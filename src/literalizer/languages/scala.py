@@ -76,7 +76,7 @@ from literalizer._formatters.type_inference import (
     record_shape_for_dict,
     single_concrete_type,
 )
-from literalizer._heterogeneous import iter_wrapped_scalars
+from literalizer._heterogeneous import iter_wrapped_values
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -1602,7 +1602,7 @@ class Scala(metaclass=LanguageCls):
         when there is nothing to widen, or when any widened scalar only
         has the ``Any`` top type (a ``null`` value).
         """
-        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        scalars = iter_wrapped_values(data=data, wrap_ids=wrap_ids)
         if len(scalars) == 0:
             return None
         scalar_types = {

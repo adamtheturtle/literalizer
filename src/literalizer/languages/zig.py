@@ -241,6 +241,27 @@ def _format_zig_entry(
 
 
 @beartype
+def _close_zig_wrapped_container_ids(
+    *, value: Value, parent_wrapped: bool, wrap_ids: set[int]
+) -> None:
+    """Propagate recursive ``ZVal`` slots through nested collections."""
+    if isinstance(value, dict):
+        children: list[Value] = list(value.values())
+    elif isinstance(value, (list, set)):
+        children = list(value)
+    else:
+        return
+    if parent_wrapped:
+        wrap_ids.add(id(value))
+    for child in children:
+        _close_zig_wrapped_container_ids(
+            value=child,
+            parent_wrapped=id(value) in wrap_ids,
+            wrap_ids=wrap_ids,
+        )
+
+
+@beartype
 def _make_zig_call_preamble_stub(
     *,
     record_mode: bool,
@@ -1567,11 +1588,30 @@ class Zig(metaclass=LanguageCls):
                 datetime_type=self.datetime_format.value.type_produced,
             )
 
+        def _wrap_non_scalar(raw_value: Value, formatted: str) -> str:
+            """Tag a sequence payload stored in a widened ``ZVal`` map."""
+            if isinstance(raw_value, list):
+                return f".{{ .arr = {formatted} }}"
+            return formatted
+
+        base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
+
+        def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
+            """Tag every nested value inside a fallback map payload."""
+            wrap_ids = set(base_compute_wrap_ids(data))
+
+            _close_zig_wrapped_container_ids(
+                value=data, parent_wrapped=False, wrap_ids=wrap_ids
+            )
+            return frozenset(wrap_ids)
+
         return dataclasses.replace(
             strategy,
             behavior=dataclasses.replace(
                 strategy.behavior,
+                compute_wrap_ids=_compute_wrap_ids,
                 wrap_scalar=_wrap_scalar,
+                wrap_non_scalar=_wrap_non_scalar,
                 widens_nested_maps_by_wrapping_scalars=True,
             ),
         )

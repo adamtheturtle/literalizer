@@ -82,7 +82,7 @@ from literalizer._formatters.type_inference import (
     replace_positional_empty_lists,
     set_sort_key,
 )
-from literalizer._heterogeneous import iter_wrapped_scalars
+from literalizer._heterogeneous import iter_wrapped_values
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -574,7 +574,7 @@ class _CppTypeCtx:
     tuple_strategy: bool
     variant_type_name: str
     dict_type_name: str
-    record_name_for_value: Callable[[Value], str | None]
+    record_name_for_value: Callable[[ValueInput], str | None]
     """The name a mapping is rendered as, where it is rendered as one.
 
     Under the ``RECORD`` strategy a record-shaped mapping is written as
@@ -913,12 +913,16 @@ def _infer_cpp_collection_element(
     """Infer a homogeneous type unless tuple rendering needs per-item
     types.
     """
+    nested_record_type = nested_record_sequence_type(
+        value=items, record_name_for_value=type_ctx.record_name_for_value
+    )
+    has_record_item = nested_record_type is not None
     has_tuple_item = type_ctx.tuple_strategy and any(
         isinstance(item, list) and is_tuple_eligible(value=item)
         for item in items
     )
     element_type = None
-    if not has_tuple_item:
+    if not has_tuple_item and not has_record_item:
         element_type = infer_element_type(items=items)
     return element_type
 
@@ -1139,6 +1143,7 @@ def _build_variant_preamble(
     type_ctx: _CppTypeCtx,
     tuple_list_ids: frozenset[int],
     record_dict_ids: frozenset[int],
+    force_variant: bool,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build a data preamble for the active variant implementation."""
     element_to_type = type_ctx.element_to_type(int_type="long long")
@@ -1148,7 +1153,7 @@ def _build_variant_preamble(
         lines: list[str] = []
         if _has_empty_collection(data=data):
             lines.append("#include <cstddef>")
-        if _needs_variant_type(
+        if force_variant or _needs_variant_type(
             data=data,
             element_to_type=element_to_type,
             type_ctx=type_ctx,
@@ -1269,6 +1274,7 @@ def _build_tuple_preamble(
             type_ctx=type_ctx,
             tuple_list_ids=frozenset(),
             record_dict_ids=frozenset(),
+            force_variant=False,
         )
         lines = list(variant_preamble(data))
         if len(tuple_list_ids) > 0:
@@ -1561,7 +1567,7 @@ def _cpp14_explicit_variant_behavior(
             excluded_ids=record_ids | tuple_ids,
         )
 
-    def _wrap(_raw_value: Value, formatted: str) -> str:
+    def _wrap(_raw_value: Value, formatted: str, /) -> str:
         """Direct-list-initialize the fallback carrier."""
         return f"{type_ctx.variant_type_name}{{{formatted}}}"
 
@@ -1597,10 +1603,18 @@ def _cpp14_explicit_variant_behavior(
             )
         return base_ids
 
+    def _wrap_scalar(value: Scalar, formatted: str) -> str:
+        """Retain a homogeneous fallback map's concrete scalar type."""
+        if base.wrap_scalar is not None:
+            wrapped = base.wrap_scalar(value, formatted)
+            if wrapped == formatted:
+                return formatted
+        return _wrap(value, formatted)
+
     return dataclasses.replace(
         base,
         compute_wrap_ids=_compute_wrap_ids,
-        wrap_scalar=_wrap,
+        wrap_scalar=_wrap_scalar,
         wrap_non_scalar=_wrap,
         compute_call_slot_wrap_ids=_compute_call_slot_wrap_ids,
     )
@@ -1692,20 +1706,23 @@ def _cpp_narrow_widened_map_value_type(
 ) -> str | None:
     """Return the single C++ type every widened-map scalar shares.
 
-    Returns ``None`` when the widened maps genuinely mix scalar types
-    (the ``LiteralizerRecordValue`` alias carrier is then required),
-    when there is nothing to widen, when *map_value_typing* asks for
-    the alias carrier whatever the data holds, or under C++14, whose
-    explicit fallback carrier replaces the record strategy's scalar
-    wrapper with one that also serves heterogeneous containers and call
-    slots and so cannot selectively leave the widened maps' scalars
-    bare.
+    Returns ``None`` when the widened maps mix native value types, when
+    there is nothing to widen, or when *map_value_typing* requests the
+    alias carrier. C++14 also retains its explicit carrier when another
+    heterogeneous collection requires that scalar wrapper.
     """
     if map_value_typing is RecordMapValueTypings.WIDE:
         return None
-    if type_ctx.variant_type_name != "std::variant":
+    if type_ctx.variant_type_name != "std::variant" and bool(
+        _cpp14_variant_parent_ids(
+            data=data,
+            type_ctx=type_ctx,
+            excluded_ids=frozenset(collect_record_shapes(data=data))
+            | _cpp_tuple_list_ids(data=data),
+        )
+    ):
         return None
-    scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+    scalars = iter_wrapped_values(data=data, wrap_ids=wrap_ids)
     if len(scalars) == 0:
         return None
     value_type = _compute_element_type_for_items(
@@ -1713,7 +1730,10 @@ def _cpp_narrow_widened_map_value_type(
         type_ctx=type_ctx,
         in_mapping_value=True,
     )
-    if value_type.startswith("std::variant<"):
+    if (
+        value_type.startswith("std::variant<")
+        or value_type == type_ctx.variant_type_name
+    ):
         return None
     return value_type
 
@@ -2029,10 +2049,24 @@ def _build_cpp_record_preamble(
         effective_tuple_list_ids_2 = tuple_list_ids
         if type_ctx.variant_type_name == "std::variant":
             effective_tuple_list_ids_2 = frozenset[int]()
+        requires_map_carrier = (
+            len(wrap_ids) > 0
+            and _cpp_narrow_widened_map_value_type(
+                data=data,
+                wrap_ids=wrap_ids,
+                type_ctx=type_ctx,
+                map_value_typing=map_value_typing,
+            )
+            is None
+        )
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
             tuple_list_ids=(effective_tuple_list_ids_2),
             record_dict_ids=record_dict_ids,
+            force_variant=(
+                requires_map_carrier
+                and type_ctx.variant_type_name != "std::variant"
+            ),
         )
         value_alias: tuple[str, ...] = ()
         if native_only or (
@@ -2050,16 +2084,7 @@ def _build_cpp_record_preamble(
             headers = list(variant_preamble(data))
         if include_tuple_header and bool(tuple_list_ids):
             headers.append("#include <tuple>")
-        if (
-            len(wrap_ids) > 0
-            and _cpp_narrow_widened_map_value_type(
-                data=data,
-                wrap_ids=wrap_ids,
-                type_ctx=type_ctx,
-                map_value_typing=map_value_typing,
-            )
-            is None
-        ):
+        if requires_map_carrier:
             # C++14's explicit fallback carrier wraps every widened
             # scalar in the carrier type, so the alias must name the
             # carrier even when the widened scalars share one concrete
@@ -2069,7 +2094,7 @@ def _build_cpp_record_preamble(
             else:
                 value_type = _compute_element_type_for_items(
                     items=list(
-                        iter_wrapped_scalars(data=data, wrap_ids=wrap_ids),
+                        iter_wrapped_values(data=data, wrap_ids=wrap_ids),
                     ),
                     type_ctx=type_ctx,
                     in_mapping_value=True,
@@ -4130,7 +4155,7 @@ class Cpp(metaclass=LanguageCls):
         )
         return dataclasses.replace(strategy, behavior=behavior)
 
-    def _rendered_record_name(self, value: Value, /) -> str | None:
+    def _rendered_record_name(self, value: ValueInput, /) -> str | None:
         """Return the ``struct`` name *value* is rendered as, if any.
 
         Resolved when a type is needed rather than when the context is
@@ -4479,6 +4504,7 @@ class Cpp(metaclass=LanguageCls):
             type_ctx=self._type_ctx,
             tuple_list_ids=frozenset(),
             record_dict_ids=frozenset(),
+            force_variant=False,
         )
 
     @cached_property

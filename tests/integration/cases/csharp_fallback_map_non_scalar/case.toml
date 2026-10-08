@@ -2,4 +2,4 @@ schema_version = 1
 owner = "variant"
 
 [[variants]]
-axis = "csharp_fallback_map_non_scalar"
+axis = "record_nested_map_fallback"
