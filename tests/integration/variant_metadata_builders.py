@@ -16,6 +16,7 @@ from beartype import beartype
 import literalizer
 from tests.enum_members import enum_member_by_name
 
+from .case_manifests import RenderContext
 from .language_specs import make_spec, sorted_languages
 from .variant_types import VariantCase, compact_variant
 
@@ -25,7 +26,7 @@ _enum_member_by_name = enum_member_by_name
 @beartype
 def build_modifier_variant_cases(
     *,
-    case_dir_names: tuple[str, ...],
+    case_contexts: Mapping[str, RenderContext],
     sequence_case_dirs: Mapping[str, str],
 ) -> list[VariantCase]:
     """Build variants exercising per-language modifier rendering.
@@ -37,6 +38,9 @@ def build_modifier_variant_cases(
     each branch of typed-declaration inference is exercised;
     combinations the language rejects at literalize time are skipped
     by the test itself.
+
+    Combined forms require a redefinition-supporting declaration style
+    and omit immutable modifiers, whose rejection is tested separately.
     """
     cases: list[VariantCase] = []
     for lang_cls in sorted_languages():
@@ -62,13 +66,24 @@ def build_modifier_variant_cases(
                     variant_name=variant.name,
                     variant=variant,
                     case_dir_name=case_dir_name,
-                    variable_form=literalizer.NewVariable(
-                        name="my_data",
+                    variable_form=(
+                        literalizer.BothVariableForms
+                        if context.variable_form == "both"
+                        else literalizer.NewVariable
+                    )(
+                        name=context.variable_name,
                         modifiers=modifiers,
                     ),
-                    pre_indent_level=0,
+                    pre_indent_level=context.pre_indent_level,
                 )
-                for case_dir_name in case_dir_names
+                for case_dir_name, context in case_contexts.items()
+                if context.variable_form != "both"
+                or (
+                    spec.declaration_style.value.supports_redefinition
+                    and modifiers.isdisjoint(
+                        lang_cls.immutable_variable_modifiers
+                    )
+                )
             )
 
     # Some modifiers require a non-default sequence representation for typed

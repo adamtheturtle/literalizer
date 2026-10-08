@@ -76,6 +76,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -556,6 +557,8 @@ else:
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class D(metaclass=LanguageCls):
     """D language specification."""
+
+    format_call_class_scope_stub = default_format_call_stub
 
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
@@ -1096,11 +1099,10 @@ class D(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a D declaration in a main function."""
-        del variable_name
+        body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,

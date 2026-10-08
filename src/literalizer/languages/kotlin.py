@@ -100,6 +100,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -1064,6 +1065,8 @@ class Kotlin(metaclass=LanguageCls):
             instead of Kotlin's narrow ``List`` / ``Map`` / array types.
     """
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
@@ -1653,12 +1656,12 @@ class Kotlin(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    wrap_in_file: ClassVar[
-        "staticmethod[[str, str, tuple[str, ...]], str]"
-    ] = wrap_in_file_noop_static
+    wrap_in_file: ClassVar["staticmethod[[str, FileWrapperContext], str]"] = (
+        wrap_in_file_noop_static
+    )
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = wrap_combined_in_file_noop_static
 
     date_format: DateFormats = DateFormats.KOTLIN

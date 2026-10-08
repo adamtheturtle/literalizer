@@ -65,6 +65,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -1017,10 +1018,11 @@ class Sml(metaclass=LanguageCls):
     @staticmethod
     def wrap_in_file(
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap an SML val declaration at top level."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -1031,7 +1033,7 @@ class Sml(metaclass=LanguageCls):
         return content + force_line
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.SML
@@ -1168,6 +1170,8 @@ class Sml(metaclass=LanguageCls):
 
             return _curried_arg
         return entry_formatter
+
+    format_call_class_scope_stub = default_format_call_stub
 
     format_call_preamble_stub = default_format_call_stub
 

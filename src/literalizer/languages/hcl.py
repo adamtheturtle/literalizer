@@ -55,6 +55,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -220,6 +221,8 @@ else:
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Hcl(metaclass=LanguageCls):
     """HCL (HashiCorp Configuration Language) language specification."""
+
+    format_call_class_scope_stub = default_format_call_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -606,8 +609,7 @@ class Hcl(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap code in a valid HCL file.
 
@@ -618,11 +620,12 @@ class Hcl(metaclass=LanguageCls):
         through unchanged so a mixed file of variable declarations and
         calls parses correctly.
         """
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         if variable_name != "":
             return wrap_in_file_noop(
                 content=content,
-                variable_name=variable_name,
-                body_preamble=body_preamble,
+                context=context,
             )
         statements = _split_top_level_statements(content=content)
         rendered: list[str] = []
@@ -646,7 +649,7 @@ class Hcl(metaclass=LanguageCls):
         )
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO

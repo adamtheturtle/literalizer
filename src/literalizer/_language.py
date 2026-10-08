@@ -51,6 +51,24 @@ if TYPE_CHECKING:
     from abc import abstractmethod
 
 
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class FileWrapperContext:
+    """Declaration metadata and explicitly placed wrapper preambles."""
+
+    variable_name: str
+    """The bound name, or an empty string for unbound call output."""
+
+    modifiers: frozenset[enum.Enum]
+    """Declaration modifiers before they are rendered as keywords."""
+
+    body_preamble: tuple[str, ...]
+    """Supporting code placed alongside the wrapped statements."""
+
+    class_preamble: tuple[str, ...]
+    """Supporting declarations placed directly in the wrapper class."""
+
+
 class NewVariableNameSyntax(enum.Enum):
     """Conservative lexical grammars for ``NewVariable`` declarations.
 
@@ -1370,6 +1388,7 @@ class LanguageCls(type):
             "format_call_arg_ref_identifier",
             "format_call_arg_ref_identifier_consumable",
             "format_call_preamble_stub",
+            "format_call_class_scope_stub",
             "format_call_ref_identifier",
             "format_call_statement",
             "format_call_stub",
@@ -2948,6 +2967,21 @@ class Language(Protocol):
         ...
 
     @property
+    def format_call_class_scope_stub(
+        self,
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
+        """Return call stubs explicitly placed as wrapper class members.
+
+        The arguments match :attr:`format_call_stub`. Languages whose
+        stubs require class-member scope use this hook instead of mixing
+        them with statement-body preamble lines.
+        """
+        ...
+
+    @property
     def format_call_preamble_stub(
         self,
     ) -> Callable[
@@ -3104,8 +3138,7 @@ class Language(Protocol):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a code snippet in a complete, valid file."""
         ...
@@ -3114,8 +3147,7 @@ class Language(Protocol):
         self,
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a declaration and assignment in a complete, valid file."""
         ...
@@ -3124,7 +3156,7 @@ class Language(Protocol):
         self,
         declarations: tuple[str, ...],
         calls: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a sequence of top-level *declarations* (each one a
         full ``literalize`` ``bare_code`` for a ``$ref`` target)
@@ -3529,7 +3561,7 @@ def _default_wrap_calls_with_declarations(
     self: "Language",
     declarations: tuple[str, ...],
     calls: str,
-    body_preamble: tuple[str, ...],
+    context: FileWrapperContext,
 ) -> str:
     """Default ``wrap_calls_with_declarations`` — concatenate the
     *declarations* and *calls* and route through :meth:`wrap_in_file`
@@ -3540,13 +3572,12 @@ def _default_wrap_calls_with_declarations(
         content = "\n".join((*declarations, calls))
     return self.wrap_in_file(
         content=content,
-        variable_name="",
-        body_preamble=body_preamble,
+        context=dataclasses.replace(context, variable_name=""),
     )
 
 
 default_wrap_calls_with_declarations: Callable[
-    ["Language", tuple[str, ...], str, tuple[str, ...]], str
+    ["Language", tuple[str, ...], str, FileWrapperContext], str
 ] = _default_wrap_calls_with_declarations
 """Shared callable for languages whose call-mode :meth:`wrap_in_file`
 already accepts the declarations spliced in front of the call
@@ -3710,11 +3741,10 @@ def prepend_body_preamble(
 @beartype
 def wrap_in_file_noop(
     content: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
+    context: FileWrapperContext,
 ) -> str:
     """Default ``wrap_in_file`` that only adds body preamble."""
-    del variable_name  # unused
+    body_preamble = context.body_preamble
     return prepend_body_preamble(content=content, body_preamble=body_preamble)
 
 
@@ -3737,16 +3767,14 @@ def parenthesize_bare_object(*, content: str, variable_name: str) -> str:
 def wrap_combined_in_file_noop(
     declaration: str,
     assignment: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
+    context: FileWrapperContext,
 ) -> str:
     """Default ``wrap_combined_in_file``: join with newline, prepend
     preamble.
     """
     return wrap_in_file_noop(
         content=declaration + "\n" + assignment,
-        variable_name=variable_name,
-        body_preamble=body_preamble,
+        context=context,
     )
 
 
@@ -3758,27 +3786,27 @@ def wrap_combined_in_file_noop(
 # Beartype supports. Its import hook evaluates annotations, and Python 3.14's
 # ``staticmethod[...]`` hints cannot be hashed even when quoted:
 # https://github.com/beartype/beartype/issues/704
-_wrap_in_file_noop_callable: Callable[[str, str, tuple[str, ...]], str] = (
+_wrap_in_file_noop_callable: Callable[[str, FileWrapperContext], str] = (
     wrap_in_file_noop
 )
 #: Static descriptor for the shared file wrapper.
 if TYPE_CHECKING:
-    wrap_in_file_noop_static: "staticmethod[[str, str, tuple[str, ...]], str]"
+    wrap_in_file_noop_static: "staticmethod[[str, FileWrapperContext], str]"
 else:
-    wrap_in_file_noop_static: Callable[[str, str, tuple[str, ...]], str] = (
+    wrap_in_file_noop_static: Callable[[str, FileWrapperContext], str] = (
         staticmethod(_wrap_in_file_noop_callable)
     )
 _wrap_combined_in_file_noop_callable: Callable[
-    [str, str, str, tuple[str, ...]], str
+    [str, str, FileWrapperContext], str
 ] = wrap_combined_in_file_noop
 #: Static descriptor for the shared combined file wrapper.
 if TYPE_CHECKING:
     wrap_combined_in_file_noop_static: (
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     )
 else:
     wrap_combined_in_file_noop_static: Callable[
-        [str, str, str, tuple[str, ...]], str
+        [str, str, FileWrapperContext], str
     ] = staticmethod(_wrap_combined_in_file_noop_callable)
 
 
@@ -3787,19 +3815,17 @@ def _default_wrap_combined_in_file(
     self: "Language",
     declaration: str,
     assignment: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
+    context: FileWrapperContext,
 ) -> str:
     """Join both forms and use the language's selected file wrapper."""
     return self.wrap_in_file(
         content=declaration + "\n" + assignment,
-        variable_name=variable_name,
-        body_preamble=body_preamble,
+        context=context,
     )
 
 
 default_wrap_combined_in_file: Callable[
-    ["Language", str, str, str, tuple[str, ...]], str
+    ["Language", str, str, FileWrapperContext], str
 ] = _default_wrap_combined_in_file
 """Shared combined wrapper that delegates to the language's file
 wrapper.
@@ -3810,25 +3836,24 @@ wrapper.
 def _unsupported_wrap_combined_in_file(
     declaration: str,
     assignment: str,
-    variable_name: str,
-    body_preamble: tuple[str, ...],
+    context: FileWrapperContext,
 ) -> str:
     """Reject combined variable forms for an unsupported language."""
-    del declaration, assignment, variable_name, body_preamble
+    del declaration, assignment, context
     raise WrapCombinedInFileNotSupportedError
 
 
 _unsupported_wrap_combined_in_file_callable: Callable[
-    [str, str, str, tuple[str, ...]], str
+    [str, str, FileWrapperContext], str
 ] = _unsupported_wrap_combined_in_file
 #: Static descriptor rejecting unsupported combined variable forms.
 if TYPE_CHECKING:
     unsupported_wrap_combined_in_file_static: (
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     )
 else:
     unsupported_wrap_combined_in_file_static: Callable[
-        [str, str, str, tuple[str, ...]], str
+        [str, str, FileWrapperContext], str
     ] = staticmethod(_unsupported_wrap_combined_in_file_callable)
 
 

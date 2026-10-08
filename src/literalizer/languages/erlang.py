@@ -58,6 +58,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -789,8 +790,7 @@ class Erlang(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap an Erlang snippet in a module function.
 
@@ -803,6 +803,8 @@ class Erlang(metaclass=LanguageCls):
         :attr:`statement_terminator` and the trailing ``,`` is
         rewritten to ``.`` so ``x()`` ends on a valid clause.
         """
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         if variable_name != "":
             body = prepend_body_preamble(
                 content=content,
@@ -850,8 +852,7 @@ class Erlang(metaclass=LanguageCls):
     def wrap_call_variable_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a call-result variable binding in an Erlang module.
 
@@ -866,6 +867,8 @@ class Erlang(metaclass=LanguageCls):
         ``My_data = make_widget(...)`` binding and the trailing
         ``My_data.`` return inside ``x()``.
         """
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         erlang_varname = variable_name[0].upper() + variable_name[1:]
         indented = textwrap.indent(text=content, prefix=self.indent)
         parts = [f"-module({self.module_name}).", "-export([x/0])."]
@@ -876,7 +879,7 @@ class Erlang(metaclass=LanguageCls):
         return "\n".join(parts)
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO
@@ -1007,6 +1010,8 @@ class Erlang(metaclass=LanguageCls):
     ]:
         """Return stub declarations for a call expression."""
         return _erlang_call_stub
+
+    format_call_class_scope_stub = default_format_call_stub
 
     format_call_preamble_stub = default_format_call_stub
 

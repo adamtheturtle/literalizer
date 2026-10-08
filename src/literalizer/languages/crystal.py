@@ -81,6 +81,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatBuilder,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -1187,11 +1188,10 @@ class Crystal(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a Crystal declaration in a module."""
-        del variable_name
+        body_preamble = context.body_preamble
         body = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -1549,6 +1549,8 @@ class Crystal(metaclass=LanguageCls):
     ]:
         """Return stub declarations for a call expression."""
         return partial(_crystal_call_stub, _to_pascal_case)
+
+    format_call_class_scope_stub = default_format_call_stub
 
     format_call_preamble_stub = default_format_call_stub
 

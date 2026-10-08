@@ -68,6 +68,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -1111,6 +1112,8 @@ class PureScript(metaclass=LanguageCls):
             generated tagged ``Val`` representation.
     """
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     module_name_shares_variable_scope = False
@@ -1584,7 +1587,7 @@ class PureScript(metaclass=LanguageCls):
         self,
         declarations: tuple[str, ...],
         calls: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap declarations and calls in a PureScript module.
 
@@ -1592,6 +1595,7 @@ class PureScript(metaclass=LanguageCls):
         expressions are bound inside a ``let … in unit`` block so that
         bare expressions are not required at the top level.
         """
+        body_preamble = context.body_preamble
         preamble = "\n".join(body_preamble)
         declaration_block = "\n".join(declarations)
         decl_part = ""
@@ -1612,10 +1616,11 @@ class PureScript(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a PureScript value declaration in a module."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         preamble = "\n".join(body_preamble)
         if variable_name == "":
             return _build_purescript_call_output(
@@ -1634,7 +1639,7 @@ class PureScript(metaclass=LanguageCls):
         return f"module Check where\n\n\n{preamble}\n\n\n{content}"
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO

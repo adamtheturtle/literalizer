@@ -69,6 +69,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatBuilder,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -87,6 +88,7 @@ from literalizer._language import (
     body_preamble_from_scalars,
     default_call_data_dependent_preamble,
     default_format_call_statement,
+    default_format_call_stub,
     default_format_call_target,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
@@ -1016,6 +1018,8 @@ class Mojo(metaclass=LanguageCls):
     homogeneous in the Variant type.
     """
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     module_name_shares_variable_scope = False
@@ -1473,10 +1477,11 @@ class Mojo(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a Mojo variable declaration in a main function."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -1490,10 +1495,11 @@ class Mojo(metaclass=LanguageCls):
         self,
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap Mojo declaration and assignment in a main function."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         declaration = prepend_body_preamble(
             content=declaration,
             body_preamble=body_preamble,
@@ -1501,8 +1507,7 @@ class Mojo(metaclass=LanguageCls):
         use = f"_ = {variable_name}"
         return self.wrap_in_file(
             content=declaration + f"\n{use}\n" + assignment,
-            variable_name=variable_name,
-            body_preamble=(),
+            context=dataclasses.replace(context, body_preamble=()),
         )
 
     date_format: DateFormats = DateFormats.ISO

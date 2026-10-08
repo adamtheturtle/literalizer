@@ -55,6 +55,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -830,8 +831,7 @@ class SystemVerilog(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a SystemVerilog declaration in a module.
 
@@ -840,6 +840,8 @@ class SystemVerilog(metaclass=LanguageCls):
         ``initial begin``.  In declaration mode, *body_preamble* is
         prepended inside ``initial begin`` as usual.
         """
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         if variable_name != "":
             content = prepend_body_preamble(
                 content=content,
@@ -859,8 +861,7 @@ class SystemVerilog(metaclass=LanguageCls):
     def wrap_call_variable_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a call-result variable binding in a SystemVerilog module.
 
@@ -876,7 +877,7 @@ class SystemVerilog(metaclass=LanguageCls):
         ``static _VVal my_data = make_widget(...);`` binding inside
         ``initial begin``.
         """
-        del variable_name
+        body_preamble = context.body_preamble
         stubs_block = "".join(f"{s}\n" for s in body_preamble)
         return (
             f"module {self.module_name};\n"
@@ -1020,6 +1021,8 @@ class SystemVerilog(metaclass=LanguageCls):
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each call argument in the ``_VVal`` struct literal."""
         return self._entry_formatter
+
+    format_call_class_scope_stub = default_format_call_stub
 
     format_call_preamble_stub = default_format_call_stub
 

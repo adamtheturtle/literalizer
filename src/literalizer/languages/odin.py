@@ -81,6 +81,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -104,6 +105,7 @@ from literalizer._language import (
     default_format_call_arg_ref_identifier_consumable,
     default_format_call_ref_identifier,
     default_format_call_statement,
+    default_format_call_stub,
     default_format_call_target,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
@@ -539,6 +541,8 @@ else:
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Odin(metaclass=LanguageCls):
     """Odin language specification."""
+
+    format_call_class_scope_stub = default_format_call_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -1135,10 +1139,11 @@ class Odin(metaclass=LanguageCls):
     @staticmethod
     def wrap_in_file(
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap an Odin declaration in a main procedure."""
+        variable_name = context.variable_name
+        body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -1149,7 +1154,7 @@ class Odin(metaclass=LanguageCls):
         return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO

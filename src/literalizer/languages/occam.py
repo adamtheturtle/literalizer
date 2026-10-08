@@ -51,6 +51,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -190,6 +191,8 @@ else:
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Occam(metaclass=LanguageCls):
     """Occam-pi language specification."""
+
+    format_call_class_scope_stub = default_format_call_stub
 
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     module_name_shares_variable_scope = False
@@ -579,11 +582,10 @@ class Occam(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap an occam-pi VAL declaration in a PROC."""
-        del variable_name
+        body_preamble = context.body_preamble
         top_level_preamble = ""
         if len(body_preamble) > 0:
             top_level_preamble = "\n".join(body_preamble) + "\n"
@@ -598,7 +600,7 @@ class Occam(metaclass=LanguageCls):
         )
 
     wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, str, tuple[str, ...]], str]"
+        "staticmethod[[str, str, FileWrapperContext], str]"
     ] = unsupported_wrap_combined_in_file_static
 
     date_format: DateFormats = DateFormats.ISO

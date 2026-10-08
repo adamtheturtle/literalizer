@@ -70,6 +70,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -611,6 +612,8 @@ class FSharp(metaclass=LanguageCls):
         round-trips the rendered value.
     """
 
+    format_call_class_scope_stub = default_format_call_stub
+
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
@@ -1115,11 +1118,10 @@ class FSharp(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap an F# let declaration in a module."""
-        del variable_name
+        body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -1130,13 +1132,12 @@ class FSharp(metaclass=LanguageCls):
         self,
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap F# declaration + assignment in separate private
         functions.
         """
-        del variable_name
+        body_preamble = context.body_preamble
         decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
         assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
         preamble = "\n".join((*body_preamble, ""))

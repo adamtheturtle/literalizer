@@ -91,6 +91,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -211,6 +212,20 @@ class _CSharpModifiers(enum.Enum):
 
     READONLY = "readonly"
     """Immutability: cannot be reassigned after initialization."""
+
+
+@beartype
+def _is_csharp_class_field(modifiers: frozenset[enum.Enum], /) -> bool:
+    """Return whether a declaration requires class-member scope."""
+    return not modifiers.isdisjoint(
+        {
+            _CSharpModifiers.PUBLIC,
+            _CSharpModifiers.PRIVATE,
+            _CSharpModifiers.PROTECTED,
+            _CSharpModifiers.STATIC,
+            _CSharpModifiers.READONLY,
+        }
+    )
 
 
 @beartype
@@ -1367,17 +1382,16 @@ class CSharp(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap code in a valid file.
 
-        When *content* starts with a class-field modifier keyword (one
+        When the context carries a class-field modifier (one
         of the visibility or storage keywords that C# only accepts on
         class members) the declaration is placed inside a ``class
         Check`` body with a ``Main`` entry point.
 
-        When *body_preamble* carries call-stub declarations (``class
+        When *context.class_preamble* carries call-stub declarations (``class
         Foo_ { ... }`` and ``static Foo_ foo = new Foo_();``) the whole
         file is wrapped in ``class Check { ...stubs... static void
         Main() { ...content... } }``.  C# requires type declarations to
@@ -1397,36 +1411,24 @@ class CSharp(metaclass=LanguageCls):
         Otherwise the content is emitted as a top-level statement,
         which is the only context where ``var`` declarations are valid.
         """
-        first_token = content.lstrip().partition(" ")[0]
-        is_class_field = first_token in {
-            "public",
-            "private",
-            "protected",
-            "static",
-            "readonly",
-        }
-        if is_class_field:
+        body_preamble = context.body_preamble
+        stub_lines = context.class_preamble
+        stub_block = ""
+        if len(stub_lines) > 0:
+            stub_block = "\n".join(stub_lines) + "\n"
+        if _is_csharp_class_field(context.modifiers):
             preamble_block = "\n".join((*body_preamble, ""))
             return (
                 f"{preamble_block}class Check {{\n"
+                f"{stub_block}"
                 f"{content}\n"
                 f"{self.indent}public static void Main() {{}}\n"
                 "}"
             )
-        stub_prefixes = ("class ", "static ")
-        stub_lines = tuple(
-            line for line in body_preamble if line.startswith(stub_prefixes)
-        )
-        other_lines = tuple(
-            line
-            for line in body_preamble
-            if not line.startswith(stub_prefixes)
-        )
         if len(stub_lines) > 0:
-            stub_block = "\n".join(stub_lines) + "\n"
             body = prepend_body_preamble(
                 content=content,
-                body_preamble=other_lines,
+                body_preamble=body_preamble,
             )
             return (
                 f"class Check {{\n"
@@ -1450,8 +1452,7 @@ class CSharp(metaclass=LanguageCls):
             )
         return wrap_in_file_noop(
             content=content,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
+            context=context,
         )
 
     @property
@@ -1463,27 +1464,40 @@ class CSharp(metaclass=LanguageCls):
         self,
         declaration: str,
         assignment: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap declaration and assignment in a valid file.
+
+        Field reassignments belong in a static or instance constructor,
+        matching the declaration's storage modifier.
 
         Under the ``RECORD`` strategy the declaration and assignment are
         top-level statements that must follow the file-scope ``record``
         declarations, so they are wrapped as a ``Main`` method body via
         :meth:`wrap_in_file`; otherwise this is a no-op.
         """
+        if _is_csharp_class_field(context.modifiers):
+            prefix = "public "
+            if _CSharpModifiers.STATIC in context.modifiers:
+                prefix = "static "
+            return self.wrap_in_file(
+                content=(
+                    f"{declaration}\n"
+                    f"{self.indent}{prefix}Check() {{\n"
+                    f"{assignment}\n"
+                    f"{self.indent}}}"
+                ),
+                context=context,
+            )
         if self._record_strategy_active:
             return self.wrap_in_file(
                 content=declaration + "\n" + assignment,
-                variable_name=variable_name,
-                body_preamble=body_preamble,
+                context=context,
             )
         return wrap_combined_in_file_noop(
             declaration=declaration,
             assignment=assignment,
-            variable_name=variable_name,
-            body_preamble=body_preamble,
+            context=context,
         )
 
     date_format: DateFormats = DateFormats.CSHARP
@@ -1889,7 +1903,7 @@ class CSharp(metaclass=LanguageCls):
     )
 
     @cached_property
-    def format_call_stub(
+    def format_call_class_scope_stub(
         self,
     ) -> Callable[
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
@@ -1897,6 +1911,8 @@ class CSharp(metaclass=LanguageCls):
     ]:
         """Return stub declarations for a call expression."""
         return _csharp_call_stub
+
+    format_call_stub = default_format_call_stub
 
     format_call_preamble_stub = default_format_call_stub
 

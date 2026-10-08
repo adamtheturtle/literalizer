@@ -85,6 +85,7 @@ from literalizer._language import (
     DatetimeFormatEnum,
     DeclarationStyleConfig,
     DictFormatConfig,
+    FileWrapperContext,
     FloatSpecialsMixin,
     HeterogeneousBehavior,
     IdentifierCase,
@@ -116,7 +117,6 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
-    default_wrap_combined_in_file,
     identity_call_arg,
     new_constructor_target,
     no_call_binding_body_preamble,
@@ -234,6 +234,19 @@ class _JavaModifiers(enum.Enum):
 
     FINAL = "final"
     """Immutability: cannot be reassigned."""
+
+
+@beartype
+def _is_java_class_field(modifiers: frozenset[enum.Enum], /) -> bool:
+    """Return whether a declaration requires class-member scope."""
+    return not modifiers.isdisjoint(
+        {
+            _JavaModifiers.PUBLIC,
+            _JavaModifiers.PRIVATE,
+            _JavaModifiers.PROTECTED,
+            _JavaModifiers.STATIC,
+        }
+    )
 
 
 @beartype
@@ -1912,41 +1925,27 @@ class Java(metaclass=LanguageCls):
     def wrap_in_file(
         self,
         content: str,
-        variable_name: str,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> str:
         """Wrap a Java declaration in a ``class`` scope named after
         the configured module name.
 
-        When *content* starts with a class-field modifier keyword
-        (``public``, ``private``, ``protected``, ``static``) the
+        When the context carries a class-field modifier
+        (``public``, ``private``, ``protected``, ``static``), the
         declaration is placed at class-field scope, which is the only
         context where those modifiers are valid.  Otherwise the
         declaration goes inside a ``public static void`` method named
         after the configured module name so that local-only forms like
         ``var x = 42;`` compile.
         """
-        del variable_name
-        first_token = content.lstrip().partition(" ")[0]
-        is_class_field = first_token in {
-            "public",
-            "private",
-            "protected",
-            "static",
-        }
-        # Lines starting with "static " are class-level declarations
-        # (call stubs); everything else goes inside the method body.
-        class_lines = [
-            line for line in body_preamble if line.startswith("static ")
-        ]
-        method_lines = tuple(
-            line for line in body_preamble if not line.startswith("static ")
-        )
+        body_preamble = context.body_preamble
+        class_lines = context.class_preamble
+        method_lines = body_preamble
         class_block = ""
         if len(class_lines) > 0:
             class_block = "\n".join(class_lines) + "\n"
         method_name = IdentifierCase.CAMEL.convert(name=self.module_name)
-        if is_class_field:
+        if _is_java_class_field(context.modifiers):
             field_preamble = "\n".join((*method_lines, ""))
             return (
                 f"class {self.module_name} {{\n"
@@ -1969,7 +1968,24 @@ class Java(metaclass=LanguageCls):
             "}"
         )
 
-    wrap_combined_in_file = default_wrap_combined_in_file
+    def wrap_combined_in_file(
+        self,
+        declaration: str,
+        assignment: str,
+        context: FileWrapperContext,
+    ) -> str:
+        """Place field reassignment in a matching initializer block."""
+        if _is_java_class_field(context.modifiers):
+            prefix = ""
+            if _JavaModifiers.STATIC in context.modifiers:
+                prefix = "static "
+            assignment = (
+                f"{self.indent}{prefix}{{\n{assignment}\n{self.indent}}}"
+            )
+        return self.wrap_in_file(
+            content=declaration + "\n" + assignment,
+            context=context,
+        )
 
     date_format: DateFormats = DateFormats.JAVA
     datetime_format: DatetimeFormats = DatetimeFormats.INSTANT
@@ -2293,7 +2309,7 @@ class Java(metaclass=LanguageCls):
     )
 
     @cached_property
-    def format_call_stub(
+    def format_call_class_scope_stub(
         self,
     ) -> Callable[
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
@@ -2301,6 +2317,8 @@ class Java(metaclass=LanguageCls):
     ]:
         """Return stub declarations for a call expression."""
         return _java_call_stub
+
+    format_call_stub = default_format_call_stub
 
     format_call_preamble_stub = default_format_call_stub
 
