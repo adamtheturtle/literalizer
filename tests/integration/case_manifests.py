@@ -483,6 +483,7 @@ class RefCaseSpec(  # noqa: NOD001
 
     ref_key: str = "$ref"
     variable_form: VariableFormName = "new"
+    variable_modifiers: StringTuple = Field(default_factory=_empty_names)
     collection_layout: CollectionLayoutName = "compact"
     pre_indent_level: int = 0
     heterogeneous_strategy: str | None = None

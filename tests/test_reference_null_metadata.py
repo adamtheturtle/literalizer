@@ -23,7 +23,7 @@ from literalizer.languages import Cpp, Python
             (
                 "#include <initializer_list>",
                 "#include <vector>",
-                "#include <cstddef>",
+                "#include <utility>",
             ),
         ),
         (
@@ -32,13 +32,17 @@ from literalizer.languages import Cpp, Python
             (
                 "#include <initializer_list>",
                 "#include <vector>",
-                "#include <cstddef>",
+                "#include <utility>",
             ),
         ),
         (
             {"item": None},
             "my_data = item;",
-            ("#include <initializer_list>", "#include <cstddef>"),
+            (
+                "#include <initializer_list>",
+                "#include <cstddef>",
+                "#include <utility>",
+            ),
         ),
     ],
 )
@@ -90,7 +94,10 @@ def test_cpp_json_null_reference_assignment() -> None:
         ref_values={"item": None},
     )
     assert result.code == "my_data = std::move(item);"
-    assert result.preamble == ("#include <nlohmann/json.hpp>",)
+    assert result.preamble == (
+        "#include <nlohmann/json.hpp>",
+        "#include <utility>",
+    )
 
 
 @pytest.mark.parametrize(

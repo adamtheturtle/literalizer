@@ -4434,6 +4434,49 @@ class Cpp(metaclass=LanguageCls):
             )
         return behavior
 
+    @staticmethod
+    def reference_binding_data_dependent_preamble(
+        data: Value, /
+    ) -> tuple[str, ...]:
+        """Only a non-scalar reference's ``std::move`` needs a header."""
+        if isinstance(data, (bool, int, float)):
+            return ()
+        return ("#include <utility>",)
+
+    @staticmethod
+    def reference_declaration_imports(
+        entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Keep headers used by each rendered bound value."""
+        return tuple(
+            entry for entry in entries if entry.startswith("#include ")
+        )
+
+    @staticmethod
+    def format_reference_variable_declaration(
+        name: str,
+        value: str,
+        _data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Preserve reference categories and static binding ownership."""
+        if _CppModifiers.STATIC in modifiers:
+            type_keyword = "auto"
+        elif _CppModifiers.CONST in modifiers:
+            type_keyword = "auto&"
+        else:
+            type_keyword = "auto&&"
+        prefix = _cpp_modifier_prefix(modifiers=modifiers)
+        return f"{prefix}{type_keyword} {name} = {value};"
+
+    @staticmethod
+    def format_reference_variable_assignment(
+        name: str, value: str, _data: Value, /
+    ) -> str:
+        """Assign an already rendered reference directly."""
+        return f"{name} = {value};"
+
     @cached_property
     def format_variable_declaration(
         self,

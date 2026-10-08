@@ -419,8 +419,8 @@ def literalize(
             per-language declaration sequencing (Nix nested ``let``,
             Fortran two-phase declarations, and so on).  Supply
             *bound_refs* ordered by each ref's first use in *source*
-            (and limited to refs that appear there) so every binding
-            precedes its first use and no unused binding is emitted.
+            so every binding precedes its first use. Entries that are not
+            referenced by the selected input are omitted.
             Binding
             emission only happens when *wrap_in_file* is ``True`` and
             *variable_form* is a :class:`NewVariable` or
@@ -807,11 +807,7 @@ def literalize_call(
             only happens when *wrap_in_file* is ``True``; otherwise
             *bound_refs* degrades to type information only, exactly like
             *ref_values*, and the refs stay free identifiers.  Every
-            name should appear as a ``$ref`` marker in *source* (a ref
-            that is declared but never referenced is folded into
-            neither the call nor its preamble inference and so may
-            leave the declaration's data-dependent preamble entries
-            uncovered, besides being an unused binding); this mirrors
+            referenced name is declared; unused entries are omitted, matching
             ``literalize``'s *bound_refs* contract.  Where declarations
             are emitted, *variable_form* (which binds the call *result*)
             cannot be combined with them and the pair raises

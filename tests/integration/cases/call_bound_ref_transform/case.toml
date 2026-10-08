@@ -11,4 +11,4 @@ languages = ["Python"]
 languages_reason = "Python's built-in repr consumes the transformed call's return value."
 
 [call.ref_declarations]
-x = "1"
+ref_data = "1"
