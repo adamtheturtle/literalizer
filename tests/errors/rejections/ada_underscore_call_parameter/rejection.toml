@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Ada identifiers cannot have leading, trailing, or consecutive underscores."
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Ada"]
+values = ["__proto__", "_x", "x_", "x__y"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "capture"
+parameter_names = ["{value}"]
+wrap_in_file = true
