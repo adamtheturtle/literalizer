@@ -26,6 +26,7 @@ import dataclasses
 
 from beartype import beartype
 
+from literalizer._dictionary_keys import dictionary_key_formatter
 from literalizer._document_formatting import format_document_fast
 from literalizer._formatters.collection_openers import FixedOpen
 from literalizer._formatters.format_entries import (
@@ -169,6 +170,9 @@ class _JsonNativeRenderer:
         self.dict_config = dict_config
         self.sequence_config = sequence_config
         self.format_string = language.format_string
+        self.format_dictionary_key = dictionary_key_formatter(
+            language=language
+        )
         self.format_integer = language.format_integer
         self.format_float = language.format_float
         self.null_literal = language.null_literal
@@ -224,6 +228,14 @@ class _JsonNativeRenderer:
             case _:
                 raise _SharedRendererRequiredError
 
+    def dictionary_key(self, value: Scalar, /) -> str:
+        """Render a semantic string key or retain ordinary scalar
+        rendering.
+        """
+        if isinstance(value, str) and self.format_dictionary_key is not None:
+            return self.format_dictionary_key(value)
+        return self.scalar(value)
+
     def compact(self, value: Value, /) -> str:
         """Format one value with compact nested collections."""
         match value:
@@ -248,7 +260,9 @@ class _JsonNativeRenderer:
         """Join each formatted key and value with the separator."""
         guard_dict_keys_supported(value=value, spec=self.language)
         return [
-            self.scalar(key) + self.entry_separator + self.compact(child)
+            self.dictionary_key(key)
+            + self.entry_separator
+            + self.compact(child)
             for key, child in value.items()
         ]
 
@@ -257,7 +271,7 @@ class _JsonNativeRenderer:
         guard_dict_keys_supported(value=value, spec=self.language)
         return [
             self.format_dict_entry(
-                self.scalar(key), child, self.compact(child)
+                self.dictionary_key(key), child, self.compact(child)
             )
             for key, child in value.items()
         ]

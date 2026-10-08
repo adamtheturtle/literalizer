@@ -406,40 +406,11 @@ def _build_gleam_float_wrapper(
 
 
 @beartype
-def _apply_gleam_dict_entry(
-    key: str,
-    _raw_value: Value,
-    formatted_value: str,
-    str_prefix: str,
+def _gleam_dict_entry(
+    key: str, _raw_value: Value, formatted_value: str
 ) -> str:
-    """Format a dict entry as a hash tuple with a plain-string key.
-
-    Dict keys are ``String``, not ``GVal``, so the ``{prefix}Str(...)``
-    constructor must be stripped from the formatted key.
-    """
-    key = key.removeprefix(str_prefix).removesuffix(")")
+    """Format an entry whose key already has dictionary-key syntax."""
     return f"#({key}, {formatted_value})"
-
-
-@beartype
-def _build_gleam_dict_entry(
-    prefix: str,
-) -> Callable[[str, Value, str], str]:
-    """Build a dict-entry formatter that strips the ``{prefix}Str`` prefix
-    from keys.
-    """
-    _str_prefix = f"{prefix}Str("
-
-    def _format(key: str, _raw_value: Value, formatted_value: str) -> str:
-        """Delegate to module-level implementation."""
-        return _apply_gleam_dict_entry(
-            key=key,
-            _raw_value=_raw_value,
-            formatted_value=formatted_value,
-            str_prefix=_str_prefix,
-        )
-
-    return _format
 
 
 # Backward-compatible module-level aliases used by the Enum members.
@@ -455,7 +426,6 @@ _format_gleam_integer_decimal = _build_gleam_integer_wrapper(
 _format_gleam_datetime_epoch = _build_gleam_datetime_epoch(prefix="G")
 _gleam_integer_wrapper = _build_gleam_integer_wrapper
 _gleam_float_wrapper = _build_gleam_float_wrapper
-_gleam_dict_entry = _build_gleam_dict_entry(prefix="G")
 
 
 _GLEAM_INT_BASE: dict[tuple[str, str], Callable[[int], str]] = {
@@ -703,23 +673,6 @@ _GLEAM_JSON_BYTES_FORMATTERS: dict[str, Callable[[bytes], str]] = {
     "HEX": _format_gleam_json_bytes_hex,
     "BASE64": _format_gleam_json_bytes_base64,
 }
-
-
-@beartype
-def _apply_gleam_json_dict_entry(
-    key: str,
-    _raw_value: Value,
-    formatted_value: str,
-) -> str:
-    """Format a dict entry as ``#("key", value)`` for ``json.object``.
-
-    Dict keys are formatted as ``json.string("k")`` builder calls by
-    :func:`_format_gleam_json_string`, but ``json.object`` expects bare
-    string keys inside its ``#(key, value)`` pairs, so the builder
-    wrapping is stripped here.
-    """
-    bare_key = key.removeprefix(_GLEAM_JSON_STRING_OPEN).removesuffix(")")
-    return f"#({bare_key}, {formatted_value})"
 
 
 @beartype
@@ -1539,9 +1492,7 @@ class Gleam(metaclass=LanguageCls):
     @cached_property
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
-        if self._json_type_active:
-            return _apply_gleam_json_dict_entry
-        return _build_gleam_dict_entry(prefix=self.constructor_prefix)
+        return _gleam_dict_entry
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
@@ -1720,6 +1671,11 @@ class Gleam(metaclass=LanguageCls):
         if self.dict_format is type(self.dict_format).RECORD:
             return format_time_iso
         return _build_gleam_time_iso(prefix=self.constructor_prefix)
+
+    @cached_property
+    def format_dict_key(self) -> Callable[[str], str]:
+        """Render a string key without a value constructor."""
+        return format_string_backslash_nul_braced_unicode
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

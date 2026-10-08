@@ -40,6 +40,7 @@ from literalizer._comments_resolve import (
     resolve_toml_comments,
     resolve_yaml_comments,
 )
+from literalizer._dictionary_keys import dictionary_key_formatter
 from literalizer._document_formatting import format_document_fast
 from literalizer._formatters.type_inference import (
     BeyondI64,
@@ -1188,13 +1189,7 @@ def _format_ordered_map_value(
             raw_key=k,
             formatted_key=_format_ordered_map_key(
                 raw_key=k,
-                key_str=_format_value(
-                    value=k,
-                    dict_open_override=None,
-                    sequence_open_override=None,
-                    ctx=ctx.compact(),
-                    int_formatter=None,
-                ),
+                key_str=_format_dictionary_key(key=k, ctx=ctx.compact()),
                 spec=spec,
             ),
             raw_value=v,
@@ -1423,13 +1418,7 @@ def _format_dict_value(
     pairs = [
         _build_dict_entry(
             raw_key=k,
-            key_str=_format_value(
-                value=k,
-                dict_open_override=None,
-                sequence_open_override=None,
-                ctx=ctx.compact(),
-                int_formatter=None,
-            ),
+            key_str=_format_dictionary_key(key=k, ctx=ctx.compact()),
             raw_value=v,
             formatted_value=_maybe_wrap_child(
                 parent_id=parent_id,
@@ -3033,6 +3022,21 @@ def _filter_collection_comments(
 
 
 @beartype
+def _format_dictionary_key(*, key: Scalar, ctx: _RenderContext) -> str:
+    """Render a key using its semantic role and shared scalar rules."""
+    formatter = dictionary_key_formatter(language=ctx.spec)
+    if isinstance(key, str) and formatter is not None:
+        return formatter(key)
+    return _format_value(
+        value=key,
+        dict_open_override=None,
+        sequence_open_override=None,
+        ctx=ctx,
+        int_formatter=None,
+    )
+
+
+@beartype
 def _format_dict_lines(
     *,
     dict_data: dict[Scalar, Value],
@@ -3085,13 +3089,7 @@ def _format_dict_lines(
         )
     formatted_entries: list[str] = []
     for k, v in entries:
-        formatted_key: str = _format_value(
-            value=k,
-            dict_open_override=None,
-            sequence_open_override=None,
-            ctx=line_ctx.compact(),
-            int_formatter=None,
-        )
+        formatted_key = _format_dictionary_key(key=k, ctx=line_ctx.compact())
         formatted_val = _maybe_wrap_child(
             parent_id=parent_id,
             raw_value=v,
