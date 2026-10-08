@@ -282,6 +282,8 @@ def run_literalize_ref_golden_case(
             for name, source in config.extra_ref_value_sources.items()
         },
     )
+    if config.bound_refs is not None:
+        bound_refs_input.update(config.bound_refs)
     with GoldenSkips(
         policy=_REF_SKIPS,
         golden_path=golden_path,
