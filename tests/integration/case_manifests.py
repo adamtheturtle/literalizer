@@ -486,6 +486,7 @@ class RefCaseSpec(  # noqa: NOD001
     collection_layout: CollectionLayoutName = "compact"
     pre_indent_level: int = 0
     heterogeneous_strategy: str | None = None
+    sequence_format: str | None = None
     ref_case_override: RefIdentifierCase | None = None
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
     bound_refs: Mapping[str, ValueInput] | None = None

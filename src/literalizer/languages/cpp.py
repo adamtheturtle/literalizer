@@ -2000,6 +2000,31 @@ def _contains_external_record(
 
 
 @beartype
+def _cpp_record_field_headers(
+    *, declarations: tuple[str, ...]
+) -> tuple[str, ...]:
+    """Include dependencies named by the emitted native field types."""
+    type_headers = (
+        ("std::string", "#include <string>"),
+        ("std::vector", "#include <vector>"),
+        ("std::array", "#include <array>"),
+        ("std::map", "#include <map>"),
+        ("std::unordered_map", "#include <unordered_map>"),
+        ("std::set", "#include <set>"),
+        ("std::tuple", "#include <tuple>"),
+        ("std::pair", "#include <utility>"),
+        ("std::chrono::", "#include <chrono>"),
+        ("std::nullptr_t", "#include <cstddef>"),
+        ("std::variant", "#include <variant>"),
+    )
+    return tuple(
+        header
+        for type_name, header in type_headers
+        if any(type_name in declaration for declaration in declarations)
+    )
+
+
+@beartype
 def _build_cpp_record_preamble(
     *,
     type_ctx: _CppTypeCtx,
@@ -2022,10 +2047,9 @@ def _build_cpp_record_preamble(
     record field may still be a heterogeneous list or an empty
     collection) followed by the generated ``struct`` declarations.  The
     headers precede the declarations so a declared field may name
-    ``std::nullptr_t`` or ``std::variant``; the scalar/sequence headers
-    (``<string>``, ``<vector>``, ``<chrono>``) are emitted earlier
-    still, by the type-driven preamble the core assembles before this
-    one.
+    ``std::nullptr_t`` or ``std::variant``. Include the field dependencies
+    here too: a bound reference's types may be absent from the root
+    binding's type-driven preamble.
     """
 
     def _record_pre(data: Value, /) -> tuple[str, ...]:
@@ -2100,7 +2124,13 @@ def _build_cpp_record_preamble(
                     in_mapping_value=True,
                 )
             value_alias = (f"using {_CPP_RECORD_MAP_VALUE} = {value_type};",)
-        return (*headers, *value_alias, *record_preamble(data))
+        declarations = record_preamble(data)
+        return (
+            *_cpp_record_field_headers(declarations=declarations),
+            *headers,
+            *value_alias,
+            *declarations,
+        )
 
     return _record_pre
 
@@ -3841,12 +3871,40 @@ class Cpp(metaclass=LanguageCls):
 
     format_call_target = default_format_call_target
 
+    def _cpp_record_field_is_trivial(self, value: Value, /) -> bool:
+        """Identify fields of records whose moves only copy their data."""
+        if isinstance(value, dict):
+            return (
+                not _contains_external_record(
+                    data=value,
+                    record_shape_names=self.record_shape_names,
+                )
+                and self._rendered_record_name(value) is not None
+                and all(
+                    self._cpp_record_field_is_trivial(field)
+                    for field in value.values()
+                )
+            )
+        if isinstance(value, list):
+            return self._type_ctx.sequence_is_array and all(
+                not isinstance(item, dict)
+                and self._cpp_record_field_is_trivial(item)
+                for item in value
+            )
+        if isinstance(value, datetime.datetime):
+            return (
+                self._resolved_datetime_format.value.type_produced is not str
+            )
+        if isinstance(value, datetime.date):
+            return self._resolved_date_format.value.type_produced is not str
+        return value is None or isinstance(value, (bool, int, float))
+
     @cached_property
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
         """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``,
-        except for ``trivially-copyable`` scalars.
+        except for ``trivially-copyable`` scalars and native records.
 
         A direct copy assignment (``auto my_data = my_var``) triggers
         clang-tidy ``performance-unnecessary-copy-initialization`` when
@@ -3857,7 +3915,8 @@ class Cpp(metaclass=LanguageCls):
         ``hicpp-move-const-arg`` / ``performance-move-const-arg``
         warning ("has no effect; remove std::move()"), so we drop the
         wrapper when the caller's ``ref_values`` identifies the ref as
-        one of those types.  When the value is unknown we keep the
+        one of those types or a record containing only trivial fields.
+        When the value is unknown we keep the
         historical ``std::move`` form.
         """
 
@@ -3865,9 +3924,12 @@ class Cpp(metaclass=LanguageCls):
             name: str, value: Value | None, /
         ) -> str:
             """Wrap the identifier in ``std::move()`` unless *value* is
-            a ``trivially-copyable`` scalar.
+            a ``trivially-copyable`` scalar or native record.
             """
-            if isinstance(value, (bool, int, float)):
+            if isinstance(value, (bool, int, float)) or (
+                isinstance(value, dict)
+                and self._cpp_record_field_is_trivial(value)
+            ):
                 return name
             return f"std::move({name})"
 
@@ -3922,7 +3984,15 @@ class Cpp(metaclass=LanguageCls):
         through the non-consuming formatter so the emitted C++ compiles
         cleanly under ``--warnings-as-errors``.
         """
-        return _cpp_value_inhibits_consuming_form
+
+        def _inhibits(value: Value, /) -> bool:
+            """Suppress moves for scalars and trivial native records."""
+            return _cpp_value_inhibits_consuming_form(value) or (
+                isinstance(value, dict)
+                and self._cpp_record_field_is_trivial(value)
+            )
+
+        return _inhibits
 
     @cached_property
     def _cpp_date_type(self) -> str:
@@ -4468,6 +4538,7 @@ class Cpp(metaclass=LanguageCls):
         """
         if self._json_type_active:
             return no_data_preamble
+
         if self._record_strategy_active:
             return _build_cpp_record_preamble(
                 type_ctx=self._type_ctx,

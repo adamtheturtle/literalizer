@@ -12,7 +12,7 @@ auto my_data = Record0{
     {
         "s",
     },
-    std::move(first),
+    first,
 };
     (void)my_data;
     return 0;

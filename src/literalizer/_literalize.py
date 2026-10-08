@@ -3918,6 +3918,12 @@ def _literalize_impl(
             ref_value = None
             if ref_values is not None:
                 ref_value = ref_values.get(raw_ref_name)
+            if ref_value is not None:
+                compute_record_shapes = (
+                    language.heterogeneous_behavior.compute_record_shapes
+                )
+                if compute_record_shapes is not None:
+                    _ = compute_record_shapes(ref_value)
             identifier = language.format_call_ref_identifier(
                 ref_name, ref_value
             )
@@ -5685,6 +5691,16 @@ def _compute_call_arg_ref_consume_inhibited_names(
     """
     if len(ref_values) == 0:
         return frozenset[str]()
+    compute_record_shapes = (
+        language.heterogeneous_behavior.compute_record_shapes
+    )
+    if compute_record_shapes is not None:
+        resolved_values = _resolve_ref_list_for_preamble(
+            values=elements,
+            ref_values=ref_values,
+            ref_key=ref_key,
+        )
+        _ = compute_record_shapes(resolved_values)
     inhibits = language.consumable_ref_value_inhibits_consuming_form
     referenced: set[str] = set()
     for element in elements:

@@ -12,7 +12,7 @@ auto my_data = Record0{
     .direct = {
         .x = "s",
     },
-    .bound = std::move(first),
+    .bound = first,
 };
     (void)my_data;
     return 0;
