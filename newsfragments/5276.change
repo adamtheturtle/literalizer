@@ -1,0 +1,1 @@
+Reject pre-indented Haskell files and preserve multiline call continuations when composing bound references.
