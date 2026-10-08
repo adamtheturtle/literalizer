@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "multiline_string"
+suffix = "_nested_list"
+
+[[variants]]
+axis = "multiline_string_list"
+suffix = "_nested_list"
