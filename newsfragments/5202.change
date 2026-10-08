@@ -1,0 +1,1 @@
+Fix PureScript native-record wrapped call stubs to accept independently typed native arguments.

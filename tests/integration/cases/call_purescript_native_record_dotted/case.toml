@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["PureScript"]
+languages_reason = "PureScript native-record stubs quantify argument types only when parameters are present."
+target_function = "app.client.consume"
+parameter_names = ["item", "count"]
+per_element = true
+wrap_in_file = true
+variant_only = true
+
+[[call.variants]]
+axis = "native_record"

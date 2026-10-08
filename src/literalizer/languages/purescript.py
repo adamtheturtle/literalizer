@@ -595,7 +595,7 @@ def _build_purescript_call_stub_lines(
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
-    type_name: str,
+    type_name: str | None,
 ) -> tuple[str, ...]:
     """Return PureScript stub declarations for a call name.
 
@@ -603,9 +603,17 @@ def _build_purescript_call_stub_lines(
     """
     del stub_return
 
+    quantifier = ""
+    if type_name is None:
+        parameter_types = [f"a{index}" for index in range(len(params))]
+        if len(parameter_types) > 0:
+            quantifier = f"forall {' '.join(parameter_types)}. "
+    else:
+        parameter_types = [type_name] * len(params)
+
     if len(parts) == 1:
         name = parts[0]
-        sig = " -> ".join([*[type_name] * len(params), "Unit"])
+        sig = quantifier + " -> ".join([*parameter_types, "Unit"])
         lhs = " ".join([name, *["_"] * len(params)])
         return (f"{name} :: {sig}", f"{lhs} = unit")
 
@@ -617,7 +625,7 @@ def _build_purescript_call_stub_lines(
         func_type = "Unit"
         func_body = "unit"
     else:
-        arg_types = " -> ".join(type_name for _ in params)
+        arg_types = " -> ".join(parameter_types)
         func_type = f"{arg_types} -> Unit"
         wildcards = " ".join("_" for _ in params)
         func_body = f"\\{wildcards} -> unit"
@@ -628,17 +636,17 @@ def _build_purescript_call_stub_lines(
         inner_type = f"{{ {field} :: {inner_type} }}"
         inner_val = f"{{ {field}: {inner_val} }}"
 
-    return (f"{root} :: {inner_type}", f"{root} = {inner_val}")
+    return (f"{root} :: {quantifier}{inner_type}", f"{root} = {inner_val}")
 
 
 @beartype
 def _build_purescript_call_stub(
-    type_name: str,
+    type_name: str | None,
 ) -> Callable[
     [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
     tuple[str, ...],
 ]:
-    """Build a call stub factory that uses *type_name* for parameter types."""
+    """Build stubs using *type_name*, or independent type variables."""
 
     @beartype
     def _purescript_call_stub(
@@ -1750,7 +1758,11 @@ class PureScript(metaclass=LanguageCls):
 
         Under :attr:`json_type` the stub's parameter types are ``Json``
         rather than the generated ``Val`` ADT.
+        Native-record mode uses independent universally quantified types
+        so each ignored argument can have its own native type.
         """
+        if self.dict_format is type(self.dict_format).RECORD:
+            return _build_purescript_call_stub(type_name=None)
         stub_type_name = "Json"
         if not self._json_type_active:
             stub_type_name = self.type_name
