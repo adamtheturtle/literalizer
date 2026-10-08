@@ -24,6 +24,9 @@ reason = "Supplies the sequence-format input the modifier builder renders."
 [special_axes.modifiers]
 reason = "Crosses declaration modifiers with the inputs that declare them."
 
+[special_axes.record_modifiers]
+reason = "Crosses class-field modifiers with the generated record representation."
+
 [special_axes.json_type_modifiers]
 reason = "Crosses declaration modifiers with each JSON value-type spec."
 
