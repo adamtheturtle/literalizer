@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Crystal keyword field renaming must not merge distinct input keys."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Crystal"]
+
+[call]
+api = "literalize"
+sources = ['{"end": 1, "end_": 2}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
