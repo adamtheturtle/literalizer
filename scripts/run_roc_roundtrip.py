@@ -140,9 +140,11 @@ def main() -> None:
         source_filename="main.roc",
         program=program,
         steps=[
-            roundtrip_common.Step(
+            # Bound a stalled platform fetch, compilation, or execution.
+            roundtrip_common.TimedStep(
                 args=[roc, "run", "--linker=legacy", "main.roc"],
                 failure_label="roc run error",
+                timeout_seconds=120,
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,

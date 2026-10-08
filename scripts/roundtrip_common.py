@@ -30,10 +30,16 @@ the final stdout to :func:`verify`.
 """
 
 import json
+import os
+import shlex
+import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 from collections.abc import Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -200,6 +206,111 @@ class Step:
     failure_label: str
 
 
+@dataclass(frozen=True)
+class TimedStep(Step):
+    """A subprocess with a deadline and process-tree cleanup on
+    timeout.
+    """
+
+    timeout_seconds: float
+
+
+def _run_timed_attempt(
+    *,
+    label: str,
+    step: TimedStep,
+    tmpdir: Path,
+    program: str,
+    attempt: str,
+) -> subprocess.CompletedProcess[str]:
+    """Run one bounded attempt, reporting and cleaning up a timeout."""
+    command = shlex.join(split_command=step.args)
+    _ = sys.stderr.write(
+        f"{label}: attempt {attempt} starting "
+        f"(timeout {step.timeout_seconds:g}s): {command}\n",
+    )
+    _ = sys.stderr.flush()
+    started = time.monotonic()
+    # A new session lets timeout cleanup kill Roc and any compiler or
+    # generated-program children, including ones holding output pipes.
+    with subprocess.Popen(
+        args=list(step.args),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=tmpdir,
+        start_new_session=True,
+    ) as process:
+        try:
+            stdout, stderr = process.communicate(
+                timeout=step.timeout_seconds,
+            )
+        except subprocess.TimeoutExpired:
+            # Kill before draining output pipes. The direct child
+            # may have exited while a descendant still holds a pipe.
+            if os.name == "nt":
+                # The test matrix includes Windows, where killpg is
+                # unavailable. taskkill also terminates descendants.
+                taskkill = shutil.which(cmd="taskkill") or "taskkill"
+                _ = subprocess.run(
+                    args=[taskkill, "/F", "/T", "/PID", f"{process.pid}"],
+                    capture_output=True,
+                    check=False,
+                )
+                process.kill()
+            else:
+                with suppress(ProcessLookupError):
+                    os.killpg(process.pid, signal.SIGKILL)
+            stdout, stderr = process.communicate()
+            elapsed = time.monotonic() - started
+            _ = sys.stderr.write(
+                f"{label}: {step.failure_label}: attempt {attempt} "
+                f"timed out after {elapsed:.2f}s\n"
+                f"Command: {command}\n"
+                f"Stdout:\n{stdout}\nStderr:\n{stderr}\n"
+                f"Program:\n{program}\n",
+            )
+            _ = sys.stderr.flush()
+            raise
+        return subprocess.CompletedProcess(
+            args=list(step.args),
+            returncode=process.returncode,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+
+def _run_step(
+    *,
+    label: str,
+    step: Step,
+    tmpdir: Path,
+    program: str,
+) -> subprocess.CompletedProcess[str]:
+    """Run a step and fail after a cleaned-up timeout."""
+    if not isinstance(step, TimedStep):
+        return subprocess.run(
+            args=list(step.args),
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=tmpdir,
+            encoding="utf-8",
+        )
+    try:
+        return _run_timed_attempt(
+            label=label,
+            step=step,
+            tmpdir=tmpdir,
+            program=program,
+            attempt="1/1",
+        )
+    except subprocess.TimeoutExpired:
+        sys.exit(1)
+
+
 def execute(
     *,
     label: str,
@@ -217,6 +328,10 @@ def execute(
     tmpdir, then runs each :class:`Step` with cwd set to that tmpdir.
     The first non-zero exit aborts with a diagnostic that includes the
     failing step's stdout/stderr and a dump of *program*.
+
+    A :class:`TimedStep` logs each attempt and its timeout diagnostics,
+    terminates the process tree on timeout, and fails. Completed
+    subprocesses are never retried, even if their output fails verification.
 
     On success, the *last* step's stdout is passed to :func:`verify`
     with *label* and *excluded_keys*, and a ``"{label} round-trip OK"``
@@ -238,13 +353,11 @@ def execute(
             extra_path.parent.mkdir(parents=True, exist_ok=True)
             _ = extra_path.write_text(data=content, encoding="utf-8")
         for step in steps:
-            result = subprocess.run(
-                args=list(step.args),
-                capture_output=True,
-                text=True,
-                check=False,
-                cwd=tmpdir,
-                encoding="utf-8",
+            result = _run_step(
+                label=label,
+                step=step,
+                tmpdir=tmpdir,
+                program=program,
             )
             if result.returncode != 0:
                 _ = sys.stderr.write(
