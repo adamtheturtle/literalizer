@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base", "combined"]
+languages = ["Nim"]
+languages_reason = "Nim distinguishes ordinary dictionary data from a resolved custom-key reference."
