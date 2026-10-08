@@ -509,6 +509,37 @@ def typed_dict_open(
 
 
 @beartype
+@dataclass(frozen=True, kw_only=True)
+class CollectionType:
+    """A literal opener and declared type from one inference decision."""
+
+    opener: str
+    declared_type: str
+
+
+@beartype
+def infer_collection_type(
+    *,
+    items: list[Value],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+    opener_template: str,
+    declared_type_template: str,
+    fallback: CollectionType,
+) -> CollectionType:
+    """Resolve an element type once for both literal and annotation."""
+    element_type = infer_element_type(items=items)
+    if element_type is None:
+        return fallback
+    type_name = element_to_type(element_type)
+    if type_name is None or type_name == "":
+        return fallback
+    return CollectionType(
+        opener=opener_template.format(type_name=type_name),
+        declared_type=declared_type_template.format(type_name=type_name),
+    )
+
+
+@beartype
 @dataclass(frozen=True)
 class TypeOpeners:
     """Resolved type-to-opener functions for sequences, dicts, and
@@ -518,6 +549,8 @@ class TypeOpeners:
     seq: Callable[[type | ListType | DictType], str | None]
     dict: Callable[[type | ListType | DictType], str | None]
     set: Callable[[type | ListType | DictType], str | None]
+    seq_element_type: Callable[[type | ListType | DictType], str | None]
+    dict_element_type: Callable[[type | ListType | DictType], str | None]
 
 
 @beartype
@@ -733,6 +766,8 @@ class TypedOpenerConfig:
         if effective_opener_template is None:
             effective_opener_template = self._set_opener_template
         return TypeOpeners(
+            seq_element_type=seq_resolver,
+            dict_element_type=dict_set_resolver,
             seq=make_type_to_opener(
                 element_to_type=seq_resolver,
                 opener_template=self._sequence_opener_template,

@@ -13,11 +13,12 @@ from beartype import beartype
 
 from literalizer._checks import reject_aware_datetimes
 from literalizer._formatters.collection_openers import (
+    CollectionType,
     TypedOpenerConfig,
     TypeOpeners,
     fixed_open,
+    infer_collection_type,
     make_type_to_opener,
-    typed_collection_open,
     typed_dict_open,
 )
 from literalizer._formatters.format_dates import (
@@ -136,7 +137,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ConflictingVariableModifiersError,
     IncompatibleFormatsError,
@@ -1712,14 +1713,9 @@ class CSharp(metaclass=LanguageCls):
         the literal C# infers for the same value (``int``/``long``, or
         ``ulong`` beyond signed 64-bit range, the bare-decimal overflow
         fallback).  An ``EPOCH`` datetime renders as its epoch integer,
-        so it is sized like that integer.  A list or ordered-map field
-        is typed from the very opener the value formatter uses for that
-        value (a record field is formatted with no sibling override, so
-        the opener equals the one rendered): the ``new `` prefix and the
-        trailing `` {`` are stripped (``new int[] {`` -> ``int[]``,
-        ``new Dictionary<string, object> {`` ->
-        ``Dictionary<string, object>``).  Every other scalar uses the
-        shared scalar resolver (``date`` -> ``DateOnly``).
+        so it is sized like that integer. Lists and ordered maps share
+        structured type information with their literal openers. Every
+        other scalar uses the shared scalar resolver.
 
         A record-eligible dict with no ``record_name`` was widened out
         of record inference because its nested sibling maps cannot
@@ -1746,17 +1742,13 @@ class CSharp(metaclass=LanguageCls):
             case int() if not isinstance(value, bool):
                 field_type = _csharp_int_field_type(value=value)
             case OrderedMap():
-                opener = self.ordered_map_format_config.ordered_map_open(
-                    value,
-                )
-                field_type = opener.removeprefix("new ").removesuffix(" {")
+                field_type = self._ordered_map_type(value).declared_type
             case dict() if record_shape_for_dict(value=value) is not None:
                 field_type = self._csharp_derecordized_map_field_type()
             case dict():
                 field_type = "object"
             case list():
-                opener = self.sequence_open(value)
-                field_type = opener.removeprefix("new ").removesuffix(" {")
+                field_type = self._array_type(value).declared_type
             case _:
                 field_type = self._csharp_scalar_field_type(value=value)
         return field_type
@@ -2081,55 +2073,55 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence.
+        """Render the opener chosen with the semantic array type."""
+        if (
+            self._json_type_active
+            or self.sequence_format is self.sequence_formats.TUPLE
+        ):
+            return self.sequence_format_config.sequence_open
+        return lambda items: self._array_type(items).opener
 
-        Under the ``RECORD`` strategy a list whose every element is a
-        record-shaped dict renders each element as a generated
-        ``RecordN`` literal; the typed opener would type such a list
-        ``Dictionary<string, object>[]`` (the homogeneous-map element
-        type) which the record literals cannot initialize.  Such a list
-        is instead opened with an implicitly-typed array ``new[] {`` so
-        C# infers ``RecordN[]`` from the literals.  Every other list
-        keeps the typed array opener.
+    @cached_property
+    def _array_type(self) -> Callable[[list[Value]], CollectionType]:
+        """Keep array literals and record-component types together."""
+        lookup = self._record_strategy.record_name_for_value
 
-        ``json_type`` takes precedence over the ``RECORD`` strategy:
-        record-shaped dicts under json mode render as ``new JsonObject
-        { ... }`` (not as ``RecordN`` literals), so their parent list
-        must keep the json ``new JsonArray {`` opener rather than the
-        implicitly-typed ``new[] {`` form, which would otherwise infer
-        a ``JsonObject[]`` array that is not what json mode promises.
-        """
-        fmt = self.sequence_format_config
-        if fmt.typed_opener_fallback is not None:
-            base_open = typed_collection_open(
-                type_to_opener=self._openers.seq,
-                fallback=fmt.typed_opener_fallback,
-            )
-        else:
-            base_open = fmt.sequence_open
-        if self._json_type_active:
-            return base_open
-        match self._record_strategy.record_name_for_value:
-            case None:
-                return base_open
-            case record_name_for_value:
-                pass
-
-        def _open(items: list[Value]) -> str:
-            """Return the implicitly-typed array opener for an
-            all-record list, else the typed array opener.
+        def _infer(items: list[Value]) -> CollectionType:
+            """Resolve nested records or the shared typed array
+            fallback.
             """
-            if (
-                nested_record_sequence_type(
-                    value=items,
-                    record_name_for_value=record_name_for_value,
+            if lookup is not None:
+                record_type = nested_record_sequence_type(
+                    value=items, record_name_for_value=lookup
                 )
-                is not None
-            ):
-                return "new[] {"
-            return base_open(items)
+                if record_type is not None:
+                    depth, name = record_type
+                    return CollectionType(
+                        opener="new[] {", declared_type=name + "[]" * depth
+                    )
+            fallback_type = self.default_sequence_element_type
+            return infer_collection_type(
+                items=items,
+                element_to_type=self._openers.seq_element_type,
+                opener_template="new {type_name}[] {{",
+                declared_type_template="{type_name}[]",
+                fallback=CollectionType(
+                    opener=f"new {fallback_type}[] {{",
+                    declared_type=f"{fallback_type}[]",
+                ),
+            )
 
-        return _open
+        return _infer
+
+    def _ordered_map_type(self, _value: Value, /) -> CollectionType:
+        """Resolve ordered-map defaults before adding literal syntax."""
+        declared_type = (
+            f"Dictionary<{self.default_dict_key_type}, "
+            f"{self.default_dict_value_type}>"
+        )
+        return CollectionType(
+            opener=f"new {declared_type} {{", declared_type=declared_type
+        )
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
@@ -2304,7 +2296,7 @@ class CSharp(metaclass=LanguageCls):
                 close="}",
                 preamble_lines=(),
             )
-        return ordered_map_format_factory(
+        base = ordered_map_format_factory(
             open_template="new Dictionary<{key_type}, {type}> {{",
             close="}",
             preamble_lines=("using System.Collections.Generic;",),
@@ -2312,6 +2304,12 @@ class CSharp(metaclass=LanguageCls):
             self.default_dict_value_type,
             default_key_type=self.default_dict_key_type,
         )
+
+        def _open(value: dict[Scalar, Value]) -> str:
+            """Render the ordered-map opener from its semantic type."""
+            return self._ordered_map_type(value).opener
+
+        return dataclasses.replace(base, ordered_map_open=_open)
 
     @cached_property
     def format_variable_declaration(
