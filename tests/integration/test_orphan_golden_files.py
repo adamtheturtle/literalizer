@@ -26,6 +26,7 @@ from .case_manifests import (
     case_dir_name_for_owner,
     load_case_manifests,
 )
+from .golden_scenarios import golden_groups
 from .language_specs import make_golden_path, make_spec
 from .literalize_ref_cases import (
     discover_literalize_default_ref_cases,
@@ -157,6 +158,28 @@ def _expected_specialized_new_variable_golden_files(
 
 
 @beartype
+def _expected_default_module_name_golden_files() -> set[Path]:
+    """Return the default-name paths declared by the shared runner."""
+    expected: set[Path] = set()
+    for group in golden_groups():
+        if group.scenario_name != "default_module_name":
+            continue
+        for rendering in group.renderings:
+            for version in rendering.versions:
+                expected.add(
+                    make_golden_path(
+                        parent=rendering.golden_parent,
+                        name=rendering.golden_name,
+                        extension=rendering.lang_cls.extension,
+                        lang_cls=rendering.lang_cls,
+                        version=version,
+                    )
+                )
+
+    return expected
+
+
+@beartype
 def _expected_golden_files(cases_dir: Path) -> set[Path]:
     """Return the set of all golden files that parameterized tests
     cover.
@@ -166,6 +189,8 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     for manifest in load_case_manifests(cases_dir=cases_dir):
         expected.add(manifest.path)
         expected.add(manifest.input.path)
+
+    expected.update(_expected_default_module_name_golden_files())
 
     for case_name, lang_cls in discover_cases(cases_dir=cases_dir):
         expected.update(
@@ -243,7 +268,12 @@ def test_no_dead_golden_files(cases_dir: Path) -> None:
     test.  Orphaned golden files silently rot and waste repository space.
     """
     expected = _expected_golden_files(cases_dir=cases_dir)
-    actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
+    actual = {
+        path
+        for parent in (cases_dir, cases_dir.parent / "default_module_names")
+        for path in parent.rglob(pattern="*")
+        if path.is_file()
+    }
     dead_files = sorted(
         os.path.relpath(path=path, start=cases_dir)
         for path in actual - expected

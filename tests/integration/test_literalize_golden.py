@@ -75,13 +75,14 @@ def _check_rendering(
     input_info = case_input(case_dir=cases_dir / rendering.case_dir_name)
     source_text = input_info.path.read_text(encoding="utf-8")
     golden_path = make_golden_path(
-        parent=input_info.path.parent,
+        parent=rendering.golden_parent,
         name=rendering.golden_name,
         extension=spec.extension,
         lang_cls=rendering.lang_cls,
         version=version,
     )
-    spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
+    if rendering.apply_fixture_module_name:
+        spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     with GoldenSkips(
         policy=rendering.skip,
         golden_path=golden_path,

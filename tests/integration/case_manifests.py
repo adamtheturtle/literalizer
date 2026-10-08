@@ -35,7 +35,7 @@ MANIFEST_NAME = "case.toml"
 
 type VariableFormName = Literal["new", "existing", "both"]
 type CollectionLayoutName = Literal["compact", "multiline"]
-type SuiteName = Literal["base", "combined"]
+type SuiteName = Literal["base", "combined", "default-module-name"]
 type VariantCapabilityName = Literal[
     "collection_comments",
     "empty_sibling_sequence_type_hints",

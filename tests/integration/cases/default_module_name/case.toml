@@ -1,0 +1,3 @@
+schema_version = 1
+suites = ["default-module-name"]
+gates = [{ kind = "capability_flag", flag = "supports_module_name" }]

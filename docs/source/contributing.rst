@@ -61,6 +61,17 @@ Its ``input.yaml`` is inferred because it is the directory's sole input:
    schema_version = 1
    suites = ["base", "combined"]
 
+The default module-name suite checks each constructor's public default across its language versions:
+
+.. code-block:: toml
+
+   schema_version = 1
+   suites = ["default-module-name"]
+   gates = [{ kind = "capability_flag", flag = "supports_module_name" }]
+
+Its input lives beside the manifest, while its goldens remain under :file:`tests/integration/default_module_names/`.
+Those files retain the default module names; regular compiler fixtures use unique names derived from their paths.
+
 A variant-only case declares its specialized owner and the axes that consume it.
 A suffix distinguishes multiple logical uses of one input:
 
