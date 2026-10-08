@@ -1951,9 +1951,6 @@ class Java(metaclass=LanguageCls):
         declaration goes inside a ``public static void`` method named
         after the configured module name so that local-only forms like
         ``var x = 42;`` compile.
-
-        JSON declarations use method scope so their checked parsing
-        exceptions can be declared by the enclosing method.
         """
         body_preamble = context.body_preamble
         class_lines = context.class_preamble
@@ -1962,9 +1959,7 @@ class Java(metaclass=LanguageCls):
         if len(class_lines) > 0:
             class_block = "\n".join(class_lines) + "\n"
         method_name = IdentifierCase.CAMEL.convert(name=self.module_name)
-        if not self._json_type_active and _is_java_class_field(
-            context.modifiers
-        ):
+        if _is_java_class_field(context.modifiers):
             field_preamble = "\n".join((*method_lines, ""))
             return (
                 f"class {self.module_name} {{\n"
@@ -1994,9 +1989,7 @@ class Java(metaclass=LanguageCls):
         context: FileWrapperContext,
     ) -> str:
         """Place field reassignment in a matching initializer block."""
-        if not self._json_type_active and _is_java_class_field(
-            context.modifiers
-        ):
+        if _is_java_class_field(context.modifiers):
             prefix = ""
             if _JavaModifiers.STATIC in context.modifiers:
                 prefix = "static "
