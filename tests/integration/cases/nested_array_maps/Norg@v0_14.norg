@@ -1,6 +1,0 @@
-* my_data
-@code javascript
-{
-    "groups": [[{"id": 1}], [{"id": 2}]]
-}
-@end
