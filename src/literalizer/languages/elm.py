@@ -288,11 +288,7 @@ def _build_elm_float_wrapper(
 @beartype
 def _apply_elm_string(value: str, prefix: str) -> str:
     """Format a string with a constructor prefix."""
-    escaped = format_string_backslash_control(
-        value=value,
-        control_char_fmt="\\u{{{:04x}}}",
-        escape_delete=False,
-    )
+    escaped = _elm_native_string(value=value)
     return f"{prefix}Str {escaped}"
 
 
@@ -312,40 +308,9 @@ def _build_elm_str_formatter(
 
 
 @beartype
-def _apply_elm_dict_entry(
-    key: str,
-    _raw_value: Value,
-    formatted_value: str,
-    str_prefix: str,
-) -> str:
-    """Format a dict entry as a tuple with a plain-string key.
-
-    Dict keys are ``String``, not ``Val``, so the ``{prefix}Str``
-    constructor must be stripped from the formatted key.
-    """
-    key = key.removeprefix(str_prefix)
+def _elm_dict_entry(key: str, _raw_value: Value, formatted_value: str) -> str:
+    """Format an entry whose key already has dictionary-key syntax."""
     return f"({key}, {formatted_value})"
-
-
-@beartype
-def _build_elm_dict_entry(
-    prefix: str,
-) -> Callable[[str, Value, str], str]:
-    """Build a dict-entry formatter that strips the ``{prefix}Str`` prefix
-    from keys.
-    """
-    _str_prefix = f"{prefix}Str "
-
-    def _format(key: str, _raw_value: Value, formatted_value: str) -> str:
-        """Delegate to module-level implementation."""
-        return _apply_elm_dict_entry(
-            key=key,
-            _raw_value=_raw_value,
-            formatted_value=formatted_value,
-            str_prefix=_str_prefix,
-        )
-
-    return _format
 
 
 # Backward-compatible module-level aliases used by the Enum members.
@@ -375,7 +340,6 @@ _format_elm_float_fixed = _build_elm_float_wrapper(
     inner=format_float_fixed,
 )
 _format_elm_string = _build_elm_str_formatter(prefix="E")
-_elm_dict_entry = _build_elm_dict_entry(prefix="E")
 
 
 @beartype
@@ -718,11 +682,7 @@ def _build_elm_json_float_formatter(
 @beartype
 def _format_elm_json_string(value: str) -> str:
     """Format a string as ``Json.Encode.string "..."``."""
-    escaped = format_string_backslash_control(
-        value=value,
-        control_char_fmt="\\u{{{:04x}}}",
-        escape_delete=False,
-    )
+    escaped = _elm_native_string(value=value)
     return f"Json.Encode.string {escaped}"
 
 
@@ -760,20 +720,6 @@ _JSON_BYTES_FORMATTERS: dict[str, Callable[[bytes], str]] = {
     "HEX": _format_elm_json_bytes_hex,
     "BASE64": _format_elm_json_bytes_base64,
 }
-
-
-@beartype
-def _elm_json_dict_entry(
-    key: str, _raw_value: Value, formatted_value: str
-) -> str:
-    """Format one ``Json.Encode.object`` entry as ``( "k", v )``.
-
-    The framework has already formatted the key with the
-    ``Json.Encode.string`` constructor, so strip that prefix to keep the
-    bare quoted string that ``Json.Encode.object`` requires.
-    """
-    raw_key = key.removeprefix("Json.Encode.string ")
-    return f"({raw_key}, {formatted_value})"
 
 
 @beartype
@@ -1578,9 +1524,7 @@ class Elm(metaclass=LanguageCls):
     @cached_property
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
-        if self._json_active:
-            return _elm_json_dict_entry
-        return _build_elm_dict_entry(prefix=self.constructor_prefix)
+        return _elm_dict_entry
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
@@ -1719,6 +1663,11 @@ class Elm(metaclass=LanguageCls):
         if self.dict_format is type(self.dict_format).RECORD:
             return format_time_iso
         return _build_elm_time_iso(prefix=self.constructor_prefix)
+
+    @cached_property
+    def format_dict_key(self) -> Callable[[str], str]:
+        """Render a string key without a value constructor."""
+        return _elm_native_string
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

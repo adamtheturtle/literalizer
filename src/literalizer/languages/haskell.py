@@ -515,6 +515,7 @@ class _StringFormatters:
     format_string: Callable[[str], str]
     format_bytes: Callable[[bytes], str]
     format_dict_entry: Callable[[str, Value, str], str]
+    format_dict_key: Callable[[str], str]
     is_explicit: bool
 
 
@@ -536,18 +537,6 @@ def _wrap_bytes_with_constructor(
 ) -> str:
     """Wrap formatted bytes with the constructor prefix."""
     return f"{string_constructor}{base_format_bytes(data)}"
-
-
-@beartype
-def _format_explicit_dict_entry(
-    key: str,
-    _raw_value: Value,
-    formatted_value: str,
-    string_constructor: str,
-) -> str:
-    """Format a dict entry, stripping the constructor from the key."""
-    clean_key = key.removeprefix(string_constructor)
-    return f"({clean_key}, {formatted_value})"
 
 
 @beartype
@@ -606,8 +595,8 @@ def _build_string_formatters(
     """Build string/bytes/dict-entry formatters.
 
     For ``EXPLICIT`` format, string and bytes values are wrapped with the
-    constructor prefix (e.g. ``HStr "hello"``), and dict keys are
-    unwrapped since they are ``String``, not ``Val``.
+    constructor prefix (e.g. ``HStr "hello"``), and dictionary keys use the
+    shared string formatter directly.
 
     For ``DOUBLE`` format, values pass through unmodified, and dict
     entries use tuple formatting.
@@ -648,6 +637,7 @@ def _build_string_formatters(
             format_dict_entry=tuple_dict_entry(
                 format_value=passthrough_sequence_entry,
             ),
+            format_dict_key=base_format_string,
             is_explicit=False,
         )
 
@@ -669,23 +659,13 @@ def _build_string_formatters(
             base_format_bytes=base_format_bytes,
         )
 
-    def _format_dict_entry(
-        key: str,
-        _raw_value: Value,
-        formatted_value: str,
-    ) -> str:
-        """Delegate to module-level implementation."""
-        return _format_explicit_dict_entry(
-            key=key,
-            _raw_value=_raw_value,
-            formatted_value=formatted_value,
-            string_constructor=string_constructor,
-        )
-
     return _StringFormatters(
         format_string=_format_string,
         format_bytes=_format_bytes,
-        format_dict_entry=_format_dict_entry,
+        format_dict_entry=tuple_dict_entry(
+            format_value=passthrough_sequence_entry
+        ),
+        format_dict_key=base_format_string,
         is_explicit=True,
     )
 
@@ -2573,6 +2553,11 @@ class Haskell(metaclass=LanguageCls):
             constructor_prefix=self.constructor_prefix,
             base_format_bytes=self.bytes_format,
         )
+
+    @cached_property
+    def format_dict_key(self) -> Callable[[str], str]:
+        """Render keys with the shared unwrapped string formatter."""
+        return self._string_fmts.format_dict_key
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

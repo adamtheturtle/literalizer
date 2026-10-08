@@ -350,8 +350,8 @@ def _build_purescript_float_wrapper(
 
 
 @beartype
-def _apply_purescript_string(value: str, prefix: str) -> str:
-    """Format a string with a constructor prefix."""
+def _purescript_native_string(value: str) -> str:
+    """Render a string with PureScript escaping rules."""
     has_greedy_hex_boundary = any(
         character <= "\x1f"
         and character not in "\t\n\r"
@@ -359,12 +359,11 @@ def _apply_purescript_string(value: str, prefix: str) -> str:
         for character, following in itertools.pairwise(value)
     )
     if not has_greedy_hex_boundary:
-        escaped = format_string_backslash_control(
+        return format_string_backslash_control(
             value=value,
             control_char_fmt="\\x{:02x}",
             escape_delete=False,
         )
-        return f"{prefix}Str {escaped}"
     pieces: list[str] = []
     hex_run_after_control = False
     for char in value:
@@ -378,8 +377,13 @@ def _apply_purescript_string(value: str, prefix: str) -> str:
         )[1:-1]
         pieces.append(formatted)
         hex_run_after_control = char <= "\x1f" and char not in "\t\n\r"
-    escaped = f'"{"".join(pieces)}"'
-    return f"{prefix}Str {escaped}"
+    return f'"{"".join(pieces)}"'
+
+
+@beartype
+def _apply_purescript_string(value: str, prefix: str) -> str:
+    """Wrap the shared string representation in a value constructor."""
+    return f"{prefix}Str {_purescript_native_string(value=value)}"
 
 
 @beartype
@@ -398,40 +402,11 @@ def _build_purescript_str_formatter(
 
 
 @beartype
-def _apply_purescript_dict_entry(
-    key: str,
-    _raw_value: Value,
-    formatted_value: str,
-    str_prefix: str,
+def _purescript_dict_entry(
+    key: str, _raw_value: Value, formatted_value: str
 ) -> str:
-    """Format a dict entry as a ``Tuple`` with a plain-string key.
-
-    Dict keys are ``String``, not ``Val``, so the ``{prefix}Str``
-    constructor must be stripped from the formatted key.
-    """
-    key = key.removeprefix(str_prefix)
+    """Format an entry whose key already has dictionary-key syntax."""
     return f"(Tuple {key} ({formatted_value}))"
-
-
-@beartype
-def _build_purescript_dict_entry(
-    prefix: str,
-) -> Callable[[str, Value, str], str]:
-    """Build a dict-entry formatter that strips the ``{prefix}Str`` prefix
-    from keys.
-    """
-    _str_prefix = f"{prefix}Str "
-
-    def _format(key: str, _raw_value: Value, formatted_value: str) -> str:
-        """Delegate to module-level implementation."""
-        return _apply_purescript_dict_entry(
-            key=key,
-            _raw_value=_raw_value,
-            formatted_value=formatted_value,
-            str_prefix=_str_prefix,
-        )
-
-    return _format
 
 
 # Backward-compatible module-level aliases used by the Enum members.
@@ -463,7 +438,6 @@ _format_purescript_float_fixed = _build_purescript_float_wrapper(
     inner=format_float_fixed,
 )
 _format_purescript_string = _build_purescript_str_formatter(prefix="P")
-_purescript_dict_entry = _build_purescript_dict_entry(prefix="P")
 
 
 @beartype
@@ -779,14 +753,6 @@ def _validate_purescript_native_record(
     elif isinstance(data, (set, type(None))):
         msg = f"PureScript record mode cannot represent {type(data).__name__}"
         raise UnrepresentableInputError(msg)
-
-
-@beartype
-def _purescript_native_string(value: str) -> str:
-    """Reuse PureScript's escaping without its ``Val`` constructor."""
-    return _apply_purescript_string(value=value, prefix="P").removeprefix(
-        "PStr "
-    )
 
 
 @beartype
@@ -1869,7 +1835,7 @@ class PureScript(metaclass=LanguageCls):
     @cached_property
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter using the configured prefix."""
-        return _build_purescript_dict_entry(prefix=self.constructor_prefix)
+        return _purescript_dict_entry
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
@@ -1957,6 +1923,11 @@ class PureScript(metaclass=LanguageCls):
         if self.dict_format is type(self.dict_format).RECORD:
             return format_time_iso
         return _build_purescript_time_iso(prefix=self.constructor_prefix)
+
+    @cached_property
+    def format_dict_key(self) -> Callable[[str], str]:
+        """Render a string key without a value constructor."""
+        return _purescript_native_string
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
