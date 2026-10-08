@@ -48,11 +48,11 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
 from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
     RecordDeclarationField,
     RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
-    RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
 )
@@ -1422,8 +1422,16 @@ class Zig(metaclass=LanguageCls):
     def _zig_ordered_map_type(self, *, value: OrderedMap) -> str:
         """Infer the value type of an ordered map field."""
         value_for_type = next(iter(value.values()), 0)
-        val_type = self._zig_value_type(value_for_type)
+        val_type = self._zig_resolved_value_type(value_for_type)
         return f"[]const struct {{ key: []const u8, val: {val_type} }}"
+
+    def _zig_resolved_value_type(self, value: Value, /) -> str:
+        """Resolve native record identities within a structural field type."""
+        name_for_value = self._record_strategy.record_name_for_value
+        record_name = name_for_value(value)
+        if record_name is not None:
+            return record_name
+        return self._zig_value_type(value)
 
     def _zig_value_type(self, value: Value, /) -> str:
         """Return the Zig type for a raw record field *value*.
@@ -1498,12 +1506,12 @@ class Zig(metaclass=LanguageCls):
         inferred = infer_element_type(items=items)
         if inferred is None:
             members = ", ".join(
-                self._zig_value_type(element) for element in items
+                self._zig_resolved_value_type(element) for element in items
             )
             return f"struct {{ {members} }}"
         element_type = _ZIG_INFERRED_ELEMENT_TYPES.get(
             inferred,
-            self._zig_value_type(max(items, key=_zig_int_sort_key)),
+            self._zig_resolved_value_type(max(items, key=_zig_int_sort_key)),
         )
         return f"[]const {element_type}"
 
@@ -1527,7 +1535,7 @@ class Zig(metaclass=LanguageCls):
             and record_shape_for_dict(value=request.value) is not None
         ):
             return "ZVal"
-        return self._zig_value_type(request.value)
+        return self._zig_resolved_value_type(request.value)
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
@@ -1540,12 +1548,12 @@ class Zig(metaclass=LanguageCls):
             field_type=self._zig_record_field_type,
             render_declaration=_zig_render_record_declaration,
             render_literal=_zig_record_literal,
-            field_type_names_nested_records=False,
+            field_type_names_nested_records=True,
             suppress_custom_name_declarations=False,
         )
 
     @cached_property
-    def _record_strategy(self) -> RecordStrategy:
+    def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
