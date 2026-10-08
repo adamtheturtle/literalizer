@@ -32,7 +32,7 @@ _LANGUAGES = (Elm, FSharp, Haskell, PureScript)
 @pytest.mark.parametrize(
     argnames="lang_cls",
     argvalues=_LANGUAGES,
-    ids=[lang_cls.__name__ for lang_cls in _LANGUAGES],
+    ids=lambda lang_cls: lang_cls.__name__,
 )
 @pytest.mark.parametrize(argnames="attribute", argvalues=["code", "bare_code"])
 def test_unwrapped_literalize_result_golden(

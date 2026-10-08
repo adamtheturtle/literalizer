@@ -116,7 +116,7 @@ def _check_rendering(
 @pytest.mark.parametrize(
     argnames="group",
     argvalues=_GROUPS,
-    ids=[group.test_id for group in _GROUPS],
+    ids=lambda group: group.test_id,
 )
 def test_golden_file(
     group: GoldenGroup,
