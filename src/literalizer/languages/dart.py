@@ -13,11 +13,11 @@ from typing import TYPE_CHECKING, ClassVar, assert_never
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
+    CollectionType,
     TypedOpenerConfig,
     TypeOpeners,
     fixed_open,
-    typed_collection_open,
-    typed_dict_open,
+    infer_collection_type,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -332,35 +332,11 @@ def _dart_list_hint(
 
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class _DartHintOpeners:
-    """The openers a declared type annotation is read back from."""
+class _DartCollectionTypes:
+    """Shared semantic collection types and their literal openers."""
 
-    dict_open: Callable[[dict[Scalar, Value]], str]
-    sequence_open: Callable[[list[Value]], str]
-
-
-@beartype
-def _dart_opener_hint(
-    *,
-    prefix: str,
-    opener: str,
-    delimiter: str,
-    default_arguments: str,
-) -> str:
-    """Turn a rendered opener into the type it constructs.
-
-    The declared type and the literal's own type arguments have to be
-    one inference or the assignment does not type-check, so the type is
-    read back off the opener the renderer picked rather than derived a
-    second time (issue #3935).  An opener with no type arguments -- the
-    fallback for a value the renderer could not narrow -- names the
-    language's default ones.
-    """
-    arguments = opener.removesuffix(delimiter)
-    resolved_arguments = arguments
-    if resolved_arguments == "":
-        resolved_arguments = f"<{default_arguments}>"
-    return f"{prefix}{resolved_arguments}"
+    dict_type: Callable[[dict[Scalar, Value]], CollectionType]
+    sequence_type: Callable[[list[Value]], CollectionType]
 
 
 @beartype
@@ -373,7 +349,7 @@ def _dart_type_hint(
     default_dict_key_type: str,
     default_dict_value_type: str,
     sequence_is_tuple: bool,
-    openers: _DartHintOpeners,
+    openers: _DartCollectionTypes,
 ) -> str:
     """Derive a Dart type annotation from *data*."""
     recurse = functools.partial(
@@ -388,14 +364,7 @@ def _dart_type_hint(
     )
     match data:
         case dict():
-            hint = _dart_opener_hint(
-                prefix="Map",
-                opener=openers.dict_open(data),
-                delimiter="{",
-                default_arguments=(
-                    f"{default_dict_key_type}, {default_dict_value_type}"
-                ),
-            )
+            hint = openers.dict_type(data).declared_type
         case set():
             hint = _dart_set_hint(
                 elem_types=sorted({recurse(data=e) for e in data}),
@@ -409,12 +378,7 @@ def _dart_type_hint(
                 sequence_is_tuple=sequence_is_tuple,
             )
         case list():
-            hint = _dart_opener_hint(
-                prefix="List",
-                opener=openers.sequence_open(data),
-                delimiter="[",
-                default_arguments="dynamic",
-            )
+            hint = openers.sequence_type(data).declared_type
         case _:
             hint = _dart_scalar_hint(
                 data=data,
@@ -438,7 +402,7 @@ def _format_dart_typed_declaration(
     default_dict_key_type: str,
     default_dict_value_type: str,
     sequence_is_tuple: bool,
-    openers: _DartHintOpeners,
+    openers: _DartCollectionTypes,
 ) -> str:
     """Format a Dart variable declaration with an explicit type."""
     hint = _dart_type_hint(
@@ -984,7 +948,7 @@ class Dart(metaclass=LanguageCls):
             default_dict_key_type: str,
             default_dict_value_type: str,
             sequence_is_tuple: bool,
-            openers: _DartHintOpeners,
+            openers: _DartCollectionTypes,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             if self in {type(self).NEVER, type(self).SAFE}:
@@ -1372,28 +1336,44 @@ class Dart(metaclass=LanguageCls):
             default_type=self.default_set_element_type,
         )
 
+    def _sequence_type(self, items: list[Value], /) -> CollectionType:
+        """Infer one type for the list literal and its declaration."""
+        return infer_collection_type(
+            items=items,
+            element_to_type=self._openers.seq_element_type,
+            opener_template="<{type_name}>[",
+            declared_type_template="List<{type_name}>",
+            fallback=CollectionType(opener="[", declared_type="List<dynamic>"),
+        )
+
+    def _dict_type(self, items: dict[Scalar, Value], /) -> CollectionType:
+        """Infer one type for the map literal and its declaration."""
+        key = self.default_dict_key_type
+        default_value = self.default_dict_value_type
+        return infer_collection_type(
+            items=list(items.values()),
+            element_to_type=self._openers.dict_element_type,
+            opener_template=f"<{key}, {{type_name}}>{{{{",
+            declared_type_template=f"Map<{key}, {{type_name}}>",
+            fallback=CollectionType(
+                opener=f"<{key}, {default_value}>{{",
+                declared_type=f"Map<{key}, {default_value}>",
+            ),
+        )
+
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence."""
+        """Render the opener from the shared list type decision."""
         fmt = self.sequence_format.value
         if fmt.typed_opener_fallback is not None:
-            return typed_collection_open(
-                type_to_opener=self._openers.seq,
-                fallback=fmt.typed_opener_fallback,
-            )
+            return lambda items: self._sequence_type(items).opener
         return fmt.sequence_open
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=typed_dict_open(
-                type_to_opener=self._openers.dict,
-                fallback=(
-                    f"<{self.default_dict_key_type}, "
-                    f"{self.default_dict_value_type}>{{"
-                ),
-            ),
+            dict_open=lambda items: self._dict_type(items).opener,
             close="}",
             format_entry=dict_entry_with_separator(
                 separator=": ",
@@ -1497,9 +1477,9 @@ class Dart(metaclass=LanguageCls):
             sequence_is_tuple=(
                 self.sequence_format is type(self.sequence_format).TUPLE
             ),
-            openers=_DartHintOpeners(
-                dict_open=self.dict_format_config.dict_open,
-                sequence_open=self.sequence_open,
+            openers=_DartCollectionTypes(
+                dict_type=self._dict_type,
+                sequence_type=self._sequence_type,
             ),
         )
 

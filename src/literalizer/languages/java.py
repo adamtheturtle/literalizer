@@ -13,9 +13,10 @@ from typing import TYPE_CHECKING, ClassVar, Final, assert_never
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
+    CollectionType,
     TypedOpenerConfig,
     fixed_open,
-    typed_collection_open,
+    infer_collection_type,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -2187,13 +2188,8 @@ class Java(metaclass=LanguageCls):
 
         An ordered-map field is the concrete ``java.util.ArrayList``
         the ordered-map opener constructs.  A list field is typed from
-        the array opener ``self.sequence_open`` emits for it (no
-        sibling override, so the opener equals the one rendered):
-        ``new int[]{`` -> ``int[]``, ``new Object[]{`` -> ``Object[]``.
-        Only ``sequence_format=ARRAY`` produces that opener;
-        :meth:`validate_spec_for_data` rejects ``RECORD`` with any
-        other sequence format up front, so no opener without an
-        encoded element type (e.g. ``List.of(``) reaches this branch.
+        the same semantic array-type decision as the literal opener. The
+        record strategy requires ``sequence_format=ARRAY``.
 
         A record-eligible dict with no ``record_name`` was widened out
         of record inference because its nested sibling maps cannot
@@ -2218,8 +2214,7 @@ class Java(metaclass=LanguageCls):
             case dict() if record_shape_for_dict(value=value) is not None:
                 return "java.util.Map<String, Object>"
             case list():
-                opener = self.sequence_open(value)
-                field_type = opener.removeprefix("new ").removesuffix("{")
+                field_type = self._array_type(value).declared_type
             case _:
                 return self._java_record_noncollection_field_type(value)
         return field_type
@@ -2382,19 +2377,17 @@ class Java(metaclass=LanguageCls):
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence.
-
-        Under ``HeterogeneousStrategies.RECORD`` a list whose every
-        element is rendered as one shared record type opens as
-        ``new RecordN[]{`` -- the record literals all share that
-        element type, so the array spells it instead of falling back to
-        ``new Object[]{``.
-        """
+        """Render the opener chosen with the semantic array type."""
         if self._json_type_active:
             return _JSON_NODE_SEQUENCE_CONFIG.sequence_open
         fmt = self.sequence_format.value
         if fmt.typed_opener_fallback is None:
             return fmt.sequence_open
+        return lambda items: self._array_type(items).opener
+
+    @cached_property
+    def _array_type(self) -> Callable[[list[Value]], CollectionType]:
+        """Keep array literal and record-component type decisions together."""
         if self._suffix_is_auto:
             cfg = self._opener_config_long
         else:
@@ -2415,28 +2408,32 @@ class Java(metaclass=LanguageCls):
             narrow_list_values=True,
             dict_key_type="",
         )
-        base = typed_collection_open(
-            type_to_opener=openers.seq,
-            fallback=fmt.typed_opener_fallback,
-        )
-        match self._record_strategy.record_name_for_value:
-            case None:
-                return base
-            case record_name_for_value:
-                pass
+        lookup = self._record_strategy.record_name_for_value
 
-        def _open(items: list[Value], /) -> str:
-            """Use the shared record element type when every item is
-            rendered as one record, else the typed array opener.
+        def _infer(items: list[Value]) -> CollectionType:
+            """Resolve records or the shared scalar/collection element
+            type.
             """
-            names = {record_name_for_value(item) for item in items}
-            if len(names) == 1:
-                (name,) = names
-                if name is not None:
-                    return f"new {name}[]{{"
-            return base(items)
+            if lookup is not None:
+                names = {lookup(item) for item in items}
+                if len(names) == 1:
+                    (name,) = names
+                    if name is not None:
+                        return CollectionType(
+                            opener=f"new {name}[]{{",
+                            declared_type=f"{name}[]",
+                        )
+            return infer_collection_type(
+                items=items,
+                element_to_type=openers.seq_element_type,
+                opener_template="new {type_name}[]{{",
+                declared_type_template="{type_name}[]",
+                fallback=CollectionType(
+                    opener="new Object[]{", declared_type="Object[]"
+                ),
+            )
 
-        return _open
+        return _infer
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
