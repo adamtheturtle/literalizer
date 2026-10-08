@@ -1,1 +1,1 @@
-private Object[] p = new Playlist();
+private Object p = new Playlist();

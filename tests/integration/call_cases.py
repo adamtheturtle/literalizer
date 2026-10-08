@@ -29,6 +29,7 @@ from literalizer.exceptions import (
     UnsupportedCallShapeError,
     VariableNameNotSupportedError,
 )
+from tests.enum_members import enum_member_by_name
 
 from .case_inputs import CaseInput
 from .case_manifests import CallCaseSpec, call_case_specs, case_input
@@ -381,6 +382,14 @@ def _literalize_call_case(
     bound_refs: Mapping[str, literalizer.ValueInput] | None,
 ) -> literalizer.LiteralizeResult:
     """Run a configured call through the public API."""
+    if isinstance(variable_form, literalizer.NewVariable):
+        variable_form = dataclasses.replace(
+            variable_form,
+            modifiers=frozenset(
+                enum_member_by_name(enum_cls=spec.modifiers, name=name)
+                for name in config.variable_modifiers
+            ),
+        )
     return literalizer.literalize_call(
         source=source,
         input_format=input_info.input_format,

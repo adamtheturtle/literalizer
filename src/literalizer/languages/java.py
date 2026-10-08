@@ -113,7 +113,6 @@ from literalizer._language import (
     default_format_call_stub,
     default_format_call_target,
     default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
@@ -1058,7 +1057,6 @@ class Java(metaclass=LanguageCls):
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
-    format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(new_constructor_target)
@@ -2558,6 +2556,25 @@ class Java(metaclass=LanguageCls):
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return self._java_dict_entry
+
+    def format_call_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        _data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Type the call result according to its stub's Object return."""
+        if len(modifiers) == 0 and (self.variable_type_hints.name != "ALWAYS"):
+            return _format_java_var_declaration(
+                name=name, value=value, _data=_data, _modifiers=modifiers
+            )
+        prefix = _java_modifier_prefix(modifiers=modifiers)
+        terminated = _java_split_trailing_line_comments(value=value)
+        return (
+            f"{prefix}Object {name} = {terminated.code};{terminated.trailing}"
+        )
 
     @cached_property
     def format_variable_declaration(

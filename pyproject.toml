@@ -645,7 +645,7 @@ reportUnnecessaryTypeIgnoreComment = true
 executionEnvironments = [
     { root = "tests/integration/cases", reportUnusedExpression = false, reportUndefinedVariable = false, reportUnknownVariableType = false },
     { root = "tests/errors/test_non_string_dict_key_guard.py", reportPrivateUsage = false },
-    { root = "tests/integration/call_cases.py", reportPrivateUsage = false },
+    { root = "tests/integration/call_cases.py", extraPaths = [ "." ], reportPrivateUsage = false },
 ]
 
 [tool.ty]

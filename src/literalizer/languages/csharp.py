@@ -120,7 +120,6 @@ from literalizer._language import (
     default_format_call_stub,
     default_format_call_target,
     default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
@@ -758,7 +757,6 @@ class CSharp(metaclass=LanguageCls):
     pools_map_integer_width = True
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(new_constructor_target)
@@ -2312,6 +2310,23 @@ class CSharp(metaclass=LanguageCls):
             self.default_dict_value_type,
             default_key_type=self.default_dict_key_type,
         )
+
+    @staticmethod
+    def format_call_variable_declaration(
+        name: str,
+        value: str,
+        _data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Type the call result according to its stub's object return."""
+        if _CSharpModifiers.CONST in modifiers:
+            msg = "C# 'const' cannot bind a runtime call result."
+            raise IncompatibleFormatsError(msg)
+        prefix = _csharp_modifier_prefix(modifiers=modifiers)
+        if prefix == "":
+            return f"var {name} = {value};"
+        return f"{prefix}object {name} = {value};"
 
     @cached_property
     def format_variable_declaration(

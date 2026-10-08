@@ -1,1 +1,1 @@
-readonly ValueTuple p = new Playlist();
+readonly object p = new Playlist();
