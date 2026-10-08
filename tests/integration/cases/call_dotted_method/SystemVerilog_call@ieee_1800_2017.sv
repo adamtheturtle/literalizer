@@ -18,8 +18,8 @@ class AppType_;
 endclass
 AppType_ app = new();
 initial begin
-app.client.fetch(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"});
-app.client.fetch(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""});
-app.client.fetch(_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""});
+void'(app.client.fetch(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"}));
+void'(app.client.fetch(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}));
+void'(app.client.fetch(_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}));
 end
 endmodule

@@ -12,8 +12,8 @@ typedef struct {
 module main;
 task process(input _VVal value, input _VVal label); endtask
 initial begin
-process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "a"});
-process(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "b"});
-process(_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "c"});
+void'(process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "a"}));
+void'(process(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "b"}));
+void'(process(_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "c"}));
 end
 endmodule

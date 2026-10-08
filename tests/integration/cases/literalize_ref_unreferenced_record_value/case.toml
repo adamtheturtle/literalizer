@@ -1,11 +1,11 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Kotlin"]
-languages_reason = "Sampled: Kotlin represents RECORD support; broader compiled fixtures reject the intentionally unreferenced binding."
+languages = ["Erlang", "Go", "Kotlin", "Roc", "Zig"]
+languages_reason = "Unused bound references must not generate declarations rejected by target toolchains."
 
 [ref]
-languages = ["Kotlin"]
-languages_reason = "Sampled: Kotlin represents RECORD support; broader compiled fixtures reject the intentionally unreferenced binding."
+languages = ["Erlang", "Go", "Kotlin", "Roc", "Zig"]
+languages_reason = "Unused bound references must not generate declarations rejected by target toolchains."
 
 [ref.extra_ref_value_sources]
 other = '"true"'

@@ -52,11 +52,11 @@ from literalizer._formatters.format_strings import (
     make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
     RecordDeclarationField,
     RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
-    RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
 )
@@ -728,7 +728,7 @@ class V(metaclass=LanguageCls):
         re.Pattern[str] | None
     ] = None
     accepts_type_name_call_target = True
-    declares_type_name_call_target = True
+    declares_type_name_call_target = False
     dotted_call_root_shares_entrypoint_namespace = True
     reserved_bare_call_target_identifiers: ClassVar[frozenset[str]] = (
         frozenset()
@@ -1449,7 +1449,7 @@ class V(metaclass=LanguageCls):
         )
 
     @cached_property
-    def _record_strategy(self) -> RecordStrategy:
+    def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
@@ -1544,7 +1544,8 @@ class V(metaclass=LanguageCls):
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
-        """Append ``.clone()`` to the ref identifier, except for scalars.
+        """Append ``.clone()`` to collection refs, except for native
+        records.
 
         V's container types (arrays, maps) are not copied by direct
         assignment, so a ``$ref`` marker appearing on the right-hand
@@ -1560,9 +1561,14 @@ class V(metaclass=LanguageCls):
 
         def _clone(name: str, value: Value | None, /) -> str:
             """Return *name* with ``.clone()`` appended unless *value*
-            is a register-trivial scalar that V auto-copies.
+            is a scalar or native record that V auto-copies.
             """
-            if isinstance(value, bool | int | float):
+            if isinstance(value, bool | int | float) or (
+                isinstance(value, dict)
+                and self.heterogeneous_strategy.name == "RECORD"
+                and self._record_strategy.record_name_for_value(value)
+                is not None
+            ):
                 return name
             return f"{name}.clone()"
 

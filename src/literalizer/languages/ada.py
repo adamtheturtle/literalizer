@@ -385,7 +385,6 @@ class Ada(metaclass=LanguageCls):
     supports_dotted_calls = True
     allows_empty_call_parens = False
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = False
     reserved_variable_identifiers: frozenset[str] = frozenset(
@@ -465,6 +464,9 @@ class Ada(metaclass=LanguageCls):
             "with",
             "xor",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
     )
     supports_dotted_call_stub = False
     call_returns_expression = True

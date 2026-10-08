@@ -18,8 +18,8 @@ class My_AppType_;
 endclass
 My_AppType_ my_app = new();
 initial begin
-my_app.http_client.fetch(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"});
-my_app.http_client.fetch(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""});
-my_app.http_client.fetch(_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""});
+void'(my_app.http_client.fetch(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hello"}));
+void'(my_app.http_client.fetch(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}));
+void'(my_app.http_client.fetch(_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}));
 end
 endmodule

@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "C++ reference declaration modifiers must accept the rendered value category."
+variable_modifiers = ["STATIC"]
+
+[ref.value_sources]
+ref_data = "[1, 2]"
+
+[ref.explicit_ref_value_sources]
+ref_data = "1"

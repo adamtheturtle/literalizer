@@ -16,13 +16,13 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
-    {"exact_millisecond", "09:30:15.123000"},
-    {"sub_millisecond", "09:30:15.123456"},
+    {"exact_millisecond", ((CVal){.s = "09:30:15.123000"})},
+    {"sub_millisecond", ((CVal){.s = "09:30:15.123456"})},
 }});
 (void)my_data;
 my_data = ((CVal){.m = (CKV[]){
-    {"exact_millisecond", "09:30:15.123000"},
-    {"sub_millisecond", "09:30:15.123456"},
+    {"exact_millisecond", ((CVal){.s = "09:30:15.123000"})},
+    {"sub_millisecond", ((CVal){.s = "09:30:15.123456"})},
 }});
     (void)my_data;
     return 0;

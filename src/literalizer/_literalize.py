@@ -3629,8 +3629,6 @@ def _build_render_context(
         ref_key=ref_key,
     )
     alias_record_ids = language.heterogeneous_behavior.alias_record_ids
-    if alias_record_ids is not None:
-        alias_record_ids(inference_id_map)
     wrap_ids = _source_container_ids(
         inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
         id_map=inference_id_map,
@@ -3640,6 +3638,8 @@ def _build_render_context(
         # language's type-inference cache. Restore the composition-wide record
         # context before any opener or field type reads that cache.
         check_data(data=record_context_data, spec=language)
+    if alias_record_ids is not None:
+        alias_record_ids(inference_id_map)
     tuple_list_ids = _source_container_ids(
         inferred_ids=_compute_tuple_list_ids(
             data=inference_data,
@@ -3971,6 +3971,12 @@ def _literalize_impl(
             ref_value = None
             if ref_values is not None:
                 ref_value = ref_values.get(raw_ref_name)
+            if ref_value is not None:
+                compute_record_shapes = (
+                    language.heterogeneous_behavior.compute_record_shapes
+                )
+                if compute_record_shapes is not None:
+                    _ = compute_record_shapes(ref_value)
             identifier = language.format_call_ref_identifier(
                 ref_name, ref_value
             )
@@ -4151,6 +4157,18 @@ class _ReferenceBindingLanguage(Protocol):
     """A language with binding syntax for an already rendered
     reference.
     """
+
+    def reference_binding_data_dependent_preamble(
+        self, data: Value, /
+    ) -> tuple[str, ...]:
+        """Return imports needed for an identifier binding."""
+        ...
+
+    def reference_declaration_imports(
+        self, entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Retain imports used by already rendered declarations."""
+        ...
 
     def format_reference_variable_declaration(
         self,
@@ -4758,6 +4776,14 @@ def literalize_apply_form(
     data_dependent_preamble = language.data_dependent_preamble(
         pre_form.data_for_preamble
     )
+    if _extract_call_arg_ref_name(
+        value=pre_form.data, ref_key=pre_form.active_ref_key
+    ) is not None and isinstance(language, _ReferenceBindingLanguage):
+        data_dependent_preamble = (
+            language.reference_binding_data_dependent_preamble(
+                pre_form.data_for_preamble
+            )
+        )
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
@@ -5083,6 +5109,10 @@ def literalize_bound_refs(
         wrap_in_file=True,
         bound_ref_names=frozenset(bound_refs),
     )
+    used_ref_names = _collect_ref_names(
+        value=pre_form.data, ref_key=pre_form.active_ref_key
+    )
+    ordered_names = [name for name in ordered_names if name in used_ref_names]
     declaration_form = variable_form
     if isinstance(declaration_form, BothVariableForms):
         declaration_form = NewVariable(
@@ -5202,7 +5232,13 @@ def _literalize_value_binding(
         language=language,
         has_variable_declaration=True,
     )
-    data_dependent_preamble = language.data_dependent_preamble(value)
+    preamble_data = value
+    if (
+        record_context_data is not None
+        and language.heterogeneous_behavior.render_record_literal is not None
+    ):
+        preamble_data = record_context_data
+    data_dependent_preamble = language.data_dependent_preamble(preamble_data)
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
@@ -5299,8 +5335,17 @@ def _compose_bound_refs(
         if entry not in d.data_dependent_preamble
         or entry in unified_data_dependent_entries
     )
+    reference_imports: tuple[str, ...] = ()
+    if isinstance(language, _ReferenceBindingLanguage):
+        reference_imports = language.reference_declaration_imports(
+            tuple(
+                entry
+                for declaration in decl_results
+                for entry in declaration.data_dependent_preamble
+            )
+        )
     all_preamble = deduplicate_preamble_entries(
-        entries=declaration_preamble + main_result.preamble
+        entries=declaration_preamble + reference_imports + main_result.preamble
     )
     scoped = _scope_preamble_for_wrap(
         language=language,
@@ -5732,6 +5777,16 @@ def _compute_call_arg_ref_consume_inhibited_names(
     """
     if len(ref_values) == 0:
         return frozenset[str]()
+    compute_record_shapes = (
+        language.heterogeneous_behavior.compute_record_shapes
+    )
+    if compute_record_shapes is not None:
+        resolved_values = _resolve_ref_list_for_preamble(
+            values=elements,
+            ref_values=ref_values,
+            ref_key=ref_key,
+        )
+        _ = compute_record_shapes(resolved_values)
     inhibits = language.consumable_ref_value_inhibits_consuming_form
     referenced: set[str] = set()
     for element in elements:
@@ -8130,6 +8185,12 @@ def literalize_call_parsed(
         values=bound_refs,
         argument_name="bound_refs",
     )
+    used_ref_names = _collect_ref_names(value=data, ref_key=ref_key)
+    materialized_bound_refs = {
+        name: value
+        for name, value in materialized_bound_refs.items()
+        if name in used_ref_names
+    }
     materialized_ref_values: Mapping[str, Value] = {
         **materialized_bound_refs,
         **explicit_ref_values,

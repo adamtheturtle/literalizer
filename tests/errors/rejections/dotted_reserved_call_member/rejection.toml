@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Dotted members must follow the target language keyword rules."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Ada", "CSharp", "Cpp", "D", "Dart", "Go", "Groovy", "Haskell", "Kotlin", "OCaml", "Swift", "SystemVerilog"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "thing.if"
+parameter_names = ["value"]
+wrap_in_file = true
