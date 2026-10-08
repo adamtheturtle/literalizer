@@ -9,7 +9,6 @@ from hypothesis import strategies as st
 
 from literalizer import (
     InputFormat,
-    NewVariable,
     literalize,
 )
 from literalizer.languages import Erlang, Python
@@ -32,12 +31,6 @@ PYTHON_BYTES = Python(
     set_format=Python.set_formats.SET,
     variable_type_hints=Python.variable_type_hints_formats.NEVER,
 )
-PYTHON_MULTILINE = Python(
-    sequence_format=Python.sequence_formats.LIST,
-    string_format=Python.string_formats.MULTILINE,
-    variable_type_hints=Python.variable_type_hints_formats.NEVER,
-)
-_MULTILINE_VALUE = "\nfirst line\n  indented\n\nlast line\n"
 
 type _JSONScalar = str | int | float | bool | None
 
@@ -137,31 +130,6 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     )
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
-
-
-# Root, nested-list, and declaration/assignment multiline cases live in
-# tests/integration/cases/multiline_string*. Their Python fixtures also undergo
-# value-preservation checks in test_multiline_string_roundtrip.py. Keep this
-# fragment test because its caller supplies the enclosing indented block.
-def test_multiline_string_pre_indent_round_trip() -> None:
-    """Generated code indentation does not become string indentation."""
-    result = literalize(
-        source=json.dumps(obj=_MULTILINE_VALUE),
-        input_format=InputFormat.JSON,
-        language=PYTHON_MULTILINE,
-        pre_indent_level=1,
-        include_delimiters=True,
-        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
-    )
-    tree = ast.parse(source=f"if True:\n{result.code}")
-    if_statement = tree.body[0]
-
-    assert isinstance(if_statement, ast.If)
-    assignment = if_statement.body[0]
-    assert isinstance(assignment, ast.Assign)
-    assert (
-        ast.literal_eval(node_or_string=assignment.value) == _MULTILINE_VALUE
-    )
 
 
 @given(data=st.binary())

@@ -296,6 +296,10 @@ class ManifestVariant(  # noqa: NOD001
 
     axis: Annotated[str, Field(min_length=1)]
     suffix: str = ""
+    # An enclosing fixture can compile a fragment rendered without the
+    # language's whole-file wrapper, such as an indented Python assignment.
+    fixture_prefix: str = ""
+    wrap_in_file: bool = True
     context: RenderContext = Field(default_factory=RenderContext)
     # The language capabilities this input needs in order to render at
     # all.  A variant whose language lacks one of them is skipped (no

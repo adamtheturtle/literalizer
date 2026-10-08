@@ -1865,6 +1865,7 @@ def _axis_variants(
                             layout.layout
                         ],
                         fixture_prefix=fixture.fixture_prefix,
+                        wrap_in_file=True,
                         record_null_substitutions=None,
                     )
                     for layout in axis.layouts

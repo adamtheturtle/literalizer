@@ -58,7 +58,7 @@ def test_multiline_string_golden_roundtrip(
     tree = ast.parse(source=golden_path.read_text(encoding="utf-8"))
     values = [
         ast.literal_eval(node_or_string=node.value)
-        for node in tree.body
+        for node in ast.walk(node=tree)
         if isinstance(node, ast.Assign)
     ]
     assignment_count = (

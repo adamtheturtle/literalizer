@@ -56,7 +56,7 @@ def _literalize(
         pre_indent_level=render.pre_indent_level,
         include_delimiters=True,
         variable_form=variable_form,
-        wrap_in_file=True,
+        wrap_in_file=render.wrap_in_file,
         collection_layout=render.collection_layout,
         record_null_substitutions=render.record_null_substitutions,
     )
