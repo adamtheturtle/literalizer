@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Nim"]
+languages_reason = "Nim constant table literals must share the populated sibling map key and value types."
+
+[[variants]]
+axis = "declaration_style"
