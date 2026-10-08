@@ -323,7 +323,7 @@ class VisualBasic(metaclass=LanguageCls):
     variable name is supplied.
     """
 
-    format_call_class_scope_stub = default_format_call_stub
+    format_call_stub = default_format_call_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -856,20 +856,19 @@ class VisualBasic(metaclass=LanguageCls):
     ) -> str:
         """Wrap a VB.NET Dim declaration inside a Module.
 
-        When *body_preamble* carries call-stub declarations (``Class``
-        and ``Function`` blocks plus their ``Dim ... As New ...``
-        instances) the stubs sit at module scope and *content* is
+        The context carries module-member call stubs separately from
+        body bindings. When member declarations are present, *content* is
         placed inside ``Sub _calls()``: VB rejects bare expression
         statements at module level, but shared subs taking no
         arguments are invoked by the fixture linter so the calls
         still execute.
         """
         body_preamble = context.body_preamble
-        has_stubs = any(
-            line.startswith(("Function ", "Class ")) for line in body_preamble
-        )
-        if has_stubs:
-            preamble_block = "\n".join(body_preamble)
+        if len(context.class_preamble) > 0:
+            preamble_block = "\n".join(context.class_preamble)
+            content = prepend_body_preamble(
+                content=content, body_preamble=body_preamble
+            )
             preamble_indented = textwrap.indent(
                 text=preamble_block,
                 prefix=self.indent,
@@ -1053,7 +1052,7 @@ class VisualBasic(metaclass=LanguageCls):
     )
 
     @cached_property
-    def format_call_stub(
+    def format_call_class_scope_stub(
         self,
     ) -> Callable[
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],

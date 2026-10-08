@@ -86,7 +86,6 @@ from literalizer._language import (
     default_format_call_arg_ref_identifier_consumable,
     default_format_call_ref_identifier,
     default_format_call_statement,
-    default_format_call_stub,
     default_format_call_target,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
@@ -180,20 +179,14 @@ def _elixir_params(params: Sequence[str]) -> tuple[str, ...]:
 @beartype
 def _elixir_call_stub(
     parts: Sequence[str],
-    params: Sequence[str],
+    _params: Sequence[str],
     _stub_return: StubReturn,
     _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
-    """Return an Elixir body-level stub for call name *parts*.
-
-    For simple names the stub is a one-liner ``def`` placed at module
-    level by :meth:`Elixir.wrap_in_file`.  For dotted names only the
-    variable binding is returned (the module stubs are preamble).
-    """
+    """Return the function-body alias for a dotted Elixir call."""
     if len(parts) == 1:
-        param_list = ", ".join(_elixir_params(params=params))
-        return (f"def {parts[0]}({param_list}), do: nil",)
+        return ()
     root = parts[0]
     # `Playlist = PlaylistType_` matches against an alias rather than
     # binding a variable, and fails at run time with a MatchError, so an
@@ -201,6 +194,21 @@ def _elixir_call_stub(
     if root[:1].isupper():
         return ()
     return (f"{root} = {_elixir_root_module(root)}",)
+
+
+@beartype
+def _elixir_call_member_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Return module-member stubs for a simple Elixir call."""
+    if len(parts) != 1:
+        return ()
+    param_list = ", ".join(_elixir_params(params=params))
+    return (f"def {parts[0]}({param_list}), do: nil",)
 
 
 @beartype
@@ -296,7 +304,15 @@ class Elixir(metaclass=LanguageCls):
               e.g. ``{1, 2, 3}``.
     """
 
-    format_call_class_scope_stub = default_format_call_stub
+    @property
+    def format_call_class_scope_stub(
+        self,
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
+        """Provide declarations at module-member scope."""
+        return _elixir_call_member_stub
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -768,11 +784,8 @@ class Elixir(metaclass=LanguageCls):
     ) -> str:
         """Wrap an Elixir variable assignment in a module function.
 
-        For variable cases, *body_preamble* lines are prepended inside
-        ``def x do``.  For call cases (empty *variable_name*), lines
-        starting with ``def `` are lifted to module level inside
-        ``defmodule Check do`` but before ``def x do``, while other
-        preamble lines stay inside ``def x do``.
+        The context places module-member declarations before ``def x do``
+        and body bindings inside that function.
         """
         variable_name = context.variable_name
         body_preamble = context.body_preamble
@@ -787,12 +800,8 @@ class Elixir(metaclass=LanguageCls):
                 "defmodule Check do\n"
                 f"  def x do\n{indented}{use_line}\n  end\nend"
             )
-        module_defs = [
-            line for line in body_preamble if line.startswith("def ")
-        ]
-        body_assigns = tuple(
-            line for line in body_preamble if not line.startswith("def ")
-        )
+        module_defs = context.class_preamble
+        body_assigns = body_preamble
         body = prepend_body_preamble(
             content=content, body_preamble=body_assigns
         )
@@ -812,25 +821,13 @@ class Elixir(metaclass=LanguageCls):
     ) -> str:
         """Wrap a call-result variable binding in an Elixir module.
 
-        :meth:`wrap_in_file`'s variable branch places *body_preamble*
-        inside ``def x do``, but for a call binding those lines are the
-        module-level stub function definitions emitted by
-        :func:`_elixir_call_stub`; nesting a ``def`` inside ``def x do``
-        is a syntax error.  This hook hoists the ``def ``-prefixed
-        preamble lines to module scope (matching the
-        call-without-binding branch of :meth:`wrap_in_file`) while
-        keeping the ``my_data = make_widget(...)`` binding, any non-stub
-        preamble lines (e.g. the dotted-call ``root = RootType_`` alias),
-        and the trailing ``_ = my_data`` use inside ``def x do``.
+        The context keeps stub definitions at module-member scope while
+        dotted-call root aliases and the result binding stay in ``def x do``.
         """
         variable_name = context.variable_name
         body_preamble = context.body_preamble
-        module_defs = [
-            line for line in body_preamble if line.startswith("def ")
-        ]
-        body_assigns = tuple(
-            line for line in body_preamble if not line.startswith("def ")
-        )
+        module_defs = context.class_preamble
+        body_assigns = body_preamble
         body = prepend_body_preamble(
             content=content, body_preamble=body_assigns
         )
