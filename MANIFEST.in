@@ -1,3 +1,4 @@
 include *.py
 include *.toml
 recursive-include tests *.py
+recursive-include docs *.md
