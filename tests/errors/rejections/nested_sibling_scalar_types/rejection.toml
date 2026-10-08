@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Nested sibling sequence elements require one representable scalar type under the default ERROR strategy."
+exceptions = ["HeterogeneousSiblingListsError"]
+languages = ["Mojo", "Rust", "V"]
+
+[call]
+api = "literalize"
+sources = ["{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}", "[[[1],[2]],[[\"x\"],[\"y\"]]]"]
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
