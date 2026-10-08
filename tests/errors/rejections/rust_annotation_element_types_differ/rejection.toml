@@ -5,7 +5,7 @@ languages = ["Rust"]
 
 [call]
 api = "literalize"
-sources = ['{"a": [[1], []], "b": [["x"]]}']
+sources = ['{"a": [{"x": 1}], "b": [{"x": "s"}]}']
 input_format = "json"
 wrap_in_file = true
 variable_form = "new"

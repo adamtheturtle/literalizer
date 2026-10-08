@@ -200,6 +200,8 @@ lint.per-file-ignores."scripts/*.py" = [
     # Runner scripts intentionally execute explicitly selected toolchains.
     "S603",
 ]
+# Tooling regressions use the same assertion policy as package tests.
+lint.per-file-ignores."scripts/tests/test_*.py" = [ "S101" ]
 lint.per-file-ignores."tests/**/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",

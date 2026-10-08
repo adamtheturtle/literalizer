@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Swift"]
+languages_reason = "Swift requires an explicit element type for a bound empty collection beside numeric references."
+
+[ref.value_sources]
+empty_values = "[]"
+float_values = "[1.5]"
+integer_values = "[1]"

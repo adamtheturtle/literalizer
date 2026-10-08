@@ -241,7 +241,6 @@ def build_tuple_strategy(
     # and refinement propagates a nested split to every enclosing shape.
     record_strategy = build_record_strategy(
         renderer=wrapped_renderer,
-        split_conflicting_field_types=True,
         widen_unrecordizable_nested_sibling_maps=False,
         derecordized_map_open=None,
     )

@@ -2446,7 +2446,6 @@ class Haskell(metaclass=LanguageCls):
                 field_type_names_nested_records=True,
                 suppress_custom_name_declarations=False,
             ),
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=False,
             derecordized_map_open=None,
         )

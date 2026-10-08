@@ -1125,7 +1125,6 @@ class OCaml(metaclass=LanguageCls):
                 field_type_names_nested_records=True,
                 suppress_custom_name_declarations=False,
             ),
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=False,
             derecordized_map_open=None,
         )
@@ -1241,6 +1240,27 @@ class OCaml(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _nested_entry_formatter(self) -> Callable[[Value, str], str]:
+        """Wrap nested arrays in the selected value carrier
+        constructor.
+        """
+        base = self._entry_formatter
+        if (
+            self._json_type_active
+            or self.sequence_format is not type(self.sequence_format).ARRAY
+        ):
+            return base
+        prefix = self.constructor_prefix
+
+        def _format(original: Value, formatted: str) -> str:
+            """Tag array entries while leaving root arrays unwrapped."""
+            if isinstance(original, list):
+                return f"{prefix}Array {formatted}"
+            return base(original, formatted)
+
+        return _format
+
+    @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         fmt: SequenceFormatConfig = self.sequence_format.value
@@ -1298,7 +1318,7 @@ class OCaml(metaclass=LanguageCls):
             dict_open=fixed_open(open_str=dict_open_str),
             close="]",
             format_entry=tuple_dict_entry(
-                format_value=self._entry_formatter,
+                format_value=self._nested_entry_formatter,
             ),
             empty_dict=None,
             preamble_lines=(),
@@ -1388,14 +1408,14 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a set entry."""
-        return self._entry_formatter
+        return self._nested_entry_formatter
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
         if self.dict_format is type(self.dict_format).RECORD:
             return passthrough_sequence_entry
-        return self._entry_formatter
+        return self._nested_entry_formatter
 
     @cached_property
     def comment_config(self) -> CommentConfig:
@@ -1417,7 +1437,7 @@ class OCaml(metaclass=LanguageCls):
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
-        return tuple_dict_entry(format_value=self._entry_formatter)
+        return tuple_dict_entry(format_value=self._nested_entry_formatter)
 
     @cached_property
     def _ocaml_declaration(self) -> Callable[[str, str, Value], str]:
@@ -1524,7 +1544,12 @@ class OCaml(metaclass=LanguageCls):
             datetime.time: (_h, f"  | {p}Str of string"),
             datetime.date: (_h, _date_constructor),
             datetime.datetime: (_h, _datetime_constructor),
-            list: (_h, f"  | {p}List of {self.type_name} list"),
+            list: (
+                _h,
+                f"  | {p}Array of {self.type_name} array"
+                if self.sequence_format is type(self.sequence_format).ARRAY
+                else f"  | {p}List of {self.type_name} list",
+            ),
             dict: (_h, f"  | {p}Map of (string * {self.type_name}) list"),
             OrderedMap: (
                 _h,

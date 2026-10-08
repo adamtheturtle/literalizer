@@ -24,16 +24,19 @@ fi
 
 case "$mode" in
 tidy)
-    clang-tidy "$fixture_path" -- "-std=$standard"
+    python3 scripts/run_bounded_compiler.py --fixture "$fixture_path" -- \
+        clang-tidy "$fixture_path" -- "-std=$standard"
     ;;
 run)
     temporary_directory=$(mktemp -d)
     trap 'rm -rf "$temporary_directory"' EXIT
-    clang++ "-std=$standard" \
+    python3 scripts/run_bounded_compiler.py --fixture "$fixture_path" -- \
+        clang++ "-std=$standard" \
         -include-pch "/tmp/lint-cpp-$standard.hpp.pch" \
         "$fixture_path" \
         -o "$temporary_directory/run"
-    "$temporary_directory/run"
+    python3 scripts/run_bounded_compiler.py --fixture "$fixture_path" -- \
+        "$temporary_directory/run"
     ;;
 *)
     echo "Unknown C++ fixture lint mode: $mode" >&2

@@ -1653,7 +1653,7 @@ class Mojo(metaclass=LanguageCls):
     format_call_target = default_format_call_target
 
     @cached_property
-    def format_call_ref_identifier(
+    def _format_consumable_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
         """Append ``^`` to trigger move/transfer semantics in Mojo,
@@ -1682,10 +1682,29 @@ class Mojo(metaclass=LanguageCls):
         return _format_mojo_ref_identifier
 
     @cached_property
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Copy bound containers so repeated declarations preserve
+        them.
+        """
+        consume = self._format_consumable_ref_identifier
+
+        def _format(name: str, value: Value | None, /) -> str:
+            """Copy containers and preserve scalar reference
+            formatting.
+            """
+            if isinstance(value, (list, dict, set)):
+                return f"{name}.copy()"
+            return consume(name, value)
+
+        return _format
+
+    @cached_property
     def format_call_arg_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
-        """Emit a call-argument ``$ref`` as the bare identifier.
+        """Copy container call arguments and borrow other references.
 
         The Mojo transfer operator ``^`` consumes the variable, which
         is unsafe when the caller may use it again in a later call (or
@@ -1695,7 +1714,14 @@ class Mojo(metaclass=LanguageCls):
         :attr:`format_call_arg_ref_identifier_consumable` is used
         instead and appends ``^``.
         """
-        return identity_call_ref_identifier
+
+        def _format(name: str, value: Value | None, /) -> str:
+            """Explicitly copy owned containers before passing them on."""
+            if isinstance(value, (list, dict, set)):
+                return f"{name}.copy()"
+            return identity_call_ref_identifier(name, value)
+
+        return _format
 
     @cached_property
     def format_call_arg_ref_identifier_consumable(
@@ -1712,7 +1738,7 @@ class Mojo(metaclass=LanguageCls):
         :attr:`consumable_ref_value_inhibits_consuming_form`), because
         applying ``^`` to such a value is a hard error under ``--Werror``.
         """
-        return self.format_call_ref_identifier
+        return self._format_consumable_ref_identifier
 
     @cached_property
     def consumable_ref_value_inhibits_consuming_form(
