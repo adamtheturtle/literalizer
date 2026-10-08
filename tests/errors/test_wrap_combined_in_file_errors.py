@@ -14,23 +14,16 @@ def _language_class_name(language_cls: LanguageCls, /) -> str:
     return language_cls.__name__
 
 
-_SORTED_LANGUAGES: list[LanguageCls] = sorted(
-    ALL_LANGUAGES,
-    key=_language_class_name,
-)
-
-_UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
-    cls
-    for cls in _SORTED_LANGUAGES
-    if not any(
-        style.value.supports_redefinition for style in cls.DeclarationStyles
-    )
-]
-
-
 @pytest.mark.parametrize(
     argnames="language_cls",
-    argvalues=_UNSUPPORTED_COMBINED_LANGUAGES,
+    argvalues=[
+        cls
+        for cls in sorted(ALL_LANGUAGES, key=_language_class_name)
+        if not any(
+            style.value.supports_redefinition
+            for style in cls.DeclarationStyles
+        )
+    ],
     ids=_language_class_name,
 )
 def test_wrap_combined_in_file_unsupported_raises(

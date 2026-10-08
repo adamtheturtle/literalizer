@@ -26,12 +26,11 @@ from .golden_checks import check_golden
 from .language_specs import make_golden_path
 
 _GOLDEN_DIR = Path(__file__).parent / "unwrapped_literalize_results"
-_LANGUAGES = (Elm, FSharp, Haskell, PureScript)
 
 
 @pytest.mark.parametrize(
     argnames="lang_cls",
-    argvalues=_LANGUAGES,
+    argvalues=[Elm, FSharp, Haskell, PureScript],
     ids=lambda lang_cls: lang_cls.__name__,
 )
 @pytest.mark.parametrize(argnames="attribute", argvalues=["code", "bare_code"])
