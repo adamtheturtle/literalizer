@@ -3786,6 +3786,13 @@ class Cpp(metaclass=LanguageCls):
         return identity_call_ref_identifier
 
     @cached_property
+    def format_known_null_ref_identifier(self) -> Callable[[str], str]:
+        """Keep native null references bare and owning JSON values movable."""
+        if self._json_type_active:
+            return lambda name: self.format_call_ref_identifier(name, None)
+        return lambda name: name
+
+    @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -3818,7 +3825,14 @@ class Cpp(metaclass=LanguageCls):
         through the non-consuming formatter so the emitted C++ compiles
         cleanly under ``--warnings-as-errors``.
         """
-        return _cpp_value_inhibits_consuming_form
+
+        def _inhibits(value: Value) -> bool:
+            """Exclude native null scalars from the consuming form."""
+            if value is None:
+                return not self._json_type_active
+            return _cpp_value_inhibits_consuming_form(value)
+
+        return _inhibits
 
     @cached_property
     def _cpp_date_type(self) -> str:
