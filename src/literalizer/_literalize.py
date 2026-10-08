@@ -4085,6 +4085,30 @@ def _literalize(
         raise
 
 
+@runtime_checkable
+class _ReferenceBindingLanguage(Protocol):
+    """A language with binding syntax for an already rendered
+    reference.
+    """
+
+    def format_reference_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Bind an identifier without applying literal constructors."""
+        ...
+
+    def format_reference_variable_assignment(
+        self, name: str, value: str, data: Value, /
+    ) -> str:
+        """Assign an identifier without applying literal constructors."""
+        ...
+
+
 @beartype
 def _apply_variable_wrapper(
     *,
@@ -4094,6 +4118,7 @@ def _apply_variable_wrapper(
     variable_form: NewVariable | ExistingVariable | None,
     line_prefix: str,
     is_call_binding: bool,
+    is_reference_binding: bool,
 ) -> str:
     """Optionally wrap *result* in a variable declaration or
     assignment.
@@ -4124,9 +4149,19 @@ def _apply_variable_wrapper(
     else:
         value = result
 
+    declaration_formatter: Callable[
+        [str, str, Value, frozenset[enum.Enum]], str
+    ]
+    assignment_formatter: Callable[[str, str, Value], str]
     match variable_form:
         case NewVariable(name=name, modifiers=modifiers):
-            if is_call_binding:
+            if is_reference_binding and isinstance(
+                language, _ReferenceBindingLanguage
+            ):
+                declaration_formatter = (
+                    language.format_reference_variable_declaration
+                )
+            elif is_call_binding:
                 declaration_formatter = (
                     language.format_call_variable_declaration
                 )
@@ -4144,7 +4179,13 @@ def _apply_variable_wrapper(
                 modifiers,
             )
         case _:
-            if is_call_binding:
+            if is_reference_binding and isinstance(
+                language, _ReferenceBindingLanguage
+            ):
+                assignment_formatter = (
+                    language.format_reference_variable_assignment
+                )
+            elif is_call_binding:
                 assignment_formatter = language.format_call_variable_assignment
             else:
                 assignment_formatter = language.format_variable_assignment
@@ -4561,6 +4602,10 @@ def reject_undeclared_assignment(
         variable_form=variable_form,
         line_prefix=pre_form.line_prefix,
         is_call_binding=False,
+        is_reference_binding=_extract_call_arg_ref_name(
+            value=pre_form.data, ref_key=pre_form.active_ref_key
+        )
+        is not None,
     )
 
     def _render(styled: Language) -> str:
@@ -4575,6 +4620,10 @@ def reject_undeclared_assignment(
             ),
             line_prefix=pre_form.line_prefix,
             is_call_binding=False,
+            is_reference_binding=_extract_call_arg_ref_name(
+                value=pre_form.data, ref_key=pre_form.active_ref_key
+            )
+            is not None,
         )
 
     if assignment not in _declaration_spellings(
@@ -4619,6 +4668,10 @@ def literalize_apply_form(
         variable_form=variable_form,
         line_prefix=pre_form.line_prefix,
         is_call_binding=False,
+        is_reference_binding=_extract_call_arg_ref_name(
+            value=pre_form.data, ref_key=pre_form.active_ref_key
+        )
+        is not None,
     )
 
     resolved = pre_form.resolved
@@ -5081,6 +5134,7 @@ def _literalize_value_binding(
         variable_form=variable_form,
         line_prefix=line_prefix,
         is_call_binding=False,
+        is_reference_binding=False,
     )
     computed = compute_preamble(
         data=value,
@@ -6281,6 +6335,7 @@ def _render_variable_bound_call(
             variable_form=variable_form,
             line_prefix="",
             is_call_binding=True,
+            is_reference_binding=False,
         ),
         comment=comment,
         language=language,

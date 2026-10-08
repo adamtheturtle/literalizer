@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-ref"
+suites = ["base", "combined"]
+languages = ["Nim"]
+languages_reason = "Nim distinguishes a plain dictionary from a resolved reference using literal conversion syntax."
+
+[ref]
+ref_key = "reference"
+variable_form = "both"
+languages = ["Nim"]
+languages_reason = "Nim must preserve a resolved root reference without JSON conversion."
+
+[ref.value_sources]
+whole = '[1, 2]'
