@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidNewVariableNameError]
+"Roc['Record0']" = "Roc cannot use NewVariable name 'Record0': it is not a valid identifier"
