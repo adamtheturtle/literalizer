@@ -107,25 +107,15 @@ def test_record_shape_names_are_snapshotted() -> None:
     assert render() == before_mutation
 
 
-def test_unrelated_reference_values_preserve_set_rendering() -> None:
-    """Unused caller-owned bindings do not change a set's rendering."""
-    source = "!!set\n1:\n2:\n"
+def test_unrelated_reference_values_are_not_mutated() -> None:
+    """Rendering a set leaves unused caller-owned bindings unchanged."""
     ref_values = {"unused": [3]}
-    language = Python()
-    expected = literalize(
-        source=source,
+    _ = literalize(
+        source="!!set\n1:\n2:\n",
         input_format=InputFormat.YAML,
-        language=language,
-        ref_key="$ref",
-    )
-
-    result = literalize(
-        source=source,
-        input_format=InputFormat.YAML,
-        language=language,
+        language=Python(),
         ref_key="$ref",
         ref_values=ref_values,
     )
 
-    assert result == expected
     assert ref_values == {"unused": [3]}

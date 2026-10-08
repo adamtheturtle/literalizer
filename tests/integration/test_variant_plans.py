@@ -132,6 +132,7 @@ def test_special_axes_are_declared() -> None:
     assert (
         frozenset(
             {
+                "json_type_modifiers",
                 "json_type_variable_form",
                 "modifier_sequence_format",
                 "modifiers",

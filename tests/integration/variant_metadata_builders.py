@@ -8,6 +8,7 @@ cases without depending on individual language classes.
 
 from __future__ import annotations
 
+import dataclasses
 import enum
 from collections.abc import Mapping
 
@@ -17,7 +18,7 @@ import literalizer
 from tests.enum_members import enum_member_by_name
 
 from .language_specs import make_spec, sorted_languages
-from .variant_types import VariantCase, compact_variant
+from .variant_types import Variant, VariantCase, compact_variant
 
 _enum_member_by_name = enum_member_by_name
 
@@ -25,12 +26,13 @@ _enum_member_by_name = enum_member_by_name
 @beartype
 def build_modifier_variant_cases(
     *,
+    base_variants: tuple[Variant, ...],
     case_dir_names: tuple[str, ...],
     sequence_case_dirs: Mapping[str, str],
 ) -> list[VariantCase]:
     """Build variants exercising per-language modifier rendering.
 
-    For every language with a non-empty ``modifiers`` enum, emit one
+    For every base spec with a non-empty ``modifiers`` enum, emit one
     singleton-modifier variant per member plus one variant per entry
     in ``lang_cls.modifier_combinations``.  Each variant runs against
     inputs covering scalar / dict / set / date / datetime values so
@@ -39,8 +41,9 @@ def build_modifier_variant_cases(
     by the test itself.
     """
     cases: list[VariantCase] = []
-    for lang_cls in sorted_languages():
-        spec = make_spec(lang_cls=lang_cls)
+    for base_variant in base_variants:
+        lang_cls = base_variant.lang_cls
+        spec = base_variant.spec
         if len(spec.modifiers) == 0:
             continue
         entries: list[tuple[str, frozenset[enum.Enum]]] = [
@@ -52,10 +55,9 @@ def build_modifier_variant_cases(
             for combo in lang_cls.modifier_combinations
         )
         for mod_name, modifiers in entries:
-            variant = compact_variant(
-                name=f"{lang_cls.__name__}_modifiers_{mod_name}",
-                spec=make_spec(lang_cls=lang_cls),
-                lang_cls=lang_cls,
+            variant = dataclasses.replace(
+                base_variant,
+                name=f"{base_variant.name}_modifiers_{mod_name}",
             )
             cases.extend(
                 VariantCase(

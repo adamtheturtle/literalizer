@@ -130,7 +130,14 @@ def discover_literalize_default_ref_cases() -> list[LiteralizeRefCase]:
 
 
 type _RefData = (
-    dict[str, _RefData] | list[_RefData] | str | int | float | bool | None
+    dict[str, _RefData]
+    | list[_RefData]
+    | set[str | int | float | bool | None]
+    | str
+    | int
+    | float
+    | bool
+    | None
 )
 
 
@@ -188,7 +195,9 @@ def _parse_ref_input(
                 allow_duplicate_keys=False,
             )
         case literalizer.InputFormat.YAML:
-            ruamel_yaml = as_yaml_parser(parser=YAML())
+            # Reference discovery needs plain values, including YAML sets;
+            # the public renderer preserves comments from input_source.
+            ruamel_yaml = as_yaml_parser(parser=YAML(typ="safe"))
             parsed = ruamel_yaml.load(stream=input_source)
         case literalizer.InputFormat.TOML:
             parsed = tomllib.loads(input_source)

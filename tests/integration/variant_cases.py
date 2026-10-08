@@ -432,8 +432,33 @@ def build_variant_cases() -> list[VariantCase]:
     cases.extend(
         case
         for case in build_modifier_variant_cases(
+            base_variants=tuple(
+                compact_variant(
+                    name=lang_cls.__name__,
+                    spec=make_spec(lang_cls=lang_cls),
+                    lang_cls=lang_cls,
+                )
+                for lang_cls in sorted_languages()
+            ),
             case_dir_names=modifier_inputs,
             sequence_case_dirs=modifier_sequence_inputs,
+        )
+        if selection_by_case[case.case_dir_name].admits_language(
+            lang_cls=case.variant.lang_cls,
+        )
+    )
+
+    json_modifier_inputs = tuple(
+        case_dir_name
+        for case_dir_name, entry in entries
+        if entry.axis == "json_type_modifiers"
+    )
+    cases.extend(
+        case
+        for case in build_modifier_variant_cases(
+            base_variants=tuple(variants_for_axis(axis_key="json_type")),
+            case_dir_names=json_modifier_inputs,
+            sequence_case_dirs={},
         )
         if selection_by_case[case.case_dir_name].admits_language(
             lang_cls=case.variant.lang_cls,

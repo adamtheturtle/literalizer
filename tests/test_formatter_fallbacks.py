@@ -4,13 +4,11 @@ from textwrap import dedent
 
 from literalizer import (
     InputFormat,
-    NewVariable,
     literalize,
 )
 from literalizer.languages import (
     Cpp,
     Roc,
-    Rust,
 )
 
 
@@ -28,22 +26,6 @@ def test_roc_call_wrapper_without_preamble() -> None:
         main =
             dbg (call)
             {}"""
-    )
-
-
-def test_rust_mutable_json_declaration() -> None:
-    """The ``mut`` modifier applies to JSON-backed local declarations."""
-    language = Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)
-    result = literalize(
-        source="1",
-        input_format=InputFormat.JSON,
-        language=language,
-        variable_form=NewVariable(
-            name="data", modifiers=frozenset({Rust.modifiers.MUT})
-        ),
-    )
-    assert result.code == (
-        "let mut data: serde_json::Value = serde_json::json!(1);"
     )
 
 
