@@ -12,16 +12,15 @@ from .golden_checks import check_golden
 from .language_specs import make_golden_path, sorted_languages
 
 _GOLDEN_DIR = Path(__file__).parent / "default_module_names"
-_LANGUAGES = [
-    lang_cls
-    for lang_cls in sorted_languages()
-    if lang_cls.supports_module_name
-]
 
 
 @pytest.mark.parametrize(
     argnames="lang_cls",
-    argvalues=_LANGUAGES,
+    argvalues=[
+        lang_cls
+        for lang_cls in sorted_languages()
+        if lang_cls.supports_module_name
+    ],
     ids=lambda lang_cls: lang_cls.__name__,
 )
 def test_default_module_name_golden(

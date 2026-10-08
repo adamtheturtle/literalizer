@@ -56,8 +56,6 @@ MOJO = Mojo(
 )
 ALL_FORMATS = list(InputFormat)
 
-FORMATS_WITH_NULL = [f for f in ALL_FORMATS if f.supports_null]
-
 
 @beartype
 def _to_source(
@@ -354,7 +352,10 @@ def test_raises_mixed_dict_shapes(input_format: InputFormat) -> None:
         )
 
 
-@pytest.mark.parametrize(argnames="input_format", argvalues=FORMATS_WITH_NULL)
+@pytest.mark.parametrize(
+    argnames="input_format",
+    argvalues=[f for f in ALL_FORMATS if f.supports_null],
+)
 def test_raises_mixed_dict_none_list(input_format: InputFormat) -> None:
     """Dict with None alongside a list raises (formats with null)."""
     expected_msg = re.escape(

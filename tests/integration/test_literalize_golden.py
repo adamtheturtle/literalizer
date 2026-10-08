@@ -32,8 +32,6 @@ from .golden_scenarios import (
 )
 from .language_specs import make_golden_path, with_per_fixture_module_name
 
-_GROUPS = golden_groups()
-
 
 @beartype
 def _literalize(
@@ -115,7 +113,7 @@ def _check_rendering(
 
 @pytest.mark.parametrize(
     argnames="group",
-    argvalues=_GROUPS,
+    argvalues=golden_groups(),
     ids=lambda group: group.test_id,
 )
 def test_golden_file(
