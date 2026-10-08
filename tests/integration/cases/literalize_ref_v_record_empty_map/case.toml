@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["V"]
+languages_reason = "An empty map remains a collection under V RECORD mode and still requires clone()."
+heterogeneous_strategy = "RECORD"
+
+[ref.value_sources]
+empty_map = "{}"

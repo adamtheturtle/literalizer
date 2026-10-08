@@ -14,10 +14,19 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
+struct Record1 { const char *x; };
+struct Record2 { long long x; };
+struct Record0 { struct Record1 direct; struct Record2 bound; };
 int main(void) {
-CVal my_data = ((CVal){.m = (CKV[]){
-    {"times", ((CVal){.a = (CVal[]){((CVal){.s = "09:30:00"}), ((CVal){.s = "17:45:00"}), ((CVal){.s = "23:59:59"})}})},
-}});
+struct Record2 first = (struct Record2){
+    .x = 1,
+};
+struct Record0 my_data = (struct Record0){
+    .direct = (struct Record1){
+        .x = "s",
+    },
+    .bound = first,
+};
     (void)my_data;
     return 0;
 }

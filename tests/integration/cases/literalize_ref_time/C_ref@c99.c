@@ -15,8 +15,9 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 int main(void) {
+CVal my_time = ((CVal){.s = "01:02:03"});
 CVal my_data = ((CVal){.m = (CKV[]){
-    {"times", ((CVal){.a = (CVal[]){((CVal){.s = "09:30:00"}), ((CVal){.s = "17:45:00"}), ((CVal){.s = "23:59:59"})}})},
+    {"x", my_time},
 }});
     (void)my_data;
     return 0;

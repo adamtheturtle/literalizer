@@ -18,7 +18,7 @@ struct Record0 { const CVal *vals; };
 int main(void) {
 struct Record0 my_data = (struct Record0){
     .vals = (CVal[]){
-        "09:30:00",
+        ((CVal){.s = "09:30:00"}),
         ((CVal){.s = "hello"}),
     },
 };
