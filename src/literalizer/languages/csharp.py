@@ -2172,26 +2172,42 @@ class CSharp(metaclass=LanguageCls):
             )
         cfg = self._opener_config
         resolved = self._resolved_dict_opener
-        return DictFormatConfig(
-            dict_open=typed_dict_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=cfg.element_to_type(
-                        dict_value_to_type=None,
-                        list_template=None,
-                        enable_list_type=(
-                            self.sequence_format is self.sequence_formats.ARRAY
-                        ),
-                        date_type=cfg.type_name(py_type=self._date_tp),
-                        datetime_type=cfg.type_name(py_type=self._dt_tp),
-                        enable_dict_type=False,
-                        dict_key_type=self.default_dict_key_type,
+        base_open = typed_dict_open(
+            type_to_opener=make_type_to_opener(
+                element_to_type=cfg.element_to_type(
+                    dict_value_to_type=None,
+                    list_template=None,
+                    enable_list_type=(
+                        self.sequence_format is self.sequence_formats.ARRAY
                     ),
-                    opener_template=resolved,
+                    date_type=cfg.type_name(py_type=self._date_tp),
+                    datetime_type=cfg.type_name(py_type=self._dt_tp),
+                    enable_dict_type=False,
+                    dict_key_type=self.default_dict_key_type,
                 ),
-                fallback=resolved.format(
-                    type_name=self.default_dict_value_type,
-                ),
+                opener_template=resolved,
             ),
+            fallback=resolved.format(
+                type_name=self.default_dict_value_type,
+            ),
+        )
+
+        def _open(data: dict[Scalar, Value]) -> str:
+            """Infer epoch values from their rendered integer widths."""
+            if self._dt_tp is not int:
+                return base_open(data)
+            normalized = {
+                key: (
+                    datetime_epoch_seconds(value=value)
+                    if isinstance(value, datetime.datetime)
+                    else value
+                )
+                for key, value in data.items()
+            }
+            return base_open(normalized)
+
+        return DictFormatConfig(
+            dict_open=_open,
             close="}",
             format_entry=dict_entry_with_template(
                 template="[{key}] = {value}",

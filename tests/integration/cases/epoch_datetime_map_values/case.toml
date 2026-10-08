@@ -1,6 +1,6 @@
 schema_version = 1
-languages = ["Kotlin", "Scala"]
-languages_reason = "Sampled: these two type an EPOCH datetime by the width of the epoch value, and a map value's type cannot depend on the value."
+languages = ["CSharp", "Kotlin", "Scala", "SystemVerilog", "V"]
+languages_reason = "Sampled: these languages infer integer widths for EPOCH datetime map values and need one compatible map value type."
 suites = ["base"]
 
 [[variants]]

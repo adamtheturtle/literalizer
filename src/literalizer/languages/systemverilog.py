@@ -16,8 +16,8 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_formatter,
     format_date_iso,
-    format_datetime_epoch,
     format_datetime_iso,
     format_time_iso,
 )
@@ -588,7 +588,9 @@ class SystemVerilog(metaclass=LanguageCls):
         )
 
         EPOCH = DatetimeFormatConfig(
-            formatter=format_datetime_epoch,
+            formatter=datetime_epoch_formatter(
+                format_integer=_format_integer_decimal_sv
+            ),
             type_produced=int,
             preamble_lines=(),
         )
@@ -1142,7 +1144,11 @@ class SystemVerilog(metaclass=LanguageCls):
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
-        """Callable that formats a datetime as a string literal."""
+        """Format epoch seconds with the configured integer literal
+        width.
+        """
+        if self.datetime_format.value.type_produced is int:
+            return datetime_epoch_formatter(format_integer=self.format_integer)
         return self.datetime_format
 
     @cached_property
