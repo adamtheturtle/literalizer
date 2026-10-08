@@ -835,8 +835,14 @@ def _has_heterogeneous_sibling_lists(
             return (
                 len(all_lists) == len(values)
                 and len(seq_lists) > 1
-                and _all_scalars_heterogeneous(
-                    values=[e for sub in seq_lists for e in sub],
+                and (
+                    _all_scalars_heterogeneous(
+                        values=[e for sub in seq_lists for e in sub],
+                    )
+                    or _has_heterogeneous_sibling_lists(
+                        data=[e for sub in seq_lists for e in sub],
+                        tuple_list_ids=tuple_list_ids,
+                    )
                 )
             )
         case list():
@@ -857,8 +863,14 @@ def _has_heterogeneous_sibling_lists(
             return (
                 len(all_list_children) == len(data)
                 and len(seq_list_children) > 1
-                and _all_scalars_heterogeneous(
-                    values=[e for sub in seq_list_children for e in sub],
+                and (
+                    _all_scalars_heterogeneous(
+                        values=[e for sub in seq_list_children for e in sub],
+                    )
+                    or _has_heterogeneous_sibling_lists(
+                        data=[e for sub in seq_list_children for e in sub],
+                        tuple_list_ids=tuple_list_ids,
+                    )
                 )
             )
         case _:
