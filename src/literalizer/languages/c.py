@@ -2018,15 +2018,9 @@ class C(metaclass=LanguageCls):
         if not self._record_strategy_active:
             return None
         root = f"struct {_C_RECORD_PREFIX}0"
-        if (
-            isinstance(data, dict)
-            and not isinstance(data, OrderedMap)
-            and record_shape_for_dict(value=data) is not None
-        ):
-            record_name = self._record_strategy.record_name_for_value(data)
-            if record_name is not None:
-                return f"struct {record_name}"
-            return root
+        record_name = self._record_strategy.record_name_for_value(data)
+        if record_name is not None:
+            return f"struct {record_name}"
         if isinstance(data, list) and _all_record_shaped(data):
             return f"{root}[]"
         return None
