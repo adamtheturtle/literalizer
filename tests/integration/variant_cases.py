@@ -464,6 +464,25 @@ def build_variant_cases() -> list[VariantCase]:
         )
     )
 
+    record_modifier_inputs = {
+        case_dir_name: entry.context
+        for case_dir_name, entry in entries
+        if entry.axis == "record_modifiers"
+    }
+    cases.extend(
+        case
+        for case in build_modifier_variant_cases(
+            base_variants=tuple(
+                variants_for_axis(axis_key="heterogeneous_strategy_record")
+            ),
+            case_contexts=record_modifier_inputs,
+            sequence_case_dirs={},
+        )
+        if selection_by_case[case.case_dir_name].admits_language(
+            lang_cls=case.variant.lang_cls,
+        )
+    )
+
     json_modifier_inputs = {
         case_dir_name: entry.context
         for case_dir_name, entry in entries

@@ -2588,7 +2588,7 @@ class Java(metaclass=LanguageCls):
         effective_set_outer = "Set"
         if self.set_format is type(self.set_format).TREE_SET:
             effective_set_outer = "TreeSet"
-        return self.variable_type_hints.formatter(
+        base = self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             int_type=effective_int_type,
             date_hint=(effective_date_hint),
@@ -2599,6 +2599,39 @@ class Java(metaclass=LanguageCls):
             dict_outer=(effective_dict_outer),
             set_outer=(effective_set_outer),
         )
+
+        return self._record_declaration_formatter(base=base)
+
+    def _record_declaration_formatter(
+        self,
+        *,
+        base: Callable[[str, str, Value, frozenset[enum.Enum]], str],
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Share the retained literal record type with bindings."""
+        record_name_for_value = self._record_strategy.record_name_for_value
+        if record_name_for_value is None:
+            return base
+
+        def _formatter(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Use the record name retained by the literal renderer."""
+            record_name = record_name_for_value(data)
+            if record_name is not None and (
+                len(modifiers) > 0 or self.variable_type_hints.name == "ALWAYS"
+            ):
+                prefix = _java_modifier_prefix(modifiers=modifiers)
+                terminated = _java_split_trailing_line_comments(value=value)
+                return (
+                    f"{prefix}{record_name} {name} = {terminated.code};"
+                    f"{terminated.trailing}"
+                )
+            return base(name, value, data, modifiers)
+
+        return _formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

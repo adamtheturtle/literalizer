@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "variant"
+
+languages = ["Java", "CSharp"]
+languages_reason = "Class-field record bindings must use the generated record type."
+
+[[variants]]
+axis = "record_modifiers"
+context = { variable_form = "new" }

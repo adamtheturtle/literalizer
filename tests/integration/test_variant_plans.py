@@ -136,6 +136,7 @@ def test_special_axes_are_declared() -> None:
                 "json_type_variable_form",
                 "modifier_sequence_format",
                 "modifiers",
+                "record_modifiers",
                 "multiline_string_combined",
                 "multiline_string_pre_indent",
             }

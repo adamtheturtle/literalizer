@@ -431,6 +431,7 @@ def _format_csharp_declaration(
     datetime_hint: str,
     dict_value_type: str,
     tuple_sequences: bool,
+    record_type: str | None,
 ) -> str:
     """Format a C# variable declaration, applying modifiers when set.
 
@@ -449,13 +450,15 @@ def _format_csharp_declaration(
     prefix = _csharp_modifier_prefix(modifiers=modifiers)
     if prefix == "":
         return f"var {name} = {value};"
-    hint = _csharp_type_hint(
-        data=data,
-        date_hint=date_hint,
-        datetime_hint=datetime_hint,
-        dict_value_type=dict_value_type,
-        tuple_sequences=tuple_sequences,
-    )
+    hint = record_type
+    if hint is None:
+        hint = _csharp_type_hint(
+            data=data,
+            date_hint=date_hint,
+            datetime_hint=datetime_hint,
+            dict_value_type=dict_value_type,
+            tuple_sequences=tuple_sequences,
+        )
     return f"{prefix}{hint} {name} = {value};"
 
 
@@ -2362,6 +2365,11 @@ class CSharp(metaclass=LanguageCls):
                 datetime_hint=datetime_hint,
                 dict_value_type=dict_value_type,
                 tuple_sequences=tuple_sequences,
+                record_type=(
+                    None
+                    if self._record_strategy.record_name_for_value is None
+                    else self._record_strategy.record_name_for_value(data)
+                ),
             )
 
         return _formatter
