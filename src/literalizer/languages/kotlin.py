@@ -1978,7 +1978,16 @@ class Kotlin(metaclass=LanguageCls):
         """Resolve the Kotlin array field type from its opener."""
         opener = self.sequence_open(value)
         if opener == "arrayOf(":
-            element = self._kotlin_value_field_type(value[0])
+            children = [
+                child
+                for item in value
+                if isinstance(item, list)
+                for child in item
+            ]
+            if all(isinstance(item, list) for item in value):
+                element = self._kotlin_list_field_type(value=children)
+            else:
+                element = self._kotlin_value_field_type(value[0])
             field_type = f"Array<{element}>"
         else:
             field_type = _kotlin_opener_to_type(opener)

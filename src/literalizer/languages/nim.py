@@ -2043,6 +2043,14 @@ class Nim(metaclass=LanguageCls):
         """Infer the Nim sequence field type from its elements."""
         if len(value) == 0:
             element_type = "string"
+        elif all(isinstance(item, list) for item in value):
+            children = [
+                child
+                for item in value
+                if isinstance(item, list)
+                for child in item
+            ]
+            element_type = self._nim_list_field_type(value=children)
         else:
             element_type = "int64"
             if infer_element_type(items=value) is not WideInt:
@@ -2368,6 +2376,16 @@ class Nim(metaclass=LanguageCls):
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format_config.sequence_open
 
+    def _nim_empty_dict_form(
+        self, siblings: Sequence[dict[Scalar, Value]], /
+    ) -> str:
+        """Type an empty constant table from populated sibling tables."""
+        keys: list[Value] = [key for sibling in siblings for key in sibling]
+        values = [value for sibling in siblings for value in sibling.values()]
+        key_type = self._nim_list_field_type(value=keys)[4:-1]
+        value_type = self._nim_list_field_type(value=values)[4:-1]
+        return f"initTable[{key_type}, {value_type}]()"
+
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting.
@@ -2413,7 +2431,8 @@ class Nim(metaclass=LanguageCls):
                 narrowed_empty_form=None,
             )
         effective_preamble_lines: tuple[str, ...]
-        if self._uses_native_nim_collections:
+        is_const = self.declaration_style is self.declaration_styles.CONST
+        if self._uses_native_nim_collections or is_const:
             if self._uses_record:
                 effective_preamble_lines = ()
             else:
@@ -2429,7 +2448,9 @@ class Nim(metaclass=LanguageCls):
                 preamble_lines=(effective_preamble_lines),
                 narrowed_open=None,
                 supports_trailing_comma=True,
-                narrowed_empty_form=None,
+                narrowed_empty_form=self._nim_empty_dict_form
+                if is_const
+                else None,
             )
         return DictFormatConfig(
             dict_open=fixed_open(open_str="{"),
