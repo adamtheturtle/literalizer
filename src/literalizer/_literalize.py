@@ -4152,6 +4152,18 @@ class _ReferenceBindingLanguage(Protocol):
     reference.
     """
 
+    def reference_binding_data_dependent_preamble(
+        self, data: Value, /
+    ) -> tuple[str, ...]:
+        """Return imports needed for an identifier binding."""
+        ...
+
+    def reference_declaration_imports(
+        self, entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Retain imports used by already rendered declarations."""
+        ...
+
     def format_reference_variable_declaration(
         self,
         name: str,
@@ -4758,6 +4770,14 @@ def literalize_apply_form(
     data_dependent_preamble = language.data_dependent_preamble(
         pre_form.data_for_preamble
     )
+    if _extract_call_arg_ref_name(
+        value=pre_form.data, ref_key=pre_form.active_ref_key
+    ) is not None and isinstance(language, _ReferenceBindingLanguage):
+        data_dependent_preamble = (
+            language.reference_binding_data_dependent_preamble(
+                pre_form.data_for_preamble
+            )
+        )
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
@@ -5303,8 +5323,17 @@ def _compose_bound_refs(
         if entry not in d.data_dependent_preamble
         or entry in unified_data_dependent_entries
     )
+    reference_imports: tuple[str, ...] = ()
+    if isinstance(language, _ReferenceBindingLanguage):
+        reference_imports = language.reference_declaration_imports(
+            tuple(
+                entry
+                for declaration in decl_results
+                for entry in declaration.data_dependent_preamble
+            )
+        )
     all_preamble = deduplicate_preamble_entries(
-        entries=declaration_preamble + main_result.preamble
+        entries=declaration_preamble + reference_imports + main_result.preamble
     )
     scoped = _scope_preamble_for_wrap(
         language=language,

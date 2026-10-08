@@ -32,6 +32,7 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
 )
 from literalizer.languages import Matlab
+from tests.enum_members import enum_member_by_name
 from tests.yaml_support import as_yaml_parser
 
 from .case_manifests import (
@@ -251,6 +252,14 @@ def run_literalize_ref_golden_case(
     variable_form_obj: literalizer.VariableForm | None = (
         config.resolved_variable_form()
     )
+    if isinstance(variable_form_obj, literalizer.NewVariable):
+        variable_form_obj = dataclasses.replace(
+            variable_form_obj,
+            modifiers=frozenset(
+                enum_member_by_name(enum_cls=spec.modifiers, name=name)
+                for name in config.variable_modifiers
+            ),
+        )
     try:
         _ = literalizer.literalize(
             source='{"key": "value"}',
