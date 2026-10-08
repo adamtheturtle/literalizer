@@ -52,6 +52,7 @@ from .case_manifests import (
     OwnerName,
     case_dir_name_for_owner,
     case_manifests_by_name,
+    manifest_admits_language,
     variable_form_for_context,
 )
 from .golden_checks import (
@@ -254,9 +255,11 @@ class GoldenRendering:
     lang_cls: literalizer.LanguageCls
     case_dir_name: str
     golden_name: str
+    golden_parent: Path
     spec_source: SpecSource
     render: RenderArguments
     fixture_prefix: str
+    apply_fixture_module_name: bool
     skip: SkipPolicy
 
     @property
@@ -304,9 +307,11 @@ def unprefixed_rendering(
         lang_cls=lang_cls,
         case_dir_name=case_dir_name,
         golden_name=golden_name,
+        golden_parent=_CASES_DIR / case_dir_name,
         spec_source=spec_source,
         render=render,
         fixture_prefix="",
+        apply_fixture_module_name=True,
         skip=skip,
     )
 
@@ -382,6 +387,43 @@ def _base_renderings(
             )
         )
     return tuple(renderings)
+
+
+@beartype
+def _default_module_name_renderings(
+    *,
+    lang_cls: literalizer.LanguageCls,
+) -> tuple[GoldenRendering, ...]:
+    """Render declared inputs with the constructor's module-name default.
+
+    These specs bypass both the test default in ``make_spec`` and the
+    per-fixture naming policy, so the golden pins the public default.
+    """
+    manifests = case_manifests_by_name(cases_dir=_CASES_DIR)
+    return tuple(
+        GoldenRendering(
+            lang_cls=lang_cls,
+            case_dir_name=case_name,
+            golden_name=f"{lang_cls.__name__}_default_module_name",
+            golden_parent=_CASES_DIR.parent / "default_module_names",
+            spec_source=pinned_spec_source(
+                spec=lang_cls(language_version=version),
+            ),
+            render=compact_render(
+                variable_form=literalizer.NewVariable(
+                    name="my_data",
+                    modifiers=frozenset(),
+                ),
+            ),
+            fixture_prefix="",
+            apply_fixture_module_name=False,
+            skip=NO_SKIPS,
+        )
+        for case_name, manifest in manifests.items()
+        if "default-module-name" in manifest.suites
+        and manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
+        for version in lang_cls.VersionFormats
+    )
 
 
 @beartype
@@ -492,6 +534,7 @@ def _variant_renderings(
             lang_cls=lang_cls,
             case_dir_name=variant_case.case_dir_name,
             golden_name=variant_case.variant_name,
+            golden_parent=_CASES_DIR / variant_case.case_dir_name,
             spec_source=pinned_spec_source(spec=variant_case.variant.spec),
             render=RenderArguments(
                 variable_form=variant_case.variable_form,
@@ -502,6 +545,7 @@ def _variant_renderings(
                 ),
             ),
             fixture_prefix=variant_case.variant.fixture_prefix,
+            apply_fixture_module_name=True,
             skip=VARIANT_SKIPS,
         )
         for variant_case in grouped.get(lang_cls, [])
@@ -691,6 +735,10 @@ def _indent_renderings(
 
 GOLDEN_SCENARIOS: tuple[GoldenScenario, ...] = (
     GoldenScenario(name="base", build=_base_renderings),
+    GoldenScenario(
+        name="default_module_name",
+        build=_default_module_name_renderings,
+    ),
     GoldenScenario(
         name="kebab_new_variable",
         build=_kebab_new_variable_renderings,
