@@ -42,6 +42,7 @@ from literalizer._comments_resolve import (
 )
 from literalizer._dictionary_keys import dictionary_key_formatter
 from literalizer._document_formatting import format_document_fast
+from literalizer._formatters.format_dates import datetime_epoch_seconds
 from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
@@ -467,7 +468,13 @@ def _format_scalar(
         case bytes():
             result = spec.format_bytes(value)
         case datetime.datetime():
-            result = spec.format_datetime(value)
+            if (
+                int_formatter is not None
+                and spec.datetime_format.value.type_produced is int
+            ):
+                result = int_formatter(datetime_epoch_seconds(value=value))
+            else:
+                result = spec.format_datetime(value)
         case datetime.time():
             result = spec.format_time(value)
         case _:
@@ -541,6 +548,13 @@ def _map_widened_int_formatter(
     """
     if not spec.pools_map_integer_width:
         return None
+    if spec.datetime_format.value.type_produced is int:
+        items = [
+            datetime_epoch_seconds(value=value)
+            if isinstance(value, datetime.datetime)
+            else value
+            for value in items
+        ]
     return _widened_int_formatter(items=items, spec=spec)
 
 
