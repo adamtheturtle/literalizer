@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-ref"
+
+# Non-string marker values remain ordinary mappings. Only the string marker
+# declares a binding, including when all three appear in the same sequence.
+[ref]
+languages = ["Python"]
+languages_reason = "Sampled: reference-name discovery is shared across languages; Python preserves both malformed marker mappings, including the null value."
