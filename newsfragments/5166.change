@@ -1,1 +1,0 @@
-C#, Dart, Go, Kotlin, and Scala now accept ``skip_null_dict_values=True`` to omit null dictionary values while preserving the existing default behavior.

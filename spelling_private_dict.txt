@@ -69,6 +69,7 @@ Lua
 MLton
 Mixin
 Mojo
+MyST
 NEL
 NaN
 Nim
@@ -123,6 +124,7 @@ Sml
 SystemVerilog
 Tcl
 Toml
+Towncrier
 Vec
 YAMLError
 ZKV
