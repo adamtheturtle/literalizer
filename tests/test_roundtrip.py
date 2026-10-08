@@ -8,7 +8,6 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from literalizer import (
-    BothVariableForms,
     InputFormat,
     NewVariable,
     literalize,
@@ -120,22 +119,6 @@ def test_roundtrip_scalar(data: _JSONScalar) -> None:
     assert parsed == data
 
 
-def test_roundtrip_multiline_string_contexts() -> None:
-    """Multiline root and nested values preserve their exact contents."""
-    value = "\nfirst line\n  indented\n\nlast line\n"
-    for data in (value, [[[value]]]):
-        result = literalize(
-            source=json.dumps(obj=data),
-            input_format=InputFormat.JSON,
-            language=PYTHON_MULTILINE,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-        )
-
-        assert ast.literal_eval(node_or_string=result.code) == data
-
-
 # ``st.dictionaries`` internally filters draws to ensure unique keys, which
 # can accumulate enough filtered examples to trigger the ``filter_too_much``
 # health check on unlucky seeds.  The filtering is expected behavior here,
@@ -156,48 +139,10 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     assert parsed == data
 
 
-def test_multiline_string_root_and_nested_round_trip() -> None:
-    """Multiline syntax preserves scalar and nested collection values."""
-    for value in (_MULTILINE_VALUE, [[_MULTILINE_VALUE]]):
-        result = literalize(
-            source=json.dumps(obj=value),
-            input_format=InputFormat.JSON,
-            language=PYTHON_MULTILINE,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=None,
-        )
-
-        assert ast.literal_eval(node_or_string=result.code) == value
-
-
-def test_multiline_string_new_and_existing_variable_round_trip() -> None:
-    """Declaration and assignment forms preserve multiline values."""
-    for variable_form, expected_assignment_count in (
-        (NewVariable(name="my_data", modifiers=frozenset()), 1),
-        (BothVariableForms(name="my_data", modifiers=frozenset()), 2),
-    ):
-        result = literalize(
-            source=json.dumps(obj=_MULTILINE_VALUE),
-            input_format=InputFormat.JSON,
-            language=PYTHON_MULTILINE,
-            pre_indent_level=0,
-            include_delimiters=True,
-            variable_form=variable_form,
-            wrap_in_file=True,
-        )
-        assignments = [
-            node
-            for node in ast.parse(source=result.code).body
-            if isinstance(node, ast.Assign)
-        ]
-
-        assert len(assignments) == expected_assignment_count
-        assert [
-            ast.literal_eval(node_or_string=node.value) for node in assignments
-        ] == [_MULTILINE_VALUE] * expected_assignment_count
-
-
+# Root, nested-list, and declaration/assignment multiline cases live in
+# tests/integration/cases/multiline_string*. Their Python goldens also undergo
+# value-preservation checks in test_multiline_string_roundtrip.py. Keep this
+# fragment test because its caller supplies the enclosing indented block.
 def test_multiline_string_pre_indent_round_trip() -> None:
     """Generated code indentation does not become string indentation."""
     result = literalize(

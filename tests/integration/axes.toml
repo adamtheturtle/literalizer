@@ -625,6 +625,20 @@ overrides = [
   { kind = "enum_member", option = "string_format", member = "MULTILINE" },
 ]
 
+# Preserve multiline whitespace through an explicit list representation as
+# well as each language's default sequence representation.
+[axes.multiline_string_list]
+plan = "fixed_overrides"
+name_template = "{lang}_string_format_multiline_list"
+gates = [
+  { kind = "capability_flag", flag = "supports_multiline_string_literals" },
+  { kind = "enum_member_present", option = "sequence_format", member = "LIST" },
+]
+overrides = [
+  { kind = "enum_member", option = "string_format", member = "MULTILINE" },
+  { kind = "enum_member", option = "sequence_format", member = "LIST" },
+]
+
 # Native record fields keep their scalar representation when alternate
 # datetime, date, or bytes options are selected. Membership in the option
 # enums discovers the languages that can render each combination.
