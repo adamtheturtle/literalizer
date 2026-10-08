@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Gleam['{\"a\":[1],\"b\":[]}']" = "Gleam nested sequences require sequence_format=LIST"
+"Gleam['[[1],[]]']" = "Gleam nested sequences require sequence_format=LIST"

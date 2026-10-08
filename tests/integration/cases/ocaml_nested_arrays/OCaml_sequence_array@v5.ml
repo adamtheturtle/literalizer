@@ -1,11 +1,11 @@
 module Check = struct
 
 type val_t =
-  | ONull
+  | OInt of int
   | OArray of val_t array
 let my_data : val_t array = [|
-    ONull;
-    ONull
+    OArray [|OArray [|OInt 1|]|];
+    OArray [|OArray [||]|]
 |]
 
 end
