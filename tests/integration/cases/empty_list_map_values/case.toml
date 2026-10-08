@@ -1,6 +1,6 @@
 schema_version = 1
-languages = ["Cpp", "Go", "Rust"]
-languages_reason = "These statically typed backends infer one sequence type for every value in a map and must type an empty list from its non-empty sibling."
+languages = ["Cpp", "Gleam", "Go", "OCaml", "Rust"]
+languages_reason = "Typed maps need a common sequence representation, including empty values and sequence format variants."
 suites = ["base"]
 
 [[variants]]

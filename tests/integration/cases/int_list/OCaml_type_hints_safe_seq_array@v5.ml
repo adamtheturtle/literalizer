@@ -2,7 +2,7 @@ module Check = struct
 
 type val_t =
   | OInt of int
-  | OList of val_t list
+  | OArray of val_t array
 let my_data : val_t array = [|
     OInt 1;
     OInt 2;

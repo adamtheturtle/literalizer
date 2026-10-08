@@ -120,6 +120,23 @@ from literalizer.exceptions import (
 
 
 @beartype
+def _reject_nested_gleam_tuples(data: Value, /) -> None:
+    """Reject tuples that cannot inhabit the uniform GVal list carrier."""
+    match data:
+        case dict():
+            children = list(data.values())
+        case list() | set():
+            children = list(data)
+        case _:
+            return
+    for child in children:
+        if isinstance(child, list):
+            msg = "Gleam nested sequences require sequence_format=LIST"
+            raise UnrepresentableInputError(msg)
+        _reject_nested_gleam_tuples(child)
+
+
+@beartype
 def _gleam_signed_base_impl(value: int, base: Callable[[int], str]) -> str:
     """Group a negative base literal for Gleam's unary minus."""
     if value < 0:
@@ -1221,6 +1238,11 @@ class Gleam(metaclass=LanguageCls):
             _validate_gleam_native_record(
                 data=data, reserved_fields=self.reserved_variable_identifiers
             )
+        elif (
+            self.sequence_format is type(self.sequence_format).TUPLE
+            and not self._json_type_active
+        ):
+            _reject_nested_gleam_tuples(data)
 
     @cached_property
     def validate_call_arg(self) -> Callable[[Value], None]:
