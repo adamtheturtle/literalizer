@@ -1,0 +1,5 @@
+schema_version = 1
+# A typed empty list falls back when its sibling element type has no concrete type name.
+languages = ["Crystal"]
+languages_reason = "Sampled: Crystal can compile both fallback shapes; the narrowed-empty resolver is shared across backends."
+suites = ["base", "combined"]

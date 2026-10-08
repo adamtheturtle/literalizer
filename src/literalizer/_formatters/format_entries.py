@@ -230,13 +230,19 @@ def passthrough_sequence_entry(_value: Value, item: str) -> str:
 
 
 @beartype
-def passthrough_set_entry(_value: Value, item: str) -> str:
+def _passthrough_set_entry(_value: Value, item: str) -> str:
     """Return *item* unchanged.
 
     Use this as ``format_set_entry`` for languages where set entries
     need no extra formatting.
     """
     return item
+
+
+passthrough_set_entry: Callable[[Value, str], str] = _passthrough_set_entry
+"""Shared callable for languages whose set entries need no extra
+formatting.
+"""
 
 
 @beartype

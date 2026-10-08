@@ -848,10 +848,10 @@ class Haxe(metaclass=LanguageCls):
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
-    @cached_property
-    def format_set_entry(self) -> Callable[[Value, str], str]:
-        """Format a set entry."""
-        return passthrough_set_entry
+    format_set_entry: ClassVar["staticmethod[[Value, str], str]"] = (
+        staticmethod(passthrough_set_entry)
+    )
+    """Callable that formats a set entry."""
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
@@ -926,7 +926,7 @@ class Haxe(metaclass=LanguageCls):
         )
         return dataclasses.replace(
             base,
-            set_open=sequence_surrogate_set_open(base.set_open),
+            set_open=sequence_surrogate_set_open(open_str="["),
         )
 
     @cached_property

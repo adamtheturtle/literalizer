@@ -80,7 +80,6 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
     record_shape_for_dict,
     replace_positional_empty_lists,
-    set_sort_key,
 )
 from literalizer._heterogeneous import iter_wrapped_scalars
 from literalizer._json_native_document import (
@@ -862,20 +861,6 @@ def _compute_cpp_type(
                     length=len(item),
                 )
             return cpp_type
-        case set():
-            sorted_items: list[Value] = sorted(
-                item,
-                key=set_sort_key,
-            )
-            inner_type = _compute_element_type_for_items(
-                items=sorted_items,
-                type_ctx=type_ctx,
-                in_mapping_value=False,
-            )
-            return type_ctx.sequence_type(
-                inner=inner_type,
-                length=len(sorted_items),
-            )
         case _:
             scalar_type = element_to_type(type(item))
             resolved_result_1: str = "std::nullptr_t"
@@ -1065,18 +1050,6 @@ def _needs_variant_type(
     Used to determine whether ``#include <variant>`` is needed.
     """
     match data:
-        case set():
-            sorted_items: list[Value] = sorted(
-                data,
-                key=set_sort_key,
-            )
-            return _items_need_variant(
-                items=sorted_items,
-                element_to_type=element_to_type,
-                type_ctx=type_ctx,
-                tuple_list_ids=tuple_list_ids,
-                record_dict_ids=record_dict_ids,
-            )
         case list():
             if id(data) in tuple_list_ids:
                 return False
@@ -1507,14 +1480,6 @@ def _cpp14_variant_parent_ids(
                         excluded_ids=excluded_ids,
                     )
                 )
-            case set():
-                children.extend(
-                    sorted(
-                        value,
-                        key=set_sort_key,
-                    )
-                )
-                type_children = children
             case _:
                 return
         if (
@@ -2115,21 +2080,6 @@ def _apply_cpp_variant_dict_open(
 
 
 @beartype
-def _apply_cpp_variant_set_open(
-    *,
-    items: list[Value],
-    type_ctx: _CppTypeCtx,
-) -> str:
-    """Return a typed, owning ``std::vector`` opener."""
-    inner = _compute_element_type_for_items(
-        items=items,
-        type_ctx=type_ctx,
-        in_mapping_value=False,
-    )
-    return f"std::vector<{inner}>{{"
-
-
-@beartype
 def _apply_cpp_variant_ordered_map_open(
     *,
     data: dict[Scalar, Value],
@@ -2178,20 +2128,6 @@ def _build_variant_dict_open(
             type_ctx=type_ctx,
             opener_template=opener_template,
         )
-
-    return _open
-
-
-@beartype
-def _build_variant_set_open(
-    *,
-    type_ctx: _CppTypeCtx,
-) -> Callable[[list[Value]], str]:
-    """Build a set opener that uses a typed, owning ``std::vector``."""
-
-    def _open(items: list[Value]) -> str:
-        """Delegate to module-level implementation."""
-        return _apply_cpp_variant_set_open(items=items, type_ctx=type_ctx)
 
     return _open
 
@@ -2416,9 +2352,7 @@ _NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
 
 
 _NLOHMANN_JSON_SET_CONFIG = SetFormatConfig(
-    set_open=sequence_surrogate_set_open(
-        fixed_open(open_str="nlohmann::json::array({")
-    ),
+    set_open=sequence_surrogate_set_open(open_str="nlohmann::json::array({"),
     close="})",
     empty_set="nlohmann::json::array({})",
     preamble_lines=(),
@@ -2500,7 +2434,7 @@ _NLOHMANN_INLINE_SEQUENCE_CONFIG = SequenceFormatConfig(
 
 
 _NLOHMANN_INLINE_SET_CONFIG = SetFormatConfig(
-    set_open=sequence_surrogate_set_open(fixed_open(open_str="[")),
+    set_open=sequence_surrogate_set_open(open_str="["),
     close="]",
     empty_set="[]",
     preamble_lines=(),
@@ -2967,7 +2901,7 @@ class Cpp(metaclass=LanguageCls):
         """Set type options for C++."""
 
         SET = SetFormatConfig(
-            set_open=sequence_surrogate_set_open(lambda _items: "{"),
+            set_open=sequence_surrogate_set_open(open_str="{"),
             close="}",
             empty_set=None,
             preamble_lines=("#include <vector>",),
@@ -2975,19 +2909,6 @@ class Cpp(metaclass=LanguageCls):
             supports_heterogeneity=True,
             supports_trailing_comma=True,
         )
-
-        def get_config(
-            self,
-            *,
-            type_ctx: _CppTypeCtx,
-        ) -> SetFormatConfig:
-            """Return the set format config with variant opener."""
-            return dataclasses.replace(
-                self.value,
-                set_open=sequence_surrogate_set_open(
-                    _build_variant_set_open(type_ctx=type_ctx)
-                ),
-            )
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -3741,10 +3662,10 @@ class Cpp(metaclass=LanguageCls):
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
-    @cached_property
-    def format_set_entry(self) -> Callable[[Value, str], str]:
-        """Format a set entry."""
-        return passthrough_set_entry
+    format_set_entry: ClassVar["staticmethod[[Value, str], str]"] = (
+        staticmethod(passthrough_set_entry)
+    )
+    """Callable that formats a set entry."""
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
@@ -4186,7 +4107,7 @@ class Cpp(metaclass=LanguageCls):
             return _NLOHMANN_INLINE_SET_CONFIG
         if self._json_type_active:
             return _NLOHMANN_JSON_SET_CONFIG
-        return self.set_format.get_config(type_ctx=self._type_ctx)
+        return self.set_format.value
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
@@ -4392,26 +4313,17 @@ class Cpp(metaclass=LanguageCls):
         def _record_aware_open(data: dict[Scalar, Value]) -> str:
             """Type ordered-map values from rendered record lists."""
             values = list(data.values())
-            if len(values) > 0 and all(
-                isinstance(value, list) and _all_record_shaped(value)
+            record_lists = [
+                value
                 for value in values
-            ):
-                resolved_names = [
-                    record_name_for_value(value[0])
-                    for value in values
-                    if isinstance(value, list) and bool(value)
-                ]
-                match resolved_names:
-                    case [str() as record_name, *rest] if all(
-                        name == record_name for name in rest
-                    ):
-                        value_type = f"std::vector<{record_name}>"
-                        return (
-                            "std::vector<std::pair<std::string, "
-                            f"{value_type}>>{{"
-                        )
-                    case _:
-                        pass
+                if isinstance(value, list) and _all_record_shaped(value)
+            ]
+            if len(record_lists) > 0 and len(record_lists) == len(values):
+                # Validation rejects distinct record-list shapes before
+                # rendering, and record preparation registers this name.
+                record_name = record_name_for_value(record_lists[0][0])
+                value_type = f"std::vector<{record_name}>"
+                return f"std::vector<std::pair<std::string, {value_type}>>{{"
             return config.ordered_map_open(data)
 
         return dataclasses.replace(

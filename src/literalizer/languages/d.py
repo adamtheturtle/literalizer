@@ -839,9 +839,7 @@ class D(metaclass=LanguageCls):
         """Set type options for D."""
 
         SET = SetFormatConfig(
-            set_open=sequence_surrogate_set_open(
-                fixed_open(open_str="JSONValue([")
-            ),
+            set_open=sequence_surrogate_set_open(open_str="JSONValue(["),
             close="])",
             empty_set=_D_EMPTY_JSON_ARRAY,
             preamble_lines=(),
