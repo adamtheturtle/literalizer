@@ -1083,7 +1083,7 @@ jobs:
           while IFS= read -r -d '' f; do
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-elm
-          xargs -0 uv run --no-project python -m scripts.check_elm_syntax < /tmp/files-elm
+          xargs -0 uv run python -m scripts.check_elm_syntax < /tmp/files-elm
 
   # Elm runtime check. Sibling to `lint-elm` so the compile + Node
   # execute pass runs in parallel with the format + compile-only pass.
@@ -1119,7 +1119,7 @@ jobs:
       - name: Run Elm
         run: |-
           find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
-          xargs -0 uv run --no-project python -m scripts.run_elm < /tmp/files-elm
+          xargs -0 uv run python -m scripts.run_elm < /tmp/files-elm
       # Basic JSON -> Elm -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `elm` binary (from the
       # npm-linters install above) and Node 22 already on PATH; `uv run`

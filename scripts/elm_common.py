@@ -6,9 +6,11 @@ import os
 import shutil
 import subprocess
 import tempfile
-import time
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+
+from tenacity import RetryError, Retrying, retry_if_result, stop_after_attempt
+from tenacity.wait import wait_incrementing
 
 ELM_JSON = json.dumps(
     obj={
@@ -150,6 +152,8 @@ def _is_elm_transient_error(result: subprocess.CompletedProcess[str]) -> bool:
     """Return True if ``elm make`` failed with a transient cache or
     dependency-download error.
     """
+    if result.returncode == 0:
+        return False
     output = result.stderr + result.stdout
     if any(
         marker in output
@@ -172,9 +176,23 @@ def run_elm_make(
     env: Mapping[str, str],
 ) -> subprocess.CompletedProcess[str]:
     """Run ``elm make``, retrying transient cache failures."""
-    retries = 4
-    for attempt in range(retries):
-        result = subprocess.run(
+    retryer = Retrying(
+        retry=retry_if_result(predicate=_is_elm_transient_error),
+        stop=stop_after_attempt(max_attempt_number=5),
+        wait=wait_incrementing(start=0.5, increment=0.5),
+        # Transient failures can leave a corrupt cache on disk. Clear it
+        # before each retry so the compiler does not re-read that cache.
+        before_sleep=lambda _retry_state: shutil.rmtree(
+            path=Path(cwd) / "elm-stuff",
+            ignore_errors=True,
+        ),
+    )
+    last_result: subprocess.CompletedProcess[str] | None = None
+
+    def _compile() -> subprocess.CompletedProcess[str]:
+        """Invoke Elm once, preserving its output and exit status."""
+        nonlocal last_result
+        last_result = subprocess.run(
             args=list(args),
             capture_output=True,
             text=True,
@@ -182,21 +200,13 @@ def run_elm_make(
             cwd=cwd,
             env=dict(env),
         )
-        if result.returncode == 0 or not _is_elm_transient_error(
-            result=result
-        ):
-            return result
-        # Transient failures (especially CORRUPT CACHE) leave a
-        # bad ``elm-stuff`` cache on disk; subsequent attempts
-        # would just re-read the corruption.  Wipe it so the
-        # retry starts from a clean cache.
-        shutil.rmtree(path=Path(cwd) / "elm-stuff", ignore_errors=True)
-        time.sleep(0.5 * (attempt + 1))
-    return subprocess.run(
-        args=list(args),
-        capture_output=True,
-        text=True,
-        check=False,
-        cwd=cwd,
-        env=dict(env),
-    )
+        return last_result
+
+    try:
+        return retryer(fn=_compile)
+    except RetryError:
+        # Callers report the compiler's final failure, rather than a
+        # retry-library exception.
+        if last_result is None:
+            raise
+        return last_result

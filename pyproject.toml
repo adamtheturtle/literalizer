@@ -109,6 +109,7 @@ dev = [
     # well as in the ``release`` extra (used by the release workflow).
     "sphinxcontrib-towncrier==0.5.0a0",
     "strict-kwargs==2026.8.28.post2",
+    "tenacity==9.1.4",
     "towncrier==26.9.0",
     # ``tree-sitter`` resolves the ``tree-sitter-norg`` grammar for the
     # ``Norg roundtrip`` check (``scripts/run_norg_roundtrip.py``);
