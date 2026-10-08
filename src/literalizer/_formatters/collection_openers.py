@@ -40,23 +40,21 @@ class FixedOpen:
 
 @beartype
 @dataclass(frozen=True)
-class SequenceSurrogateSetOpen:
-    """Mark a set opener whose target value is actually a sequence."""
+class SequenceSurrogateSetOpen(FixedOpen):
+    """Mark a fixed sequence opener whose set input is rejected.
 
-    opener: Callable[[list[Value]], str]
-
-    def __call__(self, items: list[Value], /) -> str:
-        """Delegate to the sequence-surrogate opener."""
-        return self.opener(items)
+    Public rendering rejects this configuration before calling the
+    opener, so it does not need content-dependent set inference.
+    """
 
 
 @beartype
 def sequence_surrogate_set_open(
-    opener: Callable[[list[Value]], str],
-    /,
+    *,
+    open_str: str,
 ) -> Callable[[list[Value]], str]:
-    """Mark *opener* as degrading set values to sequence values."""
-    return SequenceSurrogateSetOpen(opener=opener)
+    """Mark *open_str* as opening a sequence rather than a native set."""
+    return SequenceSurrogateSetOpen(open_str=open_str)
 
 
 @beartype
@@ -229,7 +227,7 @@ def _narrowed_type_name(
     type_name = None
     if inner is not None:
         type_name = element_to_type(inner)
-    if type_name is not None and len(type_name) > 0:
+    if type_name is not None:
         return type_name
     return fallback_type
 
@@ -580,7 +578,7 @@ class TypedOpenerConfig:
         dict_type_template: str | None,
         fallback_value_type: str | None,
         wide_int_type: str | None,
-        beyond_i64_type: str | None,
+        beyond_i64_type: str,
     ) -> None:
         """Initialize with scalar type mappings and template strings."""
         self._str_type = str_type
@@ -609,15 +607,10 @@ class TypedOpenerConfig:
         """Build a dict mapping Python types to language type names."""
         collected_entries: dict[type, str]
         effective_self: str | None
-        effective_self_2: str | None
         if self._wide_int_type is not None:
             effective_self = self._wide_int_type
         else:
             effective_self = self._int_type
-        if self._beyond_i64_type is not None:
-            effective_self_2 = self._beyond_i64_type
-        else:
-            effective_self_2 = self._int_type
         collected_collected_entries: dict[type, str] = {
             entry_py_type: entry_name
             for entry_py_type, entry_name in (
@@ -628,7 +621,7 @@ class TypedOpenerConfig:
                 (bytes, self._bytes_type),
                 (MixedNumeric, self._mixed_numeric_type),
                 (WideInt, effective_self),
-                (BeyondI64, effective_self_2),
+                (BeyondI64, self._beyond_i64_type),
                 (datetime.date, self._date_type),
                 (datetime.datetime, self._datetime_type),
                 (datetime.time, self._time_type),
@@ -781,15 +774,3 @@ class TypedOpenerConfig:
                 opener_template=(effective_opener_template),
             ),
         )
-
-
-@beartype
-def replace_optional_type_name(
-    *, template: str | None, placeholder: str, type_name: str
-) -> str | None:
-    """Substitute a configured type name while preserving an absent
-    hint.
-    """
-    if template is None:
-        return None
-    return template.replace(placeholder, type_name)

@@ -1419,7 +1419,7 @@ class Nim(metaclass=LanguageCls):
         """Set type options for Nim."""
 
         SET = SetFormatConfig(
-            set_open=sequence_surrogate_set_open(fixed_open(open_str="[")),
+            set_open=sequence_surrogate_set_open(open_str="["),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -1865,10 +1865,10 @@ class Nim(metaclass=LanguageCls):
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
-    @cached_property
-    def format_set_entry(self) -> Callable[[Value, str], str]:
-        """Format a set entry."""
-        return passthrough_set_entry
+    format_set_entry: ClassVar[Callable[[Value, str], str]] = staticmethod(
+        passthrough_set_entry
+    )
+    """Callable that formats a set entry."""
 
     @cached_property
     def _heterogeneous_variant_date_type(self) -> str:
@@ -2355,7 +2355,7 @@ class Nim(metaclass=LanguageCls):
             return dataclasses.replace(
                 self.set_format.value,
                 set_open=sequence_surrogate_set_open(
-                    fixed_open(open_str=f"{_NIM_JSON_MACRO}([")
+                    open_str=f"{_NIM_JSON_MACRO}(["
                 ),
                 close="])",
                 empty_set="newJArray()",
