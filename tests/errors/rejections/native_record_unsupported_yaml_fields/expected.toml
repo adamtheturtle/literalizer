@@ -1,0 +1,9 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableInputError]
+"Gleam['1: one\\n']" = "Gleam record mode cannot represent field 1"
+"Gleam['--- !!omap\\n- a: 1\\n']" = "Gleam record mode cannot represent ordered maps"
+"Gleam['--- !!set\\na:\\n']" = "Gleam record mode cannot represent set"
+"OCaml['1: one\\n']" = "OCaml record mode cannot represent field 1"
+"OCaml['--- !!omap\\n- a: 1\\n']" = "OCaml record mode cannot represent ordered maps"
+"OCaml['--- !!set\\na:\\n']" = "OCaml record mode cannot represent set"

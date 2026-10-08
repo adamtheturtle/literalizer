@@ -11,8 +11,8 @@ f _ = ()
 main : Program () () Never
 main =
     let
-        x : Val
-        x = EList [
+        ref_data : Val
+        ref_data = EList [
             EList [
                 EInt 1,
                 EInt 2
@@ -24,7 +24,7 @@ main =
             ]
         _ = f (EList [
         _ =     EList [
-        _ =         x
+        _ =         ref_data
         _ =         ]
         _ =     ])
     in

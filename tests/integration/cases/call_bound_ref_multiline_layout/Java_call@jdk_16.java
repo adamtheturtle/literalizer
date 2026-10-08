@@ -1,7 +1,7 @@
 class Main {
 static Object f(Object... args) { return null; }
     public static void main() {
-var x = new int[][]{
+var ref_data = new int[][]{
     new int[]{
         1,
         2
@@ -13,7 +13,7 @@ var x = new int[][]{
 };
 f(new int[][][][]{
     new int[][][]{
-        x
+        ref_data
     }
 });
     }

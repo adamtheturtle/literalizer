@@ -1,6 +1,5 @@
-import json
-var x = @[
+var refData = @[
     1,
     2
 ]
-var my_data = x
+var my_data = refData

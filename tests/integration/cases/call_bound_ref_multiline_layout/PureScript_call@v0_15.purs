@@ -7,8 +7,8 @@ data Val
     | PList (Array Val)
 f :: Val -> Unit
 f _ = unit
-x :: Val
-x = PList [
+ref_data :: Val
+ref_data = PList [
     PList [
         PInt 1,
         PInt 2
@@ -25,7 +25,7 @@ main =
     let
         _ = f (PList [
             PList [
-                x
+                ref_data
             ]
         ])
     in

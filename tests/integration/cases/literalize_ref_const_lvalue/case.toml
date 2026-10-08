@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{ kind = "modifier_present", modifier = "CONST" }]
+variable_modifiers = ["CONST"]
+
+[ref.value_sources]
+ref_data = "[1, 2]"
+
+[ref.explicit_ref_value_sources]
+ref_data = "1"

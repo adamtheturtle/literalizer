@@ -2,7 +2,7 @@
 int main(void) {
 @autoreleasepool {
 id my_data = @{
-    /* nested openers /* and {- remain */
+    /* nested openers / * and {- remain */
     @"x": @1,
 };
     (void)my_data;

@@ -1,5 +1,5 @@
 : f ;
-: x
+: ref_data
 +arr
     +arr
         1 +int
@@ -13,6 +13,6 @@
 ;
 +arr
     +arr
-        x
+        ref_data
      -arr
  -arr f

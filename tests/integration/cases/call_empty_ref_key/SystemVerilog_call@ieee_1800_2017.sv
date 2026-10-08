@@ -13,6 +13,6 @@ module main;
 task consume(input _VVal value); endtask
 initial begin
 static _VVal external_value = _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""};
-consume(external_value);
+void'(consume(external_value));
 end
 endmodule

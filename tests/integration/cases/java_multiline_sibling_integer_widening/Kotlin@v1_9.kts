@@ -1,5 +1,5 @@
 val my_data = mapOf<String, Any?>(
-    "a" to intArrayOf(
+    "a" to listOf<Any?>(
         1L,
     ),
     "b" to listOf<Any?>(

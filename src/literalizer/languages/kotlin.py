@@ -82,7 +82,7 @@ from literalizer._formatters.type_inference import (
     record_shape_for_dict,
     single_concrete_type,
 )
-from literalizer._heterogeneous import iter_wrapped_scalars
+from literalizer._heterogeneous import iter_wrapped_values
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -1114,7 +1114,6 @@ class Kotlin(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str]] = (
@@ -1164,6 +1163,28 @@ class Kotlin(metaclass=LanguageCls):
             "when",
             "while",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
+        - (
+            frozenset(
+                {
+                    "Any",
+                    "Array",
+                    "Boolean",
+                    "Double",
+                    "HashMap",
+                    "Int",
+                    "LinkedHashMap",
+                    "List",
+                    "Long",
+                    "Map",
+                    "MutableSet",
+                    "Set",
+                    "String",
+                }
+            )
+        )
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
@@ -1978,7 +1999,16 @@ class Kotlin(metaclass=LanguageCls):
         """Resolve the Kotlin array field type from its opener."""
         opener = self.sequence_open(value)
         if opener == "arrayOf(":
-            element = self._kotlin_value_field_type(value[0])
+            children = [
+                child
+                for item in value
+                if isinstance(item, list)
+                for child in item
+            ]
+            if all(isinstance(item, list) for item in value):
+                element = self._kotlin_list_field_type(value=children)
+            else:
+                element = self._kotlin_value_field_type(value[0])
             field_type = f"Array<{element}>"
         else:
             field_type = _kotlin_opener_to_type(opener)
@@ -2087,7 +2117,7 @@ class Kotlin(metaclass=LanguageCls):
         when there is nothing to widen, or when any widened scalar only
         has the ``Any?`` top type (a ``null`` value).
         """
-        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        scalars = iter_wrapped_values(data=data, wrap_ids=wrap_ids)
         if len(scalars) == 0:
             return None
         scalar_types = {
@@ -2115,7 +2145,6 @@ class Kotlin(metaclass=LanguageCls):
         if self.heterogeneous_strategy is cls.RECORD:
             strategy = build_record_strategy(
                 renderer=self._record_renderer,
-                split_conflicting_field_types=True,
                 widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open=None,
             )

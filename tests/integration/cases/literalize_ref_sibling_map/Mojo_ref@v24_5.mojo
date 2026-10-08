@@ -4,6 +4,6 @@ def main():
     }
     var my_data = List([
         {"k": 1},
-        sibling_map^,
+        sibling_map.copy(),
     ])
     _ = my_data

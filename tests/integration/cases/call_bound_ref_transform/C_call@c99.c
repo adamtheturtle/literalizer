@@ -16,7 +16,7 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 static CVal f(CVal _a0) { (void)_a0; return (CVal){0}; }
 int main(void) {
-CVal x = ((CVal){.i = 1});
-f(x);
+CVal ref_data = ((CVal){.i = 1});
+f(ref_data);
     return 0;
 }

@@ -52,11 +52,11 @@ from literalizer._formatters.format_strings import (
     make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
     RecordDeclarationField,
     RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
-    RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
 )
@@ -133,6 +133,33 @@ _format_string = make_backslash_string_formatter(
     quote_char="'",
     extra_replacements=[("$", "\\$"), ("\0", "\\x00")],
 )
+
+
+@beartype
+def _v_empty_array_rank(value: Value, /) -> int | None:
+    """Infer the rank of a uniform array tree containing only empty leaves."""
+    if not isinstance(value, list):
+        return None
+    if len(value) == 0:
+        return 1
+    ranks = {_v_empty_array_rank(item) for item in value}
+    if len(ranks) != 1:
+        return None
+    (rank,) = ranks
+    if rank is None:
+        return None
+    return rank + 1
+
+
+@beartype
+def _format_v_empty_array_entry(original: Value, formatted: str, /) -> str:
+    """Name the type of nested empty arrays that V cannot infer
+    together.
+    """
+    rank = _v_empty_array_rank(original)
+    if rank is None or rank == 1 or f"[]{_V_IFACE_NAME}{{}}" not in formatted:
+        return formatted
+    return f"{'[]' * rank}{_V_IFACE_NAME}({formatted})"
 
 
 @beartype
@@ -676,7 +703,7 @@ class V(metaclass=LanguageCls):
         re.Pattern[str] | None
     ] = None
     accepts_type_name_call_target = True
-    declares_type_name_call_target = True
+    declares_type_name_call_target = False
     dotted_call_root_shares_entrypoint_namespace = True
     reserved_bare_call_target_identifiers: ClassVar[frozenset[str]] = (
         frozenset()
@@ -1248,7 +1275,11 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
-        """Format a sequence entry."""
+        """Format an entry with an explicit rank for nested empty
+        arrays.
+        """
+        if self.heterogeneous_strategy.name == "ERROR":
+            return _format_v_empty_array_entry
         return passthrough_sequence_entry
 
     @cached_property
@@ -1382,11 +1413,10 @@ class V(metaclass=LanguageCls):
         )
 
     @cached_property
-    def _record_strategy(self) -> RecordStrategy:
+    def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
         )
@@ -1478,7 +1508,8 @@ class V(metaclass=LanguageCls):
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
-        """Append ``.clone()`` to the ref identifier, except for scalars.
+        """Append ``.clone()`` to collection refs, except for native
+        records.
 
         V's container types (arrays, maps) are not copied by direct
         assignment, so a ``$ref`` marker appearing on the right-hand
@@ -1494,9 +1525,14 @@ class V(metaclass=LanguageCls):
 
         def _clone(name: str, value: Value | None, /) -> str:
             """Return *name* with ``.clone()`` appended unless *value*
-            is a register-trivial scalar that V auto-copies.
+            is a scalar or native record that V auto-copies.
             """
-            if isinstance(value, bool | int | float):
+            if isinstance(value, bool | int | float) or (
+                isinstance(value, dict)
+                and self.heterogeneous_strategy.name == "RECORD"
+                and self._record_strategy.record_name_for_value(value)
+                is not None
+            ):
                 return name
             return f"{name}.clone()"
 

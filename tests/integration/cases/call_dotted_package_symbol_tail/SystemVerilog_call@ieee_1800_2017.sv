@@ -15,6 +15,6 @@ class HelperType_;
 endclass
 HelperType_ helper = new();
 initial begin
-helper.list(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""});
+void'(helper.list(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}));
 end
 endmodule

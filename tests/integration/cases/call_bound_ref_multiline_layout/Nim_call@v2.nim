@@ -1,6 +1,6 @@
 import json
 template f(args: varargs[untyped]) = discard
-var x = %* [
+var ref_data = %* [
     [
         1,
         2
@@ -12,6 +12,6 @@ var x = %* [
 ]
 f([
     [
-        x
+        ref_data
     ]
 ])

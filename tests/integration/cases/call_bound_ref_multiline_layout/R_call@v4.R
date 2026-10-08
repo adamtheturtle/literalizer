@@ -1,5 +1,5 @@
 f <- function(...) NULL
-x <- list(
+ref_data <- list(
     list(
         1,
         2
@@ -11,6 +11,6 @@ x <- list(
 )
 f(value = list(
     list(
-        x
+        ref_data
     )
 ))

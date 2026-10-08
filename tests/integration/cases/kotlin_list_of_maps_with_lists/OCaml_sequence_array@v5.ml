@@ -3,11 +3,11 @@ module Check = struct
 type val_t =
   | OInt of int
   | OStr of string
-  | OList of val_t list
+  | OArray of val_t array
   | OMap of (string * val_t) list
 let my_data : val_t array = [|
-    OMap [("a", [|OInt 1|])];
-    OMap [("a", [|OInt 2|])]
+    OMap [("a", OArray [|OInt 1|])];
+    OMap [("a", OArray [|OInt 2|])]
 |]
 
 end

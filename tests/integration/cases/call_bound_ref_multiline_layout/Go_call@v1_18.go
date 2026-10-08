@@ -2,7 +2,7 @@ package main
 func f(args ...any) any { return nil }
 
 func main() {
-x := [][]int{
+ref_data := [][]int{
 	[]int{
 		1,
 		2,
@@ -14,7 +14,7 @@ x := [][]int{
 }
 f([][][][]int{
 	[][][]int{
-		x,
+		ref_data,
 	},
 })
 }

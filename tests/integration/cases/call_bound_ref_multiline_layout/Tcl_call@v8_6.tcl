@@ -1,5 +1,5 @@
 proc f {args} {}
-set x [list \
+set ref_data [list \
     [list \
         1 \
         2 \
@@ -11,6 +11,6 @@ set x [list \
 ]
 f [list \
     [list \
-        x \
+        ref_data \
     ] \
 ]

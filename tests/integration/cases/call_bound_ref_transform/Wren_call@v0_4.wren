@@ -3,5 +3,5 @@ class F_ {
     call(a) {}
 }
 var f = F_.new()
-var x = 1
-f.call(x)
+var ref_data = 1
+f.call(ref_data)

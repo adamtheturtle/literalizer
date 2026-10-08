@@ -2,5 +2,5 @@
 -export([x/0]).
 f(_) -> undefined.
 x() ->
-    X = 1,
-    f(X).
+    Ref_data = 1,
+    f(Ref_data).

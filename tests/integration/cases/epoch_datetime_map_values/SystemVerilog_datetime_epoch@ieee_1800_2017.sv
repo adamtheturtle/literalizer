@@ -13,7 +13,7 @@ module main;
 initial begin
 static _VKV my_data[] = '{
     _VKV'{k: "within_i32", v: _VVal'{tag: _VVAL_INT, i: 1705320000, r: 0.0, s: ""}},
-    _VKV'{k: "beyond_i32", v: _VVal'{tag: _VVAL_INT, i: 4085195400, r: 0.0, s: ""}}
+    _VKV'{k: "beyond_i32", v: _VVal'{tag: _VVAL_INT, i: 64'sd4085195400, r: 0.0, s: ""}}
 };
 end
 endmodule

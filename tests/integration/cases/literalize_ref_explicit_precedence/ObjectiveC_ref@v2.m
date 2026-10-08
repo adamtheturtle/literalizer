@@ -1,11 +1,11 @@
 #import <Foundation/Foundation.h>
 int main(void) {
 @autoreleasepool {
-id x = @[
+id refData = @[
     @1,
     @2,
 ];
-id my_data = x;
+id my_data = refData;
     (void)my_data;
 }
     return 0;

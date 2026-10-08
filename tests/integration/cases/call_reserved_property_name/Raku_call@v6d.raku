@@ -1,3 +1,3 @@
 class FooType { method class(*@a, *%kw) {} }
-my $foo = FooType.new;
+my $foo = FooType.bless;
 $foo.class(1);

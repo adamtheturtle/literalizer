@@ -1,133 +1,114 @@
-"""Tests for intentionally incomplete literal fragments.
+"""TOML-driven public API tests for incomplete literal fragments.
 
-Every golden case wraps its value in a whole file, so a fragment
-rendered without its delimiters has no golden surface (issue #4699,
-and #3557 for the same gap on ``LiteralizeResult``).
+These fragments omit delimiters or reference externally declared names,
+so they cannot use the compiling whole-file golden suite. The manifest
+owns their sources, API arguments, and exact result expectations.
 """
 
-from __future__ import annotations
+from typing import Literal
 
 import pytest
+from pydantic import BaseModel, Field, TypeAdapter
 
-import literalizer
 from literalizer import (
-    InputFormat,
+    LiteralizeResult,
+    ValueInput,
     literalize,
     literalize_call,
 )
-from literalizer.languages import Cpp, OCaml, PureScript, Python, Rust
+from tests.integration.case_manifests import CallInputFormat, ManifestLanguage
+from tests.toml_cases import load_toml_cases
+
+type _ResultView = Literal["code", "bare_code"]
 
 
-def test_binary_without_sequence_delimiters() -> None:
-    """YAML binary renders when the enclosing sequence is omitted."""
+# Omitted TOML keys leave optional reference values and preamble checks unset.
+class _FragmentCase(  # noqa: NOD001
+    BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
+):
+    """Shared source, language, reference values, and result
+    expectations.
+    """
+
+    name: str
+    language: ManifestLanguage
+    source: str
+    input_format: CallInputFormat
+    expected: dict[_ResultView, str] = Field(min_length=1)
+    ref_values: dict[str, ValueInput] | None = None
+    expected_preamble: tuple[str, ...] | None = None
+
+
+class _LiteralCase(_FragmentCase, frozen=True):
+    """One delimiter and indentation configuration for a literal."""
+
+    pre_indent_level: int
+    include_delimiters: bool
+
+
+class _CallCase(_FragmentCase, frozen=True):
+    """One externally defined call target and its argument
+    configuration.
+    """
+
+    target_function: str
+    parameter_names: tuple[str, ...]
+    per_element: bool
+
+
+class _FragmentCases(BaseModel, extra="forbid", frozen=True):
+    """All declarative literal and call fragment cases."""
+
+    literals: tuple[_LiteralCase, ...]
+    calls: tuple[_CallCase, ...]
+
+
+_CASES = TypeAdapter(type=_FragmentCases).validate_python(
+    load_toml_cases(name="literalize_fragments"),
+)
+
+
+def _check_result(*, case: _FragmentCase, result: LiteralizeResult) -> None:
+    """Compare the declared result views and optional preamble
+    contract.
+    """
+    views = {"code": result.code, "bare_code": result.bare_code}
+    assert {name: views[name] for name in case.expected} == case.expected
+    if case.expected_preamble is not None:
+        assert result.preamble == case.expected_preamble
+
+
+@pytest.mark.parametrize(
+    argnames="case", argvalues=_CASES.literals, ids=lambda case: case.name
+)
+def test_literal_fragment(case: _LiteralCase) -> None:
+    """Each literal fragment preserves its manifest-owned expectations."""
     result = literalize(
-        source="- !!binary SGVsbG8=\n",
-        input_format=InputFormat.YAML,
-        language=Python(),
-        pre_indent_level=0,
-        include_delimiters=False,
+        source=case.source,
+        input_format=case.input_format,
+        language=case.language(),
+        pre_indent_level=case.pre_indent_level,
+        include_delimiters=case.include_delimiters,
         variable_form=None,
+        ref_key="$ref",
+        ref_values=case.ref_values,
     )
-    assert result.code == '"48656c6c6f",'
+    _check_result(case=case, result=result)
 
 
 @pytest.mark.parametrize(
-    argnames=("lang_cls", "expected"),
-    ids=["OCaml", "PureScript"],
-    argvalues=[
-        (
-            OCaml,
-            (
-                "type val_t =\n"
-                "  | OInt of int\n"
-                "  | OList of val_t list\n"
-                "let _ = Module.func(OInt 1)"
-            ),
-        ),
-        (
-            PureScript,
-            (
-                "data Val\n"
-                "    = PInt Int\n"
-                "    | PList (Array Val)\n"
-                "Module.func (PInt 1)"
-            ),
-        ),
-    ],
+    argnames="case", argvalues=_CASES.calls, ids=lambda case: case.name
 )
-def test_unwrapped_qualified_call_target(
-    *,
-    lang_cls: literalizer.LanguageCls,
-    expected: str,
-) -> None:
-    """A module-qualified call target renders as a bare fragment.
-
-    These languages spell a module with an initial capital, which their
-    declaration grammar refuses, so a wrapped file cannot declare the
-    target -- but the call itself is what the caller places in a module
-    that already imports it.  Elm is absent because it flattens a
-    dotted target into one identifier, and the flattened name is
-    capitalized and so not a value name at all (issue #4525).
-    """
+def test_call_fragment(case: _CallCase) -> None:
+    """Each call fragment preserves its manifest-owned expectations."""
     result = literalize_call(
-        source="- - 1\n",
-        input_format=InputFormat.YAML,
-        language=lang_cls(),
-        target_function="Module.func",
-        parameter_names=["a"],
-    )
-    assert result.code == expected
-
-
-@pytest.mark.parametrize(
-    argnames="ref_values",
-    argvalues=[
-        pytest.param(None, id="none"),
-        pytest.param({"zzz": 5}, id="unrelated"),
-    ],
-)
-def test_unresolved_ref_marker_leaves_no_preamble(
-    ref_values: dict[str, int] | None,
-) -> None:
-    """A marker with no value supplied asks for nothing of its own.
-
-    An unresolved marker is a bare identifier in the rendered code, so
-    the mapping it is written as must not reach preamble inference; and
-    an entry naming something else must not change what identical code
-    asks for (issue #4480).
-    """
-    result = literalize(
-        source='[{"$ref": "a"}, 1]',
-        input_format=InputFormat.JSON,
-        language=Rust(),
+        source=case.source,
+        input_format=case.input_format,
+        language=case.language(),
+        target_function=case.target_function,
+        parameter_names=case.parameter_names,
+        per_element=case.per_element,
         ref_key="$ref",
-        ref_values=ref_values,
+        ref_values=case.ref_values,
     )
-    assert result.bare_code == "vec![\n    a,\n    1,\n]"
-    assert len(result.preamble) == 0
-
-
-def test_ordered_map_argument_types_from_its_reference() -> None:
-    """An ordered map takes the type its reference holds.
-
-    A marker stands for a value declared elsewhere, so the ordered map
-    around it is written with that value's type rather than with the
-    marker's own mapping shape (issue #4732).  A golden would have to
-    wrap the call in a file, where the generated stub's parameter type
-    for an ordered map is a separate gap, so this stays an ordinary
-    test.
-    """
-    result = literalize_call(
-        source="- - !!omap\n    - m:\n        $ref: big_list\n",
-        input_format=InputFormat.YAML,
-        language=Cpp(),
-        target_function="process",
-        parameter_names=["a"],
-        per_element=True,
-        ref_key="$ref",
-        ref_values={"big_list": ["x"]},
-    )
-    assert result.bare_code == (
-        "process(std::vector<std::pair<std::string, "
-        'std::vector<std::string>>>{{"m", big_list}});'
-    )
+    _check_result(case=case, result=result)

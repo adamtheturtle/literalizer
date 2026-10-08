@@ -12,7 +12,7 @@ typedef struct {
 module main;
 initial begin
 static _VKV my_data[] = '{
-    /* nested openers /* and {- remain */
+    /* nested openers / * and {- remain */
     _VKV'{k: "x", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}}
 };
 end

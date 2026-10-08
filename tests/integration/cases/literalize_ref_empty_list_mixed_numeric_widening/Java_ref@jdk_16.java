@@ -1,7 +1,7 @@
 class Main {
     public static void main() {
-var emptyValues = new Object[]{};
-var integerValues = new int[]{
+var emptyValues = new double[]{};
+var integerValues = new double[]{
     1
 };
 var floatValues = new double[]{

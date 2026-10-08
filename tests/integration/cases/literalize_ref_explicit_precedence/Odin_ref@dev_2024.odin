@@ -2,10 +2,10 @@
 package main
 
 main :: proc() {
-x := [dynamic]any{
+ref_data := [dynamic]any{
 	1,
 	2,
 }
-my_data := x
+my_data := ref_data
 _ = my_data
 }

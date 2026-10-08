@@ -7,8 +7,8 @@ Val : [
 f : a -> {}
 f = \_ -> {}
 
-x : Val
-x = RList [
+ref_data : Val
+ref_data = RList [
     RList [
         RInt 1i128,
         RInt 2i128,
@@ -21,7 +21,7 @@ x = RList [
 main =
     dbg (f (RList [
         RList [
-            x,
+            ref_data,
         ],
     ]))
     {}

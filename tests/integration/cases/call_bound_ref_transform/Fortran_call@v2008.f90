@@ -83,9 +83,9 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    type(fval_t) :: x
-    x = fint(1_int64)
-    call f(x)
+    type(fval_t) :: ref_data
+    ref_data = fint(1_int64)
+    call f(ref_data)
 contains
     function f(a) result(r)
         implicit none

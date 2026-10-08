@@ -1,5 +1,5 @@
-x <- list(
+ref_data <- list(
     1,
     2
 )
-my_data <- x
+my_data <- ref_data

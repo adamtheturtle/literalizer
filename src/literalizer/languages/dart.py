@@ -550,7 +550,6 @@ class Dart(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_call_parameter_identifier_pattern: ClassVar[re.Pattern[str]] = (
         _DART_PRIVATE_NAME
     )
@@ -637,6 +636,28 @@ class Dart(metaclass=LanguageCls):
             "with",
             "yield",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
+        - (
+            frozenset(
+                {
+                    "BigInt",
+                    "DateTime",
+                    "List",
+                    "Map",
+                    "Null",
+                    "Set",
+                    "String",
+                    "bool",
+                    "double",
+                    "dynamic",
+                    "int",
+                    "main",
+                    "num",
+                }
+            )
+        )
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

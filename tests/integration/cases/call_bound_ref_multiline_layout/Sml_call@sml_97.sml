@@ -2,7 +2,7 @@ datatype val_t =
     SInt of LargeInt.int
   | SList of val_t list
 fun f _ = ()
-val x : val_t = SList [
+val ref_data : val_t = SList [
     SList [
         SInt 1,
         SInt 2
@@ -14,6 +14,6 @@ val x : val_t = SList [
 ]
 val _ = f(SList [
     SList [
-        x
+        ref_data
     ]
 ])

@@ -1,7 +1,7 @@
-def f(value: List[List[List[Int]]]):
+def f(value: List[List[List[List[Int]]]]):
     pass
 def main():
-    var x = List([
+    var ref_data = List([
         List([
             1,
             2,
@@ -13,6 +13,6 @@ def main():
     ])
     f(List([
         List([
-            x,
+            ref_data.copy(),
         ]),
     ]))

@@ -1,7 +1,7 @@
 defmodule Check do
   def f(_value), do: nil
   def x do
-    x = [
+    ref_data = [
         [
             1,
             2,
@@ -13,7 +13,7 @@ defmodule Check do
     ]
     f([
         [
-            x,
+            ref_data,
         ],
     ])
   end

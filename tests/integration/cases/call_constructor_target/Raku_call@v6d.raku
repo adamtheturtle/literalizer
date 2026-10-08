@@ -1,3 +1,3 @@
 class PlaylistType { method new(*@a, *%kw) {} }
-my $Playlist = PlaylistType.new;
+my $Playlist = PlaylistType.bless;
 $Playlist.new(1);

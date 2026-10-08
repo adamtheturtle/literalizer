@@ -109,6 +109,7 @@ dev = [
     # well as in the ``release`` extra (used by the release workflow).
     "sphinxcontrib-towncrier==0.5.0a0",
     "strict-kwargs==2026.8.28.post2",
+    "tenacity==9.1.4",
     "towncrier==26.9.0",
     # ``tree-sitter`` resolves the ``tree-sitter-norg`` grammar for the
     # ``Norg roundtrip`` check (``scripts/run_norg_roundtrip.py``);
@@ -200,6 +201,8 @@ lint.per-file-ignores."scripts/*.py" = [
     # Runner scripts intentionally execute explicitly selected toolchains.
     "S603",
 ]
+# Tooling regressions use the same assertion policy as package tests.
+lint.per-file-ignores."scripts/tests/test_*.py" = [ "S101" ]
 lint.per-file-ignores."tests/**/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",

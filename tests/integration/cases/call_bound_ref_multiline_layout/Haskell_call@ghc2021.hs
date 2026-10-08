@@ -10,8 +10,8 @@ instance Num Val where
     negate _ = error "not implemented"
 f :: Val -> IO ()
 f _ = return ()
-x :: Val
-x = HList [
+ref_data :: Val
+ref_data = HList [
     HList [
         1,
         2
@@ -24,8 +24,8 @@ x = HList [
 main :: IO ()
 main = do
     _ <- f (HList [
-    _ <-     HList [
-    _ <-         x
-    _ <-         ]
-    _ <-     ])
+        HList [
+            ref_data
+            ]
+        ])
     pure ()

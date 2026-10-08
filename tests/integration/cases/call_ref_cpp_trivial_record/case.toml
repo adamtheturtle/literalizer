@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = true
+variant_only = true
+ref_declarations = { item = '{"value":1}' }
+consumable_refs = ["item"]
+
+[[call.variants]]
+axis = "heterogeneous_strategy_record"

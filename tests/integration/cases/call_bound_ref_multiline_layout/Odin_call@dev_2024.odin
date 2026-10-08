@@ -3,7 +3,7 @@ package main
 f :: proc(args: ..any) -> any { return nil }
 
 main :: proc() {
-x := [dynamic]any{
+ref_data := [dynamic]any{
 	[dynamic]any{
 		1,
 		2,
@@ -15,7 +15,7 @@ x := [dynamic]any{
 }
 f([dynamic]any{
 	[dynamic]any{
-		x,
+		ref_data,
 	},
 });
 }

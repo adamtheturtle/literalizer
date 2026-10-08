@@ -83,11 +83,11 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    type(fval_t) :: x
+    type(fval_t) :: ref_data
     type(fval_t) :: my_data
-    x = flist([fval_t :: &
+    ref_data = flist([fval_t :: &
         fint(1_int64), &
         fint(2_int64) &
     ])
-    my_data = x
+    my_data = ref_data
 end program main

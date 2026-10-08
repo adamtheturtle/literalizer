@@ -8,12 +8,12 @@ instance Num Val where
     signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-x :: Val
-x = HList [
+refData :: Val
+refData = HList [
     1,
     2
     ]
 my_data :: Val
-my_data = x
+my_data = refData
 main :: IO ()
 main = seq my_data (return ())

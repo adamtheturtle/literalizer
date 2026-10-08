@@ -14,7 +14,7 @@ function _VVal f(input _VVal a);
     f = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""};
 endfunction
 initial begin
-static _VVal x = _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""};
-f(x);
+static _VVal ref_data = _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""};
+void'(f(ref_data));
 end
 endmodule

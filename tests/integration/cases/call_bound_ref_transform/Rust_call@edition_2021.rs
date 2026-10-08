@@ -1,5 +1,5 @@
 fn main() {
     fn f<A>(_a: A) {}
-    let x = 1;
-    f(x);
+    let ref_data = 1;
+    f(ref_data);
 }

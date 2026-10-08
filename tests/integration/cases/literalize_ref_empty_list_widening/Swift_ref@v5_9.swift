@@ -1,4 +1,4 @@
-let emptyValues = []
+let emptyValues: [Any] = []
 let integerValues = [
     1,
 ]

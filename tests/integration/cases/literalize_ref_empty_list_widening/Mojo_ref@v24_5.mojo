@@ -4,7 +4,7 @@ def main():
         1,
     ])
     var my_data = List([
-        empty_values^,
-        integer_values^,
+        empty_values.copy(),
+        integer_values.copy(),
     ])
     _ = my_data

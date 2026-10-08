@@ -1,6 +1,6 @@
 using System;
-var X = (
+var RefData = (
     1,
     2
 );
-var my_data = X;
+var my_data = RefData;

@@ -611,7 +611,6 @@ class D(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
@@ -721,6 +720,9 @@ class D(metaclass=LanguageCls):
             "while",
             "with",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
@@ -839,9 +841,7 @@ class D(metaclass=LanguageCls):
         """Set type options for D."""
 
         SET = SetFormatConfig(
-            set_open=sequence_surrogate_set_open(
-                fixed_open(open_str="JSONValue([")
-            ),
+            set_open=sequence_surrogate_set_open(open_str="JSONValue(["),
             close="])",
             empty_set=_D_EMPTY_JSON_ARRAY,
             preamble_lines=(),
@@ -1379,11 +1379,23 @@ class D(metaclass=LanguageCls):
     @cached_property
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
-        return build_record_strategy(
+        strategy = build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open="JSONValue([",
+        )
+
+        def _wrap_non_scalar(raw_value: Value, formatted: str) -> str:
+            """Convert a fallback-map array value to its JSON carrier."""
+            if isinstance(raw_value, list) and len(raw_value) == 0:
+                return _D_EMPTY_JSON_ARRAY
+            return f"JSONValue({formatted})"
+
+        return dataclasses.replace(
+            strategy,
+            behavior=dataclasses.replace(
+                strategy.behavior, wrap_non_scalar=_wrap_non_scalar
+            ),
         )
 
     @cached_property

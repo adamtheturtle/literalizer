@@ -1,5 +1,5 @@
 function f(...) end
-local x = {
+local ref_data = {
     {
         1,
         2,
@@ -11,6 +11,6 @@ local x = {
 }
 f({
     {
-        x,
+        ref_data,
     },
 })

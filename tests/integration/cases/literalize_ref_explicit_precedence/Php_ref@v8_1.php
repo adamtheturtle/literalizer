@@ -1,6 +1,6 @@
 <?php
-$x = [
+$ref_data = [
     1,
     2,
 ];
-$my_data = $x;
+$my_data = $ref_data;

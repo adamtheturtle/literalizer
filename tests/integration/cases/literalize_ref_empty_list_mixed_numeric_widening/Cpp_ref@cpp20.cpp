@@ -2,8 +2,8 @@
 #include <vector>
 #include <cstddef>
 int main() {
-auto empty_values = std::vector<std::nullptr_t>{};
-auto integer_values = std::vector<int>{
+auto empty_values = std::vector<double>{};
+auto integer_values = std::vector<double>{
     1,
 };
 auto float_values = std::vector<double>{

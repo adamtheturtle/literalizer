@@ -42,6 +42,7 @@ from literalizer._comments_resolve import (
 )
 from literalizer._dictionary_keys import dictionary_key_formatter
 from literalizer._document_formatting import format_document_fast
+from literalizer._formatters.format_dates import datetime_epoch_seconds
 from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
@@ -436,6 +437,22 @@ def _format_scalar_integer(
 
 
 @beartype
+def _format_scalar_datetime(
+    *,
+    value: datetime.datetime,
+    spec: Language,
+    int_formatter: Callable[[int], str] | None,
+) -> str:
+    """Format a datetime with the selected epoch override."""
+    if (
+        int_formatter is not None
+        and spec.datetime_format.value.type_produced is int
+    ):
+        return int_formatter(datetime_epoch_seconds(value=value))
+    return spec.format_datetime(value)
+
+
+@beartype
 def _format_scalar(
     *,
     value: Scalar,
@@ -467,7 +484,9 @@ def _format_scalar(
         case bytes():
             result = spec.format_bytes(value)
         case datetime.datetime():
-            result = spec.format_datetime(value)
+            result = _format_scalar_datetime(
+                value=value, spec=spec, int_formatter=int_formatter
+            )
         case datetime.time():
             result = spec.format_time(value)
         case _:
@@ -541,6 +560,13 @@ def _map_widened_int_formatter(
     """
     if not spec.pools_map_integer_width:
         return None
+    if spec.datetime_format.value.type_produced is int:
+        items = [
+            datetime_epoch_seconds(value=value)
+            if isinstance(value, datetime.datetime)
+            else value
+            for value in items
+        ]
     return _widened_int_formatter(items=items, spec=spec)
 
 
@@ -2044,6 +2070,18 @@ def _compute_sequence_open_override(
     if len(openers) <= 1:
         return None
 
+    pooled = [item for sibling in lists for item in sibling]
+    if infer_element_type(items=pooled) in {
+        int,
+        WideInt,
+        BeyondI64,
+        float,
+        MixedNumeric,
+    }:
+        numeric_opener = spec.sequence_open(pooled)
+        if numeric_opener == spec.sequence_open(pooled + pooled):
+            return numeric_opener
+
     fallback = spec.sequence_open([])
     if fallback != spec.sequence_open(_FALLBACK_PROBE):
         normalized_lists = replace_positional_empty_lists(lists=lists)
@@ -2089,10 +2127,19 @@ def _accumulate_sequence_open_overrides(
     if len(lists) <= 1:
         return
     normalized = replace_positional_empty_lists(lists=lists)
-    if normalized != lists:
+    pooled = [item for sibling in lists for item in sibling]
+    numeric = infer_element_type(items=pooled) in {
+        int,
+        WideInt,
+        BeyondI64,
+        float,
+        MixedNumeric,
+    } and spec.sequence_open(pooled) == spec.sequence_open(pooled + pooled)
+    if numeric or normalized != lists:
         opener = _compute_sequence_open_override(items=lists, spec=spec)
         if opener is not None and (
-            spec.sequence_open([]) != spec.sequence_open(_FALLBACK_PROBE)
+            numeric
+            or spec.sequence_open([]) != spec.sequence_open(_FALLBACK_PROBE)
         ):
             for sibling in lists:
                 _ = out.setdefault(id(sibling), opener)
@@ -2552,6 +2599,7 @@ def _wrap_body(
     spec: Language,
     line_prefix: str,
     dict_open_override: str | None,
+    sequence_open_override: str | None,
 ) -> str:
     """Wrap ``body`` in the language's open/close delimiters."""
     ci = ""
@@ -2583,7 +2631,10 @@ def _wrap_body(
         case _:
             sequence_cfg = spec.sequence_format_config
             template = sequence_cfg.single_element_template
-            if template is not None and len(data) == 1:
+            if sequence_open_override is not None:
+                open_str = sequence_open_override
+                close_str = sequence_cfg.close
+            elif template is not None and len(data) == 1:
                 open_str, _, close_str = template.partition("{items}")
             else:
                 open_str = spec.sequence_open(data)
@@ -3578,8 +3629,6 @@ def _build_render_context(
         ref_key=ref_key,
     )
     alias_record_ids = language.heterogeneous_behavior.alias_record_ids
-    if alias_record_ids is not None:
-        alias_record_ids(inference_id_map)
     wrap_ids = _source_container_ids(
         inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
         id_map=inference_id_map,
@@ -3589,6 +3638,8 @@ def _build_render_context(
         # language's type-inference cache. Restore the composition-wide record
         # context before any opener or field type reads that cache.
         check_data(data=record_context_data, spec=language)
+    if alias_record_ids is not None:
+        alias_record_ids(inference_id_map)
     tuple_list_ids = _source_container_ids(
         inferred_ids=_compute_tuple_list_ids(
             data=inference_data,
@@ -3765,6 +3816,7 @@ def _prepare_root_render(
 
     if (
         ref_key is _DISABLED_REF_KEY
+        and record_context_data is None
         and raw_yaml_data is None
         and toml_comment_doc is None
     ):
@@ -3839,6 +3891,7 @@ def _format_root_collection(
         spec=language,
         line_prefix=line_prefix,
         dict_open_override=ctx.dict_open_overrides.get(id(data)),
+        sequence_open_override=ctx.sequence_open_overrides.get(id(data)),
     )
 
 
@@ -3918,6 +3971,12 @@ def _literalize_impl(
             ref_value = None
             if ref_values is not None:
                 ref_value = ref_values.get(raw_ref_name)
+            if ref_value is not None:
+                compute_record_shapes = (
+                    language.heterogeneous_behavior.compute_record_shapes
+                )
+                if compute_record_shapes is not None:
+                    _ = compute_record_shapes(ref_value)
             identifier = language.format_call_ref_identifier(
                 ref_name, ref_value
             )
@@ -4098,6 +4157,18 @@ class _ReferenceBindingLanguage(Protocol):
     """A language with binding syntax for an already rendered
     reference.
     """
+
+    def reference_binding_data_dependent_preamble(
+        self, data: Value, /
+    ) -> tuple[str, ...]:
+        """Return imports needed for an identifier binding."""
+        ...
+
+    def reference_declaration_imports(
+        self, entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Retain imports used by already rendered declarations."""
+        ...
 
     def format_reference_variable_declaration(
         self,
@@ -4705,6 +4776,14 @@ def literalize_apply_form(
     data_dependent_preamble = language.data_dependent_preamble(
         pre_form.data_for_preamble
     )
+    if _extract_call_arg_ref_name(
+        value=pre_form.data, ref_key=pre_form.active_ref_key
+    ) is not None and isinstance(language, _ReferenceBindingLanguage):
+        data_dependent_preamble = (
+            language.reference_binding_data_dependent_preamble(
+                pre_form.data_for_preamble
+            )
+        )
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
@@ -5030,6 +5109,10 @@ def literalize_bound_refs(
         wrap_in_file=True,
         bound_ref_names=frozenset(bound_refs),
     )
+    used_ref_names = _collect_ref_names(
+        value=pre_form.data, ref_key=pre_form.active_ref_key
+    )
+    ordered_names = [name for name in ordered_names if name in used_ref_names]
     declaration_form = variable_form
     if isinstance(declaration_form, BothVariableForms):
         declaration_form = NewVariable(
@@ -5149,7 +5232,13 @@ def _literalize_value_binding(
         language=language,
         has_variable_declaration=True,
     )
-    data_dependent_preamble = language.data_dependent_preamble(value)
+    preamble_data = value
+    if (
+        record_context_data is not None
+        and language.heterogeneous_behavior.render_record_literal is not None
+    ):
+        preamble_data = record_context_data
+    data_dependent_preamble = language.data_dependent_preamble(preamble_data)
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
@@ -5246,8 +5335,17 @@ def _compose_bound_refs(
         if entry not in d.data_dependent_preamble
         or entry in unified_data_dependent_entries
     )
+    reference_imports: tuple[str, ...] = ()
+    if isinstance(language, _ReferenceBindingLanguage):
+        reference_imports = language.reference_declaration_imports(
+            tuple(
+                entry
+                for declaration in decl_results
+                for entry in declaration.data_dependent_preamble
+            )
+        )
     all_preamble = deduplicate_preamble_entries(
-        entries=declaration_preamble + main_result.preamble
+        entries=declaration_preamble + reference_imports + main_result.preamble
     )
     scoped = _scope_preamble_for_wrap(
         language=language,
@@ -5679,6 +5777,16 @@ def _compute_call_arg_ref_consume_inhibited_names(
     """
     if len(ref_values) == 0:
         return frozenset[str]()
+    compute_record_shapes = (
+        language.heterogeneous_behavior.compute_record_shapes
+    )
+    if compute_record_shapes is not None:
+        resolved_values = _resolve_ref_list_for_preamble(
+            values=elements,
+            ref_values=ref_values,
+            ref_key=ref_key,
+        )
+        _ = compute_record_shapes(resolved_values)
     inhibits = language.consumable_ref_value_inhibits_consuming_form
     referenced: set[str] = set()
     for element in elements:
@@ -7427,8 +7535,7 @@ def _compose_call_with_bound_ref_declarations(
         sections=(),
         data_dependent_preamble=data_dependent_preamble,
     )
-    stub_arg_values: Sequence[Value]
-    stub_arg_values = [data_for_preamble]
+    stub_arg_values: Sequence[Value] = [[data_for_preamble]]
     if per_element and isinstance(data_for_preamble, list):
         stub_arg_values = data_for_preamble
     collected_decl_results: list[LiteralizeResult] = []
@@ -8078,6 +8185,12 @@ def literalize_call_parsed(
         values=bound_refs,
         argument_name="bound_refs",
     )
+    used_ref_names = _collect_ref_names(value=data, ref_key=ref_key)
+    materialized_bound_refs = {
+        name: value
+        for name, value in materialized_bound_refs.items()
+        if name in used_ref_names
+    }
     materialized_ref_values: Mapping[str, Value] = {
         **materialized_bound_refs,
         **explicit_ref_values,

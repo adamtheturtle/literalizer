@@ -2,7 +2,7 @@ using System;
 class Check {
 static object f(object value = null) => null;
     public static void Main() {
-var x = (
+var ref_data = (
     (
         1,
         2
@@ -14,7 +14,7 @@ var x = (
 );
 f(ValueTuple.Create(
     ValueTuple.Create(
-        x
+        ref_data
     )
 ));
     }

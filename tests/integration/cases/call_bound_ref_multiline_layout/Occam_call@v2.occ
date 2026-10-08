@@ -15,7 +15,7 @@ PROC f (VAL MOBILE LIT value)
     SKIP
 :
 PROC main ()
-    VAL MOBILE LIT x IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+    VAL MOBILE LIT ref_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
         MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
             MOBILE LIT(lit.int; 1),
             MOBILE LIT(lit.int; 2)
@@ -27,7 +27,7 @@ PROC main ()
     ]):
     f(MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
         MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
-            x
+            ref_data
         ])
     ]))
     SEQ

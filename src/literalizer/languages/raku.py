@@ -175,7 +175,7 @@ def _raku_call_stub(
         cls = root.capitalize() + "Type"
         return (
             f"class {cls} {{ method {method}(*@a, *%kw) {{}} }}",
-            f"my ${root} = {cls}.new;",
+            f"my ${root} = {cls}.bless;",
         )
     lines: list[str] = []
     inner_cls = fields[-1].capitalize() + "Type"
@@ -184,13 +184,15 @@ def _raku_call_stub(
     for i in range(len(fields) - 2, -1, -1):
         cls = fields[i].capitalize() + "Type"
         field = fields[i + 1]
-        lines.append(f"class {cls} {{ method {field} {{ {prev_cls}.new }} }}")
+        lines.append(
+            f"class {cls} {{ method {field} {{ {prev_cls}.bless }} }}"
+        )
         prev_cls = cls
     root_cls = root.capitalize() + "Type"
     lines.append(
-        f"class {root_cls} {{ method {fields[0]} {{ {prev_cls}.new }} }}"
+        f"class {root_cls} {{ method {fields[0]} {{ {prev_cls}.bless }} }}"
     )
-    lines.append(f"my ${root} = {root_cls}.new;")
+    lines.append(f"my ${root} = {root_cls}.bless;")
     return tuple(lines)
 
 
@@ -493,7 +495,7 @@ class Raku(metaclass=LanguageCls):
         """Set type options for Raku."""
 
         SET = SetFormatConfig(
-            set_open=sequence_surrogate_set_open(fixed_open(open_str="[")),
+            set_open=sequence_surrogate_set_open(open_str="["),
             close="]",
             empty_set=None,
             preamble_lines=(),
@@ -804,10 +806,10 @@ class Raku(metaclass=LanguageCls):
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
-    @cached_property
-    def format_set_entry(self) -> Callable[[Value, str], str]:
-        """Format a set entry."""
-        return passthrough_set_entry
+    format_set_entry: ClassVar["staticmethod[[Value, str], str]"] = (
+        staticmethod(passthrough_set_entry)
+    )
+    """Callable that formats a set entry."""
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

@@ -4,7 +4,7 @@ type val_t =
   | OInt of int
   | OList of val_t list
 let f _ = ()
-let x : val_t = OList [
+let ref_data : val_t = OList [
     OList [
         OInt 1;
         OInt 2
@@ -16,7 +16,7 @@ let x : val_t = OList [
 ]
 let _ = f(OList [
     OList [
-        x
+        ref_data
     ]
 ])
 

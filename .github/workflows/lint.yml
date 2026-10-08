@@ -23,6 +23,7 @@ concurrency:
 jobs:
   pre-commit:
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.12', '3.13', '3.14']
         # We select hooks by prek group (defined via ``groups:`` in
@@ -1083,7 +1084,7 @@ jobs:
           while IFS= read -r -d '' f; do
             elm-format --stdin < "$f" > /dev/null || exit 1
           done < /tmp/files-elm
-          xargs -0 uv run --no-project python -m scripts.check_elm_syntax < /tmp/files-elm
+          xargs -0 uv run python -m scripts.check_elm_syntax < /tmp/files-elm
 
   # Elm runtime check. Sibling to `lint-elm` so the compile + Node
   # execute pass runs in parallel with the format + compile-only pass.
@@ -1119,7 +1120,7 @@ jobs:
       - name: Run Elm
         run: |-
           find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
-          xargs -0 uv run --no-project python -m scripts.run_elm < /tmp/files-elm
+          xargs -0 uv run python -m scripts.run_elm < /tmp/files-elm
       # Basic JSON -> Elm -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `elm` binary (from the
       # npm-linters install above) and Node 22 already on PATH; `uv run`
@@ -1858,6 +1859,7 @@ jobs:
 
   lint-cpp-tidy:
     strategy:
+      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
@@ -2002,6 +2004,7 @@ jobs:
 
   lint-cpp:
     strategy:
+      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
@@ -2212,12 +2215,17 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
+          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
+            swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
-        run: xargs -0 -P "$(nproc)" -n1 swift -swift-version 5 -warnings-as-errors
-          < /tmp/files-to-lint
+        run: |-
+          cat > /tmp/run-swift.sh <<'SCRIPT'
+          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
+            swift -swift-version 5 -warnings-as-errors "$1"
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-swift.sh < /tmp/files-to-lint
       # `uv` is needed by the `Swift roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv

@@ -12,6 +12,6 @@ typedef struct {
 module main;
 task process(input _VVal data); endtask
 initial begin
-process(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""});
+void'(process(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}));
 end
 endmodule

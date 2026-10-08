@@ -1,5 +1,5 @@
-def x = [
+def refData = [
     1,
     2,
 ]
-def my_data = x
+def my_data = refData

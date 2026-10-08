@@ -12,6 +12,6 @@ typedef struct {
 module main;
 task f(input _VVal a); endtask
 initial begin
-f(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}"});  // note
+void'(f(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}"}));  // note
 end
 endmodule

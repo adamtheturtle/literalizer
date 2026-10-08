@@ -1,4 +1,4 @@
 def my_data = [
-    /* nested openers /* and {- remain */
+    /* nested openers / * and {- remain */
     "x": 1,
 ]

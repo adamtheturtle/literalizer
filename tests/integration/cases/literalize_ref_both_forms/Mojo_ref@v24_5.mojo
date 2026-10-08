@@ -4,10 +4,10 @@ def main():
         2,
     ])
     var my_data = {
-        "a": shared^,
+        "a": shared.copy(),
     }
     _ = my_data
     my_data = {
-        "a": shared^,
+        "a": shared.copy(),
     }
     _ = my_data

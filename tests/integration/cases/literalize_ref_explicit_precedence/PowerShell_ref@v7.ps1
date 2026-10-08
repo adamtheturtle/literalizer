@@ -1,5 +1,5 @@
-$X = @(
+$RefData = @(
     1;
     2
 )
-$my_data = $X
+$my_data = $RefData

@@ -2,6 +2,6 @@ interface ICallArg_ {}
 fn f(args ...ICallArg_) ICallArg_ { return 0 }
 
 fn main() {
-	x := 1
-	f(x);
+	ref_data := 1
+	f(ref_data);
 }

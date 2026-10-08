@@ -1,7 +1,7 @@
 with A_Stub; use A_Stub;
 procedure Main is
     procedure F (Value : A_Val) is begin null; end F;
-    x : A_Val := AList'[
+    ref_data : A_Val := AList'[
         AList'[
             AInt (1),
             AInt (2)
@@ -14,7 +14,7 @@ procedure Main is
 begin
     F(value => AList'[
         AList'[
-            x
+            ref_data
         ]
     ]);
 end Main;

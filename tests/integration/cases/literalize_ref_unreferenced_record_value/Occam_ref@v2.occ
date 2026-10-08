@@ -12,7 +12,6 @@ MOBILE DATA TYPE LIT IS
 :
 
 PROC main ()
-    VAL MOBILE LIT OTHER IS "true":
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
         MOBILE LIT(lit.pair; MOBILE []BYTE "main"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "x"; MOBILE LIT(lit.int; 1)), MOBILE LIT(lit.pair; MOBILE []BYTE "y"; MOBILE LIT(lit.str; MOBILE []BYTE "s"))]))
     ]):

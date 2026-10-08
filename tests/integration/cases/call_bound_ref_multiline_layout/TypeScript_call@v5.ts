@@ -1,5 +1,5 @@
 const f: any = () => {};
-const x = [
+const ref_data = [
   [
     1,
     2,
@@ -11,7 +11,7 @@ const x = [
 ];
 f({ value: [
   [
-    x,
+    ref_data,
   ],
 ] });
 export {};

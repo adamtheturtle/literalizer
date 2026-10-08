@@ -1,6 +1,6 @@
 object Fixture_call_bound_ref_multiline_layout_Scala_call {
 def f(value: Any = null): Any = null
-val x = List[List[Int]](
+val ref_data = List[List[Int]](
     List[Int](
         1,
         2,
@@ -12,7 +12,7 @@ val x = List[List[Int]](
 )
 f(value = List[List[List[List[Int]]]](
     List[List[List[Int]]](
-        x,
+        ref_data,
     ),
 ))
 }

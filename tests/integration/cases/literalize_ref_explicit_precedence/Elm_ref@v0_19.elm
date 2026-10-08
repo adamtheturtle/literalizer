@@ -6,10 +6,10 @@ type Val
     | EList (List Val)
 
 
-x : Val
-x = EList [
+refData : Val
+refData = EList [
     EInt 1,
     EInt 2
     ]
 my_data : Val
-my_data = x
+my_data = refData

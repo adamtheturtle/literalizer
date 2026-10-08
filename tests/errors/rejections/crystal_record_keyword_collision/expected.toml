@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Crystal = "cannot represent the dict key 'end_' under the RECORD heterogeneous strategy: its field identifier 'end_' collides with another key in the same record"

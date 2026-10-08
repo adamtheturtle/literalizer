@@ -1,5 +1,5 @@
 def f(*a); end
-x = [
+ref_data = [
   [
     1,
     2,
@@ -11,6 +11,6 @@ x = [
 ]
 f(value: [
   [
-    x,
+    ref_data,
   ],
 ])

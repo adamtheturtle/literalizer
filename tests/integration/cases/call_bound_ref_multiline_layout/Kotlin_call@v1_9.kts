@@ -1,5 +1,5 @@
 fun f(value: Any? = null): Any? = null
-val x = arrayOf(
+val ref_data = arrayOf(
     intArrayOf(
         1,
         2,
@@ -11,6 +11,6 @@ val x = arrayOf(
 )
 f(value = arrayOf(
     arrayOf(
-        x,
+        ref_data,
     ),
 ))

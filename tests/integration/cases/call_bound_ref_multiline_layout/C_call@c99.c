@@ -16,7 +16,7 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 static void f(CVal _a0) { (void)_a0; }
 int main(void) {
-CVal x = ((CVal){.a = (CVal[]){
+CVal ref_data = ((CVal){.a = (CVal[]){
     ((CVal){.a = (CVal[]){
         ((CVal){.i = 1}),
         ((CVal){.i = 2}),
@@ -28,7 +28,7 @@ CVal x = ((CVal){.a = (CVal[]){
 }});
 f(((CVal){.a = (CVal[]){
     ((CVal){.a = (CVal[]){
-        x,
+        ref_data,
     }}),
 }}));
     return 0;

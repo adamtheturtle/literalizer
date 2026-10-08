@@ -5,7 +5,7 @@ class Record1:
     k: tuple[bool, ...]
 @dataclasses.dataclass(frozen=True)
 class Record0:
-    h: tuple[int | str | tuple[int | str, ...] | dict[str, tuple[bool, ...]], ...]
+    h: tuple[int | str | tuple[int | str, ...] | Record1, ...]
 my_data = Record0(
     h=(
         1,

@@ -12,7 +12,7 @@ typedef struct {
 module main;
 task DoThing(input _VVal x); endtask
 initial begin
-DoThing(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""});
-DoThing(_VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""});
+void'(DoThing(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}));
+void'(DoThing(_VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""}));
 end
 endmodule

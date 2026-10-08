@@ -42,12 +42,11 @@ struct Value {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
-using LiteralizerRecordValue = Value;
-struct Record0 { std::map<std::string, LiteralizerRecordValue> input; };
+struct Record0 { std::map<std::string, std::nullptr_t> input; };
 int main() {
 auto my_data = std::vector<Record0>{
-    Record0{{{"a", Value{nullptr}}}},
-    Record0{{{"b", Value{nullptr}}}},
+    Record0{{{"a", nullptr}}},
+    Record0{{{"b", nullptr}}},
 };
     (void)my_data;
     return 0;

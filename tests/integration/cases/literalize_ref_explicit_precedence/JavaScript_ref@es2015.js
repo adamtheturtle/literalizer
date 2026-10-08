@@ -1,5 +1,5 @@
-const x = [
+const refData = [
   1,
   2,
 ];
-const my_data = x;
+const my_data = refData;

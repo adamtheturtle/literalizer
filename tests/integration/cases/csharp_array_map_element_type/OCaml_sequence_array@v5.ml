@@ -5,10 +5,10 @@ type val_t =
   | OInt of int
   | OFloat of float
   | OStr of string
-  | OList of val_t list
+  | OArray of val_t array
   | OMap of (string * val_t) list
 let my_data : val_t = OMap [
-    ("d", [|OMap [("a", [|OMap [("b", [|OInt 1; [|OFloat 2.5; [|OStr "x"; [|OBool true|]|]|]|])]|])]|])
+    ("d", OArray [|OMap [("a", OArray [|OMap [("b", OArray [|OInt 1; OArray [|OFloat 2.5; OArray [|OStr "x"; OArray [|OBool true|]|]|]|])]|])]|])
 ]
 
 end

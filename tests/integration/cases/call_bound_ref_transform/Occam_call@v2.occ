@@ -15,8 +15,8 @@ MOBILE LIT FUNCTION f (VAL MOBILE LIT a)
     RESULT MOBILE LIT(lit.null)
 :
 PROC main ()
-    VAL MOBILE LIT x IS 1:
-    f(x)
+    VAL MOBILE LIT ref_data IS 1:
+    f(ref_data)
     SEQ
         SKIP
 :

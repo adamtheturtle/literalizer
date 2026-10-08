@@ -1,4 +1,4 @@
-data class Record0(val a: Array<IntArray>, val b: Array<Array<Any?>>)
+data class Record0(val a: Array<IntArray>, val b: Array<IntArray>)
 val my_data = Record0(
     a = arrayOf(
         intArrayOf(

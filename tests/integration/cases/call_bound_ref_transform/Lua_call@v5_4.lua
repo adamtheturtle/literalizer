@@ -1,3 +1,3 @@
 function f(...) end
-local x = 1
-f(x)
+local ref_data = 1
+f(ref_data)

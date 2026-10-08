@@ -16,7 +16,7 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
-    /* nested openers /* and {- remain */
+    /* nested openers / * and {- remain */
     {"x", ((CVal){.i = 1})},
 }});
     (void)my_data;

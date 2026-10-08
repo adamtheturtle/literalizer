@@ -1,5 +1,5 @@
 @discardableResult func f(value: Any = 0) -> Any { 0 }
-let x = [
+let ref_data = [
     [
         1,
         2,
@@ -11,6 +11,6 @@ let x = [
 ]
 f(value: [
     [
-        x,
+        ref_data,
     ],
 ]);

@@ -1,7 +1,7 @@
 class Fixture_call_bound_ref_multiline_layout_Haxe_call {
     public static function main() {
         function f(value:Dynamic):Dynamic return null;
-        final x = ([
+        final ref_data = ([
             ([
                 1,
                 2,
@@ -13,7 +13,7 @@ class Fixture_call_bound_ref_multiline_layout_Haxe_call {
         ] : Array<Dynamic>);
         f(([
             ([
-                x,
+                ref_data,
             ] : Array<Dynamic>),
         ] : Array<Dynamic>));
     }

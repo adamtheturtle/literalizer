@@ -4,7 +4,7 @@ Module Check
         Return Nothing
     End Function
     Sub _calls()
-        Dim x = 1
-        f(x)
+        Dim ref_data = 1
+        f(ref_data)
     End Sub
 End Module

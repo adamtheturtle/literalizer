@@ -6,10 +6,10 @@ data Val
     | PList (Array Val)
 
 
-x :: Val
-x = PList [
+refData :: Val
+refData = PList [
     PInt 1,
     PInt 2
 ]
 my_data :: Val
-my_data = x
+my_data = refData

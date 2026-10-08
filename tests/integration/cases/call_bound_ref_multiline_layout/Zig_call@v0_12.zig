@@ -12,7 +12,7 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 fn f(value: ZVal) void { _ = value; }
 pub fn main() void {
-    const x: ZVal = .{ .arr = &.{
+    const ref_data: ZVal = .{ .arr = &.{
         .{ .arr = &.{
             .{ .int = 1 },
             .{ .int = 2 },
@@ -24,7 +24,7 @@ pub fn main() void {
     }};
     f(.{ .arr = &.{
         .{ .arr = &.{
-            x,
+            ref_data,
         }},
     }});
 }

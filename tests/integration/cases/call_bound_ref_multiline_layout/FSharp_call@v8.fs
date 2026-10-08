@@ -4,7 +4,7 @@ type Val =
     | FInt of int64
     | FList of Val list
 let f (_value: obj) : obj = null
-let x: Val = FList [
+let ref_data: Val = FList [
     FList [
         FInt 1L;
         FInt 2L
@@ -16,6 +16,6 @@ let x: Val = FList [
 ]
 f(FList [
     FList [
-        x
+        ref_data
     ]
 ])

@@ -11,7 +11,6 @@ const ZVal = union(enum) {
 };
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
-    const other: ZVal = .{ .str = "true" };
     const my_data: ZVal = .{ .map = &.{
         .{ .key = "main", .val = .{ .map = &.{.{ .key = "x", .val = .{ .int = 1 } }, .{ .key = "y", .val = .{ .str = "s" } }}} },
     }};

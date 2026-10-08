@@ -5,7 +5,6 @@ pub type GVal {
 }
 
 pub fn main() {
-  let other = GStr("true")
   let my_data = GDict([
     #("main", GDict([#("x", GInt(1)), #("y", GStr("s"))])),
   ])

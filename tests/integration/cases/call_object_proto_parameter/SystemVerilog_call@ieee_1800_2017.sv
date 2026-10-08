@@ -12,6 +12,6 @@ typedef struct {
 module main;
 task capture(input _VVal __proto__); endtask
 initial begin
-capture(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""});
+void'(capture(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}));
 end
 endmodule

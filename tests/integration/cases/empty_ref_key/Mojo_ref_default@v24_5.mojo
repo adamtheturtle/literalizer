@@ -3,6 +3,6 @@ def main():
         "_": "_",
     }
     var my_data = List([
-        external_value^,
+        external_value.copy(),
     ])
     _ = my_data

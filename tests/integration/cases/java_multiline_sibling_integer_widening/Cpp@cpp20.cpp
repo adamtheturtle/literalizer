@@ -4,7 +4,7 @@
 #include <vector>
 int main() {
 auto my_data = std::map<std::string, std::vector<long long>>{
-    {"a", std::vector<int>{
+    {"a", std::vector<long long>{
         1,
     }},
     {"b", std::vector<long long>{

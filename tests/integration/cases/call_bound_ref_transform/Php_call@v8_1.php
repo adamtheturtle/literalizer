@@ -1,4 +1,4 @@
 <?php
 function f($a) {}
-$x = 1;
-f(a: $x);
+$ref_data = 1;
+f(a: $ref_data);

@@ -4,7 +4,7 @@ owner = "literalize-ref"
 [ref]
 
 [ref.value_sources]
-x = "[1, 2]"
+ref_data = "[1, 2]"
 
 [ref.explicit_ref_value_sources]
-x = "1"
+ref_data = "1"

@@ -14,6 +14,8 @@ import functools
 
 from beartype import beartype
 
+import literalizer
+
 from .call_cases import CASES_DIR
 from .case_manifests import CallCaseSpec, call_case_specs
 from .variant_cases import Variant, variants_for_axis
@@ -45,6 +47,7 @@ def build_call_variant_cases() -> list[CallVariantCase]:
         for manifest_variant in config.variants
         for variant in variants_for_axis(axis_key=manifest_variant.axis)
         if config.admits_language(lang_cls=variant.lang_cls)
+        if isinstance(variant.spec.call_style_config, literalizer.CallStyle)
         if config.call_style_type is None
         or any(
             isinstance(member.value, config.call_style_type)

@@ -1,10 +1,10 @@
 package main
 
 func main() {
-X := []int{
+RefData := []int{
 	1,
 	2,
 }
-my_data := X
+my_data := RefData
 _ = my_data
 }

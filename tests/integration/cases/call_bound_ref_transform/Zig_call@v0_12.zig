@@ -12,6 +12,6 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 fn f(a: ZVal) void { _ = a; }
 pub fn main() void {
-    const x: ZVal = .{ .int = 1 };
-    f(x);
+    const ref_data: ZVal = .{ .int = 1 };
+    f(ref_data);
 }

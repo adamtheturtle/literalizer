@@ -42,7 +42,6 @@ struct Value {
   } // get const
 };
 int main() {
-const auto* other = "true";
 auto my_data = std::map<std::string, std::map<std::string, Value>>{
     {"main", std::map<std::string, Value>{{"x", Value{1}}, {"y", Value{"s"}}}},
 };

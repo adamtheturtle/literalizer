@@ -5,7 +5,7 @@ pub type GVal {
 pub fn f(_value: a) -> Nil { Nil }
 
 pub fn main() {
-  let x = GList([
+  let ref_data = GList([
     GList([
       GInt(1),
       GInt(2),
@@ -17,7 +17,7 @@ pub fn main() {
   ])
   f(GList([
     GList([
-      x,
+      ref_data,
     ]),
   ]))
 }

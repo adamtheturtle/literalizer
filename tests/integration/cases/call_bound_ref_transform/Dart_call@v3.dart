@@ -1,6 +1,6 @@
 dynamic f({dynamic a}) => null;
 final my_data = null;
 void main() {
-    final x = 1;
-    f(a: x);
+    final ref_data = 1;
+    f(a: ref_data);
 }

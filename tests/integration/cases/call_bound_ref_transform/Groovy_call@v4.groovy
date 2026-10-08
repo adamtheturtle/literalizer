@@ -1,3 +1,3 @@
 def f(Map _args) { null }
-def x = 1
-f(a: x)
+def ref_data = 1
+f(a: ref_data)

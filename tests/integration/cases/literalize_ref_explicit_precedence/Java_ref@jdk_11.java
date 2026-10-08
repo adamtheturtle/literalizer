@@ -1,9 +1,9 @@
 class Main {
     public static void main() {
-var x = new int[]{
+var refData = new int[]{
     1,
     2
 };
-var my_data = x;
+var my_data = refData;
     }
 }

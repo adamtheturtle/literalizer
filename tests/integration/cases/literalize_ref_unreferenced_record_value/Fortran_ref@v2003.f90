@@ -84,9 +84,7 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    type(fval_t) :: other
     type(fval_t) :: my_data
-    other = fstr('true')
     my_data = fmap([fval_t :: &
         fentry('main', fmap([fval_t :: fentry('x', fint(1_int64)), fentry('y', fstr('s'))])) &
     ])

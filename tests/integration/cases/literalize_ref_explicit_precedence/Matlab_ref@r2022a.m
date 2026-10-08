@@ -1,5 +1,5 @@
-x = {
+refData = {
     1,
     2
 };
-my_data = x;
+my_data = refData;

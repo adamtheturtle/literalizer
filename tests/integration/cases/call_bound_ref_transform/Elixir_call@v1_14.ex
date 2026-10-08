@@ -1,7 +1,7 @@
 defmodule Check do
   def f(_a), do: nil
   def x do
-    x = 1
-    f(x)
+    ref_data = 1
+    f(ref_data)
   end
 end

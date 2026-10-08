@@ -5,6 +5,6 @@ pub type GVal {
 pub fn f(_a: a) -> Nil { Nil }
 
 pub fn main() {
-  let x = GInt(1)
-  f(x)
+  let ref_data = GInt(1)
+  f(ref_data)
 }

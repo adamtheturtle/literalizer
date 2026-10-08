@@ -12,10 +12,10 @@ typedef struct {
 module main;
 task f(input _VVal value); endtask
 initial begin
-static _VVal x[] = '{
+static _VVal ref_data[] = '{
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}, _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: \"\"}}"},
     _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: \"\"}, _VVal'{tag: _VVAL_INT, i: 4, r: 0.0, s: \"\"}}"}
 };
-f(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{\n    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"x\\\"}}\"}\n}"});
+void'(f(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{\n    _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \\\"ref_data\\\"}}\"}\n}"}));
 end
 endmodule

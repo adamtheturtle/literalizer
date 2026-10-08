@@ -4,7 +4,7 @@ Module Check
         Return Nothing
     End Function
     Sub _calls()
-        Dim x = New Integer()() {
+        Dim ref_data = New Integer()() {
             New Integer() {
                 1,
                 2
@@ -16,7 +16,7 @@ Module Check
         }
         f(New Integer()()()() {
             New Integer()()() {
-                x
+                ref_data
             }
         })
     End Sub

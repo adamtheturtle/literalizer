@@ -3,7 +3,7 @@ class F_ {
     call(value) {}
 }
 var f = F_.new()
-var x = [
+var ref_data = [
     [
         1,
         2,
@@ -15,6 +15,6 @@ var x = [
 ]
 f.call([
     [
-        x,
+        ref_data,
     ],
 ])

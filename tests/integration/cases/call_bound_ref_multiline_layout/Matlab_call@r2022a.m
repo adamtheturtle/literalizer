@@ -1,5 +1,5 @@
 f = @(varargin) [];
-x = {
+ref_data = {
     {
         1,
         2
@@ -11,6 +11,6 @@ x = {
 };
 f({
     {
-        x
+        ref_data
     }
 })

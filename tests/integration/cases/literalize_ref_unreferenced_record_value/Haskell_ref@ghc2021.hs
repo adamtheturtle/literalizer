@@ -8,8 +8,6 @@ instance Num Val where
     signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-other :: Val
-other = HStr "true"
 my_data :: Val
 my_data = HMap [
     ("main", HMap [("x", 1), ("y", HStr "s")])

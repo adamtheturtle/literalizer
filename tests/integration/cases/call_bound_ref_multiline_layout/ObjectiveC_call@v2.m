@@ -2,7 +2,7 @@
 static void f(id _a0) { (void)_a0; }
 int main(void) {
 @autoreleasepool {
-id x = @[
+id ref_data = @[
     @[
         @1,
         @2,
@@ -14,7 +14,7 @@ id x = @[
 ];
 f(@[
     @[
-        x,
+        ref_data,
     ],
 ]);
 }

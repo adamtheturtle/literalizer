@@ -8,7 +8,7 @@ instance Num Val where
     signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-capture :: a -> IO ()
+capture :: Val -> IO ()
 capture _ = return ()
 main :: IO ()
 main = do

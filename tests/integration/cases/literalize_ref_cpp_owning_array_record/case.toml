@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" }, { kind = "enum_member_present", option = "sequence_format", member = "ARRAY" }]
+heterogeneous_strategy = "RECORD"
+sequence_format = "ARRAY"
+
+[ref.value_sources]
+first = '{"labels":["owned"]}'

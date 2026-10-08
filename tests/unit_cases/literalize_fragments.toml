@@ -1,0 +1,100 @@
+# Incomplete fragments stay in the unit suite: no whole-file golden can
+# preserve omitted delimiters or externally defined identifiers.
+
+[[literals]]
+name = "binary_without_sequence_delimiters"
+language = "Python"
+source = "- !!binary SGVsbG8=\n"
+input_format = "yaml"
+pre_indent_level = 0
+include_delimiters = false
+expected = { code = '"48656c6c6f",' }
+
+# Unresolved markers must not contribute their mapping shape to inference.
+# Both absent and unrelated reference values leave the preamble empty.
+[[literals]]
+name = "unresolved_ref_without_values"
+language = "Rust"
+source = '[{"$ref": "a"}, 1]'
+input_format = "json"
+pre_indent_level = 0
+include_delimiters = true
+expected_preamble = []
+expected.bare_code = """\
+vec![
+    a,
+    1,
+]"""
+
+[[literals]]
+name = "unresolved_ref_with_unrelated_values"
+language = "Rust"
+source = '[{"$ref": "a"}, 1]'
+input_format = "json"
+pre_indent_level = 0
+include_delimiters = true
+ref_values = { zzz = 5 }
+expected_preamble = []
+expected.bare_code = """\
+vec![
+    a,
+    1,
+]"""
+
+[[literals]]
+name = "unknown_reference_ignores_unrelated_preamble_values"
+language = "Cpp"
+source = '{"$ref":"missing"}'
+input_format = "json"
+pre_indent_level = 0
+include_delimiters = true
+ref_values = { other = 1 }
+expected = { bare_code = "std::move(missing)" }
+
+# Capitalized module names are valid call targets but cannot be declared
+# by these languages' wrapped-file stub grammar. Elm flattens the dotted
+# target to a capitalized identifier, which is not a valid value name.
+[[calls]]
+name = "ocaml_unwrapped_qualified_call_target"
+language = "OCaml"
+source = "- - 1\n"
+input_format = "yaml"
+target_function = "Module.func"
+parameter_names = ["a"]
+per_element = true
+expected.code = """\
+type val_t =
+  | OInt of int
+  | OList of val_t list
+let _ = Module.func(OInt 1)"""
+
+[[calls]]
+name = "purescript_unwrapped_qualified_call_target"
+language = "PureScript"
+source = "- - 1\n"
+input_format = "yaml"
+target_function = "Module.func"
+parameter_names = ["a"]
+per_element = true
+expected.code = """\
+data Val
+    = PInt Int
+    | PList (Array Val)
+Module.func (PInt 1)"""
+
+# The ordered map must infer the referenced list's type, not the marker's
+# mapping shape. Its wrapped call-stub typing is a separate gap (#4732).
+[[calls]]
+name = "ordered_map_argument_types_from_its_reference"
+language = "Cpp"
+source = """\
+- - !!omap
+    - m:
+        $ref: big_list
+"""
+input_format = "yaml"
+target_function = "process"
+parameter_names = ["a"]
+per_element = true
+ref_values = { big_list = ["x"] }
+expected = { bare_code = 'process(std::vector<std::pair<std::string, std::vector<std::string>>>{{"m", big_list}});' }

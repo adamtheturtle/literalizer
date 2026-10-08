@@ -3,5 +3,5 @@ def main():
         1,
         2,
     ])
-    var my_data = whole^
+    var my_data = whole.copy()
     _ = my_data

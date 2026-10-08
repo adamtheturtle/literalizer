@@ -1,0 +1,57 @@
+# These cases pin unwrapped LiteralizeResult views, which whole-file goldens
+# cannot check. Sources and expected literals belong to the fixture data.
+record_input_case = "dict_mixed_scalars"
+
+[prefix]
+languages = ["Elm", "FSharp", "Haskell", "PureScript"]
+input_case = "comment_scalar"
+attributes = ["code", "bare_code"]
+variable_name = "my_data"
+
+[[records]]
+language = "Cpp"
+expected_code = """\
+Record0{
+    .a = 1,
+    .b = "x",
+}"""
+
+[[records]]
+language = "Go"
+expected_code = """\
+Record0{
+	A: 1,
+	B: "x",
+}"""
+
+[[records]]
+language = "Java"
+expected_code = """\
+new Record0(
+    1,
+    "x"
+)"""
+
+[[records]]
+language = "Kotlin"
+expected_code = """\
+Record0(
+    a = 1,
+    b = "x",
+)"""
+
+[[records]]
+language = "Rust"
+expected_code = """\
+Record0 {
+    a: 1,
+    b: "x",
+}"""
+
+[[records]]
+language = "Scala"
+expected_code = """\
+Record0(
+    a = 1,
+    b = "x",
+)"""

@@ -1,5 +1,5 @@
 sub f {}
-my $x = [
+my $ref_data = [
     [
         1,
         2,
@@ -11,6 +11,6 @@ my $x = [
 ];
 f([
     [
-        $x,
+        $ref_data,
     ],
 ]);

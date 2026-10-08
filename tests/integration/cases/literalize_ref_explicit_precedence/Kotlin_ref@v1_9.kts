@@ -1,5 +1,5 @@
-val x = intArrayOf(
+val refData = intArrayOf(
     1,
     2,
 )
-val my_data = x
+val my_data = refData

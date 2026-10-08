@@ -1,0 +1,3 @@
+schema_version = 1
+# A typed empty list falls back when its sibling element type has no concrete type name.
+suites = ["base", "combined"]

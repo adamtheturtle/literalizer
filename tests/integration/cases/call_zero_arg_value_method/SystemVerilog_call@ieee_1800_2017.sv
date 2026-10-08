@@ -17,6 +17,6 @@ class ThingType_;
 endclass
 ThingType_ thing = new();
 initial begin
-thing.go();
+void'(thing.go());
 end
 endmodule

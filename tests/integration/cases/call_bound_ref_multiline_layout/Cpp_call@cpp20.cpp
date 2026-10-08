@@ -2,7 +2,7 @@
 #include <vector>
 auto f(auto...) { return 0; }
 int main() {
-auto x = std::vector<std::vector<int>>{
+auto ref_data = std::vector<std::vector<int>>{
     std::vector<int>{
         1,
         2,
@@ -14,7 +14,7 @@ auto x = std::vector<std::vector<int>>{
 };
 f(std::vector<std::vector<std::vector<std::vector<int>>>>{
     std::vector<std::vector<std::vector<int>>>{
-        x,
+        ref_data,
     },
 });
     return 0;

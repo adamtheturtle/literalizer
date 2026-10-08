@@ -1,5 +1,5 @@
 def f(a: Int) -> None:
     pass
 def main():
-    var x = 1
-    f(x)
+    var ref_data = 1
+    f(ref_data)

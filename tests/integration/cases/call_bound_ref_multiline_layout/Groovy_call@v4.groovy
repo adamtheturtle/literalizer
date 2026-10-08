@@ -1,5 +1,5 @@
 def f(Map _args) { null }
-def x = [
+def ref_data = [
     [
         1,
         2,
@@ -11,6 +11,6 @@ def x = [
 ]
 f(value: [
     [
-        x,
+        ref_data,
     ],
 ])

@@ -261,3 +261,20 @@ def iter_wrapped_scalars(
             out.append(child)
         out.extend(iter_wrapped_scalars(data=child, wrap_ids=wrap_ids))
     return out
+
+
+@beartype
+def iter_wrapped_values(
+    *, data: Value, wrap_ids: frozenset[int]
+) -> list[Value]:
+    """Return every value occupying a wrapped container slot."""
+    if isinstance(data, dict):
+        children: list[Value] = list(data.values())
+    elif isinstance(data, list):
+        children = list(data)
+    else:
+        return []
+    out = list(children) if id(data) in wrap_ids else []
+    for child in children:
+        out.extend(iter_wrapped_values(data=child, wrap_ids=wrap_ids))
+    return out

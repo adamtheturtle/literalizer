@@ -1,6 +1,6 @@
 fn main() {
     fn f<A>(_value: A) {}
-    let x = vec![
+    let ref_data = vec![
         vec![
             1,
             2,
@@ -12,7 +12,7 @@ fn main() {
     ];
     f(vec![
         vec![
-            x,
+            ref_data,
         ],
     ]);
 }

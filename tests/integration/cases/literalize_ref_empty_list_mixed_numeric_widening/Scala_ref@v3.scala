@@ -1,6 +1,6 @@
 object Fixture_literalize_ref_empty_list_mixed_numeric_widening_Scala_ref {
-val emptyValues = List()
-val integerValues = List[Int](
+val emptyValues = List[Double]()
+val integerValues = List[Double](
     1,
 )
 val floatValues = List[Double](

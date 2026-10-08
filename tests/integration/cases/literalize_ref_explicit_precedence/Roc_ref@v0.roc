@@ -5,10 +5,10 @@ Val : [
     RList (List Val),
 ]
 
-x : Val
-x = RList [
+ref_data : Val
+ref_data = RList [
     RInt 1i128,
     RInt 2i128,
 ]
 my_data : Val
-my_data = x
+my_data = ref_data

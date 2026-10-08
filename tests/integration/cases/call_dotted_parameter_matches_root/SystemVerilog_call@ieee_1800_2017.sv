@@ -15,6 +15,6 @@ class OuterType_;
 endclass
 OuterType_ outer = new();
 initial begin
-outer.inner(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}, _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""});
+void'(outer.inner(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}, _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""}));
 end
 endmodule

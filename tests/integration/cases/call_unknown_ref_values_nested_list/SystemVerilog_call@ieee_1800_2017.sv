@@ -13,6 +13,6 @@ module main;
 task process(input _VVal data); endtask
 initial begin
 static _VVal unknown_value[] = '{};
-process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"unknown_value\"}}"});
+void'(process(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: \"unknown_value\"}}"}));
 end
 endmodule

@@ -1,2 +1,2 @@
-x = 1
-_0 = f(x)
+ref_data = 1
+_0 = f(ref_data)

@@ -69,7 +69,7 @@ from literalizer._formatters.type_inference import (
     ListType,
     single_concrete_type,
 )
-from literalizer._heterogeneous import iter_wrapped_scalars
+from literalizer._heterogeneous import iter_wrapped_values
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -584,7 +584,6 @@ class Go(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
@@ -624,6 +623,9 @@ class Go(metaclass=LanguageCls):
             "type",
             "var",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers - (frozenset({"main"}))
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
@@ -1298,7 +1300,7 @@ class Go(metaclass=LanguageCls):
         """
         if self.record_map_value_typing is RecordMapValueTypings.WIDE:
             return None
-        scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+        scalars = iter_wrapped_values(data=data, wrap_ids=wrap_ids)
         if len(scalars) == 0:
             return None
         scalar_types = {
@@ -1338,7 +1340,6 @@ class Go(metaclass=LanguageCls):
             )
         strategy = build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
         )

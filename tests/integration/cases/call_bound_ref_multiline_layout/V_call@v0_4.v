@@ -2,7 +2,7 @@ interface ICallArg_ {}
 fn f(args ...ICallArg_) {}
 
 fn main() {
-	x := [
+	ref_data := [
 		[
 			1,
 			2,
@@ -14,7 +14,7 @@ fn main() {
 	]
 	f([
 		[
-			x,
+			ref_data,
 		],
 	]);
 }

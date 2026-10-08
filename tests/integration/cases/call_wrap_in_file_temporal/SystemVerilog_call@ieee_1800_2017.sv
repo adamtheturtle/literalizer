@@ -12,6 +12,6 @@ typedef struct {
 module main;
 task check(input _VVal ts, input _VVal d); endtask
 initial begin
-check(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2024-01-15T10:30:00+00:00"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2024-06-01"});
+void'(check(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2024-01-15T10:30:00+00:00"}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2024-06-01"}));
 end
 endmodule

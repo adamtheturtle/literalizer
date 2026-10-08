@@ -1,3 +1,3 @@
 f = @(varargin) [];
-x = 1;
-f(x)
+ref_data = 1;
+f(ref_data)

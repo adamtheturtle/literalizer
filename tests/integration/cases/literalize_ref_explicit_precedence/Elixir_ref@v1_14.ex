@@ -1,10 +1,10 @@
 defmodule Check do
   def x do
-    x = [
+    ref_data = [
         1,
         2,
     ]
-    my_data = x
+    my_data = ref_data
     _ = my_data
   end
 end

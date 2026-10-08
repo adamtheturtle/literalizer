@@ -1,8 +1,8 @@
 module Fixture_literalize_ref_explicit_precedence_Crystal_ref
 extend self
-x = [
+ref_data = [
     1,
     2,
 ]
-my_data = x
+my_data = ref_data
 end

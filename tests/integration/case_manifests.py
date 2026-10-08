@@ -23,6 +23,7 @@ from pydantic import (
 
 import literalizer
 from literalizer import ValueInput
+from literalizer.languages import ALL_LANGUAGES
 
 from .case_inputs import CaseInput, infer_case_input
 from .language_metadata import language_metadata
@@ -222,6 +223,19 @@ def _to_call_transform(value: object, /) -> object:
 # type is still checked.
 type StringTuple = Annotated[tuple[str, ...], Field(strict=False)]
 type StringFrozenSet = Annotated[frozenset[str], Field(strict=False)]
+# Concrete language configurations in the unwrapped-result contract data
+# still resolve names; whole-file case selection uses capability gates.
+_LANGUAGES_BY_NAME = {
+    lang_cls.__name__: lang_cls for lang_cls in ALL_LANGUAGES
+}
+type ManifestLanguage = Annotated[
+    literalizer.LanguageCls,
+    BeforeValidator(func=_name_resolver(values_by_name=_LANGUAGES_BY_NAME)),
+]
+type ManifestLanguages = Annotated[
+    tuple[ManifestLanguage, ...],
+    Field(strict=False),
+]
 type CallTransformTemplate = Annotated[
     InstanceOf[CallTransform], BeforeValidator(func=_to_call_transform)
 ]
@@ -450,9 +464,11 @@ class RefCaseSpec(  # noqa: NOD001
 
     ref_key: str = "$ref"
     variable_form: VariableFormName = "new"
+    variable_modifiers: StringTuple = Field(default_factory=_empty_names)
     collection_layout: CollectionLayoutName = "compact"
     pre_indent_level: int = 0
     heterogeneous_strategy: str | None = None
+    sequence_format: str | None = None
     ref_case_override: RefIdentifierCase | None = None
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
     bound_refs: Mapping[str, ValueInput] | None = None
