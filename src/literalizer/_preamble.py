@@ -204,7 +204,9 @@ type _Collection = dict[Scalar, Value] | set[Scalar] | list[Value]
 
 
 @beartype
-def _collections_in(*, data: Value) -> list[_Collection]:
+def _collections_in(
+    *, data: Value, recordized_dict_ids: frozenset[int]
+) -> list[_Collection]:
     """Return every collection inside *data*, *data* itself included."""
     found: list[_Collection] = []
     pending: list[Value] = [data]
@@ -218,7 +220,25 @@ def _collections_in(*, data: Value) -> list[_Collection]:
                 found.append(value)
             case list():
                 found.append(value)
-                pending.extend(value)
+                # Map annotations pool sibling values. An empty mapping
+                # contributes no default type when a mapping of the same
+                # kind supplies values, while native records stay opaque.
+                populated_map_types = {
+                    type(item)
+                    for item in value
+                    if isinstance(item, dict)
+                    and len(item) > 0
+                    and id(item) not in recordized_dict_ids
+                }
+                pending.extend(
+                    item
+                    for item in value
+                    if not (
+                        isinstance(item, dict)
+                        and len(item) == 0
+                        and type(item) in populated_map_types
+                    )
+                )
             case _:
                 pass
     return found
@@ -248,11 +268,15 @@ def _empty_collection_sentinel(
 
 
 @beartype
-def _collect_empty_collection_types(*, data: Value) -> frozenset[type]:
+def _collect_empty_collection_types(
+    *, data: Value, recordized_dict_ids: frozenset[int]
+) -> frozenset[type]:
     """Return the :class:`EmptyCollection` sentinels *data* calls for."""
     sentinels = (
         _empty_collection_sentinel(value=value)
-        for value in _collections_in(data=data)
+        for value in _collections_in(
+            data=data, recordized_dict_ids=recordized_dict_ids
+        )
     )
     return frozenset(
         sentinel for sentinel in sentinels if sentinel is not None
@@ -564,7 +588,9 @@ def compute_preamble(
             )
         annotated_collection_types = (
             effective_annotated_collection_types
-        ) | _collect_empty_collection_types(data=data)
+        ) | _collect_empty_collection_types(
+            data=data, recordized_dict_ids=recordized_dict_ids
+        )
     if has_variable_declaration and _has_union_in_type_hints(data=data):
         annotated_collection_types = annotated_collection_types | frozenset(
             {HeterogeneousElements}

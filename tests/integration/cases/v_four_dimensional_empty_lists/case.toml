@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["V"]
+languages_reason = "V must preserve every array dimension when all nested leaves are empty."
+suites = ["base", "combined"]
+
+[base_context]
+collection_layout = "multiline"

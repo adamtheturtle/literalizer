@@ -43,6 +43,7 @@ from literalizer._formatters.format_integers import (
     format_integer_underscore,
 )
 from literalizer._formatters.format_strings import (
+    bidi_escape_replacements,
     make_backslash_string_formatter,
 )
 from literalizer._language import (
@@ -107,7 +108,11 @@ from literalizer.exceptions import CallArgNotSupportedError
 
 _format_string = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("$", "\\$"), ("\0", "\\x00")],
+    extra_replacements=[
+        ("$", "\\$"),
+        ("\0", "\\x00"),
+        *bidi_escape_replacements(template="\\u{:04X}"),
+    ],
 )
 
 
