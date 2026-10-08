@@ -1365,6 +1365,21 @@ class V(metaclass=LanguageCls):
             return request.record_name
         if request.element_record_name is not None:
             return f"[]{request.element_record_name}"
+        if isinstance(request.value, OrderedMap):
+            names = {
+                self._record_strategy.record_name_for_value(value)
+                for value in request.value.values()
+            }
+            if len(names) == 1 and None not in names:
+                key_type = _v_inner_type(list(request.value))
+                return f"map[{key_type}]{next(iter(names))}"
+            if len(names) > 1 and None not in names:
+                message = (
+                    "V cannot represent ordered-map values with multiple "
+                    "native record types under the RECORD heterogeneous "
+                    "strategy"
+                )
+                raise UnrepresentableInputError(message)
         if (
             isinstance(request.value, dict)
             and not isinstance(request.value, OrderedMap)
@@ -1408,7 +1423,7 @@ class V(metaclass=LanguageCls):
             field_type=self._v_record_field_type,
             render_declaration=self._v_render_record_declaration,
             render_literal=_v_record_literal,
-            field_type_names_nested_records=False,
+            field_type_names_nested_records=True,
             suppress_custom_name_declarations=False,
         )
 
