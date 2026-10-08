@@ -829,9 +829,10 @@ class SystemVerilog(metaclass=LanguageCls):
 
     validate_call_arg = default_validate_call_arg
 
-    format_call_statement: ClassVar["staticmethod[[str], str]"] = staticmethod(
-        _sv_format_call_statement
-    )
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Explicitly discard task and function call results."""
+        return _sv_format_call_statement
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
