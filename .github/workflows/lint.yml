@@ -2212,12 +2212,17 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
+          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
+            swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
-        run: xargs -0 -P "$(nproc)" -n1 swift -swift-version 5 -warnings-as-errors
-          < /tmp/files-to-lint
+        run: |-
+          cat > /tmp/run-swift.sh <<'SCRIPT'
+          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
+            swift -swift-version 5 -warnings-as-errors "$1"
+          SCRIPT
+          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-swift.sh < /tmp/files-to-lint
       # `uv` is needed by the `Swift roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
