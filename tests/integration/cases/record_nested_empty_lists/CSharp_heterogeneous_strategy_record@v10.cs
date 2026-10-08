@@ -12,7 +12,7 @@ var my_data = new Record0(
         }
     },
     new int[][] {
-        new object[] {},
+        new int[] {},
         new int[] {
             1
         }
