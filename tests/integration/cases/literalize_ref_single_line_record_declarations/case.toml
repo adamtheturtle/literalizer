@@ -1,10 +1,10 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Scala"]
+languages = ["Python", "Scala"]
 languages_reason = "Sampled: Scala covers single-line RECORD declarations without multiplying this focused regression across every RECORD language."
 
 [ref]
-languages = ["Scala"]
+languages = ["Python", "Scala"]
 languages_reason = "Sampled: Scala covers single-line RECORD declarations without multiplying this focused regression across every RECORD language."
 heterogeneous_strategy = "RECORD"
 
