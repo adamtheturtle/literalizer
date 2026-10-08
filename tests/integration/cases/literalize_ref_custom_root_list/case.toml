@@ -1,8 +1,5 @@
 schema_version = 1
 owner = "literalize-ref"
-suites = ["base", "combined"]
-languages = ["Nim"]
-languages_reason = "Nim distinguishes a plain dictionary from a resolved reference using literal conversion syntax."
 
 [ref]
 ref_key = "reference"
