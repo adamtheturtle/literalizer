@@ -911,8 +911,12 @@ def neutralize_comment_terminator(
     if isinstance(comment_suffix, QuoteSensitiveCommentSuffix):
         text = text.translate(str.maketrans("", "", "\"'"))
     terminator = comment_suffix.strip()
-    if isinstance(comment_suffix, NestingCommentSuffix):
-        opener = comment_suffix.opener
+    if isinstance(comment_suffix, NestingCommentSuffix) or (
+        comment_prefix == "/*" and terminator == "*/"
+    ):
+        opener = "/*"
+        if isinstance(comment_suffix, NestingCommentSuffix):
+            opener = comment_suffix.opener
         text = text.replace(
             opener, " ".join(character for character in opener)
         )
