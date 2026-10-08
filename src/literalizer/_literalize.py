@@ -5344,8 +5344,22 @@ def _compose_bound_refs(
                 for entry in declaration.data_dependent_preamble
             )
         )
+    # A later binding can introduce an import needed by the canonical
+    # record declarations already carried by an earlier binding.
+    # Place every binding's independent headers before those declarations.
+    data_entries = {
+        entry
+        for declaration in decl_results
+        for entry in declaration.data_dependent_preamble
+    } | set(main_result.data_dependent_preamble)
+    all_entries = (
+        declaration_preamble + reference_imports + main_result.preamble
+    )
     all_preamble = deduplicate_preamble_entries(
-        entries=declaration_preamble + reference_imports + main_result.preamble
+        entries=tuple(
+            entry for entry in all_entries if entry not in data_entries
+        )
+        + tuple(entry for entry in all_entries if entry in data_entries)
     )
     scoped = _scope_preamble_for_wrap(
         language=language,
