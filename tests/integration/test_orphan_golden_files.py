@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 
+import pytest
 from beartype import beartype
 
 import literalizer
@@ -10,7 +11,6 @@ import literalizer
 from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
 from .case_discovery import (
-    build_heterogeneous_strategy_combined_cases,
     build_indent_cases,
     build_no_variable_form_cases,
     build_pre_indent_cases,
@@ -57,12 +57,36 @@ def _paths_for_versions(
 
 
 @beartype
+def _expected_strategy_golden_files(*, cases_dir: Path) -> set[Path]:
+    """Follow the strategy runner's effective language versions."""
+    expected: set[Path] = set()
+    for group in golden_groups():
+        if group.scenario_name != "heterogeneous_strategy":
+            continue
+        for rendering in group.renderings:
+            for version in rendering.versions:
+                spec = rendering.spec_for(version=version)
+                if spec.language_version is not version:
+                    continue
+                expected.add(
+                    make_golden_path(
+                        parent=cases_dir / rendering.case_dir_name,
+                        name=rendering.golden_name,
+                        extension=spec.extension,
+                        lang_cls=rendering.lang_cls,
+                        version=version,
+                    )
+                )
+    return expected
+
+
+@beartype
 def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
     """Return expected paths for variant, statement-terminator, strategy,
     and
     pre-indent golden files.
     """
-    expected: set[Path] = set()
+    expected = _expected_strategy_golden_files(cases_dir=cases_dir)
 
     for variant_case in build_variant_cases():
         expected.update(
@@ -85,16 +109,6 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
                 name=case.name,
                 extension=statement_terminator_style_spec.extension,
                 lang_cls=case.lang_cls,
-            )
-        )
-
-    for strategy_case in build_heterogeneous_strategy_combined_cases():
-        expected.update(
-            _paths_for_versions(
-                parent=cases_dir / strategy_case.case_dir_name,
-                name=strategy_case.name,
-                extension=strategy_case.lang_cls.extension,
-                lang_cls=strategy_case.lang_cls,
             )
         )
 
@@ -263,11 +277,9 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     return expected
 
 
-def test_no_dead_golden_files(cases_dir: Path) -> None:
-    """Every file under ``cases/`` must be referenced by a parameterized
-    test.  Orphaned golden files silently rot and waste repository space.
-    """
-    expected = _expected_golden_files(cases_dir=cases_dir)
+@beartype
+def _check_golden_inventory(*, cases_dir: Path, expected: set[Path]) -> None:
+    """Reject files outside the exercised golden inventory."""
     actual = {
         path
         for parent in (cases_dir, cases_dir.parent / "default_module_names")
@@ -278,4 +290,53 @@ def test_no_dead_golden_files(cases_dir: Path) -> None:
         os.path.relpath(path=path, start=cases_dir)
         for path in actual - expected
     )
-    assert len(dead_files) == 0
+    assert dead_files == []
+
+
+def test_no_dead_golden_files(cases_dir: Path) -> None:
+    """Every file under ``cases/`` must be referenced by a parameterized
+    test.  Orphaned golden files silently rot and waste repository space.
+    """
+    _check_golden_inventory(
+        cases_dir=cases_dir,
+        expected=_expected_golden_files(cases_dir=cases_dir),
+    )
+
+
+def test_effective_language_version_owns_golden(tmp_path: Path) -> None:
+    """Pinned Java RECORD covers JDK16; C++ retains all actual
+    versions.
+    """
+    cases_dir = tmp_path / "cases"
+    case_dir = cases_dir / "dict_mixed_scalars"
+    case_dir.mkdir(parents=True)
+    expected = _expected_variant_golden_files(cases_dir=cases_dir)
+    java_prefix = "Java_heterogeneous_strategy_record_combined@"
+    cpp_prefix = "Cpp_heterogeneous_strategy_record_combined@"
+    java_golden = case_dir / f"{java_prefix}jdk_16.java"
+    assert {
+        path for path in expected if path.name.startswith(java_prefix)
+    } == {
+        java_golden,
+    }
+    assert {path for path in expected if path.name.startswith(cpp_prefix)} == {
+        case_dir / f"{cpp_prefix}cpp14.cpp",
+        case_dir / f"{cpp_prefix}cpp17.cpp",
+        case_dir / f"{cpp_prefix}cpp20.cpp",
+    }
+    contents = (
+        Path(__file__).parent
+        / "cases"
+        / "dict_mixed_scalars"
+        / java_golden.name
+    ).read_bytes()
+    _ = java_golden.write_bytes(data=contents)
+    _check_golden_inventory(cases_dir=cases_dir, expected=expected)
+
+    phantom_golden = case_dir / f"{java_prefix}jdk_11.java"
+    _ = phantom_golden.write_bytes(data=contents)
+    with pytest.raises(
+        expected_exception=AssertionError,
+        match="Java_heterogeneous_strategy_record_combined@jdk_11",
+    ):
+        _check_golden_inventory(cases_dir=cases_dir, expected=expected)
