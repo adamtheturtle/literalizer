@@ -20,7 +20,7 @@ _SORTED_LANGUAGES: list[LanguageCls] = sorted(
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_SORTED_LANGUAGES,
-    ids=[c.__name__ for c in _SORTED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_format_enums_populated(*, language_cls: LanguageCls) -> None:
     """Every language exposes at least one member in each format Enum."""

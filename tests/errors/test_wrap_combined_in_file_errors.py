@@ -31,7 +31,7 @@ _UNSUPPORTED_COMBINED_LANGUAGES: list[LanguageCls] = [
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_UNSUPPORTED_COMBINED_LANGUAGES,
-    ids=[c.__name__ for c in _UNSUPPORTED_COMBINED_LANGUAGES],
+    ids=_language_class_name,
 )
 def test_wrap_combined_in_file_unsupported_raises(
     *,
