@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Elm"]
+languages_reason = "Regression for Elm's string constructor when a reference holds a time."
+collection_layout = "multiline"
+
+[ref.bound_refs]
+my_time = 01:02:03

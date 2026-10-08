@@ -470,6 +470,10 @@ class RefCaseSpec(  # noqa: NOD001
     historical behavior: refs render with no value-type knowledge and
     stubs are dict shaped.
 
+    *bound_refs* supplies values directly from TOML, including dates
+    and times that JSON sources cannot express. These values override
+    the corresponding source-derived bindings.
+
     When *ref_case_override* is set, the case forces that identifier
     case for the ``ref_case`` argument of :func:`literalizer.literalize`
     instead of using the language's default (``identifier_cases[0]``).
@@ -484,6 +488,7 @@ class RefCaseSpec(  # noqa: NOD001
     heterogeneous_strategy: str | None = None
     ref_case_override: RefIdentifierCase | None = None
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
+    bound_refs: Mapping[str, ValueInput] | None = None
     extra_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
