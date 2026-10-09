@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "C++ nullptr references are trivial scalars and must not be moved."
+
+[ref.value_sources]
+my_null = "null"

@@ -800,13 +800,16 @@ def _has_heterogeneous(
 def _has_heterogeneous_sibling_lists(
     *,
     data: Value,
+    record_dict_ids: frozenset[int],
     tuple_list_ids: frozenset[int],
 ) -> bool:
     """Recursively check whether data contains sibling lists whose
     combined scalar elements are heterogeneous.
 
     Sibling lists are detected both as the direct children of a list
-    and as the values of a dict.
+    and as the values of a dict. Native records have independently typed
+    fields, so their values do not share a sequence element pool. Each
+    field is still checked recursively for incompatible sibling lists.
 
     Lists whose ``id`` is in *tuple_list_ids* are carved out by the
     active TUPLE heterogeneous strategy: each is rendered as its own
@@ -823,11 +826,14 @@ def _has_heterogeneous_sibling_lists(
             if any(
                 _has_heterogeneous_sibling_lists(
                     data=v,
+                    record_dict_ids=record_dict_ids,
                     tuple_list_ids=tuple_list_ids,
                 )
                 for v in values
             ):
                 return True
+            if id(data) in record_dict_ids:
+                return False
             all_lists: list[list[Value]] = [
                 v for v in values if isinstance(v, list)
             ]
@@ -841,6 +847,7 @@ def _has_heterogeneous_sibling_lists(
                     )
                     or _has_heterogeneous_sibling_lists(
                         data=[e for sub in seq_lists for e in sub],
+                        record_dict_ids=record_dict_ids,
                         tuple_list_ids=tuple_list_ids,
                     )
                 )
@@ -849,6 +856,7 @@ def _has_heterogeneous_sibling_lists(
             if any(
                 _has_heterogeneous_sibling_lists(
                     data=v,
+                    record_dict_ids=record_dict_ids,
                     tuple_list_ids=tuple_list_ids,
                 )
                 for v in data
@@ -869,6 +877,7 @@ def _has_heterogeneous_sibling_lists(
                     )
                     or _has_heterogeneous_sibling_lists(
                         data=[e for sub in seq_list_children for e in sub],
+                        record_dict_ids=record_dict_ids,
                         tuple_list_ids=tuple_list_ids,
                     )
                 )
@@ -1154,11 +1163,13 @@ def _check_heterogeneous(
 def _check_heterogeneous_sibling_lists(
     *,
     data: Value,
+    record_dict_ids: frozenset[int],
     tuple_list_ids: frozenset[int],
 ) -> None:
     """Raise if sibling lists have heterogeneous scalar types."""
     if _has_heterogeneous_sibling_lists(
         data=data,
+        record_dict_ids=record_dict_ids,
         tuple_list_ids=tuple_list_ids,
     ):
         types = _describe_heterogeneous_types(data=data)
@@ -1618,6 +1629,7 @@ def _check_scalar_heterogeneity(
             )
             _check_heterogeneous_sibling_lists(
                 data=data,
+                record_dict_ids=record_dict_ids,
                 tuple_list_ids=tuple_list_ids,
             )
         if not dict_supports_het:
