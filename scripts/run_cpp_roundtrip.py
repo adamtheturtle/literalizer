@@ -72,13 +72,15 @@ def main() -> None:
         source_filename="main.cpp",
         program=program,
         steps=[
-            roundtrip_common.Step(
+            roundtrip_common.bounded_step(
                 args=[clangxx, "-std=c++20", "main.cpp", "-o", "main"],
                 failure_label="clang++ error",
+                timeout_seconds=60,
             ),
-            roundtrip_common.Step(
+            roundtrip_common.bounded_step(
                 args=["./main"],
                 failure_label="run error",
+                timeout_seconds=60,
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,

@@ -30,9 +30,12 @@ the final stdout to :func:`verify`.
 """
 
 import json
+import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -200,6 +203,42 @@ class Step:
     failure_label: str
 
 
+class GnuTimeoutUnavailableError(RuntimeError):
+    """GNU timeout was not found on this computer."""
+
+    def __init__(self) -> None:
+        """Explain how to install the required command."""
+        super().__init__(
+            "GNU timeout is required for bounded compiler checks; "
+            "install coreutils (gtimeout on macOS)."
+        )
+
+
+def bounded_step(
+    *, args: Sequence[str], failure_label: str, timeout_seconds: float
+) -> Step:
+    """Bound one compiler or executable using GNU timeout.
+
+    GNU timeout kills the complete command process group, including
+    descendants that ignore TERM. On macOS it is also named ``gtimeout``.
+    """
+    timeout_command = shutil.which(cmd="timeout")
+    if timeout_command is None:
+        timeout_command = shutil.which(cmd="gtimeout")
+    if timeout_command is None:
+        raise GnuTimeoutUnavailableError
+    return Step(
+        args=[
+            timeout_command,
+            "--verbose",
+            "--signal=KILL",
+            f"{timeout_seconds:g}s",
+            *args,
+        ],
+        failure_label=failure_label,
+    )
+
+
 def execute(
     *,
     label: str,
@@ -238,6 +277,7 @@ def execute(
             extra_path.parent.mkdir(parents=True, exist_ok=True)
             _ = extra_path.write_text(data=content, encoding="utf-8")
         for step in steps:
+            started = time.monotonic()
             result = subprocess.run(
                 args=list(step.args),
                 capture_output=True,
@@ -247,8 +287,15 @@ def execute(
                 encoding="utf-8",
             )
             if result.returncode != 0:
+                elapsed = time.monotonic() - started
+                status = result.returncode
+                if status < 0:
+                    status = 128 - status
                 _ = sys.stderr.write(
                     f"{label}: {step.failure_label}\n"
+                    f"{source_path}: command failed ({status}) "
+                    f"after {elapsed:.2f}s: "
+                    f"{shlex.join(split_command=step.args)}\n"
                     f"{result.stdout}{result.stderr}",
                 )
                 _ = sys.stderr.write(f"\nProgram:\n{program}\n")

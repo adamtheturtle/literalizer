@@ -67,9 +67,10 @@ def main() -> None:
         source_filename="main.swift",
         program=program,
         steps=[
-            roundtrip_common.Step(
+            roundtrip_common.bounded_step(
                 args=[swift, "-swift-version", "5", "main.swift"],
                 failure_label="swift run error",
+                timeout_seconds=60,
             ),
         ],
         excluded_keys=_EXCLUDED_KEYS,
