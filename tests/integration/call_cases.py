@@ -233,6 +233,21 @@ def _skip_if_wrapper_unsupported(
 
 
 @beartype
+def _is_reserved_parameter_name(
+    *, lang_cls: literalizer.LanguageCls, name: str
+) -> bool:
+    """Compare reserved names using the backend's identifier case
+    policy.
+    """
+    if lang_cls.reserved_variable_identifiers_case_sensitive:
+        return name in lang_cls.reserved_variable_identifiers
+    return any(
+        name.casefold() == reserved_name.casefold()
+        for reserved_name in lang_cls.reserved_variable_identifiers
+    )
+
+
+@beartype
 def _expected_call_shape_exception(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -273,7 +288,7 @@ def _expected_call_shape_exception(
         rejects_reserved_parameters
         and lang_cls.declares_call_parameter_names
         and any(
-            name in lang_cls.reserved_variable_identifiers
+            _is_reserved_parameter_name(lang_cls=lang_cls, name=name)
             for name in config.parameter_names
         )
     ):
