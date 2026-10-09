@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Gleam"]
+languages_reason = "Gleam combines actual scalar bindings with explicit list reference hints into one carrier."
+
+[ref.value_sources]
+ref_data = "1"
+
+[ref.explicit_ref_value_sources]
+ref_data = "[1, 2]"

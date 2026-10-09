@@ -561,6 +561,43 @@ def _collect_gleam_types(*, value: Value) -> frozenset[type]:
 
 
 @beartype
+def _gleam_preamble_for_types(
+    *,
+    types: frozenset[type],
+    type_name: str,
+    constructor_prefix: str,
+    datetime_type_produced: type,
+) -> tuple[str, ...]:
+    """Render the shared carrier declaration for the collected types."""
+    p = constructor_prefix
+    int_types: set[type] = {int}
+    str_types: set[type] = {str, bytes, datetime.date, datetime.time}
+    if datetime_type_produced is int:
+        int_types.add(datetime.datetime)
+    else:
+        str_types.add(datetime.datetime)
+    constructors = [
+        constructor
+        for type_set, constructor in (
+            (frozenset({type(None)}), f"{p}Null"),
+            (frozenset({bool}), f"{p}Bool(Bool)"),
+            (frozenset(int_types), f"{p}Int(Int)"),
+            (frozenset({float}), f"{p}Float(Float)"),
+            (frozenset(str_types), f"{p}Str(String)"),
+            (frozenset({list}), f"{p}List(List({type_name}))"),
+            (
+                frozenset({dict, OrderedMap}),
+                f"{p}Dict(List(#(String, {type_name})))",
+            ),
+            (frozenset({set}), f"{p}Set(List({type_name}))"),
+        )
+        if len(types & type_set) > 0
+    ]
+    body = "\n".join(f"  {c}" for c in constructors)
+    return (f"pub type {type_name} {{\n{body}\n}}",)
+
+
+@beartype
 def _build_gleam_data_dependent_preamble(
     *,
     type_name: str,
@@ -577,32 +614,12 @@ def _build_gleam_data_dependent_preamble(
     def _compute(data: Value, /) -> tuple[str, ...]:
         """Return the ``pub type`` declaration for *data*."""
         types = _collect_gleam_types(value=data)
-        p = constructor_prefix
-        int_types: set[type] = {int}
-        str_types: set[type] = {str, bytes, datetime.date, datetime.time}
-        if datetime_type_produced is int:
-            int_types.add(datetime.datetime)
-        else:
-            str_types.add(datetime.datetime)
-        constructors = [
-            constructor
-            for type_set, constructor in (
-                (frozenset({type(None)}), f"{p}Null"),
-                (frozenset({bool}), f"{p}Bool(Bool)"),
-                (frozenset(int_types), f"{p}Int(Int)"),
-                (frozenset({float}), f"{p}Float(Float)"),
-                (frozenset(str_types), f"{p}Str(String)"),
-                (frozenset({list}), f"{p}List(List({type_name}))"),
-                (
-                    frozenset({dict, OrderedMap}),
-                    f"{p}Dict(List(#(String, {type_name})))",
-                ),
-                (frozenset({set}), f"{p}Set(List({type_name}))"),
-            )
-            if len(types & type_set) > 0
-        ]
-        body = "\n".join(f"  {c}" for c in constructors)
-        return (f"pub type {type_name} {{\n{body}\n}}",)
+        return _gleam_preamble_for_types(
+            types=types,
+            type_name=type_name,
+            constructor_prefix=constructor_prefix,
+            datetime_type_produced=datetime_type_produced,
+        )
 
     return _compute
 
@@ -1375,6 +1392,33 @@ class Gleam(metaclass=LanguageCls):
             constructor_prefix=self.constructor_prefix,
             datetime_type_produced=self.datetime_format.value.type_produced,
         )
+
+    @cached_property
+    def bound_reference_data_preamble(
+        self,
+    ) -> Callable[[tuple[Value, ...]], tuple[str, ...] | None]:
+        """Combine default carrier constructors across reference
+        bindings.
+        """
+
+        def _compute(values: tuple[Value, ...], /) -> tuple[str, ...] | None:
+            """Return a shared carrier, retaining native and JSON policies."""
+            if (
+                self._json_type_active
+                or self.dict_format is type(self.dict_format).RECORD
+            ):
+                return None
+            types = frozenset[type]()
+            for value in values:
+                types |= _collect_gleam_types(value=value)
+            return _gleam_preamble_for_types(
+                types=types,
+                type_name=self.type_name,
+                constructor_prefix=self.constructor_prefix,
+                datetime_type_produced=self.datetime_format.value.type_produced,
+            )
+
+        return _compute
 
     @cached_property
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
