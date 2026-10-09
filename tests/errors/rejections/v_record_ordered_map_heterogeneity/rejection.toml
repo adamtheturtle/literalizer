@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "V ordered-map record fields retain their heterogeneous scalar rejection policy."
+exceptions = ["HeterogeneousScalarCollectionError"]
+languages = ["V"]
+
+[call]
+api = "literalize"
+sources = ['{values: !!omap [{first: 1}, {second: s}], flag: true}']
+input_format = "yaml"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [{ kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" }]

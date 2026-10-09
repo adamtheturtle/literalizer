@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["V"]
+languages_reason = "V native ordered-map record fields use independently inferred map value types and an interface header for empty maps."
+
+[[variants]]
+axis = "heterogeneous_strategy_record"
