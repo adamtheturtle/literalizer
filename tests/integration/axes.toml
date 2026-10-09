@@ -1449,3 +1449,15 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
   { kind = "enum_member", option = "sequence_format", member = "LIST" },
 ]
+
+[axes.dart_call_result_var]
+plan = "fixed_overrides"
+name_template = "{lang}_call_result_var_type_hints_always"
+gates = [
+  { kind = "enum_member_present", option = "declaration_style", member = "VAR" },
+  { kind = "enum_member_present", option = "variable_type_hints", member = "ALWAYS" },
+]
+overrides = [
+  { kind = "enum_member", option = "declaration_style", member = "VAR" },
+  { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
+]

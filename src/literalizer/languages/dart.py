@@ -100,7 +100,6 @@ from literalizer._language import (
     identity_call_arg,
     identity_constructor_target,
     line_comment_call_variable_assignment,
-    line_comment_call_variable_declaration,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_data_preamble,
@@ -110,6 +109,7 @@ from literalizer._language import (
     value_contains,
     wrap_in_file_noop,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -532,9 +532,6 @@ class Dart(metaclass=LanguageCls):
     format_integer_widened = no_format_integer_widened
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
-    )
-    format_call_variable_declaration: ClassVar[property] = (
-        line_comment_call_variable_declaration(regex_literals=False)
     )
     format_call_variable_assignment: ClassVar[property] = (
         line_comment_call_variable_assignment(regex_literals=False)
@@ -1476,6 +1473,36 @@ class Dart(metaclass=LanguageCls):
             close="}",
             preamble_lines=(),
         )
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Infer the target's return type independently of its
+        arguments.
+        """
+
+        def _format(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Bind the call result before its trailing comments."""
+            code, trailing = split_trailing_line_comments(
+                statement=value,
+                prefix="//",
+                regex_literals=False,
+                backtick_strings=False,
+            )
+            return (
+                self.declaration_style.value.formatter(
+                    name, code, data, modifiers
+                )
+                + trailing
+            )
+
+        return _format
 
     @cached_property
     def format_variable_declaration(

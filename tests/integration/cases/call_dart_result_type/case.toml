@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+languages = ["Dart"]
+languages_reason = "Dart explicit literal hints must not become annotations of an unknown call result."
+
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "dart_call_result_var"
