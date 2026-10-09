@@ -18,6 +18,7 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
+from literalizer._language import is_reserved_identifier
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -239,11 +240,46 @@ def _is_reserved_parameter_name(
     """Compare reserved names using the backend's identifier case
     policy.
     """
-    if lang_cls.reserved_variable_identifiers_case_sensitive:
-        return name in lang_cls.reserved_variable_identifiers
-    return any(
-        name.casefold() == reserved_name.casefold()
-        for reserved_name in lang_cls.reserved_variable_identifiers
+    return is_reserved_identifier(
+        case_sensitive=lang_cls.reserved_variable_identifiers_case_sensitive,
+        name=name,
+        reserved_identifiers=lang_cls.reserved_variable_identifiers,
+    )
+
+
+@beartype
+def _is_reserved_call_target(
+    *, lang_cls: literalizer.LanguageCls, target_function: str
+) -> bool:
+    """Apply declaration keywords to the head and member keywords to
+    every target component.
+    """
+    parts = target_function.split(sep=".")
+    case_sensitive = (
+        lang_cls.reserved_variable_identifiers_case_sensitive
+        and lang_cls.reserved_call_target_keywords_case_sensitive
+    )
+    bare_identifiers = (
+        lang_cls.reserved_bare_call_target_identifiers
+        if len(parts) == 1
+        else frozenset[str]()
+    )
+    head_identifiers = (
+        lang_cls.reserved_variable_identifiers
+        | lang_cls.reserved_call_target_head_identifiers
+        | bare_identifiers
+    ) - lang_cls.contextual_call_target_identifiers
+    return is_reserved_identifier(
+        case_sensitive=case_sensitive,
+        name=parts[0],
+        reserved_identifiers=head_identifiers,
+    ) or any(
+        is_reserved_identifier(
+            case_sensitive=case_sensitive,
+            name=part,
+            reserved_identifiers=lang_cls.reserved_identifiers,
+        )
+        for part in parts
     )
 
 
@@ -293,8 +329,9 @@ def _expected_call_shape_exception(
         )
     ):
         return InvalidCallParameterNameError
-    innermost_target_function = config.target_function.split(sep=".")[-1]
-    if innermost_target_function in lang_cls.reserved_identifiers:
+    if _is_reserved_call_target(
+        lang_cls=lang_cls, target_function=config.target_function
+    ):
         return InvalidCallTargetError
     unsupported_signals = (
         parameter_count == 0 and not lang_cls.supports_zero_parameter_calls,

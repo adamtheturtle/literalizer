@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "class"
+parameter_names = ["a"]
+per_element = false
+wrap_in_file = true
+languages = ["JavaScript"]
+languages_reason = "ECMAScript declaration keywords cannot name bare call targets."
