@@ -140,7 +140,7 @@ jobs:
     needs: [build, benchmark-wheel, benchmarks]
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: always()
+    if: ${{ !cancelled() }}
     steps:
       - name: Check matrix job status
         run: |-
