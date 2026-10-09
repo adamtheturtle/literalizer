@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Cpp"]
+languages_reason = "C++ native record fields independently declare their std::array element types, including nested arrays."
+
+[[variants]]
+axis = "record_array_sequence"

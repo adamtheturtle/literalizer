@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = true
+languages = ["Cpp"]
+languages_reason = "C++ native nullptr references are trivial; nlohmann JSON null values retain ownership semantics."
+ref_declarations = { my_null = "null", regular_null = "null" }
+consumable_refs = ["my_null"]
+
+[[call.variants]]
+axis = "json_type"

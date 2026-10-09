@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Kotlin"]
+languages_reason = "Kotlin RECORD fields must match Pair and Triple literals, including nested tuples and list fallbacks."
+
+[[variants]]
+axis = "record_tuple_sequence"
