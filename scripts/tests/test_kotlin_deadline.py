@@ -11,14 +11,18 @@ import pytest
 
 _TIMEOUT_EXIT_STATUS = 124
 
+_requires_pinned_kotlin = pytest.mark.skipif(
+    condition=os.environ.get(key="LITERALIZER_KOTLIN_DEADLINE_TESTS") != "1",
+    reason="native Kotlin deadline tests run in the pinned Kotlin lint job",
+)
+
 
 def _run_kotlin(
     *, tmp_path: Path, sources: list[str]
 ) -> subprocess.CompletedProcess[str]:
     """Run the real Kotlin host with an isolated output directory."""
     kotlin = shutil.which(cmd="kotlin")
-    if kotlin is None:
-        pytest.skip(reason="the Kotlin lint job supplies the compiler")
+    assert kotlin is not None, "the Kotlin lint job must supply its compiler"
     files: list[str] = []
     for index, source in enumerate(iterable=sources):
         path = tmp_path / f"fixture {index}.kts"
@@ -45,6 +49,7 @@ def _run_kotlin(
     return result
 
 
+@_requires_pinned_kotlin
 def test_completed_fixture_cancels_deadline(tmp_path: Path) -> None:
     """Cancel each timer before a later fixture runs past its deadline."""
     result = _run_kotlin(
@@ -59,6 +64,7 @@ def test_completed_fixture_cancels_deadline(tmp_path: Path) -> None:
     assert "deadline" not in result.stderr
 
 
+@_requires_pinned_kotlin
 def test_compilation_error_preserves_remaining_checks(tmp_path: Path) -> None:
     """Keep compilation failures and continue with subsequent fixtures."""
     result = _run_kotlin(
@@ -71,6 +77,7 @@ def test_compilation_error_preserves_remaining_checks(tmp_path: Path) -> None:
     assert "deadline" not in result.stderr
 
 
+@_requires_pinned_kotlin
 def test_stalled_evaluation_reports_fixture(tmp_path: Path) -> None:
     """Stop an infinite evaluation and name its file and elapsed
     budget.
