@@ -3545,7 +3545,7 @@ jobs:
       - lint-objectivec-tidy
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: always()
+    if: ${{ !cancelled() }}
     steps:
       - name: Check all jobs succeeded
         run: |-
