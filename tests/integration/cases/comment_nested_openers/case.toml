@@ -1,6 +1,6 @@
 schema_version = 1
 owner = "variant"
-languages = ["C", "Cpp", "Dart", "Haskell", "Kotlin", "ObjectiveC", "Odin", "PureScript", "Rust", "Scala", "Swift"]
+languages = ["C", "Cpp", "Dart", "Elm", "Haskell", "Kotlin", "ObjectiveC", "Odin", "PureScript", "Rust", "Scala", "Swift"]
 languages_reason = "These block-comment syntaxes nest or warn about embedded openers."
 
 [[variants]]
