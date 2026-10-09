@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[MixedListValuesError]
+"Mojo['[1,[]]']" = "List has values of mixed type families including a container, which this heterogeneous strategy cannot represent"
+"Mojo['[[],1]']" = "List has values of mixed type families including a container, which this heterogeneous strategy cannot represent"
+"Mojo['[{},[]]']" = "List has values of mixed type families including a container, which this heterogeneous strategy cannot represent"
+"Mojo['{\"a\":[1,[]]}']" = "List has values of mixed type families including a container, which this heterogeneous strategy cannot represent"

@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Mojo"]
+languages_reason = "Empty Mojo dictionary siblings must retain nested empty collection types."
+suites = ["base"]

@@ -594,6 +594,7 @@ def literalize(
         )
 
     pre_form = literalize_pre_form(
+        preserve_ref_values=False,
         source=source,
         input_format=input_format,
         language=language,

@@ -734,6 +734,7 @@ class CSharp(metaclass=LanguageCls):
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
+    uses_resolved_ref_declaration_data = True
     module_name_shares_variable_scope = False
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
         None
@@ -2424,6 +2425,32 @@ class CSharp(metaclass=LanguageCls):
             )
 
         return _formatter
+
+    @staticmethod
+    def bound_reference_modifiers(
+        modifiers: frozenset[enum.Enum], /
+    ) -> frozenset[enum.Enum]:
+        """Class-field roots require typed static bound fields."""
+        if _is_csharp_class_field(modifiers):
+            return frozenset({_CSharpModifiers.STATIC})
+        return frozenset[enum.Enum]()
+
+    def validate_reference_binding_hint(
+        self, value: Value, hint: Value, /
+    ) -> None:
+        """Reject an explicit hint incompatible with its bound field
+        type.
+        """
+        modifiers = frozenset[enum.Enum]({_CSharpModifiers.STATIC})
+        formatter = self.format_variable_declaration
+        actual_declaration = formatter("bound", "value", value, modifiers)
+        hinted_declaration = formatter("bound", "value", hint, modifiers)
+        if actual_declaration != hinted_declaration:
+            msg = (
+                "C# reference hints must have the same declaration type "
+                "as their bound values"
+            )
+            raise UnrepresentableInputError(msg)
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

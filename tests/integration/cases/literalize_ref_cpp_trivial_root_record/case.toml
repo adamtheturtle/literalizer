@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["Cpp"]
-languages_reason = "C++ root references to trivial RECORD structs must avoid ineffective moves."
+languages = ["C", "Cpp"]
+languages_reason = "C root references need the native record type; C++ must avoid ineffective moves."
 heterogeneous_strategy = "RECORD"
 
 [ref.value_sources]

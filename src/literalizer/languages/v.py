@@ -588,14 +588,28 @@ def _v_inner_type(items: list[Value], /) -> str:
 
 
 @beartype
-def _v_ordered_map_field_inner_type(items: list[Value], /) -> str:
-    """Infer ordered-map field values without losing their nominal map
-    kind.
+def _v_ordered_map_field_inner_type(
+    items: list[Value],
+    /,
+    *,
+    record_name_for_value: Callable[[Value], str | None],
+) -> str:
+    """Resolve nested collection fields using their rendered record names.
 
-    Ordered maps retain their nested map spelling, while plain dicts keep
-    the existing resolver because they may render as native records.
-    Scalar leaves use the shared pooled inference for integer widths.
+    Ordered maps and lists retain their structural types, while native
+    record leaves keep their generated nominal names. Scalar leaves use
+    the shared pooled inference for integer widths.
     """
+    names = {record_name_for_value(item) for item in items}
+    if len(names) == 1 and None not in names:
+        return f"{next(iter(names))}"
+    if len(names) > 1 and None not in names:
+        message = (
+            "V cannot represent ordered-map values with multiple "
+            "native record types under the RECORD heterogeneous "
+            "strategy"
+        )
+        raise UnrepresentableInputError(message)
     if len(items) > 0 and all(isinstance(item, OrderedMap) for item in items):
         values = [
             value
@@ -603,12 +617,18 @@ def _v_ordered_map_field_inner_type(items: list[Value], /) -> str:
             if isinstance(item, OrderedMap)
             for value in item.values()
         ]
-        return f"map[string]{_v_ordered_map_field_inner_type(values)}"
+        inner = _v_ordered_map_field_inner_type(
+            values, record_name_for_value=record_name_for_value
+        )
+        return f"map[string]{inner}"
     if len(items) > 0 and all(isinstance(item, list) for item in items):
         values = [
             value for item in items if isinstance(item, list) for value in item
         ]
-        return f"[]{_v_ordered_map_field_inner_type(values)}"
+        inner = _v_ordered_map_field_inner_type(
+            values, record_name_for_value=record_name_for_value
+        )
+        return f"[]{inner}"
     return _v_inner_type(items)
 
 
@@ -1376,9 +1396,16 @@ class V(metaclass=LanguageCls):
             case int():
                 return _v_int_field_type(value)
             case list():
-                return f"[]{_v_inner_type(value)}"
+                inner = _v_ordered_map_field_inner_type(
+                    value,
+                    record_name_for_value=self._record_strategy.record_name_for_value,
+                )
+                return f"[]{inner}"
             case OrderedMap():
-                inner = _v_ordered_map_field_inner_type(list(value.values()))
+                inner = _v_ordered_map_field_inner_type(
+                    list(value.values()),
+                    record_name_for_value=self._record_strategy.record_name_for_value,
+                )
                 return f"map[string]{inner}"
             case _:
                 scalar_type = _V_SCALAR_FIELD_TYPE.get(type(value))
@@ -1401,21 +1428,6 @@ class V(metaclass=LanguageCls):
             return request.record_name
         if request.element_record_name is not None:
             return f"[]{request.element_record_name}"
-        if isinstance(request.value, OrderedMap):
-            names = {
-                self._record_strategy.record_name_for_value(value)
-                for value in request.value.values()
-            }
-            if len(names) == 1 and None not in names:
-                key_type = _v_inner_type(list(request.value))
-                return f"map[{key_type}]{next(iter(names))}"
-            if len(names) > 1 and None not in names:
-                message = (
-                    "V cannot represent ordered-map values with multiple "
-                    "native record types under the RECORD heterogeneous "
-                    "strategy"
-                )
-                raise UnrepresentableInputError(message)
         if (
             isinstance(request.value, dict)
             and not isinstance(request.value, OrderedMap)
