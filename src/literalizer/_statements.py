@@ -29,7 +29,7 @@ def split_trailing_line_comments(
     for match in reversed(matches):
         if not match.group().startswith(prefix):
             break
-        if statement[match.end() : cursor].strip():
+        if statement[match.end() : cursor].strip() != "":
             break
         cursor = match.start()
     if cursor == len(statement):
