@@ -123,8 +123,6 @@ from literalizer._language import (
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
@@ -132,6 +130,7 @@ from literalizer._language import (
     identity_call_arg,
     identity_call_ref_identifier,
     identity_constructor_target,
+    line_comment_call_variable_assignment,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_compute_call_slot_wrap_ids,
@@ -143,6 +142,7 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import OrderedMap, Scalar, Value, ValueInput
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -2698,8 +2698,7 @@ class Cpp(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_assignment = line_comment_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -4537,6 +4536,23 @@ class Cpp(metaclass=LanguageCls):
         return tuple(
             entry for entry in entries if entry.startswith("#include ")
         )
+
+    @staticmethod
+    def format_call_variable_declaration(
+        name: str,
+        value: str,
+        _data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Deduce a call's result type independently of its argument
+        data.
+        """
+        code, trailing = split_trailing_line_comments(
+            statement=value, prefix="//"
+        )
+        prefix = _cpp_modifier_prefix(modifiers=modifiers)
+        return f"{prefix}auto {name} = {code};{trailing}"
 
     @staticmethod
     def format_reference_variable_declaration(

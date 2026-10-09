@@ -94,13 +94,13 @@ from literalizer._language import (
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_constructor_target,
+    line_comment_call_variable_assignment,
+    line_comment_call_variable_declaration,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_data_preamble,
@@ -533,8 +533,8 @@ class Dart(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_declaration = line_comment_call_variable_declaration
+    format_call_variable_assignment = line_comment_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas

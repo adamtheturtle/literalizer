@@ -17,6 +17,47 @@ _OPENING_BRACKETS = "([{"
 _CLOSING_BRACKETS = ")]}"
 
 
+@beartype
+def split_trailing_line_comments(
+    *, statement: str, prefix: str
+) -> tuple[str, str]:
+    """Separate trailing line comments from a C-style expression."""
+    cursor = len(statement)
+    matches = list(
+        _c_style_comment_pattern(prefix=prefix).finditer(string=statement)
+    )
+    for match in reversed(matches):
+        if not match.group().startswith(prefix):
+            break
+        if statement[match.end() : cursor].strip():
+            break
+        cursor = match.start()
+    if cursor == len(statement):
+        return statement, ""
+    code = statement[:cursor].rstrip()
+    return code, statement[len(code) :]
+
+
+@functools.cache
+@beartype
+def _c_style_comment_pattern(*, prefix: str) -> re.Pattern[str]:
+    """Match literals and comments without treating quoted markers as
+    comments.
+    """
+    alternatives = [
+        (
+            r'R"(?P<raw_delimiter>[^ ()\\\t\r\n]{0,16})\('
+            r'[\s\S]*?\)(?P=raw_delimiter)"'
+        ),
+        r"(?P<triple_quote>\"\"\"|''')[\s\S]*?(?P=triple_quote)",
+        r'"(?:[^"\\]|\\[\s\S])*"',
+        r"'(?:[^'\\]|\\[\s\S])*'",
+        r"/\*[\s\S]*?\*/",
+        rf"{re.escape(pattern=prefix)}[^\n]*",
+    ]
+    return re.compile(pattern="|".join(alternatives))
+
+
 @functools.cache
 @beartype
 def _skipped_span_pattern(
