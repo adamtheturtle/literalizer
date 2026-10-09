@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Cpp"]
+languages_reason = "C++ bound method calls explicitly discard unchanged transformed return values."
+target_function = "thing.go"
+parameter_names = ["value"]
+per_element = true
+call_transform = "{call}"
+wrap_in_file = true
+ref_declarations = { item = "[1, 2]" }
