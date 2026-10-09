@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     vals: (&'static str, &'static str),
 }

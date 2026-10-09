@@ -114,8 +114,6 @@ from literalizer._language import (
     date_scalar_preamble,
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
-    default_format_call_arg_ref_identifier,
-    default_format_call_arg_ref_identifier_consumable,
     default_format_call_ref_identifier,
     default_format_call_statement,
     default_format_call_stub,
@@ -1510,7 +1508,7 @@ def _rust_value_enum_lines(
         )
     if len(variants) == 0:
         return []
-    lines: list[str] = [f"enum {enum_name} {{"]
+    lines: list[str] = ["#[derive(Clone)]", f"enum {enum_name} {{"]
     for variant in variants:
         if variant.inner_type is None:
             body = variant.name
@@ -2854,7 +2852,10 @@ def _record_preamble_impl(
         )
         struct_blocks: list[str] = []
         for shape in emit_order:
-            block: list[str] = [f"struct {record_names[shape]} {{"]
+            block: list[str] = [
+                "#[derive(Clone)]",
+                f"struct {record_names[shape]} {{",
+            ]
             for key in shape.keys:
                 example = field_values[shape].get(key)
                 effective_derecordized_map_value_type = narrow_value_type
@@ -4284,10 +4285,98 @@ class Rust(metaclass=LanguageCls):
 
     format_call_ref_identifier = default_format_call_ref_identifier
 
-    format_call_arg_ref_identifier = default_format_call_arg_ref_identifier
+    def _reference_value_is_copy(self, value: Value | None, /) -> bool:
+        """Classify the emitted binding, including its container
+        format.
+        """
+        if self._json_type_active:
+            return False
+        if not isinstance(value, (list, dict, set)):
+            return True
+        if not isinstance(value, list):
+            return False
+        return self._reference_list_is_copy(value)
+
+    def _reference_list_is_copy(self, value: list[Value], /) -> bool:
+        """Arrays and tuples copy only when every rendered field
+        copies.
+        """
+        sequence_cls = type(self.sequence_format)
+        if len(value) == 0 and self.sequence_format is sequence_cls.ARRAY:
+            return self.default_sequence_element_type in {
+                "bool",
+                "char",
+                "i8",
+                "i16",
+                "i32",
+                "i64",
+                "i128",
+                "isize",
+                "u8",
+                "u16",
+                "u32",
+                "u64",
+                "u128",
+                "usize",
+                "f32",
+                "f64",
+                "&str",
+                "&'static str",
+                "()",
+                "NaiveDate",
+                "NaiveDateTime",
+                "NaiveTime",
+            }
+        is_copy_container = self.sequence_format in {
+            sequence_cls.ARRAY,
+            sequence_cls.TUPLE,
+        }
+        if self.sequence_format is sequence_cls.TUPLE_NESTED_VEC:
+            is_copy_container = id(value) in _rust_tuple_list_ids(value)
+        if (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).TUPLE
+        ):
+            is_copy_container |= id(value) in collect_tuple_list_ids(
+                data=value
+            )
+        if (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).TAGGED_ENUM
+            and len(_tagged_enum_wrap_ids(value)) > 0
+        ):
+            return False
+        return is_copy_container and all(
+            self._reference_value_is_copy(item) for item in value
+        )
+
+    @cached_property
+    def format_reused_literal_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Clone owned bindings while preserving direct Copy
+        references.
+        """
+
+        def _format(name: str, value: Value | None, /) -> str:
+            """Keep a reused binding available after this expression."""
+            if self._reference_value_is_copy(value):
+                return name
+            return f"{name}.clone()"
+
+        return _format
+
+    @cached_property
+    def format_call_arg_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Preserve bindings passed to calls unless explicitly
+        consumed.
+        """
+        return self.format_reused_literal_ref_identifier
 
     format_call_arg_ref_identifier_consumable = (
-        default_format_call_arg_ref_identifier_consumable
+        default_format_call_ref_identifier
     )
 
     consumable_ref_value_inhibits_consuming_form = (

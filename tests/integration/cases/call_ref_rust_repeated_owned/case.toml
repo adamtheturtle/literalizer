@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["data"]
+per_element = true
+languages = ["Rust"]
+languages_reason = "Rust calls retain owned bindings unless one use is explicitly consumable."
+consumable_refs = ["item"]
+
+[call.ref_declarations]
+item = '[1,2]'

@@ -262,6 +262,11 @@ def _ref_language_options(
             config.heterogeneous_strategy,
         ),
         ("sequence_format", lang_cls.SequenceFormats, config.sequence_format),
+        (
+            "declaration_style",
+            lang_cls.DeclarationStyles,
+            config.declaration_style,
+        ),
         ("json_type", lang_cls.JsonTypes, config.json_type),
         ("dict_format", lang_cls.DictFormats, config.dict_format),
     ):
@@ -270,6 +275,11 @@ def _ref_language_options(
                 spec,
                 **{name: enum_member_by_name(enum_cls=enum_cls, name=choice)},
             )
+    if config.default_sequence_element_type is not None:
+        spec = dataclasses.replace(
+            spec,
+            default_sequence_element_type=config.default_sequence_element_type,
+        )
     return spec
 
 
