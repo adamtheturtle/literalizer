@@ -605,6 +605,9 @@ files = [ "." ]
 # ``tests/integration/cases/`` carries a ``@<version>`` tag, so exclude
 # those paths from mypy; ruff and other linters still cover them.
 exclude = [
+    # doccmd excerpts can disappear during directory discovery. Dedicated
+    # mypy-docs checks still validate these files as explicit inputs.
+    "(^|/)doccmd_",
     "build",
     "tests/integration/cases/.*@.*",
 ]
