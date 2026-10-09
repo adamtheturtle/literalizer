@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Go"]
+languages_reason = "Go imports from later bound records must precede every record declaration."
+heterogeneous_strategy = "RECORD"
+
+[ref.value_sources]
+plain = '{"x":1}'
+
+[ref.bound_refs.timed]
+day = 2001-01-02
+stamp = 2001-01-02T03:04:05Z

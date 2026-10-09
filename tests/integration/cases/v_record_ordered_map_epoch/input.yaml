@@ -1,0 +1,8 @@
+values: !!omap
+  - first: 2040-01-01T00:00:00Z
+flag: true
+nested_values: !!omap
+  - first: !!omap
+      - nested: 2040-01-01T00:00:00Z
+list_values: !!omap
+  - first: [2040-01-01T00:00:00Z]

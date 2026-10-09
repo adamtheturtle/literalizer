@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "Independent C++ record fields do not exempt heterogeneous elements within an array or sibling arrays in a plain mapping."
+exceptions = ["HeterogeneousScalarCollectionError", "HeterogeneousSiblingListsError", "UnrepresentableInputError"]
+languages = ["Cpp"]
+
+[call]
+api = "literalize"
+sources = ['{values: [1, s]}', '{values: [[1], [s]]}', '{1: [1], 2: [s]}']
+input_format = "yaml"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "option_member", option = "sequence_format", member = "ARRAY" },
+]
