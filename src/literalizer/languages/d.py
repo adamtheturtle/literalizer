@@ -535,6 +535,9 @@ def _format_d_call_declaration(
         prefix="//",
         backtick_strings=True,
         regex_literals=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
     )
     return f"auto {name} = {code};{trailing}"
 
@@ -553,6 +556,9 @@ def _format_d_call_assignment(name: str, value: str, _data: Value) -> str:
         prefix="//",
         backtick_strings=True,
         regex_literals=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
     )
     return f"{name} = {code};{trailing}"
 

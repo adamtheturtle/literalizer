@@ -2715,7 +2715,12 @@ class Cpp(metaclass=LanguageCls):
         staticmethod(identity_constructor_target)
     )
     format_call_variable_assignment: ClassVar[property] = (
-        line_comment_call_variable_assignment(regex_literals=False)
+        line_comment_call_variable_assignment(
+            regex_literals=False,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+        )
     )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
@@ -4582,6 +4587,9 @@ class Cpp(metaclass=LanguageCls):
             prefix="//",
             regex_literals=False,
             backtick_strings=False,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
         )
         prefix = _cpp_modifier_prefix(modifiers=modifiers)
         return f"{prefix}auto {name} = {code};{trailing}"

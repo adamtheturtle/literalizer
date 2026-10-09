@@ -24,15 +24,24 @@ def split_trailing_line_comments(
     prefix: str,
     regex_literals: bool,
     backtick_strings: bool,
+    raw_string_prefixes: tuple[str, ...],
+    verbatim_strings: bool,
+    interpolation_syntax: tuple[str, str] | None,
 ) -> tuple[str, str]:
     """Separate trailing line comments from a C-style expression."""
     cursor = len(statement)
-    matches = list(
-        _c_style_comment_pattern(
-            prefix=prefix,
-            regex_literals=regex_literals,
-            backtick_strings=backtick_strings,
-        ).finditer(string=statement)
+    pattern = _c_style_comment_pattern(
+        prefix=prefix,
+        regex_literals=regex_literals,
+        backtick_strings=backtick_strings,
+        raw_string_prefixes=raw_string_prefixes,
+        verbatim_strings=verbatim_strings,
+    )
+    matches = _c_style_comment_matches(
+        statement=statement,
+        pattern=pattern,
+        interpolation_syntax=interpolation_syntax,
+        verbatim_strings=verbatim_strings,
     )
     for match in reversed(matches):
         if not match.group().startswith(prefix):
@@ -46,25 +55,197 @@ def split_trailing_line_comments(
     return code, statement[len(code) :]
 
 
+def _c_style_comment_matches(
+    *,
+    statement: str,
+    pattern: re.Pattern[str],
+    interpolation_syntax: tuple[str, str] | None,
+    verbatim_strings: bool,
+) -> list[re.Match[str]]:
+    """Skip complete interpolated strings before locating comments."""
+    if (
+        interpolation_syntax is None
+        or interpolation_syntax[0] not in statement
+    ):
+        return list(pattern.finditer(string=statement))
+    matches = []
+    cursor = 0
+    while (match := pattern.search(string=statement, pos=cursor)) is not None:
+        matches.append(match)
+        cursor = _literal_span_end(
+            statement=statement,
+            match=match,
+            pattern=pattern,
+            interpolation_syntax=interpolation_syntax,
+            verbatim_strings=verbatim_strings,
+        )
+    return matches
+
+
+def _literal_span_end(
+    *,
+    statement: str,
+    match: re.Match[str],
+    pattern: re.Pattern[str],
+    interpolation_syntax: tuple[str, str],
+    verbatim_strings: bool,
+) -> int:
+    """Extend a quoted span across nested interpolation expressions."""
+    literal = match.group()
+    interpolation_start, quotes = interpolation_syntax
+    if literal[:1] not in quotes and not literal.startswith("@"):
+        return match.end()
+    quote_start = match.start()
+    if literal.startswith("@"):
+        quote_start += literal.index('"')
+    preceding = statement[max(0, quote_start - 2) : quote_start]
+    if interpolation_start == "{" and "$" not in preceding:
+        return match.end()
+    if interpolation_start not in literal:
+        return match.end()
+    verbatim = verbatim_strings and "@" in preceding
+    quote = statement[quote_start]
+    delimiter = quote
+    if not verbatim and statement.startswith(quote * 3, quote_start):
+        delimiter = quote * 3
+    return _interpolated_string_end(
+        statement=statement,
+        cursor=quote_start + len(delimiter),
+        delimiter=delimiter,
+        verbatim=verbatim,
+        pattern=pattern,
+        interpolation_syntax=interpolation_syntax,
+        verbatim_strings=verbatim_strings,
+    )
+
+
+def _string_escape_width(
+    *, statement: str, cursor: int, verbatim: bool
+) -> int:
+    """Return how many characters belong to a string escape."""
+    if verbatim and statement.startswith('""', cursor):
+        return 2
+    if not verbatim and statement[cursor] == "\\":
+        return 2
+    return 0
+
+
+def _interpolated_string_end(
+    *,
+    statement: str,
+    cursor: int,
+    delimiter: str,
+    verbatim: bool,
+    pattern: re.Pattern[str],
+    interpolation_syntax: tuple[str, str],
+    verbatim_strings: bool,
+) -> int:
+    """Find a string's closing delimiter outside interpolation."""
+    interpolation_start = interpolation_syntax[0]
+    while cursor < len(statement):
+        escape_width = _string_escape_width(
+            statement=statement, cursor=cursor, verbatim=verbatim
+        )
+        if escape_width:
+            cursor += escape_width
+        elif statement.startswith(delimiter, cursor):
+            return cursor + len(delimiter)
+        elif interpolation_start == "{" and statement.startswith("{{", cursor):
+            cursor += 2
+        elif statement.startswith(interpolation_start, cursor):
+            cursor = _interpolation_expression_end(
+                statement=statement,
+                cursor=cursor + len(interpolation_start),
+                pattern=pattern,
+                interpolation_syntax=interpolation_syntax,
+                verbatim_strings=verbatim_strings,
+            )
+        else:
+            cursor += 1
+    return len(statement)
+
+
+def _interpolation_expression_end(
+    *,
+    statement: str,
+    cursor: int,
+    pattern: re.Pattern[str],
+    interpolation_syntax: tuple[str, str],
+    verbatim_strings: bool,
+) -> int:
+    """Balance expression delimiters while skipping quoted contents."""
+    interpolation_start = interpolation_syntax[0]
+    closing = ["}"]
+    while cursor < len(statement):
+        match = pattern.match(string=statement, pos=cursor)
+        if match is not None:
+            cursor = _literal_span_end(
+                statement=statement,
+                match=match,
+                pattern=pattern,
+                interpolation_syntax=interpolation_syntax,
+                verbatim_strings=verbatim_strings,
+            )
+            continue
+        character = statement[cursor]
+        if character in _OPENING_BRACKETS:
+            closing.append(
+                _CLOSING_BRACKETS[_OPENING_BRACKETS.index(character)]
+            )
+        elif character == closing[-1]:
+            closing.pop()
+            if not closing:
+                return cursor + 1
+        elif (
+            interpolation_start == "{"
+            and character == ":"
+            and len(closing) == 1
+        ):
+            # A C# format tail is text, including slash comment markers.
+            end = statement.find("}", cursor)
+            return len(statement) if end == -1 else end + 1
+        cursor += 1
+    return len(statement)
+
+
 @functools.cache
 @beartype
 def _c_style_comment_pattern(
-    *, prefix: str, regex_literals: bool, backtick_strings: bool
+    *,
+    prefix: str,
+    regex_literals: bool,
+    backtick_strings: bool,
+    raw_string_prefixes: tuple[str, ...],
+    verbatim_strings: bool,
 ) -> re.Pattern[str]:
     """Match literals and comments without treating quoted markers as
     comments.
     """
-    alternatives = [
-        (
-            r'R"(?P<raw_delimiter>[^ ()\\\t\r\n]{0,16})\('
-            r'[\s\S]*?\)(?P=raw_delimiter)"'
-        ),
-        r"(?P<triple_quote>\"\"\"|''')[\s\S]*?(?P=triple_quote)",
-        r'"(?:[^"\\]|\\[\s\S])*"',
-        r"'(?:[^'\\]|\\[\s\S])*'",
-        r"/\*[\s\S]*?\*/",
-        rf"{re.escape(pattern=prefix)}[^\n]*",
-    ]
+    raw_prefix = "|".join(
+        re.escape(pattern=marker) for marker in raw_string_prefixes
+    )
+    alternatives = []
+    if raw_prefix:
+        alternatives.append(
+            rf"(?:{raw_prefix})"
+            r"(?:(?P<raw_triple_quote>\"\"\"|''')"
+            r"[\s\S]*?(?P=raw_triple_quote)|\"[^\"]*\"|'[^']*')"
+        )
+    if verbatim_strings:
+        alternatives.append(r'@\$?"(?:[^"]|"")*"')
+    alternatives.extend(
+        [
+            (
+                r'R"(?P<raw_delimiter>[^ ()\\\t\r\n]{0,16})\('
+                r'[\s\S]*?\)(?P=raw_delimiter)"'
+            ),
+            r"(?P<triple_quote>\"\"\"|''')[\s\S]*?(?P=triple_quote)",
+            r'"(?:[^"\\]|\\[\s\S])*"',
+            r"'(?:[^'\\]|\\[\s\S])*'",
+            r"/\*[\s\S]*?\*/",
+            rf"{re.escape(pattern=prefix)}[^\n]*",
+        ]
+    )
     if regex_literals:
         alternatives.append(r"~/(?:[^/\\]|\\[\s\S])*/[a-z]*")
     if backtick_strings:

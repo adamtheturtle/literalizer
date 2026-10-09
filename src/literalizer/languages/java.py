@@ -667,6 +667,9 @@ def _java_split_trailing_line_comments(value: str) -> _JavaTerminatedValue:
         prefix="//",
         regex_literals=False,
         backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
     )
     return _JavaTerminatedValue(code=code, trailing=trailing)
 

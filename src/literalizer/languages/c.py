@@ -706,6 +706,9 @@ def _format_c_call_declaration(
         prefix="//",
         regex_literals=False,
         backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
     )
     return f"CVal {name} = {code};{trailing}"
 
@@ -723,6 +726,9 @@ def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
         prefix="//",
         regex_literals=False,
         backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
     )
     return f"{name} = {code};{trailing}"
 

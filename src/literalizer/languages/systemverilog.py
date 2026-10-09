@@ -358,6 +358,9 @@ def _format_systemverilog_call_declaration(
         prefix="//",
         regex_literals=False,
         backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
     )
     return f"static _VVal {name} = {code};{trailing}"
 
@@ -380,6 +383,9 @@ def _format_systemverilog_call_assignment(
         prefix="//",
         regex_literals=False,
         backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
     )
     return f"{name} = {code};{trailing}"
 

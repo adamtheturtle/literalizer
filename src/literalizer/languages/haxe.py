@@ -293,10 +293,20 @@ class Haxe(metaclass=LanguageCls):
         staticmethod(new_constructor_target)
     )
     format_call_variable_declaration: ClassVar[property] = (
-        line_comment_call_variable_declaration(regex_literals=True)
+        line_comment_call_variable_declaration(
+            regex_literals=True,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=("${", "'"),
+        )
     )
     format_call_variable_assignment: ClassVar[property] = (
-        line_comment_call_variable_assignment(regex_literals=True)
+        line_comment_call_variable_assignment(
+            regex_literals=True,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=("${", "'"),
+        )
     )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble

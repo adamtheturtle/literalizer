@@ -89,3 +89,103 @@ def test_existing_haxe_regex_call_binding(suffix: str) -> None:
         wrap_in_file=False,
     )
     assert result.code == f"my_data = {expression};{suffix}"
+
+
+@pytest.mark.parametrize(
+    argnames=("lang_cls", "expression"),
+    argvalues=[
+        pytest.param(Dart, "r'ends\\' + '// payload'", id="dart-raw-single"),
+        pytest.param(Dart, 'r"ends\\" + "// payload"', id="dart-raw-double"),
+        pytest.param(
+            Dart, "r'''ends\\''' + '// payload'", id="dart-raw-triple-single"
+        ),
+        pytest.param(
+            Dart, 'r"""ends\\""" + "// payload"', id="dart-raw-triple-double"
+        ),
+        pytest.param(Dart, '"${"${"// payload"}"}"', id="dart-nested"),
+        pytest.param(
+            Dart, '"${r"ends\\" + "// payload"}"', id="dart-nested-raw"
+        ),
+        pytest.param(
+            Dart, "\"${{'value': '// payload'}['value']}\"", id="dart-map"
+        ),
+        pytest.param(
+            Dart,
+            "'''prefix ${'// payload'}'''",
+            id="dart-triple-interpolation",
+        ),
+        pytest.param(
+            Dart, '"\\"prefix ${"// payload"}\\""', id="dart-escaped-quotes"
+        ),
+        pytest.param(CSharp, '@"ends\\" + "// payload"', id="csharp-verbatim"),
+        pytest.param(
+            CSharp, '@"a"" // payload""b"', id="csharp-verbatim-quotes"
+        ),
+        pytest.param(CSharp, '$"{$"{1://}"}"', id="csharp-nested-format"),
+        pytest.param(
+            CSharp,
+            '$"{(true ? "// payload" : "ok")}"',
+            id="csharp-conditional",
+        ),
+        pytest.param(
+            CSharp, '$"{{payload}} {1://}"', id="csharp-escaped-braces"
+        ),
+        pytest.param(
+            CSharp,
+            '$@"a"" {"// payload"}""b"',
+            id="csharp-interpolated-verbatim",
+        ),
+        pytest.param(
+            CSharp,
+            '@$"a"" {"// payload"}""b"',
+            id="csharp-verbatim-interpolated",
+        ),
+        pytest.param(
+            Haxe, "'prefix ${'// payload'}'", id="haxe-interpolation"
+        ),
+        pytest.param(Haxe, '"prefix ${ // payload"', id="haxe-double-literal"),
+    ],
+)
+@pytest.mark.parametrize(
+    argnames="suffix", argvalues=["", " // trailing\n// extra"]
+)
+def test_existing_call_binding_string_syntax(
+    lang_cls: LanguageCls, expression: str, suffix: str
+) -> None:
+    """Keep raw strings and interpolation intact in external
+    assignments.
+    """
+    result = literalize_call(
+        source="42",
+        input_format=InputFormat.JSON,
+        language=lang_cls(),
+        target_function="make_widget",
+        parameter_names=["count"],
+        per_element=False,
+        call_transform=lambda _context: expression + suffix,
+        variable_form=ExistingVariable(name="my_data"),
+        wrap_in_file=False,
+    )
+    assert result.code == f"my_data = {expression};{suffix}"
+
+
+@pytest.mark.parametrize(
+    argnames="expression",
+    argvalues=['"${"// payload"', '"${"// payload"}', '"${]"// payload"'],
+)
+def test_existing_call_binding_incomplete_interpolation(
+    expression: str,
+) -> None:
+    """Opaque incomplete fragments remain intact without a lexer crash."""
+    result = literalize_call(
+        source="42",
+        input_format=InputFormat.JSON,
+        language=Dart(),
+        target_function="make_widget",
+        parameter_names=["count"],
+        per_element=False,
+        call_transform=lambda _context: expression,
+        variable_form=ExistingVariable(name="my_data"),
+        wrap_in_file=False,
+    )
+    assert result.code == f"my_data = {expression};"

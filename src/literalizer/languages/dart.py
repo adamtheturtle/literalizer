@@ -534,7 +534,12 @@ class Dart(metaclass=LanguageCls):
         staticmethod(identity_constructor_target)
     )
     format_call_variable_assignment: ClassVar[property] = (
-        line_comment_call_variable_assignment(regex_literals=False)
+        line_comment_call_variable_assignment(
+            regex_literals=False,
+            raw_string_prefixes=("r",),
+            verbatim_strings=False,
+            interpolation_syntax=("${", "\"'"),
+        )
     )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
@@ -1494,6 +1499,9 @@ class Dart(metaclass=LanguageCls):
                 prefix="//",
                 regex_literals=False,
                 backtick_strings=False,
+                raw_string_prefixes=("r",),
+                verbatim_strings=False,
+                interpolation_syntax=("${", "\"'"),
             )
             return (
                 self.declaration_style.value.formatter(

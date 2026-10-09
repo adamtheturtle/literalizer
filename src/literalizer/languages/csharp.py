@@ -780,6 +780,9 @@ class CSharp(metaclass=LanguageCls):
             prefix="//",
             regex_literals=False,
             backtick_strings=False,
+            raw_string_prefixes=(),
+            verbatim_strings=True,
+            interpolation_syntax=("{", '"'),
         )
         prefix = _csharp_modifier_prefix(modifiers=modifiers)
         if prefix == "":
@@ -787,7 +790,12 @@ class CSharp(metaclass=LanguageCls):
         return f"{prefix}object {name} = {code};{trailing}"
 
     format_call_variable_assignment: ClassVar[property] = (
-        line_comment_call_variable_assignment(regex_literals=False)
+        line_comment_call_variable_assignment(
+            regex_literals=False,
+            raw_string_prefixes=(),
+            verbatim_strings=True,
+            interpolation_syntax=("{", '"'),
+        )
     )
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(new_constructor_target)

@@ -589,6 +589,9 @@ def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
         prefix="//",
         regex_literals=False,
         backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
     )
     return f"{name} = {code};{trailing}"
 
@@ -2002,6 +2005,9 @@ class Zig(metaclass=LanguageCls):
                 prefix="//",
                 regex_literals=False,
                 backtick_strings=False,
+                raw_string_prefixes=(),
+                verbatim_strings=False,
+                interpolation_syntax=None,
             )
             return f"{keyword} {name} = {code};{trailing}"
 

@@ -3659,6 +3659,9 @@ def _line_comment_call_variable_declaration(
     self: "Language",
     *,
     regex_literals: bool,
+    raw_string_prefixes: tuple[str, ...],
+    verbatim_strings: bool,
+    interpolation_syntax: tuple[str, str] | None,
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Terminate C-style call bindings before trailing line comments."""
 
@@ -3671,6 +3674,9 @@ def _line_comment_call_variable_declaration(
             prefix="//",
             regex_literals=regex_literals,
             backtick_strings=False,
+            raw_string_prefixes=raw_string_prefixes,
+            verbatim_strings=verbatim_strings,
+            interpolation_syntax=interpolation_syntax,
         )
         return (
             self.format_variable_declaration(name, code, data, modifiers)
@@ -3682,7 +3688,11 @@ def _line_comment_call_variable_declaration(
 
 @beartype
 def line_comment_call_variable_declaration(
-    *, regex_literals: bool
+    *,
+    regex_literals: bool,
+    raw_string_prefixes: tuple[str, ...],
+    verbatim_strings: bool,
+    interpolation_syntax: tuple[str, str] | None,
 ) -> property:
     """Build a call binding descriptor with its literal syntax."""
 
@@ -3691,7 +3701,11 @@ def line_comment_call_variable_declaration(
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Return the declaration formatter for this language."""
         return _line_comment_call_variable_declaration(
-            self=self, regex_literals=regex_literals
+            self=self,
+            regex_literals=regex_literals,
+            raw_string_prefixes=raw_string_prefixes,
+            verbatim_strings=verbatim_strings,
+            interpolation_syntax=interpolation_syntax,
         )
 
     return property(fget=_get)
@@ -3702,6 +3716,9 @@ def _line_comment_call_variable_assignment(
     self: "Language",
     *,
     regex_literals: bool,
+    raw_string_prefixes: tuple[str, ...],
+    verbatim_strings: bool,
+    interpolation_syntax: tuple[str, str] | None,
 ) -> Callable[[str, str, Value], str]:
     """Terminate C-style call assignments before trailing line
     comments.
@@ -3714,6 +3731,9 @@ def _line_comment_call_variable_assignment(
             prefix="//",
             regex_literals=regex_literals,
             backtick_strings=False,
+            raw_string_prefixes=raw_string_prefixes,
+            verbatim_strings=verbatim_strings,
+            interpolation_syntax=interpolation_syntax,
         )
         return self.format_variable_assignment(name, code, data) + trailing
 
@@ -3721,13 +3741,23 @@ def _line_comment_call_variable_assignment(
 
 
 @beartype
-def line_comment_call_variable_assignment(*, regex_literals: bool) -> property:
+def line_comment_call_variable_assignment(
+    *,
+    regex_literals: bool,
+    raw_string_prefixes: tuple[str, ...],
+    verbatim_strings: bool,
+    interpolation_syntax: tuple[str, str] | None,
+) -> property:
     """Build a call assignment descriptor with its literal syntax."""
 
     def _get(self: "Language") -> Callable[[str, str, Value], str]:
         """Return the assignment formatter for this language."""
         return _line_comment_call_variable_assignment(
-            self=self, regex_literals=regex_literals
+            self=self,
+            regex_literals=regex_literals,
+            raw_string_prefixes=raw_string_prefixes,
+            verbatim_strings=verbatim_strings,
+            interpolation_syntax=interpolation_syntax,
         )
 
     return property(fget=_get)
