@@ -340,6 +340,7 @@ def run_literalize_ref_golden_case(
         policy=_REF_SKIPS,
         golden_path=golden_path,
         prefix=lang_cls.__name__,
+        config=file_regression.request.config,
     ):
         effective_bound_refs = None
         if len(bound_refs_input) > 0:

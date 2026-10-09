@@ -14,6 +14,7 @@ import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
+import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
@@ -223,13 +224,19 @@ def _skip_if_wrapper_unsupported(
     config: CallCaseSpec,
     lang_cls: literalizer.LanguageCls,
     golden_path: Path,
+    file_regression: FileRegressionFixture,
 ) -> None:
-    """Skip (and drop any stale golden) when this language cannot host
+    """Skip (and check any stale golden) when this language cannot host
     the case's wrapper stub.
     """
     reason = _wrapper_capability_skip_reason(lang_cls=lang_cls, config=config)
     if reason is not None:
-        skip_golden(reason=reason, golden_path=golden_path, unlink=True)
+        skip_golden(
+            reason=reason,
+            golden_path=golden_path,
+            unlink=True,
+            config=file_regression.request.config,
+        )
 
 
 @beartype
@@ -427,6 +434,7 @@ def run_wrap_in_file_case(
     lang_extension: str,
     golden_path: Path,
     file_regression: FileRegressionFixture,
+    pytest_config: pytest.Config,
 ) -> None:
     """Run ``literalize_call(..., wrap_in_file=True)`` and check
     golden.
@@ -435,6 +443,7 @@ def run_wrap_in_file_case(
         policy=_WRAP_IN_FILE_SKIPS,
         golden_path=golden_path,
         prefix=lang_name,
+        config=pytest_config,
     ):
         wrap_result = _literalize_call_case(
             config=config,
@@ -477,6 +486,7 @@ def _run_call_with_declarations(
     effective_ref_case: literalizer.IdentifierCase | None,
     lang_name: str,
     golden_path: Path,
+    file_regression: FileRegressionFixture,
 ) -> _CallWithDeclarations:
     """Run ref declarations and the call, skipping on typed unsupported
     signals.
@@ -485,6 +495,7 @@ def _run_call_with_declarations(
         policy=_DECLARATION_SKIPS,
         golden_path=golden_path,
         prefix=lang_name,
+        config=file_regression.request.config,
     ):
         decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
             ref_name: literalizer.literalize(
@@ -578,7 +589,10 @@ def run_call_golden_case(
         version=version,
     )
     _skip_if_wrapper_unsupported(
-        config=config, lang_cls=lang_cls, golden_path=golden_path
+        config=config,
+        lang_cls=lang_cls,
+        golden_path=golden_path,
+        file_regression=file_regression,
     )
     if config.call_style_type is not None:
         # Apply the manifest's style to variant specs as well as defaults.
@@ -616,6 +630,7 @@ def run_call_golden_case(
             lang_extension=lang_cls.extension,
             golden_path=golden_path,
             file_regression=file_regression,
+            pytest_config=file_regression.request.config,
         )
         return
     if (
@@ -629,6 +644,7 @@ def run_call_golden_case(
             policy=_DECLARATION_SKIPS,
             golden_path=golden_path,
             prefix=lang_cls.__name__,
+            config=file_regression.request.config,
         ):
             bound = _literalize_call_case(
                 config=config,
@@ -660,6 +676,7 @@ def run_call_golden_case(
         effective_ref_case=effective_ref_case,
         lang_name=lang_cls.__name__,
         golden_path=golden_path,
+        file_regression=file_regression,
     )
     decl_results = call_outcome.decl_results
     result = call_outcome.result
@@ -696,6 +713,7 @@ def run_call_golden_case(
         policy=_PREAMBLE_STUB_SKIPS,
         golden_path=golden_path,
         prefix=lang_cls.__name__,
+        config=file_regression.request.config,
     ):
         preamble_stubs.extend(
             spec.format_call_preamble_stub(
