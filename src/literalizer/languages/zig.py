@@ -1165,14 +1165,21 @@ class Zig(metaclass=LanguageCls):
         variable_name = context.variable_name
         body_preamble = context.body_preamble
         json_mode = self._json_type_active
-        # Detect ``var``/``const`` on the caller's declaration, before
-        # injecting the JSON-mode arena ``var`` body preamble (which
-        # would otherwise spuriously trip the regex).
-        is_var = bool(
-            re.search(
-                pattern=r"^\s*var ",
-                string=content,
-                flags=re.MULTILINE,
+        # Inspect caller declarations before adding the JSON arena preamble.
+        mutable_names = re.findall(
+            pattern=r"^\s*var ([A-Za-z_][A-Za-z0-9_]*)\b",
+            string=content,
+            flags=re.MULTILINE,
+        )
+        is_var = variable_name in mutable_names
+        content = "\n".join(
+            (
+                content,
+                *(
+                    f"_ = &{name};"
+                    for name in mutable_names
+                    if name != variable_name
+                ),
             ),
         )
         effective_body_preamble = body_preamble

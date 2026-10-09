@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Zig"]
+languages_reason = "Zig mutable bound references require an address use in generated wrappers."
+
+[ref]
+languages = ["Zig"]
+languages_reason = "Zig mutable bound references require an address use in generated wrappers."
+declaration_style = "VAR"
+json_type = "STD_JSON_VALUE"
+
+[ref.value_sources]
+shared = "[1, 2]"
