@@ -5019,6 +5019,7 @@ class _BoundRefComposition:
     """Per-ref declaration results paired with the main binding."""
 
     declarations: tuple[LiteralizeResult, ...]
+    resolved_preamble_data: Value
     main_result: LiteralizeResult
     assignment_result: LiteralizeResult | None
     variable_form: NewVariable | ExistingVariable | BothVariableForms
@@ -5262,6 +5263,7 @@ def literalize_bound_refs(
         )
     composition = _BoundRefComposition(
         declarations=tuple(decl_results),
+        resolved_preamble_data=pre_form.data_for_preamble,
         main_result=main_result,
         assignment_result=assignment_result,
         variable_form=variable_form,
@@ -5344,6 +5346,18 @@ def _literalize_value_binding(
         sections=(),
         data_dependent_preamble=data_dependent_preamble,
     )
+
+
+@runtime_checkable
+class _BoundReferenceDataPreambleLanguage(Protocol):
+    """A language whose references share one resolved carrier preamble."""
+
+    @property
+    def bound_reference_data_preamble(
+        self,
+    ) -> Callable[[tuple[Value, ...]], tuple[str, ...] | None]:
+        """Return a carrier shared by all resolved reference values."""
+        ...
 
 
 @beartype
@@ -5438,9 +5452,30 @@ def _compose_bound_refs(
         for declaration in decl_results
         for entry in declaration.data_dependent_preamble
     } | set(main_result.data_dependent_preamble)
-    all_entries = (
-        declaration_preamble + reference_imports + main_result.preamble
-    )
+    main_preamble = main_result.preamble
+    if isinstance(language, _BoundReferenceDataPreambleLanguage):
+        reference_preamble = language.bound_reference_data_preamble(
+            (
+                *(declaration.source_data for declaration in decl_results),
+                composition.resolved_preamble_data,
+            )
+        )
+        if reference_preamble is not None:
+            declaration_preamble = tuple(
+                entry
+                for declaration in decl_results
+                for entry in declaration.preamble
+                if entry not in declaration.data_dependent_preamble
+            )
+            main_preamble = tuple(
+                entry
+                for entry in main_preamble
+                if entry not in main_result.data_dependent_preamble
+            )
+            unified_data_dependent_preamble = reference_preamble
+            main_preamble += reference_preamble
+            data_entries.update(reference_preamble)
+    all_entries = declaration_preamble + reference_imports + main_preamble
     all_preamble = deduplicate_preamble_entries(
         entries=tuple(
             entry for entry in all_entries if entry not in data_entries

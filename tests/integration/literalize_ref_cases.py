@@ -243,6 +243,37 @@ def _bound_ref_inputs(
 
 
 @beartype
+def _ref_language_options(
+    *,
+    config: RefCaseSpec,
+    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
+) -> literalizer.Language:
+    """Apply the output modes explicitly selected by a reference case."""
+    for name, enum_cls, choice in (
+        (
+            "variable_type_hints",
+            lang_cls.VariableTypeHints,
+            config.variable_type_hints,
+        ),
+        (
+            "heterogeneous_strategy",
+            lang_cls.HeterogeneousStrategies,
+            config.heterogeneous_strategy,
+        ),
+        ("sequence_format", lang_cls.SequenceFormats, config.sequence_format),
+        ("json_type", lang_cls.JsonTypes, config.json_type),
+        ("dict_format", lang_cls.DictFormats, config.dict_format),
+    ):
+        if choice is not None:
+            spec = dataclasses.replace(
+                spec,
+                **{name: enum_member_by_name(enum_cls=enum_cls, name=choice)},
+            )
+    return spec
+
+
+@beartype
 def run_literalize_ref_golden_case(
     *,
     config: RefCaseSpec,
@@ -274,25 +305,7 @@ def run_literalize_ref_golden_case(
         version=version,
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
-    if config.variable_type_hints is not None:
-        spec = dataclasses.replace(
-            spec,
-            variable_type_hints=lang_cls.VariableTypeHints[
-                config.variable_type_hints
-            ],
-        )
-    if config.heterogeneous_strategy is not None:
-        spec = dataclasses.replace(
-            spec,
-            heterogeneous_strategy=lang_cls.HeterogeneousStrategies[
-                config.heterogeneous_strategy
-            ],
-        )
-    if config.sequence_format is not None:
-        spec = dataclasses.replace(
-            spec,
-            sequence_format=lang_cls.SequenceFormats[config.sequence_format],
-        )
+    spec = _ref_language_options(config=config, lang_cls=lang_cls, spec=spec)
     variable_form_obj: literalizer.VariableForm | None = (
         config.resolved_variable_form()
     )
