@@ -1602,6 +1602,13 @@ class V(metaclass=LanguageCls):
         return _clone
 
     @cached_property
+    def format_known_null_ref_identifier(self) -> Callable[[str], str]:
+        """Copy a known null pointer without invoking collection
+        methods.
+        """
+        return lambda name: name
+
+    @cached_property
     def format_call_arg_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
