@@ -1504,3 +1504,15 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "TUPLE" },
   { kind = "non_default_kwarg", kwarg = "heterogeneous_value_variant_name", name_value = true },
 ]
+
+[axes.cpp_tuple_versions]
+plan = "fixed_overrides"
+name_template = "{lang}_tuple"
+per_version = true
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "CPP14" },
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "TUPLE" },
+]
