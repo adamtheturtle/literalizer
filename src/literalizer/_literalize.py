@@ -4361,6 +4361,23 @@ class _PreFormState:
 
 
 @runtime_checkable
+class _BoundReferenceDeclarationLanguage(Protocol):
+    """A language whose bound declarations depend on their outer scope."""
+
+    def bound_reference_modifiers(
+        self, modifiers: frozenset[enum.Enum], /
+    ) -> frozenset[enum.Enum]:
+        """Return modifiers needed by a bound value's declaration."""
+        ...
+
+    def validate_reference_binding_hint(
+        self, value: Value, hint: Value, /
+    ) -> None:
+        """Reject a hint incompatible with the actual bound representation."""
+        ...
+
+
+@runtime_checkable
 class _ResolvedRefDeclarationLanguage(Protocol):
     """A language opting into resolved-reference declaration hints."""
 
@@ -4375,6 +4392,16 @@ def _declaration_data(*, pre_form: _PreFormState, language: Language) -> Value:
         and language.uses_resolved_ref_declaration_data
     )
     if uses_resolved:
+        alias_record_ids = language.heterogeneous_behavior.alias_record_ids
+        if alias_record_ids is not None:
+            alias_record_ids(
+                _inference_to_source_container_ids(
+                    source=pre_form.data_for_declaration,
+                    inferred=pre_form.data,
+                    ref_values=None,
+                    ref_key=pre_form.active_ref_key,
+                )
+            )
         return pre_form.data_for_declaration
     return pre_form.data
 
@@ -5135,11 +5162,12 @@ def literalize_bound_refs(
     Haskell ``seq name``) is preserved.
     """
     ordered_names = list(bound_refs)
+    explicit_hint_values = reference_values_or_empty(
+        values=explicit_ref_values
+    )
     effective_ref_values = merged_reference_values(
         bound_refs=bound_refs,
-        explicit_ref_values=reference_values_or_empty(
-            values=explicit_ref_values
-        ),
+        explicit_ref_values=explicit_hint_values,
     )
     effective_ref_values_2 = nonempty_mapping(values=effective_ref_values)
     pre_form = literalize_pre_form(
@@ -5203,6 +5231,17 @@ def literalize_bound_refs(
     decl_results: list[LiteralizeResult] = []
     for name in ordered_names:
         bound_value = contextual_bound_refs[name]
+        bound_modifiers = frozenset[enum.Enum]()
+        if isinstance(language, _BoundReferenceDeclarationLanguage):
+            bound_modifiers = language.bound_reference_modifiers(
+                declaration_form.modifiers
+                if isinstance(declaration_form, NewVariable)
+                else frozenset()
+            )
+            if name in explicit_hint_values:
+                language.validate_reference_binding_hint(
+                    bound_value, explicit_hint_values[name]
+                )
         language.validate_spec_for_data(data=bound_value)
         converted_name = name
         if ref_case is not None:
@@ -5212,7 +5251,7 @@ def literalize_bound_refs(
                 value=bound_value,
                 language=language,
                 variable_form=NewVariable(
-                    name=converted_name, modifiers=frozenset()
+                    name=converted_name, modifiers=bound_modifiers
                 ),
                 collection_layout=collection_layout,
                 record_context_data=bound_ref_contexts.get(
