@@ -18,6 +18,7 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
+from literalizer._language import is_reserved_identifier
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -233,6 +234,54 @@ def _skip_if_wrapper_unsupported(
 
 
 @beartype
+def _is_reserved_parameter_name(
+    *, lang_cls: literalizer.LanguageCls, name: str
+) -> bool:
+    """Compare reserved names using the identifier case policy."""
+    return is_reserved_identifier(
+        case_sensitive=lang_cls.reserved_variable_identifiers_case_sensitive,
+        name=name,
+        reserved_identifiers=lang_cls.reserved_variable_identifiers,
+    )
+
+
+@beartype
+def _is_reserved_call_target(
+    *, lang_cls: literalizer.LanguageCls, target_function: str
+) -> bool:
+    """Apply declaration keywords to the head and member keywords to
+    every target component.
+    """
+    parts = target_function.split(sep=".")
+    case_sensitive = (
+        lang_cls.reserved_variable_identifiers_case_sensitive
+        and lang_cls.reserved_call_target_keywords_case_sensitive
+    )
+    bare_identifiers = (
+        lang_cls.reserved_bare_call_target_identifiers
+        if len(parts) == 1
+        else frozenset[str]()
+    )
+    head_identifiers = (
+        lang_cls.reserved_variable_identifiers
+        | lang_cls.reserved_call_target_head_identifiers
+        | bare_identifiers
+    ) - lang_cls.contextual_call_target_identifiers
+    return is_reserved_identifier(
+        case_sensitive=case_sensitive,
+        name=parts[0],
+        reserved_identifiers=head_identifiers,
+    ) or any(
+        is_reserved_identifier(
+            case_sensitive=case_sensitive,
+            name=part,
+            reserved_identifiers=lang_cls.reserved_identifiers,
+        )
+        for part in parts
+    )
+
+
+@beartype
 def _expected_call_shape_exception(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -269,13 +318,18 @@ def _expected_call_shape_exception(
         or bound_refs_wrap
         or isinstance(effective_style.value, literalizer.KeywordCallStyle)
     )
-    if rejects_reserved_parameters and any(
-        name in lang_cls.reserved_variable_identifiers
-        for name in config.parameter_names
+    if (
+        rejects_reserved_parameters
+        and lang_cls.declares_call_parameter_names
+        and any(
+            _is_reserved_parameter_name(lang_cls=lang_cls, name=name)
+            for name in config.parameter_names
+        )
     ):
         return InvalidCallParameterNameError
-    innermost_target_function = config.target_function.split(sep=".")[-1]
-    if innermost_target_function in lang_cls.reserved_identifiers:
+    if _is_reserved_call_target(
+        lang_cls=lang_cls, target_function=config.target_function
+    ):
         return InvalidCallTargetError
     unsupported_signals = (
         parameter_count == 0 and not lang_cls.supports_zero_parameter_calls,
