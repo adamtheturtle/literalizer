@@ -157,12 +157,12 @@ def _mojo_collection_type(
     """
     inner_values: list[Value]
     containers: Sequence[list[Value] | dict[Scalar, Value]]
-    if values and all(isinstance(value, list) for value in values):
+    if bool(values) and all(isinstance(value, list) for value in values):
         lists = [value for value in values if isinstance(value, list)]
         containers = lists
         inner_values = [item for value in lists for item in value]
         opener, closer, fallback = "List[", "]", sequence_fallback
-    elif values and all(
+    elif bool(values) and all(
         isinstance(value, dict) and not isinstance(value, OrderedMap)
         for value in values
     ):
@@ -174,7 +174,8 @@ def _mojo_collection_type(
         )
         key_type = dict_key_fallback
         if inferred_key_type is not None:
-            key_type = element_to_type(inferred_key_type) or dict_key_fallback
+            key_name = element_to_type(inferred_key_type)
+            key_type = key_name if key_name is not None else dict_key_fallback
         opener, closer, fallback = (
             f"Dict[{key_type}, ",
             "]",
@@ -187,18 +188,16 @@ def _mojo_collection_type(
         return element_to_type(inferred)
     inner_type = variant_type
     if not any(id(value) in wrap_ids for value in containers):
-        inner_type = (
-            _mojo_collection_type(
-                values=inner_values,
-                element_to_type=element_to_type,
-                wrap_ids=wrap_ids,
-                variant_type=variant_type,
-                sequence_fallback=sequence_fallback,
-                dict_key_fallback=dict_key_fallback,
-                dict_value_fallback=dict_value_fallback,
-            )
-            or fallback
+        inferred_inner = _mojo_collection_type(
+            values=inner_values,
+            element_to_type=element_to_type,
+            wrap_ids=wrap_ids,
+            variant_type=variant_type,
+            sequence_fallback=sequence_fallback,
+            dict_key_fallback=dict_key_fallback,
+            dict_value_fallback=dict_value_fallback,
         )
+        inner_type = inferred_inner if inferred_inner is not None else fallback
     return f"{opener}{inner_type}{closer}"
 
 
