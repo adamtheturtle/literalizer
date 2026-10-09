@@ -145,7 +145,13 @@ from literalizer._language import (
     prepend_body_preamble,
 )
 from literalizer._statements import split_trailing_line_comments
-from literalizer._types import OrderedMap, Scalar, Value, ValueInput
+from literalizer._types import (
+    CallPreambleData,
+    OrderedMap,
+    Scalar,
+    Value,
+    ValueInput,
+)
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidCppRawStringDelimiterError,
@@ -2017,6 +2023,7 @@ def _build_cpp_record_preamble(
     record_preamble: Callable[[Value], tuple[str, ...]],
     compute_wrap_ids: Callable[[Value], frozenset[int]],
     compute_carrier_ids: Callable[[Value], frozenset[int]],
+    compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]],
     include_tuple_header: bool,
     record_shape_names: Mapping[frozenset[str], str],
     native_only: bool,
@@ -2069,12 +2076,16 @@ def _build_cpp_record_preamble(
             )
             is None
         )
+        requires_call_carrier = isinstance(data, CallPreambleData) and any(
+            compute_call_slot_wrap_ids(values)
+            for values in data.argument_slots
+        )
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
             tuple_list_ids=(effective_tuple_list_ids_2),
             record_dict_ids=record_dict_ids,
             force_variant=(
-                requires_map_carrier
+                (requires_map_carrier or requires_call_carrier)
                 and type_ctx.variant_type_name != "std::variant"
             ),
         )
@@ -4525,6 +4536,9 @@ class Cpp(metaclass=LanguageCls):
                 compute_carrier_ids=(
                     self.heterogeneous_behavior.compute_wrap_ids
                 ),
+                compute_call_slot_wrap_ids=(
+                    self.heterogeneous_behavior.compute_call_slot_wrap_ids
+                ),
                 include_tuple_header=False,
                 record_shape_names=self.record_shape_names,
                 native_only=False,
@@ -4539,6 +4553,9 @@ class Cpp(metaclass=LanguageCls):
                 ),
                 compute_carrier_ids=(
                     self.heterogeneous_behavior.compute_wrap_ids
+                ),
+                compute_call_slot_wrap_ids=(
+                    self.heterogeneous_behavior.compute_call_slot_wrap_ids
                 ),
                 include_tuple_header=True,
                 record_shape_names=self.record_shape_names,

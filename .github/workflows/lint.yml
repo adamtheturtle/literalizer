@@ -2340,7 +2340,7 @@ jobs:
       # over the network.
       - name: Install com.inuoe.jzon
         timeout-minutes: 10
-        run: ros install com.inuoe.jzon
+        run: scripts/retry.sh ros install com.inuoe.jzon
       # ``uv`` is needed by the ``Common Lisp roundtrip`` step below; it
       # runs the helper in project mode so ``import literalizer``
       # resolves.

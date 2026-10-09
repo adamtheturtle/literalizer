@@ -1,19 +1,17 @@
 #include <initializer_list>
 #include <string>
 #include <cstddef>
-#include <chrono>
-#include <map>
-#include <variant>
+struct Record0 { std::string s; int i{}; double f{}; bool b{}; std::nullptr_t n{}; std::string d; std::string dt; std::string by; };
 int main() {
-auto my_data = std::map<std::string, std::variant<std::string, int, double, bool, std::nullptr_t, std::chrono::year_month_day>>{
-    {"s", "string"},
-    {"i", 1},
-    {"f", 1.5},
-    {"b", true},
-    {"n", nullptr},
-    {"d", std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}}},
-    {"dt", "2024-01-15T12:00:00"},
-    {"by", "48656c6c6f"},
+auto my_data = Record0{
+    "string",
+    1,
+    1.5,
+    true,
+    nullptr,
+    "2024-01-15",
+    "2024-01-15T12:00:00",
+    "48656c6c6f",
 };
     (void)my_data;
     return 0;

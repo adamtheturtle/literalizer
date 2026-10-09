@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+variant_only = true
+languages = ["Cpp"]
+languages_reason = "A complete tuple argument must not request the scalar call-slot carrier."
+
+[[call.variants]]
+axis = "cpp14_heterogeneous_strategy_tuple"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"
