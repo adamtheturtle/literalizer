@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Roc"]
+languages_reason = "Roc top-level annotations and their definitions must retain the same pre-indentation margin."
+
+[ref]
+pre_indent_level = 3
+languages = ["Roc"]
+languages_reason = "Roc top-level annotations and their definitions must retain the same pre-indentation margin."
+
+[ref.value_sources]
+shared = "[1, 2]"
+other = "3"
