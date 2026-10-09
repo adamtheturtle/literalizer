@@ -7,14 +7,12 @@ strategy rejects).
 """
 
 from pathlib import Path
-from typing import NoReturn
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import InputFormat
-from literalizer.exceptions import CallArgNotSupportedError
-from literalizer.languages import Python
+from literalizer.languages import Bash
 
 from .call_cases import (
     CallCase,
@@ -25,52 +23,59 @@ from .call_cases import (
 )
 from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .case_inputs import CaseInput
+from .golden_checks import cleanup_stale_golden
 from .language_specs import make_golden_path, make_spec
 
 
-def test_wrap_in_file_case_skips_when_call_arg_is_rejected(
+@pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
+def test_wrap_in_file_case_handles_stale_rejected_call_arg(
+    *,
     tmp_path: Path,
     file_regression: FileRegressionFixture,
-    monkeypatch: pytest.MonkeyPatch,
+    regenerate: bool,
 ) -> None:
-    """Wrapped call cases drop stale golden files on rejected
-    arguments.
+    """A rejected Bash collection preserves or explicitly removes its
+    stale fixture.
     """
-    config = next(
-        config for config in default_call_case_specs() if config.wrap_in_file
+    pytest_config = pytest.Config.fromdictargs(
+        option_dict={}, args=["--regen-all"] if regenerate else []
     )
-    golden_path = tmp_path / "stale.py"
+    config = next(
+        config
+        for config in default_call_case_specs()
+        if config.case_dir_name == "call_multiline_list_argument"
+    ).model_copy(update={"per_element": False})
+    golden_path = tmp_path / "stale.sh"
     _ = golden_path.write_text(data="stale\n")
 
-    def reject_call(**_kwargs: object) -> NoReturn:
-        """Raise the configured call argument error."""
-        raise CallArgNotSupportedError(
-            language_name="Python",
-            reason="compound argument",
-        )
-
-    monkeypatch.setattr(target="literalizer.literalize_call", name=reject_call)
-
+    expected_exception: type[BaseException] = pytest.fail.Exception
+    expected_message = r"Stale golden file: .*stale\.sh.*--regen-all"
+    if regenerate:
+        expected_exception = pytest.skip.Exception
+        expected_message = "Bash rejected call arg: list values"
     with pytest.raises(
-        expected_exception=pytest.skip.Exception,
-        match="Python rejected call arg: compound argument",
+        expected_exception=expected_exception, match=expected_message
     ):
         run_wrap_in_file_case(
             config=config,
-            spec=make_spec(lang_cls=Python),
+            spec=make_spec(lang_cls=Bash),
             source="[]\n",
             input_info=CaseInput(
                 path=tmp_path / "input.yaml",
                 input_format=InputFormat.YAML,
             ),
             effective_ref_case=None,
-            lang_name="Python",
-            lang_extension=Python.extension,
+            lang_name="Bash",
+            lang_extension=Bash.extension,
             golden_path=golden_path,
             file_regression=file_regression,
+            pytest_config=pytest_config,
         )
 
-    assert not golden_path.exists()
+    if regenerate:
+        assert not golden_path.exists()
+    else:
+        assert golden_path.read_text(encoding="utf-8") == "stale\n"
 
 
 @pytest.mark.parametrize(
@@ -106,13 +111,16 @@ def test_call_golden_file(
                         file_regression=file_regression,
                         version=version_format,
                     )
-                make_golden_path(
-                    parent=cases_dir / config.case_dir_name,
-                    name=f"{lang_cls.__name__}_call",
-                    extension=lang_cls.extension,
-                    lang_cls=lang_cls,
-                    version=version_format,
-                ).unlink(missing_ok=True)
+                cleanup_stale_golden(
+                    golden_path=make_golden_path(
+                        parent=cases_dir / config.case_dir_name,
+                        name=f"{lang_cls.__name__}_call",
+                        extension=lang_cls.extension,
+                        lang_cls=lang_cls,
+                        version=version_format,
+                    ),
+                    config=file_regression.request.config,
+                )
                 continue
             run_call_golden_case(
                 config=config,

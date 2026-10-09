@@ -38,6 +38,11 @@ Running tests
 
    $ uv run --group dev pytest
 
+Golden verification preserves existing fixtures when rendering skips.
+A stale skipped fixture fails verification with its path.
+To remove it, run the corresponding golden test with ``--regen-all``.
+Regeneration also rewrites supported golden files, so select only the affected test and review its diff.
+
 Changelog entries
 -----------------
 
