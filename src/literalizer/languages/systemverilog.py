@@ -92,6 +92,7 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -352,7 +353,8 @@ def _format_systemverilog_call_declaration(
     struct literal, so the call result is bound directly with a plain
     ``static _VVal`` declaration regardless of the source data type.
     """
-    return f"static _VVal {name} = {value};"
+    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    return f"static _VVal {name} = {code};{trailing}"
 
 
 @beartype
@@ -368,7 +370,8 @@ def _format_systemverilog_call_assignment(
     already declared ``_VVal``, so the call result is assigned directly
     with no ``_VVal`` struct-literal wrapping.
     """
-    return f"{name} = {value};"
+    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    return f"{name} = {code};{trailing}"
 
 
 # Work around https://github.com/astral-sh/ty/issues/4573.

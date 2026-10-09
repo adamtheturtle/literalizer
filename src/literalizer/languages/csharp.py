@@ -120,12 +120,12 @@ from literalizer._language import (
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
     identity_call_arg,
+    line_comment_call_variable_assignment,
     new_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -136,6 +136,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ConflictingVariableModifiersError,
@@ -774,12 +775,15 @@ class CSharp(metaclass=LanguageCls):
         if _CSharpModifiers.CONST in modifiers:
             msg = "C# 'const' cannot bind a runtime call result."
             raise IncompatibleFormatsError(msg)
+        code, trailing = split_trailing_line_comments(
+            statement=value, prefix="//"
+        )
         prefix = _csharp_modifier_prefix(modifiers=modifiers)
         if prefix == "":
-            return f"var {name} = {value};"
-        return f"{prefix}object {name} = {value};"
+            return f"var {name} = {code};{trailing}"
+        return f"{prefix}object {name} = {code};{trailing}"
 
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_assignment = line_comment_call_variable_assignment
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(new_constructor_target)
     )

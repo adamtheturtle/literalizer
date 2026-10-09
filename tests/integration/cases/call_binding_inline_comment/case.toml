@@ -8,7 +8,7 @@ per_element = false
 call_transform = "{call} // note"
 wrap_in_file = true
 variable_form = "new"
-languages = ["Cpp", "Dart", "Java", "ObjectiveC"]
+languages = ["C", "Cpp", "CSharp", "D", "Dart", "Haxe", "Java", "ObjectiveC", "SystemVerilog", "Zig"]
 languages_reason = "C-style call bindings terminate before inline line comments."
 
 [[call.variants]]

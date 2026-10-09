@@ -10,13 +10,34 @@ from literalizer import (
     LanguageCls,
     literalize_call,
 )
-from literalizer.languages import Cpp, Dart, Java, ObjectiveC
+from literalizer.languages import (
+    C,
+    Cpp,
+    CSharp,
+    D,
+    Dart,
+    Haxe,
+    Java,
+    ObjectiveC,
+    SystemVerilog,
+    Zig,
+)
 
 
 @pytest.mark.parametrize(
     argnames=("lang_cls", "argument"),
     argvalues=[
+        pytest.param(C, "((CVal){.i = 42})", id="C"),
         pytest.param(Cpp, "42", id="Cpp"),
+        pytest.param(CSharp, "42", id="CSharp"),
+        pytest.param(D, "42", id="D"),
+        pytest.param(Haxe, "42", id="Haxe"),
+        pytest.param(
+            SystemVerilog,
+            '_VVal\'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}',
+            id="SystemVerilog",
+        ),
+        pytest.param(Zig, ".{ .int = 42 }", id="Zig"),
         pytest.param(Dart, "count: 42", id="Dart"),
         pytest.param(Java, "42", id="Java"),
         pytest.param(ObjectiveC, "@42", id="ObjectiveC"),

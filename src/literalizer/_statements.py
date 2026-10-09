@@ -52,6 +52,7 @@ def _c_style_comment_pattern(*, prefix: str) -> re.Pattern[str]:
         r"(?P<triple_quote>\"\"\"|''')[\s\S]*?(?P=triple_quote)",
         r'"(?:[^"\\]|\\[\s\S])*"',
         r"'(?:[^'\\]|\\[\s\S])*'",
+        r"`[^`]*`",
         r"/\*[\s\S]*?\*/",
         rf"{re.escape(pattern=prefix)}[^\n]*",
     ]

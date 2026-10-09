@@ -118,6 +118,7 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -700,7 +701,8 @@ def _format_c_call_declaration(
     difference is dropping the value-wrapping compound literal, so the
     call result is bound directly with a plain ``CVal`` declaration.
     """
-    return f"CVal {name} = {value};"
+    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    return f"CVal {name} = {code};{trailing}"
 
 
 @beartype
@@ -711,7 +713,8 @@ def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
     the variable is already declared ``CVal``, so the call result is
     assigned directly with no compound-literal wrapping.
     """
-    return f"{name} = {value};"
+    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    return f"{name} = {code};{trailing}"
 
 
 # Static preamble emitted under ``json_type=CJSON``: the cJSON header
