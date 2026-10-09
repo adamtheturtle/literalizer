@@ -2416,7 +2416,7 @@ class CSharp(metaclass=LanguageCls):
         """Class-field roots require typed static bound fields."""
         if _is_csharp_class_field(modifiers):
             return frozenset({_CSharpModifiers.STATIC})
-        return frozenset()
+        return frozenset[enum.Enum]()
 
     def validate_reference_binding_hint(
         self, value: Value, hint: Value, /
