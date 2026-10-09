@@ -525,8 +525,9 @@ def _variant_renderings(
 ) -> tuple[GoldenRendering, ...]:
     """Render each format variant's own spec against its own case.
 
-    A variant pins the language version its spec was built for, so the
-    rendering carries the spec rather than the keywords to rebuild it.
+    Plans expand ordinary options across supported versions and keep
+    explicit version choices pinned. Each variant already carries its
+    effective version, so the rendering uses that spec unchanged.
     """
     grouped = group_variant_cases_by_language()
     return tuple(
