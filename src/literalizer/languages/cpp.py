@@ -57,6 +57,8 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_octal,
+    format_string_c_utf8_characters,
+    has_bidi_formatting_character,
 )
 from literalizer._formatters.record_strategy import (
     ActiveRecordStrategy,
@@ -287,12 +289,14 @@ def _reject_incompatible_nested_cpp_arrays(data: Value, /) -> None:
 @beartype
 def _format_string_cpp_escaped(value: str) -> str:
     r"""Format *value* without embedding a null byte in a C++ literal."""
+    if has_bidi_formatting_character(value=value):
+        entries = format_string_c_utf8_characters(value=value)
+        return f"std::string{{{entries}}}"
     segments = value.split(sep="\0")
     if len(segments) == 1:
         return format_string_backslash_nul_octal(value=value)
     formatted_segments = [
-        format_string_backslash_nul_octal(value=segment)
-        for segment in segments
+        format_string_backslash_nul_octal(value=part) for part in segments
     ]
     return " + '\\0' + ".join(
         [f"std::string{{{formatted_segments[0]}}}", *formatted_segments[1:]],
@@ -325,6 +329,7 @@ def _format_string_multiline_with_delimiter_base(
     r"""Format *value* as a C++ raw string with a safe delimiter."""
     if (
         "\0" in value
+        or has_bidi_formatting_character(value=value)
         or "\r" in value
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
@@ -2295,13 +2300,16 @@ def _renders_as_string_literal(
 ) -> bool:
     """Return whether *data* renders as a C string literal.
 
-    ``bytes`` and ``str`` always render as quoted strings in C++.
+    Strings with null bytes or bidirectional controls render as owning values;
+    other strings and ``bytes`` render as quoted strings in C++.
     ``datetime.datetime`` and ``datetime.date`` do so only when their
     format's ``type_produced`` is :class:`str` (the ISO variants);
     other variants render as ``std::chrono`` or numeric expressions.
     """
     match data:
-        case str() if "\0" in data:
+        case str() if "\0" in data or has_bidi_formatting_character(
+            value=data
+        ):
             return False
         case bytes() | str():
             return True
