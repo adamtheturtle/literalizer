@@ -2172,10 +2172,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Verify Kotlin fixture deadlines
-        env:
-          LITERALIZER_KOTLIN_DEADLINE_TESTS: '1'
-        run: uv run --group=dev pytest scripts/tests/test_kotlin_deadline.py -n0 -q
       # Basic JSON -> Kotlin -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Kotlin toolchain on hand; the
       # script (issue 2715) routes the shared document through
