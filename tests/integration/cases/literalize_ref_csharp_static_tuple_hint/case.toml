@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["CSharp"]
+languages_reason = "C# bound values must use legal fields when the root requires class-member scope."
+variable_modifiers = ["STATIC"]
+
+[ref.value_sources]
+ref_data = '[1,2]'
+
+[ref.explicit_ref_value_sources]
+ref_data = '[3,4]'
