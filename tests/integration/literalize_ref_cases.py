@@ -274,6 +274,13 @@ def run_literalize_ref_golden_case(
         version=version,
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
+    if config.variable_type_hints is not None:
+        spec = dataclasses.replace(
+            spec,
+            variable_type_hints=lang_cls.VariableTypeHints[
+                config.variable_type_hints
+            ],
+        )
     if config.heterogeneous_strategy is not None:
         spec = dataclasses.replace(
             spec,

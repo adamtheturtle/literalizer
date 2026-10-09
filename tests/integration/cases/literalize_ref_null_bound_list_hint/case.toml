@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "A bound C++ nullptr remains trivial even when the inference hint describes a list."
+
+[ref.value_sources]
+my_value = "null"
+
+[ref.explicit_ref_value_sources]
+my_value = "[1, 2]"

@@ -1027,6 +1027,19 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
+[axes.record_array_sequence]
+plan = "fixed_overrides"
+name_template = "{lang}_record_array_sequence"
+per_version = true
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member_present", option = "sequence_format", member = "ARRAY" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member", option = "sequence_format", member = "ARRAY" },
+]
+
 # Scalar leaves are valid even when nested tuple records are rejected.
 [axes.record_tuple_sequence]
 plan = "fixed_overrides"
