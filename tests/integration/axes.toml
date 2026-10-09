@@ -930,6 +930,25 @@ layouts = [
   { layout = "MULTILINE", name_suffix = "_multiline" },
 ]
 
+# Explicit annotations must retain the native record names in root
+# collections as well as in individual record fields.
+[axes.record_type_hints_always]
+plan = "fixed_overrides"
+name_template = "{lang}_record_type_hints_always"
+per_version = true
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member_present", option = "variable_type_hints", member = "ALWAYS" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
+]
+layouts = [
+  { layout = "COMPACT" },
+  { layout = "MULTILINE", name_suffix = "_multiline" },
+]
+
 [axes.record_nested_in_ordered_map]
 plan = "fixed_overrides"
 name_template = "{lang}_record_nested_in_ordered_map"

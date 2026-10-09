@@ -1,0 +1,4 @@
+- !!omap
+  - first: {x: 1}
+- !!omap
+  - first: {x: 2}

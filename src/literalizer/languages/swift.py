@@ -414,8 +414,13 @@ def _swift_type_hint(
     default_sequence_element_type: str,
     default_dict_value_type: str,
     sequence_is_tuple: bool,
+    record_name_for_value: Callable[[Value], str | None] | None,
 ) -> str:
     """Derive a Swift type annotation from *data*."""
+    if record_name_for_value is not None:
+        record_name = record_name_for_value(data)
+        if record_name is not None:
+            return record_name
     recurse = functools.partial(
         _swift_type_hint,
         date_hint=date_hint,
@@ -424,6 +429,7 @@ def _swift_type_hint(
         default_sequence_element_type=default_sequence_element_type,
         default_dict_value_type=default_dict_value_type,
         sequence_is_tuple=sequence_is_tuple,
+        record_name_for_value=record_name_for_value,
     )
     match data:
         case dict():
@@ -508,6 +514,7 @@ def _format_swift_typed_declaration(
         default_sequence_element_type=default_sequence_element_type,
         default_dict_value_type=default_dict_value_type,
         sequence_is_tuple=sequence_is_tuple,
+        record_name_for_value=None,
     )
     return f"{keyword} {name}: {hint} = {value}"
 
@@ -1121,6 +1128,7 @@ class Swift(metaclass=LanguageCls):
                         ),
                         default_dict_value_type=default_dict_value_type,
                         sequence_is_tuple=sequence_is_tuple,
+                        record_name_for_value=None,
                     )
                     needs_context = (
                         data is None
@@ -1381,7 +1389,7 @@ class Swift(metaclass=LanguageCls):
 
     def _swift_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the Swift ``struct`` field type for a record field,
-        derived structurally from the raw value.
+        retaining generated record names through nested collections.
 
         A field whose value is itself a nested record-shaped dict uses
         that record's generated name.  A field whose value is a list
@@ -1389,8 +1397,9 @@ class Swift(metaclass=LanguageCls):
         is typed ``[RecordN]`` to match the element type Swift infers
         from the homogeneous array of ``RecordN`` literals.  Every other
         value is typed by the same :func:`_swift_type_hint` machinery
-        the typed variable declaration uses.  A record-eligible dict
-        with no ``record_name`` was widened out of record inference
+        the typed variable declaration uses, with the active record-name
+        lookup propagated through maps, lists, and tuples.  A record-eligible
+        dict with no ``record_name`` was widened out of record inference
         because its nested sibling maps cannot share one shape; type it
         as ``[String: Any?]`` so the uniform enclosing record survives
         (#2916) even when one sibling contains a null.  Using plain
@@ -1418,6 +1427,7 @@ class Swift(metaclass=LanguageCls):
             sequence_is_tuple=(
                 self.sequence_format is type(self.sequence_format).TUPLE
             ),
+            record_name_for_value=self._record_strategy.record_name_for_value,
         )
 
     @cached_property
@@ -1434,7 +1444,7 @@ class Swift(metaclass=LanguageCls):
             field_type=self._swift_record_field_type,
             render_declaration=_swift_render_record_declaration,
             render_literal=_swift_record_literal,
-            field_type_names_nested_records=False,
+            field_type_names_nested_records=True,
             suppress_custom_name_declarations=False,
         )
 
@@ -1627,15 +1637,30 @@ class Swift(metaclass=LanguageCls):
             """Keep native record declarations consistent with their
             values.
             """
-            record_name = lookup(data)
-            if record_name is None:
-                return formatter(name, value, data, modifiers)
-            keyword = self.declaration_style.name.lower()
             if (
                 self.variable_type_hints
                 is type(self.variable_type_hints).ALWAYS
             ):
-                return f"{keyword} {name}: {record_name} = {value}"
+                hint = _swift_type_hint(
+                    data=data,
+                    date_hint=self._swift_date_hint,
+                    datetime_hint=self._swift_datetime_hint,
+                    default_set_element_type=self.default_set_element_type,
+                    default_sequence_element_type=(
+                        self.default_sequence_element_type
+                    ),
+                    default_dict_value_type=self.default_dict_value_type,
+                    sequence_is_tuple=(
+                        self.sequence_format
+                        is type(self.sequence_format).TUPLE
+                    ),
+                    record_name_for_value=lookup,
+                )
+                keyword = self.declaration_style.name.lower()
+                return f"{keyword} {name}: {hint} = {value}"
+            record_name = lookup(data)
+            if record_name is None:
+                return formatter(name, value, data, modifiers)
             return self.declaration_style.value.formatter(
                 name, value, data, modifiers
             )
