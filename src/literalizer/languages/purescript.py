@@ -19,6 +19,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     datetime_epoch_formatter,
+    datetime_epoch_seconds,
     format_date_iso,
     format_datetime_iso,
     format_time_iso,
@@ -246,7 +247,21 @@ def _purescript_int_fits_in_int32(value: int) -> bool:
 
 
 @beartype
-def _purescript_has_large_int(val: Value) -> bool:
+def _purescript_datetime_has_large_int(
+    value: datetime.datetime, datetime_type_produced: type
+) -> bool:
+    """Return whether an epoch datetime requires the wide integer
+    carrier.
+    """
+    return datetime_type_produced is int and not _purescript_int_fits_in_int32(
+        value=datetime_epoch_seconds(value=value),
+    )
+
+
+@beartype
+def _purescript_has_large_int(
+    val: Value, datetime_type_produced: type
+) -> bool:
     """Return True if *val* contains an integer that overflows
     PureScript's 32-bit ``Int``.
 
@@ -264,16 +279,14 @@ def _purescript_has_large_int(val: Value) -> bool:
             case int():
                 if not _purescript_int_fits_in_int32(value=value):
                     return True
-            case list():
-                pending.extend(value)
-            case dict():
-                pending.extend(value.values())
-            case set():
-                pending.extend(
-                    member
-                    for member in value
-                    if isinstance(member, int) and not isinstance(member, bool)
-                )
+            case datetime.datetime():
+                if _purescript_datetime_has_large_int(
+                    value=value,
+                    datetime_type_produced=datetime_type_produced,
+                ):
+                    return True
+            case list() | dict() | set():
+                pending.extend(_purescript_children(val=value))
             case _:
                 continue
     return False
@@ -457,7 +470,7 @@ def _purescript_children(val: Value) -> list[Value]:
             return [
                 member
                 for member in val
-                if isinstance(member, (int, float))
+                if isinstance(member, (int, float, datetime.datetime))
                 and not isinstance(member, bool)
             ]
         case _:
@@ -516,13 +529,16 @@ def _build_purescript_body_preamble(
         """Return body-preamble lines for the given *types*."""
         p = constructor_prefix
         needs_tuple = bool(types & {dict, OrderedMap})
-        has_large_int = int in types and _purescript_has_large_int(val=data)
         int_types: set[type] = {int}
         str_types: set[type] = {str, bytes, datetime.date, datetime.time}
         if datetime_type_produced is int:
             int_types.add(datetime.datetime)
         else:
             str_types.add(datetime.datetime)
+        has_large_int = bool(types & int_types) and _purescript_has_large_int(
+            val=data,
+            datetime_type_produced=datetime_type_produced,
+        )
         constructors = [
             constructor
             for type_set, constructor in (
