@@ -44,6 +44,12 @@ class ControlCharacterFreeCommentPrefix(str):
     __slots__ = ()
 
 
+class TabFreeCommentPrefix(str):
+    """Mark comment text that must use spaces instead of tabs."""
+
+    __slots__ = ()
+
+
 _BIDI_COMMENT_CHARACTERS = (
     "\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
 )
@@ -903,6 +909,8 @@ def neutralize_comment_terminator(
         text=text,
         characters=f"\u2028\u2029{_BIDI_COMMENT_CHARACTERS}",
     )
+    if isinstance(comment_prefix, TabFreeCommentPrefix):
+        text = text.replace("\t", " ")
     if isinstance(comment_prefix, ControlCharacterFreeCommentPrefix):
         text = _mark_code_points(
             text=text,
