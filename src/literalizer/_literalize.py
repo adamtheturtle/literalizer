@@ -2446,6 +2446,47 @@ def _layout_context(*, value: Value, ctx: _RenderContext) -> _RenderContext:
     return ctx.compact()
 
 
+@runtime_checkable
+class _NullReferenceLanguage(Protocol):
+    """A language that distinguishes a null reference from unknown
+    metadata.
+    """
+
+    @property
+    def format_known_null_ref_identifier(self) -> Callable[[str], str]:
+        """Format a reference to a value known to render as null."""
+        ...
+
+
+@beartype
+def _known_null_reference_names(
+    ref_values: Mapping[str, Value] | None, /
+) -> frozenset[str]:
+    """Return definite null names, without confusing absent metadata."""
+    if isinstance(ref_values, _ReferenceValues):
+        return ref_values.known_null_names
+    return frozenset[str]()
+
+
+@beartype
+def _format_literal_ref_identifier(
+    *,
+    raw_ref_name: str,
+    ref_name: str,
+    language: Language,
+    ref_values: Mapping[str, Value] | None,
+) -> str:
+    """Preserve known null bindings separately from optional type
+    hints.
+    """
+    if raw_ref_name in _known_null_reference_names(ref_values) and isinstance(
+        language, _NullReferenceLanguage
+    ):
+        return language.format_known_null_ref_identifier(ref_name)
+    ref_value = reference_values_or_empty(values=ref_values).get(raw_ref_name)
+    return language.format_call_ref_identifier(ref_name, ref_value)
+
+
 @beartype
 def _format_ref_value(*, raw_ref_name: str, ctx: _RenderContext) -> str:
     """Format a reference marker found in a nested value."""
@@ -2458,7 +2499,12 @@ def _format_ref_value(*, raw_ref_name: str, ctx: _RenderContext) -> str:
     if ctx.ref_values is not None:
         ref_value = ctx.ref_values.get(raw_ref_name)
     if not ctx.expand_refs:
-        return ctx.spec.format_call_ref_identifier(ref_name, ref_value)
+        return _format_literal_ref_identifier(
+            raw_ref_name=raw_ref_name,
+            ref_name=ref_name,
+            language=ctx.spec,
+            ref_values=ctx.ref_values,
+        )
     return _format_call_arg_ref_identifier(
         raw_ref_name=raw_ref_name,
         ref_name=ref_name,
@@ -3977,8 +4023,11 @@ def _literalize_impl(
                 )
                 if compute_record_shapes is not None:
                     _ = compute_record_shapes(ref_value)
-            identifier = language.format_call_ref_identifier(
-                ref_name, ref_value
+            identifier = _format_literal_ref_identifier(
+                raw_ref_name=raw_ref_name,
+                ref_name=ref_name,
+                language=language,
+                ref_values=ref_values,
             )
             return f"{line_prefix}{identifier}"
 
@@ -5086,14 +5135,12 @@ def literalize_bound_refs(
     Haskell ``seq name``) is preserved.
     """
     ordered_names = list(bound_refs)
-    effective_ref_values: dict[str, Value] = {
-        name: bound_refs[name] for name in ordered_names
-    }
-    effective_explicit_ref_values: Mapping[str, Value]
-    effective_explicit_ref_values = reference_values_or_empty(
-        values=explicit_ref_values
+    effective_ref_values = merged_reference_values(
+        bound_refs=bound_refs,
+        explicit_ref_values=reference_values_or_empty(
+            values=explicit_ref_values
+        ),
     )
-    effective_ref_values.update(effective_explicit_ref_values)
     effective_ref_values_2 = nonempty_mapping(values=effective_ref_values)
     pre_form = literalize_pre_form(
         source=source,
@@ -5344,8 +5391,22 @@ def _compose_bound_refs(
                 for entry in declaration.data_dependent_preamble
             )
         )
+    # A later binding can introduce an import needed by the canonical
+    # record declarations already carried by an earlier binding.
+    # Place every binding's independent headers before those declarations.
+    data_entries = {
+        entry
+        for declaration in decl_results
+        for entry in declaration.data_dependent_preamble
+    } | set(main_result.data_dependent_preamble)
+    all_entries = (
+        declaration_preamble + reference_imports + main_result.preamble
+    )
     all_preamble = deduplicate_preamble_entries(
-        entries=declaration_preamble + reference_imports + main_result.preamble
+        entries=tuple(
+            entry for entry in all_entries if entry not in data_entries
+        )
+        + tuple(entry for entry in all_entries if entry in data_entries)
     )
     scoped = _scope_preamble_for_wrap(
         language=language,
@@ -5753,6 +5814,23 @@ def _compute_call_arg_ref_single_use_names(
 
 
 @beartype
+def _reference_value_inhibits_consuming_form(
+    *,
+    name: str,
+    ref_values: Mapping[str, Value],
+    inhibits: Callable[[Value], bool],
+    language: Language,
+) -> bool:
+    """Classify known null bindings without replacing inference hints."""
+    if isinstance(language, _NullReferenceLanguage):
+        if name in _known_null_reference_names(ref_values):
+            return inhibits(None)
+        if ref_values[name] is None:
+            return False
+    return inhibits(ref_values[name])
+
+
+@beartype
 def _compute_call_arg_ref_consume_inhibited_names(
     *,
     elements: list[Value],
@@ -5803,7 +5881,13 @@ def _compute_call_arg_ref_consume_inhibited_names(
     return frozenset(
         name
         for name in referenced
-        if name in ref_values and inhibits(ref_values[name])
+        if name in ref_values
+        and _reference_value_inhibits_consuming_form(
+            name=name,
+            ref_values=ref_values,
+            inhibits=inhibits,
+            language=language,
+        )
     )
 
 
@@ -7716,6 +7800,41 @@ def _wrap_call_result_in_file(
     )
 
 
+class _ReferenceValues(dict[str, Value]):
+    """Inference hints with separate knowledge of actual null bindings."""
+
+    def __init__(
+        self, values: Mapping[str, Value], known_null_names: frozenset[str]
+    ) -> None:
+        """Retain mapping behavior and the definite null reference
+        names.
+        """
+        super().__init__(values)
+        self.known_null_names = known_null_names
+
+
+@beartype
+def merged_reference_values(
+    *,
+    bound_refs: Mapping[str, Value],
+    explicit_ref_values: Mapping[str, Value],
+) -> Mapping[str, Value]:
+    """Merge hints while retaining null knowledge from actual bindings.
+
+    Explicit hints still control inference.  A bound declaration determines
+    whether a reference is actually null; only external refs use their hint
+    for that distinction.  Missing metadata never establishes a known null.
+    """
+    values = {**bound_refs, **explicit_ref_values}
+    actual_values = {**explicit_ref_values, **bound_refs}
+    return _ReferenceValues(
+        values=values,
+        known_null_names=frozenset(
+            name for name, value in actual_values.items() if value is None
+        ),
+    )
+
+
 @beartype
 def materialize_value_mapping(
     *,
@@ -8229,10 +8348,10 @@ def literalize_call_parsed(
         for name, value in materialized_bound_refs.items()
         if name in used_ref_names
     }
-    materialized_ref_values: Mapping[str, Value] = {
-        **materialized_bound_refs,
-        **explicit_ref_values,
-    }
+    materialized_ref_values = merged_reference_values(
+        bound_refs=materialized_bound_refs,
+        explicit_ref_values=explicit_ref_values,
+    )
 
     resolved_preamble_data = _resolve_call_preamble_data(
         data=data,
