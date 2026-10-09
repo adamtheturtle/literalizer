@@ -743,7 +743,9 @@ class Scala(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        _SCALA_RESERVED_IDENTIFIERS - _SCALA_SOFT_KEYWORDS
+    )
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = (
