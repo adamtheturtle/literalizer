@@ -50,13 +50,14 @@ def _probe(*, text: str) -> str:
     # so indexing it with a ``string`` is a known TS7053 under the
     # ``NEVER`` default (issue #4836); only annotated ones are indexed.
     if value.startswith("{") and annotation:
-        return f'const k: string = "k";\nvoid {name}[k];\n'
+        return f'void {name}["k" as string];\n'
     if value.startswith("new Map"):
-        return f'const k: string = "k";\nvoid {name}.get(k);\n'
+        return f'void {name}.get("k" as string);\n'
     # Iterate rather than index: a typed empty tuple is ``readonly []``
-    # and ``[0]`` on it is a legitimate error.
+    # and ``[0]`` on it is a legitimate error. Spread consumes the
+    # iterator without introducing a binding that can shadow its source.
     if value.startswith(("[", "new Set")):
-        return f"for (const item of {name}) {{\n  void item;\n}}\n"
+        return f"void [...{name}];\n"
     return f"void {name};\n"
 
 
