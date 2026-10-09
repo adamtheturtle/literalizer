@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "A null inference hint must not change ownership of a bound C++ vector."
+
+[ref.value_sources]
+my_value = "[1, 2]"
+
+[ref.explicit_ref_value_sources]
+my_value = "null"

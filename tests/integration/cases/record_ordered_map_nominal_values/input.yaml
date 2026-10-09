@@ -1,0 +1,4 @@
+values: !!omap
+  - first: {x: 1}
+  - second: {x: 2}
+flag: true
