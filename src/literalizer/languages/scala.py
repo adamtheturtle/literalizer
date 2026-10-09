@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
     TypedOpenerConfig,
     TypeOpeners,
     fixed_open,
+    make_narrowed_empty_form,
     make_type_to_opener,
     typed_collection_open,
     typed_dict_open,
@@ -1807,7 +1808,26 @@ class Scala(metaclass=LanguageCls):
                 declared_type=_CIRCE_JSON_TYPE,
                 narrowed_empty_form=None,
             )
-        return self.sequence_format.value
+        base = self.sequence_format.value
+        if self.sequence_format is self.sequence_formats.ARRAY:
+            element_to_type = self._opener_config.element_to_type(
+                list_template=None,
+                enable_list_type=True,
+                date_type=self._date_type_name,
+                datetime_type=self._datetime_type_name,
+                enable_dict_type=False,
+                dict_value_to_type=None,
+                dict_key_type="",
+            )
+            return dataclasses.replace(
+                base,
+                narrowed_empty_form=make_narrowed_empty_form(
+                    element_to_type=element_to_type,
+                    template="Array.empty[{type}]",
+                    fallback_type="Any",
+                ),
+            )
+        return base
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
