@@ -92,6 +92,7 @@ from literalizer._types import Value
 
 _ADA_EMPTY_LITERAL = "AList'[]"
 _C0_CONTROL_LIMIT = 32
+_DELETE_CODE_POINT = 127
 
 # Work around https://github.com/astral-sh/ty/issues/4573.
 if TYPE_CHECKING:
@@ -353,7 +354,9 @@ class Ada(metaclass=LanguageCls):
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
-    new_variable_name_syntax = NewVariableNameSyntax.ASCII
+    new_variable_name_syntax = (
+        NewVariableNameSyntax.ASCII_SEPARATING_UNDERSCORE
+    )
     max_variable_identifier_length: ClassVar[int | None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
@@ -382,7 +385,6 @@ class Ada(metaclass=LanguageCls):
     supports_dotted_calls = True
     allows_empty_call_parens = False
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = False
     reserved_variable_identifiers: frozenset[str] = frozenset(
@@ -462,6 +464,9 @@ class Ada(metaclass=LanguageCls):
             "with",
             "xor",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
     )
     supports_dotted_call_stub = False
     call_returns_expression = True
@@ -1087,12 +1092,16 @@ class Ada(metaclass=LanguageCls):
             quote_escape='""',
             control_char_template="Character'Val({})",
             concat_operator=" & ",
+            escape_delete_and_c1=True,
         )
 
         def _format(value: str) -> str:
             """Widen a bare ``Character'Val(N)`` result to ``String``."""
             formatted = inner(value)
-            if len(value) == 1 and ord(value) < _C0_CONTROL_LIMIT:
+            if len(value) == 1 and (
+                ord(value) < _C0_CONTROL_LIMIT
+                or ord(value) == _DELETE_CODE_POINT
+            ):
                 return f'"" & {formatted}'
             return formatted
 

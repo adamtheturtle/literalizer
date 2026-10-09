@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "f"
+parameter_names = ["value"]
+per_element = false
+languages = ["Erlang", "Go", "Roc", "Zig"]
+languages_reason = "Unused bound call declarations must be omitted for compilers that reject unused bindings."
+
+[call.ref_declarations]
+unused = "[3, 4]"

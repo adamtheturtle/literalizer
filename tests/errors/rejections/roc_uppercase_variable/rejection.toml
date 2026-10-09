@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Roc variable declarations cannot use uppercase tag names."
+exceptions = ["InvalidNewVariableNameError"]
+languages = ["Roc"]
+values = ["Record0"]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "new"
+variable_name = "{value}"
+wrap_in_file = true

@@ -4,6 +4,7 @@ values.
 
 import ast
 import json
+import runpy
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,24 @@ from .variant_cases import build_variant_cases
 from .variant_types import VariantCase
 
 
+def _assignment_values(
+    *, tree: ast.Module, evaluation_path: Path, variable_name: str
+) -> list[object]:
+    """Execute each assignment or enclosing block with its preceding
+    imports and bindings.
+    """
+    values: list[object] = []
+    for index, node in enumerate(iterable=tree.body):
+        if isinstance(node, (ast.Assign, ast.If)):
+            prefix = ast.Module(body=tree.body[: index + 1], type_ignores=[])
+            _ = evaluation_path.write_text(
+                data=ast.unparse(ast_obj=prefix), encoding="utf-8"
+            )
+            namespace = runpy.run_path(path_name=str(object=evaluation_path))
+            values.append(namespace[variable_name])
+    return values
+
+
 @pytest.mark.parametrize(
     argnames="case",
     argvalues=[
@@ -32,12 +51,13 @@ from .variant_types import VariantCase
 def test_multiline_string_golden_roundtrip(
     case: VariantCase,
     cases_dir: Path,
+    tmp_path: Path,
 ) -> None:
     """Every emitted assignment retains leading, nested and trailing
     whitespace.
 
     The rendering suite compares public API output with these same files.
-    Evaluating their literals also prevents accepting a regenerated golden
+    Executing their assignments also prevents accepting a regenerated golden
     that changes the source value while remaining valid Python.
     """
     input_info = case_input(case_dir=cases_dir / case.case_dir_name)
@@ -56,11 +76,11 @@ def test_multiline_string_golden_roundtrip(
         version=spec.language_version,
     )
     tree = ast.parse(source=golden_path.read_text(encoding="utf-8"))
-    values = [
-        ast.literal_eval(node_or_string=node.value)
-        for node in ast.walk(node=tree)
-        if isinstance(node, ast.Assign)
-    ]
+    values = _assignment_values(
+        tree=tree,
+        evaluation_path=tmp_path / "roundtrip.py",
+        variable_name=case.variable_form.name,
+    )
     assignment_count = (
         2 if isinstance(case.variable_form, BothVariableForms) else 1
     )

@@ -31,6 +31,7 @@ from literalizer._literalize import (
     literalize_call_parsed,
     literalize_pre_form,
     materialize_value_mapping,
+    merged_reference_values,
     nonempty_mapping,
     reference_inputs_or_empty,
 )
@@ -418,8 +419,8 @@ def literalize(
             per-language declaration sequencing (Nix nested ``let``,
             Fortran two-phase declarations, and so on).  Supply
             *bound_refs* ordered by each ref's first use in *source*
-            (and limited to refs that appear there) so every binding
-            precedes its first use and no unused binding is emitted.
+            so every binding precedes its first use. Entries that are not
+            referenced by the selected input are omitted.
             Binding
             emission only happens when *wrap_in_file* is ``True`` and
             *variable_form* is a :class:`NewVariable` or
@@ -513,7 +514,10 @@ def literalize(
     # ``bound_refs`` entries double as ``ref_values`` so a name need not
     # be repeated in both mappings; an explicit ``ref_values`` entry for
     # the same name wins (it is the caller's stated type intent).
-    combined_ref_values = {**materialized_bound_refs, **explicit_ref_values}
+    combined_ref_values = merged_reference_values(
+        bound_refs=materialized_bound_refs,
+        explicit_ref_values=explicit_ref_values,
+    )
     materialized_ref_values: Mapping[str, Value] | None
     materialized_ref_values = nonempty_mapping(values=combined_ref_values)
     _validate_bound_ref_output_name(
@@ -590,6 +594,7 @@ def literalize(
         )
 
     pre_form = literalize_pre_form(
+        preserve_ref_values=False,
         source=source,
         input_format=input_format,
         language=language,
@@ -803,11 +808,7 @@ def literalize_call(
             only happens when *wrap_in_file* is ``True``; otherwise
             *bound_refs* degrades to type information only, exactly like
             *ref_values*, and the refs stay free identifiers.  Every
-            name should appear as a ``$ref`` marker in *source* (a ref
-            that is declared but never referenced is folded into
-            neither the call nor its preamble inference and so may
-            leave the declaration's data-dependent preamble entries
-            uncovered, besides being an unused binding); this mirrors
+            referenced name is declared; unused entries are omitted, matching
             ``literalize``'s *bound_refs* contract.  Where declarations
             are emitted, *variable_form* (which binds the call *result*)
             cannot be combined with them and the pair raises

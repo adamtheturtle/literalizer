@@ -800,13 +800,16 @@ def _has_heterogeneous(
 def _has_heterogeneous_sibling_lists(
     *,
     data: Value,
+    record_dict_ids: frozenset[int],
     tuple_list_ids: frozenset[int],
 ) -> bool:
     """Recursively check whether data contains sibling lists whose
     combined scalar elements are heterogeneous.
 
     Sibling lists are detected both as the direct children of a list
-    and as the values of a dict.
+    and as the values of a dict. Native records have independently typed
+    fields, so their values do not share a sequence element pool. Each
+    field is still checked recursively for incompatible sibling lists.
 
     Lists whose ``id`` is in *tuple_list_ids* are carved out by the
     active TUPLE heterogeneous strategy: each is rendered as its own
@@ -823,11 +826,14 @@ def _has_heterogeneous_sibling_lists(
             if any(
                 _has_heterogeneous_sibling_lists(
                     data=v,
+                    record_dict_ids=record_dict_ids,
                     tuple_list_ids=tuple_list_ids,
                 )
                 for v in values
             ):
                 return True
+            if id(data) in record_dict_ids:
+                return False
             all_lists: list[list[Value]] = [
                 v for v in values if isinstance(v, list)
             ]
@@ -835,14 +841,22 @@ def _has_heterogeneous_sibling_lists(
             return (
                 len(all_lists) == len(values)
                 and len(seq_lists) > 1
-                and _all_scalars_heterogeneous(
-                    values=[e for sub in seq_lists for e in sub],
+                and (
+                    _all_scalars_heterogeneous(
+                        values=[e for sub in seq_lists for e in sub],
+                    )
+                    or _has_heterogeneous_sibling_lists(
+                        data=[e for sub in seq_lists for e in sub],
+                        record_dict_ids=record_dict_ids,
+                        tuple_list_ids=tuple_list_ids,
+                    )
                 )
             )
         case list():
             if any(
                 _has_heterogeneous_sibling_lists(
                     data=v,
+                    record_dict_ids=record_dict_ids,
                     tuple_list_ids=tuple_list_ids,
                 )
                 for v in data
@@ -857,8 +871,15 @@ def _has_heterogeneous_sibling_lists(
             return (
                 len(all_list_children) == len(data)
                 and len(seq_list_children) > 1
-                and _all_scalars_heterogeneous(
-                    values=[e for sub in seq_list_children for e in sub],
+                and (
+                    _all_scalars_heterogeneous(
+                        values=[e for sub in seq_list_children for e in sub],
+                    )
+                    or _has_heterogeneous_sibling_lists(
+                        data=[e for sub in seq_list_children for e in sub],
+                        record_dict_ids=record_dict_ids,
+                        tuple_list_ids=tuple_list_ids,
+                    )
                 )
             )
         case _:
@@ -1035,54 +1056,36 @@ def _has_mixed_dict_values(
 
 
 @beartype
-def _has_dict_with_unwrappable_value_mix(
+def _has_unwrappable_value_mix(
     *,
     data: Value,
-    record_dict_ids: frozenset[int],
+    container_type: type,
+    excluded_container_ids: frozenset[int],
 ) -> bool:
-    """Recursively check whether data contains any dict whose values span
-    multiple type families and at least one value is a container.
-
-    Wrapping strategies that only wrap scalars (tagged-enum / variant
-    payload with no list/dict member) cannot uniformly type such a
-    dict — scalar values would render wrapped while container values
-    stay raw, and any two distinct non-scalar families (e.g. ``dict``
-    and ``list``) cannot share a single map value type even after the
-    wrapping.  The static-typed target rejects the resulting
-    heterogeneous map.
-
-    Dicts whose ``id`` is in *record_dict_ids* are skipped — they are
-    carved out by the active RECORD heterogeneous strategy.
+    """Find mixed value families including a container that scalar-only
+    wrapping cannot represent. Native records and tuples are exempt.
     """
     match data:
         case dict():
             values: list[Value] = list(data.values())
-            has_container = any(
-                isinstance(v, (list, dict, set)) for v in values
-            )
-            if (
-                id(data) not in record_dict_ids
-                and has_container
-                and _values_mixed_types(values=values)
-            ):
-                return True
-            return any(
-                _has_dict_with_unwrappable_value_mix(
-                    data=v,
-                    record_dict_ids=record_dict_ids,
-                )
-                for v in values
-            )
         case list():
-            return any(
-                _has_dict_with_unwrappable_value_mix(
-                    data=v,
-                    record_dict_ids=record_dict_ids,
-                )
-                for v in data
-            )
+            values = data
         case _:
             return False
+    own_mixed = (
+        isinstance(data, container_type)
+        and id(data) not in excluded_container_ids
+        and any(isinstance(value, (list, dict, set)) for value in values)
+        and _values_mixed_types(values=values)
+    )
+    return own_mixed or any(
+        _has_unwrappable_value_mix(
+            data=value,
+            container_type=container_type,
+            excluded_container_ids=excluded_container_ids,
+        )
+        for value in values
+    )
 
 
 @beartype
@@ -1160,11 +1163,13 @@ def _check_heterogeneous(
 def _check_heterogeneous_sibling_lists(
     *,
     data: Value,
+    record_dict_ids: frozenset[int],
     tuple_list_ids: frozenset[int],
 ) -> None:
     """Raise if sibling lists have heterogeneous scalar types."""
     if _has_heterogeneous_sibling_lists(
         data=data,
+        record_dict_ids=record_dict_ids,
         tuple_list_ids=tuple_list_ids,
     ):
         types = _describe_heterogeneous_types(data=data)
@@ -1624,6 +1629,7 @@ def _check_scalar_heterogeneity(
             )
             _check_heterogeneous_sibling_lists(
                 data=data,
+                record_dict_ids=record_dict_ids,
                 tuple_list_ids=tuple_list_ids,
             )
         if not dict_supports_het:
@@ -1644,21 +1650,56 @@ def _check_scalar_heterogeneity(
         if not set_supports_het:
             _check_heterogeneous_set(data=data)
     elif behavior.wrap_non_scalar is None:
-        # A wrapping strategy that only wraps scalars cannot uniformly
-        # represent a dict whose values span multiple type families and
-        # include at least one container — the tagged-enum / variant
-        # payload has no member that fits the container, and two
-        # distinct non-scalar families share no map value type either.
-        if not dict_supports_het and _has_dict_with_unwrappable_value_mix(
+        _check_scalar_wrapping_shapes(
             data=data,
+            spec=spec,
             record_dict_ids=record_dict_ids,
-        ):
-            msg = (
-                "Dict has values of mixed type families including a "
-                "container, which this heterogeneous strategy cannot "
-                "represent"
-            )
-            raise MixedDictValuesError(msg)
+            tuple_list_ids=tuple_list_ids,
+        )
+
+
+@beartype
+def _check_scalar_wrapping_shapes(
+    *,
+    data: Value,
+    spec: Language,
+    record_dict_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
+) -> None:
+    """Refuse containers that a scalar-only wrapping strategy cannot
+    type.
+    """
+    if (
+        not spec.dict_supports_heterogeneous_values
+        and _has_unwrappable_value_mix(
+            data=data,
+            container_type=dict,
+            excluded_container_ids=record_dict_ids,
+        )
+    ):
+        msg = (
+            "Dict has values of mixed type families including a "
+            "container, which this heterogeneous strategy cannot "
+            "represent"
+        )
+        raise MixedDictValuesError(msg)
+    # Empty-container variants have their own shape validation, including
+    # concrete container type hints, so retain that strategy boundary.
+    if (
+        not spec.sequence_format_config.supports_heterogeneity
+        and spec.heterogeneous_behavior.wrap_empty_container is None
+        and _has_unwrappable_value_mix(
+            data=data,
+            container_type=list,
+            excluded_container_ids=tuple_list_ids,
+        )
+    ):
+        msg = (
+            "List has values of mixed type families including a "
+            "container, which this heterogeneous strategy cannot "
+            "represent"
+        )
+        raise MixedListValuesError(msg)
 
 
 @beartype

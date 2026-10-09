@@ -49,14 +49,14 @@ from literalizer._formatters.format_json_value import (
     to_jsonable,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_nul_octal,
+    format_string_c,
 )
 from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
     RecordDeclarationField,
     RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
-    RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
 )
@@ -150,7 +150,7 @@ def _apply_format_c_entry(
             field = string_field
             if datetime_as_int:
                 field = int_field
-        case str() | bytes() | datetime.date():
+        case str() | bytes() | datetime.date() | datetime.time():
             field = string_field
         case bool():
             return formatted
@@ -789,7 +789,7 @@ def _c_json_object_key(key: Scalar, /) -> str:
     narrows its static :data:`~literalizer._types.Scalar` type to
     :class:`str` without a redundant runtime branch.
     """
-    return format_string_backslash_nul_octal(value=str(object=key))
+    return format_string_c(value=str(object=key))
 
 
 @beartype
@@ -825,7 +825,7 @@ def _c_cjson_scalar_create(
         case float():
             return f"cJSON_CreateNumber({format_float(value)})"
         case str():
-            literal = format_string_backslash_nul_octal(value=value)
+            literal = format_string_c(value=value)
             return f"cJSON_CreateString({literal})"
         case None:
             return "cJSON_CreateNull()"
@@ -926,6 +926,7 @@ class C(metaclass=LanguageCls):
 
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
+    uses_resolved_ref_declaration_data = True
     module_name_shares_variable_scope = False
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
         None
@@ -1609,11 +1610,10 @@ class C(metaclass=LanguageCls):
         )
 
     @cached_property
-    def _record_strategy(self) -> RecordStrategy:
+    def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         return build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=self._map_open_str,
         )
@@ -1736,7 +1736,7 @@ class C(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_nul_octal
+        return format_string_c
 
     @cached_property
     def _format_entry(self) -> Callable[[Value, str], str]:
@@ -2010,25 +2010,59 @@ class C(metaclass=LanguageCls):
         """Return the typed left-hand side for a ``RECORD`` top-level
         binding, or ``None`` to fall back to the ``CVal`` form.
 
-        The shared strategy names record shapes in document order with
-        no custom names, so the outermost record-shaped dict (or the
-        shared element shape of a top-level all-record list) is always
-        ``Record0``: a record-shaped root binds ``struct Record0 NAME``
-        and an all-record-list root binds ``struct Record0 NAME[]``;
-        every other root keeps the ``CVal`` union.
+        Record dictionaries use the name assigned by the shared rendering
+        schema, including bound values whose record is not the document's
+        root. An all-record-list root remains a ``Record0`` array; other
+        values keep the ``CVal`` union.
         """
         if not self._record_strategy_active:
             return None
         root = f"struct {_C_RECORD_PREFIX}0"
-        if (
-            isinstance(data, dict)
-            and not isinstance(data, OrderedMap)
-            and record_shape_for_dict(value=data) is not None
-        ):
-            return root
+        record_name = self._record_strategy.record_name_for_value(data)
+        if record_name is not None:
+            return f"struct {record_name}"
         if isinstance(data, list) and _all_record_shaped(data):
             return f"{root}[]"
         return None
+
+    @staticmethod
+    def reference_binding_data_dependent_preamble(
+        _data: Value, /
+    ) -> tuple[str, ...]:
+        """Reference copies need no additional declarations."""
+        return ()
+
+    @staticmethod
+    def reference_declaration_imports(
+        entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Keep headers required by the rendered bound values."""
+        return tuple(
+            entry for entry in entries if entry.startswith("#include ")
+        )
+
+    def format_reference_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Copy a reference using its resolved representation's type."""
+        lhs = self._record_binding_lhs(data)
+        if lhs is not None and lhs.endswith("[]"):
+            lhs = f"const {lhs[:-2]} *"
+        if lhs is None:
+            lhs = "cJSON *" if self._json_type_active else "CVal"
+        return f"{lhs} {name} = {value};"
+
+    @staticmethod
+    def format_reference_variable_assignment(
+        name: str, value: str, _data: Value, /
+    ) -> str:
+        """Assign an already rendered reference directly."""
+        return f"{name} = {value};"
 
     @cached_property
     def format_variable_declaration(

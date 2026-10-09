@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp", "Rust"]
+languages_reason = "C++ and Rust aggregate names must stay consistent between bound declarations and the root record."
+heterogeneous_strategy = "RECORD"
+
+[ref.value_sources]
+first = '{"x": 1}'

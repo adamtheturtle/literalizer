@@ -2,11 +2,11 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["V"]
-languages_reason = "Sampled: V is an arbitrary representative; precedence is language-independent."
+languages = ["C", "Cpp", "Gleam", "Nim", "ObjectiveC", "V"]
+languages_reason = "Gleam must share one carrier across hints and bindings; Nim must infer imports from the emitted declaration; V represents reference hint precedence."
 
 [ref.value_sources]
-x = "[1, 2]"
+ref_data = "[1, 2]"
 
 [ref.explicit_ref_value_sources]
-x = "1"
+ref_data = "1"

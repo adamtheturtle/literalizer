@@ -57,6 +57,8 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_octal,
+    format_string_c_utf8_characters,
+    has_bidi_formatting_character,
 )
 from literalizer._formatters.record_strategy import (
     ActiveRecordStrategy,
@@ -81,7 +83,7 @@ from literalizer._formatters.type_inference import (
     record_shape_for_dict,
     replace_positional_empty_lists,
 )
-from literalizer._heterogeneous import iter_wrapped_scalars
+from literalizer._heterogeneous import iter_wrapped_values
 from literalizer._json_native_document import (
     register_json_native_document_fast,
 )
@@ -287,12 +289,14 @@ def _reject_incompatible_nested_cpp_arrays(data: Value, /) -> None:
 @beartype
 def _format_string_cpp_escaped(value: str) -> str:
     r"""Format *value* without embedding a null byte in a C++ literal."""
+    if has_bidi_formatting_character(value=value):
+        entries = format_string_c_utf8_characters(value=value)
+        return f"std::string{{{entries}}}"
     segments = value.split(sep="\0")
     if len(segments) == 1:
         return format_string_backslash_nul_octal(value=value)
     formatted_segments = [
-        format_string_backslash_nul_octal(value=segment)
-        for segment in segments
+        format_string_backslash_nul_octal(value=part) for part in segments
     ]
     return " + '\\0' + ".join(
         [f"std::string{{{formatted_segments[0]}}}", *formatted_segments[1:]],
@@ -325,6 +329,7 @@ def _format_string_multiline_with_delimiter_base(
     r"""Format *value* as a C++ raw string with a safe delimiter."""
     if (
         "\0" in value
+        or has_bidi_formatting_character(value=value)
         or "\r" in value
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
@@ -542,8 +547,8 @@ def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
     are register-trivial.  ``date`` and ``datetime`` map to
     ``std::chrono::year_month_day`` and
     ``std::chrono::system_clock::time_point``, both also
-    register-trivial.  Strings, bytes, lists, and dicts allocate or own
-    heap storage, so ``std::move`` continues to deliver value for those.
+    register-trivial. Owned strings, lists, and dicts retain their move
+    form. Native literal-pointer bindings follow their representation.
     """
     if isinstance(value, (list, dict, set)):
         return False
@@ -573,7 +578,7 @@ class _CppTypeCtx:
     tuple_strategy: bool
     variant_type_name: str
     dict_type_name: str
-    record_name_for_value: Callable[[Value], str | None]
+    record_name_for_value: Callable[[ValueInput], str | None]
     """The name a mapping is rendered as, where it is rendered as one.
 
     Under the ``RECORD`` strategy a record-shaped mapping is written as
@@ -898,12 +903,16 @@ def _infer_cpp_collection_element(
     """Infer a homogeneous type unless tuple rendering needs per-item
     types.
     """
+    nested_record_type = nested_record_sequence_type(
+        value=items, record_name_for_value=type_ctx.record_name_for_value
+    )
+    has_record_item = nested_record_type is not None
     has_tuple_item = type_ctx.tuple_strategy and any(
         isinstance(item, list) and is_tuple_eligible(value=item)
         for item in items
     )
     element_type = None
-    if not has_tuple_item:
+    if not has_tuple_item and not has_record_item:
         element_type = infer_element_type(items=items)
     return element_type
 
@@ -1112,6 +1121,7 @@ def _build_variant_preamble(
     type_ctx: _CppTypeCtx,
     tuple_list_ids: frozenset[int],
     record_dict_ids: frozenset[int],
+    force_variant: bool,
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build a data preamble for the active variant implementation."""
     element_to_type = type_ctx.element_to_type(int_type="long long")
@@ -1121,7 +1131,7 @@ def _build_variant_preamble(
         lines: list[str] = []
         if _has_empty_collection(data=data):
             lines.append("#include <cstddef>")
-        if _needs_variant_type(
+        if force_variant or _needs_variant_type(
             data=data,
             element_to_type=element_to_type,
             type_ctx=type_ctx,
@@ -1242,6 +1252,7 @@ def _build_tuple_preamble(
             type_ctx=type_ctx,
             tuple_list_ids=frozenset(),
             record_dict_ids=frozenset(),
+            force_variant=False,
         )
         lines = list(variant_preamble(data))
         if len(tuple_list_ids) > 0:
@@ -1526,7 +1537,7 @@ def _cpp14_explicit_variant_behavior(
             excluded_ids=record_ids | tuple_ids,
         )
 
-    def _wrap(_raw_value: Value, formatted: str) -> str:
+    def _wrap(_raw_value: Value, formatted: str, /) -> str:
         """Direct-list-initialize the fallback carrier."""
         return f"{type_ctx.variant_type_name}{{{formatted}}}"
 
@@ -1562,10 +1573,18 @@ def _cpp14_explicit_variant_behavior(
             )
         return base_ids
 
+    def _wrap_scalar(value: Scalar, formatted: str) -> str:
+        """Retain a homogeneous fallback map's concrete scalar type."""
+        if base.wrap_scalar is not None:
+            wrapped = base.wrap_scalar(value, formatted)
+            if wrapped == formatted:
+                return formatted
+        return _wrap(value, formatted)
+
     return dataclasses.replace(
         base,
         compute_wrap_ids=_compute_wrap_ids,
-        wrap_scalar=_wrap,
+        wrap_scalar=_wrap_scalar,
         wrap_non_scalar=_wrap,
         compute_call_slot_wrap_ids=_compute_call_slot_wrap_ids,
     )
@@ -1657,20 +1676,23 @@ def _cpp_narrow_widened_map_value_type(
 ) -> str | None:
     """Return the single C++ type every widened-map scalar shares.
 
-    Returns ``None`` when the widened maps genuinely mix scalar types
-    (the ``LiteralizerRecordValue`` alias carrier is then required),
-    when there is nothing to widen, when *map_value_typing* asks for
-    the alias carrier whatever the data holds, or under C++14, whose
-    explicit fallback carrier replaces the record strategy's scalar
-    wrapper with one that also serves heterogeneous containers and call
-    slots and so cannot selectively leave the widened maps' scalars
-    bare.
+    Returns ``None`` when the widened maps mix native value types, when
+    there is nothing to widen, or when *map_value_typing* requests the
+    alias carrier. C++14 also retains its explicit carrier when another
+    heterogeneous collection requires that scalar wrapper.
     """
     if map_value_typing is RecordMapValueTypings.WIDE:
         return None
-    if type_ctx.variant_type_name != "std::variant":
+    if type_ctx.variant_type_name != "std::variant" and bool(
+        _cpp14_variant_parent_ids(
+            data=data,
+            type_ctx=type_ctx,
+            excluded_ids=frozenset(collect_record_shapes(data=data))
+            | _cpp_tuple_list_ids(data=data),
+        )
+    ):
         return None
-    scalars = iter_wrapped_scalars(data=data, wrap_ids=wrap_ids)
+    scalars = iter_wrapped_values(data=data, wrap_ids=wrap_ids)
     if len(scalars) == 0:
         return None
     value_type = _compute_element_type_for_items(
@@ -1678,7 +1700,10 @@ def _cpp_narrow_widened_map_value_type(
         type_ctx=type_ctx,
         in_mapping_value=True,
     )
-    if value_type.startswith("std::variant<"):
+    if (
+        value_type.startswith("std::variant<")
+        or value_type == type_ctx.variant_type_name
+    ):
         return None
     return value_type
 
@@ -1763,6 +1788,21 @@ def _cpp_record_member_value(field: RecordLiteralField, /) -> str:
 
 
 @beartype
+def _cpp_record_field_needs_value_initialization(type_name: str, /) -> bool:
+    """Value-initialize scalars and arrays whose leaves are scalars.
+
+    Other class types keep their existing default-construction policy;
+    in particular, an externally supplied array element type may have no
+    default constructor.
+    """
+    while type_name.startswith("std::array<"):
+        type_name = type_name.removeprefix("std::array<").rsplit(
+            sep=", ", maxsplit=1
+        )[0]
+    return type_name in _CPP_SCALAR_FIELD_TYPES
+
+
+@beartype
 def _cpp_render_record_declaration(
     name: str,
     fields: Sequence[RecordDeclarationField],
@@ -1770,7 +1810,8 @@ def _cpp_render_record_declaration(
 ) -> str:
     """Render a C++ aggregate ``struct Name { Type field{}; ... };``.
 
-    A scalar field carries a ``{}`` in-class initializer so the
+    A scalar field or array of scalar fields carries a ``{}`` in-class
+    initializer so the
     aggregate satisfies clang-tidy's member-init check; a class-type
     field omits it (its default constructor already value-initializes
     it, which the redundant-init check would otherwise flag).
@@ -1778,7 +1819,7 @@ def _cpp_render_record_declaration(
     collected_members: list[str] = []
     for entry_field in fields:
         effective_value = ""
-        if entry_field.type_name in _CPP_SCALAR_FIELD_TYPES:
+        if _cpp_record_field_needs_value_initialization(entry_field.type_name):
             effective_value = "{}"
         collected_members.append(
             f"{entry_field.type_name} {entry_field.identifier}"
@@ -1945,6 +1986,31 @@ def _contains_external_record(
 
 
 @beartype
+def _cpp_record_field_headers(
+    *, declarations: tuple[str, ...]
+) -> tuple[str, ...]:
+    """Include dependencies named by the emitted native field types."""
+    type_headers = (
+        ("std::string", "#include <string>"),
+        ("std::vector", "#include <vector>"),
+        ("std::array", "#include <array>"),
+        ("std::map", "#include <map>"),
+        ("std::unordered_map", "#include <unordered_map>"),
+        ("std::set", "#include <set>"),
+        ("std::tuple", "#include <tuple>"),
+        ("std::pair", "#include <utility>"),
+        ("std::chrono::", "#include <chrono>"),
+        ("std::nullptr_t", "#include <cstddef>"),
+        ("std::variant", "#include <variant>"),
+    )
+    return tuple(
+        header
+        for type_name, header in type_headers
+        if any(type_name in declaration for declaration in declarations)
+    )
+
+
+@beartype
 def _build_cpp_record_preamble(
     *,
     type_ctx: _CppTypeCtx,
@@ -1967,10 +2033,9 @@ def _build_cpp_record_preamble(
     record field may still be a heterogeneous list or an empty
     collection) followed by the generated ``struct`` declarations.  The
     headers precede the declarations so a declared field may name
-    ``std::nullptr_t`` or ``std::variant``; the scalar/sequence headers
-    (``<string>``, ``<vector>``, ``<chrono>``) are emitted earlier
-    still, by the type-driven preamble the core assembles before this
-    one.
+    ``std::nullptr_t`` or ``std::variant``. Include the field dependencies
+    here too: a bound reference's types may be absent from the root
+    binding's type-driven preamble.
     """
 
     def _record_pre(data: Value, /) -> tuple[str, ...]:
@@ -1994,10 +2059,24 @@ def _build_cpp_record_preamble(
         effective_tuple_list_ids_2 = tuple_list_ids
         if type_ctx.variant_type_name == "std::variant":
             effective_tuple_list_ids_2 = frozenset[int]()
+        requires_map_carrier = (
+            len(wrap_ids) > 0
+            and _cpp_narrow_widened_map_value_type(
+                data=data,
+                wrap_ids=wrap_ids,
+                type_ctx=type_ctx,
+                map_value_typing=map_value_typing,
+            )
+            is None
+        )
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
             tuple_list_ids=(effective_tuple_list_ids_2),
             record_dict_ids=record_dict_ids,
+            force_variant=(
+                requires_map_carrier
+                and type_ctx.variant_type_name != "std::variant"
+            ),
         )
         value_alias: tuple[str, ...] = ()
         if native_only or (
@@ -2015,16 +2094,7 @@ def _build_cpp_record_preamble(
             headers = list(variant_preamble(data))
         if include_tuple_header and bool(tuple_list_ids):
             headers.append("#include <tuple>")
-        if (
-            len(wrap_ids) > 0
-            and _cpp_narrow_widened_map_value_type(
-                data=data,
-                wrap_ids=wrap_ids,
-                type_ctx=type_ctx,
-                map_value_typing=map_value_typing,
-            )
-            is None
-        ):
+        if requires_map_carrier:
             # C++14's explicit fallback carrier wraps every widened
             # scalar in the carrier type, so the alias must name the
             # carrier even when the widened scalars share one concrete
@@ -2034,13 +2104,19 @@ def _build_cpp_record_preamble(
             else:
                 value_type = _compute_element_type_for_items(
                     items=list(
-                        iter_wrapped_scalars(data=data, wrap_ids=wrap_ids),
+                        iter_wrapped_values(data=data, wrap_ids=wrap_ids),
                     ),
                     type_ctx=type_ctx,
                     in_mapping_value=True,
                 )
             value_alias = (f"using {_CPP_RECORD_MAP_VALUE} = {value_type};",)
-        return (*headers, *value_alias, *record_preamble(data))
+        declarations = record_preamble(data)
+        return (
+            *_cpp_record_field_headers(declarations=declarations),
+            *headers,
+            *value_alias,
+            *declarations,
+        )
 
     return _record_pre
 
@@ -2240,15 +2316,18 @@ def _renders_as_string_literal(
 ) -> bool:
     """Return whether *data* renders as a C string literal.
 
-    ``bytes`` and ``str`` always render as quoted strings in C++.
+    Strings with null bytes or bidirectional controls render as owning values;
+    other strings and ``bytes`` render as quoted strings in C++.
     ``datetime.datetime`` and ``datetime.date`` do so only when their
     format's ``type_produced`` is :class:`str` (the ISO variants);
     other variants render as ``std::chrono`` or numeric expressions.
     """
     match data:
-        case str() if "\0" in data:
+        case str() if "\0" in data or has_bidi_formatting_character(
+            value=data
+        ):
             return False
-        case bytes() | str():
+        case bytes() | str() | datetime.time():
             return True
         case datetime.datetime():
             return datetime_type is str
@@ -2662,7 +2741,6 @@ class Cpp(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
@@ -2762,6 +2840,10 @@ class Cpp(metaclass=LanguageCls):
             "xor",
             "xor_eq",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
+        - (frozenset({"final", "override", "reflexpr"}))
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
@@ -3417,6 +3499,13 @@ class Cpp(metaclass=LanguageCls):
 
     format_call_statement = default_format_call_statement
 
+    @cached_property
+    def format_identity_transformed_call_statement(
+        self,
+    ) -> Callable[[str], str]:
+        """Explicitly discard an unchanged transformed call's return value."""
+        return lambda call: f"static_cast<void>({call})"
+
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     class VariableTypeHints(enum.Enum):
@@ -3737,12 +3826,40 @@ class Cpp(metaclass=LanguageCls):
 
     format_call_target = default_format_call_target
 
+    def _cpp_record_field_is_trivial(self, value: Value, /) -> bool:
+        """Identify fields of records whose moves only copy their data."""
+        if isinstance(value, dict):
+            return (
+                not _contains_external_record(
+                    data=value,
+                    record_shape_names=self.record_shape_names,
+                )
+                and self._rendered_record_name(value) is not None
+                and all(
+                    self._cpp_record_field_is_trivial(field)
+                    for field in value.values()
+                )
+            )
+        if isinstance(value, list):
+            return self._type_ctx.sequence_is_array and all(
+                not isinstance(item, dict)
+                and self._cpp_record_field_is_trivial(item)
+                for item in value
+            )
+        if isinstance(value, datetime.datetime):
+            return (
+                self._resolved_datetime_format.value.type_produced is not str
+            )
+        if isinstance(value, datetime.date):
+            return self._resolved_date_format.value.type_produced is not str
+        return value is None or isinstance(value, (bool, int, float))
+
     @cached_property
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
         """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``,
-        except for ``trivially-copyable`` scalars.
+        except for native literal pointers and trivial scalars or records.
 
         A direct copy assignment (``auto my_data = my_var``) triggers
         clang-tidy ``performance-unnecessary-copy-initialization`` when
@@ -3753,7 +3870,8 @@ class Cpp(metaclass=LanguageCls):
         ``hicpp-move-const-arg`` / ``performance-move-const-arg``
         warning ("has no effect; remove std::move()"), so we drop the
         wrapper when the caller's ``ref_values`` identifies the ref as
-        one of those types.  When the value is unknown we keep the
+        one of those types or a record containing only trivial fields.
+        When the value is unknown we keep the
         historical ``std::move`` form.
         """
 
@@ -3761,13 +3879,32 @@ class Cpp(metaclass=LanguageCls):
             name: str, value: Value | None, /
         ) -> str:
             """Wrap the identifier in ``std::move()`` unless *value* is
-            a ``trivially-copyable`` scalar.
+            a ``trivially-copyable`` scalar or native record.
             """
-            if isinstance(value, (bool, int, float)):
+            if isinstance(
+                value, (bool, int, float)
+            ) or self._native_ref_value_is_trivial(value):
                 return name
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier
+
+    def _native_ref_value_is_trivial(self, value: Value | None, /) -> bool:
+        """Classify the actual native scalar or record binding type."""
+        if self._json_type_active or value is None:
+            return False
+        return _renders_as_string_literal(
+            data=value,
+            date_type=self._resolved_date_format.value.type_produced,
+            datetime_type=self._resolved_datetime_format.value.type_produced,
+        ) or self._cpp_record_field_is_trivial(value)
+
+    @cached_property
+    def format_reused_literal_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Borrow a literal reference whose binding is used again."""
+        return identity_call_ref_identifier
 
     @cached_property
     def format_call_arg_ref_identifier(
@@ -3784,6 +3921,13 @@ class Cpp(metaclass=LanguageCls):
         instead and emits ``std::move(name)``.
         """
         return identity_call_ref_identifier
+
+    @cached_property
+    def format_known_null_ref_identifier(self) -> Callable[[str], str]:
+        """Keep native null references bare and owning JSON values movable."""
+        if self._json_type_active:
+            return lambda name: self.format_call_ref_identifier(name, None)
+        return lambda name: name
 
     @cached_property
     def format_call_arg_ref_identifier_consumable(
@@ -3818,7 +3962,18 @@ class Cpp(metaclass=LanguageCls):
         through the non-consuming formatter so the emitted C++ compiles
         cleanly under ``--warnings-as-errors``.
         """
-        return _cpp_value_inhibits_consuming_form
+
+        def _inhibits(value: Value, /) -> bool:
+            """Suppress moves for native nulls and other trivial
+            values.
+            """
+            if value is None:
+                return not self._json_type_active
+            return _cpp_value_inhibits_consuming_form(
+                value
+            ) or self._native_ref_value_is_trivial(value)
+
+        return _inhibits
 
     @cached_property
     def _cpp_date_type(self) -> str:
@@ -3967,7 +4122,6 @@ class Cpp(metaclass=LanguageCls):
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
         )
@@ -4037,7 +4191,6 @@ class Cpp(metaclass=LanguageCls):
         )
         strategy = build_record_strategy(
             renderer=renderer,
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=f"{_CPP_RECORD_MAP_TYPE}{{",
         )
@@ -4051,7 +4204,7 @@ class Cpp(metaclass=LanguageCls):
         )
         return dataclasses.replace(strategy, behavior=behavior)
 
-    def _rendered_record_name(self, value: Value, /) -> str | None:
+    def _rendered_record_name(self, value: ValueInput, /) -> str | None:
         """Return the ``struct`` name *value* is rendered as, if any.
 
         Resolved when a type is needed rather than when the context is
@@ -4355,6 +4508,7 @@ class Cpp(metaclass=LanguageCls):
         """
         if self._json_type_active:
             return no_data_preamble
+
         if self._record_strategy_active:
             return _build_cpp_record_preamble(
                 type_ctx=self._type_ctx,
@@ -4391,6 +4545,7 @@ class Cpp(metaclass=LanguageCls):
             type_ctx=self._type_ctx,
             tuple_list_ids=frozenset(),
             record_dict_ids=frozenset(),
+            force_variant=False,
         )
 
     @cached_property
@@ -4421,6 +4576,49 @@ class Cpp(metaclass=LanguageCls):
                 type_ctx=self._type_ctx,
             )
         return behavior
+
+    @staticmethod
+    def reference_binding_data_dependent_preamble(
+        data: Value, /
+    ) -> tuple[str, ...]:
+        """Only a non-scalar reference's ``std::move`` needs a header."""
+        if isinstance(data, (bool, int, float)):
+            return ()
+        return ("#include <utility>",)
+
+    @staticmethod
+    def reference_declaration_imports(
+        entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Keep headers used by each rendered bound value."""
+        return tuple(
+            entry for entry in entries if entry.startswith("#include ")
+        )
+
+    @staticmethod
+    def format_reference_variable_declaration(
+        name: str,
+        value: str,
+        _data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Preserve reference categories and static binding ownership."""
+        if _CppModifiers.STATIC in modifiers:
+            type_keyword = "auto"
+        elif _CppModifiers.CONST in modifiers:
+            type_keyword = "auto&"
+        else:
+            type_keyword = "auto&&"
+        prefix = _cpp_modifier_prefix(modifiers=modifiers)
+        return f"{prefix}{type_keyword} {name} = {value};"
+
+    @staticmethod
+    def format_reference_variable_assignment(
+        name: str, value: str, _data: Value, /
+    ) -> str:
+        """Assign an already rendered reference directly."""
+        return f"{name} = {value};"
 
     @cached_property
     def format_variable_declaration(

@@ -40,6 +40,10 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     make_ull_fallback,
 )
+from literalizer._formatters.format_strings import (
+    format_string_c,
+    has_bidi_formatting_character,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -246,15 +250,15 @@ def _format_objc_string(value: str) -> str:
 
     Example: ``hello "world"`` → ``@"hello \"world\""``.
     """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\n", "\\n")
-        .replace("\r", "\\r")
-        .replace("\t", "\\t")
-        .replace("\0", "\\000")
-    )
-    return f'@"{escaped}"'
+    if has_bidi_formatting_character(value=value):
+        segments = value.split(sep="\0")
+        formatted = f"@({format_string_c(value=segments[0])})"
+        for segment in segments[1:]:
+            formatted = f'[{formatted} stringByAppendingString:@"\\000"]'
+            suffix = _format_objc_string(value=segment)
+            formatted = f"[{formatted} stringByAppendingString:{suffix}]"
+        return formatted
+    return f"@{format_string_c(value=value)}"
 
 
 @beartype

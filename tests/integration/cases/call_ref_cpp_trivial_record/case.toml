@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Cpp"]
+languages_reason = "C++ consuming references must avoid moves of trivial RECORD structs."
+target_function = "consume"
+parameter_names = ["value"]
+per_element = true
+variant_only = true
+ref_declarations = { item = '{"value":1}' }
+consumable_refs = ["item"]
+
+[[call.variants]]
+axis = "heterogeneous_strategy_record"

@@ -1,0 +1,15 @@
+# languages rejecting: 12; languages accepting: 0
+
+[InvalidCallTargetError]
+Ada = "Ada cannot use call target 'thing.if': component 'if' is a reserved identifier"
+CSharp = "CSharp cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Cpp = "Cpp cannot use call target 'thing.if': component 'if' is a reserved identifier"
+D = "D cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Dart = "Dart cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Go = "Go cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Groovy = "Groovy cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Haskell = "Haskell cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Kotlin = "Kotlin cannot use call target 'thing.if': component 'if' is a reserved identifier"
+OCaml = "OCaml cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Swift = "Swift cannot use call target 'thing.if': component 'if' is a reserved identifier"
+SystemVerilog = "SystemVerilog cannot use call target 'thing.if': component 'if' is a reserved identifier"

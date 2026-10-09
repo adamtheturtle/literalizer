@@ -25,8 +25,7 @@ supports optional-field unification; this module deliberately omits
 that (out of scope for the non-Rust ports), so
 :attr:`RecordShape.optional_keys` is always empty here.  Splitting
 same-key-set shapes whose field types conflict (issue #2888) is
-supported behind the ``split_conflicting_field_types`` flag of
-:func:`build_record_strategy`; because this module has no
+supported by :func:`build_record_strategy`; because this module has no
 optional-field unification its refinement is simpler than Rust's (no
 absent-key wildcard rule), and it reuses each language's own
 :attr:`RecordRenderer.field_type` hook as the field-type signature
@@ -727,7 +726,6 @@ def _assign_names(
     shapes: Sequence[RecordShape],
     prefix: str,
     record_shape_names: Mapping[frozenset[str], str],
-    reject_split_key_sets: bool,
 ) -> dict[RecordShape, str]:
     """Assign struct names in *shapes* order.
 
@@ -736,8 +734,7 @@ def _assign_names(
     *index* advances only for the auto-named shapes (mirrors Rust's
     ``_compute_shapes``/``_build_record_preamble``).
 
-    When *reject_split_key_sets* is set (field-type splitting is on) and
-    more than one distinct shape carries a custom-named key set (same
+    When more than one distinct shape carries a custom-named key set (same
     keys but conflicting field types -- see
     :func:`_refine_record_shapes`), the custom name cannot identify one
     declaration, so the input is rejected rather than emitting duplicate
@@ -753,7 +750,7 @@ def _assign_names(
         if custom is None:
             names[shape] = f"{prefix}{prefix_index}"
             prefix_index += 1
-        elif reject_split_key_sets and key_set_counts[key_set] > 1:
+        elif key_set_counts[key_set] > 1:
             sorted_keys = ", ".join(sorted(key_set))
             msg = (
                 f"record_shape_names maps the key set {{{sorted_keys}}} "
@@ -915,7 +912,6 @@ def _collect_strategy_shapes(
     data: Value,
     renderer: RecordRenderer,
     widen_unrecordizable_nested_sibling_maps: bool,
-    split_conflicting_field_types: bool,
 ) -> Mapping[int, RecordShape]:
     """Collect and refine the record shapes for the selected strategy."""
     raw_shapes_by_id = collect_record_shapes(data=data)
@@ -925,18 +921,15 @@ def _collect_strategy_shapes(
             data=data,
             shapes_by_id=raw_shapes_by_id,
         )
-    shapes_by_id = widened_shapes_by_id
-    if split_conflicting_field_types:
-        shapes_by_id = _refine_record_shapes(
-            data=data,
-            shapes_by_id=widened_shapes_by_id,
-            recordizable_ids=frozenset(raw_shapes_by_id),
-            field_type=renderer.field_type,
-            field_type_names_nested_records=(
-                renderer.field_type_names_nested_records
-            ),
-        )
-    return shapes_by_id
+    return _refine_record_shapes(
+        data=data,
+        shapes_by_id=widened_shapes_by_id,
+        recordizable_ids=frozenset(raw_shapes_by_id),
+        field_type=renderer.field_type,
+        field_type_names_nested_records=(
+            renderer.field_type_names_nested_records
+        ),
+    )
 
 
 @beartype
@@ -984,7 +977,6 @@ class _RecordStrategyState:
     """
 
     renderer: RecordRenderer
-    split_conflicting_field_types: bool
     widen_unrecordizable_nested_sibling_maps: bool
     name_by_shape: dict[RecordShape, str]
     id_to_shape: dict[int, RecordShape]
@@ -1000,7 +992,6 @@ class _RecordStrategyState:
             widen_unrecordizable_nested_sibling_maps=(
                 self.widen_unrecordizable_nested_sibling_maps
             ),
-            split_conflicting_field_types=self.split_conflicting_field_types,
         )
         self.name_by_shape.clear()
         self.id_to_shape.clear()
@@ -1017,7 +1008,6 @@ class _RecordStrategyState:
                 shapes=ordered,
                 prefix=self.renderer.name_prefix,
                 record_shape_names=self.renderer.record_shape_names,
-                reject_split_key_sets=self.split_conflicting_field_types,
             ),
         )
         _accumulate_emit_order(
@@ -1118,7 +1108,6 @@ class _RecordStrategyState:
 def build_record_strategy(
     *,
     renderer: RecordRenderer,
-    split_conflicting_field_types: bool,
     widen_unrecordizable_nested_sibling_maps: bool,
     derecordized_map_open: str | None,
 ) -> ActiveRecordStrategy:
@@ -1131,13 +1120,11 @@ def build_record_strategy(
     derive each field's declared type from the raw value through the
     language's own collection openers.
 
-    When *split_conflicting_field_types* is set, ``compute_record_shapes``
-    additionally runs :func:`_refine_record_shapes` so same-key-set dicts
-    whose declared field types conflict resolve to distinct record shapes
-    (issue #2888); a language opts in once its
-    :attr:`RecordRenderer.field_type` hook is a faithful field-type
-    signature (widening hooks are checked for polarity first).  Left off,
-    the strategy behaves exactly as before.
+    ``compute_record_shapes`` runs :func:`_refine_record_shapes` so
+    same-key-set dicts whose declared field types conflict resolve to
+    distinct record shapes (issue #2888). The language must provide a
+    faithful :attr:`RecordRenderer.field_type` signature; widening hooks
+    are checked for polarity first.
 
     When *widen_unrecordizable_nested_sibling_maps* is set, nested maps
     whose sibling instances cannot share one record shape are dropped
@@ -1153,7 +1140,6 @@ def build_record_strategy(
     """
     state = _RecordStrategyState(
         renderer=renderer,
-        split_conflicting_field_types=split_conflicting_field_types,
         widen_unrecordizable_nested_sibling_maps=(
             widen_unrecordizable_nested_sibling_maps
         ),

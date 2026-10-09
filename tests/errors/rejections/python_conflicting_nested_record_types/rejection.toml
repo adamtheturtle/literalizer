@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Python nested records with incompatible field shapes cannot share one annotation."
+exceptions = ["HeterogeneousSiblingListsError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ['[{"name":"one","payload":{"scalar":1,"items":[2,3]}},{"name":"two","payload":{"other":2}}]']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

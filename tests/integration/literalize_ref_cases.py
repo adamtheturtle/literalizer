@@ -32,6 +32,7 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
 )
 from literalizer.languages import Matlab
+from tests.enum_members import enum_member_by_name
 from tests.yaml_support import as_yaml_parser
 
 from .case_manifests import (
@@ -210,6 +211,69 @@ def _parse_ref_input(
 
 
 @beartype
+def _bound_ref_inputs(
+    *,
+    config: RefCaseSpec,
+    raw_data: _RefData,
+    lang_cls: literalizer.LanguageCls,
+) -> dict[str, ValueInput]:
+    """Prepare referenced bindings and the case's additional
+    declarations.
+    """
+    collected_bound_refs_input: dict[str, ValueInput] = {}
+    for entry_raw_name in collect_ref_names(
+        data=raw_data, ref_key=config.ref_key
+    ):
+        effective_s = '{"_": "_"}'
+        if lang_cls is Matlab:
+            effective_s = '{"key": "value"}'
+        collected_bound_refs_input[entry_raw_name] = json.loads(
+            s=config.value_sources.get(entry_raw_name, effective_s)
+        )
+    bound_refs_input: dict[str, ValueInput] = collected_bound_refs_input
+    bound_refs_input.update(
+        {
+            name: json.loads(s=source)
+            for name, source in config.extra_ref_value_sources.items()
+        },
+    )
+    if config.bound_refs is not None:
+        bound_refs_input.update(config.bound_refs)
+    return bound_refs_input
+
+
+@beartype
+def _ref_language_options(
+    *,
+    config: RefCaseSpec,
+    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
+) -> literalizer.Language:
+    """Apply the output modes explicitly selected by a reference case."""
+    for name, enum_cls, choice in (
+        (
+            "variable_type_hints",
+            lang_cls.VariableTypeHints,
+            config.variable_type_hints,
+        ),
+        (
+            "heterogeneous_strategy",
+            lang_cls.HeterogeneousStrategies,
+            config.heterogeneous_strategy,
+        ),
+        ("sequence_format", lang_cls.SequenceFormats, config.sequence_format),
+        ("json_type", lang_cls.JsonTypes, config.json_type),
+        ("dict_format", lang_cls.DictFormats, config.dict_format),
+    ):
+        if choice is not None:
+            spec = dataclasses.replace(
+                spec,
+                **{name: enum_member_by_name(enum_cls=enum_cls, name=choice)},
+            )
+    return spec
+
+
+@beartype
 def run_literalize_ref_golden_case(
     *,
     config: RefCaseSpec,
@@ -241,16 +305,18 @@ def run_literalize_ref_golden_case(
         version=version,
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
-    if config.heterogeneous_strategy is not None:
-        spec = dataclasses.replace(
-            spec,
-            heterogeneous_strategy=lang_cls.HeterogeneousStrategies[
-                config.heterogeneous_strategy
-            ],
-        )
+    spec = _ref_language_options(config=config, lang_cls=lang_cls, spec=spec)
     variable_form_obj: literalizer.VariableForm | None = (
         config.resolved_variable_form()
     )
+    if isinstance(variable_form_obj, literalizer.NewVariable):
+        variable_form_obj = dataclasses.replace(
+            variable_form_obj,
+            modifiers=frozenset(
+                enum_member_by_name(enum_cls=spec.modifiers, name=name)
+                for name in config.variable_modifiers
+            ),
+        )
     try:
         _ = literalizer.literalize(
             source='{"key": "value"}',
@@ -265,25 +331,11 @@ def run_literalize_ref_golden_case(
         input_format=input_info.input_format,
         input_source=input_source,
     )
-    collected_bound_refs_input: dict[str, ValueInput] = {}
-    for entry_raw_name in collect_ref_names(
-        data=raw_data, ref_key=config.ref_key
-    ):
-        effective_s = '{"_": "_"}'
-        if lang_cls is Matlab:
-            effective_s = '{"key": "value"}'
-        collected_bound_refs_input[entry_raw_name] = json.loads(
-            s=config.value_sources.get(entry_raw_name, effective_s)
-        )
-    bound_refs_input: dict[str, ValueInput] = collected_bound_refs_input
-    bound_refs_input.update(
-        {
-            name: json.loads(s=source)
-            for name, source in config.extra_ref_value_sources.items()
-        },
+    bound_refs_input = _bound_ref_inputs(
+        config=config,
+        raw_data=raw_data,
+        lang_cls=lang_cls,
     )
-    if config.bound_refs is not None:
-        bound_refs_input.update(config.bound_refs)
     with GoldenSkips(
         policy=_REF_SKIPS,
         golden_path=golden_path,

@@ -95,7 +95,6 @@ from literalizer._language import (
     default_format_call_stub,
     default_format_call_target,
     default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
@@ -533,7 +532,6 @@ class Dart(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
@@ -550,7 +548,6 @@ class Dart(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_call_parameter_identifier_pattern: ClassVar[re.Pattern[str]] = (
         _DART_PRIVATE_NAME
     )
@@ -637,6 +634,28 @@ class Dart(metaclass=LanguageCls):
             "with",
             "yield",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
+        - (
+            frozenset(
+                {
+                    "BigInt",
+                    "DateTime",
+                    "List",
+                    "Map",
+                    "Null",
+                    "Set",
+                    "String",
+                    "bool",
+                    "double",
+                    "dynamic",
+                    "int",
+                    "main",
+                    "num",
+                }
+            )
+        )
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
@@ -1451,6 +1470,15 @@ class Dart(metaclass=LanguageCls):
             close="}",
             preamble_lines=(),
         )
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Infer the target's return type independently of its
+        arguments.
+        """
+        return self.declaration_style.value.formatter
 
     @cached_property
     def format_variable_declaration(

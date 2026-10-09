@@ -128,6 +128,7 @@ def _format_fortran_string_unwrapped(value: str) -> str:
         quote_escape="''",
         control_char_template="achar({})",
         concat_operator=" // ",
+        escape_delete_and_c1=False,
     )(value)
 
 

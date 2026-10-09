@@ -16,8 +16,8 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_formatter,
     format_date_iso,
-    format_datetime_epoch,
     format_datetime_iso,
     format_time_iso,
 )
@@ -75,7 +75,6 @@ from literalizer._language import (
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier_consumable,
-    default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
     default_sequence_binding_declarations,
@@ -143,10 +142,10 @@ def _format_integer_hex_sv(value: int) -> str:
 def _format_integer_decimal_sv(value: int) -> str:
     """Format an integer as a SystemVerilog decimal literal.
 
-    Values outside 32-bit signed range get an explicit 64-bit signed
-    width prefix; smaller values are emitted as bare decimals.
+    Values whose signed magnitude needs more than 31 bits get an explicit
+    64-bit signed width prefix; smaller values are emitted as bare decimals.
     """
-    if _INT32_MIN <= value <= _INT32_MAX:
+    if _INT32_MIN < value <= _INT32_MAX:
         return str(object=value)
     bits = 64
     if value < 0:
@@ -249,6 +248,12 @@ _format_sv_entry_iso = _build_sv_entry_formatter(datetime_as_int=False)
 
 
 _SV_NULL = '_VVal\'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""}'
+
+
+@beartype
+def _sv_format_call_statement(expression: str, /) -> str:
+    """Explicitly discard the result of a task or function call."""
+    return f"void'({expression.removesuffix(';')});"
 
 
 @beartype
@@ -434,7 +439,6 @@ class SystemVerilog(metaclass=LanguageCls):
     supports_dotted_calls = True
     allows_empty_call_parens = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     reserved_variable_identifiers: frozenset[str] = frozenset(
@@ -527,6 +531,9 @@ class SystemVerilog(metaclass=LanguageCls):
             "with",
         }
     )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
+    )
     supports_dotted_call_stub = True
     call_returns_expression = True
     supports_json_call_result_binding = False
@@ -588,7 +595,9 @@ class SystemVerilog(metaclass=LanguageCls):
         )
 
         EPOCH = DatetimeFormatConfig(
-            formatter=format_datetime_epoch,
+            formatter=datetime_epoch_formatter(
+                format_integer=_format_integer_decimal_sv
+            ),
             type_produced=int,
             preamble_lines=(),
         )
@@ -824,7 +833,10 @@ class SystemVerilog(metaclass=LanguageCls):
 
     validate_call_arg = default_validate_call_arg
 
-    format_call_statement = default_format_call_statement
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Explicitly discard task and function call results."""
+        return _sv_format_call_statement
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -1142,7 +1154,11 @@ class SystemVerilog(metaclass=LanguageCls):
 
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
-        """Callable that formats a datetime as a string literal."""
+        """Format epoch seconds with the configured integer literal
+        width.
+        """
+        if self.datetime_format.value.type_produced is int:
+            return datetime_epoch_formatter(format_integer=self.format_integer)
         return self.datetime_format
 
     @cached_property

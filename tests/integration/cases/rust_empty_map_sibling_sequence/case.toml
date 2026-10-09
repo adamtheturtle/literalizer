@@ -1,6 +1,6 @@
 schema_version = 1
-languages = ["Rust"]
-languages_reason = "Rust-specific: only its LAZY_STATIC declarations carry an inferred annotation, and the empty map is typed from its non-empty sibling."
+languages = ["Mojo", "Python", "Rust"]
+languages_reason = "Empty maps must use the populated sibling value type; Rust also infers LAZY_STATIC declaration types."
 suites = ["base"]
 
 [[variants]]

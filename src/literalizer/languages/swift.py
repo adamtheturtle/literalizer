@@ -244,7 +244,9 @@ def _tuple_sequence_entry(original: Value, entry: str) -> str:
 
 
 @beartype
-def _swift_param(*, name: str, accepts_nil: bool) -> str:
+def _swift_param(
+    *, name: str, accepts_nil: bool, is_wrapper_parameter: bool
+) -> str:
     """Format a single Swift parameter for a stub signature.
 
     When *accepts_nil* is ``True`` the parameter type is ``Any?`` with
@@ -254,7 +256,7 @@ def _swift_param(*, name: str, accepts_nil: bool) -> str:
     type_and_default = "Any = 0"
     if accepts_nil:
         type_and_default = "Any? = nil"
-    if name.startswith("_"):
+    if is_wrapper_parameter:
         return f"_ {name}: {type_and_default}"
     return f"{name}: {type_and_default}"
 
@@ -289,7 +291,12 @@ def _swift_call_stub(
     """Return Swift stub declarations for a call name."""
     accepts_nil = _swift_args_contain_nil(args=args)
     param_list = ", ".join(
-        _swift_param(name=p, accepts_nil=accepts_nil) for p in params
+        _swift_param(
+            name=p,
+            accepts_nil=accepts_nil,
+            is_wrapper_parameter=len(args) == 0 and p.startswith("_"),
+        )
+        for p in params
     )
     if len(parts) == 1:
         return (
@@ -667,7 +674,6 @@ class Swift(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = True
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
     contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset(
@@ -749,6 +755,9 @@ class Swift(metaclass=LanguageCls):
             "while",
             "willSet",
         }
+    )
+    reserved_identifiers: ClassVar[frozenset[str]] = (
+        reserved_variable_identifiers
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
@@ -1113,16 +1122,22 @@ class Swift(metaclass=LanguageCls):
                         default_dict_value_type=default_dict_value_type,
                         sequence_is_tuple=sequence_is_tuple,
                     )
-                    needs_context = data is None or (
-                        bool(data)
-                        and (
-                            (
-                                isinstance(data, OrderedMap)
-                                and len({type(item) for item in data.values()})
-                                > 1
+                    needs_context = (
+                        data is None
+                        or value == "[]"
+                        or (
+                            bool(data)
+                            and (
+                                (
+                                    isinstance(data, OrderedMap)
+                                    and len(
+                                        {type(item) for item in data.values()}
+                                    )
+                                    > 1
+                                )
+                                or "Record0(" not in value
+                                or hint == "[Any]"
                             )
-                            or "Record0(" not in value
-                            or hint == "[Any]"
                         )
                     )
                     if isinstance(data, dict) and any(
@@ -1132,7 +1147,7 @@ class Swift(metaclass=LanguageCls):
                     if value == "()":
                         hint = "Any"
                         needs_context = True
-                    if "Any" in hint and needs_context:
+                    if needs_context and ("Any" in hint or value == "[]"):
                         return f"{keyword} {name}: {hint} = {value}"
                     return auto_formatter(name, value, data, modifiers)
 
@@ -1430,7 +1445,6 @@ class Swift(metaclass=LanguageCls):
         if self.heterogeneous_strategy is cls.RECORD:
             return build_record_strategy(
                 renderer=self._record_renderer,
-                split_conflicting_field_types=True,
                 widen_unrecordizable_nested_sibling_maps=True,
                 derecordized_map_open=None,
             )
@@ -1588,7 +1602,7 @@ class Swift(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        return self.variable_type_hints.formatter(
+        formatter = self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self.declaration_style.name.lower(),
             date_hint=self._swift_date_hint,
@@ -1600,6 +1614,33 @@ class Swift(metaclass=LanguageCls):
                 self.sequence_format is type(self.sequence_format).TUPLE
             ),
         )
+        lookup = self._record_strategy.record_name_for_value
+        if lookup is None:
+            return formatter
+
+        def _record_formatter(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Keep native record declarations consistent with their
+            values.
+            """
+            record_name = lookup(data)
+            if record_name is None:
+                return formatter(name, value, data, modifiers)
+            keyword = self.declaration_style.name.lower()
+            if (
+                self.variable_type_hints
+                is type(self.variable_type_hints).ALWAYS
+            ):
+                return f"{keyword} {name}: {record_name} = {value}"
+            return self.declaration_style.value.formatter(
+                name, value, data, modifiers
+            )
+
+        return _record_formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

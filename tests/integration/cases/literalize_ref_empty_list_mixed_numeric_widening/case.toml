@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["Kotlin"]
-languages_reason = "Kotlin's widened outer list accepts the distinct primitive-array siblings while requiring an empty referenced list to use the same Any fallback."
+languages = ["Cpp", "Dart", "Go", "Java", "Kotlin", "Scala"]
+languages_reason = "Sampled: regressions for bound empty, integer and floating point collections that require a common nested numeric element type."
 
 [ref.value_sources]
 empty_values = "[]"

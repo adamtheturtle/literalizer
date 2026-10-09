@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallParameterNameError]
+"Ada['__proto__']" = "Ada cannot use call parameter '__proto__': it is not a valid identifier"
+"Ada['_x']" = "Ada cannot use call parameter '_x': it is not a valid identifier"
+"Ada['x_']" = "Ada cannot use call parameter 'x_': it is not a valid identifier"
+"Ada['x__y']" = "Ada cannot use call parameter 'x__y': it is not a valid identifier"

@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["OCaml", "Scala"]
+languages_reason = "Nested native arrays must preserve their element type and rank beside empty siblings."
+suites = ["base", "combined"]
+
+[[variants]]
+axis = "sequence"

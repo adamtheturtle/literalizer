@@ -52,11 +52,11 @@ from literalizer._formatters.format_strings import (
     make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
     RecordDeclarationField,
     RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
-    RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
 )
@@ -133,6 +133,33 @@ _format_string = make_backslash_string_formatter(
     quote_char="'",
     extra_replacements=[("$", "\\$"), ("\0", "\\x00")],
 )
+
+
+@beartype
+def _v_empty_array_rank(value: Value, /) -> int | None:
+    """Infer the rank of a uniform array tree containing only empty leaves."""
+    if not isinstance(value, list):
+        return None
+    if len(value) == 0:
+        return 1
+    ranks = {_v_empty_array_rank(item) for item in value}
+    if len(ranks) != 1:
+        return None
+    (rank,) = ranks
+    if rank is None:
+        return None
+    return rank + 1
+
+
+@beartype
+def _format_v_empty_array_entry(original: Value, formatted: str, /) -> str:
+    """Name the type of nested empty arrays that V cannot infer
+    together.
+    """
+    rank = _v_empty_array_rank(original)
+    if rank is None or rank == 1 or f"[]{_V_IFACE_NAME}{{}}" not in formatted:
+        return formatted
+    return f"{'[]' * rank}{_V_IFACE_NAME}({formatted})"
 
 
 @beartype
@@ -561,6 +588,51 @@ def _v_inner_type(items: list[Value], /) -> str:
 
 
 @beartype
+def _v_ordered_map_field_inner_type(
+    items: list[Value],
+    /,
+    *,
+    record_name_for_value: Callable[[Value], str | None],
+) -> str:
+    """Resolve nested collection fields using their rendered record names.
+
+    Ordered maps and lists retain their structural types, while native
+    record leaves keep their generated nominal names. Scalar leaves use
+    the shared pooled inference for integer widths.
+    """
+    names = {record_name_for_value(item) for item in items}
+    if len(names) == 1 and None not in names:
+        return f"{next(iter(names))}"
+    if len(names) > 1 and None not in names:
+        message = (
+            "V cannot represent ordered-map values with multiple "
+            "native record types under the RECORD heterogeneous "
+            "strategy"
+        )
+        raise UnrepresentableInputError(message)
+    if len(items) > 0 and all(isinstance(item, OrderedMap) for item in items):
+        values = [
+            value
+            for item in items
+            if isinstance(item, OrderedMap)
+            for value in item.values()
+        ]
+        inner = _v_ordered_map_field_inner_type(
+            values, record_name_for_value=record_name_for_value
+        )
+        return f"map[string]{inner}"
+    if len(items) > 0 and all(isinstance(item, list) for item in items):
+        values = [
+            value for item in items if isinstance(item, list) for value in item
+        ]
+        inner = _v_ordered_map_field_inner_type(
+            values, record_name_for_value=record_name_for_value
+        )
+        return f"[]{inner}"
+    return _v_inner_type(items)
+
+
+@beartype
 def _v_record_field_identifier(key: str, /) -> str:
     """Return the V ``struct`` member name for a dict *key*.
 
@@ -676,7 +748,7 @@ class V(metaclass=LanguageCls):
         re.Pattern[str] | None
     ] = None
     accepts_type_name_call_target = True
-    declares_type_name_call_target = True
+    declares_type_name_call_target = False
     dotted_call_root_shares_entrypoint_namespace = True
     reserved_bare_call_target_identifiers: ClassVar[frozenset[str]] = (
         frozenset()
@@ -1248,7 +1320,11 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
-        """Format a sequence entry."""
+        """Format an entry with an explicit rank for nested empty
+        arrays.
+        """
+        if self.heterogeneous_strategy.name == "ERROR":
+            return _format_v_empty_array_entry
         return passthrough_sequence_entry
 
     @cached_property
@@ -1264,7 +1340,8 @@ class V(metaclass=LanguageCls):
     def _v_epoch_normalized(self, value: Value, /) -> Value:
         """Return *value* with every ``datetime.datetime`` replaced by
         its epoch-second integer when the active datetime format renders
-        epochs (``EPOCH``), descending through lists so a datetime
+        epochs (``EPOCH``), descending through lists and ordered maps so a
+        datetime
         element is typed like the integer literal the value formatter
         emits for it rather than as the ``string`` the generic resolver
         would map ``datetime.datetime`` to.
@@ -1281,6 +1358,13 @@ class V(metaclass=LanguageCls):
                 return datetime_epoch_seconds(value=value)
             case list():
                 return [self._v_epoch_normalized(item) for item in value]
+            case OrderedMap():
+                return OrderedMap(
+                    {
+                        key: self._v_epoch_normalized(item)
+                        for key, item in value.items()
+                    }
+                )
             case _:
                 return value
 
@@ -1299,9 +1383,9 @@ class V(metaclass=LanguageCls):
         ``[]`` of its element type (an empty list to ``[]IVal``,
         matching the ``[]IVal{}`` empty literal).
 
-        An ordered map remains out of scope for the base ``RECORD``
-        port (the cross-language decision is tracked in #2317).  A
-        plain nested map excluded from record rendering by the shared
+        An ordered map compiles to ``map[string]`` of its value type,
+        inferred independently of other record fields. A plain nested
+        map excluded from record rendering by the shared
         sibling-map fallback is instead typed as ``map[string]IVal`` by
         :meth:`_v_record_field_type`.
         """
@@ -1312,7 +1396,17 @@ class V(metaclass=LanguageCls):
             case int():
                 return _v_int_field_type(value)
             case list():
-                return f"[]{_v_inner_type(value)}"
+                inner = _v_ordered_map_field_inner_type(
+                    value,
+                    record_name_for_value=self._record_strategy.record_name_for_value,
+                )
+                return f"[]{inner}"
+            case OrderedMap():
+                inner = _v_ordered_map_field_inner_type(
+                    list(value.values()),
+                    record_name_for_value=self._record_strategy.record_name_for_value,
+                )
+                return f"map[string]{inner}"
             case _:
                 scalar_type = _V_SCALAR_FIELD_TYPE.get(type(value))
                 if scalar_type is not None and scalar_type != "":
@@ -1377,16 +1471,15 @@ class V(metaclass=LanguageCls):
             field_type=self._v_record_field_type,
             render_declaration=self._v_render_record_declaration,
             render_literal=_v_record_literal,
-            field_type_names_nested_records=False,
+            field_type_names_nested_records=True,
             suppress_custom_name_declarations=False,
         )
 
     @cached_property
-    def _record_strategy(self) -> RecordStrategy:
+    def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
-            split_conflicting_field_types=True,
             widen_unrecordizable_nested_sibling_maps=True,
             derecordized_map_open=None,
         )
@@ -1478,7 +1571,8 @@ class V(metaclass=LanguageCls):
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
-        """Append ``.clone()`` to the ref identifier, except for scalars.
+        """Append ``.clone()`` to collection refs, except for native
+        records.
 
         V's container types (arrays, maps) are not copied by direct
         assignment, so a ``$ref`` marker appearing on the right-hand
@@ -1494,9 +1588,14 @@ class V(metaclass=LanguageCls):
 
         def _clone(name: str, value: Value | None, /) -> str:
             """Return *name* with ``.clone()`` appended unless *value*
-            is a register-trivial scalar that V auto-copies.
+            is a scalar or native record that V auto-copies.
             """
-            if isinstance(value, bool | int | float):
+            if isinstance(value, bool | int | float) or (
+                isinstance(value, dict)
+                and self.heterogeneous_strategy.name == "RECORD"
+                and self._record_strategy.record_name_for_value(value)
+                is not None
+            ):
                 return name
             return f"{name}.clone()"
 

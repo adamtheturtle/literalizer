@@ -1,0 +1,6 @@
+values:
+  - !!omap
+      - inner: {x: 1}
+  - !!omap
+      - inner: {x: 2}
+flag: true
