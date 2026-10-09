@@ -1,0 +1,13 @@
+numbers: !!omap
+  - first: 1
+words: !!omap
+  - first: s
+nested: !!omap
+  - first: [1, 2]
+empty: !!omap []
+flag: true
+nested_maps: !!omap
+  - first: !!omap
+      - nested: 1
+empty_nested_maps: !!omap
+  - first: !!omap []
