@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["Swift"]
-languages_reason = "Swift nullable native record bindings need their generated record type rather than a dictionary annotation."
+languages = ["Python", "Swift"]
+languages_reason = "Native record bindings retain their generated types in explicit annotations, including nullable fields."
 heterogeneous_strategy = "RECORD"
 variable_type_hints = "ALWAYS"
 
