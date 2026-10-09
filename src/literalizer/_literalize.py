@@ -2447,6 +2447,40 @@ def _layout_context(*, value: Value, ctx: _RenderContext) -> _RenderContext:
 
 
 @beartype
+def _literal_ref_single_use_names(
+    *, data: Value, ref_key: str, preserve_ref_values: bool
+) -> frozenset[str]:
+    """Identify refs whose literal can safely consume their binding."""
+    if preserve_ref_values:
+        return frozenset[str]()
+    return _compute_call_arg_ref_single_use_names(
+        elements=[data], ref_key=ref_key
+    )
+
+
+@runtime_checkable
+class _ReusableLiteralReferenceLanguage(Protocol):
+    """A language that borrows references needed by later literal uses."""
+
+    @property
+    def format_reused_literal_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Format a reference whose binding must remain reusable."""
+        ...
+
+
+@beartype
+def _format_literal_reference_identifier(
+    *, name: str, value: Value | None, language: Language, reused: bool
+) -> str:
+    """Use the language's borrowing form when literal refs are reused."""
+    if reused and isinstance(language, _ReusableLiteralReferenceLanguage):
+        return language.format_reused_literal_ref_identifier(name, value)
+    return language.format_call_ref_identifier(name, value)
+
+
+@beartype
 def _format_ref_value(*, raw_ref_name: str, ctx: _RenderContext) -> str:
     """Format a reference marker found in a nested value."""
     ref_name = _validated_ref_name(
@@ -2458,7 +2492,12 @@ def _format_ref_value(*, raw_ref_name: str, ctx: _RenderContext) -> str:
     if ctx.ref_values is not None:
         ref_value = ctx.ref_values.get(raw_ref_name)
     if not ctx.expand_refs:
-        return ctx.spec.format_call_ref_identifier(ref_name, ref_value)
+        return _format_literal_reference_identifier(
+            name=ref_name,
+            value=ref_value,
+            language=ctx.spec,
+            reused=raw_ref_name not in ctx.single_use_ref_names,
+        )
     return _format_call_arg_ref_identifier(
         raw_ref_name=raw_ref_name,
         ref_name=ref_name,
@@ -3596,6 +3635,7 @@ def _record_context_formatting(
 @beartype
 def _build_render_context(
     *,
+    preserve_ref_values: bool,
     data: Value,
     inference_data: Value,
     language: Language,
@@ -3726,7 +3766,11 @@ def _build_render_context(
         collection_layout=collection_layout,
         multiline_prefix=line_prefix,
         consumable_ref_names=frozenset(),
-        single_use_ref_names=frozenset(),
+        single_use_ref_names=_literal_ref_single_use_names(
+            data=data,
+            ref_key=ref_key,
+            preserve_ref_values=preserve_ref_values,
+        ),
         consume_inhibited_ref_names=frozenset(),
         yaml_comment_nodes=yaml_comment_nodes,
         toml_comments=toml_comments,
@@ -3794,6 +3838,7 @@ def _format_root_collection_override(
 @beartype
 def _prepare_root_render(
     *,
+    preserve_ref_values: bool,
     data: CollectionValue,
     inference_data: CollectionValue,
     language: Language,
@@ -3831,6 +3876,7 @@ def _prepare_root_render(
             return fast_result
 
     return _build_render_context(
+        preserve_ref_values=preserve_ref_values,
         data=data,
         inference_data=inference_data,
         language=language,
@@ -3898,6 +3944,7 @@ def _format_root_collection(
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize_impl(
     *,
+    preserve_ref_values: bool,
     data: Value,
     language: Language,
     line_prefix: str,
@@ -3918,6 +3965,7 @@ def _literalize_impl(
     indent.
 
     Args:
+        preserve_ref_values: Keep references reusable across generated forms.
         data: A scalar, sequence, or mapping.  Scalars (strings,
             numbers, booleans, ``None``, :class:`datetime.date`,
             :class:`datetime.datetime`) are formatted as a single
@@ -3977,8 +4025,11 @@ def _literalize_impl(
                 )
                 if compute_record_shapes is not None:
                     _ = compute_record_shapes(ref_value)
-            identifier = language.format_call_ref_identifier(
-                ref_name, ref_value
+            identifier = _format_literal_reference_identifier(
+                name=ref_name,
+                value=ref_value,
+                language=language,
+                reused=preserve_ref_values,
             )
             return f"{line_prefix}{identifier}"
 
@@ -3986,6 +4037,7 @@ def _literalize_impl(
         if validate_data:
             check_data(data=data, spec=language)
         _ = _build_render_context(
+            preserve_ref_values=preserve_ref_values,
             data=data,
             inference_data=data,
             language=language,
@@ -4013,6 +4065,7 @@ def _literalize_impl(
         ref_key=ref_key,
     )
     prepared = _prepare_root_render(
+        preserve_ref_values=preserve_ref_values,
         data=data,
         inference_data=inference_data,
         language=language,
@@ -4043,6 +4096,7 @@ def _literalize_impl(
 @beartype
 def _literalize_child_path(
     *,
+    preserve_ref_values: bool,
     data: Value,
     error_type: type[LiteralizerError],
     language: Language,
@@ -4077,6 +4131,7 @@ def _literalize_child_path(
         with suppress(LiteralizerError):
             try:
                 _ = _literalize_impl(
+                    preserve_ref_values=preserve_ref_values,
                     data=child,
                     language=language,
                     line_prefix="",
@@ -4094,6 +4149,7 @@ def _literalize_child_path(
                 return (
                     component,
                     *_literalize_child_path(
+                        preserve_ref_values=preserve_ref_values,
                         data=child,
                         error_type=error_type,
                         language=language,
@@ -4109,6 +4165,7 @@ def _literalize_child_path(
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
 def _literalize(
     *,
+    preserve_ref_values: bool,
     data: Value,
     language: Language,
     line_prefix: str,
@@ -4125,6 +4182,7 @@ def _literalize(
     """Render data and attach a path to value-specific renderer errors."""
     try:
         return _literalize_impl(
+            preserve_ref_values=preserve_ref_values,
             data=data,
             language=language,
             line_prefix=line_prefix,
@@ -4141,6 +4199,7 @@ def _literalize(
     except LiteralizerError as exc:
         if exc.path is None:
             exc.path = _literalize_child_path(
+                preserve_ref_values=preserve_ref_values,
                 data=data,
                 error_type=type(exc),
                 language=language,
@@ -4333,6 +4392,7 @@ def _declaration_data(*, pre_form: _PreFormState, language: Language) -> Value:
 @beartype
 def _literalize_pre_form_impl(
     *,
+    preserve_ref_values: bool,
     source: str,
     input_format: InputFormat,
     language: Language,
@@ -4370,6 +4430,7 @@ def _literalize_pre_form_impl(
     if isinstance(parsed, ParsedToml):
         effective_toml_comment_doc = parsed.toml_doc
     result = _literalize(
+        preserve_ref_values=preserve_ref_values,
         data=data,
         language=language,
         line_prefix=line_prefix,
@@ -4457,6 +4518,7 @@ def _literalize_pre_form_impl(
 @beartype
 def literalize_pre_form(
     *,
+    preserve_ref_values: bool,
     source: str,
     input_format: InputFormat,
     language: Language,
@@ -4473,6 +4535,7 @@ def literalize_pre_form(
     """Run pre-form rendering with typed recursion failures."""
     try:
         pre_form = _literalize_pre_form_impl(
+            preserve_ref_values=preserve_ref_values,
             source=source,
             input_format=input_format,
             language=language,
@@ -4875,6 +4938,7 @@ def literalize_both_forms(
             collection_layout=collection_layout,
         )
     pre_form = literalize_pre_form(
+        preserve_ref_values=True,
         source=source,
         input_format=input_format,
         language=language,
@@ -5096,6 +5160,7 @@ def literalize_bound_refs(
     effective_ref_values.update(effective_explicit_ref_values)
     effective_ref_values_2 = nonempty_mapping(values=effective_ref_values)
     pre_form = literalize_pre_form(
+        preserve_ref_values=isinstance(variable_form, BothVariableForms),
         source=source,
         input_format=input_format,
         language=language,
@@ -5205,6 +5270,7 @@ def _literalize_value_binding(
     binding it precedes (issue #4464).
     """
     result_text = _literalize(
+        preserve_ref_values=False,
         data=value,
         language=language,
         line_prefix=line_prefix,

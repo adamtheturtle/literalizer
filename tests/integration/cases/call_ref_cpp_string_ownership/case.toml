@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Cpp"]
+languages_reason = "C++ native string pointers remain bare while JSON strings retain owning moves."
+target_function = "consume"
+parameter_names = ["value"]
+per_element = true
+ref_declarations = { item = '"s"' }
+consumable_refs = ["item"]
+
+[[call.variants]]
+axis = "json_type"
