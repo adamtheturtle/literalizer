@@ -1,0 +1,10 @@
+first:
+  values: !!omap
+    - outer: !!omap
+        - inner: {x: 1}
+  flag: true
+second:
+  values: !!omap
+    - outer: !!omap
+        - inner: {y: s}
+  flag: false
