@@ -1,1 +1,1 @@
-{"a": {"$ref": "shared"}, "b": {"$ref": "other"}}
+{"a": {"$ref": "shared"}, "b": {"$ref": "other"}, "payload": {"$ref": "payload"}}

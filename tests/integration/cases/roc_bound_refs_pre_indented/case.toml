@@ -11,3 +11,4 @@ languages_reason = "Roc top-level annotations and their definitions must retain 
 [ref.value_sources]
 shared = "[1, 2]"
 other = "3"
+payload = '"\n    shared : Val\nshared = RInt 99"'
