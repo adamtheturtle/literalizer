@@ -69,3 +69,23 @@ def test_existing_call_binding_comments(
         wrap_in_file=False,
     )
     assert result.code == f"my_data = make_widget({argument});{suffix}"
+
+
+@pytest.mark.parametrize(argnames="suffix", argvalues=["", " // trailing"])
+def test_existing_haxe_regex_call_binding(suffix: str) -> None:
+    """Keep regex slashes in assignments to external variables."""
+    expression = r'(~/\//).match("/") ? make_widget(42) : null'
+    result = literalize_call(
+        source="42",
+        input_format=InputFormat.JSON,
+        language=Haxe(),
+        target_function="make_widget",
+        parameter_names=["count"],
+        per_element=False,
+        call_transform=lambda context: (
+            r'(~/\//).match("/") ? ' + context.call + " : null" + suffix
+        ),
+        variable_form=ExistingVariable(name="my_data"),
+        wrap_in_file=False,
+    )
+    assert result.code == f"my_data = {expression};{suffix}"

@@ -776,14 +776,19 @@ class CSharp(metaclass=LanguageCls):
             msg = "C# 'const' cannot bind a runtime call result."
             raise IncompatibleFormatsError(msg)
         code, trailing = split_trailing_line_comments(
-            statement=value, prefix="//"
+            statement=value,
+            prefix="//",
+            regex_literals=False,
+            backtick_strings=False,
         )
         prefix = _csharp_modifier_prefix(modifiers=modifiers)
         if prefix == "":
             return f"var {name} = {code};{trailing}"
         return f"{prefix}object {name} = {code};{trailing}"
 
-    format_call_variable_assignment = line_comment_call_variable_assignment
+    format_call_variable_assignment: ClassVar[property] = (
+        line_comment_call_variable_assignment(regex_literals=False)
+    )
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(new_constructor_target)
     )

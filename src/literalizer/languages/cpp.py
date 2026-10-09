@@ -2714,7 +2714,9 @@ class Cpp(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_assignment = line_comment_call_variable_assignment
+    format_call_variable_assignment: ClassVar[property] = (
+        line_comment_call_variable_assignment(regex_literals=False)
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -4576,7 +4578,10 @@ class Cpp(metaclass=LanguageCls):
         data.
         """
         code, trailing = split_trailing_line_comments(
-            statement=value, prefix="//"
+            statement=value,
+            prefix="//",
+            regex_literals=False,
+            backtick_strings=False,
         )
         prefix = _cpp_modifier_prefix(modifiers=modifiers)
         return f"{prefix}auto {name} = {code};{trailing}"

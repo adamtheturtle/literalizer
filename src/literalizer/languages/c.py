@@ -701,7 +701,12 @@ def _format_c_call_declaration(
     difference is dropping the value-wrapping compound literal, so the
     call result is bound directly with a plain ``CVal`` declaration.
     """
-    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+    )
     return f"CVal {name} = {code};{trailing}"
 
 
@@ -713,7 +718,12 @@ def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
     the variable is already declared ``CVal``, so the call result is
     assigned directly with no compound-literal wrapping.
     """
-    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+    )
     return f"{name} = {code};{trailing}"
 
 

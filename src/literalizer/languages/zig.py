@@ -584,7 +584,12 @@ def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
     ``ZVal`` union tagging a literal-binding assignment applies (a call
     result is not a ``ZVal`` union literal).
     """
-    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+    )
     return f"{name} = {code};{trailing}"
 
 
@@ -1993,7 +1998,10 @@ class Zig(metaclass=LanguageCls):
         ) -> str:
             """Format an inferred Zig declaration binding a call."""
             code, trailing = split_trailing_line_comments(
-                statement=value, prefix="//"
+                statement=value,
+                prefix="//",
+                regex_literals=False,
+                backtick_strings=False,
             )
             return f"{keyword} {name} = {code};{trailing}"
 

@@ -3657,6 +3657,8 @@ formatted exactly like a literal binding (no value-type tag to drop).
 @beartype
 def _line_comment_call_variable_declaration(
     self: "Language",
+    *,
+    regex_literals: bool,
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Terminate C-style call bindings before trailing line comments."""
 
@@ -3665,7 +3667,10 @@ def _line_comment_call_variable_declaration(
     ) -> str:
         """Bind the expression, then preserve its final comments."""
         code, trailing = split_trailing_line_comments(
-            statement=value, prefix="//"
+            statement=value,
+            prefix="//",
+            regex_literals=regex_literals,
+            backtick_strings=False,
         )
         return (
             self.format_variable_declaration(name, code, data, modifiers)
@@ -3675,14 +3680,28 @@ def _line_comment_call_variable_declaration(
     return _format
 
 
-line_comment_call_variable_declaration: property = property(
-    fget=_line_comment_call_variable_declaration
-)
+@beartype
+def line_comment_call_variable_declaration(
+    *, regex_literals: bool
+) -> property:
+    """Build a call binding descriptor with its literal syntax."""
+
+    def _get(
+        self: "Language",
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Return the declaration formatter for this language."""
+        return _line_comment_call_variable_declaration(
+            self=self, regex_literals=regex_literals
+        )
+
+    return property(fget=_get)
 
 
 @beartype
 def _line_comment_call_variable_assignment(
     self: "Language",
+    *,
+    regex_literals: bool,
 ) -> Callable[[str, str, Value], str]:
     """Terminate C-style call assignments before trailing line
     comments.
@@ -3691,16 +3710,27 @@ def _line_comment_call_variable_assignment(
     def _format(name: str, value: str, data: Value) -> str:
         """Assign the expression, then preserve its final comments."""
         code, trailing = split_trailing_line_comments(
-            statement=value, prefix="//"
+            statement=value,
+            prefix="//",
+            regex_literals=regex_literals,
+            backtick_strings=False,
         )
         return self.format_variable_assignment(name, code, data) + trailing
 
     return _format
 
 
-line_comment_call_variable_assignment: property = property(
-    fget=_line_comment_call_variable_assignment
-)
+@beartype
+def line_comment_call_variable_assignment(*, regex_literals: bool) -> property:
+    """Build a call assignment descriptor with its literal syntax."""
+
+    def _get(self: "Language") -> Callable[[str, str, Value], str]:
+        """Return the assignment formatter for this language."""
+        return _line_comment_call_variable_assignment(
+            self=self, regex_literals=regex_literals
+        )
+
+    return property(fget=_get)
 
 
 @beartype

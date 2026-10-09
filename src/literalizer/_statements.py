@@ -19,12 +19,20 @@ _CLOSING_BRACKETS = ")]}"
 
 @beartype
 def split_trailing_line_comments(
-    *, statement: str, prefix: str
+    *,
+    statement: str,
+    prefix: str,
+    regex_literals: bool,
+    backtick_strings: bool,
 ) -> tuple[str, str]:
     """Separate trailing line comments from a C-style expression."""
     cursor = len(statement)
     matches = list(
-        _c_style_comment_pattern(prefix=prefix).finditer(string=statement)
+        _c_style_comment_pattern(
+            prefix=prefix,
+            regex_literals=regex_literals,
+            backtick_strings=backtick_strings,
+        ).finditer(string=statement)
     )
     for match in reversed(matches):
         if not match.group().startswith(prefix):
@@ -40,7 +48,9 @@ def split_trailing_line_comments(
 
 @functools.cache
 @beartype
-def _c_style_comment_pattern(*, prefix: str) -> re.Pattern[str]:
+def _c_style_comment_pattern(
+    *, prefix: str, regex_literals: bool, backtick_strings: bool
+) -> re.Pattern[str]:
     """Match literals and comments without treating quoted markers as
     comments.
     """
@@ -52,10 +62,13 @@ def _c_style_comment_pattern(*, prefix: str) -> re.Pattern[str]:
         r"(?P<triple_quote>\"\"\"|''')[\s\S]*?(?P=triple_quote)",
         r'"(?:[^"\\]|\\[\s\S])*"',
         r"'(?:[^'\\]|\\[\s\S])*'",
-        r"`[^`]*`",
         r"/\*[\s\S]*?\*/",
         rf"{re.escape(pattern=prefix)}[^\n]*",
     ]
+    if regex_literals:
+        alternatives.append(r"~/(?:[^/\\]|\\[\s\S])*/[a-z]*")
+    if backtick_strings:
+        alternatives.append(r"`[^`]*`")
     return re.compile(pattern="|".join(alternatives))
 
 

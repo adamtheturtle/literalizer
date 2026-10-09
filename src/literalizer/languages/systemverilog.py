@@ -353,7 +353,12 @@ def _format_systemverilog_call_declaration(
     struct literal, so the call result is bound directly with a plain
     ``static _VVal`` declaration regardless of the source data type.
     """
-    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+    )
     return f"static _VVal {name} = {code};{trailing}"
 
 
@@ -370,7 +375,12 @@ def _format_systemverilog_call_assignment(
     already declared ``_VVal``, so the call result is assigned directly
     with no ``_VVal`` struct-literal wrapping.
     """
-    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+    )
     return f"{name} = {code};{trailing}"
 
 

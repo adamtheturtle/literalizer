@@ -533,8 +533,12 @@ class Dart(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_declaration = line_comment_call_variable_declaration
-    format_call_variable_assignment = line_comment_call_variable_assignment
+    format_call_variable_declaration: ClassVar[property] = (
+        line_comment_call_variable_declaration(regex_literals=False)
+    )
+    format_call_variable_assignment: ClassVar[property] = (
+        line_comment_call_variable_assignment(regex_literals=False)
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas

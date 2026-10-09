@@ -530,7 +530,12 @@ def _format_d_call_declaration(
     return-type hint is required: the call result is bound directly with
     a plain inferred ``auto`` declaration and no value-wrapping.
     """
-    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        backtick_strings=True,
+        regex_literals=False,
+    )
     return f"auto {name} = {code};{trailing}"
 
 
@@ -543,7 +548,12 @@ def _format_d_call_assignment(name: str, value: str, _data: Value) -> str:
     declared, so the call result is assigned directly with no
     ``JSONValue`` or struct-constructor wrapping.
     """
-    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        backtick_strings=True,
+        regex_literals=False,
+    )
     return f"{name} = {code};{trailing}"
 
 

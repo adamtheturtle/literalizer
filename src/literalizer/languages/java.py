@@ -662,7 +662,12 @@ class _JavaTerminatedValue:
 @beartype
 def _java_split_trailing_line_comments(value: str) -> _JavaTerminatedValue:
     """Keep a statement terminator ahead of trailing ``//`` comments."""
-    code, trailing = split_trailing_line_comments(statement=value, prefix="//")
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+    )
     return _JavaTerminatedValue(code=code, trailing=trailing)
 
 
