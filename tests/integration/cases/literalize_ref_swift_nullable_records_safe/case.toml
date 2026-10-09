@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Swift"]
+languages_reason = "Swift nullable native record bindings need their generated record type rather than a dictionary annotation."
+heterogeneous_strategy = "RECORD"
+variable_type_hints = "SAFE"
+
+[ref.value_sources]
+nullable = '{"x":1,"y":null}'
+null_fields = '{"x":null,"y":null}'
+plain = '{"x":1,"y":2}'
