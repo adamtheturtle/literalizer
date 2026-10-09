@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["C", "Elm"]
-languages_reason = "Regression for tagged string constructors when a reference holds a time."
+languages = ["C", "Cpp", "Elm"]
+languages_reason = "Regression for tagged string constructors and native pointer references holding a time."
 collection_layout = "multiline"
 
 [ref.bound_refs]

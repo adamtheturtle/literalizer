@@ -547,8 +547,8 @@ def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
     are register-trivial.  ``date`` and ``datetime`` map to
     ``std::chrono::year_month_day`` and
     ``std::chrono::system_clock::time_point``, both also
-    register-trivial.  Strings, bytes, lists, and dicts allocate or own
-    heap storage, so ``std::move`` continues to deliver value for those.
+    register-trivial. Owned strings, lists, and dicts retain their move
+    form. Native literal-pointer bindings follow their representation.
     """
     if isinstance(value, (list, dict, set)):
         return False
@@ -2327,7 +2327,7 @@ def _renders_as_string_literal(
             value=data
         ):
             return False
-        case bytes() | str():
+        case bytes() | str() | datetime.time():
             return True
         case datetime.datetime():
             return datetime_type is str
@@ -3859,7 +3859,7 @@ class Cpp(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Value | None], str]:
         """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``,
-        except for ``trivially-copyable`` scalars and native records.
+        except for native literal pointers and trivial scalars or records.
 
         A direct copy assignment (``auto my_data = my_var``) triggers
         clang-tidy ``performance-unnecessary-copy-initialization`` when
@@ -3881,14 +3881,30 @@ class Cpp(metaclass=LanguageCls):
             """Wrap the identifier in ``std::move()`` unless *value* is
             a ``trivially-copyable`` scalar or native record.
             """
-            if isinstance(value, (bool, int, float)) or (
-                isinstance(value, dict)
-                and self._cpp_record_field_is_trivial(value)
-            ):
+            if isinstance(
+                value, (bool, int, float)
+            ) or self._native_ref_value_is_trivial(value):
                 return name
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier
+
+    def _native_ref_value_is_trivial(self, value: Value | None, /) -> bool:
+        """Classify the actual native scalar or record binding type."""
+        if self._json_type_active or value is None:
+            return False
+        return _renders_as_string_literal(
+            data=value,
+            date_type=self._resolved_date_format.value.type_produced,
+            datetime_type=self._resolved_datetime_format.value.type_produced,
+        ) or self._cpp_record_field_is_trivial(value)
+
+    @cached_property
+    def format_reused_literal_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Borrow a literal reference whose binding is used again."""
+        return identity_call_ref_identifier
 
     @cached_property
     def format_call_arg_ref_identifier(
@@ -3953,10 +3969,9 @@ class Cpp(metaclass=LanguageCls):
             """
             if value is None:
                 return not self._json_type_active
-            return _cpp_value_inhibits_consuming_form(value) or (
-                isinstance(value, dict)
-                and self._cpp_record_field_is_trivial(value)
-            )
+            return _cpp_value_inhibits_consuming_form(
+                value
+            ) or self._native_ref_value_is_trivial(value)
 
         return _inhibits
 
