@@ -79,6 +79,7 @@ from literalizer._formatters.tuple_strategy import (
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
+    infer_element_type,
     record_shape_for_dict,
     single_concrete_type,
 )
@@ -728,16 +729,13 @@ _KOTLIN_COLLECTION_TYPE: dict[str, str] = {
 def _kotlin_opener_to_type(opener: str, /) -> str:
     """Map a Kotlin collection opener to its declared field type.
 
-    ``intArrayOf(`` is the primitive ``IntArray``; every other opener
-    is a generic constructor call whose ``<...>`` segment is the
+    A generic constructor call's ``<...>`` segment carries the
     declared type (``listOf<Any?>(`` -> ``List<Any?>``,
     ``linkedMapOf<String, Any?>(`` -> ``LinkedHashMap<String, Any?>``).
     ``arrayOf(`` carries no element type in the opener and is handled
     by the caller.  Callers pass openers emitted by the configured
     Kotlin formatters, so their generic delimiters are balanced.
     """
-    if opener == "intArrayOf(":
-        return "IntArray"
     generic_start = opener.index("<")
     name = opener[:generic_start]
     generic_end = opener.index(">(", generic_start)
@@ -1996,7 +1994,13 @@ class Kotlin(metaclass=LanguageCls):
 
     @beartype
     def _kotlin_list_field_type(self, *, value: list[Value]) -> str:
-        """Resolve the Kotlin array field type from its opener."""
+        """Resolve primitive arrays structurally, then generic fields."""
+        if self.sequence_format is type(self.sequence_format).LIST:
+            element_type = infer_element_type(items=value)
+            if isinstance(element_type, type):
+                primitive = _KOTLIN_PRIMITIVE_ARRAY_TYPES.get(element_type)
+                if primitive is not None:
+                    return primitive
         opener = self.sequence_open(value)
         if opener in {"Pair(", "Triple("}:
             field_type = self._kotlin_tuple_field_type(value)
