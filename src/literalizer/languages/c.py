@@ -926,6 +926,7 @@ class C(metaclass=LanguageCls):
 
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
+    uses_resolved_ref_declaration_data = True
     module_name_shares_variable_scope = False
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
         None
@@ -2023,6 +2024,45 @@ class C(metaclass=LanguageCls):
         if isinstance(data, list) and _all_record_shaped(data):
             return f"{root}[]"
         return None
+
+    @staticmethod
+    def reference_binding_data_dependent_preamble(
+        _data: Value, /
+    ) -> tuple[str, ...]:
+        """Reference copies need no additional declarations."""
+        return ()
+
+    @staticmethod
+    def reference_declaration_imports(
+        entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Keep headers required by the rendered bound values."""
+        return tuple(
+            entry for entry in entries if entry.startswith("#include ")
+        )
+
+    def format_reference_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        _modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Copy a reference using its resolved representation's type."""
+        lhs = self._record_binding_lhs(data)
+        if lhs is not None and lhs.endswith("[]"):
+            lhs = f"const {lhs[:-2]} *"
+        if lhs is None:
+            lhs = "cJSON *" if self._json_type_active else "CVal"
+        return f"{lhs} {name} = {value};"
+
+    @staticmethod
+    def format_reference_variable_assignment(
+        name: str, value: str, _data: Value, /
+    ) -> str:
+        """Assign an already rendered reference directly."""
+        return f"{name} = {value};"
 
     @cached_property
     def format_variable_declaration(

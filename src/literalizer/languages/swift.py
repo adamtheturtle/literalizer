@@ -1629,13 +1629,6 @@ class Swift(metaclass=LanguageCls):
             """
             record_name = lookup(data)
             if record_name is None:
-                constructor = re.match(
-                    pattern=rf"({re.escape(pattern=self.record_struct_name_prefix)}\d+)\(",
-                    string=value,
-                )
-                if constructor is not None:
-                    record_name = constructor[1]
-            if record_name is None:
                 return formatter(name, value, data, modifiers)
             keyword = self.declaration_style.name.lower()
             if (

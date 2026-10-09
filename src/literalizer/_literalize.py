@@ -4375,6 +4375,16 @@ def _declaration_data(*, pre_form: _PreFormState, language: Language) -> Value:
         and language.uses_resolved_ref_declaration_data
     )
     if uses_resolved:
+        alias_record_ids = language.heterogeneous_behavior.alias_record_ids
+        if alias_record_ids is not None:
+            alias_record_ids(
+                _inference_to_source_container_ids(
+                    source=pre_form.data_for_declaration,
+                    inferred=pre_form.data,
+                    ref_values=None,
+                    ref_key=pre_form.active_ref_key,
+                )
+            )
         return pre_form.data_for_declaration
     return pre_form.data
 
