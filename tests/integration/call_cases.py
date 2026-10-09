@@ -237,9 +237,7 @@ def _skip_if_wrapper_unsupported(
 def _is_reserved_parameter_name(
     *, lang_cls: literalizer.LanguageCls, name: str
 ) -> bool:
-    """Compare reserved names using the backend's identifier case
-    policy.
-    """
+    """Compare reserved names using the identifier case policy."""
     return is_reserved_identifier(
         case_sensitive=lang_cls.reserved_variable_identifiers_case_sensitive,
         name=name,
