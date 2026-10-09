@@ -1783,6 +1783,21 @@ def _cpp_record_member_value(field: RecordLiteralField, /) -> str:
 
 
 @beartype
+def _cpp_record_field_needs_value_initialization(type_name: str, /) -> bool:
+    """Value-initialize scalars and arrays whose leaves are scalars.
+
+    Other class types keep their existing default-construction policy;
+    in particular, an externally supplied array element type may have no
+    default constructor.
+    """
+    while type_name.startswith("std::array<"):
+        type_name = type_name.removeprefix("std::array<").rsplit(
+            sep=", ", maxsplit=1
+        )[0]
+    return type_name in _CPP_SCALAR_FIELD_TYPES
+
+
+@beartype
 def _cpp_render_record_declaration(
     name: str,
     fields: Sequence[RecordDeclarationField],
@@ -1790,7 +1805,8 @@ def _cpp_render_record_declaration(
 ) -> str:
     """Render a C++ aggregate ``struct Name { Type field{}; ... };``.
 
-    A scalar field carries a ``{}`` in-class initializer so the
+    A scalar field or array of scalar fields carries a ``{}`` in-class
+    initializer so the
     aggregate satisfies clang-tidy's member-init check; a class-type
     field omits it (its default constructor already value-initializes
     it, which the redundant-init check would otherwise flag).
@@ -1798,7 +1814,7 @@ def _cpp_render_record_declaration(
     collected_members: list[str] = []
     for entry_field in fields:
         effective_value = ""
-        if entry_field.type_name in _CPP_SCALAR_FIELD_TYPES:
+        if _cpp_record_field_needs_value_initialization(entry_field.type_name):
             effective_value = "{}"
         collected_members.append(
             f"{entry_field.type_name} {entry_field.identifier}"

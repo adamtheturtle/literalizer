@@ -41,31 +41,25 @@ struct Value {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
-struct Record1 { std::array<int, 2> values{}; };
-struct Record2 { std::array<std::array<int, 2>, 2> nested{}; };
-struct Record0 { Record1 trivial; Record2 nested; };
+struct Record0 { std::array<std::array<int, 1>, 2> numbers{}; std::array<std::array<std::string, 1>, 2> words; };
 int main() {
-auto trivial = Record1{
+auto my_data = Record0{
     {
-        1,
-        2,
-    },
-};
-auto nested = Record2{
-    {
-        std::array<int, 2>{
+        std::array<int, 1>{
             1,
+        },
+        std::array<int, 1>{
             2,
         },
-        std::array<int, 2>{
-            3,
-            4,
+    },
+    {
+        std::array<std::string, 1>{
+            "s",
+        },
+        std::array<std::string, 1>{
+            "t",
         },
     },
-};
-auto my_data = Record0{
-    trivial,
-    nested,
 };
     (void)my_data;
     return 0;

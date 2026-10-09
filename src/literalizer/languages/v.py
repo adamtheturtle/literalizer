@@ -588,6 +588,31 @@ def _v_inner_type(items: list[Value], /) -> str:
 
 
 @beartype
+def _v_ordered_map_field_inner_type(items: list[Value], /) -> str:
+    """Infer ordered-map field values without losing their nominal map
+    kind.
+
+    Ordered maps retain their nested map spelling, while plain dicts keep
+    the existing resolver because they may render as native records.
+    Scalar leaves use the shared pooled inference for integer widths.
+    """
+    if len(items) > 0 and all(isinstance(item, OrderedMap) for item in items):
+        values = [
+            value
+            for item in items
+            if isinstance(item, OrderedMap)
+            for value in item.values()
+        ]
+        return f"map[string]{_v_ordered_map_field_inner_type(values)}"
+    if len(items) > 0 and all(isinstance(item, list) for item in items):
+        values = [
+            value for item in items if isinstance(item, list) for value in item
+        ]
+        return f"[]{_v_ordered_map_field_inner_type(values)}"
+    return _v_inner_type(items)
+
+
+@beartype
 def _v_record_field_identifier(key: str, /) -> str:
     """Return the V ``struct`` member name for a dict *key*.
 
@@ -1295,7 +1320,8 @@ class V(metaclass=LanguageCls):
     def _v_epoch_normalized(self, value: Value, /) -> Value:
         """Return *value* with every ``datetime.datetime`` replaced by
         its epoch-second integer when the active datetime format renders
-        epochs (``EPOCH``), descending through lists so a datetime
+        epochs (``EPOCH``), descending through lists and ordered maps so a
+        datetime
         element is typed like the integer literal the value formatter
         emits for it rather than as the ``string`` the generic resolver
         would map ``datetime.datetime`` to.
@@ -1312,6 +1338,13 @@ class V(metaclass=LanguageCls):
                 return datetime_epoch_seconds(value=value)
             case list():
                 return [self._v_epoch_normalized(item) for item in value]
+            case OrderedMap():
+                return OrderedMap(
+                    {
+                        key: self._v_epoch_normalized(item)
+                        for key, item in value.items()
+                    }
+                )
             case _:
                 return value
 
@@ -1330,9 +1363,9 @@ class V(metaclass=LanguageCls):
         ``[]`` of its element type (an empty list to ``[]IVal``,
         matching the ``[]IVal{}`` empty literal).
 
-        An ordered map remains out of scope for the base ``RECORD``
-        port (the cross-language decision is tracked in #2317).  A
-        plain nested map excluded from record rendering by the shared
+        An ordered map compiles to ``map[string]`` of its value type,
+        inferred independently of other record fields. A plain nested
+        map excluded from record rendering by the shared
         sibling-map fallback is instead typed as ``map[string]IVal`` by
         :meth:`_v_record_field_type`.
         """
@@ -1344,6 +1377,9 @@ class V(metaclass=LanguageCls):
                 return _v_int_field_type(value)
             case list():
                 return f"[]{_v_inner_type(value)}"
+            case OrderedMap():
+                inner = _v_ordered_map_field_inner_type(list(value.values()))
+                return f"map[string]{inner}"
             case _:
                 scalar_type = _V_SCALAR_FIELD_TYPE.get(type(value))
                 if scalar_type is not None and scalar_type != "":
