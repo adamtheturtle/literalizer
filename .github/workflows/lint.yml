@@ -60,7 +60,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint
-        uses: j178/prek-action@v3.0.0
+        uses: j178/prek-action@v3.0.1
         with:
           # Matches the ``prek`` pin in ``pyproject.toml``; keep them in
           # sync. prek reimplements the ``pre-commit-hooks`` checks
