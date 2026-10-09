@@ -326,7 +326,7 @@ class LanguageSelection(  # noqa: NOD001
     """Select languages through the capabilities a case requires.
 
     A gate reads the language default spec, while a variant axis gates
-    the specs its overrides build. An ungated case admits every language.
+    the specs its overrides build. A case without gates admits every language.
     """
 
     gates: list[SuiteGate] = Field(default_factory=no_gates)
