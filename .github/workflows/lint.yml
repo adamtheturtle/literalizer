@@ -1081,7 +1081,14 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
           while IFS= read -r -d '' f; do
-            elm-format --stdin < "$f" > /dev/null || exit 1
+            printf 'Formatting %s\n' "$f"
+            if timeout --kill-after=5s 60s elm-format --stdin < "$f" > /dev/null; then
+              :
+            else
+              status=$?
+              printf '%s: elm-format failed (exit %s; 60s deadline)\n' "$f" "$status" >&2
+              exit "$status"
+            fi
           done < /tmp/files-elm
           xargs -0 uv run python -m scripts.check_elm_syntax < /tmp/files-elm
 
