@@ -1,0 +1,3 @@
+!!omap
+- "  leading\nkey  ": "  leading\nvalue\n  "
+- "next\n\tkey": ["\nfirst\n", " last\n "]
