@@ -458,7 +458,7 @@ def _purescript_children(val: Value) -> list[Value]:
             return [
                 member
                 for member in val
-                if isinstance(member, (int, float))
+                if isinstance(member, (int, float, datetime.datetime))
                 and not isinstance(member, bool)
             ]
         case _:
