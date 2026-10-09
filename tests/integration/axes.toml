@@ -1461,3 +1461,29 @@ overrides = [
   { kind = "enum_member", option = "declaration_style", member = "VAR" },
   { kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" },
 ]
+
+[axes.cpp14_heterogeneous_strategy_record]
+plan = "fixed_overrides"
+name_template = "{lang}_cpp14_heterogeneous_strategy_record"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "CPP14" },
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "CPP14" },
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
+]
+
+[axes.cpp14_tuple_carrier_name]
+plan = "fixed_overrides"
+name_template = "{lang}_cpp14_tuple_carrier_{value}"
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "CPP14" },
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TUPLE" },
+  { kind = "non_default_kwarg", kwarg = "heterogeneous_value_variant_name" },
+]
+overrides = [
+  { kind = "enum_member", option = "language_version", member = "CPP14" },
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "TUPLE" },
+  { kind = "non_default_kwarg", kwarg = "heterogeneous_value_variant_name", name_value = true },
+]

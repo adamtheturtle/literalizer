@@ -1,18 +1,55 @@
 #include <initializer_list>
 #include <string>
 #include <cstddef>
-#include <chrono>
 #include <map>
-#include <variant>
+#include <memory>
+#include <utility>
+struct Value {
+ private:
+  struct Holder {
+    Holder() = default;
+    Holder(const Holder&) = delete;
+    Holder(Holder&&) = delete;
+    Holder& operator=(const Holder&) = delete;
+    Holder& operator=(Holder&&) = delete;
+    virtual ~Holder() = default;
+  };
+  template <typename T> struct TypedHolder : Holder {
+    explicit TypedHolder(T value) : value_(std::move(value)) {}
+    T& get() { return value_; }
+    const T& get() const { return value_; }
+   private:
+    T value_;
+  }; // TypedHolder
+  static std::shared_ptr<Holder> make_holder(const char* value) {
+    return std::make_shared<TypedHolder<std::string>>(value);
+  } // make_holder string
+  template <typename T> static std::shared_ptr<Holder> make_holder(T value) {
+    return std::make_shared<TypedHolder<T>>(std::move(value));
+  } // make_holder generic
+  std::shared_ptr<Holder> value_;
+ public:
+  Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  template <typename T> explicit Value(T value) : value_(make_holder(std::move(value))) {}
+  template <typename T> bool is() const {
+    return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
+  }
+  template <typename T> T& get() {
+    return static_cast<TypedHolder<T>*>(value_.get())->get();
+  } // get
+  template <typename T> const T& get() const {
+    return static_cast<const TypedHolder<T>*>(value_.get())->get();
+  } // get const
+};
 int main() {
-auto my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullptr_t, std::chrono::year_month_day, std::chrono::system_clock::time_point>>{
-    {"name", "Alice"},
-    {"age", 30},
-    {"active", true},
-    {"score", nullptr},
-    {"joined", std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}}},
-    {"last_login", std::chrono::system_clock::time_point{std::chrono::sys_days{std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}}} + std::chrono::hours{12} + std::chrono::minutes{30}}},
-    {"avatar", "48656c6c6f"},
+auto my_data = std::map<std::string, Value>{
+    {"name", Value{"Alice"}},
+    {"age", Value{30}},
+    {"active", Value{true}},
+    {"score", Value{nullptr}},
+    {"joined", Value{"2024-01-15"}},
+    {"last_login", Value{"2024-01-15T12:30:00+00:00"}},
+    {"avatar", Value{"48656c6c6f"}},
 };
     (void)my_data;
     return 0;

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <vector>
 #include <variant>
-auto process(auto...) { return 0; }
+template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 process(nullptr);
 process("hello");

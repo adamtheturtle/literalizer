@@ -1,7 +1,9 @@
 #include <nlohmann/json.hpp>
 int main() {
     try {
-auto my_data = nlohmann::json::parse(R"json({"starts_at": "09:30:00"})json", nullptr, false);
+auto my_data = nlohmann::json::object({
+    {"starts_at", "09:30:00"},
+});
     (void)my_data;
         return 0;
     } catch (...) {
