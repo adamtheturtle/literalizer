@@ -9,6 +9,6 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    {- nested openers /* and {- remain -}
+    {- nested openers /* and { - remain -}
     ("x", EInt 1)
     ]

@@ -22,7 +22,7 @@ struct Record0 first = (struct Record0){
         .value = 1,
     },
 };
-CVal my_data = first;
+struct Record0 my_data = first;
     (void)my_data;
     return 0;
 }

@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "f"
+parameter_names = ["value"]
+per_element = true
+collection_layout = "multiline"
+wrap_in_file = true
+ref_declarations = { ref_data = "[1, 2]" }

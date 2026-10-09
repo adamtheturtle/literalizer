@@ -12,9 +12,11 @@ fn main() {
     let first = Record2 {
         x: 1,
     };
-    let my_data = HashMap::from([
-        ("direct", HashMap::from([("x", "s")])),
-        ("bound", first),
-    ]);
+    let my_data = Record0 {
+        direct: Record1 {
+            x: "s",
+        },
+        bound: first,
+    };
     let _ = my_data;
 }

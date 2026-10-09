@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+variable_form = "both"
+
+[ref.value_sources]
+shared = "[1, 2]"

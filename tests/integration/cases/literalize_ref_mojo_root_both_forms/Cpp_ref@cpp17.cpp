@@ -6,9 +6,9 @@ auto whole = std::vector<int>{
     1,
     2,
 };
-auto&& my_data = std::move(whole);
+auto&& my_data = whole;
 (void)my_data;
-my_data = std::move(whole);
+my_data = whole;
     (void)my_data;
     return 0;
 }

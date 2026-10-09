@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" }]
+heterogeneous_strategy = "RECORD"
+
+[ref.value_sources]
+plain = '{"x":1}'
+
+[ref.bound_refs.timed]
+day = 2001-01-02
+stamp = 2001-01-02T03:04:05Z

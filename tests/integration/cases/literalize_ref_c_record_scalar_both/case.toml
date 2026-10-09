@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" }]
+heterogeneous_strategy = "RECORD"
+variable_form = "both"
+
+[ref.value_sources]
+first = '42'

@@ -12,7 +12,7 @@ typedef struct {
 module main;
 initial begin
 static _VKV my_data[] = '{
-    _VKV'{k: "minimum", v: _VVal'{tag: _VVAL_INT, i: -2147483648, r: 0.0, s: ""}},
+    _VKV'{k: "minimum", v: _VVal'{tag: _VVAL_INT, i: -64'sd2147483648, r: 0.0, s: ""}},
     _VKV'{k: "below", v: _VVal'{tag: _VVAL_INT, i: -64'sd3000000000, r: 0.0, s: ""}}
 };
 end

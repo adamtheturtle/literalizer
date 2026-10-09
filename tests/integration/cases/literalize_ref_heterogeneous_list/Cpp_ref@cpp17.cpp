@@ -7,7 +7,7 @@ auto one = 1;
 const auto* two = "s";
 auto my_data = std::vector<std::variant<int, std::string>>{
     one,
-    std::move(two),
+    two,
 };
     (void)my_data;
     return 0;

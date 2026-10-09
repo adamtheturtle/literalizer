@@ -2465,6 +2465,16 @@ def _record_behavior_impl(
     name_cache: dict[RecordShape, str] = {}
     id_to_shape: dict[int, RecordShape] = {}
 
+    def _alias_ids(id_map: Mapping[int, int], /) -> None:
+        """Reuse resolved record shapes for their source containers."""
+        id_to_shape.update(
+            {
+                source_id: id_to_shape[inferred_id]
+                for inferred_id, source_id in id_map.items()
+                if inferred_id in id_to_shape
+            }
+        )
+
     def _compute_shapes(data: Value) -> Mapping[int, RecordShape]:
         """Walk *data* and return ``id(dict)`` -> :class:`RecordShape`.
 
@@ -2565,7 +2575,7 @@ def _record_behavior_impl(
         compute_record_shapes=_compute_shapes,
         render_tuple_literal=None,
         compute_tuple_list_ids=None,
-        alias_record_ids=None,
+        alias_record_ids=_alias_ids,
     )
 
 

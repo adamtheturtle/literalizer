@@ -7,6 +7,7 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
+  workflow_dispatch: {}
   schedule:
     - cron: 0 1 * * *
 
@@ -22,6 +23,7 @@ concurrency:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.12', '3.13', '3.14']
         platform: [ubuntu-latest, windows-latest]
@@ -140,7 +142,7 @@ jobs:
     needs: [build, benchmark-wheel, benchmarks]
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: always()
+    if: ${{ !cancelled() }}
     steps:
       - name: Check matrix job status
         run: |-

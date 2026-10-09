@@ -2,9 +2,6 @@ pub type GVal {
   GInt(Int)
   GList(List(GVal))
 }
-pub type GVal {
-  GInt(Int)
-}
 
 pub fn main() {
   let ref_data = GList([

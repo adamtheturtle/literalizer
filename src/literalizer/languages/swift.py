@@ -1602,7 +1602,7 @@ class Swift(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        return self.variable_type_hints.formatter(
+        formatter = self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self.declaration_style.name.lower(),
             date_hint=self._swift_date_hint,
@@ -1614,6 +1614,33 @@ class Swift(metaclass=LanguageCls):
                 self.sequence_format is type(self.sequence_format).TUPLE
             ),
         )
+        lookup = self._record_strategy.record_name_for_value
+        if lookup is None:
+            return formatter
+
+        def _record_formatter(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Keep native record declarations consistent with their
+            values.
+            """
+            record_name = lookup(data)
+            if record_name is None:
+                return formatter(name, value, data, modifiers)
+            keyword = self.declaration_style.name.lower()
+            if (
+                self.variable_type_hints
+                is type(self.variable_type_hints).ALWAYS
+            ):
+                return f"{keyword} {name}: {record_name} = {value}"
+            return self.declaration_style.value.formatter(
+                name, value, data, modifiers
+            )
+
+        return _record_formatter
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

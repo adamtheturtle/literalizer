@@ -1998,7 +1998,9 @@ class Kotlin(metaclass=LanguageCls):
     def _kotlin_list_field_type(self, *, value: list[Value]) -> str:
         """Resolve the Kotlin array field type from its opener."""
         opener = self.sequence_open(value)
-        if opener == "arrayOf(":
+        if opener in {"Pair(", "Triple("}:
+            field_type = self._kotlin_tuple_field_type(value)
+        elif opener == "arrayOf(":
             children = [
                 child
                 for item in value

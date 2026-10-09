@@ -912,9 +912,9 @@ def neutralize_comment_terminator(
         text = text.translate(str.maketrans("", "", "\"'"))
     terminator = comment_suffix.strip()
     if isinstance(comment_suffix, NestingCommentSuffix) or (
-        comment_prefix == "/*" and terminator == "*/"
+        (comment_prefix, terminator) in {("/*", "*/"), ("{-", "-}")}
     ):
-        opener = "/*"
+        opener = comment_prefix
         if isinstance(comment_suffix, NestingCommentSuffix):
             opener = comment_suffix.opener
         text = text.replace(

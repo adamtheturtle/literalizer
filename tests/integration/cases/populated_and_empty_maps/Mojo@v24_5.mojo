@@ -1,6 +1,6 @@
 def main():
     var my_data = List([
         {"a": 1},
-        Dict[String, String](),
+        Dict[String, Int](),
     ])
     _ = my_data

@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "multiline_string"
+
+[[variants]]
+axis = "multiline_string_list"
+
+[[variants]]
+axis = "multiline_string"
+suffix = "_both"
+
+[variants.context]
+variable_form = "both"

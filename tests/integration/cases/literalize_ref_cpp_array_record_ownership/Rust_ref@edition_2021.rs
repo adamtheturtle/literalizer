@@ -27,9 +27,9 @@ fn main() {
             ],
         ],
     };
-    let my_data = HashMap::from([
-        ("trivial", trivial),
-        ("nested", nested),
-    ]);
+    let my_data = Record0 {
+        trivial: trivial,
+        nested: nested,
+    };
     let _ = my_data;
 }

@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+
+[ref.value_sources]
+ref_data = "1"
+
+[ref.explicit_ref_value_sources]
+ref_data = "[1, 2]"

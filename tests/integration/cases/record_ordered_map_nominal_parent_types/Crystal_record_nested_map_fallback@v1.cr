@@ -1,0 +1,25 @@
+module Fixture_record_ordered_map_nominal_parent_types_Crystal_record_nested_map_fallback
+extend self
+record Record2, x : Int32
+record Record1, values : Hash(String, Nil), flag : Bool
+record Record3, y : String
+record Record0, first : Record1, second : Record1
+my_data = Record0.new(
+    Record1.new(
+        {
+            "item" => Record2.new(
+                1,
+            ),
+        },
+        true,
+    ),
+    Record1.new(
+        {
+            "item" => Record3.new(
+                "s",
+            ),
+        },
+        false,
+    ),
+)
+end

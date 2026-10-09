@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{ kind = "modifier_present", modifier = "PUBLIC" }]
+variable_modifiers = ["PUBLIC"]
+
+[ref.value_sources]
+ref_data = '[1,2]'

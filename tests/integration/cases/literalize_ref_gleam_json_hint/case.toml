@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-ref"
+[ref]
+gates = [{ kind = "spec_field_present", field = "json_type" }, { kind = "enum_member_present", option = "json_type", member = "GLEAM_JSON_JSON" }]
+
+json_type = "GLEAM_JSON_JSON"
+value_sources = { ref_data = "[1,2]" }
+explicit_ref_value_sources = { ref_data = "1" }

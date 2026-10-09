@@ -1,11 +1,11 @@
+import Foundation
 struct Record1 { let integer: Int; let boolean: Bool; let decimal: Double; let null: Any? }
 struct Record3 { let integer: Int }
 struct Record2 { let child: Record3 }
 struct Record4 { let text: String }
 struct Record5 { let day: Date; let stamp: Date }
 struct Record0 { let trivial: Record1; let nested: Record2; let owning: Record4; let calendar: Record5 }
-import Foundation
-let trivial: [String: Any?] = Record1(
+let trivial = Record1(
     integer: 1,
     boolean: true,
     decimal: 1.5,

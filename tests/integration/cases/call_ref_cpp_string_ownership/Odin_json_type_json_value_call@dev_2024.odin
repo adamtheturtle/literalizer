@@ -1,0 +1,13 @@
+#+feature dynamic-literals
+package main
+import "core:encoding/json"
+_json_parse :: proc(s: string) -> json.Value {
+	v, _ := json.parse_string(s, parse_integers=true)
+	return v
+}
+consume :: proc(args: ..any) -> any { return nil }
+
+main :: proc() {
+item := _json_parse(`"s"`)
+consume(item);
+}

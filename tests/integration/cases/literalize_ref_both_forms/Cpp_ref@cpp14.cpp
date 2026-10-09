@@ -8,11 +8,11 @@ auto shared = std::vector<int>{
     2,
 };
 auto my_data = std::map<std::string, std::vector<int>>{
-    {"a", std::move(shared)},
+    {"a", shared},
 };
 (void)my_data;
 my_data = std::map<std::string, std::vector<int>>{
-    {"a", std::move(shared)},
+    {"a", shared},
 };
     (void)my_data;
     return 0;

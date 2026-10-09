@@ -142,10 +142,10 @@ def _format_integer_hex_sv(value: int) -> str:
 def _format_integer_decimal_sv(value: int) -> str:
     """Format an integer as a SystemVerilog decimal literal.
 
-    Values outside 32-bit signed range get an explicit 64-bit signed
-    width prefix; smaller values are emitted as bare decimals.
+    Values whose signed magnitude needs more than 31 bits get an explicit
+    64-bit signed width prefix; smaller values are emitted as bare decimals.
     """
-    if _INT32_MIN <= value <= _INT32_MAX:
+    if _INT32_MIN < value <= _INT32_MAX:
         return str(object=value)
     bits = 64
     if value < 0:

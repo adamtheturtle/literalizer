@@ -1,4 +1,5 @@
 package main
+import "time"
 type Record1 struct {
 	Integer int
 	Boolean bool
@@ -24,7 +25,6 @@ type Record0 struct {
 	Owning Record4
 	Calendar Record5
 }
-import "time"
 
 func main() {
 Trivial := Record1{

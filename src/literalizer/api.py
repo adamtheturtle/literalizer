@@ -31,6 +31,7 @@ from literalizer._literalize import (
     literalize_call_parsed,
     literalize_pre_form,
     materialize_value_mapping,
+    merged_reference_values,
     nonempty_mapping,
     reference_inputs_or_empty,
 )
@@ -513,7 +514,10 @@ def literalize(
     # ``bound_refs`` entries double as ``ref_values`` so a name need not
     # be repeated in both mappings; an explicit ``ref_values`` entry for
     # the same name wins (it is the caller's stated type intent).
-    combined_ref_values = {**materialized_bound_refs, **explicit_ref_values}
+    combined_ref_values = merged_reference_values(
+        bound_refs=materialized_bound_refs,
+        explicit_ref_values=explicit_ref_values,
+    )
     materialized_ref_values: Mapping[str, Value] | None
     materialized_ref_values = nonempty_mapping(values=combined_ref_values)
     _validate_bound_ref_output_name(
@@ -590,6 +594,7 @@ def literalize(
         )
 
     pre_form = literalize_pre_form(
+        preserve_ref_values=False,
         source=source,
         input_format=input_format,
         language=language,

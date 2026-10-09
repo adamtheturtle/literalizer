@@ -1,0 +1,8 @@
+* ref_data
+@code javascript
+1
+@end
+* my_data
+@code javascript
+ref_data
+@end

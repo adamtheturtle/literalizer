@@ -1,4 +1,5 @@
 from __future__ import annotations
+import datetime
 import dataclasses
 @dataclasses.dataclass(frozen=True)
 class Record1:
@@ -25,7 +26,6 @@ class Record0:
     nested: Record2
     owning: Record4
     calendar: Record5
-import datetime
 trivial = Record1(
     integer=1,
     boolean=True,

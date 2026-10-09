@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "Playlist.newValue"
+parameter_names = ["x"]
+per_element = true
+wrap_in_file = true

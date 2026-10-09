@@ -1,6 +1,6 @@
 #include <initializer_list>
-#include <string>
 #include <vector>
+#include <string>
 #include <cstddef>
 #include <memory>
 #include <utility>
@@ -46,7 +46,7 @@ auto one = 1;
 const auto* two = "s";
 auto my_data = std::vector<Value>{
     Value{one},
-    Value{std::move(two)},
+    Value{two},
 };
     (void)my_data;
     return 0;

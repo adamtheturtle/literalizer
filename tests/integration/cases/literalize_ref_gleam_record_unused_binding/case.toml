@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "literalize-ref"
+[ref]
+gates = [{ kind = "enum_member_present", option = "dict_format", member = "RECORD" }]
+
+dict_format = "RECORD"
+bound_refs = { unused = [1,2] }
