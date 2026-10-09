@@ -178,7 +178,7 @@ def format_string_c_utf8_characters(*, value: str) -> str:
 @beartype
 def format_string_c(value: str) -> str:
     r"""Render bidirectional controls as a terminated UTF-8 character array."""
-    if has_bidi_formatting_character(value=value):
+    if not value.isascii() and has_bidi_formatting_character(value=value):
         entries = format_string_c_utf8_characters(value=value)
         return f"(const char[]){{{entries}, '\\000'}}"
     return format_string_backslash_nul_octal(value=value)
