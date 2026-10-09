@@ -68,7 +68,7 @@ def _c_style_comment_matches(
         or interpolation_syntax[0] not in statement
     ):
         return list(pattern.finditer(string=statement))
-    matches = []
+    matches: list[re.Match[str]] = []
     cursor = 0
     while (match := pattern.search(string=statement, pos=cursor)) is not None:
         matches.append(match)
@@ -146,7 +146,7 @@ def _interpolated_string_end(
         escape_width = _string_escape_width(
             statement=statement, cursor=cursor, verbatim=verbatim
         )
-        if escape_width:
+        if escape_width != 0:
             cursor += escape_width
         elif statement.startswith(delimiter, cursor):
             return cursor + len(delimiter)
@@ -193,8 +193,8 @@ def _interpolation_expression_end(
                 _CLOSING_BRACKETS[_OPENING_BRACKETS.index(character)]
             )
         elif character == closing[-1]:
-            closing.pop()
-            if not closing:
+            _ = closing.pop()
+            if len(closing) == 0:
                 return cursor + 1
         elif (
             interpolation_start == "{"
@@ -224,8 +224,8 @@ def _c_style_comment_pattern(
     raw_prefix = "|".join(
         re.escape(pattern=marker) for marker in raw_string_prefixes
     )
-    alternatives = []
-    if raw_prefix:
+    alternatives: list[str] = []
+    if raw_prefix != "":
         alternatives.append(
             rf"(?:{raw_prefix})"
             r"(?:(?P<raw_triple_quote>\"\"\"|''')"
