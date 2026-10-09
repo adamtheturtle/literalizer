@@ -49,7 +49,7 @@ from literalizer._formatters.format_json_value import (
     to_jsonable,
 )
 from literalizer._formatters.format_strings import (
-    format_string_backslash_nul_octal,
+    format_string_c,
 )
 from literalizer._formatters.record_strategy import (
     ActiveRecordStrategy,
@@ -789,7 +789,7 @@ def _c_json_object_key(key: Scalar, /) -> str:
     narrows its static :data:`~literalizer._types.Scalar` type to
     :class:`str` without a redundant runtime branch.
     """
-    return format_string_backslash_nul_octal(value=str(object=key))
+    return format_string_c(value=str(object=key))
 
 
 @beartype
@@ -825,7 +825,7 @@ def _c_cjson_scalar_create(
         case float():
             return f"cJSON_CreateNumber({format_float(value)})"
         case str():
-            literal = format_string_backslash_nul_octal(value=value)
+            literal = format_string_c(value=value)
             return f"cJSON_CreateString({literal})"
         case None:
             return "cJSON_CreateNull()"
@@ -1735,7 +1735,7 @@ class C(metaclass=LanguageCls):
     @cached_property
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
-        return format_string_backslash_nul_octal
+        return format_string_c
 
     @cached_property
     def _format_entry(self) -> Callable[[Value, str], str]:
