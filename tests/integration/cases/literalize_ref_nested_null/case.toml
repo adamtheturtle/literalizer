@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "C++ nested nullptr references must preserve the inferred null element type without moves."
+
+[ref.value_sources]
+my_null = "null"

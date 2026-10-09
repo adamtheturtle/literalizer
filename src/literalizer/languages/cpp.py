@@ -3892,6 +3892,13 @@ class Cpp(metaclass=LanguageCls):
         return identity_call_ref_identifier
 
     @cached_property
+    def format_known_null_ref_identifier(self) -> Callable[[str], str]:
+        """Keep native null references bare and owning JSON values movable."""
+        if self._json_type_active:
+            return lambda name: self.format_call_ref_identifier(name, None)
+        return lambda name: name
+
+    @cached_property
     def format_call_arg_ref_identifier_consumable(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -3926,7 +3933,11 @@ class Cpp(metaclass=LanguageCls):
         """
 
         def _inhibits(value: Value, /) -> bool:
-            """Suppress moves for scalars and trivial native records."""
+            """Suppress moves for native nulls and other trivial
+            values.
+            """
+            if value is None:
+                return not self._json_type_active
             return _cpp_value_inhibits_consuming_form(value) or (
                 isinstance(value, dict)
                 and self._cpp_record_field_is_trivial(value)
