@@ -1,0 +1,24 @@
+object Fixture_swift_record_ordered_map_parent_shapes_Scala_record_nested_map_fallback_multiline {
+case class Record2(x: Int)
+case class Record1(values: scala.collection.immutable.ListMap[String, Any], flag: Boolean)
+case class Record3(y: Int)
+case class Record0(first: Record1, second: Record1)
+val my_data = Record0(
+    first = Record1(
+        values = scala.collection.immutable.ListMap(
+            "item" -> Record2(
+                x = 1,
+            ),
+        ),
+        flag = true,
+    ),
+    second = Record1(
+        values = scala.collection.immutable.ListMap(
+            "item" -> Record3(
+                y = 2,
+            ),
+        ),
+        flag = false,
+    ),
+)
+}

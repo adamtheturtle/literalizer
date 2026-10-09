@@ -1,7 +1,7 @@
 #include <nlohmann/json.hpp>
 int main() {
     try {
-auto my_data = nlohmann::json::parse(R"json(null)json", nullptr, false);
+auto my_data = nlohmann::json(nullptr);
     (void)my_data;
         return 0;
     } catch (...) {

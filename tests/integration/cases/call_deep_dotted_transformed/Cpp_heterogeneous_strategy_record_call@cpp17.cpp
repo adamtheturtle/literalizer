@@ -2,10 +2,10 @@
 #include <string>
 #include <vector>
 #include <variant>
-struct clientType_ { [[nodiscard]] auto fetch(auto...) const { return 0; } };
+struct clientType_ { template <typename... Args> [[nodiscard]] auto fetch(Args...) const { return 0; } };
 struct appType_ { clientType_ client; };
 const appType_ app;
-auto emit(auto...) { return 0; }
+template <typename... Args> auto emit(Args...) { return 0; }
 int main() {
 emit(app.client.fetch("hello"));
 emit(app.client.fetch(42));

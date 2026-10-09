@@ -2,29 +2,68 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <variant>
-using LiteralizerRecordValue = std::variant<std::string, bool>;
+#include <cstddef>
+#include <memory>
+#include <utility>
+struct Value {
+ private:
+  struct Holder {
+    Holder() = default;
+    Holder(const Holder&) = delete;
+    Holder(Holder&&) = delete;
+    Holder& operator=(const Holder&) = delete;
+    Holder& operator=(Holder&&) = delete;
+    virtual ~Holder() = default;
+  };
+  template <typename T> struct TypedHolder : Holder {
+    explicit TypedHolder(T value) : value_(std::move(value)) {}
+    T& get() { return value_; }
+    const T& get() const { return value_; }
+   private:
+    T value_;
+  }; // TypedHolder
+  static std::shared_ptr<Holder> make_holder(const char* value) {
+    return std::make_shared<TypedHolder<std::string>>(value);
+  } // make_holder string
+  template <typename T> static std::shared_ptr<Holder> make_holder(T value) {
+    return std::make_shared<TypedHolder<T>>(std::move(value));
+  } // make_holder generic
+  std::shared_ptr<Holder> value_;
+ public:
+  Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  template <typename T> explicit Value(T value) : value_(make_holder(std::move(value))) {}
+  template <typename T> bool is() const {
+    return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
+  }
+  template <typename T> T& get() {
+    return static_cast<TypedHolder<T>*>(value_.get())->get();
+  } // get
+  template <typename T> const T& get() const {
+    return static_cast<const TypedHolder<T>*>(value_.get())->get();
+  } // get const
+};
+using LiteralizerRecordValue = Value;
 struct Record0 { std::map<std::string, LiteralizerRecordValue> input; std::map<std::string, LiteralizerRecordValue> expected; };
 int main() {
-auto my_data = std::vector{
+auto my_data = std::vector<Record0>{
     Record0{
-        .input = std::map<std::string, LiteralizerRecordValue>{
-            {"kind", LiteralizerRecordValue{"add"}},
-            {"item_id", LiteralizerRecordValue{"item_1"}},
-            {"urgent", LiteralizerRecordValue{true}},
+        {
+            {"kind", Value{"add"}},
+            {"item_id", Value{"item_1"}},
+            {"urgent", Value{true}},
         },
-        .expected = std::map<std::string, LiteralizerRecordValue>{
-            {"item_id", LiteralizerRecordValue{"item_1"}},
-            {"state", LiteralizerRecordValue{"pending"}},
+        {
+            {"item_id", Value{"item_1"}},
+            {"state", Value{"pending"}},
         },
     },
     Record0{
-        .input = std::map<std::string, LiteralizerRecordValue>{
-            {"kind", LiteralizerRecordValue{"remove"}},
-            {"item_id", LiteralizerRecordValue{"item_9"}},
+        {
+            {"kind", Value{"remove"}},
+            {"item_id", Value{"item_9"}},
         },
-        .expected = std::map<std::string, LiteralizerRecordValue>{
-            {"error", LiteralizerRecordValue{"not_found"}},
+        {
+            {"error", Value{"not_found"}},
         },
     },
 };

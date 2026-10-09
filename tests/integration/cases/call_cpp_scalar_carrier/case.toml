@@ -1,0 +1,20 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+wrap_in_file = true
+
+[[call.variants]]
+axis = "heterogeneous_strategy"
+
+[[call.variants]]
+axis = "cpp14_heterogeneous_strategy_tuple"
+
+[[call.variants]]
+axis = "cpp14_tuple_carrier_name"
+
+[[call.variants]]
+axis = "cpp14_heterogeneous_strategy_record"
