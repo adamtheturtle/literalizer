@@ -3475,6 +3475,13 @@ class Cpp(metaclass=LanguageCls):
 
     format_call_statement = default_format_call_statement
 
+    @cached_property
+    def format_identity_transformed_call_statement(
+        self,
+    ) -> Callable[[str], str]:
+        """Explicitly discard an unchanged transformed call's return value."""
+        return lambda call: f"static_cast<void>({call})"
+
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     class VariableTypeHints(enum.Enum):

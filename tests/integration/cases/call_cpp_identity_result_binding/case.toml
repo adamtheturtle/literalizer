@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Cpp"]
+languages_reason = "C++ identity transforms retain return values used by variable bindings."
+target_function = "thing.go"
+parameter_names = ["value"]
+per_element = false
+call_transform = "{call}"
+wrap_in_file = true
+variable_form = "new"

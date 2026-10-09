@@ -6313,8 +6313,33 @@ def _assemble_bare_call_expr(
 
 
 @beartype
+def _identity_statement_formatter(
+    *, language: Language
+) -> Callable[[str], str] | None:
+    """Return an optional formatter for an unchanged transformed statement."""
+    if isinstance(language, _IdentityTransformStatementLanguage):
+        return language.format_identity_transformed_call_statement
+    return None
+
+
+@runtime_checkable
+class _IdentityTransformStatementLanguage(Protocol):
+    """A language that explicitly discards an identity-transformed
+    call.
+    """
+
+    @property
+    def format_identity_transformed_call_statement(
+        self,
+    ) -> Callable[[str], str]:
+        """Format an identity transform whose result is discarded."""
+        ...
+
+
+@beartype
 def _assemble_call(
     *,
+    identity_statement_formatter: Callable[[str], str] | None,
     target_function: str,
     args_str: str,
     call_transform: Callable[[CallContext], str] | None,
@@ -6337,7 +6362,7 @@ def _assemble_call(
         style=style,
     )
     if call_transform is not None:
-        call_expr = call_transform(
+        transformed_call = call_transform(
             CallContext(
                 call=call_expr,
                 index=index,
@@ -6345,6 +6370,12 @@ def _assemble_call(
                 zipped=zipped,
             )
         )
+        if (
+            transformed_call == call_expr
+            and identity_statement_formatter is not None
+        ):
+            transformed_call = identity_statement_formatter(transformed_call)
+        call_expr = transformed_call
     return f"{call_expr}{statement_terminator}"
 
 
@@ -6434,6 +6465,7 @@ def _render_variable_bound_call(
     leader cannot swallow the terminator.
     """
     call_expr = _assemble_call(
+        identity_statement_formatter=None,
         target_function=target_function,
         args_str=args_str,
         call_transform=call_transform,
@@ -6592,6 +6624,9 @@ def _render_call_per_element(
                 _append_trailing_comment(
                     rendered=language.format_call_statement(
                         _assemble_call(
+                            identity_statement_formatter=_identity_statement_formatter(
+                                language=language
+                            ),
                             target_function=target_function,
                             args_str=args_str,
                             call_transform=call_transform,
@@ -6692,6 +6727,9 @@ def _render_call_whole(
         return _append_trailing_comment(
             rendered=language.format_call_statement(
                 _assemble_call(
+                    identity_statement_formatter=_identity_statement_formatter(
+                        language=language
+                    ),
                     target_function=target_function,
                     args_str=args_str,
                     call_transform=call_transform,
