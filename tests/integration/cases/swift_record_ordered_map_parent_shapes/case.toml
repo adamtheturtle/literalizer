@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Swift"]
+languages_reason = "Swift record fields retain nominal types when nested record key sets differ."
+
+[[variants]]
+axis = "record_nested_map_fallback"
