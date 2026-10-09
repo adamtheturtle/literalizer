@@ -1,7 +1,7 @@
 schema_version = 1
 owner = "variant"
-languages = ["V"]
-languages_reason = "V collection fields preserve native record names through nested ordered maps and lists."
+languages = ["Swift", "V"]
+languages_reason = "Native record names must remain precise inside ordered-map fields."
 
 [[variants]]
 axis = "record_nested_map_fallback"
