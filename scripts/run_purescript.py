@@ -8,6 +8,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+from scripts.bounded_command import bounded_command
 from scripts.purescript_common import write_lint_environment
 
 # Dynamically import the compiled ``Check`` module so Node runs its
@@ -42,14 +43,18 @@ def _run_fixture(
         encoding="utf-8",
     )
     compile_result = subprocess.run(
-        args=[
-            purs_path,
-            "compile",
-            check_path.as_posix(),
-            *(p.as_posix() for p in env_purs_paths),
-            "-o",
-            output_dir.as_posix(),
-        ],
+        args=bounded_command(
+            args=[
+                purs_path,
+                "compile",
+                check_path.as_posix(),
+                *(p.as_posix() for p in env_purs_paths),
+                "-o",
+                output_dir.as_posix(),
+            ],
+            fixture=filename,
+            timeout_seconds=60,
+        ),
         capture_output=True,
         text=True,
         check=False,
@@ -60,7 +65,11 @@ def _run_fixture(
         _ = sys.stderr.write(msg)
         return True
     run_result = subprocess.run(
-        args=[node_path, "--input-type=module", "-e", _NODE_DRIVER],
+        args=bounded_command(
+            args=[node_path, "--input-type=module", "-e", _NODE_DRIVER],
+            fixture=filename,
+            timeout_seconds=60,
+        ),
         capture_output=True,
         text=True,
         check=False,

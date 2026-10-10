@@ -12,6 +12,8 @@ from pathlib import Path
 from tenacity import RetryError, Retrying, retry_if_result, stop_after_attempt
 from tenacity.wait import wait_incrementing
 
+from scripts.bounded_command import bounded_command
+
 ELM_JSON = json.dumps(
     obj={
         "type": "application",
@@ -82,6 +84,8 @@ def prime_elm_home(*, elm_path: str, elm_home: Path) -> None:
             args=[elm_path, "make", "src/Check.elm", "--output=/dev/null"],
             cwd=tmpdir,
             env=env,
+            fixture="Elm package cache priming",
+            timeout_seconds=300,
         )
         if result.returncode != 0:
             msg = "Failed to prime ELM_HOME:\n" + result.stderr + result.stdout
@@ -174,6 +178,8 @@ def run_elm_make(
     args: Sequence[str],
     cwd: str | Path,
     env: Mapping[str, str],
+    fixture: str,
+    timeout_seconds: float,
 ) -> subprocess.CompletedProcess[str]:
     """Run ``elm make``, retrying transient cache failures."""
     retryer = Retrying(
@@ -193,7 +199,11 @@ def run_elm_make(
         """Invoke Elm once, preserving its output and exit status."""
         nonlocal last_result
         last_result = subprocess.run(
-            args=list(args),
+            args=bounded_command(
+                args=list(args),
+                fixture=fixture,
+                timeout_seconds=timeout_seconds,
+            ),
             capture_output=True,
             text=True,
             check=False,
