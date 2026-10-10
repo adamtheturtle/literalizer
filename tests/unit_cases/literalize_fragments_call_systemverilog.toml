@@ -1,0 +1,43 @@
+literals = []
+
+[[calls]]
+name = "systemverilog_existing_comment_0"
+language = "SystemVerilog"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call} // note"
+
+[calls.expected]
+code = "my_data = make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"}); // note"
+
+[[calls]]
+name = "systemverilog_existing_comment_1"
+language = "SystemVerilog"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call}\n// note"
+
+[calls.expected]
+code = "my_data = make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"});\n// note"
+
+[[calls]]
+name = "systemverilog_existing_comment_2"
+language = "SystemVerilog"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call} // note\n// extra"
+
+[calls.expected]
+code = "my_data = make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"}); // note\n// extra"
