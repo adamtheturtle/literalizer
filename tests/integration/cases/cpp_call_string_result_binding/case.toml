@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["text"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+languages = ["Cpp"]
+languages_reason = "C++ call-result declarations deduce their type independently of string argument data."
+
+[[call.variants]]
+axis = "type_hints"
