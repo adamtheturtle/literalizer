@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = '(~/\//).match("/") ? {call} : null // trailing'
+wrap_in_file = true
+variable_form = "new"
+languages = ["Haxe"]
+languages_reason = "Haxe regex slashes stay inside the expression while its trailing comment follows the terminator."
