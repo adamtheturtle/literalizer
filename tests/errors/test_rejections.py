@@ -13,12 +13,15 @@ from typing import assert_never
 import pytest
 import tomlkit
 from beartype import beartype
+from pydantic import ConfigDict, TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
+from ruamel.yaml import YAML
 
 import literalizer
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import CallTransform
 from tests.integration.golden_checks import check_golden
+from tests.yaml_support import as_yaml_parser
 
 from .rejection_cases import (
     RejectionCase,
@@ -35,6 +38,26 @@ from .rejection_manifests import (
 )
 
 _MANIFESTS = load_rejection_manifests(rejections_dir=REJECTIONS_DIR)
+
+_BOUND_VALUE = TypeAdapter(
+    type=literalizer.ValueInput,
+    config=ConfigDict(arbitrary_types_allowed=True),
+)
+
+
+@beartype
+def _bound_refs(
+    *, call: CallSpec, value: str | None
+) -> dict[str, literalizer.ValueInput] | None:
+    """Resolve scalar bindings and manifest-owned native YAML values."""
+    bindings: dict[str, literalizer.ValueInput] = dict(call.bound_refs)
+    for name, source in call.bound_ref_yaml:
+        parser = as_yaml_parser(parser=YAML(typ="safe"))
+        bindings[name] = _BOUND_VALUE.validate_python(
+            parser.load(stream=substituted(template=source, value=value)),
+            strict=True,
+        )
+    return bindings or None
 
 
 @beartype
@@ -123,9 +146,6 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     if call.api == "literalize":
         assert case.source is not None
         assert call.input_format is not None
-        effective_bound_refs_2 = None
-        if len(call.bound_refs) > 0:
-            effective_bound_refs_2 = dict(call.bound_refs)
         _ = literalizer.literalize(
             source=case.source,
             input_format=call.input_format,
@@ -136,7 +156,7 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
             include_delimiters=call.include_delimiters,
             ref_key=call.ref_key,
             ref_case=ref_case,
-            bound_refs=(effective_bound_refs_2),
+            bound_refs=_bound_refs(call=call, value=case.value),
         )
         return
     assert case.source is not None
@@ -155,9 +175,6 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         comment_source = call.comment_source_bare
     else:
         comment_source = call.comment_source
-    effective_bound_refs = None
-    if len(call.bound_refs) > 0:
-        effective_bound_refs = dict(call.bound_refs)
     effective_variable_form = None
     if call.variable_form is not None:
         effective_variable_form = variable_form
@@ -175,7 +192,7 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         wrap_in_file=call.wrap_in_file,
         ref_key=call.ref_key,
         ref_case=ref_case,
-        bound_refs=(effective_bound_refs),
+        bound_refs=_bound_refs(call=call, value=case.value),
         comment_source=comment_source,
         variable_form=(effective_variable_form),
         call_transform=_call_transform(template=call.call_transform),
