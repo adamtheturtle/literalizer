@@ -289,6 +289,7 @@ jobs:
       # ``import literalizer`` resolves. See
       # ``scripts/run_bash_roundtrip.py``.
       - name: Bash roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_bash_roundtrip
 
       # ``ruby-version: '3.4'`` is ``>=`` the ``V3`` (Ruby 3.x) default of
@@ -313,6 +314,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_ruby_roundtrip.py`.
       - name: Ruby roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_ruby_roundtrip
 
       - name: Lint JavaScript
@@ -327,6 +329,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_javascript_roundtrip.py`.
       - name: JavaScript roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_javascript_roundtrip
 
       # The host compiles each fixture into an in-memory assembly, then
@@ -398,6 +401,7 @@ jobs:
       # mode, not `--no-project`) is required so `import literalizer`
       # resolves. See `scripts/run_php_roundtrip.py`.
       - name: Php roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_php_roundtrip
 
       # Parse every fixture inside a single pwsh invocation so the .NET
@@ -425,6 +429,7 @@ jobs:
       # literalizer` resolves. See
       # `scripts/run_powershell_roundtrip.py`.
       - name: PowerShell roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_powershell_roundtrip
 
       # Every fixture defines its own `fval_m` module, and the syntax
@@ -481,6 +486,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_lua_roundtrip.py`.
       - name: Lua roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_lua_roundtrip
 
       - name: Lint Nix
@@ -494,6 +500,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_nix_roundtrip.py`.
       - name: Nix roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_nix_roundtrip
 
       - name: Lint Tcl
@@ -507,6 +514,7 @@ jobs:
       # so `import literalizer` resolves.
       # See `scripts/run_tcl_roundtrip.py`.
       - name: Tcl roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_tcl_roundtrip
 
       # The literalized `*.fth` fixtures are visitor streams that call
@@ -528,6 +536,7 @@ jobs:
       # `import literalizer` resolves.
       # See `scripts/run_forth_roundtrip.py`.
       - name: Forth roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_forth_roundtrip
 
       # Invoke ``guile-3.0`` directly rather than ``guile`` because
@@ -549,6 +558,7 @@ jobs:
       # `import literalizer` resolves.
       # See `scripts/run_scheme_roundtrip.py`.
       - name: Scheme roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_scheme_roundtrip
 
       - name: Lint Dhall
@@ -565,6 +575,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_dhall_roundtrip.py`.
       - name: Dhall roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_dhall_roundtrip
 
       - name: Lint Wren
@@ -578,6 +589,7 @@ jobs:
       # required so `import literalizer` resolves.
       # See `scripts/run_wren_roundtrip.py`.
       - name: Wren roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_wren_roundtrip
 
       # cJSON provides the ``cJSON *`` value type for the
@@ -700,6 +712,7 @@ jobs:
       # literalizer` resolves.
       # See `scripts/run_odin_roundtrip.py`.
       - name: Odin roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_odin_roundtrip
 
   lint-roc:
@@ -813,6 +826,7 @@ jobs:
       # mode, not `--no-project`) is required so `import literalizer`
       # resolves. See `scripts/run_matlab_roundtrip.py`.
       - name: MATLAB roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_matlab_roundtrip
 
   lint-perl:
@@ -857,6 +871,7 @@ jobs:
       # are core in the pinned 5.36 interpreter so no extra ``cpanm``
       # step is needed. See `scripts/run_perl_roundtrip.py`.
       - name: Perl roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_perl_roundtrip
 
   # Fixture languages linted by small tools fetched via `go install`.
@@ -890,6 +905,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_jsonnet_roundtrip.py`.
       - name: Jsonnet roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_jsonnet_roundtrip
 
       - name: Lint Hcl
@@ -902,6 +918,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_hcl_roundtrip.py`.
       - name: Hcl roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_hcl_roundtrip
 
   # Json5 + Norg + TypeScript strict type-check. The Run-TypeScript and
@@ -989,6 +1006,7 @@ jobs:
       # drives ``tsc``; every fixture is a module, so one ``tsc`` process
       # checks them all.
       - name: Lint TypeScript
+        timeout-minutes: 5
         run: |-
           find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts && test -s /tmp/files-ts
           xargs -0 uv run --no-project python -m scripts.check_typescript_consumers < /tmp/files-ts
@@ -1038,6 +1056,7 @@ jobs:
       # `import literalizer` resolves.  See
       # `scripts/run_typescript_roundtrip.py`.
       - name: TypeScript roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_typescript_roundtrip
 
   # Elm format + syntax check. Split from `lint-elm-run` so the two
@@ -1299,6 +1318,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_csharp_roundtrip.py`.
       - name: CSharp roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_csharp_roundtrip
 
       - name: Lint VisualBasic
@@ -1312,6 +1332,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_vb_roundtrip.py`.
       - name: VisualBasic roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_vb_roundtrip
 
       # Generate an FSX driver that `#load`s every fixture, then
@@ -1338,6 +1359,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_fsharp_roundtrip.py`.
       - name: FSharp roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_fsharp_roundtrip
 
   lint-sml:
@@ -1431,6 +1453,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_elixir_roundtrip.py`.
       - name: Elixir roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_elixir_roundtrip
 
   lint-erlang:
@@ -1508,6 +1531,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_erlang_roundtrip.py`.
       - name: Erlang roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_erlang_roundtrip
 
   lint-gleam:
@@ -1555,6 +1579,7 @@ jobs:
       # startup cost -- not the per-fixture compile work -- dominated the
       # old per-file parallel approach.
       - name: Lint Gleam
+        timeout-minutes: 5
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
@@ -1565,6 +1590,7 @@ jobs:
       # script generates a runner module that calls each fixture's `main`
       # in sequence. See the check step for the BEAM-startup rationale.
       - name: Run Gleam files
+        timeout-minutes: 5
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
@@ -1578,6 +1604,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_gleam_roundtrip.py`.
       - name: Gleam roundtrip
+        timeout-minutes: 1
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: uv run python -m scripts.run_gleam_roundtrip
@@ -1660,6 +1687,7 @@ jobs:
       # `import literalizer` resolves.
       # See `scripts/run_clojure_roundtrip.py`.
       - name: Clojure roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_clojure_roundtrip
 
       # Basic JSON -> Groovy -> JSON round-trip (issue 1867). Runs here
@@ -1668,6 +1696,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_groovy_roundtrip.py`.
       - name: Groovy roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_groovy_roundtrip
 
   # Haskell + PureScript share the Haskell toolchain.
@@ -1780,6 +1809,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_haskell_roundtrip.py`.
       - name: Haskell roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_haskell_roundtrip
 
       - name: Lint PureScript
@@ -2180,6 +2210,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_kotlin_roundtrip.py`.
       - name: Kotlin roundtrip
+        timeout-minutes: 1
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
         run: uv run python -m scripts.run_kotlin_roundtrip
@@ -2235,6 +2266,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_swift_roundtrip.py`.
       - name: Swift roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_swift_roundtrip
 
   lint-ocaml:
@@ -2357,6 +2389,7 @@ jobs:
       # resolves.
       # See ``scripts/run_common_lisp_roundtrip.py``.
       - name: Common Lisp roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_common_lisp_roundtrip
 
   lint-scala:
@@ -2420,6 +2453,7 @@ jobs:
       # `import literalizer` resolves.  See
       # `scripts/run_scala_roundtrip.py`.
       - name: Scala roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_scala_roundtrip
 
   lint-haxe:
@@ -2477,6 +2511,7 @@ jobs:
       # literalizer` resolves. See
       # `scripts/run_haxe_roundtrip.py`.
       - name: Haxe roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_haxe_roundtrip
 
   lint-dart:
@@ -2552,6 +2587,7 @@ jobs:
       # literalizer` resolves. See
       # `scripts/run_dart_roundtrip.py`.
       - name: Dart roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_dart_roundtrip
 
   lint-julia:
@@ -2600,6 +2636,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_julia_roundtrip.py`.
       - name: Julia roundtrip
+        timeout-minutes: 1
         env:
           JULIA_PROJECT: /tmp/julia-lint
         run: uv run python -m scripts.run_julia_roundtrip
@@ -2645,6 +2682,7 @@ jobs:
       # mode, not `--no-project`) is required so `import literalizer`
       # resolves. See `scripts/run_go_roundtrip.py`.
       - name: Go roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_go_roundtrip
       # Two documents sharing one record shape, rendered under
       # `record_map_value_typing=WIDE` and compiled as one program, so
@@ -2780,6 +2818,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_r_roundtrip.py`.
       - name: R roundtrip
+        timeout-minutes: 1
         env:
           R_LIBS_USER: /tmp/r-lint-libs
         run: uv run python -m scripts.run_r_roundtrip
@@ -2903,6 +2942,7 @@ jobs:
       # literalizer` resolves. See
       # `scripts/run_crystal_roundtrip.py`.
       - name: Crystal roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_crystal_roundtrip
 
   # Stable Mojo 1.0 includes the memory-reservation fix from upstream
@@ -2956,6 +2996,7 @@ jobs:
       # the script's `std.python` JSON interop. See
       # `scripts/run_mojo_roundtrip.py`.
       - name: Mojo roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_mojo_roundtrip
 
   lint-nim:
@@ -3089,6 +3130,7 @@ jobs:
       # ``--no-project``) is required so ``import literalizer`` resolves.
       # See ``scripts/run_nim_roundtrip.py``.
       - name: Nim roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_nim_roundtrip
 
   lint-python:
@@ -3169,6 +3211,7 @@ jobs:
       # mode, not `--no-project`) is required so `import literalizer`
       # resolves. See `scripts/run_racket_roundtrip.py`.
       - name: Racket roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_racket_roundtrip
 
   lint-raku:
@@ -3221,6 +3264,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_raku_roundtrip.py`.
       - name: Raku roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_raku_roundtrip
 
   lint-zig:
@@ -3290,6 +3334,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_zig_roundtrip.py`.
       - name: Zig roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_zig_roundtrip
 
   lint-systemverilog:
@@ -3398,6 +3443,7 @@ jobs:
       # so `import literalizer` resolves.
       # See `scripts/run_v_roundtrip.py`.
       - name: V roundtrip
+        timeout-minutes: 1
         run: uv run python -m scripts.run_v_roundtrip
 
   lint-objectivec:

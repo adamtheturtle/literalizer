@@ -20,8 +20,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-from scripts.bounded_command import bounded_command
-
 _FIXTURE_PREFIX = Path("tests/integration/cases")
 
 
@@ -74,11 +72,7 @@ def main() -> None:
             )
 
         result = subprocess.run(
-            args=bounded_command(
-                args=[gleam_path, "check"],
-                fixture=f"Gleam syntax batch ({len(fixtures)} fixtures)",
-                timeout_seconds=300,
-            ),
+            args=[gleam_path, "check"],
             capture_output=True,
             text=True,
             check=False,

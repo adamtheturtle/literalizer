@@ -18,8 +18,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-from scripts.bounded_command import bounded_command
-
 # ``tsc`` type-checks the fixtures at ``TypeScript.language_version``
 # (``V5``) in ``src/literalizer/languages/typescript.py``; ``--target
 # es2015 --lib es2015`` matches ``JavaScript.language_version``
@@ -79,11 +77,7 @@ def main() -> None:
                 encoding="utf-8",
             )
         result = subprocess.run(
-            args=bounded_command(
-                args=[tsc, *_TSC_FLAGS, *names],
-                fixture=f"TypeScript consumer batch ({len(names)} fixtures)",
-                timeout_seconds=300,
-            ),
+            args=[tsc, *_TSC_FLAGS, *names],
             capture_output=True,
             text=True,
             check=False,

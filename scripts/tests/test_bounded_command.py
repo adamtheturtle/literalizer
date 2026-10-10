@@ -196,8 +196,12 @@ def test_roundtrip_runner_keeps_json_output(
         program="print('{\"ok\": true}')\n",
         steps=[
             roundtrip_common.Step(
+                args=[sys.executable, "-c", "pass"],
+                failure_label="preparation error",
+            ),
+            roundtrip_common.Step(
                 args=[sys.executable, "main.py"], failure_label="probe error"
-            )
+            ),
         ],
         excluded_keys=(),
         expected_json='{"ok": true}',
@@ -222,7 +226,11 @@ def test_roundtrip_failure_removes_temporary_source(
                 roundtrip_common.Step(
                     args=[sys.executable, "main.py"],
                     failure_label="probe error",
-                )
+                ),
+                roundtrip_common.Step(
+                    args=[sys.executable, "-c", "pass"],
+                    failure_label="unused step",
+                ),
             ],
             excluded_keys=(),
             expected_json='{"ok": true}',
@@ -235,3 +243,31 @@ def test_roundtrip_failure_removes_temporary_source(
     source = Path(error.splitlines()[1].split(sep=": running", maxsplit=1)[0])
     assert source.name == "main.py"
     assert not source.parent.exists()
+
+
+def test_single_command_roundtrip_without_coreutils(tmp_path: Path) -> None:
+    """Single-command checks must run locally without a timeout dependency."""
+    program = """
+import sys
+from scripts import roundtrip_common
+roundtrip_common.execute(
+    label="Python probe",
+    source_filename="main.py",
+    program="print('{}')",
+    steps=[roundtrip_common.Step(
+        args=[sys.executable, "main.py"], failure_label="probe error",
+    )],
+    excluded_keys=(), expected_json="{}", extra_files=None,
+)
+"""
+    result = subprocess.run(
+        args=[sys.executable, "-c", program],
+        env={**os.environ, "PATH": str(object=tmp_path)},
+        cwd=_WRAPPER.parent.parent,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=15,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "Python probe round-trip OK\n"

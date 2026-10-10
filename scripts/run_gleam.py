@@ -19,8 +19,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-from scripts.bounded_command import bounded_command
-
 _FIXTURE_PREFIX = Path("tests/integration/cases")
 
 
@@ -102,11 +100,7 @@ def main() -> None:
         )
 
         result = subprocess.run(
-            args=bounded_command(
-                args=[gleam_path, "run", "-m", "runner"],
-                fixture=f"Gleam execution batch ({len(fixtures)} fixtures)",
-                timeout_seconds=300,
-            ),
+            args=[gleam_path, "run", "-m", "runner"],
             capture_output=True,
             text=True,
             check=False,

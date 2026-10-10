@@ -39,7 +39,6 @@ from pathlib import Path
 
 from literalizer.languages import Hcl
 from scripts import roundtrip_common
-from scripts.bounded_command import bounded_command
 
 _VAR_NAME = "myData"
 _LABEL = "HCL"
@@ -70,11 +69,7 @@ def main() -> None:
         source_path = Path(tmpdir_name) / "main.hcl"
         _ = source_path.write_text(data=document, encoding="utf-8")
         completed = subprocess.run(
-            args=bounded_command(
-                args=[hcl2json, str(object=source_path)],
-                fixture=str(object=source_path),
-                timeout_seconds=60,
-            ),
+            args=[hcl2json, str(object=source_path)],
             capture_output=True,
             text=True,
             check=False,
