@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     scores: Vec<i32>,
     args: (i32, &'static str, &'static str, i32),

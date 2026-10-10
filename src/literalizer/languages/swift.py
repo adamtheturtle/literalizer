@@ -1637,15 +1637,30 @@ class Swift(metaclass=LanguageCls):
             """Keep native record declarations consistent with their
             values.
             """
-            record_name = lookup(data)
-            if record_name is None:
-                return formatter(name, value, data, modifiers)
-            keyword = self.declaration_style.name.lower()
             if (
                 self.variable_type_hints
                 is type(self.variable_type_hints).ALWAYS
             ):
-                return f"{keyword} {name}: {record_name} = {value}"
+                hint = _swift_type_hint(
+                    data=data,
+                    date_hint=self._swift_date_hint,
+                    datetime_hint=self._swift_datetime_hint,
+                    default_set_element_type=self.default_set_element_type,
+                    default_sequence_element_type=(
+                        self.default_sequence_element_type
+                    ),
+                    default_dict_value_type=self.default_dict_value_type,
+                    sequence_is_tuple=(
+                        self.sequence_format
+                        is type(self.sequence_format).TUPLE
+                    ),
+                    record_name_for_value=lookup,
+                )
+                keyword = self.declaration_style.name.lower()
+                return f"{keyword} {name}: {hint} = {value}"
+            record_name = lookup(data)
+            if record_name is None:
+                return formatter(name, value, data, modifiers)
             return self.declaration_style.value.formatter(
                 name, value, data, modifiers
             )

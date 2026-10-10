@@ -1,7 +1,9 @@
+#[derive(Clone)]
 struct Record1 {
     name: &'static str,
     age: i32,
 }
+#[derive(Clone)]
 struct Record0 {
     id: i32,
     owner: Record1,
