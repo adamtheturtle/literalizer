@@ -15,7 +15,6 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
-    make_narrowed_empty_dict_form,
     make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
@@ -204,12 +203,6 @@ _v_element_to_type = make_element_to_type(
 _v_narrowed_empty_form = make_narrowed_empty_form(
     element_to_type=_v_element_to_type,
     template="[]{type}{{}}",
-    fallback_type=_V_IFACE_NAME,
-)
-
-_v_narrowed_empty_dict_form = make_narrowed_empty_dict_form(
-    element_to_type=_v_element_to_type,
-    template="map[string]{type}{{}}",
     fallback_type=_V_IFACE_NAME,
 )
 
@@ -593,10 +586,11 @@ def _v_ordered_map_field_inner_type(
     /,
     *,
     record_name_for_value: Callable[[Value], str | None],
+    normalize_value: Callable[[Value], Value],
 ) -> str:
     """Resolve nested collection fields using their rendered record names.
 
-    Ordered maps and lists retain their structural types, while native
+    Maps and lists retain their structural types, while native
     record leaves keep their generated nominal names. Scalar leaves use
     the shared pooled inference for integer widths.
     """
@@ -610,15 +604,17 @@ def _v_ordered_map_field_inner_type(
             "strategy"
         )
         raise UnrepresentableInputError(message)
-    if len(items) > 0 and all(isinstance(item, OrderedMap) for item in items):
+    if len(items) > 0 and all(isinstance(item, dict) for item in items):
         values = [
             value
             for item in items
-            if isinstance(item, OrderedMap)
+            if isinstance(item, dict)
             for value in item.values()
         ]
         inner = _v_ordered_map_field_inner_type(
-            values, record_name_for_value=record_name_for_value
+            values,
+            record_name_for_value=record_name_for_value,
+            normalize_value=normalize_value,
         )
         return f"map[string]{inner}"
     if len(items) > 0 and all(isinstance(item, list) for item in items):
@@ -626,10 +622,12 @@ def _v_ordered_map_field_inner_type(
             value for item in items if isinstance(item, list) for value in item
         ]
         inner = _v_ordered_map_field_inner_type(
-            values, record_name_for_value=record_name_for_value
+            values,
+            record_name_for_value=record_name_for_value,
+            normalize_value=normalize_value,
         )
         return f"[]{inner}"
-    return _v_inner_type(items)
+    return _v_inner_type([normalize_value(item) for item in items])
 
 
 @beartype
@@ -1399,12 +1397,14 @@ class V(metaclass=LanguageCls):
                 inner = _v_ordered_map_field_inner_type(
                     value,
                     record_name_for_value=self._record_strategy.record_name_for_value,
+                    normalize_value=self._v_epoch_normalized,
                 )
                 return f"[]{inner}"
             case OrderedMap():
                 inner = _v_ordered_map_field_inner_type(
                     list(value.values()),
                     record_name_for_value=self._record_strategy.record_name_for_value,
+                    normalize_value=self._v_epoch_normalized,
                 )
                 return f"map[string]{inner}"
             case _:
@@ -1638,6 +1638,28 @@ class V(metaclass=LanguageCls):
         return self.sequence_format.value.sequence_open
 
     @cached_property
+    def _narrowed_empty_dict_form(
+        self,
+    ) -> Callable[[Sequence[dict[Scalar, Value]]], str]:
+        """Borrow actual sibling map types, including nested
+        containers.
+        """
+
+        def _narrow(siblings: Sequence[dict[Scalar, Value]], /) -> str:
+            """Pool map entries before resolving their rendered types."""
+            values = [
+                value for sibling in siblings for value in sibling.values()
+            ]
+            inner = _v_ordered_map_field_inner_type(
+                values,
+                record_name_for_value=self._record_strategy.record_name_for_value,
+                normalize_value=self._v_epoch_normalized,
+            )
+            return f"map[string]{inner}{{}}"
+
+        return _narrow
+
+    @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
@@ -1651,7 +1673,7 @@ class V(metaclass=LanguageCls):
             preamble_lines=(),
             narrowed_open=None,
             supports_trailing_comma=True,
-            narrowed_empty_form=_v_narrowed_empty_dict_form,
+            narrowed_empty_form=self._narrowed_empty_dict_form,
         )
 
     @cached_property
