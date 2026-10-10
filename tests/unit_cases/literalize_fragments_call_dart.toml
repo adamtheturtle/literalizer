@@ -1,0 +1,337 @@
+literals = []
+
+[[calls]]
+name = "dart_existing_comment_0"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call} // note"
+
+[calls.expected]
+code = "my_data = make_widget(count: 42); // note"
+
+[[calls]]
+name = "dart_existing_comment_1"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call}\n// note"
+
+[calls.expected]
+code = "my_data = make_widget(count: 42);\n// note"
+
+[[calls]]
+name = "dart_existing_comment_2"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call} // note\n// extra"
+
+[calls.expected]
+code = "my_data = make_widget(count: 42); // note\n// extra"
+
+[[calls]]
+name = "dart-raw-single_plain"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "r'ends\\' + '// payload'"
+
+[calls.expected]
+code = "my_data = r'ends\\' + '// payload';"
+
+[[calls]]
+name = "dart-raw-single_comment"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "r'ends\\' + '// payload' // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = r'ends\\' + '// payload'; // trailing\n// extra"
+
+[[calls]]
+name = "dart-raw-double_plain"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "r\"ends\\\" + \"// payload\""
+
+[calls.expected]
+code = "my_data = r\"ends\\\" + \"// payload\";"
+
+[[calls]]
+name = "dart-raw-double_comment"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "r\"ends\\\" + \"// payload\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = r\"ends\\\" + \"// payload\"; // trailing\n// extra"
+
+[[calls]]
+name = "dart-raw-triple-single_plain"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "r'''ends\\''' + '// payload'"
+
+[calls.expected]
+code = "my_data = r'''ends\\''' + '// payload';"
+
+[[calls]]
+name = "dart-raw-triple-single_comment"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "r'''ends\\''' + '// payload' // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = r'''ends\\''' + '// payload'; // trailing\n// extra"
+
+[[calls]]
+name = "dart-raw-triple-double_plain"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "r\"\"\"ends\\\"\"\" + \"// payload\""
+
+[calls.expected]
+code = "my_data = r\"\"\"ends\\\"\"\" + \"// payload\";"
+
+[[calls]]
+name = "dart-raw-triple-double_comment"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "r\"\"\"ends\\\"\"\" + \"// payload\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = r\"\"\"ends\\\"\"\" + \"// payload\"; // trailing\n// extra"
+
+[[calls]]
+name = "dart-nested_plain"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{\"${{\"// payload\"}}\"}}\""
+
+[calls.expected]
+code = "my_data = \"${\"${\"// payload\"}\"}\";"
+
+[[calls]]
+name = "dart-nested_comment"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{\"${{\"// payload\"}}\"}}\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = \"${\"${\"// payload\"}\"}\"; // trailing\n// extra"
+
+[[calls]]
+name = "dart-nested-raw_plain"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{r\"ends\\\" + \"// payload\"}}\""
+
+[calls.expected]
+code = "my_data = \"${r\"ends\\\" + \"// payload\"}\";"
+
+[[calls]]
+name = "dart-nested-raw_comment"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{r\"ends\\\" + \"// payload\"}}\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = \"${r\"ends\\\" + \"// payload\"}\"; // trailing\n// extra"
+
+[[calls]]
+name = "dart-map_plain"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{{{'value': '// payload'}}['value']}}\""
+
+[calls.expected]
+code = "my_data = \"${{'value': '// payload'}['value']}\";"
+
+[[calls]]
+name = "dart-map_comment"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{{{'value': '// payload'}}['value']}}\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = \"${{'value': '// payload'}['value']}\"; // trailing\n// extra"
+
+[[calls]]
+name = "dart-triple-interpolation_plain"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "'''prefix ${{'// payload'}}'''"
+
+[calls.expected]
+code = "my_data = '''prefix ${'// payload'}''';"
+
+[[calls]]
+name = "dart-triple-interpolation_comment"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "'''prefix ${{'// payload'}}''' // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = '''prefix ${'// payload'}'''; // trailing\n// extra"
+
+[[calls]]
+name = "dart-escaped-quotes_plain"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"\\\"prefix ${{\"// payload\"}}\\\"\""
+
+[calls.expected]
+code = "my_data = \"\\\"prefix ${\"// payload\"}\\\"\";"
+
+[[calls]]
+name = "dart-escaped-quotes_comment"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"\\\"prefix ${{\"// payload\"}}\\\"\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = \"\\\"prefix ${\"// payload\"}\\\"\"; // trailing\n// extra"
+
+[[calls]]
+name = "dart_incomplete_interpolation_0"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{\"// payload\""
+
+[calls.expected]
+code = "my_data = \"${\"// payload\";"
+
+[[calls]]
+name = "dart_incomplete_interpolation_1"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{\"// payload\"}}"
+
+[calls.expected]
+code = "my_data = \"${\"// payload\"};"
+
+[[calls]]
+name = "dart_incomplete_interpolation_2"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{]\"// payload\""
+
+[calls.expected]
+code = "my_data = \"${]\"// payload\";"
