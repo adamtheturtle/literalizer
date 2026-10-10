@@ -1,0 +1,9 @@
+values: !!omap
+  - wide: [[2040-01-01T00:00:00Z], []]
+  - narrow: [[2000-01-01T00:00:00Z]]
+  - negative: [[1900-01-01T00:00:00Z]]
+  - shifted: [[2040-01-01T01:00:00+01:00]]
+  - mixed_width: [[2000-01-01T00:00:00Z], [2040-01-01T00:00:00Z]]
+  - text: preserve
+flag: true
+direct_arrays: [[2040-01-01T00:00:00Z], []]
