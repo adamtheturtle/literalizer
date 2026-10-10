@@ -26,7 +26,7 @@ dynamic = [
     "version",
 ]
 dependencies = [
-    "beartype>=0.22.9,<1",
+    "beartype>=0.23.0,<1",
     "json5>=0.12",
     "pyhumps>=3.8",
     # We require >=0.18.16 as a minimum because some users use sphinx-toolbox,
@@ -49,7 +49,7 @@ urls.Source = "https://github.com/adamtheturtle/literalizer"
 [dependency-groups]
 dev = [
     "actionlint-py==1.7.12.25",
-    "beartype==0.23.0rc2",
+    "beartype==0.23.0",
     "check-manifest==0.51",
     "clang-tidy==22.1.8",
     "deptry==0.25.1",
@@ -661,12 +661,12 @@ analysis.strict-generic-narrowing = true
 
 [tool.pytest]
 addopts = [ "-n", "auto" ]
-# Source functions already use @beartype. Package import checking adds false
-# missing branches to the 100% coverage gate:
-# https://github.com/beartype/beartype/issues/706
-# When enabling beartype_packages, exclude literalizer._json_native_document:
+beartype_packages = [ "literalizer" ]
+# Exclude literalizer._json_native_document:
 # per-level wrappers exhaust the stack below the shared parse-depth guard.
+# https://github.com/beartype/beartype/issues/734
 # Its public entry points already use @beartype.
+beartype_skip_packages = [ "literalizer._json_native_document" ]
 beartype_test_fixtures = true
 beartype_tests = true
 log_cli = true
