@@ -1,0 +1,5 @@
+class Main {
+    public static void main() {
+String my_data = "2024-01-15";
+    }
+}
