@@ -670,6 +670,7 @@ jobs:
           mapfile -d '' -t files < <(python3 -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
           n=${#files[@]}
           test "$n" -gt 0
+          bounded_runner="$PWD/scripts/run-bounded.sh"
           run_odin() {
             local src="$1"
             local wd
@@ -680,13 +681,10 @@ jobs:
             # transient segfaults, but without this timeout the retry can
             # hang forever and leave only "operation was canceled" plus
             # an orphan odin process in the Actions log.
-            ( cd "$wd" && timeout --verbose --kill-after=10s 60s odin run . -out:"$wd/prog" )
+            ( cd "$wd" && "$bounded_runner" "$src" 60s 10s odin run . -out:"$wd/prog" )
           }
           for (( i=0; i<n; i+=1 )); do
             src=$(realpath "${files[i]}")
-            # Print before running so a timeout log identifies the
-            # fixture to minimize for an upstream Odin bug report.
-            printf 'Running %s\n' "$src"
             run_odin "$src" || run_odin "$src" || exit 1
           done
       # `uv` is needed by the `Odin roundtrip` step below; it runs the
@@ -1081,7 +1079,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
           while IFS= read -r -d '' f; do
-            elm-format --stdin < "$f" > /dev/null || exit 1
+            label="Elm formatting: $f"
+            scripts/run-bounded.sh "$label" 60s 5s elm-format --stdin < "$f" > /dev/null || exit "$?"
           done < /tmp/files-elm
           xargs -0 uv run python -m scripts.check_elm_syntax < /tmp/files-elm
 
@@ -2212,14 +2211,14 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
-            swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
+          scripts/run-bounded.sh "$1" 60s KILL \
+            swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit "$?"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
         run: |-
           cat > /tmp/run-swift.sh <<'SCRIPT'
-          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
+          scripts/run-bounded.sh "$1" 60s KILL \
             swift -swift-version 5 -warnings-as-errors "$1"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-swift.sh < /tmp/files-to-lint
@@ -3416,6 +3415,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install GNU timeout
+        run: brew install --quiet coreutils
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint

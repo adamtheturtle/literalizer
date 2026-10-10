@@ -30,6 +30,7 @@ from pathlib import Path
 
 from literalizer.languages import Gleam
 from scripts import roundtrip_common
+from scripts.bounded_command import bounded_command
 
 _VAR_NAME = "my_data"
 _LABEL = "Gleam"
@@ -74,7 +75,11 @@ def main() -> None:
         source_path.parent.mkdir(parents=True, exist_ok=True)
         _ = source_path.write_text(data=program, encoding="utf-8")
         result = subprocess.run(
-            args=[gleam_path, "run", "-m", "main"],
+            args=bounded_command(
+                args=[gleam_path, "run", "-m", "main"],
+                fixture=str(object=source_path),
+                timeout_seconds=60,
+            ),
             capture_output=True,
             text=True,
             check=False,

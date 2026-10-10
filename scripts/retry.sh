@@ -30,11 +30,13 @@ attempts=3
 attempt_seconds=80
 backoff_seconds=5
 
+bounded_runner="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/run-bounded.sh"
+
 if [[ ${1:-} == sudo ]]; then
     shift
-    bounded=(sudo timeout --kill-after=10 "$attempt_seconds")
+    bounded=(sudo "$bounded_runner" "network install" "${attempt_seconds}s" 10s)
 else
-    bounded=(timeout --kill-after=10 "$attempt_seconds")
+    bounded=("$bounded_runner" "network install" "${attempt_seconds}s" 10s)
 fi
 
 for attempt in $(seq 1 "$attempts"); do

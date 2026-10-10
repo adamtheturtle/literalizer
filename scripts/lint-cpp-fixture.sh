@@ -24,18 +24,18 @@ fi
 
 case "$mode" in
 tidy)
-    python3 scripts/run_bounded_compiler.py --fixture "$fixture_path" -- \
+    scripts/run-bounded.sh "$fixture_path" 60s KILL \
         clang-tidy "$fixture_path" -- "-std=$standard"
     ;;
 run)
     temporary_directory=$(mktemp -d)
     trap 'rm -rf "$temporary_directory"' EXIT
-    python3 scripts/run_bounded_compiler.py --fixture "$fixture_path" -- \
+    scripts/run-bounded.sh "$fixture_path" 60s KILL \
         clang++ "-std=$standard" \
         -include-pch "/tmp/lint-cpp-$standard.hpp.pch" \
         "$fixture_path" \
         -o "$temporary_directory/run"
-    python3 scripts/run_bounded_compiler.py --fixture "$fixture_path" -- \
+    scripts/run-bounded.sh "$fixture_path" 60s KILL \
         "$temporary_directory/run"
     ;;
 *)

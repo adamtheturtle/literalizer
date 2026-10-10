@@ -47,6 +47,7 @@ from literalizer import (
     RoundTripCapability,
     literalize,
 )
+from scripts.bounded_command import bounded_command
 
 INPUT_PATH = Path(__file__).resolve().parent / "roundtrip_input.json"
 CAPABILITY_INPUT_PATH = (
@@ -239,7 +240,11 @@ def execute(
             _ = extra_path.write_text(data=content, encoding="utf-8")
         for step in steps:
             result = subprocess.run(
-                args=list(step.args),
+                args=bounded_command(
+                    args=list(step.args),
+                    fixture=str(object=source_path),
+                    timeout_seconds=60,
+                ),
                 capture_output=True,
                 text=True,
                 check=False,
