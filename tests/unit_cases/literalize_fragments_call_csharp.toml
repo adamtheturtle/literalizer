@@ -1,0 +1,239 @@
+literals = []
+
+[[calls]]
+name = "csharp_existing_comment_0"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call} // note"
+
+[calls.expected]
+code = "my_data = make_widget(42); // note"
+
+[[calls]]
+name = "csharp_existing_comment_1"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call}\n// note"
+
+[calls.expected]
+code = "my_data = make_widget(42);\n// note"
+
+[[calls]]
+name = "csharp_existing_comment_2"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call} // note\n// extra"
+
+[calls.expected]
+code = "my_data = make_widget(42); // note\n// extra"
+
+[[calls]]
+name = "csharp-verbatim_plain"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "@\"ends\\\" + \"// payload\""
+
+[calls.expected]
+code = "my_data = @\"ends\\\" + \"// payload\";"
+
+[[calls]]
+name = "csharp-verbatim_comment"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "@\"ends\\\" + \"// payload\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = @\"ends\\\" + \"// payload\"; // trailing\n// extra"
+
+[[calls]]
+name = "csharp-verbatim-quotes_plain"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "@\"a\"\" // payload\"\"b\""
+
+[calls.expected]
+code = "my_data = @\"a\"\" // payload\"\"b\";"
+
+[[calls]]
+name = "csharp-verbatim-quotes_comment"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "@\"a\"\" // payload\"\"b\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = @\"a\"\" // payload\"\"b\"; // trailing\n// extra"
+
+[[calls]]
+name = "csharp-nested-format_plain"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "$\"{{$\"{{1://}}\"}}\""
+
+[calls.expected]
+code = "my_data = $\"{$\"{1://}\"}\";"
+
+[[calls]]
+name = "csharp-nested-format_comment"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "$\"{{$\"{{1://}}\"}}\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = $\"{$\"{1://}\"}\"; // trailing\n// extra"
+
+[[calls]]
+name = "csharp-conditional_plain"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "$\"{{(true ? \"// payload\" : \"ok\")}}\""
+
+[calls.expected]
+code = "my_data = $\"{(true ? \"// payload\" : \"ok\")}\";"
+
+[[calls]]
+name = "csharp-conditional_comment"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "$\"{{(true ? \"// payload\" : \"ok\")}}\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = $\"{(true ? \"// payload\" : \"ok\")}\"; // trailing\n// extra"
+
+[[calls]]
+name = "csharp-escaped-braces_plain"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "$\"{{{{payload}}}} {{1://}}\""
+
+[calls.expected]
+code = "my_data = $\"{{payload}} {1://}\";"
+
+[[calls]]
+name = "csharp-escaped-braces_comment"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "$\"{{{{payload}}}} {{1://}}\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = $\"{{payload}} {1://}\"; // trailing\n// extra"
+
+[[calls]]
+name = "csharp-interpolated-verbatim_plain"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "$@\"a\"\" {{\"// payload\"}}\"\"b\""
+
+[calls.expected]
+code = "my_data = $@\"a\"\" {\"// payload\"}\"\"b\";"
+
+[[calls]]
+name = "csharp-interpolated-verbatim_comment"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "$@\"a\"\" {{\"// payload\"}}\"\"b\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = $@\"a\"\" {\"// payload\"}\"\"b\"; // trailing\n// extra"
+
+[[calls]]
+name = "csharp-verbatim-interpolated_plain"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "@$\"a\"\" {{\"// payload\"}}\"\"b\""
+
+[calls.expected]
+code = "my_data = @$\"a\"\" {\"// payload\"}\"\"b\";"
+
+[[calls]]
+name = "csharp-verbatim-interpolated_comment"
+language = "CSharp"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "@$\"a\"\" {{\"// payload\"}}\"\"b\" // trailing\n// extra"
+
+[calls.expected]
+code = "my_data = @$\"a\"\" {\"// payload\"}\"\"b\"; // trailing\n// extra"
