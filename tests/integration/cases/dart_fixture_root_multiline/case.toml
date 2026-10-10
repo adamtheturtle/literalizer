@@ -1,0 +1,27 @@
+schema_version = 1
+languages = ["Dart"]
+languages_reason = "The Dart fixture consumer obtains custom roots from metadata even when multiline strings contain declaration-looking text."
+suites = ["base"]
+
+[base_context]
+variable_name = "custom_data"
+
+[[variants]]
+axis = "multiline_string"
+
+[variants.context]
+variable_name = "custom_data"
+
+[[variants]]
+axis = "multiline_string"
+suffix = "_private"
+
+[variants.context]
+variable_name = "_customRoot"
+
+[[variants]]
+axis = "multiline_string"
+suffix = "_accessor_collision"
+
+[variants.context]
+variable_name = "literalizerFixtureRoot"

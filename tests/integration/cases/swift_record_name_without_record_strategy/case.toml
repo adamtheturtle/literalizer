@@ -1,6 +1,6 @@
 schema_version = 1
-languages = ["Swift"]
-languages_reason = "Swift reserves generated record names only when the RECORD strategy is selected."
+languages = ["Dart", "Swift"]
+languages_reason = "Swift reserves generated record names only when the RECORD strategy is selected; Dart consumers use the manifest's custom root name."
 suites = ["base"]
 
 [base_context]
