@@ -1,7 +1,9 @@
+#[derive(Clone)]
 struct Record1 {
     id: i32,
     count: Option<i32>,
 }
+#[derive(Clone)]
 struct Record0 {
     items: Vec<Record1>,
 }

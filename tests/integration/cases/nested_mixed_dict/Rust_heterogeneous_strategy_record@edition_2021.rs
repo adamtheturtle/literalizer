@@ -1,8 +1,10 @@
+#[derive(Clone)]
 struct Record1 {
     a: i32,
     b: &'static str,
     c: Option<()>,
 }
+#[derive(Clone)]
 struct Record0 {
     outer: Record1,
 }

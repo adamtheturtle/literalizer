@@ -488,6 +488,8 @@ class RefCaseSpec(  # noqa: NOD001
     pre_indent_level: int = 0
     heterogeneous_strategy: str | None = None
     sequence_format: str | None = None
+    default_sequence_element_type: str | None = None
+    declaration_style: str | None = None
     variable_type_hints: str | None = None
     json_type: str | None = None
     dict_format: str | None = None
