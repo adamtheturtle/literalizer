@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, ClassVar
 from beartype import beartype
 
 from literalizer._comments import ControlCharacterFreeCommentPrefix
+from literalizer._document_formatting import format_document_fast
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -64,7 +65,7 @@ from literalizer._formatters.type_inference import (
     record_shape_for_dict,
 )
 from literalizer._json_native_document import (
-    register_json_native_document_fast,
+    format_json_native_document_fast,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -73,6 +74,7 @@ from literalizer._language import (
     BareIntegerWidthStrategies,
     CallParameterShadowing,
     CallStyle,
+    CollectionLayout,
     CommentConfig,
     DateFormatConfig,
     DateFormatEnum,
@@ -84,6 +86,7 @@ from literalizer._language import (
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
+    Language,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
@@ -2130,4 +2133,68 @@ class Zig(metaclass=LanguageCls):
         )
 
 
-register_json_native_document_fast(language_cls=Zig)
+_PLAIN_JSON_SCALAR_TYPES = frozenset({str, int, float, bool, type(None)})
+
+
+@beartype
+def _zig_json_document_is_plain(*, data: Value) -> bool:
+    """Return whether a document contains only plain JSON values."""
+    pending = [data]
+    while len(pending) > 0:
+        value = pending.pop()
+        if type(value) in _PLAIN_JSON_SCALAR_TYPES:
+            if isinstance(value, int) and value > U64_MAX:
+                return False
+            continue
+        if isinstance(value, dict) and not isinstance(value, OrderedMap):
+            if any(not isinstance(key, str) for key in value):
+                return False
+            pending.extend(value.values())
+        elif isinstance(value, list):
+            pending.extend(value)
+        else:
+            return False
+    return True
+
+
+@beartype
+def _format_zig_document_fast(
+    language: Language,
+    data: Value,
+    *,
+    line_prefix: str,
+    include_delimiters: bool,
+    collection_layout: CollectionLayout,
+) -> str | None:
+    """Parse reference-free JSON documents as one value.
+
+    The document dispatch is reached only when reference handling and
+    source comments are disabled. Non-JSON values still use their configured
+    scalar formatters. Other rendering contexts retain the container builders
+    so their already rendered child expressions survive.
+    """
+    is_builtin_json = (
+        isinstance(language, Zig)
+        and language.__class__ is Zig
+        and language.json_type is Zig.JsonTypes["STD_JSON_VALUE"]
+    )
+    if (
+        is_builtin_json
+        and isinstance(data, (dict, list))
+        and include_delimiters
+        and collection_layout is CollectionLayout.COMPACT
+        and _zig_json_document_is_plain(data=data)
+    ):
+        return line_prefix + _zig_parse_expression(data=data)
+    return format_json_native_document_fast(
+        language=language,
+        data=data,
+        line_prefix=line_prefix,
+        include_delimiters=include_delimiters,
+        collection_layout=collection_layout,
+    )
+
+
+_registered_zig_document_formatter: Callable[..., str | None] = (
+    format_document_fast.register(cls=Zig, func=_format_zig_document_fast)
+)

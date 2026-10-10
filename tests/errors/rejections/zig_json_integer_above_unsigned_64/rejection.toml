@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Zig JSON documents retain unsigned integer bounds."
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Zig"]
+
+[call]
+api = "literalize"
+sources = ['[18446744073709551616]', '{"value": 18446744073709551616}']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "STD_JSON_VALUE" },
+]

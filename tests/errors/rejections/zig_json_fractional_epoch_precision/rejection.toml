@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "Zig JSON documents retain fractional epoch precision validation."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Zig"]
+
+[call]
+api = "literalize"
+sources = [
+  "- 2020-03-04T05:06:07.123456+02:30",
+  "when: 2020-03-04T05:06:07.123456+02:30",
+]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "STD_JSON_VALUE" },
+]
