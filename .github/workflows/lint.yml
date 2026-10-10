@@ -350,19 +350,14 @@ jobs:
         timeout-minutes: 10
         run: |-
           mkdir -p /tmp/jackson-jars
-          jackson_version=2.18.2
-          for f in jackson-databind/$jackson_version/jackson-databind-$jackson_version.jar \
-                   jackson-core/$jackson_version/jackson-core-$jackson_version.jar \
-                   jackson-annotations/$jackson_version/jackson-annotations-$jackson_version.jar; do
-            name=$(basename "$f")
-            # curl's default retry delay backs off exponentially. Bound
-            # both the retry window and each individual attempt so a
-            # persistent Maven Central failure still terminates the job.
-            curl --fail --show-error --silent --location \
-              --retry 5 --retry-all-errors --retry-max-time 120 \
-              --connect-timeout 10 --max-time 30 \
-              "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/$f" \
-              --output "/tmp/jackson-jars/$name"
+          # Pin artifact content as well as version on both official endpoints.
+          for artifact in 'com/fasterxml/jackson/core/jackson-databind/2.18.2/jackson-databind-2.18.2.jar 4b364e6850dc89172fcf1d4dd26b8ff5488eda44ff4657e22dd265203dd5ab3c' \
+                   'com/fasterxml/jackson/core/jackson-core/2.18.2/jackson-core-2.18.2.jar d8054ae7c0d1c2d2f55d28e46026ebe5892881f3fab5f439233184381c3b4a1f' \
+                   'com/fasterxml/jackson/core/jackson-annotations/2.18.2/jackson-annotations-2.18.2.jar 581bd61000ef7648943f781ca05689e56d03f6052748365a8e2b3a9b5d3fa32f'; do
+            read -r path checksum <<< "$artifact"
+            bash scripts/download-checked.sh "$checksum" "/tmp/jackson-jars/$(basename "$path")" \
+              "https://repo.maven.apache.org/maven2/$path" \
+              "https://repo1.maven.org/maven2/$path"
           done
 
       - name: Lint Java
@@ -1613,13 +1608,10 @@ jobs:
       - name: Install Groovy
         timeout-minutes: 10
         run: |-
-          # Maven Central retains this pinned binary distribution. Apache's
-          # historical archive can exceed this step's download timeout.
-          curl --fail --show-error --silent --location \
-            --retry 5 --retry-all-errors --retry-max-time 600 \
-            --connect-timeout 15 --max-time 600 \
+          bash scripts/download-checked.sh \
+            f03e8838b56c202d8c864d462f6117d3512fdb6d1db9afcd47dfd1af81683f50 /tmp/groovy.zip \
             https://repo.maven.apache.org/maven2/org/apache/groovy/groovy-binary/4.0.32/groovy-binary-4.0.32.zip \
-            --output /tmp/groovy.zip
+            https://repo1.maven.org/maven2/org/apache/groovy/groovy-binary/4.0.32/groovy-binary-4.0.32.zip
           unzip -q -o /tmp/groovy.zip -d /tmp/groovy
           echo "/tmp/groovy/groovy-4.0.32/bin" >> "$GITHUB_PATH"
 
@@ -2143,18 +2135,13 @@ jobs:
         timeout-minutes: 10
         run: |-
           mkdir -p /tmp/kotlinx-jars
-          serialization_version=1.7.3
-          for f in kotlinx-serialization-json-jvm/$serialization_version/kotlinx-serialization-json-jvm-$serialization_version.jar \
-                   kotlinx-serialization-core-jvm/$serialization_version/kotlinx-serialization-core-jvm-$serialization_version.jar; do
-            name=$(basename "$f")
-            # curl's default retry delay backs off exponentially. Bound
-            # both the retry window and each individual attempt so a
-            # persistent Maven Central failure still terminates the job.
-            curl --fail --show-error --silent --location \
-              --retry 5 --retry-all-errors --retry-max-time 120 \
-              --connect-timeout 10 --max-time 30 \
-              "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/$f" \
-              --output "/tmp/kotlinx-jars/$name"
+          # Keep these SHA-256 pins paired with the artifact versions.
+          for artifact in 'org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.7.3/kotlinx-serialization-json-jvm-1.7.3.jar b1e9138499ed8d20375edda3f2b1c95f3103a258eff6af9edc5ea07100f2b29c' \
+                   'org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.7.3/kotlinx-serialization-core-jvm-1.7.3.jar f0adde45864144475385cf4aa7e0b7feb27f61fcf9472665ed98cc971b06b1eb'; do
+            read -r path checksum <<< "$artifact"
+            bash scripts/download-checked.sh "$checksum" "/tmp/kotlinx-jars/$(basename "$path")" \
+              "https://repo.maven.apache.org/maven2/$path" \
+              "https://repo1.maven.org/maven2/$path"
           done
       # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
       # spawning one `kotlinc -script` per fixture. The JVM + compiler
