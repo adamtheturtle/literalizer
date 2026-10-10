@@ -1,0 +1,6 @@
+!!omap
+- outer:
+    - !!omap
+      - inner: {x: 1}
+    - !!omap
+      - inner: {x: 2}

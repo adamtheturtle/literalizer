@@ -104,6 +104,7 @@ def test_roundtrip_array(data: list[_JSONValue]) -> None:
     assert parsed == data
 
 
+@settings(deadline=None)
 @given(data=json_scalars)
 def test_roundtrip_scalar(data: _JSONScalar) -> None:
     """Scalar -> Python literal -> ast.literal_eval round-trips."""

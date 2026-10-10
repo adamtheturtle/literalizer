@@ -8,5 +8,5 @@ target_function = "check"
 parameter_names = ["ts", "d"]
 per_element = true
 wrap_in_file = true
-languages = ["Haskell"]
-languages_reason = "GHC alone among the wrapped-call back ends needs an import for a temporal argument, and requires every import to precede the first declaration."
+languages = ["Cobol", "Haskell"]
+languages_reason = "Haskell requires temporal imports before declarations; COBOL must keep its wrapper program distinct from the requested CHECK target."

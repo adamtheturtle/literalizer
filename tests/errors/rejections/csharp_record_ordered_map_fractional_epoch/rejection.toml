@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "CSharp integer EPOCH arrays in ordered-map record fields reject fractional datetime precision."
+exceptions = ["UnrepresentableInputError"]
+languages = ["CSharp"]
+
+[call]
+api = "literalize"
+sources = [
+  "values: !!omap\n  - first: [[2040-01-01T00:00:00.123456Z]]\nflag: true",
+]
+input_format = "yaml"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "option_member", option = "datetime_format", member = "EPOCH" },
+]
