@@ -34,6 +34,7 @@ from literalizer._formatters.type_inference import (
     ListType,
     RecordShape,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     InvalidCallParameterNameError,
@@ -3651,6 +3652,115 @@ default_format_call_variable_assignment: property = property(
 """Shared descriptor for languages whose call-result assignment is
 formatted exactly like a literal binding (no value-type tag to drop).
 """
+
+
+@beartype
+def _line_comment_call_variable_declaration(
+    self: "Language",
+    *,
+    regex_literals: bool,
+    raw_string_prefixes: tuple[str, ...],
+    verbatim_strings: bool,
+    interpolation_syntax: tuple[str, str] | None,
+) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+    """Terminate C-style call bindings before trailing line comments."""
+
+    def _format(
+        name: str, value: str, data: Value, modifiers: frozenset[enum.Enum]
+    ) -> str:
+        """Bind the expression, then preserve its final comments."""
+        code, trailing = split_trailing_line_comments(
+            statement=value,
+            prefix="//",
+            regex_literals=regex_literals,
+            backtick_strings=False,
+            raw_string_prefixes=raw_string_prefixes,
+            verbatim_strings=verbatim_strings,
+            interpolation_syntax=interpolation_syntax,
+        )
+        return (
+            self.format_variable_declaration(name, code, data, modifiers)
+            + trailing
+        )
+
+    return _format
+
+
+@beartype
+def line_comment_call_variable_declaration(
+    *,
+    regex_literals: bool,
+    raw_string_prefixes: tuple[str, ...],
+    verbatim_strings: bool,
+    interpolation_syntax: tuple[str, str] | None,
+) -> property:
+    """Build a call binding descriptor with its literal syntax."""
+
+    def _get(
+        self: "Language",
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Return the declaration formatter for this language."""
+        return _line_comment_call_variable_declaration(
+            self=self,
+            regex_literals=regex_literals,
+            raw_string_prefixes=raw_string_prefixes,
+            verbatim_strings=verbatim_strings,
+            interpolation_syntax=interpolation_syntax,
+        )
+
+    return property(fget=_get)
+
+
+@beartype
+def _line_comment_call_variable_assignment(
+    self: "Language",
+    *,
+    regex_literals: bool,
+    raw_string_prefixes: tuple[str, ...],
+    verbatim_strings: bool,
+    interpolation_syntax: tuple[str, str] | None,
+) -> Callable[[str, str, Value], str]:
+    """Terminate C-style call assignments before trailing line
+    comments.
+    """
+
+    def _format(name: str, value: str, data: Value) -> str:
+        """Assign the expression, then preserve its final comments."""
+        code, trailing = split_trailing_line_comments(
+            statement=value,
+            prefix="//",
+            regex_literals=regex_literals,
+            backtick_strings=False,
+            raw_string_prefixes=raw_string_prefixes,
+            verbatim_strings=verbatim_strings,
+            interpolation_syntax=interpolation_syntax,
+        )
+        return self.format_variable_assignment(name, code, data) + trailing
+
+    return _format
+
+
+@beartype
+def line_comment_call_variable_assignment(
+    *,
+    regex_literals: bool,
+    raw_string_prefixes: tuple[str, ...],
+    verbatim_strings: bool,
+    interpolation_syntax: tuple[str, str] | None,
+) -> property:
+    """Build a call assignment descriptor with its literal syntax."""
+
+    def _get(self: "Language") -> Callable[[str, str, Value], str]:
+        """Return the assignment formatter for this language."""
+        return _line_comment_call_variable_assignment(
+            self=self,
+            regex_literals=regex_literals,
+            raw_string_prefixes=raw_string_prefixes,
+            verbatim_strings=verbatim_strings,
+            interpolation_syntax=interpolation_syntax,
+        )
+
+    return property(fget=_get)
 
 
 @beartype

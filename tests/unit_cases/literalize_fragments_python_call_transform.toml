@@ -1,0 +1,13 @@
+literals = []
+
+[[calls]]
+name = "python_transformed_existing_call"
+language = "Python"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "[{call}]"
+expected.code = "my_data = [make_widget(count=42)]"

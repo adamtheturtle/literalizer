@@ -1,0 +1,515 @@
+[[cases]]
+name = "c_existing_comment_0"
+statement = "make_widget(((CVal){.i = 42})) // note"
+expected_code = "make_widget(((CVal){.i = 42}))"
+expected_trailing = " // note"
+
+[[cases]]
+name = "c_existing_comment_1"
+statement = "make_widget(((CVal){.i = 42}))\n// note"
+expected_code = "make_widget(((CVal){.i = 42}))"
+expected_trailing = "\n// note"
+
+[[cases]]
+name = "c_existing_comment_2"
+statement = "make_widget(((CVal){.i = 42})) // note\n// extra"
+expected_code = "make_widget(((CVal){.i = 42}))"
+expected_trailing = " // note\n// extra"
+
+[[cases]]
+name = "cpp_existing_comment_0"
+statement = "make_widget(42) // note"
+expected_code = "make_widget(42)"
+expected_trailing = " // note"
+
+[[cases]]
+name = "cpp_existing_comment_1"
+statement = "make_widget(42)\n// note"
+expected_code = "make_widget(42)"
+expected_trailing = "\n// note"
+
+[[cases]]
+name = "cpp_existing_comment_2"
+statement = "make_widget(42) // note\n// extra"
+expected_code = "make_widget(42)"
+expected_trailing = " // note\n// extra"
+
+[[cases]]
+name = "csharp_existing_comment_0"
+statement = "make_widget(42) // note"
+expected_code = "make_widget(42)"
+expected_trailing = " // note"
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp_existing_comment_1"
+statement = "make_widget(42)\n// note"
+expected_code = "make_widget(42)"
+expected_trailing = "\n// note"
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp_existing_comment_2"
+statement = "make_widget(42) // note\n// extra"
+expected_code = "make_widget(42)"
+expected_trailing = " // note\n// extra"
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "d_existing_comment_0"
+statement = "make_widget(42) // note"
+expected_code = "make_widget(42)"
+expected_trailing = " // note"
+backtick_strings = true
+
+[[cases]]
+name = "d_existing_comment_1"
+statement = "make_widget(42)\n// note"
+expected_code = "make_widget(42)"
+expected_trailing = "\n// note"
+backtick_strings = true
+
+[[cases]]
+name = "d_existing_comment_2"
+statement = "make_widget(42) // note\n// extra"
+expected_code = "make_widget(42)"
+expected_trailing = " // note\n// extra"
+backtick_strings = true
+
+[[cases]]
+name = "haxe_existing_comment_0"
+statement = "make_widget(42) // note"
+expected_code = "make_widget(42)"
+expected_trailing = " // note"
+regex_literals = true
+interpolation_syntax = ["${", "'"]
+
+[[cases]]
+name = "haxe_existing_comment_1"
+statement = "make_widget(42)\n// note"
+expected_code = "make_widget(42)"
+expected_trailing = "\n// note"
+regex_literals = true
+interpolation_syntax = ["${", "'"]
+
+[[cases]]
+name = "haxe_existing_comment_2"
+statement = "make_widget(42) // note\n// extra"
+expected_code = "make_widget(42)"
+expected_trailing = " // note\n// extra"
+regex_literals = true
+interpolation_syntax = ["${", "'"]
+
+[[cases]]
+name = "systemverilog_existing_comment_0"
+statement = "make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"}) // note"
+expected_code = "make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"})"
+expected_trailing = " // note"
+
+[[cases]]
+name = "systemverilog_existing_comment_1"
+statement = "make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"})\n// note"
+expected_code = "make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"})"
+expected_trailing = "\n// note"
+
+[[cases]]
+name = "systemverilog_existing_comment_2"
+statement = "make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"}) // note\n// extra"
+expected_code = "make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: \"\"})"
+expected_trailing = " // note\n// extra"
+
+[[cases]]
+name = "zig_existing_comment_0"
+statement = "make_widget(.{ .int = 42 }) // note"
+expected_code = "make_widget(.{ .int = 42 })"
+expected_trailing = " // note"
+
+[[cases]]
+name = "zig_existing_comment_1"
+statement = "make_widget(.{ .int = 42 })\n// note"
+expected_code = "make_widget(.{ .int = 42 })"
+expected_trailing = "\n// note"
+
+[[cases]]
+name = "zig_existing_comment_2"
+statement = "make_widget(.{ .int = 42 }) // note\n// extra"
+expected_code = "make_widget(.{ .int = 42 })"
+expected_trailing = " // note\n// extra"
+
+[[cases]]
+name = "dart_existing_comment_0"
+statement = "make_widget(count: 42) // note"
+expected_code = "make_widget(count: 42)"
+expected_trailing = " // note"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart_existing_comment_1"
+statement = "make_widget(count: 42)\n// note"
+expected_code = "make_widget(count: 42)"
+expected_trailing = "\n// note"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart_existing_comment_2"
+statement = "make_widget(count: 42) // note\n// extra"
+expected_code = "make_widget(count: 42)"
+expected_trailing = " // note\n// extra"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "objectivec_existing_comment_0"
+statement = "make_widget(@42) // note"
+expected_code = "make_widget(@42)"
+expected_trailing = " // note"
+
+[[cases]]
+name = "objectivec_existing_comment_1"
+statement = "make_widget(@42)\n// note"
+expected_code = "make_widget(@42)"
+expected_trailing = "\n// note"
+
+[[cases]]
+name = "objectivec_existing_comment_2"
+statement = "make_widget(@42) // note\n// extra"
+expected_code = "make_widget(@42)"
+expected_trailing = " // note\n// extra"
+
+[[cases]]
+name = "haxe_existing_regex_plain"
+statement = "(~/\\//).match(\"/\") ? make_widget(42) : null"
+expected_code = "(~/\\//).match(\"/\") ? make_widget(42) : null"
+expected_trailing = ""
+regex_literals = true
+interpolation_syntax = ["${", "'"]
+
+[[cases]]
+name = "haxe_existing_regex_comment"
+statement = "(~/\\//).match(\"/\") ? make_widget(42) : null // trailing"
+expected_code = "(~/\\//).match(\"/\") ? make_widget(42) : null"
+expected_trailing = " // trailing"
+regex_literals = true
+interpolation_syntax = ["${", "'"]
+
+[[cases]]
+name = "dart-raw-single_plain"
+statement = "r'ends\\' + '// payload'"
+expected_code = "r'ends\\' + '// payload'"
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-raw-single_comment"
+statement = "r'ends\\' + '// payload' // trailing\n// extra"
+expected_code = "r'ends\\' + '// payload'"
+expected_trailing = " // trailing\n// extra"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-raw-double_plain"
+statement = "r\"ends\\\" + \"// payload\""
+expected_code = "r\"ends\\\" + \"// payload\""
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-raw-double_comment"
+statement = "r\"ends\\\" + \"// payload\" // trailing\n// extra"
+expected_code = "r\"ends\\\" + \"// payload\""
+expected_trailing = " // trailing\n// extra"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-raw-triple-single_plain"
+statement = "r'''ends\\''' + '// payload'"
+expected_code = "r'''ends\\''' + '// payload'"
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-raw-triple-single_comment"
+statement = "r'''ends\\''' + '// payload' // trailing\n// extra"
+expected_code = "r'''ends\\''' + '// payload'"
+expected_trailing = " // trailing\n// extra"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-raw-triple-double_plain"
+statement = "r\"\"\"ends\\\"\"\" + \"// payload\""
+expected_code = "r\"\"\"ends\\\"\"\" + \"// payload\""
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-raw-triple-double_comment"
+statement = "r\"\"\"ends\\\"\"\" + \"// payload\" // trailing\n// extra"
+expected_code = "r\"\"\"ends\\\"\"\" + \"// payload\""
+expected_trailing = " // trailing\n// extra"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-nested_plain"
+statement = "\"${\"${\"// payload\"}\"}\""
+expected_code = "\"${\"${\"// payload\"}\"}\""
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-nested_comment"
+statement = "\"${\"${\"// payload\"}\"}\" // trailing\n// extra"
+expected_code = "\"${\"${\"// payload\"}\"}\""
+expected_trailing = " // trailing\n// extra"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-nested-raw_plain"
+statement = "\"${r\"ends\\\" + \"// payload\"}\""
+expected_code = "\"${r\"ends\\\" + \"// payload\"}\""
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-nested-raw_comment"
+statement = "\"${r\"ends\\\" + \"// payload\"}\" // trailing\n// extra"
+expected_code = "\"${r\"ends\\\" + \"// payload\"}\""
+expected_trailing = " // trailing\n// extra"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-map_plain"
+statement = "\"${{'value': '// payload'}['value']}\""
+expected_code = "\"${{'value': '// payload'}['value']}\""
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-map_comment"
+statement = "\"${{'value': '// payload'}['value']}\" // trailing\n// extra"
+expected_code = "\"${{'value': '// payload'}['value']}\""
+expected_trailing = " // trailing\n// extra"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-triple-interpolation_plain"
+statement = "'''prefix ${'// payload'}'''"
+expected_code = "'''prefix ${'// payload'}'''"
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-triple-interpolation_comment"
+statement = "'''prefix ${'// payload'}''' // trailing\n// extra"
+expected_code = "'''prefix ${'// payload'}'''"
+expected_trailing = " // trailing\n// extra"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-escaped-quotes_plain"
+statement = "\"\\\"prefix ${\"// payload\"}\\\"\""
+expected_code = "\"\\\"prefix ${\"// payload\"}\\\"\""
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart-escaped-quotes_comment"
+statement = "\"\\\"prefix ${\"// payload\"}\\\"\" // trailing\n// extra"
+expected_code = "\"\\\"prefix ${\"// payload\"}\\\"\""
+expected_trailing = " // trailing\n// extra"
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "csharp-verbatim_plain"
+statement = "@\"ends\\\" + \"// payload\""
+expected_code = "@\"ends\\\" + \"// payload\""
+expected_trailing = ""
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-verbatim_comment"
+statement = "@\"ends\\\" + \"// payload\" // trailing\n// extra"
+expected_code = "@\"ends\\\" + \"// payload\""
+expected_trailing = " // trailing\n// extra"
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-verbatim-quotes_plain"
+statement = "@\"a\"\" // payload\"\"b\""
+expected_code = "@\"a\"\" // payload\"\"b\""
+expected_trailing = ""
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-verbatim-quotes_comment"
+statement = "@\"a\"\" // payload\"\"b\" // trailing\n// extra"
+expected_code = "@\"a\"\" // payload\"\"b\""
+expected_trailing = " // trailing\n// extra"
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-nested-format_plain"
+statement = "$\"{$\"{1://}\"}\""
+expected_code = "$\"{$\"{1://}\"}\""
+expected_trailing = ""
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-nested-format_comment"
+statement = "$\"{$\"{1://}\"}\" // trailing\n// extra"
+expected_code = "$\"{$\"{1://}\"}\""
+expected_trailing = " // trailing\n// extra"
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-conditional_plain"
+statement = "$\"{(true ? \"// payload\" : \"ok\")}\""
+expected_code = "$\"{(true ? \"// payload\" : \"ok\")}\""
+expected_trailing = ""
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-conditional_comment"
+statement = "$\"{(true ? \"// payload\" : \"ok\")}\" // trailing\n// extra"
+expected_code = "$\"{(true ? \"// payload\" : \"ok\")}\""
+expected_trailing = " // trailing\n// extra"
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-escaped-braces_plain"
+statement = "$\"{{payload}} {1://}\""
+expected_code = "$\"{{payload}} {1://}\""
+expected_trailing = ""
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-escaped-braces_comment"
+statement = "$\"{{payload}} {1://}\" // trailing\n// extra"
+expected_code = "$\"{{payload}} {1://}\""
+expected_trailing = " // trailing\n// extra"
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-interpolated-verbatim_plain"
+statement = "$@\"a\"\" {\"// payload\"}\"\"b\""
+expected_code = "$@\"a\"\" {\"// payload\"}\"\"b\""
+expected_trailing = ""
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-interpolated-verbatim_comment"
+statement = "$@\"a\"\" {\"// payload\"}\"\"b\" // trailing\n// extra"
+expected_code = "$@\"a\"\" {\"// payload\"}\"\"b\""
+expected_trailing = " // trailing\n// extra"
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-verbatim-interpolated_plain"
+statement = "@$\"a\"\" {\"// payload\"}\"\"b\""
+expected_code = "@$\"a\"\" {\"// payload\"}\"\"b\""
+expected_trailing = ""
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "csharp-verbatim-interpolated_comment"
+statement = "@$\"a\"\" {\"// payload\"}\"\"b\" // trailing\n// extra"
+expected_code = "@$\"a\"\" {\"// payload\"}\"\"b\""
+expected_trailing = " // trailing\n// extra"
+verbatim_strings = true
+interpolation_syntax = ["{", "\""]
+
+[[cases]]
+name = "haxe-interpolation_plain"
+statement = "'prefix ${'// payload'}'"
+expected_code = "'prefix ${'// payload'}'"
+expected_trailing = ""
+regex_literals = true
+interpolation_syntax = ["${", "'"]
+
+[[cases]]
+name = "haxe-interpolation_comment"
+statement = "'prefix ${'// payload'}' // trailing\n// extra"
+expected_code = "'prefix ${'// payload'}'"
+expected_trailing = " // trailing\n// extra"
+regex_literals = true
+interpolation_syntax = ["${", "'"]
+
+[[cases]]
+name = "haxe-double-literal_plain"
+statement = "\"prefix ${ // payload\""
+expected_code = "\"prefix ${ // payload\""
+expected_trailing = ""
+regex_literals = true
+interpolation_syntax = ["${", "'"]
+
+[[cases]]
+name = "haxe-double-literal_comment"
+statement = "\"prefix ${ // payload\" // trailing\n// extra"
+expected_code = "\"prefix ${ // payload\""
+expected_trailing = " // trailing\n// extra"
+regex_literals = true
+interpolation_syntax = ["${", "'"]
+
+[[cases]]
+name = "dart_incomplete_interpolation_0"
+statement = "\"${\"// payload\""
+expected_code = "\"${\"// payload\""
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart_incomplete_interpolation_1"
+statement = "\"${\"// payload\"}"
+expected_code = "\"${\"// payload\"}"
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+
+[[cases]]
+name = "dart_incomplete_interpolation_2"
+statement = "\"${]\"// payload\""
+expected_code = "\"${]\"// payload\""
+expected_trailing = ""
+raw_string_prefixes = ["r"]
+interpolation_syntax = ["${", "\"'"]
+[[cases]]
+name = "comment_inside_expression"
+statement = "make_widget(42) // inner\n + 1"
+expected_code = "make_widget(42) // inner\n + 1"
+expected_trailing = ""
