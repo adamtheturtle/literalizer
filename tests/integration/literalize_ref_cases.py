@@ -262,6 +262,11 @@ def _ref_language_options(
             config.heterogeneous_strategy,
         ),
         ("sequence_format", lang_cls.SequenceFormats, config.sequence_format),
+        (
+            "declaration_style",
+            lang_cls.DeclarationStyles,
+            config.declaration_style,
+        ),
         ("json_type", lang_cls.JsonTypes, config.json_type),
         ("dict_format", lang_cls.DictFormats, config.dict_format),
     ):

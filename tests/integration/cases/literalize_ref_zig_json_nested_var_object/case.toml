@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Zig"]
+languages_reason = "Zig JSON containers preserve rendered reference expressions."
+
+[ref]
+languages = ["Zig"]
+languages_reason = "Zig JSON containers preserve rendered reference expressions."
+json_type = "STD_JSON_VALUE"
+declaration_style = "VAR"
+variable_form = "new"
+pre_indent_level = 2
+
+[ref.value_sources]
+shared = "[1, 2]"

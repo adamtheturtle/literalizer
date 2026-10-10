@@ -3,7 +3,7 @@ pub fn main() void {
     var @"literalizer JSON arena" = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer @"literalizer JSON arena".deinit();
     const allocator = @"literalizer JSON arena".allocator();
-    const my_data = (struct {
+    const shared = (struct {
         fn @"literalizer JSON build"(
             @"literalizer JSON allocator": std.mem.Allocator,
             @"literalizer JSON entries": []const struct {
@@ -22,9 +22,8 @@ pub fn main() void {
             return .{ .object = @"literalizer JSON object" };
         }
     }).@"literalizer JSON build"(allocator, &.{
-        .{ .key = "name", .value = (std.json.parseFromSlice(std.json.Value, allocator, "\"Alice\"", .{}) catch unreachable).value },
-        .{ .key = "age", .value = (std.json.parseFromSlice(std.json.Value, allocator, "30", .{}) catch unreachable).value },
-        .{ .key = "active", .value = (std.json.parseFromSlice(std.json.Value, allocator, "true", .{}) catch unreachable).value },
+        .{ .key = "field", .value = std.json.Value{ .array = std.json.Array.fromOwnedSlice(allocator, allocator.dupe(std.json.Value, &.{(std.json.parseFromSlice(std.json.Value, allocator, "1", .{}) catch unreachable).value, (std.json.parseFromSlice(std.json.Value, allocator, "2", .{}) catch unreachable).value}) catch unreachable) } },
     });
+    const my_data: std.json.Value = shared;
     _ = my_data;
 }

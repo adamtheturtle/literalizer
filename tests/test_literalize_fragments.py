@@ -5,17 +5,23 @@ so they cannot use the compiling whole-file golden suite. The manifest
 owns their sources, API arguments, and exact result expectations.
 """
 
+import dataclasses
 from typing import Literal
 
 import pytest
 from pydantic import BaseModel, Field, TypeAdapter
 
 from literalizer import (
+    ExistingVariable,
+    Language,
     LiteralizeResult,
+    NewVariable,
     ValueInput,
+    VariableForm,
     literalize,
     literalize_call,
 )
+from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import CallInputFormat, ManifestLanguage
 from tests.toml_cases import load_toml_cases
 
@@ -37,6 +43,16 @@ class _FragmentCase(  # noqa: NOD001
     expected: dict[_ResultView, str] = Field(min_length=1)
     ref_values: dict[str, ValueInput] | None = None
     expected_preamble: tuple[str, ...] | None = None
+    json_type: str | None = None
+    variable_form: Literal["new", "existing"] | None = None
+
+    def resolved_variable_form(self) -> VariableForm | None:
+        """Select the caller-owned binding used by this fragment."""
+        if self.variable_form == "new":
+            return NewVariable(name="my_data", modifiers=frozenset())
+        if self.variable_form == "existing":
+            return ExistingVariable(name="my_data")
+        return None
 
 
 class _LiteralCase(_FragmentCase, frozen=True):
@@ -68,6 +84,19 @@ _CASES = TypeAdapter(type=_FragmentCases).validate_python(
 )
 
 
+def _fragment_language(*, case: _FragmentCase) -> Language:
+    """Apply the JSON value mode explicitly selected by a fragment."""
+    language = case.language()
+    if case.json_type is not None:
+        language = dataclasses.replace(
+            language,
+            json_type=enum_member_by_name(
+                enum_cls=case.language.JsonTypes, name=case.json_type
+            ),
+        )
+    return language
+
+
 def _check_result(*, case: _FragmentCase, result: LiteralizeResult) -> None:
     """Compare the declared result views and optional preamble
     contract.
@@ -86,10 +115,10 @@ def test_literal_fragment(case: _LiteralCase) -> None:
     result = literalize(
         source=case.source,
         input_format=case.input_format,
-        language=case.language(),
+        language=_fragment_language(case=case),
         pre_indent_level=case.pre_indent_level,
         include_delimiters=case.include_delimiters,
-        variable_form=None,
+        variable_form=case.resolved_variable_form(),
         ref_key="$ref",
         ref_values=case.ref_values,
     )
@@ -104,10 +133,11 @@ def test_call_fragment(case: _CallCase) -> None:
     result = literalize_call(
         source=case.source,
         input_format=case.input_format,
-        language=case.language(),
+        language=_fragment_language(case=case),
         target_function=case.target_function,
         parameter_names=case.parameter_names,
         per_element=case.per_element,
+        variable_form=case.resolved_variable_form(),
         ref_key="$ref",
         ref_values=case.ref_values,
     )
