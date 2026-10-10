@@ -2,8 +2,6 @@
 descriptors.
 """
 
-from typing import TYPE_CHECKING
-
 import pytest
 from pydantic import BaseModel, TypeAdapter
 
@@ -14,9 +12,6 @@ from literalizer._language import (
 from literalizer._statements import split_trailing_line_comments
 from literalizer.languages import Haxe
 from tests.toml_cases import load_toml_cases
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 class _CommentCase(BaseModel, extra="forbid", frozen=True):  # noqa: NOD001
@@ -70,9 +65,8 @@ def test_shared_call_declaration_descriptor() -> None:
         verbatim_strings=False,
         interpolation_syntax=("${", "'"),
     )
-    formatter: Callable[[str, str, int, frozenset[object]], str] = (
-        descriptor.__get__(Haxe())
-    )
+    formatter = descriptor.__get__(Haxe())
+    assert callable(formatter)
     assert formatter(
         "my_data", "make_widget(42) // note", 42, frozenset()
     ) == ("final my_data = make_widget(42); // note")
@@ -88,7 +82,8 @@ def test_shared_call_assignment_descriptor() -> None:
         verbatim_strings=False,
         interpolation_syntax=("${", "'"),
     )
-    formatter: Callable[[str, str, int], str] = descriptor.__get__(Haxe())
+    formatter = descriptor.__get__(Haxe())
+    assert callable(formatter)
     assert formatter("my_data", "make_widget(42) // note", 42) == (
         "my_data = make_widget(42); // note"
     )
