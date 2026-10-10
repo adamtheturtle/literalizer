@@ -2,17 +2,9 @@
 descriptors.
 """
 
-from typing import ClassVar
-
 import pytest
 from pydantic import BaseModel, TypeAdapter
 
-from literalizer import (
-    ExistingVariable,
-    InputFormat,
-    NewVariable,
-    literalize_call,
-)
 from literalizer._language import (
     line_comment_call_variable_assignment,
     line_comment_call_variable_declaration,
@@ -63,55 +55,35 @@ def test_trailing_line_comments(case: _CommentCase) -> None:
     ) == (case.expected_code, case.expected_trailing)
 
 
-class _CommentAwareHaxe(Haxe):
-    """Exercise shared binding descriptors through the public call API."""
-
-    format_call_variable_declaration: ClassVar[property] = (
-        line_comment_call_variable_declaration(
-            regex_literals=True,
-            raw_string_prefixes=(),
-            verbatim_strings=False,
-            interpolation_syntax=("${", "'"),
-        )
-    )
-    format_call_variable_assignment: ClassVar[property] = (
-        line_comment_call_variable_assignment(
-            regex_literals=True,
-            raw_string_prefixes=(),
-            verbatim_strings=False,
-            interpolation_syntax=("${", "'"),
-        )
-    )
-
-
-@pytest.mark.parametrize(
-    argnames=("variable_form", "expected"),
-    argvalues=[
-        (
-            NewVariable(name="my_data", modifiers=frozenset()),
-            "final my_data = make_widget(42); // note",
-        ),
-        (
-            ExistingVariable(name="my_data"),
-            "my_data = make_widget(42); // note",
-        ),
-    ],
-)
-def test_shared_call_binding_descriptors(
-    variable_form: NewVariable | ExistingVariable, expected: str
-) -> None:
-    """Both shared descriptors place the terminator before final
+def test_shared_call_declaration_descriptor() -> None:
+    """The shared descriptor delegates declaration formatting and retains
     comments.
     """
-    result = literalize_call(
-        source="42",
-        input_format=InputFormat.JSON,
-        language=_CommentAwareHaxe(),
-        target_function="make_widget",
-        parameter_names=["count"],
-        per_element=False,
-        variable_form=variable_form,
-        call_transform=lambda context: context.call + " // note",
-        wrap_in_file=False,
+    descriptor = line_comment_call_variable_declaration(
+        regex_literals=True,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=("${", "'"),
     )
-    assert result.code == expected
+    formatter = descriptor.__get__(Haxe())
+    assert callable(formatter)
+    assert formatter(
+        "my_data", "make_widget(42) // note", 42, frozenset()
+    ) == ("final my_data = make_widget(42); // note")
+
+
+def test_shared_call_assignment_descriptor() -> None:
+    """The shared descriptor delegates assignment formatting and retains
+    comments.
+    """
+    descriptor = line_comment_call_variable_assignment(
+        regex_literals=True,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=("${", "'"),
+    )
+    formatter = descriptor.__get__(Haxe())
+    assert callable(formatter)
+    assert formatter("my_data", "make_widget(42) // note", 42) == (
+        "my_data = make_widget(42); // note"
+    )
