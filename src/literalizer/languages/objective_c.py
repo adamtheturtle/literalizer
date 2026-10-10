@@ -95,6 +95,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import Value
 
 
@@ -228,7 +229,16 @@ def _format_objc_call_declaration(
     A call expression already evaluates to an object pointer, so the
     ``@(...)`` boxing is dropped and the call result is bound directly.
     """
-    return f"id {name} = {value};"
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
+    )
+    return f"id {name} = {code};{trailing}"
 
 
 @beartype
@@ -238,7 +248,16 @@ def _format_objc_call_assignment(name: str, value: str, _data: Value) -> str:
     The call-expression counterpart of the literal assignment formatter;
     no ``@(...)`` boxing since a call already yields an object pointer.
     """
-    return f"{name} = {value};"
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
+    )
+    return f"{name} = {code};{trailing}"
 
 
 @beartype
