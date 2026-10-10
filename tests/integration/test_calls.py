@@ -142,9 +142,8 @@ def test_call_variant_golden_file(
     statement terminators or heterogeneous strategies.
     """
     lang_cls = call_variant_case.variant.lang_cls
-    # Each variant pins a specific ``language_version``, so render only
-    # that one version.  ``lang_cls.VersionFormats`` is iterated by other
-    # tests where the spec is rebuilt per version.
+    # The plan already expands supported versions and resolves explicit
+    # pins and syntax floors. Render each effective spec once.
     version_format = call_variant_case.variant.spec.language_version
     with subtests.test(version=version_format.name):
         run_call_golden_case(

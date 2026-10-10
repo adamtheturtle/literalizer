@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 
 from literalizer import CollectionLayout, CommentConfig
-from literalizer.languages import ALL_LANGUAGES
-from tests.enum_members import find_enum_member
+from literalizer.languages import ALL_LANGUAGES, Cpp, Java
+from tests.enum_members import enum_member_by_name, find_enum_member
 
 from .case_manifests import CaseManifestError
 from .language_specs import make_spec
@@ -156,6 +156,80 @@ def test_every_declared_axis_expands() -> None:
             )
             > 0
         ), axis_key
+
+
+def test_format_options_cover_versions_without_overriding_pins() -> None:
+    """Ordinary options cover versions; explicit pins and syntax floors
+    win.
+    """
+    ordinary = variants_for_axis(axis_key="bytes_format")
+    assert {
+        variant.spec.language_version
+        for variant in ordinary
+        if variant.lang_cls is Cpp
+        and variant.name == "Cpp_bytes_format_base64"
+    } == set(Cpp.VersionFormats)
+    pinned = variants_for_axis(axis_key="language_version")
+    assert {
+        variant.spec.language_version
+        for variant in pinned
+        if variant.name == "Cpp_version_cpp14"
+    } == {enum_member_by_name(enum_cls=Cpp.VersionFormats, name="CPP14")}
+    records = variants_for_axis(axis_key="heterogeneous_strategy_record")
+    assert [
+        variant.spec.language_version
+        for variant in records
+        if variant.lang_cls is Java
+    ] == [enum_member_by_name(enum_cls=Java.VersionFormats, name="JDK_16")]
+
+
+def test_axis_can_cover_only_default_version(
+    tmp_path: Path,
+) -> None:
+    """An explicit plan opt-out still renders its one default version."""
+    axis_path = tmp_path / "axes.toml"
+    _ = axis_path.write_text(data=_VALID_FIXED_AXIS + "per_version = false\n")
+    variants = variants_for_registry_axis(
+        axis_key="example",
+        path=axis_path,
+        resolve_axis=variants_for_axis,
+    )
+    assert [
+        variant.spec.language_version
+        for variant in variants
+        if variant.lang_cls is Cpp
+    ] == [enum_member_by_name(enum_cls=Cpp.VersionFormats, name="CPP20")]
+
+
+def test_optional_metadata_version_pins_only_languages_declaring_it(
+    tmp_path: Path,
+) -> None:
+    """A declared metadata pin wins; languages omitting it keep
+    coverage.
+    """
+    axis_path = _write_registry(
+        tmp_path=tmp_path,
+        contents=_VALID_FIXED_AXIS
+        + 'overrides = [{ kind = "metadata_enum_member", '
+        'option = "language_version", '
+        'field = "heterogeneous_value_variant_name_language_version", '
+        "optional = true }]\n",
+    )
+    variants = variants_for_registry_axis(
+        path=axis_path,
+        axis_key="example",
+        resolve_axis=variants_for_axis,
+    )
+    assert [
+        variant.spec.language_version
+        for variant in variants
+        if variant.lang_cls is Cpp
+    ] == [enum_member_by_name(enum_cls=Cpp.VersionFormats, name="CPP14")]
+    assert {
+        variant.spec.language_version
+        for variant in variants
+        if variant.lang_cls is Java
+    } == set(Java.VersionFormats)
 
 
 def test_declared_axis_names_are_unique_per_language() -> None:
@@ -333,9 +407,9 @@ def test_sole_member_template_drops_a_pointless_format_name() -> None:
     format, so each carries the format name; a language offering one has
     nothing to tell apart.
     """
-    by_language: dict[str, list[str]] = {}
+    by_language: dict[str, set[str]] = {}
     for variant in variants_for_axis(axis_key="string_embedded_nul"):
-        by_language.setdefault(variant.lang_cls.__name__, []).append(
+        by_language.setdefault(variant.lang_cls.__name__, set()).add(
             variant.name
         )
     sole = {
@@ -352,12 +426,12 @@ def test_sole_member_template_drops_a_pointless_format_name() -> None:
     assert sole != {}
     assert several != {}
     assert sole == {
-        language: [f"{language}_string_embedded_nul"] for language in sole
+        language: {f"{language}_string_embedded_nul"} for language in sole
     }
     for language, names in several.items():
         prefix = f"{language}_string_embedded_nul_"
 
-        assert [name for name in names if name.startswith(prefix)] == names
+        assert {name for name in names if name.startswith(prefix)} == names
 
 
 def test_unknown_axis_is_actionable() -> None:
