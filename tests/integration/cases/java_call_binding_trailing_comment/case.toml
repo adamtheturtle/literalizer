@@ -11,8 +11,8 @@ per_element = false
 call_transform = "{call}\n// note"
 wrap_in_file = true
 variable_form = "new"
-languages = ["C", "Cpp", "CSharp", "D", "Dart", "Haxe", "Java", "ObjectiveC", "SystemVerilog", "Zig"]
-languages_reason = "These call bindings must place the semicolon before trailing // comments in a transformed call."
+languages = ["Java"]
+languages_reason = "Java bindings must place the semicolon before trailing // comments in a transformed call."
 
 [[call.variants]]
 axis = "type_hints"

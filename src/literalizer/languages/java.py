@@ -125,7 +125,6 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
-from literalizer._statements import split_trailing_line_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ConflictingVariableModifiersError,
@@ -662,16 +661,21 @@ class _JavaTerminatedValue:
 @beartype
 def _java_split_trailing_line_comments(value: str) -> _JavaTerminatedValue:
     """Keep a statement terminator ahead of trailing ``//`` comments."""
-    code, trailing = split_trailing_line_comments(
-        statement=value,
-        prefix="//",
-        regex_literals=False,
-        backtick_strings=False,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=None,
+    lines = value.split(sep="\n")
+    split_index = next(
+        (
+            index + 1
+            for index, line in reversed(list(enumerate(iterable=lines)))
+            if not line.lstrip().startswith("//")
+        ),
+        0,
     )
-    return _JavaTerminatedValue(code=code, trailing=trailing)
+    if split_index == len(lines):
+        return _JavaTerminatedValue(code=value, trailing="")
+    return _JavaTerminatedValue(
+        code="\n".join(lines[:split_index]),
+        trailing="\n" + "\n".join(lines[split_index:]),
+    )
 
 
 @beartype

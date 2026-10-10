@@ -117,7 +117,6 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
-from literalizer._statements import split_trailing_line_comments
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -530,16 +529,7 @@ def _format_d_call_declaration(
     return-type hint is required: the call result is bound directly with
     a plain inferred ``auto`` declaration and no value-wrapping.
     """
-    code, trailing = split_trailing_line_comments(
-        statement=value,
-        prefix="//",
-        backtick_strings=True,
-        regex_literals=False,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=None,
-    )
-    return f"auto {name} = {code};{trailing}"
+    return f"auto {name} = {value};"
 
 
 @beartype
@@ -551,16 +541,7 @@ def _format_d_call_assignment(name: str, value: str, _data: Value) -> str:
     declared, so the call result is assigned directly with no
     ``JSONValue`` or struct-constructor wrapping.
     """
-    code, trailing = split_trailing_line_comments(
-        statement=value,
-        prefix="//",
-        backtick_strings=True,
-        regex_literals=False,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=None,
-    )
-    return f"{name} = {code};{trailing}"
+    return f"{name} = {value};"
 
 
 # Work around https://github.com/astral-sh/ty/issues/4573.
