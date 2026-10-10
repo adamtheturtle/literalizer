@@ -94,12 +94,12 @@ from literalizer._language import (
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_constructor_target,
+    line_comment_call_variable_assignment,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_data_preamble,
@@ -109,6 +109,7 @@ from literalizer._language import (
     value_contains,
     wrap_in_file_noop,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -532,7 +533,14 @@ class Dart(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_assignment: ClassVar[property] = (
+        line_comment_call_variable_assignment(
+            regex_literals=False,
+            raw_string_prefixes=("r",),
+            verbatim_strings=False,
+            interpolation_syntax=("${", "\"'"),
+        )
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -1478,7 +1486,31 @@ class Dart(metaclass=LanguageCls):
         """Infer the target's return type independently of its
         arguments.
         """
-        return self.declaration_style.value.formatter
+
+        def _format(
+            name: str,
+            value: str,
+            data: Value,
+            modifiers: frozenset[enum.Enum],
+        ) -> str:
+            """Bind the call result before its trailing comments."""
+            code, trailing = split_trailing_line_comments(
+                statement=value,
+                prefix="//",
+                regex_literals=False,
+                backtick_strings=False,
+                raw_string_prefixes=("r",),
+                verbatim_strings=False,
+                interpolation_syntax=("${", "\"'"),
+            )
+            return (
+                self.declaration_style.value.formatter(
+                    name, code, data, modifiers
+                )
+                + trailing
+            )
+
+        return _format
 
     @cached_property
     def format_variable_declaration(
