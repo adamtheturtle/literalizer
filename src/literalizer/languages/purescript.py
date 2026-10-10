@@ -293,12 +293,20 @@ def _purescript_has_large_int(
 
 
 @beartype
+def _purescript_int_literal(value: int, base: Callable[[int], str]) -> str:
+    """Avoid a positive literal outside the signed ``Int`` range."""
+    if value == -(2**31):
+        return f"({base(value + 1)} - {base(1)})"
+    return base(value)
+
+
+@beartype
 def _apply_purescript_integer_formatter(
     value: int, prefix: str, base: Callable[[int], str]
 ) -> str:
     """Format an integer with a constructor prefix."""
     if _purescript_int_fits_in_int32(value=value):
-        formatted = base(value)
+        formatted = _purescript_int_literal(value=value, base=base)
         if value < 0:
             return f"{prefix}Int ({formatted})"
         return f"{prefix}Int {formatted}"
@@ -774,7 +782,7 @@ def _validate_purescript_native_record(
 def _purescript_native_integer(value: int, base: Callable[[int], str]) -> str:
     """Emit an ``Int`` or exactly representable ``Number`` literal."""
     if _purescript_int_fits_in_int32(value=value):
-        return base(value)
+        return _purescript_int_literal(value=value, base=base)
     if not -(2**53) <= value <= 2**53:
         msg = f"PureScript cannot represent integer {value} exactly"
         raise UnrepresentableIntegerError(msg)
