@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "variant"
+languages = ["Zig"]
+languages_reason = "Zig reserves only the carrier and parser names occupied by the selected output mode."
+
+[[variants]]
+axis = "heterogeneous_strategy_record"
+
+[variants.context]
+variable_name = "ZVal"

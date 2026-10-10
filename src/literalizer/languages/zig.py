@@ -308,6 +308,13 @@ def _make_zig_call_preamble_stub(
         chain = parts[:-1]
         holder = chain[-1]
         holder_type = f"{holder.title()}Type_"
+        type_preamble: tuple[str, ...] = ()
+        if param_type == "ZVal" and method == "ZVal":
+            # A generated member named ZVal masks the global carrier
+            # in its own parameter declaration.  Bare call fragments
+            # do not create this stub and retain their caller's scope.
+            param_type = '@"literalizer call value"'
+            type_preamble = (f"const {param_type} = ZVal;",)
         method_param_list = ", ".join(
             [
                 f"self: {holder_type}",
@@ -340,7 +347,7 @@ def _make_zig_call_preamble_stub(
         else:
             root_type = prev_type
         lines.append(f"const {root}: {root_type} = .{{}};")
-        return tuple(lines)
+        return (*type_preamble, *lines)
 
     return _zig_call_preamble_stub
 
@@ -603,10 +610,22 @@ _ZVAL_STATIC_PREAMBLE: tuple[str, ...] = (
     "const ZKV = struct { key: []const u8, val: ZVal };",
 )
 
+_ZIG_RECORD_VALUE_NAME = '@"literalizer record value"'
+_ZIG_RECORD_ENTRY_NAME = '@"literalizer record entry"'
+_RECORD_ZVAL_STATIC_PREAMBLE = tuple(
+    line.replace("ZVal", _ZIG_RECORD_VALUE_NAME).replace(
+        "ZKV", _ZIG_RECORD_ENTRY_NAME
+    )
+    for line in _ZVAL_STATIC_PREAMBLE
+)
+
 _STD_JSON_BODY_PREAMBLE: tuple[str, ...] = (
-    "var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);",
-    "defer arena.deinit();",
-    "const allocator = arena.allocator();",
+    (
+        'var @"literalizer JSON arena" = '
+        "std.heap.ArenaAllocator.init(std.heap.page_allocator);"
+    ),
+    'defer @"literalizer JSON arena".deinit();',
+    'const allocator = @"literalizer JSON arena".allocator();',
 )
 
 
@@ -813,8 +832,9 @@ class Zig(metaclass=LanguageCls):
     )
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
-    reserved_variable_identifiers: frozenset[str] = (
-        _ZIG_RESERVED_VARIABLE_IDENTIFIERS
+    reserved_variable_identifiers: frozenset[str] = dataclasses.field(
+        default=_ZIG_RESERVED_VARIABLE_IDENTIFIERS,
+        init=False,
     )
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str]] = (
         _ZIG_SIZED_PRIMITIVE
@@ -969,9 +989,9 @@ class Zig(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity="std.math.inf(f64)",
-        negative_infinity="-std.math.inf(f64)",
-        nan="std.math.nan(f64)",
+        positive_infinity='@"literalizer float std".math.inf(f64)',
+        negative_infinity='-@"literalizer float std".math.inf(f64)',
+        nan='@"literalizer float std".math.nan(f64)',
     ):
         """Float format options."""
 
@@ -1251,7 +1271,7 @@ class Zig(metaclass=LanguageCls):
     statement_terminator: ClassVar[str] = ";"
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = (
-        'const std = @import("std");',
+        'const @"literalizer float std" = @import("std");',
     )
     call_style: CallStyles = CallStyles.POSITIONAL
 
@@ -1366,6 +1386,19 @@ class Zig(metaclass=LanguageCls):
     def __post_init__(self) -> None:
         """Reject ``json_type`` combinations the generator cannot emit."""
         self._validate_json_type_spec()
+        # Reserve the declarations this mode always emits.  The arena
+        # uses a quoted internal name so a bare JSON fragment can still
+        # assign to the caller's ordinary ``arena`` binding.
+        helper_names = frozenset[str]()
+        if self._json_type_active:
+            helper_names = frozenset({"std", "allocator"})
+        elif not self._record_strategy_active:
+            helper_names = frozenset({"ZVal", "ZKV"})
+        object.__setattr__(
+            self,
+            "reserved_variable_identifiers",
+            self.reserved_variable_identifiers | helper_names,
+        )
 
     def _validate_json_type_spec(self) -> None:
         """Reject ``json_type`` combinations the generator cannot emit.
@@ -1555,7 +1588,7 @@ class Zig(metaclass=LanguageCls):
             and not isinstance(request.value, OrderedMap)
             and record_shape_for_dict(value=request.value) is not None
         ):
-            return "ZVal"
+            return _ZIG_RECORD_VALUE_NAME
         return self._zig_resolved_value_type(request.value)
 
     @cached_property
@@ -1658,7 +1691,7 @@ class Zig(metaclass=LanguageCls):
 
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Emit ``ZVal`` when a nested map needs that carrier."""
-                value_preamble = _ZVAL_STATIC_PREAMBLE
+                value_preamble = _RECORD_ZVAL_STATIC_PREAMBLE
                 if len(compute_wrap_ids(data)) == 0:
                     value_preamble = ()
                 return (*value_preamble, *record_preamble(data))

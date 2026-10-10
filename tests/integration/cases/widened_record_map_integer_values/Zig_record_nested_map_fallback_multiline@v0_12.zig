@@ -1,16 +1,16 @@
-const ZVal = union(enum) {
+const @"literalizer record value" = union(enum) {
     nil,
     bool: bool,
     int: i64,
     uint: u64,
     float: f64,
     str: []const u8,
-    arr: []const ZVal,
-    map: []const ZKV,
-    set: []const ZVal,
+    arr: []const @"literalizer record value",
+    map: []const @"literalizer record entry",
+    set: []const @"literalizer record value",
 };
-const ZKV = struct { key: []const u8, val: ZVal };
-const Record0 = struct { input: ZVal };
+const @"literalizer record entry" = struct { key: []const u8, val: @"literalizer record value" };
+const Record0 = struct { input: @"literalizer record value" };
 pub fn main() void {
     const my_data = &.{
         Record0{

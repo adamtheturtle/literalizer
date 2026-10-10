@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Zig"]
+languages_reason = "Zig reserves only the carrier and parser names occupied by the selected output mode."
+
+[ref.value_sources]
+std = '{"a":1}'
+arena = '{"a":1}'
+allocator = '{"a":1}'

@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Zig"]
+languages_reason = "Zig JSON call arguments preserve caller references whose names do not shadow the parser."
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+variant_only = true
+
+[[call.variants]]
+axis = "json_type"
+
+[call.ref_declarations]
+arena = '{"a":1}'
+ZVal = '{"a":1}'
+ZKV = '{"a":1}'
