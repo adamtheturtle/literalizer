@@ -23,12 +23,12 @@ from .variant_types import VariantCase
 def _assignment_values(
     *, tree: ast.Module, evaluation_path: Path, variable_name: str
 ) -> list[object]:
-    """Execute each assignment with the imports and bindings preceding
-    it.
+    """Execute each assignment or enclosing block with its preceding
+    imports and bindings.
     """
     values: list[object] = []
     for index, node in enumerate(iterable=tree.body):
-        if isinstance(node, ast.Assign):
+        if isinstance(node, (ast.Assign, ast.If)):
             prefix = ast.Module(body=tree.body[: index + 1], type_ignores=[])
             _ = evaluation_path.write_text(
                 data=ast.unparse(ast_obj=prefix), encoding="utf-8"

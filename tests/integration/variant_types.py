@@ -31,6 +31,7 @@ class Variant:
     collection_layout: literalizer.CollectionLayout
     fixture_prefix: str
     record_null_substitutions: Mapping[str, ValueInput] | None
+    wrap_in_file: bool
 
 
 @beartype
@@ -54,6 +55,7 @@ def compact_variant(
         collection_layout=literalizer.CollectionLayout.COMPACT,
         fixture_prefix="",
         record_null_substitutions=None,
+        wrap_in_file=True,
     )
 
 

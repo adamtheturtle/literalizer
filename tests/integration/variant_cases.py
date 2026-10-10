@@ -296,6 +296,13 @@ def case_for_manifest_variant(
 ) -> VariantCase:
     """Combine typed language expansion with case-local render context."""
     context = manifest_variant.context
+    variant = dataclasses.replace(
+        variant,
+        fixture_prefix=(
+            manifest_variant.fixture_prefix + variant.fixture_prefix
+        ),
+        wrap_in_file=manifest_variant.wrap_in_file,
+    )
     if context.collection_layout is not None:
         variant = dataclasses.replace(
             variant,
