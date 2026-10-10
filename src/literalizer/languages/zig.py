@@ -118,6 +118,7 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
+from literalizer._statements import split_statements
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -584,6 +585,25 @@ def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
     result is not a ``ZVal`` union literal).
     """
     return f"{name} = {value};"
+
+
+@beartype
+def _zig_mutable_binding_names(*, content: str) -> list[str]:
+    """Select mutable outer declarations, excluding nested function locals."""
+    statements = split_statements(
+        content=content, quotes='"', line_comment_prefixes=("//",)
+    )
+    return [
+        match.group(1)
+        for statement in statements
+        if (
+            match := re.match(
+                pattern=r"^[ \t]*var ([A-Za-z_][A-Za-z0-9_]*)\b",
+                string=statement,
+            )
+        )
+        is not None
+    ]
 
 
 _STD_JSON_STATIC_PREAMBLE: tuple[str, ...] = ('const std = @import("std");',)
@@ -1165,14 +1185,17 @@ class Zig(metaclass=LanguageCls):
         variable_name = context.variable_name
         body_preamble = context.body_preamble
         json_mode = self._json_type_active
-        # Detect ``var``/``const`` on the caller's declaration, before
-        # injecting the JSON-mode arena ``var`` body preamble (which
-        # would otherwise spuriously trip the regex).
-        is_var = bool(
-            re.search(
-                pattern=r"^\s*var ",
-                string=content,
-                flags=re.MULTILINE,
+        # Inspect caller declarations before adding the JSON arena preamble.
+        mutable_names = _zig_mutable_binding_names(content=content)
+        is_var = variable_name in mutable_names
+        content = "\n".join(
+            (
+                content,
+                *(
+                    f"_ = &{name};"
+                    for name in mutable_names
+                    if name != variable_name
+                ),
             ),
         )
         effective_body_preamble = body_preamble
