@@ -1,13 +1,13 @@
 """Zig bindings cannot shadow the helpers used by their output mode."""
 
 import dataclasses
-import enum
 
 import pytest
 
 from literalizer import (
     ExistingVariable,
     InputFormat,
+    Language,
     NewVariable,
     literalize,
     literalize_call,
@@ -17,19 +17,19 @@ from literalizer.languages import Zig
 
 
 @pytest.mark.parametrize(
-    argnames=("json_type", "name"),
+    argnames=("language", "name"),
     argvalues=[
-        (None, "ZVal"),
-        (None, "ZKV"),
-        (Zig.JsonTypes["STD_JSON_VALUE"], "std"),
-        (Zig.JsonTypes["STD_JSON_VALUE"], "allocator"),
+        (Zig(), "ZVal"),
+        (Zig(), "ZKV"),
+        (Zig(json_type=Zig.JsonTypes["STD_JSON_VALUE"]), "std"),
+        (Zig(json_type=Zig.JsonTypes["STD_JSON_VALUE"]), "allocator"),
     ],
 )
 @pytest.mark.parametrize(argnames="wrap_in_file", argvalues=[False, True])
 @pytest.mark.parametrize(argnames="existing", argvalues=[False, True])
 def test_root_helper_name_is_rejected(
     *,
-    json_type: enum.Enum | None,
+    language: Language,
     name: str,
     wrap_in_file: bool,
     existing: bool,
@@ -44,33 +44,32 @@ def test_root_helper_name_is_rejected(
         _ = literalize(
             source='{"a":1}',
             input_format=InputFormat.JSON,
-            language=Zig(json_type=json_type),
+            language=language,
             variable_form=variable_form,
             wrap_in_file=wrap_in_file,
         )
 
 
 @pytest.mark.parametrize(
-    argnames=("json_type", "name"),
+    argnames=("language", "name"),
     argvalues=[
-        (None, "ZVal"),
-        (None, "ZKV"),
-        (Zig.JsonTypes["STD_JSON_VALUE"], "std"),
-        (Zig.JsonTypes["STD_JSON_VALUE"], "allocator"),
+        (Zig(), "ZVal"),
+        (Zig(), "ZKV"),
+        (Zig(json_type=Zig.JsonTypes["STD_JSON_VALUE"]), "std"),
+        (Zig(json_type=Zig.JsonTypes["STD_JSON_VALUE"]), "allocator"),
     ],
 )
 @pytest.mark.parametrize(argnames="wrap_in_file", argvalues=[False, True])
 @pytest.mark.parametrize(argnames="call_argument", argvalues=[False, True])
 def test_reference_helper_name_is_rejected(
     *,
-    json_type: enum.Enum | None,
+    language: Language,
     name: str,
     wrap_in_file: bool,
     call_argument: bool,
 ) -> None:
     """Bound references use the same name checks as root bindings."""
     source = '{"$ref":"' + name + '"}'
-    language = Zig(json_type=json_type)
     bound_refs = {name: {"a": 1}}
     if call_argument:
         with pytest.raises(expected_exception=ReservedVariableNameError):
