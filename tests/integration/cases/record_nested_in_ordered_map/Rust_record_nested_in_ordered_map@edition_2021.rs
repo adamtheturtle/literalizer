@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+#[derive(Clone)]
 struct Record0 {
     name: Option<()>,
     id: i32,

@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     title: &'static str,
     tags: Vec<&'static str>,

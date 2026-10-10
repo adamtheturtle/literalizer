@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Rust"]
+languages_reason = "Rust ownership distinguishes reusable owned bindings from Copy values."
+sequence_format = "ARRAY"
+heterogeneous_strategy = "TAGGED_ENUM"
+
+[ref.value_sources]
+shared = '[1,"x"]'

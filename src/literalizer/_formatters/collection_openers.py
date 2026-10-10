@@ -233,48 +233,6 @@ def _narrowed_type_name(
 
 
 @beartype
-def make_narrowed_empty_dict_form(
-    *,
-    element_to_type: Callable[[type | ListType | DictType], str | None],
-    template: str,
-    fallback_type: str,
-) -> Callable[[Sequence[dict[Scalar, Value]]], str]:
-    """Return a ``narrowed_empty_form`` callback for a map value type.
-
-    The dict counterpart of :func:`make_narrowed_empty_form`: it reads
-    the inferred value type of the first non-empty sibling map, maps it
-    through *element_to_type*, and substitutes the resolved type name
-    into *template* (which must contain ``{type}``).  *fallback_type* is
-    used when the value type cannot be resolved (heterogeneous sibling
-    values, or a value type that *element_to_type* does not handle).
-
-    Example::
-
-        narrowed_empty_form = make_narrowed_empty_dict_form(
-            element_to_type=v_element_to_type,
-            template="map[string]{type}{{}}",
-            fallback_type="IVal",
-        )
-    """
-
-    def _narrowed_empty_form(
-        siblings: Sequence[dict[Scalar, Value]],
-    ) -> str:
-        """Compute the typed empty map literal for the parent's
-        siblings.
-        """
-        return template.format(
-            type=_narrowed_type_name(
-                items=list(siblings[0].values()),
-                element_to_type=element_to_type,
-                fallback_type=fallback_type,
-            )
-        )
-
-    return _narrowed_empty_form
-
-
-@beartype
 def _resolve_element_to_type(
     *,
     element_type: type | ListType | DictType,

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+#[derive(Clone)]
 enum JsonValue {
     Str(&'static str),
     Bool(bool),

@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["Cpp"]
-languages_reason = "C++ owned references must preserve every generated use."
+languages = ["Cpp", "Rust"]
+languages_reason = "C++ and Rust owned references must preserve every generated use."
 variable_form = "new"
 
 [ref.value_sources]
