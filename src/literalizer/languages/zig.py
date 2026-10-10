@@ -118,6 +118,7 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -583,7 +584,16 @@ def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
     ``ZVal`` union tagging a literal-binding assignment applies (a call
     result is not a ``ZVal`` union literal).
     """
-    return f"{name} = {value};"
+    code, trailing = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
+    )
+    return f"{name} = {code};{trailing}"
 
 
 _STD_JSON_STATIC_PREAMBLE: tuple[str, ...] = ('const std = @import("std");',)
@@ -2027,7 +2037,16 @@ class Zig(metaclass=LanguageCls):
             _modifiers: frozenset[enum.Enum],
         ) -> str:
             """Format an inferred Zig declaration binding a call."""
-            return f"{keyword} {name} = {value};"
+            code, trailing = split_trailing_line_comments(
+                statement=value,
+                prefix="//",
+                regex_literals=False,
+                backtick_strings=False,
+                raw_string_prefixes=(),
+                verbatim_strings=False,
+                interpolation_syntax=None,
+            )
+            return f"{keyword} {name} = {code};{trailing}"
 
         return _format_call_decl
 

@@ -1,0 +1,43 @@
+literals = []
+
+[[calls]]
+name = "zig_existing_comment_0"
+language = "Zig"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call} // note"
+
+[calls.expected]
+code = "my_data = make_widget(.{ .int = 42 }); // note"
+
+[[calls]]
+name = "zig_existing_comment_1"
+language = "Zig"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call}\n// note"
+
+[calls.expected]
+code = "my_data = make_widget(.{ .int = 42 });\n// note"
+
+[[calls]]
+name = "zig_existing_comment_2"
+language = "Zig"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "{call} // note\n// extra"
+
+[calls.expected]
+code = "my_data = make_widget(.{ .int = 42 }); // note\n// extra"
