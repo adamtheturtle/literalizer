@@ -43,6 +43,7 @@ from pathlib import Path
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import R
 from scripts import roundtrip_common
+from scripts.bounded_command import bounded_command
 
 _VAR_NAME = "my_data"
 _LABEL = "R"
@@ -87,7 +88,11 @@ def main() -> None:
         script_path = Path(tmpdir_name) / "main.R"
         _ = script_path.write_text(data=program, encoding="utf-8")
         run_result = subprocess.run(
-            args=[rscript, "--no-init-file", str(object=script_path)],
+            args=bounded_command(
+                args=[rscript, "--no-init-file", str(object=script_path)],
+                fixture=str(object=script_path),
+                timeout_seconds=60,
+            ),
             capture_output=True,
             text=True,
             check=False,

@@ -18,6 +18,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from scripts.bounded_command import bounded_command
+
 
 def main() -> None:
     """Check syntax of the given V golden file."""
@@ -33,7 +35,11 @@ def main() -> None:
             encoding="utf-8",
         )
         result = subprocess.run(
-            args=[v_path, "fmt", target],
+            args=bounded_command(
+                args=[v_path, "fmt", target],
+                fixture=filename,
+                timeout_seconds=60,
+            ),
             capture_output=True,
             text=True,
             check=False,
@@ -43,7 +49,11 @@ def main() -> None:
             _ = sys.stderr.write(msg)
             sys.exit(1)
         result = subprocess.run(
-            args=[v_path, "-check", target],
+            args=bounded_command(
+                args=[v_path, "-check", target],
+                fixture=filename,
+                timeout_seconds=60,
+            ),
             capture_output=True,
             text=True,
             check=False,

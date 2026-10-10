@@ -31,4 +31,4 @@ if grep -q "containers.Map({''" "$f"; then
     exit 0
 fi
 
-octave --norc --no-gui "$f"
+scripts/run-bounded.sh "$f" 60s KILL octave --norc --no-gui "$f"
