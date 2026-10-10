@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Zig"]
+languages_reason = "Zig JSON root bindings must retain the referenced value."
+json_type = "STD_JSON_VALUE"
+
+[ref.value_sources]
+shared = '[1,2]'
