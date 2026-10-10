@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Mojo"]
+languages_reason = "Whole lists remain one typed argument in a complete Mojo call wrapper."
+target_function = "f"
+parameter_names = ["a"]
+per_element = false
+wrap_in_file = true
+variant_only = true
+
+[[call.variants]]
+axis = "heterogeneous_strategy"

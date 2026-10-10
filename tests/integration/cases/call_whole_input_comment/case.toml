@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Python"]
-languages_reason = "Sampled: a whole-input call receives its single supplied source comment."
+languages = ["Mojo", "Python"]
+languages_reason = "A whole-input call receives its supplied comment and retains its argument shape."
 target_function = "f"
 parameter_names = ["a"]
 per_element = false

@@ -7905,13 +7905,17 @@ def _wrap_call_result_in_file(
         preamble=preamble,
         data_dependent_entries=data_dependent_preamble,
     )
+    stub_arg_values = arg_values
+    if not per_element:
+        # A whole-input list is one argument, not a parameter row.
+        stub_arg_values = [[data_for_preamble]]
     wrapped = _wrap_call_in_file(
         language=language,
         result=result,
         variable_form=variable_form,
         target_function_parts=target_function_parts,
         parameter_names=parameter_names,
-        arg_values=arg_values,
+        arg_values=stub_arg_values,
         call_transform=call_transform,
         preamble=scoped.file_scope,
         computed_body=scoped.body + computed_body,

@@ -2951,7 +2951,9 @@ class Language(Protocol):
         The fourth argument is the parsed call argument data: one
         entry per rendered call, where each entry is the arguments
         row for that call (a single value for one-parameter calls, a
-        list of values for multi-parameter calls).  Languages whose
+        list of values for multi-parameter calls). A list-valued single
+        argument needs a one-element row containing that list, so it
+        is not interpreted as multiple arguments. Languages whose
         stubs need to be typed (e.g. Mojo) infer parameter types from
         this; other languages ignore it.
 
