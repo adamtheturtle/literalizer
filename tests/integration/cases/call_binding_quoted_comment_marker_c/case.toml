@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["text"]
+per_element = false
+call_transform = "{call} // note\n// extra"
+wrap_in_file = true
+variable_form = "new"
+languages = ["C"]
+languages_reason = "C-style call bindings preserve comment markers inside quoted arguments while terminating before actual comments."
+
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "multiline_string"
