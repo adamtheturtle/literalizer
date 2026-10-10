@@ -1,10 +1,10 @@
 """Roc JSON round-trip check (issue #2676).
 
 Literalize the shared ``roundtrip_input.json`` document to a Roc
-``my_data : Val`` binding, splice it into a basic-cli ``app`` that walks
-the tag-union with a hand-rolled ``val_to_json`` encoder and prints the
-result via ``Stdout.line!``, run it under ``roc``, and hand the emitted
-JSON to :func:`roundtrip_common.verify`.
+``my_data : Val`` binding, splice it into a basic command-line ``app``
+that walks the tag-union with a hand-rolled ``val_to_json`` encoder and
+prints the result via ``Stdout.line!``, run it under ``roc``, and hand
+the emitted JSON to :func:`roundtrip_common.verify`.
 
 This lives here, driven by the ``Roc roundtrip`` step of the
 ``lint-roc`` job in ``.github/workflows/lint.yml``, because that job is
@@ -12,7 +12,7 @@ where the Roc toolchain is installed (the pinned ``roc`` nightly).  It
 shares the same input and comparison logic as the other per-language
 round-trip helpers.
 
-Roc has no standard-library JSON serializer that derives an ``Encoding``
+Roc has no standard-library JSON encoder that derives an ``Encoding``
 implementation for an arbitrary ad-hoc tag union, so per the issue
 brief's preference order this script falls back to hand-rolling a tiny
 encoder that pattern-matches on the literalized ``Val`` constructors.
@@ -20,20 +20,22 @@ encoder that pattern-matches on the literalized ``Val`` constructors.
 One top-level key is excluded from the comparison:
 
 * ``float_large_exponent`` -- ``format_float_repr`` emits the literal
-  with ``e+308``, and Roc's float lexer rejects the explicit ``+`` sign
+  with ``e+308``, and the Roc float lexer rejects the explicit ``+`` sign
   in the exponent ("Floating point literals can only contain the
   digits 0-9, or use scientific notation 10e4, or have a float
-  suffix").  The key is trimmed from the input before literalization
+  suffix").  The key is trimmed from the input before rendering
   (so the generated Roc file does not contain it) and from both sides
   of the parsed comparison.
 """
 
+import shlex
 import shutil
+import sys
 
 from literalizer.languages import Roc
 from scripts import roundtrip_common
 
-# basic-cli is the canonical Roc platform; pinned to the 0.20.0 release
+# The basic command-line platform is pinned to the 0.20.0 release
 # whose tarball hash is verified by ``roc`` itself when it fetches the
 # platform.  ``roc run`` will download and cache the platform on first
 # invocation in CI.  Bump in lockstep with the ``ROC_NIGHTLY_BUILD``
@@ -45,6 +47,7 @@ _BASIC_CLI_URL = (
 
 _VAR_NAME = "my_data"
 _LABEL = "Roc"
+_SOURCE_FILENAME = "main.roc"
 _EXCLUDED_KEYS = ("float_large_exponent",)
 
 # Hand-rolled JSON encoder over the literalized ``Val`` tag union.
@@ -100,7 +103,7 @@ escape_byte = |b|
 
 
 def _build_program(json_text: str) -> str:
-    """Return a runnable Roc app literalized from *json_text*."""
+    """Return an executable Roc app literalized from *json_text*."""
     trimmed = roundtrip_common.trim_keys(
         json_text=json_text,
         excluded_keys=_EXCLUDED_KEYS,
@@ -126,22 +129,40 @@ def _build_program(json_text: str) -> str:
     )
 
 
+def _log_progress(*, message: str) -> None:
+    """Flush a diagnostic before any potentially stalled work."""
+    _ = sys.stderr.write(f"{message}\n")
+    _ = sys.stderr.flush()
+
+
 def main() -> None:
     """Round-trip the shared document through the Roc backend."""
     json_text = roundtrip_common.input_for_capabilities(
         capabilities=Roc.variant_metadata.round_trip_capabilities,
     )
+    _log_progress(
+        message=f"{_LABEL}: generating {_SOURCE_FILENAME}",
+    )
     program = _build_program(json_text=json_text)
+    _log_progress(
+        message=f"{_LABEL}: generated {_SOURCE_FILENAME} "
+        f"({len(program.encode(encoding='utf-8'))} bytes)",
+    )
     roc = shutil.which(cmd="roc")
     if roc is None or roc == "":
         roc = "roc"
+    args = [roc, "run", "--linker=legacy", _SOURCE_FILENAME]
+    _log_progress(
+        message=f"{_LABEL}: launching {shlex.join(split_command=args)} "
+        f"(source: {_SOURCE_FILENAME})",
+    )
     roundtrip_common.execute(
         label=_LABEL,
-        source_filename="main.roc",
+        source_filename=_SOURCE_FILENAME,
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[roc, "run", "--linker=legacy", "main.roc"],
+                args=args,
                 failure_label="roc run error",
             ),
         ],
