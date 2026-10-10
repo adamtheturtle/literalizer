@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Zig"]
+languages_reason = "Mutable Zig JSON root references bind the referenced value."
+
+[ref]
+languages = ["Zig"]
+languages_reason = "Mutable Zig JSON root references bind the referenced value."
+json_type = "STD_JSON_VALUE"
+declaration_style = "VAR"
+variable_form = "new"
+
+[ref.value_sources]
+shared = "[1, 2]"

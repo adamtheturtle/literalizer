@@ -1,10 +1,14 @@
 const std = @import("std");
+fn consume(value: anytype) void { _ = value; }
 pub fn main() void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    // About a.
-    const my_data = (struct {
+    const shared = std.json.Value{ .array = std.json.Array.fromOwnedSlice(allocator, allocator.dupe(std.json.Value, &.{
+        (std.json.parseFromSlice(std.json.Value, allocator, "1", .{}) catch unreachable).value,
+        (std.json.parseFromSlice(std.json.Value, allocator, "2", .{}) catch unreachable).value,
+    }) catch unreachable) };
+    consume((struct {
         fn @"literalizer JSON build"(
             @"literalizer JSON allocator": std.mem.Allocator,
             @"literalizer JSON entries": []const struct {
@@ -22,9 +26,6 @@ pub fn main() void {
             }
             return .{ .object = @"literalizer JSON object" };
         }
-    }).@"literalizer JSON build"(allocator, &.{
-        .{ .key = "a", .value = (std.json.parseFromSlice(std.json.Value, allocator, "1", .{}) catch unreachable).value },
-        .{ .key = "b", .value = (std.json.parseFromSlice(std.json.Value, allocator, "2", .{}) catch unreachable).value },
-    });
-    _ = my_data;
+    }).@"literalizer JSON build"(allocator, &.{.{ .key = "field", .value = shared }}));
+    consume(shared);
 }

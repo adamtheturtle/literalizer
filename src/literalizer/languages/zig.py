@@ -118,6 +118,7 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
+from literalizer._statements import split_statements
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -586,6 +587,25 @@ def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {value};"
 
 
+@beartype
+def _zig_mutable_binding_names(*, content: str) -> list[str]:
+    """Select mutable outer declarations, excluding nested function locals."""
+    statements = split_statements(
+        content=content, quotes='"', line_comment_prefixes=("//",)
+    )
+    return [
+        match.group(1)
+        for statement in statements
+        if (
+            match := re.match(
+                pattern=r"^[ \t]*var ([A-Za-z_][A-Za-z0-9_]*)\b",
+                string=statement,
+            )
+        )
+        is not None
+    ]
+
+
 _STD_JSON_STATIC_PREAMBLE: tuple[str, ...] = ('const std = @import("std");',)
 
 _ZVAL_STATIC_PREAMBLE: tuple[str, ...] = (
@@ -610,23 +630,63 @@ _STD_JSON_BODY_PREAMBLE: tuple[str, ...] = (
 )
 
 
-# Sequence/dict format definitions used while ``json_type`` is active.
-# The framework still walks through the data to compute a formatted
-# ``value``, but that string is discarded by
-# :func:`_format_zig_json_declaration` and friends in favor of a fresh
-# ``json.dumps`` of the raw data.  These definitions only need to be
-# permissive enough that the formatting pass does not error on
-# heterogeneous data or nulls inside containers.
+@beartype
+def _format_zig_json_entry(original: Value, formatted: str) -> str:
+    """Preserve rendered containers and references, parsing other values.
+
+    A set cannot contain a reference marker; parsing it retains the JSON
+    conversion's ordering of its scalar members.
+    """
+    if isinstance(original, (dict, list)):
+        return formatted
+    return _zig_parse_expression(data=original)
+
+
+_STD_JSON_ARRAY_OPEN = (
+    "std.json.Value{ .array = std.json.Array.fromOwnedSlice(allocator, "
+    "allocator.dupe(std.json.Value, &.{"
+)
+_STD_JSON_ARRAY_CLOSE = "}) catch unreachable) }"
+_STD_JSON_OBJECT_OPEN = """(struct {
+    fn @"literalizer JSON build"(
+        @"literalizer JSON allocator": std.mem.Allocator,
+        @"literalizer JSON entries": []const struct {
+            key: []const u8,
+            value: std.json.Value,
+        },
+    ) std.json.Value {
+        var @"literalizer JSON object" =
+            std.json.ObjectMap.init(@"literalizer JSON allocator");
+        for (@"literalizer JSON entries") |@"literalizer JSON entry"| {
+            @"literalizer JSON object".put(
+                @"literalizer JSON entry".key,
+                @"literalizer JSON entry".value,
+            ) catch unreachable;
+        }
+        return .{ .object = @"literalizer JSON object" };
+    }
+}).@"literalizer JSON build"(allocator, &.{"""
+_STD_JSON_OBJECT_CLOSE = "})"
+_STD_JSON_EMPTY_ARRAY = (
+    "std.json.Value{ .array = std.json.Array.init(allocator) }"
+)
+_STD_JSON_EMPTY_OBJECT = (
+    "std.json.Value{ .object = std.json.ObjectMap.init(allocator) }"
+)
+
+
+# Containers copy already rendered JSON values, including references.
+# Scalar entries retain the existing JSON parsing conversion semantics.
 _STD_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
-    sequence_open=fixed_open(open_str="["),
-    close="]",
+    sequence_open=fixed_open(open_str=_STD_JSON_ARRAY_OPEN),
+    close=_STD_JSON_ARRAY_CLOSE,
     supports_heterogeneity=True,
     single_element_trailing_comma=False,
     single_element_template=None,
     supports_trailing_comma=True,
-    empty_sequence="[]",
+    empty_sequence=_STD_JSON_EMPTY_ARRAY,
     preamble_lines=(),
-    format_entry=passthrough_sequence_entry,
+    format_entry=_format_zig_json_entry,
     typed_opener_fallback=None,
     uses_typed_literal_for_scalars=False,
     requires_uniform_record_shapes=False,
@@ -645,13 +705,13 @@ _STD_JSON_SET_CONFIG = SetFormatConfig(
 )
 
 _STD_JSON_DICT_CONFIG = DictFormatConfig(
-    dict_open=fixed_open(open_str="{"),
-    close="}",
+    dict_open=fixed_open(open_str=_STD_JSON_OBJECT_OPEN),
+    close=_STD_JSON_OBJECT_CLOSE,
     format_entry=dict_entry_with_template(
-        template="{key}: {value}",
-        format_value=passthrough_sequence_entry,
+        template=".{{ .key = {key}, .value = {value} }}",
+        format_value=_format_zig_json_entry,
     ),
-    empty_dict="{}",
+    empty_dict=_STD_JSON_EMPTY_OBJECT,
     preamble_lines=(),
     narrowed_open=None,
     supports_trailing_comma=True,
@@ -659,8 +719,8 @@ _STD_JSON_DICT_CONFIG = DictFormatConfig(
 )
 
 _STD_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
-    ordered_map_open=fixed_open(open_str="{"),
-    close="}",
+    ordered_map_open=fixed_open(open_str=_STD_JSON_OBJECT_OPEN),
+    close=_STD_JSON_OBJECT_CLOSE,
     preamble_lines=(),
 )
 
@@ -696,43 +756,48 @@ def _zig_parse_expression(data: Value) -> str:
 @beartype
 def _format_zig_json_declaration(
     name: str,
-    _value: str,
+    value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
 ) -> str:
-    """Format a ``std.json.Value`` declaration backed by
-    parseFromSlice.
+    """Bind a JSON value while retaining rendered reference
+    expressions.
     """
-    return f"const {name} = {_zig_parse_expression(data=data)};"
+    formatted_json = _format_zig_json_entry(original=data, formatted=value)
+    return f"const {name} = {formatted_json};"
 
 
 @beartype
 def _format_zig_json_var_declaration(
     name: str,
-    _value: str,
+    value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
 ) -> str:
-    """Format a ``var std.json.Value`` declaration backed by
-    parseFromSlice.
+    """Format a mutable JSON value binding preserving rendered references.
 
     The ``var`` form is selected when the caller pairs the declaration
     with a subsequent assignment (the ``combined`` variable form); a
     plain ``const`` cannot be reassigned.
     """
-    return f"var {name}: std.json.Value = {_zig_parse_expression(data=data)};"
+    formatted_json = _format_zig_json_entry(original=data, formatted=value)
+    return f"var {name}: std.json.Value = {formatted_json};"
 
 
 @beartype
-def _format_zig_json_assignment(name: str, _value: str, data: Value) -> str:
-    """Format a ``std.json.Value`` assignment backed by parseFromSlice."""
-    return f"{name} = {_zig_parse_expression(data=data)};"
+def _format_zig_json_assignment(name: str, value: str, data: Value) -> str:
+    """Assign a JSON value while retaining rendered reference
+    expressions.
+    """
+    return (
+        f"{name} = {_format_zig_json_entry(original=data, formatted=value)};"
+    )
 
 
 @beartype
-def _format_zig_json_call_arg(raw_value: Value, _formatted: str) -> str:
+def _format_zig_json_call_arg(raw_value: Value, formatted: str) -> str:
     """Format a direct call argument as a ``std.json.Value`` literal."""
-    return _zig_parse_expression(data=raw_value)
+    return _format_zig_json_entry(original=raw_value, formatted=formatted)
 
 
 @beartype
@@ -1165,14 +1230,17 @@ class Zig(metaclass=LanguageCls):
         variable_name = context.variable_name
         body_preamble = context.body_preamble
         json_mode = self._json_type_active
-        # Detect ``var``/``const`` on the caller's declaration, before
-        # injecting the JSON-mode arena ``var`` body preamble (which
-        # would otherwise spuriously trip the regex).
-        is_var = bool(
-            re.search(
-                pattern=r"^\s*var ",
-                string=content,
-                flags=re.MULTILINE,
+        # Inspect caller declarations before adding the JSON arena preamble.
+        mutable_names = _zig_mutable_binding_names(content=content)
+        is_var = variable_name in mutable_names
+        content = "\n".join(
+            (
+                content,
+                *(
+                    f"_ = &{name};"
+                    for name in mutable_names
+                    if name != variable_name
+                ),
             ),
         )
         effective_body_preamble = body_preamble
@@ -1301,7 +1369,7 @@ class Zig(metaclass=LanguageCls):
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         if self._json_type_active:
-            return passthrough_sequence_entry
+            return _format_zig_json_entry
         return self._format_entry
 
     @cached_property
@@ -1340,10 +1408,8 @@ class Zig(metaclass=LanguageCls):
     def supports_scalar_before_comments(self) -> bool:
         """Whether a comment can sit above the rendered value.
 
-        Under :attr:`json_type` the declaration is built from the
-        document rather than from the formatted value, so a comment
-        written into that value never reaches the output; it goes
-        above the declaration instead (issue #4546).
+        JSON scalar bindings retain their parsed-value conversion, so
+        their comments go above the declaration (issue #4546).
         """
         return not self._json_type_active
 
@@ -1351,10 +1417,8 @@ class Zig(metaclass=LanguageCls):
     def supports_collection_comments(self) -> bool:
         """Whether a comment can sit inside the rendered value.
 
-        ``std.json.parseFromSlice`` is handed one JSON document, and
-        JSON has no comments, so a comment written inside
-        it would be text the parser refuses.  The comments go
-        before the declaration instead (issue #4546).
+        JSON bindings retain the policy of placing comments above the
+        declaration, including parsed scalar leaves (issue #4546).
         """
         return not self._json_type_active
 
@@ -1370,10 +1434,8 @@ class Zig(metaclass=LanguageCls):
     def _validate_json_type_spec(self) -> None:
         """Reject ``json_type`` combinations the generator cannot emit.
 
-        Under ``json_type`` the rendered data flows through a single
-        ``std.json.parseFromSlice`` call, which is incompatible with
-        ``heterogeneous_strategy=RECORD`` (which would generate ``struct``
-        declarations parallel to the JSON text).
+        JSON values use their standard carrier rather than the native
+        structs generated by ``heterogeneous_strategy=RECORD``.
         """
         if not self._json_type_active:
             return
@@ -1628,7 +1690,7 @@ class Zig(metaclass=LanguageCls):
         """File-scope preamble.
 
         Under :attr:`json_type` only ``const std = @import("std");`` is
-        emitted (the data flows through ``std.json.parseFromSlice``).
+        emitted for the JSON value and memory allocation operations.
         The default ``ZVal`` model needs its tagged-union declaration;
         the ``RECORD`` strategy emits raw Zig values and generated
         ``struct`` declarations instead, so it needs no static
@@ -1644,8 +1706,8 @@ class Zig(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
-        Under :attr:`json_type` the data rides inside a single JSON
-        string, so no per-data preamble applies.  Under ``RECORD`` this
+        JSON value construction needs no per-data preamble.
+        Under ``RECORD`` this
         is the generated ``const Record0 = struct { ... };`` block,
         emitted in dependency order so a nested record is declared
         before its parent.
@@ -1670,8 +1732,8 @@ class Zig(metaclass=LanguageCls):
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
-        Under :attr:`json_type` heterogeneous scalars all flow through
-        the JSON text, so scalar-uniformity checks are skipped.
+        Under :attr:`json_type` heterogeneous scalars share the JSON value
+        carrier, so scalar-uniformity checks are skipped.
         ``RECORD`` resolves to the shared record behavior (its value
         needs the per-instance renderer, so it cannot be stored on the
         enum member); ``ERROR`` keeps the default ``ZVal`` model.
@@ -1717,8 +1779,8 @@ class Zig(metaclass=LanguageCls):
         match the parameter shape emitted by
         :func:`_zig_call_preamble_stub`.
 
-        Under :attr:`json_type` the argument is rendered as a
-        ``std.json.Value`` produced by ``parseFromSlice`` instead.
+        Under :attr:`json_type` the argument is a rendered container or
+        a parsed scalar ``std.json.Value`` instead.
         """
         if self._json_type_active:
             return _format_zig_json_call_arg
@@ -1742,9 +1804,8 @@ class Zig(metaclass=LanguageCls):
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format.
 
-        Under :attr:`json_type` lists are rendered into the JSON text
-        and the framework's formatted output is discarded.  Under
-        ``RECORD`` a list is a raw Zig literal -- a ``&.{ ... }`` slice
+        JSON lists contain already rendered values.
+        Under ``RECORD`` a list is a raw Zig literal -- a ``&.{ ... }`` slice
         (homogeneous / empty) or a ``.{ ... }`` tuple (heterogeneous),
         both closed by a single ``}`` rather than the ``ZVal``
         ``.{ .arr = &.{ ... }}`` form.  Only the closer changes here;
@@ -1794,9 +1855,8 @@ class Zig(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting.
 
-        Under :attr:`json_type` dicts are rendered into the JSON text
-        and the framework's formatted output is discarded.  Under
-        ``RECORD`` every non-empty string-keyed dict is a record
+        JSON dicts contain already rendered values.
+        Under ``RECORD`` every non-empty string-keyed dict is a record
         (rendered as a generated ``struct``); the only plain dict that
         still reaches the dict formatter is the empty dict, emitted as
         the raw empty struct ``.{}`` instead of the ``ZVal``
@@ -1888,8 +1948,8 @@ class Zig(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting.
 
-        Under :attr:`json_type` ordered maps are folded into the JSON
-        text.  An ordered map is never record-eligible, so under
+        Under :attr:`json_type` ordered maps retain their entry order in a
+        JSON object. An ordered map is never record-eligible, so under
         ``RECORD`` it stays a map but as a raw
         ``&.{ .{ .key = ..., .val = ... }, ... }`` slice of
         ``key``/``val`` ``struct`` values rather than the ``ZVal``
@@ -1912,10 +1972,52 @@ class Zig(metaclass=LanguageCls):
     @cached_property
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
+        if self._json_type_active:
+            return dict_entry_with_template(
+                template=".{{ .key = {key}, .value = {value} }}",
+                format_value=_format_zig_json_entry,
+            )
         return dict_entry_with_template(
             template=".{{ .key = {key}, .val = {value} }}",
             format_value=self._format_entry,
         )
+
+    def reference_binding_data_dependent_preamble(
+        self, data: Value, /
+    ) -> tuple[str, ...]:
+        """Preserve the ordinary preamble for a reference binding."""
+        return self.data_dependent_preamble(data)
+
+    @staticmethod
+    def reference_declaration_imports(
+        _entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Zig has no declaration-local data-dependent imports."""
+        return ()
+
+    def format_reference_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Bind an existing JSON value without serializing its marker."""
+        if self._json_type_active:
+            keyword = self.declaration_style.value.keyword
+            return f"{keyword} {name}: std.json.Value = {value};"
+        return self.format_variable_declaration(name, value, data, modifiers)
+
+    def format_reference_variable_assignment(
+        self, name: str, value: str, data: Value, /
+    ) -> str:
+        """Assign an existing JSON value without parsing a marker."""
+        if self._json_type_active:
+            return _format_zig_call_assignment(
+                name=name, value=value, _data=data
+            )
+        return self.format_variable_assignment(name, value, data)
 
     @cached_property
     def format_variable_declaration(
@@ -1923,8 +2025,8 @@ class Zig(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration.
 
-        Under :attr:`json_type` the declaration is a
-        ``parseFromSlice`` call.  A ``const`` binding is emitted with an
+        Under :attr:`json_type` the declaration binds a rendered container or
+        parsed scalar. A ``const`` binding is emitted with an
         inferred type; a ``var`` binding gets an explicit
         ``: std.json.Value`` annotation so a subsequent assignment can
         compile against the same static type.
