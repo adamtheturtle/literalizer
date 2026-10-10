@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["V"]
+languages_reason = "V homogeneous map siblings compare the scalar types selected by date and time formatting."
+
+[[variants]]
+axis = "datetime"

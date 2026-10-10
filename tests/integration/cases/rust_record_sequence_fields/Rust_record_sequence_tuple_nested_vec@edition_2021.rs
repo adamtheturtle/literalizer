@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     short: Vec<i32>,
     long: Vec<i32>,

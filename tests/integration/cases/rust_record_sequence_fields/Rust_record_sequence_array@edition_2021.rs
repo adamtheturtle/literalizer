@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     short: [i32; 1],
     long: [i32; 2],

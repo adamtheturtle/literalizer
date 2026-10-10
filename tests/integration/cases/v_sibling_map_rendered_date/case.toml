@@ -1,0 +1,5 @@
+schema_version = 1
+input = "input.toml"
+languages = ["V"]
+languages_reason = "V homogeneous map siblings compare the scalar types selected by date and time formatting."
+suites = ["base"]

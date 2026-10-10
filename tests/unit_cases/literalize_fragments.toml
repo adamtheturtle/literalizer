@@ -2,6 +2,18 @@
 # preserve omitted delimiters or externally defined identifiers.
 
 [[literals]]
+name = "roc_unwrapped_pre_indented_list"
+language = "Roc"
+source = "[1, 2]"
+input_format = "json"
+pre_indent_level = 1
+include_delimiters = true
+expected.bare_code = """    RList [
+        RInt 1i128,
+        RInt 2i128,
+    ]"""
+
+[[literals]]
 name = "binary_without_sequence_delimiters"
 language = "Python"
 source = "- !!binary SGVsbG8=\n"
@@ -98,3 +110,39 @@ parameter_names = ["a"]
 per_element = true
 ref_values = { big_list = ["x"] }
 expected = { bare_code = 'process(std::vector<std::pair<std::string, std::vector<std::string>>>{{"m", big_list}});' }
+
+# Caller-owned bindings and assignments are intentionally incomplete files.
+[[literals]]
+name = "zig_json_external_reference_declaration"
+language = "Zig"
+source = '{"$ref":"shared"}'
+input_format = "json"
+json_type = "STD_JSON_VALUE"
+variable_form = "new"
+pre_indent_level = 0
+include_delimiters = true
+ref_values = { shared = [1, 2] }
+expected.bare_code = "const my_data: std.json.Value = shared;"
+
+[[literals]]
+name = "zig_json_external_reference_assignment"
+language = "Zig"
+source = '{"$ref":"shared"}'
+input_format = "json"
+json_type = "STD_JSON_VALUE"
+variable_form = "existing"
+pre_indent_level = 0
+include_delimiters = true
+ref_values = { shared = [1, 2] }
+expected.bare_code = "my_data = shared;"
+
+[[literals]]
+name = "zig_value_external_reference_assignment"
+language = "Zig"
+source = '{"$ref":"shared"}'
+input_format = "json"
+variable_form = "existing"
+pre_indent_level = 0
+include_delimiters = true
+ref_values = { shared = [1, 2] }
+expected.bare_code = "my_data = shared;"

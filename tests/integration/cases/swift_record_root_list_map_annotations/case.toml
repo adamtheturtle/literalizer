@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Swift"]
+languages_reason = "Swift explicit root collection annotations retain their emitted native record types."
+
+[[variants]]
+axis = "record_type_hints_always"
