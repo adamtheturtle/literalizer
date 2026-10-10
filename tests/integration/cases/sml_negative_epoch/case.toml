@@ -1,7 +1,7 @@
 schema_version = 1
 owner = "variant"
-languages = ["Sml"]
-languages_reason = "Standard ML uses a tilde for a negative integer inside its epoch scalar constructor."
+languages = ["PureScript", "Sml"]
+languages_reason = "These epoch scalar constructors require language-specific handling of negative integers."
 
 [[variants]]
 axis = "datetime"
