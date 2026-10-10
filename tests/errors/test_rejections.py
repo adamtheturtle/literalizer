@@ -39,7 +39,7 @@ from .rejection_manifests import (
 
 _MANIFESTS = load_rejection_manifests(rejections_dir=REJECTIONS_DIR)
 
-_BOUND_VALUE = TypeAdapter(
+_BOUND_VALUE = TypeAdapter[literalizer.ValueInput](
     type=literalizer.ValueInput,
     config=ConfigDict(arbitrary_types_allowed=True),
 )
@@ -57,7 +57,7 @@ def _bound_refs(
             parser.load(stream=substituted(template=source, value=value)),
             strict=True,
         )
-    return bindings or None
+    return bindings if len(bindings) > 0 else None
 
 
 @beartype
