@@ -538,16 +538,15 @@ def _arg_values_for_stub(
     source_data: ParsedValue,
     per_element: bool,
 ) -> Sequence[ParsedValue]:
-    """Mirror ``_literalize.py``'s ``arg_values`` shape: a list of
-    arguments rows for per-element calls; a single-entry list
-    wrapping the whole data otherwise.
+    """Return argument rows for stubs, preserving a whole list as
+    one argument.
 
     A per-element call always yields a list ``source_data``; the
     ``isinstance`` check narrows the type for the static checker.
     """
     if per_element and isinstance(source_data, list):
         return source_data
-    return [source_data]
+    return [[source_data]]
 
 
 @beartype
