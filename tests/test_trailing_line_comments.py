@@ -55,17 +55,28 @@ def test_trailing_line_comments(case: _CommentCase) -> None:
     ) == (case.expected_code, case.expected_trailing)
 
 
-def test_shared_call_declaration_descriptor() -> None:
-    """The shared descriptor delegates declaration formatting and retains
-    comments.
-    """
-    descriptor = line_comment_call_variable_declaration(
+class _CommentHaxe(Haxe):
+    """Attach the shared descriptors to a language for contract checks."""
+
+    comment_declaration = line_comment_call_variable_declaration(
         regex_literals=True,
         raw_string_prefixes=(),
         verbatim_strings=False,
         interpolation_syntax=("${", "'"),
     )
-    formatter = descriptor.__get__(Haxe())
+    comment_assignment = line_comment_call_variable_assignment(
+        regex_literals=True,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=("${", "'"),
+    )
+
+
+def test_shared_call_declaration_descriptor() -> None:
+    """The shared descriptor delegates declaration formatting and retains
+    comments.
+    """
+    formatter = _CommentHaxe().comment_declaration
     assert callable(formatter)
     assert formatter(
         "my_data", "make_widget(42) // note", 42, frozenset()
@@ -76,13 +87,7 @@ def test_shared_call_assignment_descriptor() -> None:
     """The shared descriptor delegates assignment formatting and retains
     comments.
     """
-    descriptor = line_comment_call_variable_assignment(
-        regex_literals=True,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=("${", "'"),
-    )
-    formatter = descriptor.__get__(Haxe())
+    formatter = _CommentHaxe().comment_assignment
     assert callable(formatter)
     assert formatter("my_data", "make_widget(42) // note", 42) == (
         "my_data = make_widget(42); // note"
