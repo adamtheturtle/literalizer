@@ -540,6 +540,8 @@ class CallCaseSpec(  # noqa: NOD001
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
+    # Exercise the shared descriptors before built-in language adoption.
+    shared_call_comments: bool = False
     transform_stub_names: StringTuple = Field(default_factory=_empty_names)
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,
