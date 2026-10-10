@@ -598,7 +598,7 @@ hooks = [
   {
     id = "linkcheck",
     name = "linkcheck",
-    entry = "uv run --group=dev sphinx-build -M linkcheck docs/source docs/build -W -d docs/build/.doctrees-linkcheck",
+    entry = "uv run --group=dev python -m scripts.check_documentation_links docs/source docs/build docs/build/.doctrees-linkcheck",
     language = "python",
     types_or = ["rst", "markdown"],
     stages = ["manual"],
