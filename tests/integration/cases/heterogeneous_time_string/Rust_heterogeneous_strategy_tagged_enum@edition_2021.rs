@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+#[derive(Clone)]
 enum Value {
     Time(&'static str),
     Str(&'static str),

@@ -3,7 +3,7 @@
 #include <vector>
 #include <variant>
 #include <tuple>
-struct clientType_ { void fetch(auto...) const {} };
+struct clientType_ { template <typename... Args> void fetch(Args...) const {} };
 struct appType_ { clientType_ client; };
 const appType_ app;
 int main() {

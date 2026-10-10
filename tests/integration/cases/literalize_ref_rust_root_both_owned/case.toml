@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Rust"]
+languages_reason = "Rust must preserve an owned root binding across declaration and assignment."
+variable_form = "both"
+declaration_style = "LET_MUT"
+
+[ref.value_sources]
+shared = "[1,2]"

@@ -7,8 +7,8 @@ parameter_names = ["count"]
 per_element = false
 wrap_in_file = true
 variable_form = "new"
-languages = ["Dart"]
-languages_reason = "Dart explicit literal hints must not become annotations of an unknown call result."
+languages = ["Dart", "Kotlin"]
+languages_reason = "Explicit literal hints must not become annotations of an unknown call result."
 
 [[call.variants]]
 axis = "type_hints"

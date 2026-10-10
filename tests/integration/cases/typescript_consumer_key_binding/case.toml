@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "variant"
+languages = ["TypeScript"]
+languages_reason = "Compiler consumer probes must preserve declarations named k when checking string-keyed maps."
+
+[[variants]]
+axis = "type_hints"
+
+[variants.context]
+variable_name = "k"

@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     r#type: &'static str,
     r#match: &'static str,

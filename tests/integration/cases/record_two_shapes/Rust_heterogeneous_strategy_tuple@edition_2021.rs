@@ -1,11 +1,14 @@
+#[derive(Clone)]
 struct Record1 {
     count: i32,
     rate: i32,
 }
+#[derive(Clone)]
 struct Record2 {
     retries: i32,
     timeout: i32,
 }
+#[derive(Clone)]
 struct Record0 {
     metrics: Record1,
     flags: Record2,

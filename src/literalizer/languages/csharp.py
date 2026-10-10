@@ -605,6 +605,18 @@ _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
 
 @beartype
+def _csharp_epoch_array_item(value: Value, /) -> Value:
+    """Size epoch arrays from rendered values, preserving records."""
+    match value:
+        case datetime.datetime():
+            return datetime_epoch_seconds(value=value)
+        case list():
+            return [_csharp_epoch_array_item(item) for item in value]
+        case _:
+            return value
+
+
+@beartype
 def _csharp_record_field_identifier(key: str, /) -> str:
     """Return the C# record component name for a dict *key*.
 
@@ -2124,6 +2136,8 @@ class CSharp(metaclass=LanguageCls):
                         opener="new[] {", declared_type=name + "[]" * depth
                     )
             fallback_type = self.default_sequence_element_type
+            if self._dt_tp is int:
+                items = [_csharp_epoch_array_item(item) for item in items]
             return infer_collection_type(
                 items=items,
                 element_to_type=self._openers.seq_element_type,

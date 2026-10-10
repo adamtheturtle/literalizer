@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Rust"]
+languages_reason = "Rust ownership distinguishes reusable owned bindings from Copy values."
+json_type = "SERDE_JSON_VALUE"
+
+[ref.value_sources]
+shared = '42'

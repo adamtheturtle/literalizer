@@ -1,31 +1,41 @@
+#[derive(Clone)]
 struct Record1 {
     status: i32,
 }
+#[derive(Clone)]
 struct Record2 {
     status: &'static str,
 }
+#[derive(Clone)]
 struct Record4 {
     kind: &'static str,
     urgent: bool,
 }
+#[derive(Clone)]
 struct Record3 {
     inner: Record4,
 }
+#[derive(Clone)]
 struct Record6 {
     error: &'static str,
 }
+#[derive(Clone)]
 struct Record5 {
     inner: Record6,
 }
+#[derive(Clone)]
 struct Record7 {
     holder: Record1,
 }
+#[derive(Clone)]
 struct Record8 {
     holder: Record2,
 }
+#[derive(Clone)]
 struct Record9 {
     nums: Vec<i64>,
 }
+#[derive(Clone)]
 struct Record0 {
     plain: Record1,
     other: Record2,
