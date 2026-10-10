@@ -118,6 +118,7 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
+from literalizer._statements import split_statements
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -608,6 +609,25 @@ _STD_JSON_BODY_PREAMBLE: tuple[str, ...] = (
     "defer arena.deinit();",
     "const allocator = arena.allocator();",
 )
+
+
+@beartype
+def _zig_mutable_binding_names(*, content: str) -> list[str]:
+    """Select mutable outer declarations, excluding nested function locals."""
+    statements = split_statements(
+        content=content, quotes='"', line_comment_prefixes=("//",)
+    )
+    return [
+        match.group(1)
+        for statement in statements
+        if (
+            match := re.match(
+                pattern=r"^[ \t]*var ([A-Za-z_][A-Za-z0-9_]*)\b",
+                string=statement,
+            )
+        )
+        is not None
+    ]
 
 
 # Sequence/dict format definitions used while ``json_type`` is active.
@@ -1166,11 +1186,7 @@ class Zig(metaclass=LanguageCls):
         body_preamble = context.body_preamble
         json_mode = self._json_type_active
         # Inspect caller declarations before adding the JSON arena preamble.
-        mutable_names = re.findall(
-            pattern=r"^\s*var ([A-Za-z_][A-Za-z0-9_]*)\b",
-            string=content,
-            flags=re.MULTILINE,
-        )
+        mutable_names = _zig_mutable_binding_names(content=content)
         is_var = variable_name in mutable_names
         content = "\n".join(
             (

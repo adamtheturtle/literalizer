@@ -1,0 +1,3 @@
+# A leading comment with { braces, "quotes", and // markers
+- "first\n{ \"quoted\" // text }"
+- { $ref: shared }
