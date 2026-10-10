@@ -1,6 +1,7 @@
 """Zig bindings cannot shadow the helpers used by their output mode."""
 
 import dataclasses
+import enum
 
 import pytest
 
@@ -20,15 +21,15 @@ from literalizer.languages import Zig
     argvalues=[
         (None, "ZVal"),
         (None, "ZKV"),
-        (Zig.JsonTypes.STD_JSON_VALUE, "std"),
-        (Zig.JsonTypes.STD_JSON_VALUE, "allocator"),
+        (Zig.JsonTypes["STD_JSON_VALUE"], "std"),
+        (Zig.JsonTypes["STD_JSON_VALUE"], "allocator"),
     ],
 )
 @pytest.mark.parametrize(argnames="wrap_in_file", argvalues=[False, True])
 @pytest.mark.parametrize(argnames="existing", argvalues=[False, True])
 def test_root_helper_name_is_rejected(
     *,
-    json_type: Zig.JsonTypes | None,
+    json_type: enum.Enum | None,
     name: str,
     wrap_in_file: bool,
     existing: bool,
@@ -54,15 +55,15 @@ def test_root_helper_name_is_rejected(
     argvalues=[
         (None, "ZVal"),
         (None, "ZKV"),
-        (Zig.JsonTypes.STD_JSON_VALUE, "std"),
-        (Zig.JsonTypes.STD_JSON_VALUE, "allocator"),
+        (Zig.JsonTypes["STD_JSON_VALUE"], "std"),
+        (Zig.JsonTypes["STD_JSON_VALUE"], "allocator"),
     ],
 )
 @pytest.mark.parametrize(argnames="wrap_in_file", argvalues=[False, True])
 @pytest.mark.parametrize(argnames="call_argument", argvalues=[False, True])
 def test_reference_helper_name_is_rejected(
     *,
-    json_type: Zig.JsonTypes | None,
+    json_type: enum.Enum | None,
     name: str,
     wrap_in_file: bool,
     call_argument: bool,
@@ -102,23 +103,25 @@ def test_reference_helper_name_is_rejected(
 def test_replaced_spec_drops_previous_mode_reservations() -> None:
     """Derived binding metadata follows the options in a spec copy."""
     default = dataclasses.replace(
-        Zig(json_type=Zig.JsonTypes.STD_JSON_VALUE), json_type=None
+        Zig(json_type=Zig.JsonTypes["STD_JSON_VALUE"]), json_type=None
     )
     record = dataclasses.replace(
-        Zig(), heterogeneous_strategy=Zig.HeterogeneousStrategies.RECORD
+        Zig(), heterogeneous_strategy=Zig.HeterogeneousStrategies["RECORD"]
     )
-    json = dataclasses.replace(Zig(), json_type=Zig.JsonTypes.STD_JSON_VALUE)
+    json = dataclasses.replace(
+        Zig(), json_type=Zig.JsonTypes["STD_JSON_VALUE"]
+    )
     assert default.reserved_variable_identifiers == (
         Zig().reserved_variable_identifiers
     )
     assert record.reserved_variable_identifiers == (
         Zig(
-            heterogeneous_strategy=Zig.HeterogeneousStrategies.RECORD
+            heterogeneous_strategy=Zig.HeterogeneousStrategies["RECORD"]
         ).reserved_variable_identifiers
     )
     assert json.reserved_variable_identifiers == (
         Zig(
-            json_type=Zig.JsonTypes.STD_JSON_VALUE
+            json_type=Zig.JsonTypes["STD_JSON_VALUE"]
         ).reserved_variable_identifiers
     )
     assert json.reserved_identifiers == record.reserved_identifiers
