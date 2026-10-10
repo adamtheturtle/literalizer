@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Zig"]
+languages_reason = "Zig call members remain available when they do not mask an emitted parameter type."
+target_function = "obj.std"
+parameter_names = ["value"]
+per_element = false
+variant_only = true
+
+[[call.variants]]
+axis = "json_type"
