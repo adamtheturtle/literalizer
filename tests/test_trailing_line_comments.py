@@ -76,7 +76,9 @@ def test_shared_call_declaration_descriptor() -> None:
     """The shared descriptor delegates declaration formatting and retains
     comments.
     """
-    formatter = _CommentHaxe().comment_declaration
+    language = _CommentHaxe()
+    assert isinstance(language, _CommentHaxe)
+    formatter = language.comment_declaration
     assert callable(formatter)
     assert formatter(
         "my_data", "make_widget(42) // note", 42, frozenset()
@@ -87,7 +89,9 @@ def test_shared_call_assignment_descriptor() -> None:
     """The shared descriptor delegates assignment formatting and retains
     comments.
     """
-    formatter = _CommentHaxe().comment_assignment
+    language = _CommentHaxe()
+    assert isinstance(language, _CommentHaxe)
+    formatter = language.comment_assignment
     assert callable(formatter)
     assert formatter("my_data", "make_widget(42) // note", 42) == (
         "my_data = make_widget(42); // note"
