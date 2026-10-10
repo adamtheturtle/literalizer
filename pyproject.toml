@@ -663,6 +663,7 @@ addopts = [ "-n", "auto" ]
 beartype_packages = [ "literalizer" ]
 # Exclude literalizer._json_native_document:
 # per-level wrappers exhaust the stack below the shared parse-depth guard.
+# https://github.com/beartype/beartype/issues/734
 # Its public entry points already use @beartype.
 beartype_skip_packages = [ "literalizer._json_native_document" ]
 beartype_test_fixtures = true
