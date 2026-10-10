@@ -587,6 +587,25 @@ def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
     return f"{name} = {value};"
 
 
+@beartype
+def _zig_mutable_binding_names(*, content: str) -> list[str]:
+    """Select mutable outer declarations, excluding nested function locals."""
+    statements = split_statements(
+        content=content, quotes='"', line_comment_prefixes=("//",)
+    )
+    return [
+        match.group(1)
+        for statement in statements
+        if (
+            match := re.match(
+                pattern=r"^[ \t]*var ([A-Za-z_][A-Za-z0-9_]*)\b",
+                string=statement,
+            )
+        )
+        is not None
+    ]
+
+
 _STD_JSON_STATIC_PREAMBLE: tuple[str, ...] = ('const std = @import("std");',)
 
 _ZVAL_STATIC_PREAMBLE: tuple[str, ...] = (
@@ -609,25 +628,6 @@ _STD_JSON_BODY_PREAMBLE: tuple[str, ...] = (
     "defer arena.deinit();",
     "const allocator = arena.allocator();",
 )
-
-
-@beartype
-def _zig_mutable_binding_names(*, content: str) -> list[str]:
-    """Select mutable outer declarations, excluding nested function locals."""
-    statements = split_statements(
-        content=content, quotes='"', line_comment_prefixes=("//",)
-    )
-    return [
-        match.group(1)
-        for statement in statements
-        if (
-            match := re.match(
-                pattern=r"^[ \t]*var ([A-Za-z_][A-Za-z0-9_]*)\b",
-                string=statement,
-            )
-        )
-        is not None
-    ]
 
 
 # Sequence/dict format definitions used while ``json_type`` is active.
