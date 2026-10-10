@@ -1,7 +1,7 @@
 schema_version = 1
 owner = "variant"
-languages = ["V"]
-languages_reason = "V ordered-map record fields infer the rendered EPOCH integer width rather than their source datetime type."
+languages = ["CSharp", "V"]
+languages_reason = "CSharp and V ordered-map record fields infer the rendered EPOCH integer width rather than their source datetime type."
 
 [[variants]]
 axis = "record_epoch_i32_overflow"

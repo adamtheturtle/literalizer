@@ -746,7 +746,13 @@ def _make_array_config(
 def _cpp_narrowed_empty_sequence(
     *, siblings: Sequence[list[Value]], type_ctx: _CppTypeCtx
 ) -> str:
-    """Render an empty sequence with its non-empty cousin's type."""
+    """Match the declared empty alternative beside tuple siblings;
+    otherwise borrow the non-empty sequence's element type.
+    """
+    if type_ctx.tuple_strategy and any(
+        is_tuple_eligible(value=sibling) for sibling in siblings
+    ):
+        return type_ctx.sequence_type(inner="std::nullptr_t", length=0) + "{}"
     inner = _compute_element_type_for_items(
         items=siblings[0], type_ctx=type_ctx
     )

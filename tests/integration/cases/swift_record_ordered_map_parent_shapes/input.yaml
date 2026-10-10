@@ -1,0 +1,8 @@
+first:
+  values: !!omap
+    - item: {x: 1}
+  flag: true
+second:
+  values: !!omap
+    - item: {y: 2}
+  flag: false

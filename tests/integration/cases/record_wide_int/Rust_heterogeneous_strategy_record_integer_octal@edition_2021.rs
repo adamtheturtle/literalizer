@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     quantity: i32,
     big: i128,

@@ -333,6 +333,7 @@ def _format_variable_declaration(
     default_dict_key_type: str,
     join_union: Callable[[list[str]], str],
     record_eligible: Callable[[Value], bool],
+    record_name_for_value: Callable[[Value], str | None] | None,
 ) -> str:
     """Format a Python variable declaration.
 
@@ -359,6 +360,7 @@ def _format_variable_declaration(
             default_dict_value_type=default_dict_value_type,
             default_dict_key_type=default_dict_key_type,
             join_union=join_union,
+            record_name_for_value=record_name_for_value,
         )
     return f"{name} = {value}"
 
@@ -382,8 +384,11 @@ def _format_inline_type_hint_declaration(
     default_dict_value_type: str,
     default_dict_key_type: str,
     join_union: Callable[[list[str]], str],
+    record_name_for_value: Callable[[Value], str | None] | None,
 ) -> str:
-    """Format a Python variable declaration with an inline type hint."""
+    """Format an inline type hint using the active nominal record
+    names.
+    """
     hint = _python_type_hint(
         data=data,
         bytes_hint=bytes_hint,
@@ -398,7 +403,7 @@ def _format_inline_type_hint_declaration(
         default_dict_value_type=default_dict_value_type,
         default_dict_key_type=default_dict_key_type,
         join_union=join_union,
-        record_name_for_value=None,
+        record_name_for_value=record_name_for_value,
     )
     return f"{name}: {hint} = {value}"
 
@@ -607,7 +612,11 @@ def _python_type_hint(
         case dict():
             outer = dict_hint
             if isinstance(data, OrderedMap):
-                outer = "OrderedDict"
+                outer = (
+                    "TypingOrderedDict"
+                    if dict_hint == "Dict"
+                    else "OrderedDict"
+                )
             key_hint = "str"
             if len(data) == 0:
                 key_hint = default_dict_key_type
@@ -1113,6 +1122,7 @@ class Python(metaclass=LanguageCls):
     supports_non_ascii_string_literals = True
     supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
+    uses_resolved_ref_declaration_data = True
     supports_typed_dict_open = False
     language_id: ClassVar[str] = "python"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
@@ -1299,6 +1309,7 @@ class Python(metaclass=LanguageCls):
             default_dict_key_type: str,
             join_union: Callable[[list[str]], str],
             record_eligible: Callable[[Value], bool],
+            record_name_for_value: Callable[[Value], str | None] | None,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter for this hint
             style.
@@ -1338,6 +1349,7 @@ class Python(metaclass=LanguageCls):
                         default_dict_value_type=default_dict_value_type,
                         default_dict_key_type=default_dict_key_type,
                         join_union=join_union,
+                        record_name_for_value=record_name_for_value,
                     )
 
                 return _always_formatter
@@ -1371,6 +1383,7 @@ class Python(metaclass=LanguageCls):
                     default_dict_key_type=default_dict_key_type,
                     join_union=join_union,
                     record_eligible=record_eligible,
+                    record_name_for_value=record_name_for_value,
                 )
 
             return _auto_formatter
@@ -1862,7 +1875,14 @@ class Python(metaclass=LanguageCls):
             if len(blocks) == 0:
                 return ()
             typing_import: tuple[str, ...]
-            if any("Union[" in block for block in blocks):
+            # Root annotations can contain nominal unions even when the
+            # dataclass fields and structural scalar types are uniform.
+            root_declaration = self.format_variable_declaration(
+                "_", "", data, frozenset()
+            )
+            if any("Union[" in block for block in blocks) or (
+                "Union[" in root_declaration
+            ):
                 typing_import = ("from typing import Union",)
             else:
                 typing_import = ()
@@ -2058,7 +2078,12 @@ class Python(metaclass=LanguageCls):
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="OrderedDict(["),
             close="])",
-            preamble_lines=("from collections import OrderedDict",),
+            preamble_lines=("from collections import OrderedDict",)
+            + (
+                ("from typing import OrderedDict as TypingOrderedDict",)
+                if self._uses_typing_collection_aliases
+                else ()
+            ),
         )
 
     @cached_property
@@ -2157,6 +2182,7 @@ class Python(metaclass=LanguageCls):
             default_dict_key_type=self.default_dict_key_type,
             join_union=self._join_union,
             record_eligible=self._record_eligible_for_annotation,
+            record_name_for_value=self._record_strategy.record_name_for_value,
         )
 
     @cached_property

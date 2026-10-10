@@ -1927,6 +1927,43 @@ class Zig(metaclass=LanguageCls):
             format_value=self._format_entry,
         )
 
+    def reference_binding_data_dependent_preamble(
+        self, data: Value, /
+    ) -> tuple[str, ...]:
+        """Preserve the ordinary preamble for a reference binding."""
+        return self.data_dependent_preamble(data)
+
+    @staticmethod
+    def reference_declaration_imports(
+        _entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Zig has no declaration-local data-dependent imports."""
+        return ()
+
+    def format_reference_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Bind an existing JSON value without serializing its marker."""
+        if self._json_type_active:
+            keyword = self.declaration_style.value.keyword
+            return f"{keyword} {name}: std.json.Value = {value};"
+        return self.format_variable_declaration(name, value, data, modifiers)
+
+    def format_reference_variable_assignment(
+        self, name: str, value: str, data: Value, /
+    ) -> str:
+        """Assign an existing JSON value without parsing a marker."""
+        if self._json_type_active:
+            return _format_zig_call_assignment(
+                name=name, value=value, _data=data
+            )
+        return self.format_variable_assignment(name, value, data)
+
     @cached_property
     def format_variable_declaration(
         self,

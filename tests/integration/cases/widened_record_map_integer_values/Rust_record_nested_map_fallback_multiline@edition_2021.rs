@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+#[derive(Clone)]
 struct Record0 {
     input: HashMap<&'static str, i32>,
 }

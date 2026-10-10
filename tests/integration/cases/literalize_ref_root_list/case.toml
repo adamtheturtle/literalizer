@@ -5,10 +5,10 @@ owner = "literalize-ref"
 # names it rather than converting it, so Nim needs no ``import json``
 # for a value its own declaration wrote as ``@[...]`` (issue #4768).
 [ref]
-languages = ["Nim"]
+languages = ["Nim", "Rust"]
 languages_reason = """
 Sampled: Nim is where the binding chose a JSON conversion the
-referenced sequence did not need.
+referenced sequence did not need. Rust checks single-use owned references move directly.
 """
 
 [ref.value_sources]

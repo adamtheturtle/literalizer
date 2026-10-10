@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+#[derive(Clone)]
 struct Record1 {
     r#type: Option<&'static str>,
     pr_id: &'static str,
@@ -6,6 +7,7 @@ struct Record1 {
     missing: Option<Option<()>>,
     status: Option<Option<()>>,
 }
+#[derive(Clone)]
 struct Record0 {
     name: &'static str,
     input: Record1,

@@ -9,3 +9,6 @@ collection_layout = "multiline"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "cpp_tuple_versions"

@@ -1,3 +1,4 @@
+#[derive(Clone)]
 enum Value {
     Str(&'static str),
     I32(i32),
