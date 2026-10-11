@@ -217,7 +217,7 @@ def execute(
     created on demand) and each ``extra_files`` entry under the same
     tmpdir, then runs each :class:`Step` with cwd set to that tmpdir.
     Multi-command checks give each subprocess a separate deadline.
-    Single-command checks rely on the calling Actions step's timeout.
+    Single-command checks run directly.
     The first non-zero exit aborts with a diagnostic that includes the
     failing step's stdout/stderr and a dump of *program*.
 
