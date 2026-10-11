@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "(\n{call} // inner\n) // trailing"
+wrap_in_file = true
+variable_form = "new"
+languages = ["Haxe"]
+languages_reason = "C-style call bindings retain comments inside an expression and terminate before its trailing comment."
