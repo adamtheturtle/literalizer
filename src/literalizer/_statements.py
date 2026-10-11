@@ -8,6 +8,7 @@ wrapper that puts a prefix or a separator on each line then puts one on
 each *part* of a statement instead of on the statement (issue #4548).
 """
 
+import dataclasses
 import functools
 import re
 
@@ -15,6 +16,17 @@ from beartype import beartype
 
 _OPENING_BRACKETS = "([{"
 _CLOSING_BRACKETS = ")]}"
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _TrailingLineComments:
+    """An expression and its preserved trailing whitespace and
+    comments.
+    """
+
+    code: str
+    trailing_comments: str
 
 
 @beartype
@@ -27,7 +39,7 @@ def split_trailing_line_comments(
     raw_string_prefixes: tuple[str, ...],
     verbatim_strings: bool,
     interpolation_syntax: tuple[str, str] | None,
-) -> tuple[str, str]:
+) -> _TrailingLineComments:
     """Separate trailing line comments from a C-style expression."""
     cursor = len(statement)
     pattern = _c_style_comment_pattern(
@@ -50,11 +62,14 @@ def split_trailing_line_comments(
             break
         cursor = match.start()
     if cursor == len(statement):
-        return statement, ""
+        return _TrailingLineComments(code=statement, trailing_comments="")
     code = statement[:cursor].rstrip()
-    return code, statement[len(code) :]
+    return _TrailingLineComments(
+        code=code, trailing_comments=statement[len(code) :]
+    )
 
 
+@beartype
 def _c_style_comment_matches(
     *,
     statement: str,
@@ -82,6 +97,7 @@ def _c_style_comment_matches(
     return matches
 
 
+@beartype
 def _literal_span_end(
     *,
     statement: str,
@@ -119,6 +135,7 @@ def _literal_span_end(
     )
 
 
+@beartype
 def _string_escape_width(
     *, statement: str, cursor: int, verbatim: bool
 ) -> int:
@@ -130,6 +147,7 @@ def _string_escape_width(
     return 0
 
 
+@beartype
 def _interpolated_string_end(
     *,
     statement: str,
@@ -165,6 +183,7 @@ def _interpolated_string_end(
     return len(statement)
 
 
+@beartype
 def _interpolation_expression_end(
     *,
     statement: str,
