@@ -680,7 +680,7 @@ jobs:
             # transient segfaults, but without this timeout the retry can
             # hang forever and leave only "operation was canceled" plus
             # an orphan odin process in the Actions log.
-            ( cd "$wd" && "$bounded_runner" "$src" 60s 10s odin run . -out:"$wd/prog" )
+            ( cd "$wd" && "$bounded_runner" "$src" --kill-after=10s 60s odin run . -out:"$wd/prog" )
           }
           for (( i=0; i<n; i+=1 )); do
             src=$(realpath "${files[i]}")
@@ -1079,7 +1079,7 @@ jobs:
           find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
           while IFS= read -r -d '' f; do
             label="Elm formatting: $f"
-            scripts/run-bounded.sh "$label" 60s 5s elm-format --stdin < "$f" > /dev/null || exit "$?"
+            scripts/run-bounded.sh "$label" --kill-after=5s 60s elm-format --stdin < "$f" > /dev/null || exit "$?"
           done < /tmp/files-elm
           xargs -0 uv run python -m scripts.check_elm_syntax < /tmp/files-elm
 
@@ -2210,14 +2210,14 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          scripts/run-bounded.sh "$1" 60s KILL \
+          scripts/run-bounded.sh "$1" --signal=KILL 60s \
             swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit "$?"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
         run: |-
           cat > /tmp/run-swift.sh <<'SCRIPT'
-          scripts/run-bounded.sh "$1" 60s KILL \
+          scripts/run-bounded.sh "$1" --signal=KILL 60s \
             swift -swift-version 5 -warnings-as-errors "$1"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-swift.sh < /tmp/files-to-lint

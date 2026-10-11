@@ -56,16 +56,17 @@ def test_command_streams_and_status(status: int) -> None:
     assert result.stderr.startswith(b"fixture with spaces.cpp: running")
     assert b"one argument with spaces\n" in result.stderr
     if status != 0:
-        assert b"status 7; deadline 10s; elapsed" in result.stderr
+        assert b"status 7; elapsed" in result.stderr
+        assert b"--signal=KILL 10s" in result.stderr
 
 
 @_requires_timeout
 @pytest.mark.parametrize(
     argnames=("termination", "ignore_term", "status"),
     argvalues=[
-        ("KILL", False, 137),
-        ("0.1s", False, 124),
-        ("0.1s", True, 137),
+        ("--signal=KILL", False, 137),
+        ("--kill-after=0.1s", False, 124),
+        ("--kill-after=0.1s", True, 137),
     ],
 )
 def test_deadline_policies(
@@ -84,8 +85,8 @@ def test_deadline_policies(
         args=[
             str(object=_WRAPPER),
             "deep file.elm",
-            "0.5s",
             termination,
+            "0.5s",
             sys.executable,
             "-c",
             program,
@@ -97,7 +98,8 @@ def test_deadline_policies(
     )
     assert result.returncode == status
     assert "deep file.elm: running" in result.stderr
-    assert f"status {status}; deadline 0.5s" in result.stderr
+    assert f"status {status}; elapsed" in result.stderr
+    assert f"{termination} 0.5s" in result.stderr
 
 
 @_requires_timeout
@@ -238,7 +240,8 @@ def test_roundtrip_failure_removes_temporary_source(
         )
     assert failure.value.code == 1
     error = capsys.readouterr().err
-    assert "status 7; deadline 60s; elapsed" in error
+    assert "status 7; elapsed" in error
+    assert "--signal=KILL 60s" in error
     assert "Program:\nraise SystemExit(7)" in error
     source = Path(error.splitlines()[1].split(sep=": running", maxsplit=1)[0])
     assert source.name == "main.py"

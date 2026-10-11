@@ -34,9 +34,9 @@ bounded_runner="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/run-bounded.
 
 if [[ ${1:-} == sudo ]]; then
     shift
-    bounded=(sudo "$bounded_runner" "network install" "${attempt_seconds}s" 10s)
+    bounded=(sudo "$bounded_runner" "network install" --kill-after=10s "${attempt_seconds}s")
 else
-    bounded=("$bounded_runner" "network install" "${attempt_seconds}s" 10s)
+    bounded=("$bounded_runner" "network install" --kill-after=10s "${attempt_seconds}s")
 fi
 
 for attempt in $(seq 1 "$attempts"); do

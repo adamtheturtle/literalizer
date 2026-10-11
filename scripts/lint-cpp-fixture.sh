@@ -24,18 +24,18 @@ fi
 
 case "$mode" in
 tidy)
-    scripts/run-bounded.sh "$fixture_path" 60s KILL \
+    scripts/run-bounded.sh "$fixture_path" --signal=KILL 60s \
         clang-tidy "$fixture_path" -- "-std=$standard"
     ;;
 run)
     temporary_directory=$(mktemp -d)
     trap 'rm -rf "$temporary_directory"' EXIT
-    scripts/run-bounded.sh "$fixture_path" 60s KILL \
+    scripts/run-bounded.sh "$fixture_path" --signal=KILL 60s \
         clang++ "-std=$standard" \
         -include-pch "/tmp/lint-cpp-$standard.hpp.pch" \
         "$fixture_path" \
         -o "$temporary_directory/run"
-    scripts/run-bounded.sh "$fixture_path" 60s KILL \
+    scripts/run-bounded.sh "$fixture_path" --signal=KILL 60s \
         "$temporary_directory/run"
     ;;
 *)
