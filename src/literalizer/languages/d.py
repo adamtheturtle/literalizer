@@ -530,7 +530,7 @@ def _format_d_call_declaration(
     return-type hint is required: the call result is bound directly with
     a plain inferred ``auto`` declaration and no value-wrapping.
     """
-    code, trailing = split_trailing_line_comments(
+    comments = split_trailing_line_comments(
         statement=value,
         prefix="//",
         backtick_strings=True,
@@ -539,7 +539,7 @@ def _format_d_call_declaration(
         verbatim_strings=False,
         interpolation_syntax=None,
     )
-    return f"auto {name} = {code};{trailing}"
+    return f"auto {name} = {comments.code};" + comments.trailing_comments
 
 
 @beartype
@@ -551,7 +551,7 @@ def _format_d_call_assignment(name: str, value: str, _data: Value) -> str:
     declared, so the call result is assigned directly with no
     ``JSONValue`` or struct-constructor wrapping.
     """
-    code, trailing = split_trailing_line_comments(
+    comments = split_trailing_line_comments(
         statement=value,
         prefix="//",
         backtick_strings=True,
@@ -560,7 +560,7 @@ def _format_d_call_assignment(name: str, value: str, _data: Value) -> str:
         verbatim_strings=False,
         interpolation_syntax=None,
     )
-    return f"{name} = {code};{trailing}"
+    return f"{name} = {comments.code};" + comments.trailing_comments
 
 
 # Work around https://github.com/astral-sh/ty/issues/4573.
