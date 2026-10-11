@@ -229,7 +229,7 @@ def _format_objc_call_declaration(
     A call expression already evaluates to an object pointer, so the
     ``@(...)`` boxing is dropped and the call result is bound directly.
     """
-    code, trailing = split_trailing_line_comments(
+    comments = split_trailing_line_comments(
         statement=value,
         prefix="//",
         regex_literals=False,
@@ -238,7 +238,7 @@ def _format_objc_call_declaration(
         verbatim_strings=False,
         interpolation_syntax=None,
     )
-    return f"id {name} = {code};{trailing}"
+    return f"id {name} = {comments.code};" + comments.trailing_comments
 
 
 @beartype
@@ -248,7 +248,7 @@ def _format_objc_call_assignment(name: str, value: str, _data: Value) -> str:
     The call-expression counterpart of the literal assignment formatter;
     no ``@(...)`` boxing since a call already yields an object pointer.
     """
-    code, trailing = split_trailing_line_comments(
+    comments = split_trailing_line_comments(
         statement=value,
         prefix="//",
         regex_literals=False,
@@ -257,7 +257,7 @@ def _format_objc_call_assignment(name: str, value: str, _data: Value) -> str:
         verbatim_strings=False,
         interpolation_syntax=None,
     )
-    return f"{name} = {code};{trailing}"
+    return f"{name} = {comments.code};" + comments.trailing_comments
 
 
 @beartype
