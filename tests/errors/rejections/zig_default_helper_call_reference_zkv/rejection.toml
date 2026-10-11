@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "Zig default call reference bindings cannot shadow the mode's helpers."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Zig"]
+
+[call]
+api = "literalize_call"
+sources = ['{"$ref":"ZKV"}']
+input_format = "json"
+wrap_in_file = true
+ref_key = "$ref"
+bound_ref_yaml = { ZKV = "a: 1" }
+target_function = "process"
+parameter_names = ["value"]
+per_element = false

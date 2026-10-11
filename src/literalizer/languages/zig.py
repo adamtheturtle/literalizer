@@ -317,7 +317,7 @@ def _make_zig_call_preamble_stub(
             # A generated member named ZVal masks the global carrier
             # in its own parameter declaration.  Bare call fragments
             # do not create this stub and retain their caller's scope.
-            param_type = '@"literalizer call value"'
+            param_type = '@"call value"'
             type_preamble = (f"const {param_type} = ZVal;",)
         method_param_list = ", ".join(
             [
@@ -633,8 +633,8 @@ _ZVAL_STATIC_PREAMBLE: tuple[str, ...] = (
     "const ZKV = struct { key: []const u8, val: ZVal };",
 )
 
-_ZIG_RECORD_VALUE_NAME = '@"literalizer record value"'
-_ZIG_RECORD_ENTRY_NAME = '@"literalizer record entry"'
+_ZIG_RECORD_VALUE_NAME = '@"record value"'
+_ZIG_RECORD_ENTRY_NAME = '@"record entry"'
 _RECORD_ZVAL_STATIC_PREAMBLE = tuple(
     line.replace("ZVal", _ZIG_RECORD_VALUE_NAME).replace(
         "ZKV", _ZIG_RECORD_ENTRY_NAME
@@ -644,11 +644,11 @@ _RECORD_ZVAL_STATIC_PREAMBLE = tuple(
 
 _STD_JSON_BODY_PREAMBLE: tuple[str, ...] = (
     (
-        'var @"literalizer JSON arena" = '
+        'var @"JSON arena" = '
         "std.heap.ArenaAllocator.init(std.heap.page_allocator);"
     ),
-    'defer @"literalizer JSON arena".deinit();',
-    'const allocator = @"literalizer JSON arena".allocator();',
+    'defer @"JSON arena".deinit();',
+    'const allocator = @"JSON arena".allocator();',
 )
 
 
@@ -670,24 +670,24 @@ _STD_JSON_ARRAY_OPEN = (
 )
 _STD_JSON_ARRAY_CLOSE = "}) catch unreachable) }"
 _STD_JSON_OBJECT_OPEN = """(struct {
-    fn @"literalizer JSON build"(
-        @"literalizer JSON allocator": std.mem.Allocator,
-        @"literalizer JSON entries": []const struct {
+    fn @"JSON build"(
+        @"JSON allocator": std.mem.Allocator,
+        @"JSON entries": []const struct {
             key: []const u8,
             value: std.json.Value,
         },
     ) std.json.Value {
-        var @"literalizer JSON object" =
-            std.json.ObjectMap.init(@"literalizer JSON allocator");
-        for (@"literalizer JSON entries") |@"literalizer JSON entry"| {
-            @"literalizer JSON object".put(
-                @"literalizer JSON entry".key,
-                @"literalizer JSON entry".value,
+        var @"JSON object" =
+            std.json.ObjectMap.init(@"JSON allocator");
+        for (@"JSON entries") |@"JSON entry"| {
+            @"JSON object".put(
+                @"JSON entry".key,
+                @"JSON entry".value,
             ) catch unreachable;
         }
-        return .{ .object = @"literalizer JSON object" };
+        return .{ .object = @"JSON object" };
     }
-}).@"literalizer JSON build"(allocator, &.{"""
+}).@"JSON build"(allocator, &.{"""
 _STD_JSON_OBJECT_CLOSE = "})"
 _STD_JSON_EMPTY_ARRAY = (
     "std.json.Value{ .array = std.json.Array.init(allocator) }"
@@ -1057,9 +1057,9 @@ class Zig(metaclass=LanguageCls):
     class FloatFormats(
         FloatSpecialsMixin,
         enum.Enum,
-        positive_infinity='@"literalizer float std".math.inf(f64)',
-        negative_infinity='-@"literalizer float std".math.inf(f64)',
-        nan='@"literalizer float std".math.nan(f64)',
+        positive_infinity='@"float std".math.inf(f64)',
+        negative_infinity='-@"float std".math.inf(f64)',
+        nan='@"float std".math.nan(f64)',
     ):
         """Float format options."""
 
@@ -1342,7 +1342,7 @@ class Zig(metaclass=LanguageCls):
     statement_terminator: ClassVar[str] = ";"
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = (
-        'const @"literalizer float std" = @import("std");',
+        'const @"float std" = @import("std");',
     )
     call_style: CallStyles = CallStyles.POSITIONAL
 

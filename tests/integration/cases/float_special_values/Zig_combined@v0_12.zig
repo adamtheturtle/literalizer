@@ -10,17 +10,17 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-const @"literalizer float std" = @import("std");
+const @"float std" = @import("std");
 pub fn main() void {
     var my_data: ZVal = .{ .arr = &.{
-        .{ .float = @"literalizer float std".math.inf(f64) },
-        .{ .float = -@"literalizer float std".math.inf(f64) },
-        .{ .float = @"literalizer float std".math.nan(f64) },
+        .{ .float = @"float std".math.inf(f64) },
+        .{ .float = -@"float std".math.inf(f64) },
+        .{ .float = @"float std".math.nan(f64) },
     }};
     my_data = .{ .arr = &.{
-        .{ .float = @"literalizer float std".math.inf(f64) },
-        .{ .float = -@"literalizer float std".math.inf(f64) },
-        .{ .float = @"literalizer float std".math.nan(f64) },
+        .{ .float = @"float std".math.inf(f64) },
+        .{ .float = -@"float std".math.inf(f64) },
+        .{ .float = @"float std".math.nan(f64) },
     }};
     my_data = .nil;
 }

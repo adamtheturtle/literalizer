@@ -10,8 +10,8 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-const @"literalizer float std" = @import("std");
+const @"float std" = @import("std");
 pub fn main() void {
-    const std: ZVal = .{ .float = @"literalizer float std".math.nan(f64) };
+    const std: ZVal = .{ .float = @"float std".math.nan(f64) };
     _ = std;
 }

@@ -1,5 +1,5 @@
-const @"literalizer float std" = @import("std");
+const @"float std" = @import("std");
 pub fn main() void {
-    const std = @"literalizer float std".math.nan(f64);
+    const std = @"float std".math.nan(f64);
     _ = std;
 }

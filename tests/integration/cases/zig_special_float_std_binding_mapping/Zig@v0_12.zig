@@ -10,12 +10,12 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-const @"literalizer float std" = @import("std");
+const @"float std" = @import("std");
 pub fn main() void {
     const std: ZVal = .{ .map = &.{
-        .{ .key = "nan", .val = .{ .float = @"literalizer float std".math.nan(f64) } },
-        .{ .key = "positive", .val = .{ .float = @"literalizer float std".math.inf(f64) } },
-        .{ .key = "negative", .val = .{ .float = -@"literalizer float std".math.inf(f64) } },
+        .{ .key = "nan", .val = .{ .float = @"float std".math.nan(f64) } },
+        .{ .key = "positive", .val = .{ .float = @"float std".math.inf(f64) } },
+        .{ .key = "negative", .val = .{ .float = -@"float std".math.inf(f64) } },
     }};
     _ = std;
 }
