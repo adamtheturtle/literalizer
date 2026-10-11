@@ -3665,11 +3665,12 @@ def _line_comment_call_variable_declaration(
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Terminate C-style call bindings before trailing line comments."""
 
+    @beartype
     def _format(
         name: str, value: str, data: Value, modifiers: frozenset[enum.Enum]
     ) -> str:
         """Bind the expression, then preserve its final comments."""
-        code, trailing = split_trailing_line_comments(
+        comments = split_trailing_line_comments(
             statement=value,
             prefix="//",
             regex_literals=regex_literals,
@@ -3679,8 +3680,10 @@ def _line_comment_call_variable_declaration(
             interpolation_syntax=interpolation_syntax,
         )
         return (
-            self.format_variable_declaration(name, code, data, modifiers)
-            + trailing
+            self.format_variable_declaration(
+                name, comments.code, data, modifiers
+            )
+            + comments.trailing_comments
         )
 
     return _format
@@ -3696,6 +3699,7 @@ def line_comment_call_variable_declaration(
 ) -> property:
     """Build a call binding descriptor with its literal syntax."""
 
+    @beartype
     def _get(
         self: "Language",
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -3724,9 +3728,10 @@ def _line_comment_call_variable_assignment(
     comments.
     """
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Assign the expression, then preserve its final comments."""
-        code, trailing = split_trailing_line_comments(
+        comments = split_trailing_line_comments(
             statement=value,
             prefix="//",
             regex_literals=regex_literals,
@@ -3735,7 +3740,10 @@ def _line_comment_call_variable_assignment(
             verbatim_strings=verbatim_strings,
             interpolation_syntax=interpolation_syntax,
         )
-        return self.format_variable_assignment(name, code, data) + trailing
+        return (
+            self.format_variable_assignment(name, comments.code, data)
+            + comments.trailing_comments
+        )
 
     return _format
 
@@ -3750,6 +3758,7 @@ def line_comment_call_variable_assignment(
 ) -> property:
     """Build a call assignment descriptor with its literal syntax."""
 
+    @beartype
     def _get(self: "Language") -> Callable[[str, str, Value], str]:
         """Return the assignment formatter for this language."""
         return _line_comment_call_variable_assignment(
