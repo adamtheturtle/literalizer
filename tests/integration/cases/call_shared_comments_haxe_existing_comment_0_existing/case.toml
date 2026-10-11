@@ -3,13 +3,16 @@ owner = "literalize-call"
 
 [call]
 languages = ["Haxe"]
-languages_reason = "Exercise this literal syntax with the shared call-comment descriptors before built-in adoption."
+languages_reason = "The transformed call uses Haxe literal and comment syntax."
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "existing"
-shared_call_comments = true
+variant_only = true
 call_transform = "{call} // note"
 
 [call.ref_declarations]
 my_data = "42"
+
+[[call.variants]]
+axis = "declaration_style"

@@ -1,28 +1,4 @@
 [[cases]]
-name = "dart_incomplete_interpolation_0"
-statement = "\"${\"// payload\""
-expected_code = "\"${\"// payload\""
-expected_trailing = ""
-raw_string_prefixes = ["r"]
-interpolation_syntax = ["${", "\"'"]
-
-[[cases]]
-name = "dart_incomplete_interpolation_1"
-statement = "\"${\"// payload\"}"
-expected_code = "\"${\"// payload\"}"
-expected_trailing = ""
-raw_string_prefixes = ["r"]
-interpolation_syntax = ["${", "\"'"]
-
-[[cases]]
-name = "dart_incomplete_interpolation_2"
-statement = "\"${]\"// payload\""
-expected_code = "\"${]\"// payload\""
-expected_trailing = ""
-raw_string_prefixes = ["r"]
-interpolation_syntax = ["${", "\"'"]
-
-[[cases]]
 name = "backtick_scanner_option"
 statement = "`// payload` // note"
 expected_code = "`// payload`"

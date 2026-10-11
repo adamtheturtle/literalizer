@@ -1,0 +1,43 @@
+literals = []
+
+[[calls]]
+name = "dart_incomplete_interpolation_0"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{\"// payload\""
+
+[calls.expected]
+code = "my_data = \"${\"// payload\";"
+
+[[calls]]
+name = "dart_incomplete_interpolation_1"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{\"// payload\"}}"
+
+[calls.expected]
+code = "my_data = \"${\"// payload\"};"
+
+[[calls]]
+name = "dart_incomplete_interpolation_2"
+language = "Dart"
+source = "42"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "\"${{]\"// payload\""
+
+[calls.expected]
+code = "my_data = \"${]\"// payload\";"

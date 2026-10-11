@@ -3,11 +3,10 @@ owner = "literalize-call"
 
 [call]
 languages = ["Dart"]
-languages_reason = "Exercise this literal syntax with the shared call-comment descriptors before built-in adoption."
+languages_reason = "The transformed call uses Dart literal and comment syntax."
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 wrap_in_file = true
 variable_form = "new"
-shared_call_comments = true
 call_transform = "(\"${{{{'value': '// payload'}}['value']}}\").length >= 0 ? {call} : {call}"

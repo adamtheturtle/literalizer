@@ -31,7 +31,6 @@ from literalizer.exceptions import (
 )
 from tests.enum_members import enum_member_by_name
 
-from .call_comment_languages import shared_call_comment_language
 from .case_inputs import CaseInput
 from .case_manifests import CallCaseSpec, call_case_specs, case_input
 from .golden_checks import (
@@ -589,8 +588,6 @@ def run_call_golden_case(
             if isinstance(member.value, config.call_style_type)
         )
         spec = dataclasses.replace(spec, call_style=style)
-    if config.shared_call_comments:
-        spec = shared_call_comment_language(spec=spec)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
