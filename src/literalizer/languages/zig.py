@@ -651,24 +651,24 @@ _STD_JSON_ARRAY_OPEN = (
 )
 _STD_JSON_ARRAY_CLOSE = "}) catch unreachable) }"
 _STD_JSON_OBJECT_OPEN = """(struct {
-    fn @"literalizer JSON build"(
-        @"literalizer JSON allocator": std.mem.Allocator,
-        @"literalizer JSON entries": []const struct {
+    fn @"JSON build"(
+        @"JSON allocator": std.mem.Allocator,
+        @"JSON entries": []const struct {
             key: []const u8,
             value: std.json.Value,
         },
     ) std.json.Value {
-        var @"literalizer JSON object" =
-            std.json.ObjectMap.init(@"literalizer JSON allocator");
-        for (@"literalizer JSON entries") |@"literalizer JSON entry"| {
-            @"literalizer JSON object".put(
-                @"literalizer JSON entry".key,
-                @"literalizer JSON entry".value,
+        var @"JSON object" =
+            std.json.ObjectMap.init(@"JSON allocator");
+        for (@"JSON entries") |@"JSON entry"| {
+            @"JSON object".put(
+                @"JSON entry".key,
+                @"JSON entry".value,
             ) catch unreachable;
         }
-        return .{ .object = @"literalizer JSON object" };
+        return .{ .object = @"JSON object" };
     }
-}).@"literalizer JSON build"(allocator, &.{"""
+}).@"JSON build"(allocator, &.{"""
 _STD_JSON_OBJECT_CLOSE = "})"
 _STD_JSON_EMPTY_ARRAY = (
     "std.json.Value{ .array = std.json.Array.init(allocator) }"

@@ -4,24 +4,24 @@ pub fn main() void {
     defer arena.deinit();
     const allocator = arena.allocator();
     const my_data = (struct {
-        fn @"literalizer JSON build"(
-            @"literalizer JSON allocator": std.mem.Allocator,
-            @"literalizer JSON entries": []const struct {
+        fn @"JSON build"(
+            @"JSON allocator": std.mem.Allocator,
+            @"JSON entries": []const struct {
                 key: []const u8,
                 value: std.json.Value,
             },
         ) std.json.Value {
-            var @"literalizer JSON object" =
-                std.json.ObjectMap.init(@"literalizer JSON allocator");
-            for (@"literalizer JSON entries") |@"literalizer JSON entry"| {
-                @"literalizer JSON object".put(
-                    @"literalizer JSON entry".key,
-                    @"literalizer JSON entry".value,
+            var @"JSON object" =
+                std.json.ObjectMap.init(@"JSON allocator");
+            for (@"JSON entries") |@"JSON entry"| {
+                @"JSON object".put(
+                    @"JSON entry".key,
+                    @"JSON entry".value,
                 ) catch unreachable;
             }
-            return .{ .object = @"literalizer JSON object" };
+            return .{ .object = @"JSON object" };
         }
-    }).@"literalizer JSON build"(allocator, &.{
+    }).@"JSON build"(allocator, &.{
         .{ .key = "a", .value = std.json.Value{ .object = std.json.ObjectMap.init(allocator) } },
         .{ .key = "b", .value = (std.json.parseFromSlice(std.json.Value, allocator, "1", .{}) catch unreachable).value },
     });
