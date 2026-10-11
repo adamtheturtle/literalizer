@@ -37,7 +37,7 @@ _CASES = TypeAdapter(type=_CommentCases).validate_python(
 )
 def test_trailing_line_comments(case: _CommentCase) -> None:
     """Only comments after the complete expression are split off."""
-    assert split_trailing_line_comments(
+    comments = split_trailing_line_comments(
         statement=case.statement,
         prefix="//",
         regex_literals=case.regex_literals,
@@ -45,4 +45,6 @@ def test_trailing_line_comments(case: _CommentCase) -> None:
         raw_string_prefixes=case.raw_string_prefixes,
         verbatim_strings=case.verbatim_strings,
         interpolation_syntax=case.interpolation_syntax,
-    ) == (case.expected_code, case.expected_trailing)
+    )
+    assert comments.code == case.expected_code
+    assert comments.trailing_comments == case.expected_trailing

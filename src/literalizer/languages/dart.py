@@ -1487,6 +1487,7 @@ class Dart(metaclass=LanguageCls):
         arguments.
         """
 
+        @beartype
         def _format(
             name: str,
             value: str,
@@ -1494,7 +1495,7 @@ class Dart(metaclass=LanguageCls):
             modifiers: frozenset[enum.Enum],
         ) -> str:
             """Bind the call result before its trailing comments."""
-            code, trailing = split_trailing_line_comments(
+            comments = split_trailing_line_comments(
                 statement=value,
                 prefix="//",
                 regex_literals=False,
@@ -1505,9 +1506,9 @@ class Dart(metaclass=LanguageCls):
             )
             return (
                 self.declaration_style.value.formatter(
-                    name, code, data, modifiers
+                    name, comments.code, data, modifiers
                 )
-                + trailing
+                + comments.trailing_comments
             )
 
         return _format

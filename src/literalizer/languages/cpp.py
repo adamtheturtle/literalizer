@@ -4635,7 +4635,7 @@ class Cpp(metaclass=LanguageCls):
         """Deduce a call's result type independently of its argument
         data.
         """
-        code, trailing = split_trailing_line_comments(
+        comments = split_trailing_line_comments(
             statement=value,
             prefix="//",
             regex_literals=False,
@@ -4645,7 +4645,10 @@ class Cpp(metaclass=LanguageCls):
             interpolation_syntax=None,
         )
         prefix = _cpp_modifier_prefix(modifiers=modifiers)
-        return f"{prefix}auto {name} = {code};{trailing}"
+        return (
+            f"{prefix}auto {name} = {comments.code};"
+            + comments.trailing_comments
+        )
 
     @staticmethod
     def format_reference_variable_declaration(

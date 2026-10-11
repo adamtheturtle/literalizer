@@ -788,7 +788,7 @@ class CSharp(metaclass=LanguageCls):
         if _CSharpModifiers.CONST in modifiers:
             msg = "C# 'const' cannot bind a runtime call result."
             raise IncompatibleFormatsError(msg)
-        code, trailing = split_trailing_line_comments(
+        comments = split_trailing_line_comments(
             statement=value,
             prefix="//",
             regex_literals=False,
@@ -799,8 +799,13 @@ class CSharp(metaclass=LanguageCls):
         )
         prefix = _csharp_modifier_prefix(modifiers=modifiers)
         if prefix == "":
-            return f"var {name} = {code};{trailing}"
-        return f"{prefix}object {name} = {code};{trailing}"
+            return (
+                f"var {name} = {comments.code};" + comments.trailing_comments
+            )
+        return (
+            f"{prefix}object {name} = {comments.code};"
+            + comments.trailing_comments
+        )
 
     format_call_variable_assignment: ClassVar[property] = (
         line_comment_call_variable_assignment(
