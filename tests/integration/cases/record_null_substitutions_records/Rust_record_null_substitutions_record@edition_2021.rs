@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     due_date: i32,
     parent_id: i32,

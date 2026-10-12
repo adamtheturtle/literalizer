@@ -778,6 +778,19 @@ def _elm_json_call_stub(
 
 
 @beartype
+def _elm_discard_call_bindings(*, calls: str, let_indent: str) -> list[str]:
+    """Bind each complete call expression once, retaining its layout."""
+    return [
+        f"{let_indent}_ = {statement}".replace("\n", f"\n{let_indent}")
+        for statement in split_statements(
+            content=calls,
+            quotes='"',
+            line_comment_prefixes=("--",),
+        )
+    ]
+
+
+@beartype
 def _elm_call_module(preamble: str, let_lines: list[str], indent: str) -> str:
     """Build a complete Elm call-mode module from preamble and let-
     bindings.
@@ -1285,24 +1298,17 @@ class Elm(metaclass=LanguageCls):
         When *variable_name* is empty (call mode), each call expression
         in *content* is bound via ``_ = …`` inside a ``let`` block so
         the generated file is syntactically valid Elm.  *content* is
-        one single-line call expression per line: this is the only
-        shape ``literalize_call`` produces for Elm, which uses
-        :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
-        standalone comments in that path.
+        a sequence of call expressions, each of which may span multiple
+        lines. Standalone comments are rejected in this path.
         """
         variable_name = context.variable_name
         body_preamble = context.body_preamble
         preamble = "\n".join(body_preamble)
         let_indent = self.indent * 2
         if variable_name == "":
-            let_lines = [
-                f"{let_indent}_ = {statement}".replace("\n", f"\n{let_indent}")
-                for statement in split_statements(
-                    content=content,
-                    quotes='"',
-                    line_comment_prefixes=("--",),
-                )
-            ]
+            let_lines = _elm_discard_call_bindings(
+                calls=content, let_indent=let_indent
+            )
             return _elm_call_module(
                 preamble=preamble,
                 let_lines=let_lines,
@@ -1323,10 +1329,8 @@ class Elm(metaclass=LanguageCls):
         Declarations are indented without a ``_ =`` prefix; call
         statements are bound via ``_ = …`` to satisfy Elm's requirement
         that every ``let`` binding produces a value.  *calls* is one
-        single-line call expression per line: this is the only shape
-        ``literalize_call`` produces for Elm, which uses
-        :attr:`CollectionLayout.COMPACT` for wrapped calls and rejects
-        standalone comments in that path.
+        call expression per statement, which may span multiple lines.
+        Standalone comments are rejected in this path.
         """
         body_preamble = context.body_preamble
         preamble = "\n".join(body_preamble)
@@ -1337,7 +1341,7 @@ class Elm(metaclass=LanguageCls):
                 f"{let_indent}{line}" for line in decl.split(sep="\n")
             )
         let_lines.extend(
-            f"{let_indent}_ = {line}" for line in calls.split(sep="\n")
+            _elm_discard_call_bindings(calls=calls, let_indent=let_indent)
         )
         return _elm_call_module(
             preamble=preamble,

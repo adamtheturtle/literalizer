@@ -1,0 +1,12 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Zig['[{nested: {1.5: value}}]']" = "Zig cannot represent dict key of type float"
+"Zig['[{nested: {1: value}}]']" = "Zig cannot represent dict key of type int"
+"Zig['[{nested: {true: value}}]']" = "Zig cannot represent dict key of type bool"
+"Zig['{1.5: value}']" = "Zig cannot represent dict key of type float"
+"Zig['{1: value}']" = "Zig cannot represent dict key of type int"
+"Zig['{nested: {1.5: value}}']" = "Zig cannot represent dict key of type float"
+"Zig['{nested: {1: value}}']" = "Zig cannot represent dict key of type int"
+"Zig['{nested: {true: value}}']" = "Zig cannot represent dict key of type bool"
+"Zig['{true: value}']" = "Zig cannot represent dict key of type bool"

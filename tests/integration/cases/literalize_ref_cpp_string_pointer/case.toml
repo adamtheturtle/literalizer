@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "C++ native string references hold pointers rather than owning strings."
+variable_form = "new"
+
+[ref.value_sources]
+shared = '"s"'

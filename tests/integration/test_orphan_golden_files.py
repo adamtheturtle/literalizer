@@ -89,12 +89,13 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
     expected = _expected_strategy_golden_files(cases_dir=cases_dir)
 
     for variant_case in build_variant_cases():
-        expected.update(
-            _paths_for_versions(
+        expected.add(
+            make_golden_path(
                 parent=cases_dir / variant_case.case_dir_name,
                 name=variant_case.variant_name,
                 extension=variant_case.variant.spec.extension,
                 lang_cls=variant_case.variant.lang_cls,
+                version=variant_case.variant.spec.language_version,
             )
         )
 
@@ -245,12 +246,13 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         )
 
     for call_variant_case in build_call_variant_cases():
-        expected.update(
-            _paths_for_versions(
+        expected.add(
+            make_golden_path(
                 parent=cases_dir / call_variant_case.config.case_dir_name,
                 name=f"{call_variant_case.variant.name}_call",
                 extension=call_variant_case.variant.spec.extension,
                 lang_cls=call_variant_case.variant.lang_cls,
+                version=call_variant_case.variant.spec.language_version,
             )
         )
 
@@ -338,5 +340,46 @@ def test_effective_language_version_owns_golden(tmp_path: Path) -> None:
     with pytest.raises(
         expected_exception=AssertionError,
         match="Java_heterogeneous_strategy_record_combined@jdk_11",
+    ):
+        _check_golden_inventory(cases_dir=cases_dir, expected=expected)
+
+
+def test_variant_version_inventory_preserves_coverage_and_rejects_phantoms(
+    tmp_path: Path,
+) -> None:
+    """Multi-version options own real files; a version selection owns
+    one.
+    """
+    cases_dir = tmp_path / "cases"
+    case_dir = cases_dir / "binary"
+    case_dir.mkdir(parents=True)
+    expected = _expected_variant_golden_files(cases_dir=cases_dir)
+    ordinary_name = "Cpp_bytes_format_base64@"
+    pinned_name = "Cpp_version_cpp14@"
+    ordinary = {
+        case_dir / f"{ordinary_name}{version}.cpp"
+        for version in ("cpp14", "cpp17", "cpp20")
+    }
+    pinned = case_dir / f"{pinned_name}cpp14.cpp"
+    assert {
+        path
+        for path in expected
+        if path.parent == case_dir and path.name.startswith(ordinary_name)
+    } == ordinary
+    assert {
+        path
+        for path in expected
+        if path.parent == case_dir and path.name.startswith(pinned_name)
+    } == {pinned}
+    for path in ordinary | {pinned}:
+        actual = Path(__file__).parent / "cases" / "binary" / path.name
+        _ = path.write_bytes(data=actual.read_bytes())
+    _check_golden_inventory(cases_dir=cases_dir, expected=expected)
+
+    phantom = case_dir / f"{pinned_name}cpp20.cpp"
+    _ = phantom.write_bytes(data=pinned.read_bytes())
+    with pytest.raises(
+        expected_exception=AssertionError,
+        match="Cpp_version_cpp14@cpp20",
     ):
         _check_golden_inventory(cases_dir=cases_dir, expected=expected)

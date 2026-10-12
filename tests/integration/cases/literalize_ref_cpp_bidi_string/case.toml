@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "Bidirectional controls require an owning C++ string expression rather than a pointer declaration."
+
+[ref.value_sources]
+text = '"a\u202Ab"'

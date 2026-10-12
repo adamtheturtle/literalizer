@@ -1,14 +1,28 @@
 #include <initializer_list>
 #include <string>
-#include <map>
 #include <vector>
 #include <utility>
-#include <variant>
+struct Record1 { std::vector<int> numbers; std::vector<std::string> strings; };
+struct Record0 { std::vector<std::pair<std::string, int>> omap_value; Record1 sibling_lists; std::vector<std::string> ref_marker_present; };
 int main() {
-auto my_data = std::map<std::string, std::variant<std::vector<std::pair<std::string, int>>, std::map<std::string, std::variant<std::vector<int>, std::vector<std::string>>>, std::vector<std::string>>>{
-    {"omap_value", std::vector<std::pair<std::string, int>>{{"first", 1}}},
-    {"sibling_lists", std::map<std::string, std::variant<std::vector<int>, std::vector<std::string>>>{{"numbers", std::vector<int>{1, 2}}, {"strings", std::vector<std::string>{"x", "y"}}}},
-    {"ref_marker_present", std::vector<std::string>{"$keep", "z"}},
+auto my_data = Record0{
+    {
+        {"first", 1},
+    },
+    {
+        {
+            1,
+            2,
+        },
+        {
+            "x",
+            "y",
+        },
+    },
+    {
+        "$keep",
+        "z",
+    },
 };
     (void)my_data;
     return 0;

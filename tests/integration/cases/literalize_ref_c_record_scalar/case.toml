@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["C"]
+languages_reason = "C reference bindings must retain their resolved RECORD representation."
+heterogeneous_strategy = "RECORD"
+
+[ref.value_sources]
+first = '42'

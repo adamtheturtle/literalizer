@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Scala call members must use identifiers that compile without escaping."
+exceptions = ["InvalidCallTargetError"]
+languages = ["Scala"]
+values = ["Playlist.new", "foo.class", "foo.def"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "{value}"
+parameter_names = ["x"]
+wrap_in_file = true

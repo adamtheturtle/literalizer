@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"V['values: !!omap\\n  - outer: !!omap\\n      - first: {x: 1}\\n      - second: {y: s}\\nflag: true\\n']" = "V cannot represent ordered-map values with multiple native record types under the RECORD heterogeneous strategy"
+"V['values: !!omap\\n  - outer: !!omap\\n      - first: {x: 1}\\n      - second: {x: 2147483648}\\nflag: true\\n']" = "V cannot represent ordered-map values with multiple native record types under the RECORD heterogeneous strategy"

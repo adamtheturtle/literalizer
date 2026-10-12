@@ -21,12 +21,13 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 dynamic = [
     "version",
 ]
 dependencies = [
-    "beartype>=0.22.9,<1",
+    "beartype>=0.23.0,<1",
     "json5>=0.12",
     "pyhumps>=3.8",
     # We require >=0.18.16 as a minimum because some users use sphinx-toolbox,
@@ -49,7 +50,7 @@ urls.Source = "https://github.com/adamtheturtle/literalizer"
 [dependency-groups]
 dev = [
     "actionlint-py==1.7.12.25",
-    "beartype==0.23.0rc2",
+    "beartype==0.23.0",
     "check-manifest==0.51",
     "clang-tidy==22.1.8",
     "deptry==0.25.1",
@@ -164,7 +165,7 @@ version_scheme = "post-release"
 # setup-uv uses this pin instead of fetching its latest-version manifest;
 # transient manifest failures are tracked at
 # https://github.com/astral-sh/setup-uv/issues/869.
-required-version = "==0.11.7"
+required-version = "==0.13.0"
 
 [tool.ruff]
 line-length = 79
@@ -596,7 +597,7 @@ ignore_names = [
 [tool.pyproject-fmt]
 indent = 4
 keep_full_version = true
-max_supported_python = "3.14"
+max_supported_python = "3.15"
 
 [tool.mypy]
 files = [ "." ]
@@ -615,6 +616,7 @@ exclude_gitignore = true
 follow_untyped_imports = true
 strict = true
 plugins = [ "mypy_pytest_parametrize", "mypy_strict_kwargs" ]
+show_traceback = true
 num_workers = "auto"
 
 [[tool.mypy.overrides]]
@@ -663,12 +665,12 @@ analysis.strict-generic-narrowing = true
 
 [tool.pytest]
 addopts = [ "-n", "auto" ]
-# Source functions already use @beartype. Package import checking adds false
-# missing branches to the 100% coverage gate:
-# https://github.com/beartype/beartype/issues/706
-# When enabling beartype_packages, exclude literalizer._json_native_document:
+beartype_packages = [ "literalizer" ]
+# Exclude literalizer._json_native_document:
 # per-level wrappers exhaust the stack below the shared parse-depth guard.
+# https://github.com/beartype/beartype/issues/734
 # Its public entry points already use @beartype.
+beartype_skip_packages = [ "literalizer._json_native_document" ]
 beartype_test_fixtures = true
 beartype_tests = true
 log_cli = true

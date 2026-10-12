@@ -2,13 +2,51 @@
 #include <string>
 #include <cstddef>
 #include <map>
-#include <variant>
+#include <memory>
+#include <utility>
+struct Value {
+ private:
+  struct Holder {
+    Holder() = default;
+    Holder(const Holder&) = delete;
+    Holder(Holder&&) = delete;
+    Holder& operator=(const Holder&) = delete;
+    Holder& operator=(Holder&&) = delete;
+    virtual ~Holder() = default;
+  };
+  template <typename T> struct TypedHolder : Holder {
+    explicit TypedHolder(T value) : value_(std::move(value)) {}
+    T& get() { return value_; }
+    const T& get() const { return value_; }
+   private:
+    T value_;
+  }; // TypedHolder
+  static std::shared_ptr<Holder> make_holder(const char* value) {
+    return std::make_shared<TypedHolder<std::string>>(value);
+  } // make_holder string
+  template <typename T> static std::shared_ptr<Holder> make_holder(T value) {
+    return std::make_shared<TypedHolder<T>>(std::move(value));
+  } // make_holder generic
+  std::shared_ptr<Holder> value_;
+ public:
+  Value() : value_(new TypedHolder<std::nullptr_t>(nullptr)) {}
+  template <typename T> explicit Value(T value) : value_(make_holder(std::move(value))) {}
+  template <typename T> bool is() const {
+    return dynamic_cast<TypedHolder<T>*>(value_.get()) != nullptr;
+  }
+  template <typename T> T& get() {
+    return static_cast<TypedHolder<T>*>(value_.get())->get();
+  } // get
+  template <typename T> const T& get() const {
+    return static_cast<const TypedHolder<T>*>(value_.get())->get();
+  } // get const
+};
 int main() {
-const auto my_data = std::map<std::string, std::variant<std::string, int, bool, std::nullptr_t>>{
-    {"name", "Alice"},
-    {"age", 30},
-    {"active", true},
-    {"score", nullptr},
+const auto my_data = std::map<std::string, Value>{
+    {"name", Value{"Alice"}},
+    {"age", Value{30}},
+    {"active", Value{true}},
+    {"score", Value{nullptr}},
 };
     (void)my_data;
     return 0;

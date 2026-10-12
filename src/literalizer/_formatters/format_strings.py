@@ -167,6 +167,23 @@ format_string_backslash_nul_octal = make_backslash_string_formatter(
 )
 r"""Format a double-quoted string and escape NUL as fixed-width ``\000``."""
 
+
+@beartype
+def format_string_c_utf8_characters(*, value: str) -> str:
+    r"""Return escaped C character entries for the UTF-8 bytes of *value*."""
+    encoded = value.encode(encoding="utf-8")
+    return ", ".join(rf"'\{byte:03o}'" for byte in encoded)
+
+
+@beartype
+def format_string_c(value: str) -> str:
+    r"""Render bidirectional controls as a terminated UTF-8 character array."""
+    if not value.isascii() and has_bidi_formatting_character(value=value):
+        entries = format_string_c_utf8_characters(value=value)
+        return f"(const char[]){{{entries}, '\\000'}}"
+    return format_string_backslash_nul_octal(value=value)
+
+
 format_string_backslash_nul_unicode = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("\0", "\\u0000")],

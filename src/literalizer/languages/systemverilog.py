@@ -92,6 +92,7 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
+from literalizer._statements import split_double_quoted_line_comments
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -142,10 +143,10 @@ def _format_integer_hex_sv(value: int) -> str:
 def _format_integer_decimal_sv(value: int) -> str:
     """Format an integer as a SystemVerilog decimal literal.
 
-    Values outside 32-bit signed range get an explicit 64-bit signed
-    width prefix; smaller values are emitted as bare decimals.
+    Values whose signed magnitude needs more than 31 bits get an explicit
+    64-bit signed width prefix; smaller values are emitted as bare decimals.
     """
-    if _INT32_MIN <= value <= _INT32_MAX:
+    if _INT32_MIN < value <= _INT32_MAX:
         return str(object=value)
     bits = 64
     if value < 0:
@@ -352,7 +353,13 @@ def _format_systemverilog_call_declaration(
     struct literal, so the call result is bound directly with a plain
     ``static _VVal`` declaration regardless of the source data type.
     """
-    return f"static _VVal {name} = {value};"
+    comments = split_double_quoted_line_comments(
+        statement=value,
+        prefix="//",
+    )
+    return (
+        f"static _VVal {name} = {comments.code};" + comments.trailing_comments
+    )
 
 
 @beartype
@@ -368,7 +375,11 @@ def _format_systemverilog_call_assignment(
     already declared ``_VVal``, so the call result is assigned directly
     with no ``_VVal`` struct-literal wrapping.
     """
-    return f"{name} = {value};"
+    comments = split_double_quoted_line_comments(
+        statement=value,
+        prefix="//",
+    )
+    return f"{name} = {comments.code};" + comments.trailing_comments
 
 
 # Work around https://github.com/astral-sh/ty/issues/4573.

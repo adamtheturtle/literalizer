@@ -13,7 +13,11 @@ from typing import overload
 from beartype import beartype
 
 from literalizer._formatters.type_inference import (
+    BeyondI64,
+    DictType,
+    ListType,
     RecordShape,
+    WideInt,
     infer_element_type,
 )
 from literalizer._language import Language
@@ -1056,54 +1060,36 @@ def _has_mixed_dict_values(
 
 
 @beartype
-def _has_dict_with_unwrappable_value_mix(
+def _has_unwrappable_value_mix(
     *,
     data: Value,
-    record_dict_ids: frozenset[int],
+    container_type: type,
+    excluded_container_ids: frozenset[int],
 ) -> bool:
-    """Recursively check whether data contains any dict whose values span
-    multiple type families and at least one value is a container.
-
-    Wrapping strategies that only wrap scalars (tagged-enum / variant
-    payload with no list/dict member) cannot uniformly type such a
-    dict — scalar values would render wrapped while container values
-    stay raw, and any two distinct non-scalar families (e.g. ``dict``
-    and ``list``) cannot share a single map value type even after the
-    wrapping.  The static-typed target rejects the resulting
-    heterogeneous map.
-
-    Dicts whose ``id`` is in *record_dict_ids* are skipped — they are
-    carved out by the active RECORD heterogeneous strategy.
+    """Find mixed value families including a container that scalar-only
+    wrapping cannot represent. Native records and tuples are exempt.
     """
     match data:
         case dict():
             values: list[Value] = list(data.values())
-            has_container = any(
-                isinstance(v, (list, dict, set)) for v in values
-            )
-            if (
-                id(data) not in record_dict_ids
-                and has_container
-                and _values_mixed_types(values=values)
-            ):
-                return True
-            return any(
-                _has_dict_with_unwrappable_value_mix(
-                    data=v,
-                    record_dict_ids=record_dict_ids,
-                )
-                for v in values
-            )
         case list():
-            return any(
-                _has_dict_with_unwrappable_value_mix(
-                    data=v,
-                    record_dict_ids=record_dict_ids,
-                )
-                for v in data
-            )
+            values = data
         case _:
             return False
+    own_mixed = (
+        isinstance(data, container_type)
+        and id(data) not in excluded_container_ids
+        and any(isinstance(value, (list, dict, set)) for value in values)
+        and _values_mixed_types(values=values)
+    )
+    return own_mixed or any(
+        _has_unwrappable_value_mix(
+            data=value,
+            container_type=container_type,
+            excluded_container_ids=excluded_container_ids,
+        )
+        for value in values
+    )
 
 
 @beartype
@@ -1417,6 +1403,38 @@ def _fill_nested_empty_map_siblings(
 
 
 @beartype
+def _sibling_map_type_family(
+    *, inferred: type | ListType | DictType | None, spec: Language
+) -> object:
+    """Compare nested scalar families without introducing integer widths.
+
+    Integer ranges and their pooled formatters are checked separately.
+    Preserve collection ranks and kinds while comparing map value slots,
+    and use the selected date/time format's emitted scalar family.
+    """
+    match inferred:
+        case ListType(inner=inner):
+            return (
+                ListType,
+                _sibling_map_type_family(inferred=inner, spec=spec),
+            )
+        case DictType(value_type=inner):
+            return (
+                DictType,
+                _sibling_map_type_family(inferred=inner, spec=spec),
+            )
+        case _:
+            scalar_families: dict[object, object] = {
+                WideInt: int,
+                BeyondI64: int,
+                datetime.date: spec.date_format.value.type_produced,
+                datetime.datetime: spec.datetime_format.value.type_produced,
+                datetime.time: str,
+            }
+            return scalar_families.get(inferred, inferred)
+
+
+@beartype
 def _sibling_maps_diverge(
     *,
     pool: list[Value],
@@ -1457,10 +1475,15 @@ def _sibling_maps_diverge(
         if spec.dict_format_config.narrowed_empty_form is not None:
             _fill_nested_empty_map_siblings(maps=filtered)
         inferred_value_types = {
-            infer_element_type(items=list(d.values()))
+            _sibling_map_type_family(
+                inferred=infer_element_type(items=list(d.values())),
+                spec=spec,
+            )
             for d in filtered
             if len(d) > 0
         }
+        if None in inferred_value_types:
+            return False
         if len(inferred_value_types) > 1:
             return True
     return len({dict_open(d) for d in filtered}) > 1
@@ -1497,9 +1520,7 @@ def _has_unrepresentable_sibling_maps(
                 for value in data.values()
             )
         case dict():
-            if _dict_slot_uses_variant_typing(
-                spec=spec
-            ) and _sibling_maps_diverge(
+            if _sibling_maps_diverge(
                 pool=list(data.values()),
                 spec=spec,
                 record_dict_ids=record_dict_ids,
@@ -1668,21 +1689,56 @@ def _check_scalar_heterogeneity(
         if not set_supports_het:
             _check_heterogeneous_set(data=data)
     elif behavior.wrap_non_scalar is None:
-        # A wrapping strategy that only wraps scalars cannot uniformly
-        # represent a dict whose values span multiple type families and
-        # include at least one container — the tagged-enum / variant
-        # payload has no member that fits the container, and two
-        # distinct non-scalar families share no map value type either.
-        if not dict_supports_het and _has_dict_with_unwrappable_value_mix(
+        _check_scalar_wrapping_shapes(
             data=data,
+            spec=spec,
             record_dict_ids=record_dict_ids,
-        ):
-            msg = (
-                "Dict has values of mixed type families including a "
-                "container, which this heterogeneous strategy cannot "
-                "represent"
-            )
-            raise MixedDictValuesError(msg)
+            tuple_list_ids=tuple_list_ids,
+        )
+
+
+@beartype
+def _check_scalar_wrapping_shapes(
+    *,
+    data: Value,
+    spec: Language,
+    record_dict_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
+) -> None:
+    """Refuse containers that a scalar-only wrapping strategy cannot
+    type.
+    """
+    if (
+        not spec.dict_supports_heterogeneous_values
+        and _has_unwrappable_value_mix(
+            data=data,
+            container_type=dict,
+            excluded_container_ids=record_dict_ids,
+        )
+    ):
+        msg = (
+            "Dict has values of mixed type families including a "
+            "container, which this heterogeneous strategy cannot "
+            "represent"
+        )
+        raise MixedDictValuesError(msg)
+    # Empty-container variants have their own shape validation, including
+    # concrete container type hints, so retain that strategy boundary.
+    if (
+        not spec.sequence_format_config.supports_heterogeneity
+        and spec.heterogeneous_behavior.wrap_empty_container is None
+        and _has_unwrappable_value_mix(
+            data=data,
+            container_type=list,
+            excluded_container_ids=tuple_list_ids,
+        )
+    ):
+        msg = (
+            "List has values of mixed type families including a "
+            "container, which this heterogeneous strategy cannot "
+            "represent"
+        )
+        raise MixedListValuesError(msg)
 
 
 @beartype

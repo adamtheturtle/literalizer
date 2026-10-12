@@ -1,0 +1,13 @@
+schema_version = 1
+languages = ["Cpp", "Mojo"]
+languages_reason = "Empty sequence siblings must match their declared variant alternative beside scalar tuples or variant sequences."
+suites = ["base"]
+
+[[variants]]
+axis = "heterogeneous_strategy"
+
+[[variants]]
+axis = "heterogeneous_value_variant_name"
+
+[[variants]]
+axis = "cpp_tuple_versions"

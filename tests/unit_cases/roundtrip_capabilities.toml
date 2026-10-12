@@ -1,18 +1,22 @@
 [[capability_cases]]
 capability = "i64_boundaries"
 expected_keys = ["i64_min", "i64_min_adjacent", "i64_max_adjacent", "i64_max"]
+expected_values = { i64_min = -9223372036854775808, i64_min_adjacent = -9223372036854775807, i64_max_adjacent = 9223372036854775806, i64_max = 9223372036854775807 }
 
 [[capability_cases]]
 capability = "interpolation_strings"
 expected_keys = ["string_hash_interpolation", "string_braced_dollar_interpolation", "string_dollar_interpolation", "string_backticks", "string_at"]
+expected_values = {}
 
 [[capability_cases]]
 capability = "control_strings"
 expected_keys = ["string_controls"]
+expected_values = {}
 
 [[capability_cases]]
 capability = "embedded_nul"
 expected_keys = ["string_embedded_nul"]
+expected_values = {}
 
 [audited_languages]
 Bash = ["i64_boundaries", "interpolation_strings"]

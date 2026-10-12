@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallTargetError]
+"Scala['Playlist.new']" = "Scala cannot use call target 'Playlist.new': component 'new' is a reserved identifier"
+"Scala['foo.class']" = "Scala cannot use call target 'foo.class': component 'class' is a reserved identifier"
+"Scala['foo.def']" = "Scala cannot use call target 'foo.def': component 'def' is a reserved identifier"
