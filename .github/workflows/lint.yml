@@ -184,8 +184,9 @@ jobs:
         # Note the binary version (1.42.2) is distinct from the Dhall
         # *language* standard version (23.1.0) it implements.
         run: |-
-          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
-            | tar -xj
+          bash scripts/download-artifact.sh /tmp/dhall.tar.bz2 \
+            https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2
+          tar -xjf /tmp/dhall.tar.bz2
           echo "$PWD/bin" >> "$GITHUB_PATH"
       # The ``0.4.0`` wren-cli release downloaded here matches
       # ``Wren.language_version`` (``V0_4``) in
@@ -195,7 +196,8 @@ jobs:
       - name: Install Wren CLI
         timeout-minutes: 10
         run: |
-          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
+          bash scripts/download-artifact.sh /tmp/wren.zip \
+            https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
       # ``ubuntu-latest`` preinstalls a ``pwsh``, but that runner default
@@ -210,8 +212,9 @@ jobs:
         timeout-minutes: 10
         run: |-
           mkdir -p /tmp/powershell
-          curl -fsSL https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-linux-x64.tar.gz \
-            | tar -xz -C /tmp/powershell
+          bash scripts/download-artifact.sh /tmp/powershell.tar.gz \
+            https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-linux-x64.tar.gz
+          tar -xzf /tmp/powershell.tar.gz -C /tmp/powershell
           chmod +x /tmp/powershell/pwsh
           echo "/tmp/powershell" >> "$GITHUB_PATH"
       - name: Install uv
@@ -353,6 +356,7 @@ jobs:
         run: |-
           mkdir -p /tmp/jackson-jars
           jackson_version=2.18.2
+          # Three jars and two endpoints fit inside the 10-minute setup step.
           for path in jackson-databind/$jackson_version/jackson-databind-$jackson_version.jar \
                       jackson-core/$jackson_version/jackson-core-$jackson_version.jar \
                       jackson-annotations/$jackson_version/jackson-annotations-$jackson_version.jar; do
@@ -736,8 +740,8 @@ jobs:
       - name: Install Roc
         timeout-minutes: 10
         run: |-
-          curl -fsSL https://github.com/roc-lang/roc/releases/download/nightly/roc_nightly-linux_x86_64-latest.tar.gz \
-            -o /tmp/roc.tar.gz
+          bash scripts/download-artifact.sh /tmp/roc.tar.gz \
+            https://github.com/roc-lang/roc/releases/download/nightly/roc_nightly-linux_x86_64-latest.tar.gz
           mkdir -p /tmp/roc-nightly
           tar -xzf /tmp/roc.tar.gz -C /tmp/roc-nightly
           # Read the extracted top-level directory by globbing rather
@@ -1372,7 +1376,9 @@ jobs:
       - name: Install MLton
         timeout-minutes: 10
         run: |
-          curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
+          bash scripts/download-artifact.sh /tmp/mlton.tgz \
+            https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz
+          tar -xzf /tmp/mlton.tgz -C /tmp
           echo "/tmp/mlton-20241230-1.amd64-linux.ubuntu-24.04_static/bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
@@ -1862,8 +1868,7 @@ jobs:
         timeout-minutes: 10
         run: |-
           mkdir -p "${RUNNER_TEMP}/cjson-include/cjson"
-          scripts/retry.sh curl --fail --location --silent --show-error \
-            --output "${RUNNER_TEMP}/cjson-include/cjson/cJSON.h" \
+          bash scripts/download-artifact.sh "${RUNNER_TEMP}/cjson-include/cjson/cJSON.h" \
             "https://raw.githubusercontent.com/DaveGamble/cJSON/v${CJSON_VERSION}/cJSON.h"
       - name: Put the cJSON header on the include path
         run: echo "C_INCLUDE_PATH=${RUNNER_TEMP}/cjson-include${C_INCLUDE_PATH:+:${C_INCLUDE_PATH}}"
@@ -1917,8 +1922,7 @@ jobs:
         timeout-minutes: 10
         run: |-
           mkdir -p "${RUNNER_TEMP}/nlohmann-include/nlohmann"
-          scripts/retry.sh curl --fail --location --silent --show-error \
-            --output "${RUNNER_TEMP}/nlohmann-include/nlohmann/json.hpp" \
+          bash scripts/download-artifact.sh "${RUNNER_TEMP}/nlohmann-include/nlohmann/json.hpp" \
             "https://github.com/nlohmann/json/releases/download/v${NLOHMANN_JSON_VERSION}/json.hpp"
       - name: Put nlohmann/json on the include path
         run: echo "CPLUS_INCLUDE_PATH=${RUNNER_TEMP}/nlohmann-include${CPLUS_INCLUDE_PATH:+:${CPLUS_INCLUDE_PATH}}"
@@ -2070,8 +2074,7 @@ jobs:
         timeout-minutes: 10
         run: |-
           mkdir -p "${RUNNER_TEMP}/nlohmann-include/nlohmann"
-          scripts/retry.sh curl --fail --location --silent --show-error \
-            --output "${RUNNER_TEMP}/nlohmann-include/nlohmann/json.hpp" \
+          bash scripts/download-artifact.sh "${RUNNER_TEMP}/nlohmann-include/nlohmann/json.hpp" \
             "https://github.com/nlohmann/json/releases/download/v${NLOHMANN_JSON_VERSION}/json.hpp"
       - name: Put nlohmann/json on the include path
         run: echo "CPLUS_INCLUDE_PATH=${RUNNER_TEMP}/nlohmann-include${CPLUS_INCLUDE_PATH:+:${CPLUS_INCLUDE_PATH}}"
@@ -3364,7 +3367,8 @@ jobs:
       - name: Install V
         timeout-minutes: 10
         run: |
-          curl -fsSL -o /tmp/v_linux.zip https://github.com/vlang/v/releases/download/weekly.2026.08/v_linux.zip
+          bash scripts/download-artifact.sh /tmp/v_linux.zip \
+            https://github.com/vlang/v/releases/download/weekly.2026.08/v_linux.zip
           unzip -q /tmp/v_linux.zip -d /tmp
           sudo ln -s /tmp/v/v /usr/local/bin/v
           # The prebuilt binary lazily creates ``~/.vmodules`` (and the
