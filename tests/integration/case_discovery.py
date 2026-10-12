@@ -53,6 +53,7 @@ from .language_specs import (
     make_spec,
     sorted_languages,
 )
+from .yaml_warnings import expected_yaml_warnings
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -220,10 +221,11 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
     ``ruamel`` yields its comment-tracking mappings; both are walked
     structurally by the ``has_*`` predicates.
     """
-    parsed = _load_case_source(
-        source=input_info.path.read_text(encoding="utf-8"),
-        input_format=input_info.input_format,
-    )
+    with expected_yaml_warnings(input_path=input_info.path):
+        parsed = _load_case_source(
+            source=input_info.path.read_text(encoding="utf-8"),
+            input_format=input_info.input_format,
+        )
     return TypeAdapter[CaseData](type=CaseData).validate_python(
         parsed,
         strict=True,
