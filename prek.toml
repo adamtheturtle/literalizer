@@ -80,7 +80,7 @@ hooks = [
   },
   {
     id = "check-yaml",
-    exclude = "^tests/integration/cases/(special_float_dict_key|float_special_values)/",
+    exclude = "^tests/integration/cases/(special_float_dict_key|float_special_values|zig_special_float_std_binding_(scalar|mapping))/",
     priority = 92,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -146,7 +146,7 @@ hooks = [
     language = "python",
     pass_filenames = false,
     types_or = ["yaml"],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 500,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -158,7 +158,7 @@ hooks = [
     language = "python",
     types_or = ["shell"],
     exclude = "^tests/integration/cases/",
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 500,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -172,7 +172,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 500,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -184,7 +184,7 @@ hooks = [
     language = "python",
     types_or = ["shell"],
     exclude = "^tests/integration/cases/",
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 130,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -198,7 +198,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 140,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -210,7 +210,7 @@ hooks = [
     language = "python",
     types_or = ["python"],
     exclude = "^tests/integration/cases/",
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 150,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -228,7 +228,7 @@ hooks = [
       "toml"
     ],
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "mypy-docs",
@@ -246,7 +246,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "check-manifest",
@@ -257,7 +257,7 @@ hooks = [
     entry = "uv run --group=dev -m check_manifest",
     language = "python",
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "pyright",
@@ -272,7 +272,7 @@ hooks = [
       "toml"
     ],
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "pyright-docs",
@@ -286,7 +286,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "pyright-verifytypes",
@@ -298,7 +298,7 @@ hooks = [
     language = "python",
     pass_filenames = false,
     types_or = ["python"],
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "ty",
@@ -313,7 +313,7 @@ hooks = [
       "toml"
     ],
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "ty-docs",
@@ -327,7 +327,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "pyrefly",
@@ -342,7 +342,7 @@ hooks = [
       "toml"
     ],
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "pyrefly-docs",
@@ -356,7 +356,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "vulture",
@@ -365,7 +365,7 @@ hooks = [
     language = "python",
     types_or = ["python"],
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 510,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -379,7 +379,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 510,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -391,7 +391,7 @@ hooks = [
     language = "python",
     pass_filenames = false,
     types_or = ["toml"],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 510,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -402,7 +402,7 @@ hooks = [
     entry = "uv run --group=dev -m deptry src/",
     language = "python",
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 510,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -416,7 +416,7 @@ hooks = [
     groups = ["pylint"],
     priority = 600,
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "pylint-docs",
@@ -430,7 +430,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "ruff-check-fix",
@@ -439,7 +439,7 @@ hooks = [
     language = "python",
     types_or = ["python"],
     exclude = "^tests/integration/cases/",
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 160,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -453,7 +453,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 170,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -465,7 +465,7 @@ hooks = [
     language = "python",
     types_or = ["python"],
     exclude = "^tests/integration/cases/",
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 180,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -479,7 +479,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 190,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -490,7 +490,7 @@ hooks = [
     entry = "uv run --group=dev strict-kwargs check --fix",
     language = "python",
     types_or = ["python"],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     stages = ["pre-commit"],
     groups = ["fast"],
     require_serial = true
@@ -501,7 +501,7 @@ hooks = [
     entry = "uv run --group=dev no-defaults",
     language = "python",
     types_or = ["python"],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     stages = ["pre-commit"],
     groups = ["fast"],
     require_serial = true
@@ -515,7 +515,7 @@ hooks = [
     language = "python",
     pass_filenames = false,
     files = '(\.(rst|md)$|^\.vale\.ini$)',
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     stages = ["pre-commit"],
     groups = ["fast"]
   },
@@ -529,7 +529,7 @@ hooks = [
       "markdown"
     ],
     require_serial = true,
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     stages = ["pre-commit"]
   },
   {
@@ -542,7 +542,7 @@ hooks = [
       "markdown"
     ],
     require_serial = true,
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     stages = ["pre-commit"],
     groups = ["fast"]
   },
@@ -552,7 +552,7 @@ hooks = [
     entry = "uv run --group=dev -m doc8",
     language = "python",
     types_or = ["rst"],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 500,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -564,7 +564,7 @@ hooks = [
     language = "python",
     types_or = ["python"],
     exclude = "^tests/integration/cases/",
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 510,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -578,7 +578,7 @@ hooks = [
       "markdown",
       "rst"
     ],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 510,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -590,7 +590,7 @@ hooks = [
     language = "python",
     types_or = ["toml"],
     files = "pyproject.toml",
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 200,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -605,7 +605,7 @@ hooks = [
     groups = ["docs"],
     priority = 610,
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "spelling",
@@ -617,7 +617,7 @@ hooks = [
     groups = ["docs"],
     priority = 610,
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "docs",
@@ -628,7 +628,7 @@ hooks = [
     groups = ["docs"],
     priority = 610,
     pass_filenames = false,
-    additional_dependencies = ["uv==0.11.7"]
+    additional_dependencies = ["uv==0.13.0"]
   },
   {
     id = "yamlfix",
@@ -637,7 +637,7 @@ hooks = [
     language = "python",
     types_or = ["yaml"],
     exclude = "^tests/integration/cases/",
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 210,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -649,7 +649,7 @@ hooks = [
     language = "python",
     pass_filenames = false,
     types_or = ["yaml"],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 500,
     stages = ["pre-commit"],
     groups = ["fast"]
@@ -660,7 +660,7 @@ hooks = [
     entry = "uv run --group=dev sphinx-lint --enable=all --disable=line-too-long",
     language = "python",
     types_or = ["rst"],
-    additional_dependencies = ["uv==0.11.7"],
+    additional_dependencies = ["uv==0.13.0"],
     priority = 500,
     stages = ["pre-commit"],
     groups = ["fast"]
