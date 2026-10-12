@@ -538,7 +538,9 @@ def _render_ref_declaration(
     declaration_name: str,
     ref_source: str,
 ) -> literalizer.LiteralizeResult:
-    """Seed an existing result binding with its synthetic callee's carrier."""
+    """Seed an existing binding using the synthetic function return
+    carrier.
+    """
     variable_form = literalizer.NewVariable(
         name=declaration_name,
         modifiers=frozenset(),
