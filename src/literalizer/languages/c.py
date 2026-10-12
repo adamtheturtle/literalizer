@@ -701,7 +701,7 @@ def _format_c_call_declaration(
     difference is dropping the value-wrapping compound literal, so the
     call result is bound directly with a plain ``CVal`` declaration.
     """
-    code, trailing = split_trailing_line_comments(
+    comments = split_trailing_line_comments(
         statement=value,
         prefix="//",
         regex_literals=False,
@@ -710,7 +710,7 @@ def _format_c_call_declaration(
         verbatim_strings=False,
         interpolation_syntax=None,
     )
-    return f"CVal {name} = {code};{trailing}"
+    return f"CVal {name} = {comments.code};{comments.trailing_comments}"
 
 
 @beartype
@@ -721,7 +721,7 @@ def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
     the variable is already declared ``CVal``, so the call result is
     assigned directly with no compound-literal wrapping.
     """
-    code, trailing = split_trailing_line_comments(
+    comments = split_trailing_line_comments(
         statement=value,
         prefix="//",
         regex_literals=False,
@@ -730,7 +730,7 @@ def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
         verbatim_strings=False,
         interpolation_syntax=None,
     )
-    return f"{name} = {code};{trailing}"
+    return f"{name} = {comments.code};{comments.trailing_comments}"
 
 
 # Static preamble emitted under ``json_type=CJSON``: the cJSON header
