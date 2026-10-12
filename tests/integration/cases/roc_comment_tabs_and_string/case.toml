@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Roc"]
+languages_reason = "Roc-specific regression: comment tabs become spaces while string tabs remain escaped."
+suites = ["base"]

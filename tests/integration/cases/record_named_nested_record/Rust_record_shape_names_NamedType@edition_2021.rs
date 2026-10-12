@@ -1,9 +1,11 @@
+#[derive(Clone)]
 struct NamedType {
     id: i32,
     label: &'static str,
     enabled: bool,
     related_ids: Vec<i32>,
 }
+#[derive(Clone)]
 struct Record0 {
     collection: &'static str,
     featured_entry: NamedType,

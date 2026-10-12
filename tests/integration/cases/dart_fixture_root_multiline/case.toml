@@ -24,4 +24,4 @@ axis = "multiline_string"
 suffix = "_accessor_collision"
 
 [variants.context]
-variable_name = "literalizerFixtureRoot"
+variable_name = "fixtureRoot"

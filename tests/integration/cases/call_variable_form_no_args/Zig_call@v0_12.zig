@@ -10,7 +10,7 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-fn make_widget() void { }
+fn make_widget() ZVal { return .nil; }
 pub fn main() void {
     const my_data = make_widget();
     _ = my_data;

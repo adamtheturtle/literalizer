@@ -7,6 +7,8 @@ import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 
+from beartype import beartype
+
 from literalizer import VariableForm
 from literalizer.languages import Dart
 from tests.integration.call_cases import discover_call_cases
@@ -21,11 +23,13 @@ from tests.integration.literalize_ref_cases import (
 _CASES_DIR = Path(__file__).parent.parent / "tests" / "integration" / "cases"
 
 
+@beartype
 def _binding_name(*, variable_form: VariableForm | None) -> str:
     """Use the declared name or Dart's nameless-wrapper sentinel."""
     return "my_data" if variable_form is None else variable_form.name
 
 
+@beartype
 def _literalize_bindings() -> dict[Path, str]:
     """Read regular rendering bindings from the golden registry."""
     bindings: dict[Path, str] = {}
@@ -50,6 +54,7 @@ def _literalize_bindings() -> dict[Path, str]:
     return bindings
 
 
+@beartype
 def _call_bindings() -> dict[Path, str]:
     """Read call roots, including the nameless-wrapper sentinel."""
     bindings: dict[Path, str] = {}
@@ -86,6 +91,7 @@ def _call_bindings() -> dict[Path, str]:
     return bindings
 
 
+@beartype
 def _ref_bindings() -> dict[Path, str]:
     """Read declared roots for explicit and default references."""
     bindings: dict[Path, str] = {}
@@ -110,21 +116,24 @@ def _ref_bindings() -> dict[Path, str]:
     return bindings
 
 
+@beartype
 def dart_fixture_bindings() -> dict[Path, str]:
     """Read bindings from the same registries that own golden files."""
     return _literalize_bindings() | _call_bindings() | _ref_bindings()
 
 
+@beartype
 def _fresh_getter_name(*, source: str) -> str:
     """Choose an accessor name absent from the complete fixture text."""
-    name = "literalizerFixtureRoot"
+    name = "fixtureRoot"
     suffix = 0
     while name in source:
         suffix += 1
-        name = f"literalizerFixtureRoot{suffix}"
+        name = f"fixtureRoot{suffix}"
     return name
 
 
+@beartype
 def write_dart_driver(*, fixtures: Sequence[Path], target: Path) -> None:
     """Copy owned fixtures and reference their actual top-level roots."""
     bindings = dart_fixture_bindings()
@@ -169,6 +178,7 @@ def write_dart_driver(*, fixtures: Sequence[Path], target: Path) -> None:
     )
 
 
+@beartype
 def main() -> None:
     """Consume null-separated paths, then analyze and run the driver."""
     fixtures = [

@@ -1,11 +1,14 @@
 use std::collections::HashMap;
+#[derive(Clone)]
 enum Value {
     Str(&'static str),
 }
+#[derive(Clone)]
 struct Record1 {
     kind: &'static str,
     pr_id: &'static str,
 }
+#[derive(Clone)]
 struct Record0 {
     name: &'static str,
     input: Record1,

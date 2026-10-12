@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Zig"]
+languages_reason = "The generated Zig member shares the carrier type's name."
+target_function = "obj.ZVal"
+parameter_names = ["_arg"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "{call} // note"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"

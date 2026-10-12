@@ -243,6 +243,7 @@ def test_constructor_binding_golden_file(
                 policy=case.skip,
                 golden_path=golden_path,
                 prefix=case.lang_cls.__name__,
+                config=file_regression.request.config,
             ):
                 result = literalize_call(
                     source="[[]]",
