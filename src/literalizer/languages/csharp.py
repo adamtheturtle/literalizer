@@ -2000,6 +2000,7 @@ class CSharp(metaclass=LanguageCls):
         if not self._json_type_active:
             return identity_call_ref_identifier
 
+        @beartype
         def _clone_ref(name: str, _value: Value | None, /) -> str:
             """Preserve null references and detach non-null JSON nodes."""
             return f"{name}?.DeepClone()"
