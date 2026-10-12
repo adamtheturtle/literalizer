@@ -4726,6 +4726,7 @@ class Rust(metaclass=LanguageCls):
         """Callable that formats a datetime as a string literal."""
         if self.datetime_format.value.type_produced is int:
 
+            @beartype
             def _format_epoch(value: datetime.datetime) -> str:
                 """Give wide epoch literals their required Rust suffix."""
                 return _apply_rust_integer_suffix(
