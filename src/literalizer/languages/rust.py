@@ -4733,10 +4733,7 @@ class Rust(metaclass=LanguageCls):
                 )
 
             return _format_epoch
-        if (
-            self._json_type_active
-            and self.datetime_format.value.type_produced is not int
-        ):
+        if self._json_type_active:
             return format_datetime_iso
         return self.datetime_format
 
