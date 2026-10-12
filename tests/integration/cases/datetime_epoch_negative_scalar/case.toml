@@ -1,6 +1,6 @@
 schema_version = 1
 suites = ["base"]
-languages = ["PureScript"]
+languages = ["PureScript", "Rust"]
 languages_reason = "PureScript requires Prelude negate for a negative epoch scalar."
 
 [[variants]]
