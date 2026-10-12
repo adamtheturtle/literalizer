@@ -9,6 +9,8 @@ PRELUDE_PURS = textwrap.dedent(
     foreign import data Unit :: Type
     foreign import unit :: Unit
     foreign import negate :: forall a. a -> a
+    foreign import sub :: forall a. a -> a -> a
+    infixl 6 sub as -
     foreign import div :: forall a. a -> a -> a
     infixl 7 div as /
     """,
@@ -18,6 +20,7 @@ PRELUDE_JS = textwrap.dedent(
     text="""\
     export const unit = {};
     export const negate = x => -x;
+    export const sub = x => y => x - y;
     export const div = x => y => x / y;
     """,
 )

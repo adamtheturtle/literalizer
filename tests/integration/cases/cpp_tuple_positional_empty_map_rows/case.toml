@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Cpp"]
+languages_reason = "C++ native tuple types must remain distinct from empty vector alternatives during positional sibling widening."
+
+[[variants]]
+axis = "cpp_tuple_versions"

@@ -1,4 +1,4 @@
-const ClientType_ = struct { fn fetch(self: ClientType_, payload: anytype) void { _ = self; _ = payload; } };
+const ClientType_ = struct { fn fetch(self: ClientType_, payload: anytype) i64 { _ = self; _ = payload; return 0; } };
 const AppType_ = struct { client: ClientType_ = .{} };
 const app: AppType_ = .{};
 fn emit(_arg: anytype) void { _ = _arg; }

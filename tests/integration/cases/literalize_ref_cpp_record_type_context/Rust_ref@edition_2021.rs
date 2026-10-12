@@ -1,9 +1,12 @@
+#[derive(Clone)]
 struct Record1 {
     x: &'static str,
 }
+#[derive(Clone)]
 struct Record2 {
     x: i32,
 }
+#[derive(Clone)]
 struct Record0 {
     direct: Record1,
     bound: Record2,

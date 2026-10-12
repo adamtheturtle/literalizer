@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     call: &'static str,
     args: (i32, &'static str),

@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+languages = ["PureScript"]
+languages_reason = "PureScript declares numeric carriers for the actual width of formatted epoch seconds."
+
+[[variants]]
+axis = "datetime"

@@ -686,6 +686,23 @@ def _cobol_call_stub(
 
 
 @beartype
+def _cobol_wrapper_program_name(*, body_preamble: tuple[str, ...]) -> str:
+    """Choose a wrapper name distinct from its generated nested
+    programs.
+    """
+    program_ids = {
+        line.removeprefix("PROGRAM-ID. ").removesuffix(".")
+        for stub in body_preamble
+        for line in stub.splitlines()
+        if line.startswith("PROGRAM-ID. ")
+    }
+    name = "CHECK"
+    while name in program_ids:
+        name += "-WRAPPER"
+    return name
+
+
+@beartype
 def _apply_variable_declaration(
     *,
     name: str,
@@ -1677,13 +1694,19 @@ class Cobol(metaclass=LanguageCls):
             )
         indented = textwrap.indent(text=content, prefix=self.indent)
         stubs = "\n".join(body_preamble)
+        program_name = _cobol_wrapper_program_name(
+            body_preamble=body_preamble,
+        )
+        program_prefix = Cobol._PROGRAM_PREFIX.replace(
+            "PROGRAM-ID. CHECK.", f"PROGRAM-ID. {program_name}."
+        )
         return (
-            Cobol._PROGRAM_PREFIX
+            program_prefix
             + "PROCEDURE DIVISION.\n"
             + f"{indented}\n"
             + f"{self.indent}STOP RUN.\n"
             + f"{stubs}\n"
-            + "END PROGRAM CHECK."
+            + f"END PROGRAM {program_name}."
         )
 
     @staticmethod

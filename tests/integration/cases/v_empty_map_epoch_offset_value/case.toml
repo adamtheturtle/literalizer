@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["V"]
+languages_reason = "V empty map types must retain their sibling container ranks and rendered scalar widths."
+suites = ["base"]
+
+[[variants]]
+axis = "datetime"

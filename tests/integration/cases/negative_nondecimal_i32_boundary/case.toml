@@ -1,6 +1,6 @@
 schema_version = 1
-languages = ["C", "Cpp", "D", "SystemVerilog"]
-languages_reason = "These backends require signed 64-bit arithmetic for the magnitude at the signed 32-bit boundary."
+languages = ["C", "Cpp", "D", "PureScript", "SystemVerilog"]
+languages_reason = "These backends need special handling for the magnitude at the signed 32-bit boundary."
 suites = ["base"]
 
 [[variants]]

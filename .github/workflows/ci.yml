@@ -5,7 +5,6 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
     types: [opened, synchronize, reopened]
   schedule:
     - cron: 0 1 * * *
@@ -23,11 +22,12 @@ jobs:
   build:
     strategy:
       matrix:
-        python-version: ['3.12', '3.13', '3.14']
+        python-version: ['3.12', '3.13', '3.14', '3.15']
         platform: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.platform }}
-    timeout-minutes: 30
+    # Python 3.12's full golden suite reaches the 30-minute Windows limit.
+    timeout-minutes: ${{ matrix.python-version == '3.12' && 60 || 30 }}
 
     steps:
       - uses: actions/checkout@v7

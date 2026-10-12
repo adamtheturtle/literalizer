@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct NamedType {
     id: i32,
     label: &'static str,

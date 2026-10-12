@@ -1,0 +1,9 @@
+import java.util.Map;
+class Main {
+    public static void main() {
+Map<String, Object> my_data = Map.ofEntries(
+    Map.entry("name", "Alice"),
+    Map.entry("scores", new int[]{10, 20, 30})
+);
+    }
+}

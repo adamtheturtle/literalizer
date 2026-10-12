@@ -131,7 +131,6 @@ from literalizer._language import (
     default_format_call_stub,
     default_format_call_target,
     default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
@@ -1092,7 +1091,6 @@ class Kotlin(metaclass=LanguageCls):
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
-    format_call_variable_declaration = default_format_call_variable_declaration
     format_call_variable_assignment = default_format_call_variable_assignment
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
@@ -2580,6 +2578,13 @@ class Kotlin(metaclass=LanguageCls):
             separator=" to ",
             format_value=passthrough_sequence_entry,
         )
+
+    @cached_property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Infer a call's result type independently of its arguments."""
+        return self.declaration_style.value.formatter
 
     @cached_property
     def format_variable_declaration(
