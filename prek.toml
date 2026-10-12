@@ -80,7 +80,7 @@ hooks = [
   },
   {
     id = "check-yaml",
-    exclude = "^tests/integration/cases/(special_float_dict_key|float_special_values)/",
+    exclude = "^tests/integration/cases/(special_float_dict_key|float_special_values|zig_special_float_std_binding_(scalar|mapping))/",
     priority = 92,
     stages = ["pre-commit"],
     groups = ["fast"]

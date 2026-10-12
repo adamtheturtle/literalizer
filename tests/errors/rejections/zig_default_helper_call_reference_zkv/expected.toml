@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ReservedVariableNameError]
+Zig = "Zig cannot use reference name 'ZKV': it is a reserved identifier"
