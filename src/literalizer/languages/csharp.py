@@ -2124,10 +2124,20 @@ class CSharp(metaclass=LanguageCls):
                 supports_trailing_comma=True,
             )
         base = self._base_set_format_config
-        return base.with_typed_opener(
+        typed = base.with_typed_opener(
             type_to_opener=self._openers.set,
             fallback=base.set_open([]),
         )
+        if self._dt_tp is not int:
+            return typed
+
+        def _epoch_set_open(items: list[Value]) -> str:
+            """Infer set carriers from the rendered epoch integers."""
+            return typed.set_open(
+                [_csharp_epoch_array_item(item) for item in items]
+            )
+
+        return dataclasses.replace(typed, set_open=_epoch_set_open)
 
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
