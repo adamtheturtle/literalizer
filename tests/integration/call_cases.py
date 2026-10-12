@@ -43,6 +43,7 @@ from .golden_checks import (
     skip_golden,
 )
 from .language_specs import (
+    find_redefinition_styles,
     make_golden_path,
     sorted_languages,
     with_per_fixture_module_name,
@@ -546,10 +547,14 @@ def _render_ref_declaration(
         isinstance(config.variable_form, literalizer.ExistingVariable)
         and config.variable_form.name == declaration_name
     ):
+        styles = find_redefinition_styles(spec=spec)
+        seed_spec = spec
+        if len(styles) > 0:
+            seed_spec = dataclasses.replace(spec, declaration_style=styles[0])
         return literalizer.literalize_call(
             source=ref_source,
             input_format=literalizer.InputFormat.JSON,
-            language=spec,
+            language=seed_spec,
             target_function=config.target_function,
             parameter_names=config.parameter_names,
             per_element=False,
