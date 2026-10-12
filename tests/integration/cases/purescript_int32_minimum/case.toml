@@ -1,5 +1,5 @@
 schema_version = 1
-languages = ["PureScript"]
+languages = ["PureScript", "Cpp"]
 languages_reason = "PureScript checks the positive literal before unary negation at the signed Int minimum."
 suites = ["base"]
 
