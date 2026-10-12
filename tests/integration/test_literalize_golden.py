@@ -87,6 +87,7 @@ def _check_rendering(
         policy=rendering.skip,
         golden_path=golden_path,
         prefix=rendering.lang_cls.__name__,
+        config=file_regression.request.config,
     ):
         try:
             result = _literalize(
