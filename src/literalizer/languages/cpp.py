@@ -125,8 +125,6 @@ from literalizer._language import (
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
@@ -134,6 +132,7 @@ from literalizer._language import (
     identity_call_arg,
     identity_call_ref_identifier,
     identity_constructor_target,
+    line_comment_call_variable_assignment,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_compute_call_slot_wrap_ids,
@@ -145,7 +144,14 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Scalar, Value, ValueInput
+from literalizer._statements import split_trailing_line_comments
+from literalizer._types import (
+    CallPreambleData,
+    OrderedMap,
+    Scalar,
+    Value,
+    ValueInput,
+)
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidCppRawStringDelimiterError,
@@ -740,7 +746,13 @@ def _make_array_config(
 def _cpp_narrowed_empty_sequence(
     *, siblings: Sequence[list[Value]], type_ctx: _CppTypeCtx
 ) -> str:
-    """Render an empty sequence with its non-empty cousin's type."""
+    """Match the declared empty alternative beside tuple siblings;
+    otherwise borrow the non-empty sequence's element type.
+    """
+    if type_ctx.tuple_strategy and any(
+        is_tuple_eligible(value=sibling) for sibling in siblings
+    ):
+        return type_ctx.sequence_type(inner="std::nullptr_t", length=0) + "{}"
     inner = _compute_element_type_for_items(
         items=siblings[0], type_ctx=type_ctx
     )
@@ -2017,6 +2029,7 @@ def _build_cpp_record_preamble(
     record_preamble: Callable[[Value], tuple[str, ...]],
     compute_wrap_ids: Callable[[Value], frozenset[int]],
     compute_carrier_ids: Callable[[Value], frozenset[int]],
+    compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]],
     include_tuple_header: bool,
     record_shape_names: Mapping[frozenset[str], str],
     native_only: bool,
@@ -2069,12 +2082,16 @@ def _build_cpp_record_preamble(
             )
             is None
         )
+        requires_call_carrier = isinstance(data, CallPreambleData) and any(
+            compute_call_slot_wrap_ids(values)
+            for values in data.argument_slots
+        )
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
             tuple_list_ids=(effective_tuple_list_ids_2),
             record_dict_ids=record_dict_ids,
             force_variant=(
-                requires_map_carrier
+                (requires_map_carrier or requires_call_carrier)
                 and type_ctx.variant_type_name != "std::variant"
             ),
         )
@@ -2722,8 +2739,14 @@ class Cpp(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_assignment: ClassVar[property] = (
+        line_comment_call_variable_assignment(
+            regex_literals=False,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+        )
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -4519,6 +4542,9 @@ class Cpp(metaclass=LanguageCls):
                 compute_carrier_ids=(
                     self.heterogeneous_behavior.compute_wrap_ids
                 ),
+                compute_call_slot_wrap_ids=(
+                    self.heterogeneous_behavior.compute_call_slot_wrap_ids
+                ),
                 include_tuple_header=False,
                 record_shape_names=self.record_shape_names,
                 native_only=False,
@@ -4533,6 +4559,9 @@ class Cpp(metaclass=LanguageCls):
                 ),
                 compute_carrier_ids=(
                     self.heterogeneous_behavior.compute_wrap_ids
+                ),
+                compute_call_slot_wrap_ids=(
+                    self.heterogeneous_behavior.compute_call_slot_wrap_ids
                 ),
                 include_tuple_header=True,
                 record_shape_names=self.record_shape_names,
@@ -4593,6 +4622,32 @@ class Cpp(metaclass=LanguageCls):
         """Keep headers used by each rendered bound value."""
         return tuple(
             entry for entry in entries if entry.startswith("#include ")
+        )
+
+    @staticmethod
+    def format_call_variable_declaration(
+        name: str,
+        value: str,
+        _data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Deduce a call's result type independently of its argument
+        data.
+        """
+        comments = split_trailing_line_comments(
+            statement=value,
+            prefix="//",
+            regex_literals=False,
+            backtick_strings=False,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+        )
+        prefix = _cpp_modifier_prefix(modifiers=modifiers)
+        return (
+            f"{prefix}auto {name} = {comments.code};"
+            + comments.trailing_comments
         )
 
     @staticmethod

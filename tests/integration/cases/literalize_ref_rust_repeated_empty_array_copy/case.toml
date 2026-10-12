@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Rust"]
+languages_reason = "Rust empty arrays retain the ownership of their declared element type."
+sequence_format = "ARRAY"
+
+[ref.value_sources]
+shared = "[]"

@@ -1,7 +1,9 @@
+#[derive(Clone)]
 struct Record1 {
     id: i32,
     label: &'static str,
 }
+#[derive(Clone)]
 struct Record0 {
     name: &'static str,
     items: Vec<Record1>,

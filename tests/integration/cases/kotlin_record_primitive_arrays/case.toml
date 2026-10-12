@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "variant"
+languages = ["Kotlin"]
+languages_reason = "Record fields must retain Kotlin primitive-array types and nested element types."
+
+[[variants]]
+axis = "heterogeneous_strategy_record"
+
+[[variants]]
+axis = "record_tuple_sequence"

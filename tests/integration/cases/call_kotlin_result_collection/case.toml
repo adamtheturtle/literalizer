@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["items"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+languages = ["Kotlin"]
+languages_reason = "Kotlin must infer a call result independently of its collection argument."
+
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "dart_call_result_var"

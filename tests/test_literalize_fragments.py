@@ -5,18 +5,29 @@ so they cannot use the compiling whole-file golden suite. The manifest
 owns their sources, API arguments, and exact result expectations.
 """
 
+import dataclasses
+from pathlib import Path
 from typing import Literal
 
 import pytest
 from pydantic import BaseModel, Field, TypeAdapter
 
 from literalizer import (
+    ExistingVariable,
+    Language,
     LiteralizeResult,
+    NewVariable,
     ValueInput,
+    VariableForm,
     literalize,
     literalize_call,
 )
-from tests.integration.case_manifests import CallInputFormat, ManifestLanguage
+from tests.enum_members import enum_member_by_name
+from tests.integration.case_manifests import (
+    CallInputFormat,
+    CallTransformTemplate,
+    ManifestLanguage,
+)
 from tests.toml_cases import load_toml_cases
 
 type _ResultView = Literal["code", "bare_code"]
@@ -37,6 +48,16 @@ class _FragmentCase(  # noqa: NOD001
     expected: dict[_ResultView, str] = Field(min_length=1)
     ref_values: dict[str, ValueInput] | None = None
     expected_preamble: tuple[str, ...] | None = None
+    json_type: str | None = None
+    variable_form: Literal["new", "existing"] | None = None
+
+    def resolved_variable_form(self) -> VariableForm | None:
+        """Select the caller-owned binding used by this fragment."""
+        if self.variable_form == "new":
+            return NewVariable(name="my_data", modifiers=frozenset())
+        if self.variable_form == "existing":
+            return ExistingVariable(name="my_data")
+        return None
 
 
 class _LiteralCase(_FragmentCase, frozen=True):
@@ -46,7 +67,7 @@ class _LiteralCase(_FragmentCase, frozen=True):
     include_delimiters: bool
 
 
-class _CallCase(_FragmentCase, frozen=True):
+class _CallCase(_FragmentCase, frozen=True):  # noqa: NOD001
     """One externally defined call target and its argument
     configuration.
     """
@@ -54,6 +75,7 @@ class _CallCase(_FragmentCase, frozen=True):
     target_function: str
     parameter_names: tuple[str, ...]
     per_element: bool
+    call_transform: CallTransformTemplate | None = None
 
 
 class _FragmentCases(BaseModel, extra="forbid", frozen=True):
@@ -63,9 +85,37 @@ class _FragmentCases(BaseModel, extra="forbid", frozen=True):
     calls: tuple[_CallCase, ...]
 
 
-_CASES = TypeAdapter(type=_FragmentCases).validate_python(
-    load_toml_cases(name="literalize_fragments"),
+_CASE_DOCUMENTS = tuple(
+    TypeAdapter(type=_FragmentCases).validate_python(
+        load_toml_cases(name=path.stem)
+    )
+    for path in sorted(
+        (Path(__file__).parent / "unit_cases").glob(
+            pattern="literalize_fragments*.toml"
+        )
+    )
 )
+_CASES = _FragmentCases(
+    literals=tuple(
+        case for document in _CASE_DOCUMENTS for case in document.literals
+    ),
+    calls=tuple(
+        case for document in _CASE_DOCUMENTS for case in document.calls
+    ),
+)
+
+
+def _fragment_language(*, case: _FragmentCase) -> Language:
+    """Apply the JSON value mode explicitly selected by a fragment."""
+    language = case.language()
+    if case.json_type is not None:
+        language = dataclasses.replace(
+            language,
+            json_type=enum_member_by_name(
+                enum_cls=case.language.JsonTypes, name=case.json_type
+            ),
+        )
+    return language
 
 
 def _check_result(*, case: _FragmentCase, result: LiteralizeResult) -> None:
@@ -86,10 +136,10 @@ def test_literal_fragment(case: _LiteralCase) -> None:
     result = literalize(
         source=case.source,
         input_format=case.input_format,
-        language=case.language(),
+        language=_fragment_language(case=case),
         pre_indent_level=case.pre_indent_level,
         include_delimiters=case.include_delimiters,
-        variable_form=None,
+        variable_form=case.resolved_variable_form(),
         ref_key="$ref",
         ref_values=case.ref_values,
     )
@@ -104,10 +154,12 @@ def test_call_fragment(case: _CallCase) -> None:
     result = literalize_call(
         source=case.source,
         input_format=case.input_format,
-        language=case.language(),
+        language=_fragment_language(case=case),
         target_function=case.target_function,
         parameter_names=case.parameter_names,
         per_element=case.per_element,
+        call_transform=case.call_transform,
+        variable_form=case.resolved_variable_form(),
         ref_key="$ref",
         ref_values=case.ref_values,
     )

@@ -1,10 +1,18 @@
 #include <initializer_list>
 #include <string>
-#include <map>
+struct Record1 { int count{}; int rate{}; };
+struct Record2 { int retries{}; int timeout{}; };
+struct Record0 { Record1 metrics; Record2 flags; };
 int main() {
-auto my_data = std::map<std::string, std::map<std::string, int>>{
-    {"metrics", std::map<std::string, int>{{"count", 100}, {"rate", 50}}},
-    {"flags", std::map<std::string, int>{{"retries", 3}, {"timeout", 30}}},
+auto my_data = Record0{
+    {
+        100,
+        50,
+    },
+    {
+        3,
+        30,
+    },
 };
     (void)my_data;
     return 0;

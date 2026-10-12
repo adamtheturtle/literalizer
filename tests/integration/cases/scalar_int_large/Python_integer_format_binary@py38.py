@@ -1,2 +1,1 @@
-from __future__ import annotations
 my_data = 0b10000000000000000000000000000000

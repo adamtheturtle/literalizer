@@ -2,6 +2,7 @@ use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::NaiveTime;
 use std::collections::HashMap;
+#[derive(Clone)]
 enum Value {
     Str(&'static str),
     I32(i32),

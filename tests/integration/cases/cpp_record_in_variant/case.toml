@@ -1,5 +1,5 @@
 schema_version = 1
-languages = ["Cpp", "Python", "Zig"]
+languages = ["Cpp", "Kotlin", "Python", "Zig"]
 languages_reason = "Native records within heterogeneous sequences must use their generated record types in carrier and element annotations."
 suites = ["base"]
 

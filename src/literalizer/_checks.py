@@ -13,7 +13,11 @@ from typing import overload
 from beartype import beartype
 
 from literalizer._formatters.type_inference import (
+    BeyondI64,
+    DictType,
+    ListType,
     RecordShape,
+    WideInt,
     infer_element_type,
 )
 from literalizer._language import Language
@@ -1399,6 +1403,38 @@ def _fill_nested_empty_map_siblings(
 
 
 @beartype
+def _sibling_map_type_family(
+    *, inferred: type | ListType | DictType | None, spec: Language
+) -> object:
+    """Compare nested scalar families without introducing integer widths.
+
+    Integer ranges and their pooled formatters are checked separately.
+    Preserve collection ranks and kinds while comparing map value slots,
+    and use the selected date/time format's emitted scalar family.
+    """
+    match inferred:
+        case ListType(inner=inner):
+            return (
+                ListType,
+                _sibling_map_type_family(inferred=inner, spec=spec),
+            )
+        case DictType(value_type=inner):
+            return (
+                DictType,
+                _sibling_map_type_family(inferred=inner, spec=spec),
+            )
+        case _:
+            scalar_families: dict[object, object] = {
+                WideInt: int,
+                BeyondI64: int,
+                datetime.date: spec.date_format.value.type_produced,
+                datetime.datetime: spec.datetime_format.value.type_produced,
+                datetime.time: str,
+            }
+            return scalar_families.get(inferred, inferred)
+
+
+@beartype
 def _sibling_maps_diverge(
     *,
     pool: list[Value],
@@ -1439,10 +1475,15 @@ def _sibling_maps_diverge(
         if spec.dict_format_config.narrowed_empty_form is not None:
             _fill_nested_empty_map_siblings(maps=filtered)
         inferred_value_types = {
-            infer_element_type(items=list(d.values()))
+            _sibling_map_type_family(
+                inferred=infer_element_type(items=list(d.values())),
+                spec=spec,
+            )
             for d in filtered
             if len(d) > 0
         }
+        if None in inferred_value_types:
+            return False
         if len(inferred_value_types) > 1:
             return True
     return len({dict_open(d) for d in filtered}) > 1
@@ -1479,9 +1520,7 @@ def _has_unrepresentable_sibling_maps(
                 for value in data.values()
             )
         case dict():
-            if _dict_slot_uses_variant_typing(
-                spec=spec
-            ) and _sibling_maps_diverge(
+            if _sibling_maps_diverge(
                 pool=list(data.values()),
                 spec=spec,
                 record_dict_ids=record_dict_ids,

@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Python"]
+languages_reason = "Python native record declarations retain nominal types under explicit annotations."
+heterogeneous_strategy = "RECORD"
+variable_type_hints = "ALWAYS"

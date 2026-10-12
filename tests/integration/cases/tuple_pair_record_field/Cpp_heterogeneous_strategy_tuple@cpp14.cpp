@@ -1,13 +1,15 @@
 #include <initializer_list>
 #include <string>
-#include <map>
 #include <vector>
-#include <variant>
 #include <tuple>
+struct Record0 { std::string call; std::tuple<int, std::string> args; };
 int main() {
-auto my_data = std::map<std::string, std::variant<std::string, std::tuple<int, std::string>>>{
-    {"call", "send"},
-    {"args", std::make_tuple(1, "email")},
+auto my_data = Record0{
+    "send",
+    std::make_tuple(
+        1,
+        "email"
+    ),
 };
     (void)my_data;
     return 0;
