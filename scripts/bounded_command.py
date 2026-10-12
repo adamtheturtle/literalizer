@@ -3,9 +3,12 @@
 from collections.abc import Sequence
 from pathlib import Path
 
+from beartype import beartype
+
 _WRAPPER = Path(__file__).resolve().with_name(name="run-bounded.sh")
 
 
+@beartype
 def bounded_command(
     *, args: Sequence[str | Path], fixture: str, timeout_seconds: float
 ) -> list[str]:

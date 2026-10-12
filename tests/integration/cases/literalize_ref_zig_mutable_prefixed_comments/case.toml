@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Zig"]
+languages_reason = "Mutable Zig bindings with comments and a caller prefix retain an outer address use."
+
+[ref]
+languages = ["Zig"]
+languages_reason = "Mutable Zig bindings with comments and a caller prefix retain an outer address use."
+declaration_style = "VAR"
+pre_indent_level = 2
+collection_layout = "multiline"
+
+[ref.value_sources]
+shared = "[1, 2]"

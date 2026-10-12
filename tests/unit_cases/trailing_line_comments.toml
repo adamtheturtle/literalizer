@@ -1,0 +1,6 @@
+[[cases]]
+name = "backtick_scanner_option"
+statement = "`// payload` // note"
+expected_code = "`// payload`"
+expected_trailing = " // note"
+backtick_strings = true
