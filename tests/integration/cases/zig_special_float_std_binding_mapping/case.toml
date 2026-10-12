@@ -1,0 +1,13 @@
+schema_version = 1
+languages = ["Zig"]
+languages_reason = "Zig special float imports use an internal name so caller bindings named std remain valid."
+suites = ["base"]
+
+[base_context]
+variable_name = "std"
+
+[[variants]]
+axis = "heterogeneous_strategy_record"
+
+[variants.context]
+variable_name = "std"
