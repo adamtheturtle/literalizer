@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Zig"]
+languages_reason = "Zig reserves only the carrier and parser names occupied by the selected output mode."
+suites = ["base", "combined"]
+
+[base_context]
+variable_name = "arena"

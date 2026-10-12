@@ -2,6 +2,18 @@
 # preserve omitted delimiters or externally defined identifiers.
 
 [[literals]]
+name = "roc_unwrapped_pre_indented_list"
+language = "Roc"
+source = "[1, 2]"
+input_format = "json"
+pre_indent_level = 1
+include_delimiters = true
+expected.bare_code = """    RList [
+        RInt 1i128,
+        RInt 2i128,
+    ]"""
+
+[[literals]]
 name = "binary_without_sequence_delimiters"
 language = "Python"
 source = "- !!binary SGVsbG8=\n"

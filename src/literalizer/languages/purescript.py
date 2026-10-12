@@ -486,7 +486,9 @@ def _purescript_children(val: Value) -> list[Value]:
 
 
 @beartype
-def _purescript_scalar_needs_prelude(val: Value) -> bool:
+def _purescript_scalar_needs_prelude(
+    val: Value, datetime_type_produced: type
+) -> bool:
     """Return True if *val* is a scalar needing ``import Prelude``."""
     # Check bool before int (bool is a subclass of int).
     match val:
@@ -496,12 +498,19 @@ def _purescript_scalar_needs_prelude(val: Value) -> bool:
             return val < 0
         case float():
             return _purescript_negative_float(val=val)
+        case datetime.datetime():
+            return (
+                datetime_type_produced is int
+                and datetime_epoch_seconds(value=val) < 0
+            )
         case _:
             return False
 
 
 @beartype
-def _purescript_needs_prelude(val: Value) -> bool:
+def _purescript_needs_prelude(
+    val: Value, datetime_type_produced: type
+) -> bool:
     """Return True if *val* needs ``import Prelude``.
 
     Prelude is required for ``negate`` (any negative int or float)
@@ -513,7 +522,10 @@ def _purescript_needs_prelude(val: Value) -> bool:
     pending: list[Value] = [val]
     while len(pending) > 0:
         value = pending.pop()
-        if _purescript_scalar_needs_prelude(val=value):
+        if _purescript_scalar_needs_prelude(
+            val=value,
+            datetime_type_produced=datetime_type_produced,
+        ):
             return True
         pending.extend(_purescript_children(val=value))
     return False
@@ -572,8 +584,11 @@ def _build_purescript_body_preamble(
             )
             constructors.insert(int_idx + 1, f"{p}Long Number")
         needs_prelude = bool(
-            types & {int, float}
-        ) and _purescript_needs_prelude(val=data)
+            types & (int_types | {float})
+        ) and _purescript_needs_prelude(
+            val=data,
+            datetime_type_produced=datetime_type_produced,
+        )
         lines: list[str]
         lines = []
         if needs_prelude:

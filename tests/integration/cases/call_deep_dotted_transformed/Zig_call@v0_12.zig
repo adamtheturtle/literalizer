@@ -10,7 +10,7 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-const ClientType_ = struct { fn fetch(self: ClientType_, payload: ZVal) void { _ = self; _ = payload; } };
+const ClientType_ = struct { fn fetch(self: ClientType_, payload: ZVal) ZVal { _ = self; _ = payload; return .nil; } };
 const AppType_ = struct { client: ClientType_ = .{} };
 const app: AppType_ = .{};
 fn emit(_arg: anytype) void { _ = _arg; }
