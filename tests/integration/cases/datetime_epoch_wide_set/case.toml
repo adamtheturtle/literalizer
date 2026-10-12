@@ -1,7 +1,7 @@
 schema_version = 1
 suites = ["base"]
-languages = ["PureScript"]
-languages_reason = "PureScript epoch set members require the carrier for their formatted integer width."
+languages = ["CSharp", "PureScript"]
+languages_reason = "PureScript and C# epoch set members require carriers that represent their integer widths."
 
 [[variants]]
 axis = "datetime"
