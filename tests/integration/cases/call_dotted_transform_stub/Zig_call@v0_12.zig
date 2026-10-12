@@ -10,7 +10,7 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-fn process(value: ZVal) void { _ = value; }
+fn process(value: ZVal) ZVal { _ = value; return .nil; }
 const TracerType_ = struct { fn emit(self: TracerType_, _arg: anytype) void { _ = self; _ = _arg; } };
 const tracer: TracerType_ = .{};
 pub fn main() void {

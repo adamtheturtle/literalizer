@@ -10,7 +10,7 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-fn process(a: ZVal, b: ZVal) void { _ = a; _ = b; }
+fn process(a: ZVal, b: ZVal) ZVal { _ = a; _ = b; return .nil; }
 pub fn main() void {
     const my_data = process(.{ .int = 1 }, .{ .int = 2 });
     _ = my_data;
