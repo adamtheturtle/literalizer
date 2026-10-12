@@ -1,0 +1,1 @@
+{"field":{"nested":{"$ref":"shared"}},"text":"first\n{ \" // }"}

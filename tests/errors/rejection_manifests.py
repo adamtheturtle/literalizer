@@ -70,6 +70,11 @@ type BoundRefs = Annotated[
     BeforeValidator(func=_bound_refs_items),
 ]
 
+type BoundRefYaml = Annotated[
+    tuple[tuple[str, str], ...],
+    BeforeValidator(func=_bound_refs_items),
+]
+
 
 class RejectionManifestError(ValueError):
     """A rejection manifest is invalid or internally inconsistent."""
@@ -361,6 +366,7 @@ class CallSpec(  # noqa: NOD001
     ref_key: str | None = None
     ref_case: str | None = None
     bound_refs: BoundRefs = ()
+    bound_ref_yaml: BoundRefYaml = ()
     comment_source: Annotated[tuple[str, ...], Field(strict=False)] | None = (
         None
     )
@@ -542,6 +548,7 @@ class _RejectionData(  # noqa: NOD001
             for template in _kwarg_templates(kwarg=kwarg)
         ]
         templates.extend(self.call.parameter_names)
+        templates.extend(source for _, source in self.call.bound_ref_yaml)
         templates.append(self.call.variable_name)
         if self.call.target_function is not None:
             templates.append(self.call.target_function)

@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Zig['- 2020-03-04T05:06:07.123456+02:30']" = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2020-03-04T05:06:07.123456+02:30"
+"Zig['when: 2020-03-04T05:06:07.123456+02:30']" = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2020-03-04T05:06:07.123456+02:30"
