@@ -116,7 +116,6 @@ from literalizer._language import (
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier,
     default_format_call_arg_ref_identifier_consumable,
-    default_format_call_ref_identifier,
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
@@ -125,6 +124,7 @@ from literalizer._language import (
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
     identity_call_arg,
+    identity_call_ref_identifier,
     line_comment_call_variable_assignment,
     new_constructor_target,
     no_call_binding_body_preamble,
@@ -1992,7 +1992,20 @@ class CSharp(metaclass=LanguageCls):
 
     format_call_target = default_format_call_target
 
-    format_call_ref_identifier = default_format_call_ref_identifier
+    @cached_property
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Copy JSON nodes before attaching them to another parent."""
+        if not self._json_type_active:
+            return identity_call_ref_identifier
+
+        @beartype
+        def _clone_ref(name: str, _value: Value | None, /) -> str:
+            """Convert native scalars and detach non-null JSON nodes."""
+            return f"((JsonNode?){name})?.DeepClone()"
+
+        return _clone_ref
 
     format_call_arg_ref_identifier = default_format_call_arg_ref_identifier
 
