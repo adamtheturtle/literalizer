@@ -8,6 +8,7 @@ target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "existing"
+followup_source = '{"$ref": "my_data"}'
 call_transform = "{call}\n// note"
 
 [call.ref_declarations]
