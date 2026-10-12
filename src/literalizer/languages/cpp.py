@@ -389,6 +389,7 @@ def _make_cpp_i32_min_safe_formatter(
 ) -> Callable[[int], str]:
     """Keep the Int32 minimum expression typed as ``int``."""
 
+    @beartype
     def _format(value: int) -> str:
         """Avoid a positive operand outside the signed Int32 range."""
         if value == _INT32_MIN:
