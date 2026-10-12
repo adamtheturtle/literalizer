@@ -335,8 +335,8 @@ class GoldenScenario:
 class GoldenGroup:
     """One bounded batch of a scenario's renderings for one language.
 
-    Bounded groups give xdist more scheduling opportunities while
-    retaining subtests and the original compiler-owned golden paths.
+    Bounded groups give workers more scheduling opportunities while
+    each rendering remains a sub-test at its original golden path.
     """
 
     scenario_name: str

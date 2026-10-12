@@ -52,4 +52,4 @@ def test_golden_batches_preserve_single_and_empty_groups() -> None:
             )
         else:
             assert group.batch_index is not None
-    assert batch_renderings(renderings=(), max_versions=64) == ()
+    assert len(batch_renderings(renderings=(), max_versions=64)) == 0
