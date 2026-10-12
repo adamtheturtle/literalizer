@@ -34,9 +34,9 @@ from literalizer.languages import (
 
 from .call_cases import (
     CallCase,
-    _expected_call_shape_exception,
     default_call_case_specs,
     discover_call_cases,
+    expected_call_shape_exception,
     run_call_golden_case,
     run_wrap_in_file_case,
 )
@@ -183,7 +183,7 @@ def test_invalid_wrapped_identifiers_handle_stale_goldens(
     case = CallCase(
         config=config,
         lang_cls=lang_cls,
-        expected_exception=_expected_call_shape_exception(
+        expected_exception=expected_call_shape_exception(
             lang_cls=lang_cls, config=config
         ),
     )
@@ -322,7 +322,7 @@ def test_discovery_identifier_rejections_match_public_api(
         update={"target_function": target, "parameter_names": parameters}
     )
     assert (
-        _expected_call_shape_exception(lang_cls=lang_cls, config=config)
+        expected_call_shape_exception(lang_cls=lang_cls, config=config)
         is expected
     )
     with pytest.raises(expected_exception=expected):
