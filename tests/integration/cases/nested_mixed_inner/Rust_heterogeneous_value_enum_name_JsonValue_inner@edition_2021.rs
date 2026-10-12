@@ -1,3 +1,4 @@
+#[derive(Clone)]
 enum JsonValue {
     I32(i32),
     Str(&'static str),

@@ -4,8 +4,7 @@ name: Deploy documentation
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+  pull_request: {}
 
 # We often have a long CI queue, so cancel superseded runs for a PR as soon
 # as a new commit is pushed. Non-PR runs (push on main) fall back to the

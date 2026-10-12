@@ -1,0 +1,14 @@
+schema_version = 1
+input = "input.json"
+owner = "variant"
+languages = ["Python"]
+languages_reason = "Python's indented assignment requires an enclosing block to compile."
+
+[[variants]]
+axis = "multiline_string"
+suffix = "_pre_indent"
+fixture_prefix = "if True:\n"
+wrap_in_file = false
+
+[variants.context]
+pre_indent_level = 1

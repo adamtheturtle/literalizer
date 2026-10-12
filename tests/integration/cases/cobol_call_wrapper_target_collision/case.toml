@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "check"
+parameter_names = ["a"]
+per_element = false
+wrap_in_file = true
+languages = ["Cobol"]
+languages_reason = "COBOL wraps the call in a program and declares a nested target program in the same compilation unit."

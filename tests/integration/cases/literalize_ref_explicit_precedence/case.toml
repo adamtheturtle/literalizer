@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["C", "Cpp", "Nim", "ObjectiveC", "V"]
-languages_reason = "Nim must infer imports from the emitted declaration; V represents reference hint precedence."
+languages = ["C", "Cpp", "Gleam", "Nim", "ObjectiveC", "V"]
+languages_reason = "Gleam must share one carrier across hints and bindings; Nim must infer imports from the emitted declaration; V represents reference hint precedence."
 
 [ref.value_sources]
 ref_data = "[1, 2]"

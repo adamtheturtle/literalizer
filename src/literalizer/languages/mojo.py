@@ -14,7 +14,6 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
-    make_narrowed_empty_form,
     make_type_to_opener,
 )
 from literalizer._formatters.format_dates import (
@@ -115,24 +114,92 @@ from literalizer.exceptions import (
     NullInCollectionError,
 )
 
-_mojo_element_to_type = make_element_to_type(
-    dict_value_to_type=None,
-    str_type="String",
-    bool_type="Bool",
-    int_type="Int",
-    float_type="Float64",
-    mixed_numeric_type="String",
-    bytes_type="String",
-    date_type="String",
-    datetime_type="String",
-    time_type="String",
-    list_template="List[{inner}]",
-    enable_list_type=True,
-    dict_type_template="Dict[String, {inner}]",
-    fallback_value_type="String",
-    wide_int_type=None,
-    beyond_i64_type=None,
-)
+
+@beartype
+def _mojo_element_type_resolver(
+    *,
+    datetime_type: str,
+) -> Callable[[type | ListType | DictType], str | None]:
+    """Resolve collection element types with the emitted datetime type."""
+    return make_element_to_type(
+        dict_value_to_type=None,
+        str_type="String",
+        bool_type="Bool",
+        int_type="Int",
+        float_type="Float64",
+        mixed_numeric_type="String",
+        bytes_type="String",
+        date_type="String",
+        datetime_type=datetime_type,
+        time_type="String",
+        list_template="List[{inner}]",
+        enable_list_type=True,
+        dict_type_template="Dict[String, {inner}]",
+        fallback_value_type="String",
+        wide_int_type=None,
+        beyond_i64_type=None,
+    )
+
+
+@beartype
+def _mojo_collection_type(
+    *,
+    values: list[Value],
+    element_to_type: Callable[[type | ListType | DictType], str | None],
+    wrap_ids: frozenset[int],
+    variant_type: str,
+    sequence_fallback: str,
+    dict_key_fallback: str,
+    dict_value_fallback: str,
+) -> str | None:
+    """Resolve actual nested collections without discarding variant
+    IDs.
+    """
+    inner_values: list[Value]
+    containers: Sequence[list[Value] | dict[Scalar, Value]]
+    if bool(values) and all(isinstance(value, list) for value in values):
+        lists = [value for value in values if isinstance(value, list)]
+        containers = lists
+        inner_values = [item for value in lists for item in value]
+        opener, closer, fallback = "List[", "]", sequence_fallback
+    elif bool(values) and all(
+        isinstance(value, dict) and not isinstance(value, OrderedMap)
+        for value in values
+    ):
+        maps = [value for value in values if isinstance(value, dict)]
+        containers = maps
+        inner_values = [item for value in maps for item in value.values()]
+        inferred_key_type = infer_element_type(
+            items=[key for value in maps for key in value]
+        )
+        key_type = dict_key_fallback
+        if inferred_key_type is not None:
+            key_name = element_to_type(inferred_key_type)
+            key_type = key_name if key_name is not None else dict_key_fallback
+        opener, closer, fallback = (
+            f"Dict[{key_type}, ",
+            "]",
+            dict_value_fallback,
+        )
+    else:
+        inferred = infer_element_type(items=values)
+        if inferred is None:
+            return None
+        return element_to_type(inferred)
+    inner_type = variant_type
+    if not any(id(value) in wrap_ids for value in containers):
+        inferred_inner = _mojo_collection_type(
+            values=inner_values,
+            element_to_type=element_to_type,
+            wrap_ids=wrap_ids,
+            variant_type=variant_type,
+            sequence_fallback=sequence_fallback,
+            dict_key_fallback=dict_key_fallback,
+            dict_value_fallback=dict_value_fallback,
+        )
+        inner_type = inferred_inner if inferred_inner is not None else fallback
+    return f"{opener}{inner_type}{closer}"
+
 
 # Strict resolver for call-argument typing: omits ``fallback_value_type``
 # so an unresolvable dict-value type (e.g. a nested
@@ -562,13 +629,6 @@ def _mojo_call_preamble_stub(
         f"{indent}var {fields[0]}: {prev_type}"
     )
     return ("\n".join(blocks),)
-
-
-_mojo_narrowed_empty_form = make_narrowed_empty_form(
-    element_to_type=_mojo_element_to_type,
-    template="List[{type}]()",
-    fallback_type="String",
-)
 
 
 @beartype
@@ -1777,7 +1837,7 @@ class Mojo(metaclass=LanguageCls):
         )
         return dataclasses.replace(
             base,
-            narrowed_empty_form=_mojo_narrowed_empty_form,
+            narrowed_empty_form=self._narrowed_empty_collection,
         )
 
     @cached_property
@@ -1817,10 +1877,44 @@ class Mojo(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return self.dict_format(
+        base = self.dict_format(
             default_type=self.default_dict_value_type,
             default_key_type=self.default_dict_key_type,
         )
+        return dataclasses.replace(
+            base,
+            narrowed_empty_form=self._narrowed_empty_collection,
+        )
+
+    @cached_property
+    def _narrowed_empty_collection(
+        self,
+    ) -> Callable[[Sequence[Value]], str]:
+        """Match empty lists and maps to the actual populated sibling
+        types.
+        """
+        datetime_type = "String"
+        if self.datetime_format.value.type_produced is int:
+            datetime_type = "Int"
+        element_to_type = _mojo_element_type_resolver(
+            datetime_type=datetime_type,
+        )
+
+        def _narrowed_empty(siblings: Sequence[Value]) -> str:
+            """Resolve the engine's populated same-kind sibling pool."""
+            values = list(siblings)
+            type_name = _mojo_collection_type(
+                values=values,
+                element_to_type=element_to_type,
+                wrap_ids=self.heterogeneous_behavior.compute_wrap_ids(values),
+                variant_type=self.heterogeneous_value_variant_name,
+                sequence_fallback=self.default_sequence_element_type,
+                dict_key_fallback=self.default_dict_key_type,
+                dict_value_fallback=self.default_dict_value_type,
+            )
+            return f"{type_name}()"
+
+        return _narrowed_empty
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:

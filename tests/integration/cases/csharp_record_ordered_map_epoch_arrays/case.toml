@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["CSharp"]
+languages_reason = "CSharp typed arrays preserve signed integer widths for nested EPOCH timestamps inside ordered-map record fields."
+
+[[variants]]
+axis = "record_epoch_i32_overflow"

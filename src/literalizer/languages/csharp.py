@@ -120,12 +120,12 @@ from literalizer._language import (
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
     identity_call_arg,
+    line_comment_call_variable_assignment,
     new_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -136,6 +136,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ConflictingVariableModifiersError,
@@ -605,6 +606,18 @@ _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
 
 @beartype
+def _csharp_epoch_array_item(value: Value, /) -> Value:
+    """Size epoch arrays from rendered values, preserving records."""
+    match value:
+        case datetime.datetime():
+            return datetime_epoch_seconds(value=value)
+        case list():
+            return [_csharp_epoch_array_item(item) for item in value]
+        case _:
+            return value
+
+
+@beartype
 def _csharp_record_field_identifier(key: str, /) -> str:
     """Return the C# record component name for a dict *key*.
 
@@ -733,6 +746,7 @@ class CSharp(metaclass=LanguageCls):
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True
+    uses_resolved_ref_declaration_data = True
     module_name_shares_variable_scope = False
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
         None
@@ -774,12 +788,33 @@ class CSharp(metaclass=LanguageCls):
         if _CSharpModifiers.CONST in modifiers:
             msg = "C# 'const' cannot bind a runtime call result."
             raise IncompatibleFormatsError(msg)
+        comments = split_trailing_line_comments(
+            statement=value,
+            prefix="//",
+            regex_literals=False,
+            backtick_strings=False,
+            raw_string_prefixes=(),
+            verbatim_strings=True,
+            interpolation_syntax=("{", '"'),
+        )
         prefix = _csharp_modifier_prefix(modifiers=modifiers)
         if prefix == "":
-            return f"var {name} = {value};"
-        return f"{prefix}object {name} = {value};"
+            return (
+                f"var {name} = {comments.code};" + comments.trailing_comments
+            )
+        return (
+            f"{prefix}object {name} = {comments.code};"
+            + comments.trailing_comments
+        )
 
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_assignment: ClassVar[property] = (
+        line_comment_call_variable_assignment(
+            regex_literals=False,
+            raw_string_prefixes=(),
+            verbatim_strings=True,
+            interpolation_syntax=("{", '"'),
+        )
+    )
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(new_constructor_target)
     )
@@ -2123,6 +2158,8 @@ class CSharp(metaclass=LanguageCls):
                         opener="new[] {", declared_type=name + "[]" * depth
                     )
             fallback_type = self.default_sequence_element_type
+            if self._dt_tp is int:
+                items = [_csharp_epoch_array_item(item) for item in items]
             return infer_collection_type(
                 items=items,
                 element_to_type=self._openers.seq_element_type,
@@ -2407,6 +2444,32 @@ class CSharp(metaclass=LanguageCls):
             )
 
         return _formatter
+
+    @staticmethod
+    def bound_reference_modifiers(
+        modifiers: frozenset[enum.Enum], /
+    ) -> frozenset[enum.Enum]:
+        """Class-field roots require typed static bound fields."""
+        if _is_csharp_class_field(modifiers):
+            return frozenset({_CSharpModifiers.STATIC})
+        return frozenset[enum.Enum]()
+
+    def validate_reference_binding_hint(
+        self, value: Value, hint: Value, /
+    ) -> None:
+        """Reject an explicit hint incompatible with its bound field
+        type.
+        """
+        modifiers = frozenset[enum.Enum]({_CSharpModifiers.STATIC})
+        formatter = self.format_variable_declaration
+        actual_declaration = formatter("bound", "value", value, modifiers)
+        hinted_declaration = formatter("bound", "value", hint, modifiers)
+        if actual_declaration != hinted_declaration:
+            msg = (
+                "C# reference hints must have the same declaration type "
+                "as their bound values"
+            )
+            raise UnrepresentableInputError(msg)
 
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:

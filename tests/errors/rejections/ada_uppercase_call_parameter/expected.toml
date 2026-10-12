@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallParameterNameError]
+"Ada['BEGIN']" = "Ada cannot use call parameter 'BEGIN': it is a reserved identifier"
+"Ada['IF']" = "Ada cannot use call parameter 'IF': it is a reserved identifier"

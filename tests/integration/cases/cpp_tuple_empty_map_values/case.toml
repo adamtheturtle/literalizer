@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Cpp"]
+languages_reason = "C++ tuple and ordinary sequence siblings must preserve the declared type of an empty sequence."
+
+[[variants]]
+axis = "cpp_tuple_versions"

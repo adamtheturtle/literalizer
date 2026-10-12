@@ -11,6 +11,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._comments import TabFreeCommentPrefix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -959,7 +960,7 @@ class Roc(metaclass=LanguageCls):
         """Comment style options."""
 
         HASH = CommentConfig(
-            prefix="#",
+            prefix=TabFreeCommentPrefix(object="#"),
             suffix="",
         )
 
@@ -1167,6 +1168,14 @@ class Roc(metaclass=LanguageCls):
         (``List``/``Dict``/``Set``) self-reference for the compiler to
         consider load-bearing.
         """
+        # Declaration formatters add an annotation before the definition.
+        # The shared renderer prefixes only their first generated line;
+        # Roc requires both lines to begin at the same margin.
+        content = re.sub(
+            pattern=r"(?m)^([ \t]+)([A-Za-z_][A-Za-z0-9_]*) : ([^\n]+)\n\2 =",
+            repl=r"\1\2 : \3\n\1\2 =",
+            string=content,
+        )
         variable_name = context.variable_name
         body_preamble = context.body_preamble
         exposed = "main"

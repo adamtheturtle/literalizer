@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Cpp", "TypeScript"]
+languages_reason = "Identity bound-method transforms preserve reference declarations, including names used by compiler consumer probes."
+target_function = "thing.go"
+parameter_names = ["value"]
+per_element = true
+call_transform = "{call}"
+wrap_in_file = true
+ref_declarations = { item = "[1, 2]" }

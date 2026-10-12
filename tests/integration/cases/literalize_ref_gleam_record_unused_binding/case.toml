@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-ref"
+[ref]
+languages = ["Gleam"]
+languages_reason = "Gleam JSON and concrete record modes retain their own reference preamble policies."
+
+dict_format = "RECORD"
+bound_refs = { unused = [1,2] }

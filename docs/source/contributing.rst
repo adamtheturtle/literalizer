@@ -38,6 +38,11 @@ Running tests
 
    $ uv run --group dev pytest
 
+Golden verification preserves existing fixtures when rendering skips.
+A stale skipped fixture fails verification with its path.
+To remove it, run the corresponding golden test with ``--regen-all``.
+Regeneration also rewrites supported golden files, so select only the affected test and review its diff.
+
 Changelog entries
 -----------------
 
@@ -52,6 +57,11 @@ Golden case manifests
 
 Every directory under :file:`tests/integration/cases/` contains a versioned :file:`case.toml`.
 The manifest is the source of truth for the input's suite, variant-axis and ``literalize_call`` coverage; language capability checks and expansion remain in the typed Python runner.
+
+Ordinary format variants exercise every supported language version.
+An axis that explicitly selects ``language_version`` stays pinned to that version; a format requiring newer syntax uses its effective version once.
+A typed axis can declare ``per_version = false`` to exercise only its default version.
+The orphan check uses those same effective specs for ordinary and call variants, so a compiling file still needs a rendering that compares its contents.
 
 An ordinary case participates in the base and combined suites.
 Its ``input.yaml`` is inferred because it is the directory's sole input:

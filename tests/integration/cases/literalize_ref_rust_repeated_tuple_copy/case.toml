@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+languages = ["Rust"]
+languages_reason = "Rust ownership distinguishes reusable owned bindings from Copy values."
+sequence_format = "TUPLE"
+
+[ref.value_sources]
+shared = '[1,"x"]'

@@ -1,6 +1,7 @@
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::NaiveTime;
+#[derive(Clone)]
 struct Record0 {
     s: &'static str,
     i: i32,

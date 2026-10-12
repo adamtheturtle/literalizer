@@ -2,7 +2,11 @@
 #include <cmath>
 int main() {
     try {
-auto my_data = nlohmann::json::parse(R"json([Infinity, -Infinity, NaN])json", nullptr, false);
+auto my_data = nlohmann::json::array({
+    static_cast<double>(INFINITY),
+    -static_cast<double>(INFINITY),
+    static_cast<double>(NAN),
+});
     (void)my_data;
         return 0;
     } catch (...) {

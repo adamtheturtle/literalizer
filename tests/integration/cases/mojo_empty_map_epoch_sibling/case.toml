@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Mojo"]
+languages_reason = "Mojo empty dictionary siblings must match the emitted timestamp or scalar variant value type."
+suites = ["base"]
+
+[[variants]]
+axis = "datetime"

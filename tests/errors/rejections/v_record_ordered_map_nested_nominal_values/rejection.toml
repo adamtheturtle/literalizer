@@ -1,0 +1,17 @@
+schema_version = 1
+summary = "V nested ordered-map values must share one generated native record type."
+exceptions = ["UnrepresentableInputError"]
+languages = ["V"]
+
+[call]
+api = "literalize"
+sources = [
+  "values: !!omap\n  - outer: !!omap\n      - first: {x: 1}\n      - second: {y: s}\nflag: true\n",
+  "values: !!omap\n  - outer: !!omap\n      - first: {x: 1}\n      - second: {x: 2147483648}\nflag: true\n",
+]
+input_format = "yaml"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

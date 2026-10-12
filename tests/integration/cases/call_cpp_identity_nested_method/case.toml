@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Cpp"]
+languages_reason = "C++ nested methods explicitly discard unchanged transformed return values."
+target_function = "outer.thing.go"
+parameter_names = []
+per_element = true
+call_transform = "{call}"
+wrap_in_file = true

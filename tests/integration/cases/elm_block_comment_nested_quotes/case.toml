@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Elm"]
+languages_reason = "Elm ignores quotes inside block comments but still nests every opening delimiter."
+
+[[variants]]
+axis = "comment"

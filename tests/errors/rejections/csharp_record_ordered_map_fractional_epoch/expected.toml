@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+CSharp = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"

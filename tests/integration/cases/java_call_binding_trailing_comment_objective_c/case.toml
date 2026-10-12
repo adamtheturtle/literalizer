@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Scalar input comments are hoisted before Java declarations. A call
+# transform can leave a comment after the expression being bound, so
+# this public API path exercises placement of the statement terminator.
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "{call}\n// note"
+wrap_in_file = true
+variable_form = "new"
+languages = ["ObjectiveC"]
+languages_reason = "These call bindings must place the semicolon before trailing // comments in a transformed call."
+
+[[call.variants]]
+axis = "type_hints"

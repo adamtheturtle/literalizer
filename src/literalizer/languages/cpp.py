@@ -57,6 +57,8 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_octal,
+    format_string_c_utf8_characters,
+    has_bidi_formatting_character,
 )
 from literalizer._formatters.record_strategy import (
     ActiveRecordStrategy,
@@ -123,8 +125,6 @@ from literalizer._language import (
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
@@ -132,6 +132,7 @@ from literalizer._language import (
     identity_call_arg,
     identity_call_ref_identifier,
     identity_constructor_target,
+    line_comment_call_variable_assignment,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_compute_call_slot_wrap_ids,
@@ -143,7 +144,14 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Scalar, Value, ValueInput
+from literalizer._statements import split_trailing_line_comments
+from literalizer._types import (
+    CallPreambleData,
+    OrderedMap,
+    Scalar,
+    Value,
+    ValueInput,
+)
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidCppRawStringDelimiterError,
@@ -287,12 +295,14 @@ def _reject_incompatible_nested_cpp_arrays(data: Value, /) -> None:
 @beartype
 def _format_string_cpp_escaped(value: str) -> str:
     r"""Format *value* without embedding a null byte in a C++ literal."""
+    if has_bidi_formatting_character(value=value):
+        entries = format_string_c_utf8_characters(value=value)
+        return f"std::string{{{entries}}}"
     segments = value.split(sep="\0")
     if len(segments) == 1:
         return format_string_backslash_nul_octal(value=value)
     formatted_segments = [
-        format_string_backslash_nul_octal(value=segment)
-        for segment in segments
+        format_string_backslash_nul_octal(value=part) for part in segments
     ]
     return " + '\\0' + ".join(
         [f"std::string{{{formatted_segments[0]}}}", *formatted_segments[1:]],
@@ -325,6 +335,7 @@ def _format_string_multiline_with_delimiter_base(
     r"""Format *value* as a C++ raw string with a safe delimiter."""
     if (
         "\0" in value
+        or has_bidi_formatting_character(value=value)
         or "\r" in value
         or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
@@ -542,8 +553,8 @@ def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
     are register-trivial.  ``date`` and ``datetime`` map to
     ``std::chrono::year_month_day`` and
     ``std::chrono::system_clock::time_point``, both also
-    register-trivial.  Strings, bytes, lists, and dicts allocate or own
-    heap storage, so ``std::move`` continues to deliver value for those.
+    register-trivial. Owned strings, lists, and dicts retain their move
+    form. Native literal-pointer bindings follow their representation.
     """
     if isinstance(value, (list, dict, set)):
         return False
@@ -735,7 +746,13 @@ def _make_array_config(
 def _cpp_narrowed_empty_sequence(
     *, siblings: Sequence[list[Value]], type_ctx: _CppTypeCtx
 ) -> str:
-    """Render an empty sequence with its non-empty cousin's type."""
+    """Match the declared empty alternative beside tuple siblings;
+    otherwise borrow the non-empty sequence's element type.
+    """
+    if type_ctx.tuple_strategy and any(
+        is_tuple_eligible(value=sibling) for sibling in siblings
+    ):
+        return type_ctx.sequence_type(inner="std::nullptr_t", length=0) + "{}"
     inner = _compute_element_type_for_items(
         items=siblings[0], type_ctx=type_ctx
     )
@@ -2012,6 +2029,7 @@ def _build_cpp_record_preamble(
     record_preamble: Callable[[Value], tuple[str, ...]],
     compute_wrap_ids: Callable[[Value], frozenset[int]],
     compute_carrier_ids: Callable[[Value], frozenset[int]],
+    compute_call_slot_wrap_ids: Callable[[Sequence[Value]], frozenset[int]],
     include_tuple_header: bool,
     record_shape_names: Mapping[frozenset[str], str],
     native_only: bool,
@@ -2064,12 +2082,16 @@ def _build_cpp_record_preamble(
             )
             is None
         )
+        requires_call_carrier = isinstance(data, CallPreambleData) and any(
+            compute_call_slot_wrap_ids(values)
+            for values in data.argument_slots
+        )
         variant_preamble = _build_variant_preamble(
             type_ctx=type_ctx,
             tuple_list_ids=(effective_tuple_list_ids_2),
             record_dict_ids=record_dict_ids,
             force_variant=(
-                requires_map_carrier
+                (requires_map_carrier or requires_call_carrier)
                 and type_ctx.variant_type_name != "std::variant"
             ),
         )
@@ -2311,15 +2333,18 @@ def _renders_as_string_literal(
 ) -> bool:
     """Return whether *data* renders as a C string literal.
 
-    ``bytes`` and ``str`` always render as quoted strings in C++.
+    Strings with null bytes or bidirectional controls render as owning values;
+    other strings and ``bytes`` render as quoted strings in C++.
     ``datetime.datetime`` and ``datetime.date`` do so only when their
     format's ``type_produced`` is :class:`str` (the ISO variants);
     other variants render as ``std::chrono`` or numeric expressions.
     """
     match data:
-        case str() if "\0" in data:
+        case str() if "\0" in data or has_bidi_formatting_character(
+            value=data
+        ):
             return False
-        case bytes() | str():
+        case bytes() | str() | datetime.time():
             return True
         case datetime.datetime():
             return datetime_type is str
@@ -2714,8 +2739,14 @@ class Cpp(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_assignment: ClassVar[property] = (
+        line_comment_call_variable_assignment(
+            regex_literals=False,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+        )
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -3491,6 +3522,13 @@ class Cpp(metaclass=LanguageCls):
 
     format_call_statement = default_format_call_statement
 
+    @cached_property
+    def format_identity_transformed_call_statement(
+        self,
+    ) -> Callable[[str], str]:
+        """Explicitly discard an unchanged transformed call's return value."""
+        return lambda call: f"static_cast<void>({call})"
+
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     class VariableTypeHints(enum.Enum):
@@ -3844,7 +3882,7 @@ class Cpp(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, Value | None], str]:
         """Wrap a ``{"$ref": "name"}`` identifier in ``std::move()``,
-        except for ``trivially-copyable`` scalars and native records.
+        except for native literal pointers and trivial scalars or records.
 
         A direct copy assignment (``auto my_data = my_var``) triggers
         clang-tidy ``performance-unnecessary-copy-initialization`` when
@@ -3866,14 +3904,30 @@ class Cpp(metaclass=LanguageCls):
             """Wrap the identifier in ``std::move()`` unless *value* is
             a ``trivially-copyable`` scalar or native record.
             """
-            if isinstance(value, (bool, int, float)) or (
-                isinstance(value, dict)
-                and self._cpp_record_field_is_trivial(value)
-            ):
+            if isinstance(
+                value, (bool, int, float)
+            ) or self._native_ref_value_is_trivial(value):
                 return name
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier
+
+    def _native_ref_value_is_trivial(self, value: Value | None, /) -> bool:
+        """Classify the actual native scalar or record binding type."""
+        if self._json_type_active or value is None:
+            return False
+        return _renders_as_string_literal(
+            data=value,
+            date_type=self._resolved_date_format.value.type_produced,
+            datetime_type=self._resolved_datetime_format.value.type_produced,
+        ) or self._cpp_record_field_is_trivial(value)
+
+    @cached_property
+    def format_reused_literal_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Borrow a literal reference whose binding is used again."""
+        return identity_call_ref_identifier
 
     @cached_property
     def format_call_arg_ref_identifier(
@@ -3938,10 +3992,9 @@ class Cpp(metaclass=LanguageCls):
             """
             if value is None:
                 return not self._json_type_active
-            return _cpp_value_inhibits_consuming_form(value) or (
-                isinstance(value, dict)
-                and self._cpp_record_field_is_trivial(value)
-            )
+            return _cpp_value_inhibits_consuming_form(
+                value
+            ) or self._native_ref_value_is_trivial(value)
 
         return _inhibits
 
@@ -4489,6 +4542,9 @@ class Cpp(metaclass=LanguageCls):
                 compute_carrier_ids=(
                     self.heterogeneous_behavior.compute_wrap_ids
                 ),
+                compute_call_slot_wrap_ids=(
+                    self.heterogeneous_behavior.compute_call_slot_wrap_ids
+                ),
                 include_tuple_header=False,
                 record_shape_names=self.record_shape_names,
                 native_only=False,
@@ -4503,6 +4559,9 @@ class Cpp(metaclass=LanguageCls):
                 ),
                 compute_carrier_ids=(
                     self.heterogeneous_behavior.compute_wrap_ids
+                ),
+                compute_call_slot_wrap_ids=(
+                    self.heterogeneous_behavior.compute_call_slot_wrap_ids
                 ),
                 include_tuple_header=True,
                 record_shape_names=self.record_shape_names,
@@ -4563,6 +4622,32 @@ class Cpp(metaclass=LanguageCls):
         """Keep headers used by each rendered bound value."""
         return tuple(
             entry for entry in entries if entry.startswith("#include ")
+        )
+
+    @staticmethod
+    def format_call_variable_declaration(
+        name: str,
+        value: str,
+        _data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Deduce a call's result type independently of its argument
+        data.
+        """
+        comments = split_trailing_line_comments(
+            statement=value,
+            prefix="//",
+            regex_literals=False,
+            backtick_strings=False,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+        )
+        prefix = _cpp_modifier_prefix(modifiers=modifiers)
+        return (
+            f"{prefix}auto {name} = {comments.code};"
+            + comments.trailing_comments
         )
 
     @staticmethod

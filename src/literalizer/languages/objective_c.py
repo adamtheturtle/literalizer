@@ -40,6 +40,10 @@ from literalizer._formatters.format_integers import (
     make_overflow_fallback_formatter,
     make_ull_fallback,
 )
+from literalizer._formatters.format_strings import (
+    format_string_c,
+    has_bidi_formatting_character,
+)
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
     NO_HETEROGENEOUS_BEHAVIOR,
@@ -91,6 +95,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import Value
 
 
@@ -224,7 +229,16 @@ def _format_objc_call_declaration(
     A call expression already evaluates to an object pointer, so the
     ``@(...)`` boxing is dropped and the call result is bound directly.
     """
-    return f"id {name} = {value};"
+    comments = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
+    )
+    return f"id {name} = {comments.code};" + comments.trailing_comments
 
 
 @beartype
@@ -234,7 +248,16 @@ def _format_objc_call_assignment(name: str, value: str, _data: Value) -> str:
     The call-expression counterpart of the literal assignment formatter;
     no ``@(...)`` boxing since a call already yields an object pointer.
     """
-    return f"{name} = {value};"
+    comments = split_trailing_line_comments(
+        statement=value,
+        prefix="//",
+        regex_literals=False,
+        backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
+    )
+    return f"{name} = {comments.code};" + comments.trailing_comments
 
 
 @beartype
@@ -246,15 +269,15 @@ def _format_objc_string(value: str) -> str:
 
     Example: ``hello "world"`` → ``@"hello \"world\""``.
     """
-    escaped = (
-        value.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\n", "\\n")
-        .replace("\r", "\\r")
-        .replace("\t", "\\t")
-        .replace("\0", "\\000")
-    )
-    return f'@"{escaped}"'
+    if has_bidi_formatting_character(value=value):
+        segments = value.split(sep="\0")
+        formatted = f"@({format_string_c(value=segments[0])})"
+        for segment in segments[1:]:
+            formatted = f'[{formatted} stringByAppendingString:@"\\000"]'
+            suffix = _format_objc_string(value=segment)
+            formatted = f"[{formatted} stringByAppendingString:{suffix}]"
+        return formatted
+    return f"@{format_string_c(value=value)}"
 
 
 @beartype
