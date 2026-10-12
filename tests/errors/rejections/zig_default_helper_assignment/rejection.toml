@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Zig default assignment bindings cannot shadow the mode's helpers."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Zig"]
+values = ["ZKV", "ZVal"]
+
+[call]
+api = "literalize"
+sources = ['{"a":1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "existing"
+variable_name = "{value}"
