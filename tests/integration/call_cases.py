@@ -291,7 +291,7 @@ def _invalid_target_grammar(
         is not None
     )
     if any(
-        not part
+        part == ""
         or (
             lang_cls.max_variable_identifier_length is not None
             and len(part) > lang_cls.max_variable_identifier_length
