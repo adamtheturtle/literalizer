@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
-# Download a pinned artifact, trying the supplied sources in order. Publish
-# it only after its SHA-256 matches; never replace an existing file on failure.
+# Download an artifact, trying the supplied sources in order.
+# Replace the destination only after a successful download.
 set -euo pipefail
 
-expected_sha256=$1
-destination=$2
-shift 2
+destination=$1
+shift
 
 temporary=$(mktemp "${destination}.XXXXXX")
 trap 'rm -f "$temporary"' EXIT
@@ -20,11 +19,6 @@ for url in "$@"; do
         --connect-timeout 10 --max-time 30 \
         --write-out 'download HTTP %{http_code}: %{url_effective}\n' \
         "$url" --output "$temporary"; then
-        if ! printf '%s  %s\n' "$expected_sha256" "$temporary" |
-            shasum --algorithm 256 --check --status; then
-            echo "SHA-256 mismatch: $url" >&2
-            exit 1
-        fi
         mv "$temporary" "$destination"
         exit 0
     fi
