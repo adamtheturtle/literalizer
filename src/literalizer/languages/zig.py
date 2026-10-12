@@ -279,9 +279,9 @@ def _make_zig_call_preamble_stub(
     """Build the file-scope Zig call-stub formatter.
 
     Zig disallows nested function declarations inside ``main``, so
-    call stubs are emitted at module scope.  Stubs always return
-    ``void`` so a bare ``stub(...);`` statement compiles whether or
-    not a ``call_transform`` consumed the value.  Under the default
+    call stubs are emitted at module scope. Value-returning stubs use
+    the default ``ZVal`` carrier, or an integer in record mode.
+    Under the default
     ``ZVal`` model a target stub takes ``ZVal`` parameters so anonymous
     union literals like ``.{ .int = 1 }`` coerce to a concrete type at
     the call site; transform wrappers (``["_arg"]``) take ``anytype``
@@ -299,7 +299,7 @@ def _make_zig_call_preamble_stub(
     def _zig_call_preamble_stub(
         parts: Sequence[str],
         params: Sequence[str],
-        _stub_return: StubReturn,
+        stub_return: StubReturn,
         _args: Sequence[Value],
         /,
     ) -> tuple[str, ...]:
@@ -307,21 +307,37 @@ def _make_zig_call_preamble_stub(
         param_type = "ZVal"
         if record_mode or list(params) == ["_arg"]:
             param_type = "anytype"
+        return_type = "void"
+        return_statement = ""
+        if stub_return is StubReturn.VALUE:
+            return_type = "i64" if record_mode else "ZVal"
+            return_statement = " return 0;" if record_mode else " return .nil;"
         param_discards = "".join(f" _ = {p};" for p in params)
         method = parts[-1]
         if len(parts) == 1:
             param_list = ", ".join(f"{p}: {param_type}" for p in params)
-            return (f"fn {method}({param_list}) void {{{param_discards} }}",)
+            return (
+                (
+                    f"fn {method}({param_list}) {return_type} "
+                    f"{{{param_discards}{return_statement} }}"
+                ),
+            )
         chain = parts[:-1]
         holder = chain[-1]
         holder_type = f"{holder.title()}Type_"
         type_preamble: tuple[str, ...] = ()
-        if param_type == "ZVal" and method == "ZVal":
+        if method == "ZVal" and (
+            param_type == "ZVal" or return_type == "ZVal"
+        ):
             # A generated member named ZVal masks the global carrier
-            # in its own parameter declaration.  Bare call fragments
+            # in its signature. Bare call fragments
             # do not create this stub and retain their caller's scope.
-            param_type = '@"call value"'
-            type_preamble = (f"const {param_type} = ZVal;",)
+            carrier_type = '@"call value"'
+            type_preamble = (f"const {carrier_type} = ZVal;",)
+            if param_type == "ZVal":
+                param_type = carrier_type
+            if stub_return is StubReturn.VALUE:
+                return_type = carrier_type
         method_param_list = ", ".join(
             [
                 f"self: {holder_type}",
@@ -331,8 +347,8 @@ def _make_zig_call_preamble_stub(
         lines: list[str] = [
             (
                 f"const {holder_type} = struct {{ "
-                f"fn {method}({method_param_list}) void "
-                f"{{ _ = self;{param_discards} }} }};"
+                f"fn {method}({method_param_list}) {return_type} "
+                f"{{ _ = self;{param_discards}{return_statement} }} }};"
             ),
         ]
         prev_type = holder_type
