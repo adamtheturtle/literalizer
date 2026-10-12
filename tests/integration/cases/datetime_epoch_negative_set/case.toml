@@ -1,6 +1,6 @@
 schema_version = 1
 suites = ["base"]
-languages = ["PureScript"]
+languages = ["PureScript", "Rust"]
 languages_reason = "PureScript negative epoch set members require numeric negation."
 
 [[variants]]

@@ -21,6 +21,7 @@ from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import fixed_open
 from literalizer._formatters.fallbacks import nonempty_or_default
 from literalizer._formatters.format_dates import (
+    datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -4723,6 +4724,15 @@ class Rust(metaclass=LanguageCls):
     @cached_property
     def format_datetime(self) -> Callable[[datetime.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self.datetime_format.value.type_produced is int:
+
+            def _format_epoch(value: datetime.datetime) -> str:
+                """Give wide epoch literals their required Rust suffix."""
+                return _apply_rust_integer_suffix(
+                    value=datetime_epoch_seconds(value=value), base=str
+                )
+
+            return _format_epoch
         if (
             self._json_type_active
             and self.datetime_format.value.type_produced is not int

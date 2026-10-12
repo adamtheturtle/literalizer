@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Rust"]
+languages_reason = "Rust typed call parameters constrain epoch expressions to i64."
+target_function = "consume"
+parameter_names = ["value"]
+per_element = true
+wrap_in_file = true
+variant_only = true
+
+[[call.variants]]
+axis = "datetime"

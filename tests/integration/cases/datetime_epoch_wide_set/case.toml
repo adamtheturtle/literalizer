@@ -1,6 +1,6 @@
 schema_version = 1
 suites = ["base"]
-languages = ["PureScript"]
+languages = ["PureScript", "Rust"]
 languages_reason = "PureScript epoch set members require the carrier for their formatted integer width."
 
 [[variants]]
