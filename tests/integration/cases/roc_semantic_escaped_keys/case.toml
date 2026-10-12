@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base", "combined"]
+languages = ["Roc"]
+languages_reason = "Roc string keys use scalar escapes without tagged-value constructors."
+
+[[variants]]
+axis = "constructor_prefix"

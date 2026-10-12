@@ -355,40 +355,13 @@ def _build_roc_float_formatter(
 
 
 @beartype
-def _apply_roc_dict_entry(
+def _roc_dict_entry(
     key: str,
     _raw_value: Value,
     formatted_value: str,
-    str_prefix: str,
 ) -> str:
-    """Format a dict entry as a tuple with a plain-string key.
-
-    Dict keys are ``Str``, not ``Val``, so the ``{prefix}Str`` constructor
-    must be stripped from the formatted key.
-    """
-    key = key.removeprefix(str_prefix)
+    """Format a dict entry with its already-rendered plain-string key."""
     return f"({key}, {formatted_value})"
-
-
-@beartype
-def _build_roc_dict_entry(
-    prefix: str,
-) -> Callable[[str, Value, str], str]:
-    """Build a dict-entry formatter that strips the ``{prefix}Str`` prefix
-    from keys.
-    """
-    _str_prefix = f"{prefix}Str "
-
-    def _format(key: str, _raw_value: Value, formatted_value: str) -> str:
-        """Delegate to module-level implementation."""
-        return _apply_roc_dict_entry(
-            key=key,
-            _raw_value=_raw_value,
-            formatted_value=formatted_value,
-            str_prefix=_str_prefix,
-        )
-
-    return _format
 
 
 # Backward-compatible module-level aliases used by the Enum members.
@@ -426,7 +399,6 @@ _format_roc_float_fixed = _build_roc_float_formatter(
     prefix="R",
     inner=format_float_fixed,
 )
-_roc_dict_entry = _build_roc_dict_entry(prefix="R")
 
 
 _ROC_INT_BASE: dict[str, Callable[[int], str]] = {
@@ -1403,7 +1375,7 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
-        return _build_roc_dict_entry(prefix=self.constructor_prefix)
+        return _roc_dict_entry
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
@@ -1527,6 +1499,11 @@ class Roc(metaclass=LanguageCls):
             tag = f"{self.constructor_prefix}Str "
             return lambda value: formatter(value).removeprefix(tag)
         return formatter
+
+    @cached_property
+    def format_dict_key(self) -> Callable[[str], str]:
+        """Render a string key without a value constructor."""
+        return _format_roc_string_literal
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:
