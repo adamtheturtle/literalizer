@@ -1,0 +1,11 @@
+schema_version = 1
+suites = ["base"]
+
+[base_context]
+variable_name = "std"
+
+[[variants]]
+axis = "heterogeneous_strategy_record"
+
+[variants.context]
+variable_name = "std"

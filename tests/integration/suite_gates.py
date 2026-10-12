@@ -116,6 +116,7 @@ SPEC_FIELDS = frozenset(
     {
         "annotation_evaluation",
         "bool_format",
+        "default_sequence_element_type",
         "empty_dict_key",
         "json_rendering",
         "json_type",

@@ -6,5 +6,5 @@ fn main() {
         1,
         2,
     ];
-    thing.go(item);
+    thing.go(item.clone());
 }

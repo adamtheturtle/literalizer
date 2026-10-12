@@ -1,0 +1,4 @@
+def make_widget(*a); end
+my_data = nil
+my_data = make_widget(count: 42)
+// note

@@ -5,5 +5,5 @@ fn main() {
     let my_null: serde_json::Value = serde_json::json!(null);
     let regular_null: serde_json::Value = serde_json::json!(null);
     consume(my_null);
-    consume(regular_null);
+    consume(regular_null.clone());
 }

@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     numbers: [i32; 1],
     words: [&'static str; 1],

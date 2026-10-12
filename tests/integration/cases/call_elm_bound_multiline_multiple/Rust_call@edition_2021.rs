@@ -5,9 +5,9 @@ fn main() {
         2,
     ];
     f(vec![
-        ref_data,
+        ref_data.clone(),
     ]);
     f(vec![
-        ref_data,
+        ref_data.clone(),
     ]);
 }

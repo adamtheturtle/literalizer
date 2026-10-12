@@ -7,7 +7,7 @@ integer_values = (
 float_values = (
     1.5,
 )
-my_data = (
+my_data: tuple[tuple[Any, ...] | tuple[int, ...] | tuple[float, ...], ...] = (
     empty_values,
     integer_values,
     float_values,

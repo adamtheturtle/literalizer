@@ -1,9 +1,12 @@
+#[derive(Clone)]
 struct Record1 {
     values: [i32; 2],
 }
+#[derive(Clone)]
 struct Record2 {
     nested: [[i32; 2]; 2],
 }
+#[derive(Clone)]
 struct Record0 {
     trivial: Record1,
     nested: Record2,

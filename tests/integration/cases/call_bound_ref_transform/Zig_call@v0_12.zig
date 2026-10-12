@@ -10,7 +10,7 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-fn f(a: ZVal) void { _ = a; }
+fn f(a: ZVal) ZVal { _ = a; return .nil; }
 pub fn main() void {
     const ref_data: ZVal = .{ .int = 1 };
     f(ref_data);

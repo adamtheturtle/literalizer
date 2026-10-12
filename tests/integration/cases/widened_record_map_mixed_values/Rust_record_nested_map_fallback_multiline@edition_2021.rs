@@ -1,8 +1,10 @@
 use std::collections::HashMap;
+#[derive(Clone)]
 enum Value {
     I32(i32),
     Str(&'static str),
 }
+#[derive(Clone)]
 struct Record0 {
     input: HashMap<&'static str, Value>,
 }

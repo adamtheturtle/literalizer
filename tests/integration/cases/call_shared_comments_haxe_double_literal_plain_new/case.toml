@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"prefix ${{ // payload\").length >= 0 ? {call} : {call}"

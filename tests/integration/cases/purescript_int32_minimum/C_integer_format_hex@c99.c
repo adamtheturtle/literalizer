@@ -1,0 +1,26 @@
+#include <stdbool.h>
+#include <stddef.h>
+typedef struct CVal CVal;
+typedef struct CKV CKV;
+struct CVal {
+    union {
+        _Bool b;
+        long long i;
+        unsigned long long u;
+        double f;
+        const char *s;
+        const CVal *a;
+        const CKV *m;
+    };
+};
+struct CKV { const char *k; CVal v; };
+int main(void) {
+CVal my_data = ((CVal){.m = (CKV[]){
+    {"minimum", ((CVal){.i = -0x80000000LL})},
+    {"neighbor", ((CVal){.i = -0x7fffffff})},
+    {"maximum", ((CVal){.i = 0x7fffffff})},
+    {"nested", ((CVal){.a = (CVal[]){((CVal){.i = -0x80000000LL})}})},
+}});
+    (void)my_data;
+    return 0;
+}

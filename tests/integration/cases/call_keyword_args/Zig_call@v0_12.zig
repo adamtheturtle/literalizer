@@ -10,7 +10,7 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-const ThrottlerType_ = struct { fn check(self: ThrottlerType_, user_id: ZVal, ts: ZVal) void { _ = self; _ = user_id; _ = ts; } };
+const ThrottlerType_ = struct { fn check(self: ThrottlerType_, user_id: ZVal, ts: ZVal) ZVal { _ = self; _ = user_id; _ = ts; return .nil; } };
 const throttler: ThrottlerType_ = .{};
 fn emit(_arg: anytype) void { _ = _arg; }
 pub fn main() void {

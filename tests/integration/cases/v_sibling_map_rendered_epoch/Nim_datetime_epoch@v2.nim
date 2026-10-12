@@ -1,0 +1,5 @@
+import json
+var my_data = %* {
+    "a": {"k": 2208988800'i64},
+    "b": {"k": 1'i64}
+}

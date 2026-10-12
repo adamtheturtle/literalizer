@@ -3,7 +3,7 @@ fn main() {
         1,
         2,
     ];
-    let mut my_data = shared;
-    my_data = shared;
+    let mut my_data = shared.clone();
+    my_data = shared.clone();
     let _ = my_data;
 }

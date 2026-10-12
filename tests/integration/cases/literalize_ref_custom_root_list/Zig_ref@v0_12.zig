@@ -17,5 +17,6 @@ pub fn main() void {
     }};
     var my_data: ZVal = whole;
     my_data = whole;
+    _ = &whole;
     my_data = .nil;
 }

@@ -298,6 +298,10 @@ class ManifestVariant(  # noqa: NOD001
 
     axis: Annotated[str, Field(min_length=1)]
     suffix: str = ""
+    # An enclosing fixture can compile a fragment rendered without the
+    # language's whole-file wrapper, such as an indented Python assignment.
+    fixture_prefix: str = ""
+    wrap_in_file: bool = True
     context: RenderContext = Field(default_factory=RenderContext)
     # The language capabilities this input needs in order to render at
     # all.  A variant whose language lacks one of them is skipped (no
@@ -469,6 +473,8 @@ class RefCaseSpec(  # noqa: NOD001
     pre_indent_level: int = 0
     heterogeneous_strategy: str | None = None
     sequence_format: str | None = None
+    default_sequence_element_type: str | None = None
+    declaration_style: str | None = None
     variable_type_hints: str | None = None
     json_type: str | None = None
     dict_format: str | None = None
@@ -519,6 +525,9 @@ class CallCaseSpec(  # noqa: NOD001
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
+    # An additional call to the same target, emitted after the primary
+    # call so a fixture can use its bound result.
+    followup_source: str | None = None
     transform_stub_names: StringTuple = Field(default_factory=_empty_names)
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,

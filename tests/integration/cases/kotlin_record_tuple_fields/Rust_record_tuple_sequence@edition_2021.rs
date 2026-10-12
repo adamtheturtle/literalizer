@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     pair: (i32, i32),
     mixed: (i32, &'static str),

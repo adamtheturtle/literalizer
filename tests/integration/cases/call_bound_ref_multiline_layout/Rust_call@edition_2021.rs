@@ -12,7 +12,7 @@ fn main() {
     ];
     f(vec![
         vec![
-            ref_data,
+            ref_data.clone(),
         ],
     ]);
 }

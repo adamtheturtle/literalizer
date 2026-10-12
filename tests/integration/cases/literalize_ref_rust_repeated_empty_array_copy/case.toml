@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "sequence_format", member = "ARRAY" },
+]
+sequence_format = "ARRAY"
+
+[ref.value_sources]
+shared = "[]"

@@ -4,7 +4,7 @@ empty_values: tuple[Any, ...] = ()
 integer_values = (
     1,
 )
-my_data = (
+my_data: tuple[tuple[Any, ...] | tuple[int, ...], ...] = (
     empty_values,
     integer_values,
 )

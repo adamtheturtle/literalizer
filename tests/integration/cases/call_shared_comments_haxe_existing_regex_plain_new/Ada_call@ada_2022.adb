@@ -1,0 +1,7 @@
+with A_Stub; use A_Stub;
+procedure Main is
+    function Make_Widget (Count : A_Val) return A_Val is (ANull);
+    my_data : A_Val := (~/\//).match("/") ? Make_Widget(count => AInt (42)) : null;
+begin
+    null;
+end Main;

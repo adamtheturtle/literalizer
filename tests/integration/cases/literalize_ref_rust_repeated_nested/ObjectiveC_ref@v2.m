@@ -1,0 +1,14 @@
+#import <Foundation/Foundation.h>
+int main(void) {
+@autoreleasepool {
+id shared = @[
+    @1,
+    @2,
+];
+id my_data = @[
+    @{@"left": shared, @"right": shared},
+];
+    (void)my_data;
+}
+    return 0;
+}

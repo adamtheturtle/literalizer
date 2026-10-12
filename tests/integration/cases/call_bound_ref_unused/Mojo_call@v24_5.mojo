@@ -1,4 +1,4 @@
-def f[*Ts: AnyType](*args: *Ts):
+def f(value: List[Int]):
     pass
 def main():
     f(List([1, 2]))

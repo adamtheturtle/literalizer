@@ -14,10 +14,12 @@ import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
+import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
+from literalizer._language import is_reserved_identifier
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -223,13 +225,67 @@ def _skip_if_wrapper_unsupported(
     config: CallCaseSpec,
     lang_cls: literalizer.LanguageCls,
     golden_path: Path,
+    file_regression: FileRegressionFixture,
 ) -> None:
-    """Skip (and drop any stale golden) when this language cannot host
+    """Skip (and check any stale golden) when this language cannot host
     the case's wrapper stub.
     """
     reason = _wrapper_capability_skip_reason(lang_cls=lang_cls, config=config)
     if reason is not None:
-        skip_golden(reason=reason, golden_path=golden_path, unlink=True)
+        skip_golden(
+            reason=reason,
+            golden_path=golden_path,
+            unlink=True,
+            config=file_regression.request.config,
+        )
+
+
+@beartype
+def _is_reserved_parameter_name(
+    *, lang_cls: literalizer.LanguageCls, name: str
+) -> bool:
+    """Compare reserved names using the identifier case policy."""
+    return is_reserved_identifier(
+        case_sensitive=lang_cls.reserved_variable_identifiers_case_sensitive,
+        name=name,
+        reserved_identifiers=lang_cls.reserved_variable_identifiers,
+    )
+
+
+@beartype
+def _is_reserved_call_target(
+    *, lang_cls: literalizer.LanguageCls, target_function: str
+) -> bool:
+    """Apply declaration keywords to the head and member keywords to
+    every target component.
+    """
+    parts = target_function.split(sep=".")
+    case_sensitive = (
+        lang_cls.reserved_variable_identifiers_case_sensitive
+        and lang_cls.reserved_call_target_keywords_case_sensitive
+    )
+    bare_identifiers = (
+        lang_cls.reserved_bare_call_target_identifiers
+        if len(parts) == 1
+        else frozenset[str]()
+    )
+    head_identifiers = (
+        lang_cls.reserved_variable_identifiers
+        | lang_cls.reserved_call_target_head_identifiers
+        | bare_identifiers
+    ) - lang_cls.contextual_call_target_identifiers
+    return is_reserved_identifier(
+        case_sensitive=case_sensitive,
+        name=parts[0],
+        reserved_identifiers=head_identifiers,
+    ) or any(
+        is_reserved_identifier(
+            case_sensitive=case_sensitive,
+            name=part,
+            reserved_identifiers=lang_cls.reserved_identifiers,
+        )
+        for part in parts
+    )
 
 
 @beartype
@@ -273,13 +329,14 @@ def _expected_call_shape_exception(
         rejects_reserved_parameters
         and lang_cls.declares_call_parameter_names
         and any(
-            name in lang_cls.reserved_variable_identifiers
+            _is_reserved_parameter_name(lang_cls=lang_cls, name=name)
             for name in config.parameter_names
         )
     ):
         return InvalidCallParameterNameError
-    innermost_target_function = config.target_function.split(sep=".")[-1]
-    if innermost_target_function in lang_cls.reserved_identifiers:
+    if _is_reserved_call_target(
+        lang_cls=lang_cls, target_function=config.target_function
+    ):
         return InvalidCallTargetError
     unsupported_signals = (
         parameter_count == 0 and not lang_cls.supports_zero_parameter_calls,
@@ -431,6 +488,7 @@ def run_wrap_in_file_case(
     lang_extension: str,
     golden_path: Path,
     file_regression: FileRegressionFixture,
+    pytest_config: pytest.Config,
 ) -> None:
     """Run ``literalize_call(..., wrap_in_file=True)`` and check
     golden.
@@ -439,6 +497,7 @@ def run_wrap_in_file_case(
         policy=_WRAP_IN_FILE_SKIPS,
         golden_path=golden_path,
         prefix=lang_name,
+        config=pytest_config,
     ):
         wrap_result = _literalize_call_case(
             config=config,
@@ -481,6 +540,7 @@ def _run_call_with_declarations(
     effective_ref_case: literalizer.IdentifierCase | None,
     lang_name: str,
     golden_path: Path,
+    file_regression: FileRegressionFixture,
 ) -> _CallWithDeclarations:
     """Run ref declarations and the call, skipping on typed unsupported
     signals.
@@ -489,6 +549,7 @@ def _run_call_with_declarations(
         policy=_DECLARATION_SKIPS,
         golden_path=golden_path,
         prefix=lang_name,
+        config=file_regression.request.config,
     ):
         decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
             ref_name: literalizer.literalize(
@@ -533,6 +594,19 @@ def _run_call_with_declarations(
             ref_values=(effective_ref_values),
             bound_refs=None,
         )
+        if config.followup_source is not None:
+            decl_results.append(result)
+            result = literalizer.literalize_call(
+                source=config.followup_source,
+                input_format=input_info.input_format,
+                language=spec,
+                target_function=config.target_function,
+                parameter_names=config.parameter_names,
+                per_element=config.per_element,
+                ref_case=effective_ref_case,
+                ref_key=config.ref_key,
+                ref_values=effective_ref_values,
+            )
     return _CallWithDeclarations(decl_results=decl_results, result=result)
 
 
@@ -542,16 +616,15 @@ def _arg_values_for_stub(
     source_data: ParsedValue,
     per_element: bool,
 ) -> Sequence[ParsedValue]:
-    """Mirror ``_literalize.py``'s ``arg_values`` shape: a list of
-    arguments rows for per-element calls; a single-entry list
-    wrapping the whole data otherwise.
+    """Return argument rows for stubs, preserving a whole list as
+    one argument.
 
     A per-element call always yields a list ``source_data``; the
     ``isinstance`` check narrows the type for the static checker.
     """
     if per_element and isinstance(source_data, list):
         return source_data
-    return [source_data]
+    return [[source_data]]
 
 
 @beartype
@@ -582,7 +655,10 @@ def run_call_golden_case(
         version=version,
     )
     _skip_if_wrapper_unsupported(
-        config=config, lang_cls=lang_cls, golden_path=golden_path
+        config=config,
+        lang_cls=lang_cls,
+        golden_path=golden_path,
+        file_regression=file_regression,
     )
     if config.call_style_type is not None:
         # Apply the manifest's style to variant specs as well as defaults.
@@ -620,6 +696,7 @@ def run_call_golden_case(
             lang_extension=lang_cls.extension,
             golden_path=golden_path,
             file_regression=file_regression,
+            pytest_config=file_regression.request.config,
         )
         return
     if (
@@ -633,6 +710,7 @@ def run_call_golden_case(
             policy=_DECLARATION_SKIPS,
             golden_path=golden_path,
             prefix=lang_cls.__name__,
+            config=file_regression.request.config,
         ):
             bound = _literalize_call_case(
                 config=config,
@@ -664,6 +742,7 @@ def run_call_golden_case(
         effective_ref_case=effective_ref_case,
         lang_name=lang_cls.__name__,
         golden_path=golden_path,
+        file_regression=file_regression,
     )
     decl_results = call_outcome.decl_results
     result = call_outcome.result
@@ -700,6 +779,7 @@ def run_call_golden_case(
         policy=_PREAMBLE_STUB_SKIPS,
         golden_path=golden_path,
         prefix=lang_cls.__name__,
+        config=file_regression.request.config,
     ):
         preamble_stubs.extend(
             spec.format_call_preamble_stub(

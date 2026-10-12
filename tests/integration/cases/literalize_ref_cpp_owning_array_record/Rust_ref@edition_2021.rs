@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     labels: [&'static str; 1],
 }

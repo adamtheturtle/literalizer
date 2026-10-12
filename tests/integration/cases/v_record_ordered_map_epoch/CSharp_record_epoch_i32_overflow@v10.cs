@@ -13,7 +13,7 @@ var my_data = new Record0(
         }
     },
     new Dictionary<string, object> {
-        ["first"] = new int[] {
+        ["first"] = new long[] {
             2208988800
         }
     }

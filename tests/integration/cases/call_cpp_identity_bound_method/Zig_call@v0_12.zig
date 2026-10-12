@@ -10,7 +10,7 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-const ThingType_ = struct { fn go(self: ThingType_, value: ZVal) void { _ = self; _ = value; } };
+const ThingType_ = struct { fn go(self: ThingType_, value: ZVal) ZVal { _ = self; _ = value; return .nil; } };
 const thing: ThingType_ = .{};
 pub fn main() void {
     const item: ZVal = .{ .arr = &.{

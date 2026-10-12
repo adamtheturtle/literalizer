@@ -1,0 +1,7 @@
+if True:
+    const auto* my_data = R"(
+first line
+  indented
+
+last line
+)";

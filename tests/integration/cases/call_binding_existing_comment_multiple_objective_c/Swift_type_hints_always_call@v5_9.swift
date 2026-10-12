@@ -1,0 +1,5 @@
+@discardableResult func make_widget(count: Any = 0) -> Any { 0 }
+let my_data: Int = 42
+my_data = make_widget(count: my_data) // note
+// extra
+make_widget(count: my_data);

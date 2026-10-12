@@ -3,7 +3,7 @@ fn main() {
         1,
         2,
     ];
-    let mut my_data = whole;
-    my_data = whole;
+    let mut my_data = whole.clone();
+    my_data = whole.clone();
     let _ = my_data;
 }

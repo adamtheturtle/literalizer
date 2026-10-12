@@ -4,8 +4,8 @@ fn main() {
         2,
     ];
     let my_data = vec![
-        shared,
-        shared,
+        shared.clone(),
+        shared.clone(),
     ];
     let _ = my_data;
 }

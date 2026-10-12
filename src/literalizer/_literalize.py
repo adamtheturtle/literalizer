@@ -2031,6 +2031,17 @@ def _compute_sequence_dict_override(
 
 
 @beartype
+def _sequence_lists_for_type_widening(
+    *, lists: Sequence[list[Value]], spec: Language
+) -> Sequence[list[Value]]:
+    """Keep native tuple alternatives distinct from positional empties."""
+    tuple_ids = spec.heterogeneous_behavior.compute_tuple_list_ids
+    if tuple_ids is not None and len(tuple_ids(list(lists))) > 0:
+        return lists
+    return replace_positional_empty_lists(lists=lists)
+
+
+@beartype
 def _compute_sequence_open_override(
     *,
     items: Sequence[Value],
@@ -2084,7 +2095,9 @@ def _compute_sequence_open_override(
 
     fallback = spec.sequence_open([])
     if fallback != spec.sequence_open(_FALLBACK_PROBE):
-        normalized_lists = replace_positional_empty_lists(lists=lists)
+        normalized_lists = _sequence_lists_for_type_widening(
+            lists=lists, spec=spec
+        )
         if normalized_lists != lists:
             return spec.sequence_open(
                 [item for sibling in normalized_lists for item in sibling]
@@ -2126,7 +2139,7 @@ def _accumulate_sequence_open_overrides(
     """Reconcile siblings and their matching nested list positions."""
     if len(lists) <= 1:
         return
-    normalized = replace_positional_empty_lists(lists=lists)
+    normalized = _sequence_lists_for_type_widening(lists=lists, spec=spec)
     pooled = [item for sibling in lists for item in sibling]
     numeric = infer_element_type(items=pooled) in {
         int,
@@ -7905,13 +7918,17 @@ def _wrap_call_result_in_file(
         preamble=preamble,
         data_dependent_entries=data_dependent_preamble,
     )
+    stub_arg_values = arg_values
+    if not per_element:
+        # A whole-input list is one argument, not a parameter row.
+        stub_arg_values = [[data_for_preamble]]
     wrapped = _wrap_call_in_file(
         language=language,
         result=result,
         variable_form=variable_form,
         target_function_parts=target_function_parts,
         parameter_names=parameter_names,
-        arg_values=arg_values,
+        arg_values=stub_arg_values,
         call_transform=call_transform,
         preamble=scoped.file_scope,
         computed_body=scoped.body + computed_body,

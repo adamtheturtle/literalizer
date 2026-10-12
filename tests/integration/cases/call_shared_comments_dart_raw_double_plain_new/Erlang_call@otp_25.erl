@@ -1,0 +1,6 @@
+-module(fixture_call_shared_comments_dart_raw_double_plain_new_erlang_call).
+-export([x/0]).
+make_widget(_) -> undefined.
+x() ->
+    My_data = (r"ends\" + "// payload").length >= 0 ? make_widget(42) : make_widget(42),
+    My_data.

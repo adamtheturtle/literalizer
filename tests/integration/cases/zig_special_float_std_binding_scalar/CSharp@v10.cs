@@ -1,0 +1,1 @@
+var std = double.NaN;

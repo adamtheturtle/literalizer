@@ -1,2 +1,2 @@
 fun make_widget(count: Any? = null): Any? = null
-var my_data: Int = make_widget(count = 42)
+var my_data = make_widget(count = 42)

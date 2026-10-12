@@ -1,0 +1,4 @@
+module Fixture_zig_special_float_std_binding_scalar_Crystal_heterogeneous_strategy_record
+extend self
+std = Float64::NAN
+end

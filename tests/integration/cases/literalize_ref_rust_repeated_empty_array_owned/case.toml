@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "sequence_format", member = "ARRAY" },
+  { kind = "spec_field_present", field = "default_sequence_element_type" },
+]
+sequence_format = "ARRAY"
+default_sequence_element_type = "String"
+
+[ref.value_sources]
+shared = "[]"

@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     r#enum: i32,
     export: i32,

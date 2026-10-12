@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+pre_indent_level = 3
+
+[ref.value_sources]
+shared = "[1, 2]"
+other = "3"
+payload = '"\n    shared : Val\nshared = RInt 99"'

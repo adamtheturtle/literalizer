@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "obj.ZKV"
+parameter_names = ["value"]
+per_element = false

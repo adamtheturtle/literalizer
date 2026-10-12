@@ -12,6 +12,6 @@ data Val
 
 my_data :: Val
 my_data = PDict [
-    (Tuple "minimum" (PInt (-0x80000000))),
+    (Tuple "minimum" (PInt ((-0x7fffffff - 0x1)))),
     (Tuple "below" (PLong (-3000000000.0)))
 ]

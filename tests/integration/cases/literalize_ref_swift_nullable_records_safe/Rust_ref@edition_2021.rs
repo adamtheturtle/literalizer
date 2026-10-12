@@ -1,15 +1,19 @@
+#[derive(Clone)]
 struct Record1 {
     x: i32,
     y: Option<()>,
 }
+#[derive(Clone)]
 struct Record2 {
     x: Option<()>,
     y: Option<()>,
 }
+#[derive(Clone)]
 struct Record3 {
     x: i32,
     y: i32,
 }
+#[derive(Clone)]
 struct Record0 {
     nullable: Record1,
     null_fields: Record2,

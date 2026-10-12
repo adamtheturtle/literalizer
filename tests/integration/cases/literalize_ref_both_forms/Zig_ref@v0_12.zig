@@ -21,5 +21,6 @@ pub fn main() void {
     my_data = .{ .map = &.{
         .{ .key = "a", .val = shared },
     }};
+    _ = &shared;
     my_data = .nil;
 }

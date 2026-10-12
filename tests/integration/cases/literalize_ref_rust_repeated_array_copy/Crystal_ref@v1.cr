@@ -1,0 +1,11 @@
+module Fixture_literalize_ref_rust_repeated_array_copy_Crystal_ref
+extend self
+shared = [
+    1,
+    2,
+]
+my_data = [
+    shared,
+    shared,
+]
+end

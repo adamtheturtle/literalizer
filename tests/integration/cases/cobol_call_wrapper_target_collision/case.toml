@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "check"
+parameter_names = ["a"]
+per_element = false
+wrap_in_file = true

@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Record0 {
     numbers: [i32; 2],
     nested_numbers: [[i32; 2]; 2],

@@ -1,0 +1,2 @@
+class() { :; }
+class 42

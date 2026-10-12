@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["data"]
+per_element = true
+consumable_refs = []
+
+[call.ref_declarations]
+item = '[1,2]'

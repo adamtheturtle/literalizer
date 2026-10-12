@@ -1,0 +1,21 @@
+schema_version = 1
+summary = """
+Values of a homogeneous outer map must use compatible inner map types.
+This holds even when the map opener itself is independent of its value
+types, and the conflict appears inside further maps or lists.
+"""
+exceptions = ["HeterogeneousSiblingMapsError"]
+gates = [{ kind = "capability_flag", flag = "rejects_heterogeneous_dict_values" }]
+
+[call]
+api = "literalize"
+sources = [
+  '{"a":{"k":1},"b":{"k":"s"}}',
+  '{"root":{"a":{"k":1},"b":{"k":"s"}}}',
+  '[{"a":{"k":1},"b":{"k":"s"}}]',
+  '{"a":{"k":[1]},"b":{"k":["s"]}}',
+]
+input_format = "json"
+variable_form = "new"
+variable_name = "my_data"
+wrap_in_file = true

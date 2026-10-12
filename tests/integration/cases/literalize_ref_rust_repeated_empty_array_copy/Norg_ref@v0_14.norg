@@ -1,0 +1,11 @@
+* shared
+@code javascript
+[]
+@end
+* my_data
+@code javascript
+[
+    shared,
+    shared
+]
+@end

@@ -26,8 +26,8 @@ from pytest_regressions.file_regression import FileRegressionFixture
 class SkipReason:
     """Why one error skips a golden rather than failing it.
 
-    ``unlink`` drops any golden file left by an earlier run, so a stale
-    fixture cannot pose as a real result on the next one.
+    ``unlink`` marks an earlier golden as stale. Explicit regeneration
+    removes it; ordinary verification reports it without modifying it.
     """
 
     error: type[Exception]
@@ -73,22 +73,34 @@ class _ReasonedError(Protocol):
 
 
 @beartype
+def cleanup_stale_golden(*, golden_path: Path, config: pytest.Config) -> None:
+    """Remove a skipped fixture only during explicit regeneration."""
+    if config.getoption(name="regen_all") is True:
+        golden_path.unlink(missing_ok=True)
+    elif golden_path.exists():
+        pytest.fail(
+            reason=(
+                f"Stale golden file: {golden_path}. "
+                "Run its golden test with --regen-all to remove it."
+            ),
+        )
+
+
+@beartype
 def skip_golden(
     *,
     reason: str,
     golden_path: Path,
     unlink: bool,
+    config: pytest.Config,
 ) -> NoReturn:
     """Skip the current golden case with *reason*.
 
-    Dropping the golden file is part of skipping it: a fixture left by
-    an earlier run would otherwise pose as a real result on the next
-    one, and the orphan-files check would count it as covered.  The two
-    steps are spelled together here so a skip cannot be written without
-    deciding which it is.
+    A stale fixture fails ordinary verification without modifying the
+    file. Explicit regeneration removes it before skipping the case.
     """
     if unlink:
-        golden_path.unlink(missing_ok=True)
+        cleanup_stale_golden(golden_path=golden_path, config=config)
     pytest.skip(reason=reason)
 
 
@@ -100,6 +112,7 @@ def _skip_for_error(
     golden_path: Path,
     prefix: str,
     suffix: str,
+    config: pytest.Config,
 ) -> NoReturn:
     """Skip the current test with a message keyed off the caught error.
 
@@ -121,6 +134,7 @@ def _skip_for_error(
         reason=f"{prefix} {entry.reason}{detail}{suffix}",
         golden_path=golden_path,
         unlink=entry.unlink,
+        config=config,
     )
 
 
@@ -138,6 +152,7 @@ class GoldenSkips:
     policy: SkipPolicy
     golden_path: Path
     prefix: str
+    config: pytest.Config
 
     def __enter__(self) -> None:
         """Enter the guarded rendering."""
@@ -156,6 +171,7 @@ class GoldenSkips:
                 golden_path=self.golden_path,
                 prefix=self.prefix,
                 suffix=self.policy.suffix,
+                config=self.config,
             )
 
 

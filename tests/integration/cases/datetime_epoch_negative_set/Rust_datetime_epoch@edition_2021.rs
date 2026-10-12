@@ -1,0 +1,7 @@
+use std::collections::HashSet;
+fn main() {
+    let my_data = HashSet::from([
+        -1,
+    ]);
+    let _ = my_data;
+}

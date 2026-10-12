@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "json_type", member = "SERDE_JSON_VALUE" },
+]
+json_type = "SERDE_JSON_VALUE"
+
+[ref.value_sources]
+shared = '42'

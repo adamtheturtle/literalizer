@@ -5,10 +5,10 @@ fn main() {
         2,
     ];
     let mut my_data = HashMap::from([
-        ("a", shared),
+        ("a", shared.clone()),
     ]);
     my_data = HashMap::from([
-        ("a", shared),
+        ("a", shared.clone()),
     ]);
     let _ = my_data;
 }

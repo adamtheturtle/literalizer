@@ -1,0 +1,5 @@
+-module(fixture_call_zig_helper_member_zval_erlang_call).
+-export([x/0]).
+'obj.ZVal'(_) -> ok.
+x() ->
+    'obj.ZVal'(1).

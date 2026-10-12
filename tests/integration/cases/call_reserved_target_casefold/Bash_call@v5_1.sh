@@ -1,0 +1,2 @@
+BEGIN() { :; }
+BEGIN 42

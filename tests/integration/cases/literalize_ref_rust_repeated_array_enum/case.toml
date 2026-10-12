@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TAGGED_ENUM" },
+  { kind = "enum_member_present", option = "sequence_format", member = "ARRAY" },
+]
+sequence_format = "ARRAY"
+heterogeneous_strategy = "TAGGED_ENUM"
+
+[ref.value_sources]
+shared = '[1,"x"]'

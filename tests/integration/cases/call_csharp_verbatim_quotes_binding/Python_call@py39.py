@@ -1,0 +1,3 @@
+def make_widget(*_args: object, **_kwargs: object) -> object: ...
+my_data = @"a"" // payload""b" // trailing
+// extra

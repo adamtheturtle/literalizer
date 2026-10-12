@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Zig json reference bindings cannot shadow the mode's helpers."
+exceptions = ["ReservedVariableNameError"]
+languages = ["Zig"]
+
+[call]
+api = "literalize"
+sources = ['{"$ref":"allocator"}']
+input_format = "json"
+wrap_in_file = false
+ref_key = "$ref"
+bound_ref_yaml = { allocator = "a: 1" }
+kwargs = [{ kind = "option_member", option = "json_type", member = "STD_JSON_VALUE" }]

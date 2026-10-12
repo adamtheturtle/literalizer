@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "sequence_format", member = "TUPLE" },
+]
+sequence_format = "TUPLE"
+
+[ref.value_sources]
+shared = '[1,"x"]'

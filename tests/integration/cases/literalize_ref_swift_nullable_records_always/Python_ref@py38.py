@@ -17,19 +17,19 @@ class Record0:
     nullable: Record1
     null_fields: Record2
     plain: Record3
-nullable: dict[str, int | None] = Record1(
+nullable: Record1 = Record1(
     x=1,
     y=None,
 )
-null_fields: dict[str, None] = Record2(
+null_fields: Record2 = Record2(
     x=None,
     y=None,
 )
-plain: dict[str, int] = Record3(
+plain: Record3 = Record3(
     x=1,
     y=2,
 )
-my_data: dict[str, dict[str, str]] = Record0(
+my_data: Record0 = Record0(
     nullable=nullable,
     null_fields=null_fields,
     plain=plain,

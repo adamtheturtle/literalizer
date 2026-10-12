@@ -1,0 +1,6 @@
+if True:
+    final my_data = '''\nfirst line
+  indented
+
+last line
+''';

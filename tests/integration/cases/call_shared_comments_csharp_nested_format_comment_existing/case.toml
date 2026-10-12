@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "($\"{{$\"{{1://}}\"}}\").Length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[call.ref_declarations]
+my_data = "null"

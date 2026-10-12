@@ -1,7 +1,9 @@
 use std::collections::HashMap;
+#[derive(Clone)]
 enum Value {
     Null,
 }
+#[derive(Clone)]
 struct Record0 {
     input: HashMap<&'static str, Value>,
 }

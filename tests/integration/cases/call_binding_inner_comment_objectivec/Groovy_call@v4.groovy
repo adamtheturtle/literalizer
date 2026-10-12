@@ -1,0 +1,4 @@
+def make_widget(Map _args) { null }
+def my_data = make_widget(count: 42) ?
+make_widget(count: 42) // inner
+: nil // trailing

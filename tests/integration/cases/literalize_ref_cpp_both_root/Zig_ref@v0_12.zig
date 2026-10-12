@@ -17,5 +17,6 @@ pub fn main() void {
     }};
     var my_data: ZVal = shared;
     my_data = shared;
+    _ = &shared;
     my_data = .nil;
 }

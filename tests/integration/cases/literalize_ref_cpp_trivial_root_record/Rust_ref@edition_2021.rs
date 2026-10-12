@@ -1,6 +1,8 @@
+#[derive(Clone)]
 struct Record1 {
     value: i32,
 }
+#[derive(Clone)]
 struct Record0 {
     child: Record1,
 }

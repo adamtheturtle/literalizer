@@ -1,0 +1,6 @@
+let DVal = < DBool : Bool | DDouble : Double | DInteger : Integer | DText : Text >
+let make_widget = \(_ : DVal) -> DVal.DBool True
+let my_data = "" in my_data
+let my_data = ($"{$"{1://}"}").Length >= 0 ? make_widget (DVal.DInteger +42) : make_widget (DVal.DInteger +42) // trailing
+// extra in my_data
+in {=}
