@@ -384,6 +384,21 @@ _IntTypeResolver = Callable[[list[int]], str]
 
 
 @beartype
+def _make_cpp_i32_min_safe_formatter(
+    *, base: Callable[[int], str]
+) -> Callable[[int], str]:
+    """Keep the Int32 minimum expression typed as ``int``."""
+
+    def _format(value: int) -> str:
+        """Avoid a positive operand outside the signed Int32 range."""
+        if value == _INT32_MIN:
+            return f"({base(_INT32_MIN + 1)} - 1)"
+        return base(value)
+
+    return _format
+
+
+@beartype
 def _narrowest_cpp_int_type(values: list[int]) -> str:
     """Return the narrowest C++ integer type holding every value in
     *values*: ``int`` when every value fits in 32 bits, ``long long``
@@ -4437,6 +4452,10 @@ class Cpp(metaclass=LanguageCls):
             base_int_formatter = make_negative_nondecimal_i64_formatter(
                 base=base_int_formatter,
                 suffix="LL",
+            )
+        if self.numeric_literal_suffix is self.numeric_literal_suffixes.NONE:
+            base_int_formatter = _make_cpp_i32_min_safe_formatter(
+                base=base_int_formatter,
             )
         return make_overflow_fallback_formatter(
             base=make_i64_min_safe_formatter(
