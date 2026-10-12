@@ -11,6 +11,7 @@ import dataclasses
 import enum
 import functools
 import json
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -44,6 +45,7 @@ from .golden_checks import (
 )
 from .language_specs import (
     make_golden_path,
+    make_spec,
     sorted_languages,
     with_per_fixture_module_name,
 )
@@ -245,10 +247,72 @@ def _is_reserved_parameter_name(
     *, lang_cls: literalizer.LanguageCls, name: str
 ) -> bool:
     """Compare reserved names using the identifier case policy."""
-    return is_reserved_identifier(
+    pattern = lang_cls.reserved_variable_identifier_pattern
+    return (
+        pattern is not None and pattern.fullmatch(string=name) is not None
+    ) or is_reserved_identifier(
         case_sensitive=lang_cls.reserved_variable_identifiers_case_sensitive,
         name=name,
         reserved_identifiers=lang_cls.reserved_variable_identifiers,
+    )
+
+
+@beartype
+def _invalid_parameter_grammar(
+    *, lang_cls: literalizer.LanguageCls, name: str
+) -> bool:
+    """Apply the declared grammar and parameter-only restrictions."""
+    pattern = lang_cls.reserved_call_parameter_identifier_pattern
+    return (
+        not lang_cls.new_variable_name_syntax.accepts(name=name)
+        or (
+            lang_cls.max_variable_identifier_length is not None
+            and len(name) > lang_cls.max_variable_identifier_length
+        )
+        or name in lang_cls.reserved_call_parameter_identifiers
+        or (pattern is not None and pattern.fullmatch(string=name) is not None)
+    )
+
+
+@beartype
+def _invalid_target_grammar(
+    *, lang_cls: literalizer.LanguageCls, target: str, wrapped: bool
+) -> bool:
+    """Recognize targets a call or its generated declarations reject."""
+    parts = target.split(sep=".")
+    syntax = lang_cls.call_target_name_syntax
+    if syntax is None:
+        syntax = lang_cls.new_variable_name_syntax
+    constructor = any(
+        make_spec(lang_cls=lang_cls).format_constructor_target(candidate)
+        == target
+        for candidate in re.findall(pattern=r"[^\W\d]\w*", string=target)
+        if re.fullmatch(pattern=r"[A-Z][A-Za-z0-9_]*", string=candidate)
+        is not None
+    )
+    if any(
+        not part
+        or (
+            lang_cls.max_variable_identifier_length is not None
+            and len(part) > lang_cls.max_variable_identifier_length
+        )
+        or (
+            not syntax.accepts(name=part)
+            and not (
+                constructor
+                and (len(parts) > 1 or lang_cls.accepts_type_name_call_target)
+            )
+        )
+        for part in parts
+    ):
+        return True
+    return (
+        wrapped
+        and not (constructor and lang_cls.declares_type_name_call_target)
+        and any(
+            not lang_cls.new_variable_name_syntax.accepts(name=part)
+            for part in parts
+        )
     )
 
 
@@ -325,6 +389,11 @@ def _expected_call_shape_exception(
         or bound_refs_wrap
         or isinstance(effective_style.value, literalizer.KeywordCallStyle)
     )
+    if any(
+        _invalid_parameter_grammar(lang_cls=lang_cls, name=name)
+        for name in config.parameter_names
+    ):
+        return InvalidCallParameterNameError
     if (
         rejects_reserved_parameters
         and lang_cls.declares_call_parameter_names
@@ -334,7 +403,11 @@ def _expected_call_shape_exception(
         )
     ):
         return InvalidCallParameterNameError
-    if _is_reserved_call_target(
+    if _invalid_target_grammar(
+        lang_cls=lang_cls,
+        target=config.target_function,
+        wrapped=config.wrap_in_file or bound_refs_wrap,
+    ) or _is_reserved_call_target(
         lang_cls=lang_cls, target_function=config.target_function
     ):
         return InvalidCallTargetError
