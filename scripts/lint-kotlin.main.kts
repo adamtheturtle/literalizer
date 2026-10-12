@@ -3,6 +3,9 @@
 
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
+import java.util.Locale
+import java.util.Timer
+import java.util.TimerTask
 import kotlin.system.exitProcess
 
 val files = System.`in`.bufferedReader().readText()
@@ -35,9 +38,37 @@ val classpathArgs = if (extraClasspath.isEmpty()) {
 
 val compiler = K2JVMCompiler()
 var allOk = true
+val timeoutSeconds = System.getenv("LITERALIZER_KOTLIN_TIMEOUT_SECONDS")?.toLong() ?: 60L
+require(timeoutSeconds in 1L..1800L) {
+    "LITERALIZER_KOTLIN_TIMEOUT_SECONDS must be between 1 and 1800"
+}
 
 for (path in files) {
     val out = java.nio.file.Files.createTempDirectory("kotlin-lint-").toFile()
+    // A compiler/evaluation stall must not consume the entire lint job.
+    // Synchronize cancellation so a completed fixture's timer cannot
+    // terminate the JVM while the next fixture is being checked.
+    val guardLock = Any()
+    var completed = false
+    val started = System.nanoTime()
+    val cleanup = Thread { out.deleteRecursively() }
+    Runtime.getRuntime().addShutdownHook(cleanup)
+    val deadline = Timer("kotlin-fixture-deadline", true)
+    deadline.schedule(object : TimerTask() {
+        override fun run() {
+            synchronized(guardLock) {
+                if (!completed) {
+                    val elapsed = (System.nanoTime() - started) / 1_000_000_000.0
+                    val elapsedText = String.format(Locale.ROOT, "%.2f", elapsed)
+                    System.err.println(
+                        "$path: compiler/evaluation deadline (${timeoutSeconds}s) " +
+                            "exceeded after ${elapsedText}s"
+                    )
+                    exitProcess(124)
+                }
+            }
+        }
+    }, timeoutSeconds * 1000L)
     try {
         // `-language-version 1.9` and `-api-version 1.9` match
         // `Kotlin.language_version` in `src/literalizer/languages/kotlin.py`;
@@ -56,6 +87,11 @@ for (path in files) {
             allOk = false
         }
     } finally {
+        synchronized(guardLock) {
+            completed = true
+            deadline.cancel()
+        }
+        Runtime.getRuntime().removeShutdownHook(cleanup)
         out.deleteRecursively()
     }
 }
