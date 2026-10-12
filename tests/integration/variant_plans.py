@@ -350,7 +350,7 @@ class _EveryNonDefaultMemberPlan(  # noqa: NOD001
     member_flags: list[str] = Field(default_factory=_no_member_flags)
     excluded_members: list[str] = Field(default_factory=_no_excluded_members)
     declaration_style_sequence_override: bool = False
-    per_version: bool = False
+    per_version: bool = True
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
@@ -382,7 +382,7 @@ class _FixedOverridesPlan(  # noqa: NOD001
     name_metadata_field: Annotated[str, Field(min_length=1)] | None = None
     record_language_version: bool = False
     external_record_shape_fixture: bool = False
-    per_version: bool = False
+    per_version: bool = True
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
@@ -422,7 +422,7 @@ class _KwargValuesPlan(  # noqa: NOD001
     name_template: Annotated[str, Field(min_length=1)]
     kwarg: Annotated[str, Field(min_length=1)]
     values: Annotated[list[_KwargValueChoice], Field(min_length=1)]
-    per_version: bool = False
+    per_version: bool = True
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
@@ -477,7 +477,7 @@ class _CrossProductPlan(  # noqa: NOD001
         default_factory=_no_excluded_members
     )
     skip_incompatible_formats: bool = False
-    per_version: bool = False
+    per_version: bool = True
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
@@ -1630,7 +1630,11 @@ def _language_versions(
     axis: _ExpandedAxis,
     default_spec: literalizer.Language,
 ) -> list[Mapping[str, object]]:
-    """Return the per-version kwargs an axis repeats itself over."""
+    """Exercise supported versions unless the axis opts out.
+
+    Explicit version selections and required fixture versions override
+    these candidates when their specs are built.
+    """
     if not axis.per_version:
         return [{}]
     members = OPTIONS["language_version"].get_members(default_spec)
@@ -1843,10 +1847,10 @@ def _axis_variants(
                     axis=axis,
                     lang_cls=lang_cls,
                     kwargs={
+                        **version,
                         **resolved.kwargs,
                         **selection.kwargs,
                         **fixture.record_version,
-                        **version,
                     },
                 )
                 # Two declared versions may resolve to one effective
