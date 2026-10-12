@@ -36,6 +36,7 @@ class _CommentScanner:
 
     statement: str
     prefix: str
+    quotes: frozenset[str]
     regex_literals: bool
     backtick_strings: bool
     raw_string_prefixes: tuple[str, ...]
@@ -89,7 +90,7 @@ class _CommentScanner:
             )
         if self.backtick_strings and self.statement.startswith("`", cursor):
             return self._end_after(delimiter="`", cursor=cursor + 1)
-        if self.statement[cursor] in {"'", '"'}:
+        if self.statement[cursor] in self.quotes:
             return self._quoted_end(cursor=cursor, raw=False, verbatim=False)
         return self._prefixed_string_end(cursor=cursor)
 
@@ -105,9 +106,11 @@ class _CommentScanner:
             )
         for marker in self.raw_string_prefixes:
             quote_start = cursor + len(marker)
-            if self.statement.startswith(marker, cursor) and self.statement[
-                quote_start : quote_start + 1
-            ] in {"'", '"'}:
+            if (
+                self.statement.startswith(marker, cursor)
+                and self.statement[quote_start : quote_start + 1]
+                in self.quotes
+            ):
                 return self._quoted_end(
                     cursor=quote_start, raw=True, verbatim=False
                 )
@@ -228,11 +231,29 @@ def split_trailing_line_comments(
     return _CommentScanner(
         statement=statement,
         prefix=prefix,
+        quotes=frozenset({'"', "'"}),
         regex_literals=regex_literals,
         backtick_strings=backtick_strings,
         raw_string_prefixes=raw_string_prefixes,
         verbatim_strings=verbatim_strings,
         interpolation_syntax=interpolation_syntax,
+    ).split()
+
+
+@beartype
+def split_double_quoted_line_comments(
+    *, statement: str, prefix: str
+) -> _TrailingLineComments:
+    """Separate trailing comments where only double quotes delimit strings."""
+    return _CommentScanner(
+        statement=statement,
+        prefix=prefix,
+        quotes=frozenset({'"'}),
+        regex_literals=False,
+        backtick_strings=False,
+        raw_string_prefixes=(),
+        verbatim_strings=False,
+        interpolation_syntax=None,
     ).split()
 
 
