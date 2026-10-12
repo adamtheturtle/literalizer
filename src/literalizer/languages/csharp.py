@@ -2131,6 +2131,7 @@ class CSharp(metaclass=LanguageCls):
         if self._dt_tp is not int:
             return typed
 
+        @beartype
         def _epoch_set_open(items: list[Value]) -> str:
             """Infer set carriers from the rendered epoch integers."""
             return typed.set_open(

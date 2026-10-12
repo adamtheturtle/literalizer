@@ -1,8 +1,7 @@
 schema_version = 1
 suites = ["base"]
-languages = ["PureScript", "CSharp"]
-# C# set inference must size rendered epoch integers.
-languages_reason = "PureScript negative epoch set members require numeric negation."
+languages = ["CSharp", "PureScript"]
+languages_reason = "PureScript negative epoch set members require numeric negation; C# set carriers must represent the epoch integers."
 
 [[variants]]
 axis = "datetime"

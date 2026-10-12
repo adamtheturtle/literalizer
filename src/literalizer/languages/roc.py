@@ -11,6 +11,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._comments import TabFreeCommentPrefix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -959,7 +960,7 @@ class Roc(metaclass=LanguageCls):
         """Comment style options."""
 
         HASH = CommentConfig(
-            prefix="#",
+            prefix=TabFreeCommentPrefix(object="#"),
             suffix="",
         )
 
