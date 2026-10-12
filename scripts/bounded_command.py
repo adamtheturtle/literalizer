@@ -3,12 +3,12 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from beartype import beartype
+from beartype import BeartypeConf, beartype
 
 _WRAPPER = Path(__file__).resolve().with_name(name="run-bounded.sh")
 
 
-@beartype
+@beartype(conf=BeartypeConf(is_pep484_tower=True))
 def bounded_command(
     *, args: Sequence[str | Path], fixture: str, timeout_seconds: float
 ) -> list[str]:
