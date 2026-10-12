@@ -1,4 +1,4 @@
 schema_version = 1
-languages = ["Dart", "Elixir", "Python", "Rust", "Zig"]
-languages_reason = "Sampled: Zig refuses a control character in a comment and the other three refuse a bidirectional formatting character, with Python standing for a backend that accepts both."
+languages = ["Dart", "Elixir", "Python", "Roc", "Rust", "Zig"]
+languages_reason = "Sampled: Zig refuses control characters, Roc refuses tabs, and Dart, Elixir, and Rust refuse bidirectional formatting characters in comments; Python accepts both."
 suites = ["base"]
