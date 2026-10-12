@@ -540,6 +540,9 @@ class CallCaseSpec(  # noqa: NOD001
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
+    # An additional call to the same target, emitted after the primary
+    # call so a fixture can use its bound result.
+    followup_source: str | None = None
     transform_stub_names: StringTuple = Field(default_factory=_empty_names)
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,

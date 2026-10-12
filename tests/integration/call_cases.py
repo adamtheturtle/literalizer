@@ -529,6 +529,19 @@ def _run_call_with_declarations(
             ref_values=(effective_ref_values),
             bound_refs=None,
         )
+        if config.followup_source is not None:
+            decl_results.append(result)
+            result = literalizer.literalize_call(
+                source=config.followup_source,
+                input_format=input_info.input_format,
+                language=spec,
+                target_function=config.target_function,
+                parameter_names=config.parameter_names,
+                per_element=config.per_element,
+                ref_case=effective_ref_case,
+                ref_key=config.ref_key,
+                ref_values=effective_ref_values,
+            )
     return _CallWithDeclarations(decl_results=decl_results, result=result)
 
 
