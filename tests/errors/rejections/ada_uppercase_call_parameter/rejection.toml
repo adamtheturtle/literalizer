@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Ada reserved parameter names are case-insensitive."
+exceptions = ["InvalidCallParameterNameError"]
+languages = ["Ada"]
+values = ["BEGIN", "IF"]
+
+[call]
+api = "literalize_call"
+sources = ["42"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["{value}"]
+per_element = false
+wrap_in_file = true
