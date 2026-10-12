@@ -5,6 +5,6 @@ static object consume(object value = null) => null;
 JsonNode? shared = new JsonObject {
     ["value"] = new JsonArray {1, 2}
 };
-consume(new JsonObject {["left"] = shared?.DeepClone(), ["right"] = shared?.DeepClone()});
+consume(new JsonObject {["left"] = ((JsonNode?)shared)?.DeepClone(), ["right"] = ((JsonNode?)shared)?.DeepClone()});
     }
 }

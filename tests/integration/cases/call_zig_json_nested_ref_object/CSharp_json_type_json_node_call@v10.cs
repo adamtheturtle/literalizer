@@ -6,6 +6,6 @@ JsonNode? shared = new JsonArray {
     1,
     2
 };
-consume(new JsonObject {["field"] = shared?.DeepClone(), ["nested"] = new JsonArray {shared?.DeepClone(), new JsonObject()}});
+consume(new JsonObject {["field"] = ((JsonNode?)shared)?.DeepClone(), ["nested"] = new JsonArray {((JsonNode?)shared)?.DeepClone(), new JsonObject()}});
     }
 }

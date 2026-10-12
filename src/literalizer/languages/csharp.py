@@ -2002,8 +2002,8 @@ class CSharp(metaclass=LanguageCls):
 
         @beartype
         def _clone_ref(name: str, _value: Value | None, /) -> str:
-            """Preserve null references and detach non-null JSON nodes."""
-            return f"{name}?.DeepClone()"
+            """Convert native scalars and detach non-null JSON nodes."""
+            return f"((JsonNode?){name})?.DeepClone()"
 
         return _clone_ref
 

@@ -3,6 +3,6 @@ class Check {
 static object consume(object value = null) => null;
     public static void Main() {
 JsonNode? shared = (JsonNode?)(42);
-consume(new JsonArray {shared?.DeepClone(), shared?.DeepClone()});
+consume(new JsonArray {((JsonNode?)shared)?.DeepClone(), ((JsonNode?)shared)?.DeepClone()});
     }
 }
