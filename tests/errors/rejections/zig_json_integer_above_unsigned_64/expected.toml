@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Zig['[18446744073709551616]']" = "Zig cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
+"Zig['{\"value\": 18446744073709551616}']" = "Zig cannot represent integer 18446744073709551616 above the unsigned 64-bit range."
