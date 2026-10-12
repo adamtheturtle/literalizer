@@ -139,6 +139,7 @@ def build_json_type_variable_form_cases(
         for declaration_style in redef_styles:
             lang_cls = json_variant.lang_cls
             kwargs: dict[str, object] = {
+                "language_version": spec.language_version,
                 "json_type": spec.json_type,
                 "declaration_style": declaration_style,
                 # A declaration style that substitutes a sequence format
@@ -216,6 +217,7 @@ def build_multiline_string_context_cases(
                         name=name,
                         spec=make_spec(
                             lang_cls=base_variant.lang_cls,
+                            language_version=spec.language_version,
                             string_format=spec.string_format,
                             declaration_style=declaration_style,
                         ),
@@ -296,6 +298,13 @@ def case_for_manifest_variant(
 ) -> VariantCase:
     """Combine typed language expansion with case-local render context."""
     context = manifest_variant.context
+    variant = dataclasses.replace(
+        variant,
+        fixture_prefix=(
+            manifest_variant.fixture_prefix + variant.fixture_prefix
+        ),
+        wrap_in_file=manifest_variant.wrap_in_file,
+    )
     if context.collection_layout is not None:
         variant = dataclasses.replace(
             variant,
@@ -451,10 +460,14 @@ def build_variant_cases() -> list[VariantCase]:
             base_variants=tuple(
                 compact_variant(
                     name=lang_cls.__name__,
-                    spec=make_spec(lang_cls=lang_cls),
+                    spec=make_spec(
+                        lang_cls=lang_cls,
+                        language_version=version,
+                    ),
                     lang_cls=lang_cls,
                 )
                 for lang_cls in sorted_languages()
+                for version in lang_cls.VersionFormats
             ),
             case_contexts=modifier_inputs,
             sequence_case_dirs=modifier_sequence_inputs,

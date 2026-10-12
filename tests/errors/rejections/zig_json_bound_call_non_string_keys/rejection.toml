@@ -1,0 +1,27 @@
+schema_version = 1
+summary = "Bound Zig JSON call arguments retain the restriction to string object keys."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Zig"]
+values = [
+    "[{nested: {1.5: value}}]",
+    "[{nested: {1: value}}]",
+    "[{nested: {true: value}}]",
+    "{1.5: value}",
+    "{1: value}",
+    "{nested: {1.5: value}}",
+    "{nested: {1: value}}",
+    "{nested: {true: value}}",
+    "{true: value}",
+]
+
+[call]
+api = "literalize_call"
+sources = ['{"$ref": "shared"}']
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+per_element = false
+ref_key = "$ref"
+wrap_in_file = true
+bound_ref_yaml = { shared = "{value}" }
+kwargs = [{ kind = "option_member", option = "json_type", member = "STD_JSON_VALUE" }]

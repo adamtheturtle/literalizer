@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "\"${{{{'value': '// payload'}}['value']}}\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+languages = ["Dart"]
+languages_reason = "The target language preserves its quoted string syntax when terminating transformed call bindings."

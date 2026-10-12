@@ -6,6 +6,7 @@ owns their sources, API arguments, and exact result expectations.
 """
 
 import dataclasses
+from pathlib import Path
 from typing import Literal
 
 import pytest
@@ -22,7 +23,11 @@ from literalizer import (
     literalize_call,
 )
 from tests.enum_members import enum_member_by_name
-from tests.integration.case_manifests import CallInputFormat, ManifestLanguage
+from tests.integration.case_manifests import (
+    CallInputFormat,
+    CallTransformTemplate,
+    ManifestLanguage,
+)
 from tests.toml_cases import load_toml_cases
 
 type _ResultView = Literal["code", "bare_code"]
@@ -62,7 +67,7 @@ class _LiteralCase(_FragmentCase, frozen=True):
     include_delimiters: bool
 
 
-class _CallCase(_FragmentCase, frozen=True):
+class _CallCase(_FragmentCase, frozen=True):  # noqa: NOD001
     """One externally defined call target and its argument
     configuration.
     """
@@ -70,6 +75,7 @@ class _CallCase(_FragmentCase, frozen=True):
     target_function: str
     parameter_names: tuple[str, ...]
     per_element: bool
+    call_transform: CallTransformTemplate | None = None
 
 
 class _FragmentCases(BaseModel, extra="forbid", frozen=True):
@@ -79,8 +85,23 @@ class _FragmentCases(BaseModel, extra="forbid", frozen=True):
     calls: tuple[_CallCase, ...]
 
 
-_CASES = TypeAdapter(type=_FragmentCases).validate_python(
-    load_toml_cases(name="literalize_fragments"),
+_CASE_DOCUMENTS = tuple(
+    TypeAdapter(type=_FragmentCases).validate_python(
+        load_toml_cases(name=path.stem)
+    )
+    for path in sorted(
+        (Path(__file__).parent / "unit_cases").glob(
+            pattern="literalize_fragments*.toml"
+        )
+    )
+)
+_CASES = _FragmentCases(
+    literals=tuple(
+        case for document in _CASE_DOCUMENTS for case in document.literals
+    ),
+    calls=tuple(
+        case for document in _CASE_DOCUMENTS for case in document.calls
+    ),
 )
 
 
@@ -137,6 +158,7 @@ def test_call_fragment(case: _CallCase) -> None:
         target_function=case.target_function,
         parameter_names=case.parameter_names,
         per_element=case.per_element,
+        call_transform=case.call_transform,
         variable_form=case.resolved_variable_form(),
         ref_key="$ref",
         ref_values=case.ref_values,

@@ -413,7 +413,6 @@ gates = [
 ]
 overrides = [
   { kind = "metadata_enum_member", option = "heterogeneous_strategy", field = "heterogeneous_value_variant_name_strategy" },
-  { kind = "metadata_enum_member", option = "language_version", field = "heterogeneous_value_variant_name_language_version", optional = true },
   { kind = "non_default_kwarg", kwarg = "heterogeneous_value_variant_name", name_value = true },
 ]
 
