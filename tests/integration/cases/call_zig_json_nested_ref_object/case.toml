@@ -2,7 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Zig"]
+languages = ["Zig", "CSharp"]
 languages_reason = "Zig JSON container arguments preserve rendered reference expressions."
 target_function = "consume"
 parameter_names = ["value"]
