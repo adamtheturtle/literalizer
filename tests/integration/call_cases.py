@@ -43,6 +43,7 @@ from .golden_checks import (
     skip_golden,
 )
 from .language_specs import (
+    find_redefinition_styles,
     make_golden_path,
     sorted_languages,
     with_per_fixture_module_name,
@@ -530,6 +531,49 @@ class _CallWithDeclarations:
 
 
 @beartype
+def _render_ref_declaration(
+    *,
+    config: CallCaseSpec,
+    spec: literalizer.Language,
+    declaration_name: str,
+    ref_source: str,
+) -> literalizer.LiteralizeResult:
+    """Seed an existing binding using the synthetic function return
+    carrier.
+    """
+    variable_form = literalizer.NewVariable(
+        name=declaration_name,
+        modifiers=frozenset(),
+    )
+    if (
+        isinstance(config.variable_form, literalizer.ExistingVariable)
+        and config.variable_form.name == declaration_name
+    ):
+        styles = find_redefinition_styles(spec=spec)
+        seed_spec = spec
+        if len(styles) > 0:
+            seed_spec = dataclasses.replace(spec, declaration_style=styles[0])
+        return literalizer.literalize_call(
+            source=ref_source,
+            input_format=literalizer.InputFormat.JSON,
+            language=seed_spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            per_element=False,
+            variable_form=variable_form,
+        )
+    return literalizer.literalize(
+        source=ref_source,
+        input_format=literalizer.InputFormat.JSON,
+        language=spec,
+        variable_form=variable_form,
+        collection_layout=literalizer.CollectionLayout(
+            value=config.collection_layout
+        ),
+    )
+
+
+@beartype
 def _run_call_with_declarations(
     *,
     config: CallCaseSpec,
@@ -552,17 +596,11 @@ def _run_call_with_declarations(
         config=file_regression.request.config,
     ):
         decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
-            ref_name: literalizer.literalize(
-                source=ref_source,
-                input_format=literalizer.InputFormat.JSON,
-                language=spec,
-                variable_form=literalizer.NewVariable(
-                    name=declaration_names[ref_name],
-                    modifiers=frozenset(),
-                ),
-                collection_layout=literalizer.CollectionLayout(
-                    value=config.collection_layout,
-                ),
+            ref_name: _render_ref_declaration(
+                config=config,
+                spec=spec,
+                declaration_name=declaration_names[ref_name],
+                ref_source=ref_source,
             )
             for ref_name, ref_source in config.ref_declarations.items()
         }
@@ -750,7 +788,9 @@ def run_call_golden_case(
     body_stubs: list[str] = []
     class_stubs: list[str] = []
     preamble_stubs: list[str] = []
-    if config.call_transform is not None:
+    if config.call_transform is not None or isinstance(
+        config.variable_form, literalizer.ExistingVariable
+    ):
         stub_return = literalizer.StubReturn.VALUE
     else:
         stub_return = literalizer.StubReturn.VOID

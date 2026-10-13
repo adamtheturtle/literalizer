@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["CSharp", "Odin", "Cpp", "Java", "Kotlin"]
+languages_reason = "Static backends must seed existing bindings with the synthetic return carrier."
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+followup_source = '{"$ref": "my_data"}'
+ref_declarations = {my_data = "42"}
+
+[[call.variants]]
+axis = "type_hints"
