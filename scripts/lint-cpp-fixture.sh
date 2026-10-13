@@ -31,7 +31,7 @@ run)
     temporary_directory=$(mktemp -d)
     trap 'rm -rf "$temporary_directory"' EXIT
     python3 scripts/run_bounded_compiler.py --fixture "$fixture_path" -- \
-        clang++ "-std=$standard" \
+        clang++ "-std=$standard" -Werror \
         -include-pch "/tmp/lint-cpp-$standard.hpp.pch" \
         "$fixture_path" \
         -o "$temporary_directory/run"
