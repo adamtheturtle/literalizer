@@ -25,7 +25,7 @@ import literalizer
 from literalizer import ValueInput
 from literalizer.languages import ALL_LANGUAGES
 
-from .case_inputs import CaseInput, infer_case_input
+from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
 from .language_metadata import language_metadata
 from .language_specs import make_spec
 from .suite_gates import SuiteGate, gates_admit, no_gates, validate_gate_names
@@ -677,6 +677,7 @@ class _CaseManifestData(  # noqa: NOD001
 
     schema_version: Literal[1]
     input: str | None = None
+    expected_reused_anchor_warning: ReusedAnchorWarningSpec | None = None
     suites: list[SuiteName] = Field(default_factory=_empty_suites)
     owner: OwnerName | None = None
     # The load-bearing parts this input plays, beyond its participation
@@ -823,9 +824,19 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         input_info = infer_case_input(
             case_dir=case_dir,
             input_name=data.input,
+            expected_reused_anchor_warning=data.expected_reused_anchor_warning,
         )
     except ValueError as exc:
         raise _fail(path=path, message=str(object=exc)) from exc
+
+    if (
+        input_info.expected_reused_anchor_warning is not None
+        and input_info.input_format is not literalizer.InputFormat.YAML
+    ):
+        raise _fail(
+            path=path,
+            message="expected_reused_anchor_warning requires YAML input",
+        )
 
     return CaseManifest(
         path=path,

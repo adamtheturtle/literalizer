@@ -664,6 +664,10 @@ def literalize_call(
             literals.
         target_function: The function expression to call
             (e.g. ``"throttler.should_send_notification"``).
+            The caller supplies the external callee declaration and must
+            ensure it accepts the rendered arguments. Literalizer does
+            not inspect that declaration or infer its return type from
+            the arguments.
         parameter_names: Parameter names, positionally mapped to each
             element in each row.  For :class:`PositionalCallStyle`
             languages these are unused in the output but still
@@ -858,6 +862,12 @@ def literalize_call(
             :class:`~literalizer.exceptions.UnsupportedCallShapeError`,
             as are languages whose call form is not an expression
             (``call_returns_expression=False``).
+            The callee must return a value compatible with the binding
+            and any surrounding ``call_transform``. An existing binding
+            must permit assignment. Compile-time constant declarations
+            additionally require a constant expression under the target
+            language's rules; for example, Dart ``CONST`` accepts a
+            constant constructor but not an ordinary function call.
 
     .. note::
 

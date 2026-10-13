@@ -7,6 +7,7 @@ import pytest
 import literalizer
 import literalizer.languages
 
+from .case_discovery import load_case_data
 from .case_manifests import (
     CASE_ROLE_NAMES,
     INDENT_ROLE,
@@ -337,6 +338,43 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
             ),
             "Input should be",
         ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                '[expected_reused_anchor_warning]\nanchor = ""\ncount = 1\n'
+            ),
+            "String should have at least 1 character",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                '[expected_reused_anchor_warning]\nanchor = "x"\ncount = 0\n'
+            ),
+            "Input should be greater than 0",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                '[expected_reused_anchor_warning]\nanchor = "x"\n'
+                "count = true\n"
+            ),
+            "Input should be a valid integer",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                '[expected_reused_anchor_warning]\nanchor = "x"\n'
+            ),
+            "Field required",
+        ),
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                '[expected_reused_anchor_warning]\nanchor = "x"\ncount = 1\n'
+                'category = "UserWarning"\n'
+            ),
+            "Extra inputs are not permitted",
+        ),
     ],
 )
 def test_invalid_manifest_is_actionable(
@@ -474,6 +512,77 @@ def test_case_input_returns_manifest_input(tmp_path: Path) -> None:
         case_input(case_dir=case_dir)
         == load_case_manifest(case_dir=case_dir).input
     )
+    assert case_input(case_dir=case_dir).expected_reused_anchor_warning is None
+
+
+@pytest.mark.parametrize(argnames="input_name", argvalues=[None, "input.yaml"])
+def test_anchor_warning_metadata_is_loaded(
+    tmp_path: Path, input_name: str | None
+) -> None:
+    """Warning metadata belongs to the input under either selection
+    path.
+    """
+    manifest = 'schema_version = 1\nsuites = ["base"]\n'
+    if input_name is not None:
+        manifest += f'input = "{input_name}"\n'
+    manifest += (
+        '[expected_reused_anchor_warning]\nanchor = "other+"\ncount = 2\n'
+    )
+    case_dir = _write_case(
+        tmp_path=tmp_path, manifest=manifest, input_name="input.yaml"
+    )
+    expectation = case_input(case_dir=case_dir).expected_reused_anchor_warning
+    assert expectation is not None
+    assert expectation.anchor == "other+"
+    expected_count = 2
+    assert expectation.count == expected_count
+
+
+@pytest.mark.parametrize(argnames="count", argvalues=[1, 3])
+def test_anchor_warning_count_must_match_input(
+    tmp_path: Path, count: int
+) -> None:
+    """Reject a manifest whose warning count disagrees with its YAML."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            'schema_version = 1\nsuites = ["base"]\n'
+            '[expected_reused_anchor_warning]\nanchor = "other+"\n'
+            f"count = {count}\n"
+        ),
+        input_name="input.yaml",
+    )
+    source = (
+        Path(__file__).parent
+        / "cases"
+        / "yaml_rebound_anchor_multiple"
+        / "input.yaml"
+    ).read_text(encoding="utf-8")
+    _ = (case_dir / "input.yaml").write_text(data=source, encoding="utf-8")
+    with pytest.raises(
+        expected_exception=pytest.fail.Exception,
+        match=f"Expected {count} reused-anchor warnings for 'other\\+', got 2",
+    ):
+        _ = load_case_data(input_info=case_input(case_dir=case_dir))
+
+
+def test_anchor_warning_requires_yaml(tmp_path: Path) -> None:
+    """A YAML parser warning cannot be declared for another input
+    format.
+    """
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            'schema_version = 1\nsuites = ["base"]\n'
+            '[expected_reused_anchor_warning]\nanchor = "x"\ncount = 1\n'
+        ),
+        input_name="input.json",
+    )
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match="expected_reused_anchor_warning requires YAML input",
+    ):
+        _ = load_case_manifest(case_dir=case_dir)
 
 
 def test_render_context_is_loaded(tmp_path: Path) -> None:

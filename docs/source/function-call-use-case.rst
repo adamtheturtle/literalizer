@@ -147,6 +147,64 @@ Languages with different common constructor syntax override it; for example Java
 
 For languages whose default call style wraps arguments in an object, use the positional call-style option when rendering a no-argument constructor so the call is emitted as ``new Playlist()`` rather than ``new Playlist({})``.
 
+Caller-owned callee requirements
+--------------------------------
+
+Literalizer renders the target name and arguments; the caller supplies the external function or constructor declaration.
+That declaration must accept the generated argument types and calling convention.
+Literalizer does not inspect the callee or infer its return type from its arguments.
+The stubs emitted by ``wrap_in_file=True`` provide example scaffolding; they do not validate an external callee's contract.
+
+When ``variable_form`` binds a call result, the callee must return a value compatible with the declaration or existing variable.
+For example, a C++ ``auto`` declaration or Rust ``let`` binding lets the compiler infer the actual return type, while an assignment must fit the existing variable's type and mutability.
+A ``call_transform`` can impose further requirements: a wrapper that formats, compares, or consumes a value must accept the callee's actual result.
+
+A declaration that requires a compile-time constant also requires the call expression to satisfy the target language's constant-expression rules.
+An immutable binding alone does not necessarily impose that requirement: JavaScript ``const`` and Rust's ordinary ``let`` can bind runtime call results.
+In Dart, ``Dart.declaration_styles.CONST`` requires a constant expression.
+This constant-constructor call is valid:
+
+.. code-block:: python
+
+   """Generate a Dart constant-constructor binding."""
+
+   from literalizer import InputFormat, NewVariable, literalize_call
+   from literalizer.languages import Dart
+
+   result = literalize_call(
+       source="[[42]]",
+       input_format=InputFormat.JSON,
+       language=Dart(declaration_style=Dart.declaration_styles.CONST),
+       target_function="Widget",
+       parameter_names=["count"],
+       variable_form=NewVariable(
+           name="result",
+           modifiers=frozenset(),
+       ),
+   )
+
+   assert result.code == "const result = Widget(count: 42);"
+
+The caller can supply the following declaration and use that generated binding:
+
+.. code-block:: dart
+
+   class Widget {
+     final int count;
+     const Widget({required this.count});
+   }
+
+   const result = Widget(count: 42);
+
+   void main() {
+     print(result.count);
+   }
+
+The initializer is already a constant context, so ``Widget(...)`` does not need an additional ``const`` keyword.
+Replacing the constructor with an ordinary function, such as ``String make_widget({required int count}) => "count=$count";``, makes ``const result = make_widget(count: 42);`` invalid: ordinary function invocations are not Dart constant expressions.
+Choose a runtime binding for that function, or supply a constant constructor when a constant binding is needed.
+Literalizer preserves the requested declaration policy because the external callee is unknown.
+
 Variable references as arguments
 --------------------------------
 

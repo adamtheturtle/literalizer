@@ -58,6 +58,19 @@ Golden case manifests
 Every directory under :file:`tests/integration/cases/` contains a versioned :file:`case.toml`.
 The manifest is the source of truth for the input's suite, variant-axis and ``literalize_call`` coverage; language capability checks and expansion remain in the typed Python runner.
 
+A YAML case that deliberately reuses an anchor declares its expected parser warning:
+
+.. code-block:: toml
+
+   [expected_reused_anchor_warning]
+   anchor = "x"
+   count = 1
+
+The anchor must be non-empty and the count must be a positive integer.
+Fixture discovery and public-API golden rendering both assert the declared warning type, anchor and count.
+Omitting the table leaves warnings visible, and unrelated warnings remain visible when the table is present.
+Other input formats cannot declare this YAML warning.
+
 Ordinary format variants exercise every supported language version.
 An axis that explicitly selects ``language_version`` stays pinned to that version; a format requiring newer syntax uses its effective version once.
 A typed axis can declare ``per_version = false`` to exercise only its default version.

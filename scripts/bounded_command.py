@@ -3,12 +3,9 @@
 from collections.abc import Sequence
 from pathlib import Path
 
-from beartype import BeartypeConf, beartype
-
 _WRAPPER = Path(__file__).resolve().with_name(name="run-bounded.sh")
 
 
-@beartype(conf=BeartypeConf(is_pep484_tower=True))
 def bounded_command(
     *, args: Sequence[str | Path], fixture: str, timeout_seconds: float
 ) -> list[str]:
@@ -17,7 +14,8 @@ def bounded_command(
     The absolute wrapper path also works when subprocesses run in temporary
     directories. GNU timeout owns deadlines and process termination; the
     wrapper only discovers it and adds diagnostics. Standard output remains
-    unchanged.
+    unchanged. Keep this adapter free of third-party imports so standalone
+    syntax checks can also use it without installing the project.
     """
     return [
         str(object=_WRAPPER),
