@@ -966,14 +966,13 @@ def _record_name_for_value(
     return None
 
 
+@beartype
 @dataclasses.dataclass(slots=True, kw_only=True)
 class _RecordStrategyState:
     """Mutable caches and callbacks owned by one record strategy.
 
-    These methods replace closures created inside the runtime-checked
-    :func:`build_record_strategy` boundary.  Like those closures, the methods
-    have no decorators, so formatting a record does not add a second runtime
-    type check at every node.
+    Class-level runtime checking covers the generated constructor and
+    callbacks used after :func:`build_record_strategy` returns.
     """
 
     renderer: RecordRenderer
