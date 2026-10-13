@@ -682,7 +682,11 @@ def _kotlin_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Kotlin stub declarations for a call name."""
-    param_list = ", ".join(f"{p}: Any? = null" for p in params)
+    # Synthetic functions accept named arguments but deliberately ignore them.
+    # Exempt only those formal parameters, leaving body/source warnings fatal.
+    param_list = ", ".join(
+        f'@Suppress("UNUSED_PARAMETER") {p}: Any? = null' for p in params
+    )
     if len(parts) == 1:
         return (f"fun {parts[0]}({param_list}): Any? = null",)
     root = parts[0]

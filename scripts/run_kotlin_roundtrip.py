@@ -23,7 +23,6 @@ value re-emerges as ``1e+26``.  Same shape as the Go, TypeScript, Swift,
 Rust and Zig-pre-``std.json.Value`` exclusions.
 """
 
-import os
 import shutil
 from pathlib import Path
 
@@ -69,31 +68,17 @@ def main() -> None:
     kotlin = shutil.which(cmd="kotlin")
     if kotlin is None or kotlin == "":
         kotlin = "kotlin"
-    # ``LITERALIZER_LINT_CLASSPATH`` is set by the ``lint-kotlin`` job
-    # to ``/tmp/kotlinx-jars/*`` for the per-fixture compile host.  The
-    # ``kotlin`` script wrapper does not forward the JVM ``dir/*``
-    # wildcard intact, so expand it here to an explicit jar list.
-    collected_classpath: list[str] = []
-    for entry_entry in os.environ["LITERALIZER_LINT_CLASSPATH"].split(sep=":"):
-        if entry_entry.endswith("/*"):
-            classpath_paths = list(
-                Path(entry_entry.removesuffix("/*")).glob(pattern="*.jar")
-            )
-        else:
-            classpath_paths = [Path(entry_entry)]
-        collected_classpath.extend(
-            str(object=path) for path in classpath_paths
-        )
-    classpath = ":".join(
-        sorted(collected_classpath),
-    )
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.kts",
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[kotlin, "-classpath", classpath, "main.kts"],
+                args=[
+                    kotlin,
+                    str(object=Path(__file__).parent / "lint-kotlin.main.kts"),
+                    "main.kts",
+                ],
                 failure_label="kotlin run error",
             ),
         ],

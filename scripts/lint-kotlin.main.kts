@@ -8,7 +8,7 @@ import java.util.Timer
 import java.util.TimerTask
 import kotlin.system.exitProcess
 
-val files = System.`in`.bufferedReader().readText()
+val files = if (args.isNotEmpty()) args.toList() else System.`in`.bufferedReader().readText()
     .split('\u0000')
     .filter { it.isNotEmpty() }
 
@@ -74,18 +74,35 @@ for (path in files) {
         // `Kotlin.language_version` in `src/literalizer/languages/kotlin.py`;
         // keep them in sync.
         val args = mutableListOf(
-            "-script",
+            // The script evaluator discards warning diagnostics. Compile first,
+            // then instantiate the emitted script class only on strict success.
+            "-Xallow-any-scripts-in-source-roots",
+            "-Werror",
+            // The pinned compiler deprecates 1.9 mode; keep source warnings fatal.
+            "-Xsuppress-version-warnings",
             "-language-version", "1.9",
             "-api-version", "1.9",
             "-d", out.absolutePath,
         )
         args.addAll(classpathArgs)
-        args.add(path)
+        val source = java.io.File(out, "LiteralizerFixtureScript.kts")
+        source.writeText(java.io.File(path).readText())
+        args.add(source.absolutePath)
         val exit = compiler.exec(System.err, *args.toTypedArray())
         if (exit != ExitCode.OK) {
             System.err.println("Failed: $path")
             allOk = false
+        } else {
+            val urls = listOf(out.toURI().toURL()) + extraClasspath.map { java.io.File(it).toURI().toURL() }
+            java.net.URLClassLoader(urls.toTypedArray(), Thread.currentThread().contextClassLoader).use { loader ->
+                val script = loader.loadClass("LiteralizerFixtureScript")
+                script.getConstructor(Array<String>::class.java).newInstance(emptyArray<String>())
+            }
         }
+    } catch (exception: Exception) {
+        System.err.println("Failed: $path")
+        exception.printStackTrace(System.err)
+        allOk = false
     } finally {
         synchronized(guardLock) {
             completed = true

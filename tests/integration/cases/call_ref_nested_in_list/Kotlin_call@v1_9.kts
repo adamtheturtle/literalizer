@@ -1,4 +1,4 @@
-fun process(data: Any? = null): Any? = null
+fun process(@Suppress("UNUSED_PARAMETER") data: Any? = null): Any? = null
 val my_var = 42
 val my_other = 7
 process(data = listOf<Any?>(my_var, 42, "static"))

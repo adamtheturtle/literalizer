@@ -1,3 +1,3 @@
-fun process(v: Any? = null): Any? = null
+fun process(@Suppress("UNUSED_PARAMETER") v: Any? = null): Any? = null
 val my_str = "a\"b"
 process(v = my_str)

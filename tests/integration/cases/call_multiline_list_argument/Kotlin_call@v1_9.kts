@@ -1,4 +1,4 @@
-fun process(xs: Any? = null): Any? = null
+fun process(@Suppress("UNUSED_PARAMETER") xs: Any? = null): Any? = null
 process(xs = intArrayOf(
     1,
     2,

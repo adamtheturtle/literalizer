@@ -1,4 +1,4 @@
-fun process(value: Any? = null, count: Any? = null): Any? = null
+fun process(@Suppress("UNUSED_PARAMETER") value: Any? = null, @Suppress("UNUSED_PARAMETER") count: Any? = null): Any? = null
 val my_int = 1
 val my_bool = true
 val my_float = 3.14

@@ -1,4 +1,4 @@
-fun process(value: Any? = null): Any? = null
+fun process(@Suppress("UNUSED_PARAMETER") value: Any? = null): Any? = null
 // Test cases
 process(value = "hello")  // single word
 process(value = "hello world")  // two words
