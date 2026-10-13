@@ -2898,7 +2898,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.d"
-          dmd -o- -c "$tmpdir/check.d"
+          dmd -w -o- -c "$tmpdir/check.d"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-d.sh < /tmp/files-to-lint
       # Each fixture defines its own main, so compile and run directly.
@@ -2910,7 +2910,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.d"
-          dmd -of="$tmpdir/run" -od="$tmpdir" "$tmpdir/check.d" || exit 1
+          dmd -w -of="$tmpdir/run" -od="$tmpdir" "$tmpdir/check.d" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-d.sh < /tmp/files-to-lint
