@@ -1,13 +1,15 @@
 use std::collections::HashMap;
+#[allow(dead_code)]
 #[derive(Clone)]
 enum Value {
     I32(i32),
     Str(&'static str),
     Null,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("outer", HashMap::from([("a", Value::I32(1)), ("b", Value::Str("x")), ("c", Value::Null)])),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -69,7 +69,16 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[rustc, "--edition", "2021", "main.rs", "-o", "main"],
+                args=[
+                    rustc,
+                    "--edition",
+                    "2021",
+                    "-D",
+                    "warnings",
+                    "main.rs",
+                    "-o",
+                    "main",
+                ],
                 failure_label="rustc error",
             ),
             roundtrip_common.Step(

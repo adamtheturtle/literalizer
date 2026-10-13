@@ -1,3 +1,4 @@
+#[allow(non_snake_case)]
 fn main() {
     let my_data = (
         1000000,
@@ -5,5 +6,5 @@ fn main() {
         255,
         -10,
     );
-    let _ = my_data;
+    let _ = &my_data;
 }

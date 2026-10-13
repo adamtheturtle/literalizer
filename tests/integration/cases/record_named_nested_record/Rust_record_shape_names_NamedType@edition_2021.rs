@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct NamedType {
     id: i32,
@@ -5,11 +6,13 @@ struct NamedType {
     enabled: bool,
     related_ids: Vec<i32>,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     collection: &'static str,
     featured_entry: NamedType,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         collection: "alpha",
@@ -23,5 +26,5 @@ fn main() {
             ],
         },
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

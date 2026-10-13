@@ -1,18 +1,22 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record1 {
     count: i32,
     rate: i32,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record2 {
     retries: i32,
     timeout: i32,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     metrics: Record1,
     flags: Record2,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         metrics: Record1 {
@@ -24,5 +28,5 @@ fn main() {
             timeout: 30,
         },
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

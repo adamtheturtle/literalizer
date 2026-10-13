@@ -1,40 +1,50 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record1 {
     status: i32,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record2 {
     status: &'static str,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record4 {
     kind: &'static str,
     urgent: bool,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record3 {
     inner: Record4,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record6 {
     error: &'static str,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record5 {
     inner: Record6,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record7 {
     holder: Record1,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record8 {
     holder: Record2,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record9 {
     nums: Vec<i64>,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     plain: Record1,
@@ -45,6 +55,7 @@ struct Record0 {
     wrap_b: Record8,
     wide: Record9,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         plain: Record1 {
@@ -81,5 +92,5 @@ fn main() {
             ],
         },
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

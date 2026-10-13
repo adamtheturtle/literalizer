@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("a_b", 1),
@@ -6,5 +7,5 @@ fn main() {
         ("averyveryverylongkeynamethatgoesonandonandon", 3),
         ("averyveryverylongkeynamethatgoesonandmore", 4),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

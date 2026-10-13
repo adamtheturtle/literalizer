@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     id: i32,
@@ -5,6 +6,7 @@ struct Record0 {
     enabled: bool,
     related_ids: Vec<i32>,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         id: 1,
@@ -16,5 +18,5 @@ fn main() {
             3,
         ],
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

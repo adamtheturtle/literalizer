@@ -1,9 +1,11 @@
 use std::collections::HashMap;
+#[allow(dead_code)]
 #[derive(Clone)]
 enum Value {
     Str(&'static str),
     Bool(bool),
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         HashMap::from([
@@ -27,5 +29,5 @@ fn main() {
             ])),
         ]),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

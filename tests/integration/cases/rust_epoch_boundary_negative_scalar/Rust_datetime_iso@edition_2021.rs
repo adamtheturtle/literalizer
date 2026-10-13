@@ -1,4 +1,5 @@
+#[allow(non_snake_case)]
 fn main() {
     let my_data = "1901-12-13T20:45:51";
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
+#[allow(non_snake_case)]
 fn main() {
+    #[allow(unused_mut)]
     let mut my_data = HashMap::from([
         ("assert", 1),
         ("else", 1),
@@ -21,6 +23,7 @@ fn main() {
         ("true", 1),
         ("ordinary", 1),
     ]);
+    let _ = &my_data;
     my_data = HashMap::from([
         ("assert", 1),
         ("else", 1),
@@ -42,5 +45,5 @@ fn main() {
         ("true", 1),
         ("ordinary", 1),
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

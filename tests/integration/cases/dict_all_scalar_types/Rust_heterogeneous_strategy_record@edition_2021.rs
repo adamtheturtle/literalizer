@@ -1,6 +1,7 @@
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::NaiveTime;
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     s: &'static str,
@@ -12,6 +13,7 @@ struct Record0 {
     dt: NaiveDateTime,
     by: &'static str,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         s: "string",
@@ -23,5 +25,5 @@ fn main() {
         dt: NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), NaiveTime::from_hms_opt(12, 0, 0).unwrap()),
         by: "48656c6c6f",
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

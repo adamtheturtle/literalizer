@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+#[allow(non_snake_case)]
 fn main() {
     let my_data = HashSet::from([
         "apple",  // inline comment
@@ -6,5 +7,5 @@ fn main() {
         "banana",
         // trailing
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -1,3 +1,4 @@
+#[allow(non_snake_case)]
 fn main() {
     let empty_values = vec![];
     let integer_values = vec![
@@ -7,5 +8,5 @@ fn main() {
         empty_values,
         integer_values,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

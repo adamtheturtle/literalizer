@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     quantity: i32,
@@ -6,6 +7,7 @@ struct Record0 {
     label: &'static str,
     ok: bool,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         quantity: 0b11110100001001000000,
@@ -14,5 +16,5 @@ fn main() {
         label: "tag",
         ok: true,
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

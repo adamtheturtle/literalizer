@@ -1,8 +1,9 @@
+#[allow(non_snake_case)]
 fn main() {
-    struct ClientType_;
-    impl ClientType_ { fn fetch<A>(&self, _value: A) {} }
-    struct AppType_ { client: ClientType_ }
-    let app = AppType_ { client: ClientType_ };
+    struct ClientType;
+    impl ClientType { fn fetch<A>(&self, _value: A) {} }
+    struct AppType { client: ClientType }
+    let app = AppType { client: ClientType };
     app.client.fetch("hello");
     app.client.fetch("world");
 }

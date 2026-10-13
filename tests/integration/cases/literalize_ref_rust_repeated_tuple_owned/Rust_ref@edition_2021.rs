@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+#[allow(non_snake_case)]
 fn main() {
     let shared = (
         vec![
@@ -13,5 +14,5 @@ fn main() {
         shared.clone(),
         shared.clone(),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

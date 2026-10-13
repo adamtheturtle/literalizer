@@ -1,8 +1,9 @@
+#[allow(non_snake_case)]
 fn main() {
-    struct Http_ClientType_;
-    impl Http_ClientType_ { fn fetch<A>(&self, _payload: A) {} }
-    struct My_AppType_ { http_client: Http_ClientType_ }
-    let my_app = My_AppType_ { http_client: Http_ClientType_ };
+    struct HttpClientType;
+    impl HttpClientType { fn fetch<A>(&self, _payload: A) {} }
+    struct MyAppType { http_client: HttpClientType }
+    let my_app = MyAppType { http_client: HttpClientType };
     my_app.http_client.fetch("hello");
     my_app.http_client.fetch(42);
     my_app.http_client.fetch(true);

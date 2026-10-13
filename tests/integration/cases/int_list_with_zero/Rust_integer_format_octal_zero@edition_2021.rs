@@ -1,8 +1,9 @@
+#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         0o0,
         0o1,
         -0o1,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

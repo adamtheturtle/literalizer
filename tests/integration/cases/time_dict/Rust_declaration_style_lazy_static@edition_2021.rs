@@ -1,10 +1,12 @@
 use std::sync::LazyLock;
 use std::collections::HashMap;
+#[allow(non_snake_case)]
 fn main() {
+    #[allow(non_upper_case_globals)]
     static my_data: LazyLock<HashMap<&str, &str>> = LazyLock::new(|| HashMap::from([
         ("morning", "09:30:00"),
         ("afternoon", "14:15:00"),
         ("evening", "23:59:59"),
     ]));
-    let _ = my_data;
+    let _ = &my_data;
 }

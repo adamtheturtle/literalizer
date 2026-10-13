@@ -1,8 +1,9 @@
 use std::collections::HashMap;
+#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("within_i32", 1705320000),
         ("beyond_i32", 4085195400i64),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     name: &'static str,
@@ -5,6 +6,7 @@ struct Record0 {
     active: bool,
     score: f64,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         name: "Alice",
@@ -12,5 +14,5 @@ fn main() {
         active: true,
         score: 4.5,
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

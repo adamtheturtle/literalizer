@@ -1,5 +1,6 @@
 use chrono::NaiveDate;
 use std::collections::HashMap;
+#[allow(dead_code)]
 #[derive(Clone)]
 enum Value {
     Str(&'static str),
@@ -11,6 +12,7 @@ enum Value {
     I64(i64),
     Bytes(&'static str),
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("s", Value::Str("string")),
@@ -22,5 +24,5 @@ fn main() {
         ("dt", Value::I64(1705320000)),
         ("by", Value::Bytes("48656c6c6f")),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

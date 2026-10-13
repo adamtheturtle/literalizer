@@ -2779,7 +2779,7 @@ jobs:
           while IFS= read -r -d '' f; do
             stem=$(basename "$f" .rs)
             crate_name=${stem//@/_}
-            rustc --edition 2021 \
+            rustc --edition 2021 -D warnings \
               --crate-name "$crate_name" \
               -L "dependency=$RUST_DEPS" \
               --extern "chrono=$RUST_CHRONO_RLIB" \

@@ -1,3 +1,4 @@
+#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         0.000000,
@@ -6,5 +7,5 @@ fn main() {
         0.001000,
         10000000000000000.000000,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

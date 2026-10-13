@@ -1,15 +1,18 @@
+#[allow(non_snake_case)]
 fn main() {
+    #[allow(unused_mut)]
     let mut my_data = r#"
 root first line
   indented
 
 root last line
 "#;
+    let _ = &my_data;
     my_data = r#"
 root first line
   indented
 
 root last line
 "#;
-    let _ = my_data;
+    let _ = &mut my_data;
 }

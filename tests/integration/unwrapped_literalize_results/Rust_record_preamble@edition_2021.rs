@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     a: i32,

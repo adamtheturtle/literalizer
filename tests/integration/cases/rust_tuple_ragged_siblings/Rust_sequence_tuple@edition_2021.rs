@@ -1,7 +1,8 @@
+#[allow(non_snake_case)]
 fn main() {
     let my_data = (
         ("set_task", "web", "lint_web"),
         ("merge_pipelines",),
     );
-    let _ = my_data;
+    let _ = &my_data;
 }

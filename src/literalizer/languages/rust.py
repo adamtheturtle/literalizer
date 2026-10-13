@@ -124,7 +124,6 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
-    default_wrap_combined_in_file,
     identity_call_arg,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -793,7 +792,12 @@ def _format_typed_declaration(
         default_dict_key_type="",
         default_dict_value_type="",
     )
-    return f"{keyword} {name}: {type_annotation} = {value};"
+    # Keep the caller's requested constant/static name, even when it differs
+    # from Rust's naming convention. This exemption is on this item only.
+    attribute = (
+        "#[allow(non_upper_case_globals)]\n" if name != name.upper() else ""
+    )
+    return f"{attribute}{keyword} {name}: {type_annotation} = {value};"
 
 
 @beartype
@@ -829,6 +833,7 @@ def _format_lazy_static_declaration(
         default_dict_value_type=default_dict_value_type,
     )
     return (
+        "#[allow(non_upper_case_globals)]\n"
         f"static {name}: LazyLock<{type_annotation}> = "
         f"LazyLock::new(|| {value});"
     )
@@ -876,6 +881,8 @@ def _format_let_declaration(
     keyword = "let"
     if _RustModifiers.MUT in modifiers:
         keyword = "let mut"
+        # Explicitly mutable references need not mutate in this document.
+        return f"#[allow(unused_mut)]\n{keyword} {name} = {value};"
     return f"{keyword} {name} = {value};"
 
 
@@ -1509,7 +1516,12 @@ def _rust_value_enum_lines(
         )
     if len(variants) == 0:
         return []
-    lines: list[str] = ["#[derive(Clone)]", f"enum {enum_name} {{"]
+    # Payloads are intentionally opaque until a caller inspects the value.
+    lines: list[str] = [
+        "#[allow(dead_code)]",
+        "#[derive(Clone)]",
+        f"enum {enum_name} {{",
+    ]
     for variant in variants:
         if variant.inner_type is None:
             body = variant.name
@@ -2854,6 +2866,7 @@ def _record_preamble_impl(
         struct_blocks: list[str] = []
         for shape in emit_order:
             block: list[str] = [
+                "#[allow(dead_code)]",
                 "#[derive(Clone)]",
                 f"struct {record_names[shape]} {{",
             ]
@@ -3062,7 +3075,7 @@ def _rust_call_stub(
         method_param_list = f"&self, {param_list}"
     fields = parts[1:-1]
     if len(fields) == 0:
-        type_name = f"{root.title()}Type_"
+        type_name = f"{IdentifierCase.PASCAL.convert(name=root)}Type"
         return (
             f"struct {type_name};",
             (
@@ -3073,7 +3086,7 @@ def _rust_call_stub(
             f"let {root} = {type_name};",
         )
     lines: list[str] = []
-    inner_type = f"{fields[-1].title()}Type_"
+    inner_type = f"{IdentifierCase.PASCAL.convert(name=fields[-1])}Type"
     lines.append(f"struct {inner_type};")
     lines.append(
         f"impl {inner_type} {{"
@@ -3082,14 +3095,14 @@ def _rust_call_stub(
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = f"{IdentifierCase.PASCAL.convert(name=fields[i])}Type"
         lines.append(f"struct {curr_type} {{ {fields[i + 1]}: {prev_type} }}")
         prev_type = curr_type
-    root_type = f"{root.title()}Type_"
+    root_type = f"{IdentifierCase.PASCAL.convert(name=root)}Type"
     lines.append(f"struct {root_type} {{ {fields[0]}: {prev_type} }}")
     construction = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = f"{IdentifierCase.PASCAL.convert(name=fields[i])}Type"
         construction = f"{curr_type} {{ {fields[i + 1]}: {construction} }}"
     construction = f"{root_type} {{ {fields[0]}: {construction} }}"
     lines.append(f"let {root} = {construction};")
@@ -3524,7 +3537,7 @@ class Rust(metaclass=LanguageCls):
         )
         LET_MUT = DeclarationStyleConfig(
             formatter=variable_declaration_formatter(
-                template="let mut {name} = {value};"
+                template="#[allow(unused_mut)]\nlet mut {name} = {value};"
             ),
             supports_redefinition=True,
         )
@@ -3563,6 +3576,7 @@ class Rust(metaclass=LanguageCls):
                     """Format a lazy static JSON-backed declaration."""
                     expr = _rust_json_value_expression(data, value)
                     return (
+                        "#[allow(non_upper_case_globals)]\n"
                         f"static {name}: LazyLock<{json_type}> = "
                         f"LazyLock::new(|| {expr});"
                     )
@@ -4032,10 +4046,33 @@ class Rust(metaclass=LanguageCls):
         )
         use_line = ""
         if variable_name != "":
-            use_line = f"\n{self.indent}let _ = {variable_name};"
-        return f"fn main() {{\n{indented}{use_line}\n}}"
+            borrow = (
+                "&mut "
+                if self.declaration_style is self.declaration_styles.LET_MUT
+                or _RustModifiers.MUT in context.modifiers
+                else "&"
+            )
+            use_line = f"\n{self.indent}let _ = {borrow}{variable_name};"
+        # A forced identifier case is a caller-owned naming choice.
+        name_policy = "#[allow(non_snake_case)]\n"
+        return f"{name_policy}fn main() {{\n{indented}{use_line}\n}}"
 
-    wrap_combined_in_file = default_wrap_combined_in_file
+    def wrap_combined_in_file(
+        self,
+        declaration: str,
+        assignment: str,
+        context: FileWrapperContext,
+    ) -> str:
+        """Read the original binding before exercising its
+        reassignment.
+        """
+        return self.wrap_in_file(
+            content=(
+                f"{declaration}\nlet _ = &{context.variable_name};\n"
+                + assignment
+            ),
+            context=context,
+        )
 
     date_format: DateFormats = DateFormats.RUST
     datetime_format: DatetimeFormats = DatetimeFormats.RUST

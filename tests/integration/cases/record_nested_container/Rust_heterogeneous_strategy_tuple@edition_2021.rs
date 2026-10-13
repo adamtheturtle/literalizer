@@ -1,9 +1,11 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     title: &'static str,
     tags: Vec<&'static str>,
     priority: i32,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         title: "report",
@@ -14,5 +16,5 @@ fn main() {
         ],
         priority: 2,
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

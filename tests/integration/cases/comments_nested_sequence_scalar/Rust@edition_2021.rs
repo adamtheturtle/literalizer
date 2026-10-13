@@ -1,3 +1,4 @@
+#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         vec!["ADD", "alice", "hello"],
@@ -7,5 +8,5 @@ fn main() {
             "5",  // removes "world"
         ],
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

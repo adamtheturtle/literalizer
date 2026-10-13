@@ -1,16 +1,19 @@
 use std::collections::HashMap;
+#[allow(dead_code)]
 #[derive(Clone)]
 enum Value {
     Str(&'static str),
     Bool(bool),
     Null,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     name: &'static str,
     input: HashMap<&'static str, Value>,
     expected: HashMap<&'static str, Value>,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         Record0 {
@@ -37,5 +40,5 @@ fn main() {
             ]),
         },
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

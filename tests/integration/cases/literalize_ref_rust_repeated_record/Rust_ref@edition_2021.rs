@@ -1,7 +1,9 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     value: Vec<i32>,
 }
+#[allow(non_snake_case)]
 fn main() {
     let shared = Record0 {
         value: vec![
@@ -13,5 +15,5 @@ fn main() {
         shared.clone(),
         shared.clone(),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

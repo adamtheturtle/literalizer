@@ -1,12 +1,15 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record1 {
     id: i32,
     count: Option<i32>,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     items: Vec<Record1>,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         items: vec![
@@ -24,5 +27,5 @@ fn main() {
             },
         ],
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

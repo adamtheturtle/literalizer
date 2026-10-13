@@ -1,13 +1,16 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record1 {
     id: i32,
     label: &'static str,
 }
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     name: &'static str,
     items: Vec<Record1>,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         name: "box",
@@ -22,5 +25,5 @@ fn main() {
             },
         ],
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

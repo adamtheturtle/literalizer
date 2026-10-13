@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     s: &'static str,
@@ -10,6 +11,7 @@ struct Record0 {
     dt: i64,
     by: &'static str,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         s: "string",
@@ -21,5 +23,5 @@ fn main() {
         dt: 1705320000,
         by: "48656c6c6f",
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

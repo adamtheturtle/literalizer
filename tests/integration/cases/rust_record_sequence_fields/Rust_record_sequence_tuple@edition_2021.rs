@@ -1,8 +1,10 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     short: (i32,),
     long: (i32, i32),
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         short: (
@@ -13,5 +15,5 @@ fn main() {
             2,
         ),
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

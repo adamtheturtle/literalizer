@@ -1,8 +1,10 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     name: &'static str,
     scores: Vec<i32>,
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         name: "Alice",
@@ -12,5 +14,5 @@ fn main() {
             30,
         ],
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

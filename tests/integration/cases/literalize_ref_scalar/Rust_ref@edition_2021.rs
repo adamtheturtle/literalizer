@@ -1,5 +1,6 @@
+#[allow(non_snake_case)]
 fn main() {
     let my_int = 42;
     let my_data = my_int;
-    let _ = my_data;
+    let _ = &my_data;
 }

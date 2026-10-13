@@ -1,3 +1,4 @@
+#[allow(non_snake_case)]
 fn main() {
     let my_data = (
         1,
@@ -5,5 +6,5 @@ fn main() {
         "a@gmail.com",
         100,
     );
-    let _ = my_data;
+    let _ = &my_data;
 }

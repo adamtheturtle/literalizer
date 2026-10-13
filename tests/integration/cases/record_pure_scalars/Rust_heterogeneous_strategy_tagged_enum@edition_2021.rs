@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+#[allow(dead_code)]
 #[derive(Clone)]
 enum Value {
     Str(&'static str),
@@ -6,6 +7,7 @@ enum Value {
     Bool(bool),
     F64(f64),
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("name", Value::Str("Alice")),
@@ -13,5 +15,5 @@ fn main() {
         ("active", Value::Bool(true)),
         ("score", Value::F64(4.5)),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

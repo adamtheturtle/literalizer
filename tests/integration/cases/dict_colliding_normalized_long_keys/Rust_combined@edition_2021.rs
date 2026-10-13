@@ -1,16 +1,19 @@
 use std::collections::HashMap;
+#[allow(non_snake_case)]
 fn main() {
+    #[allow(unused_mut)]
     let mut my_data = HashMap::from([
         ("a_b", 1),
         ("a-b", 2),
         ("averyveryverylongkeynamethatgoesonandonandon", 3),
         ("averyveryverylongkeynamethatgoesonandmore", 4),
     ]);
+    let _ = &my_data;
     my_data = HashMap::from([
         ("a_b", 1),
         ("a-b", 2),
         ("averyveryverylongkeynamethatgoesonandonandon", 3),
         ("averyveryverylongkeynamethatgoesonandmore", 4),
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

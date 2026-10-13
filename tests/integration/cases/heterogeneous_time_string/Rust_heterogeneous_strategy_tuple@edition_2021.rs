@@ -1,7 +1,9 @@
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Record0 {
     vals: (&'static str, &'static str),
 }
+#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         vals: (
@@ -9,5 +11,5 @@ fn main() {
             "hello",
         ),
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

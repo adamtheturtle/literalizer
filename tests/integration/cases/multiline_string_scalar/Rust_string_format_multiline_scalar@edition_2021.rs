@@ -1,3 +1,4 @@
+#[allow(non_snake_case)]
 fn main() {
     let my_data = r#"
 root first line
@@ -5,5 +6,5 @@ root first line
 
 root last line
 "#;
-    let _ = my_data;
+    let _ = &my_data;
 }

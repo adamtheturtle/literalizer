@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+#[allow(non_snake_case)]
 fn main() {
     let deep = vec![
         vec![
@@ -17,5 +18,5 @@ fn main() {
             ])),
         ])),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }
