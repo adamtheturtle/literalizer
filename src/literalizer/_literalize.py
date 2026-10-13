@@ -411,6 +411,8 @@ def _file_wrapper_context(
     variable_form: VariableForm | None,
     body_preamble: tuple[str, ...],
     class_preamble: tuple[str, ...],
+    has_literal_declarations: bool,
+    generated_body_preamble: tuple[str, ...],
 ) -> FileWrapperContext:
     """Keep declaration metadata available after rendering the binding."""
     modifiers = frozenset[enum.Enum]()
@@ -421,6 +423,8 @@ def _file_wrapper_context(
         modifiers=modifiers,
         body_preamble=body_preamble,
         class_preamble=class_preamble,
+        has_literal_declarations=has_literal_declarations,
+        generated_body_preamble=generated_body_preamble,
     )
 
 
@@ -4953,6 +4957,10 @@ def literalize_apply_form(
                 variable_form=variable_form,
                 body_preamble=scoped.body + computed.body,
                 class_preamble=(),
+                has_literal_declarations=(
+                    isinstance(variable_form, NewVariable) or len(pre_decl) > 0
+                ),
+                generated_body_preamble=computed.body,
             ),
         )
         if len(scoped.file_scope) > 0:
@@ -5062,6 +5070,8 @@ def literalize_both_forms(
             variable_form=variable_form,
             body_preamble=decl_preamble,
             class_preamble=(),
+            has_literal_declarations=True,
+            generated_body_preamble=declaration.body_preamble,
         ),
     )
     if len(scoped.file_scope) > 0:
@@ -5565,6 +5575,13 @@ def _compose_bound_refs(
         variable_form=composition.variable_form,
         body_preamble=body_preamble,
         class_preamble=(),
+        has_literal_declarations=(
+            len(decl_results) > 0
+            or isinstance(
+                composition.variable_form, (NewVariable, BothVariableForms)
+            )
+        ),
+        generated_body_preamble=unified_body_preamble,
     )
     if composition.assignment_result is None:
         wrapped = language.wrap_in_file(
@@ -7738,6 +7755,8 @@ def _wrap_call_in_file(
             + body_stubs
             + computed_body,
             class_preamble=class_stubs,
+            has_literal_declarations=False,
+            generated_body_preamble=computed_body,
         ),
     )
     call_binding_pragmas: tuple[str, ...] = ()
@@ -8778,6 +8797,8 @@ def literalize_call_with_declarations(
             + unified_body_preamble
             + extra_body_preamble,
             class_preamble=extra_class_preamble,
+            has_literal_declarations=len(declarations) > 0,
+            generated_body_preamble=unified_body_preamble,
         ),
     )
     if len(scoped.file_scope) > 0:

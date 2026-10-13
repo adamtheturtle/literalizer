@@ -40,5 +40,7 @@ def test_wrap_combined_in_file_unsupported_raises(
                 modifiers=frozenset(),
                 body_preamble=(),
                 class_preamble=(),
+                has_literal_declarations=True,
+                generated_body_preamble=(),
             ),
         )

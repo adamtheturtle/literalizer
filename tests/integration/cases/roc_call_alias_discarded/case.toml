@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Roc"]
+languages_reason = "Roc aliases are retained only for literal declarations, including custom alias names."
+target_function = "process"
+parameter_names = ["value"]
+per_element = false
+
+[[call.variants]]
+axis = "type_name"

@@ -69,6 +69,12 @@ class FileWrapperContext:
     class_preamble: tuple[str, ...]
     """Supporting declarations placed directly in the wrapper class."""
 
+    has_literal_declarations: bool
+    """Whether the wrapper contains a literal-binding declaration."""
+
+    generated_body_preamble: tuple[str, ...]
+    """Body blocks produced by the language for the rendered data."""
+
 
 class NewVariableNameSyntax(enum.Enum):
     """Conservative lexical grammars for ``NewVariable`` declarations.
