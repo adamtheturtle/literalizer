@@ -673,7 +673,7 @@ jobs:
           cat > /tmp/run-c.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c99 "$1" -o "$tmpdir/run" -lcjson || exit 1
+          clang -std=c99 -Werror "$1" -o "$tmpdir/run" -lcjson || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-c
@@ -2169,7 +2169,7 @@ jobs:
       - name: Build precompiled headers
         run: |-
           for standard in c++14 c++17 c++20; do
-            clang++ "-std=$standard" -x c++-header scripts/lint-cpp-pch.hpp \
+            clang++ "-std=$standard" -Werror -x c++-header scripts/lint-cpp-pch.hpp \
               -o "/tmp/lint-cpp-$standard.hpp.pch"
           done
       # Each fixture defines its own main, so compile and run directly.

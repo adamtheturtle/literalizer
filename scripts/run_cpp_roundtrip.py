@@ -73,7 +73,14 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[clangxx, "-std=c++20", "main.cpp", "-o", "main"],
+                args=[
+                    clangxx,
+                    "-std=c++20",
+                    "-Werror",
+                    "main.cpp",
+                    "-o",
+                    "main",
+                ],
                 failure_label="clang++ error",
             ),
             roundtrip_common.Step(
