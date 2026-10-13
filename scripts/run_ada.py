@@ -25,7 +25,7 @@ def main() -> None:
     src = Path(filename)
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)
-        tmp_src = tmpdir / "check.adb"
+        tmp_src = tmpdir / "main.adb"
         _ = tmp_src.write_text(
             data=src.read_text(encoding="utf-8"),
             encoding="utf-8",
@@ -35,7 +35,13 @@ def main() -> None:
         # `-gnat2022` matches `Ada.language_version` in
         # `src/literalizer/languages/ada.py`; keep them in sync.
         compile_result = subprocess.run(
-            args=[gnatmake_path, "-gnat2022", "check.adb"],
+            args=[
+                gnatmake_path,
+                "-gnat2022",
+                "-gnatwe",
+                "-Werror",
+                "main.adb",
+            ],
             capture_output=True,
             text=True,
             check=False,
@@ -48,7 +54,7 @@ def main() -> None:
             )
             sys.exit(1)
         run_result = subprocess.run(
-            args=[tmpdir / "check"],
+            args=[tmpdir / "main"],
             capture_output=True,
             text=True,
             check=False,
