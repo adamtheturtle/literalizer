@@ -70,7 +70,7 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[javac, "-cp", classpath, "Main.java"],
+                args=[javac, "-Werror", "-cp", classpath, "Main.java"],
                 failure_label="javac error",
             ),
             roundtrip_common.Step(

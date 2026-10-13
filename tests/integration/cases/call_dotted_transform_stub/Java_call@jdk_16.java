@@ -1,6 +1,6 @@
 class Main {
-static Object process(Object... args) { return null; }
-static class TracerType_ { Object emit(Object... args) { return null; } }
+static Object process(Object arg0) { return null; }
+static class TracerType_ { Object emit(Object arg0) { return null; } }
 static TracerType_ tracer = new TracerType_();
     public static void main() {
 tracer.emit(process("hello"));
