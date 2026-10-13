@@ -682,26 +682,26 @@ def _kotlin_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Kotlin stub declarations for a call name."""
-    # Synthetic functions accept named arguments but deliberately ignore them.
-    # Exempt only those formal parameters, leaving body/source warnings fatal.
-    param_list = ", ".join(
-        f'@Suppress("UNUSED_PARAMETER") {p}: Any? = null' for p in params
-    )
+    # Return the supplied arguments as a placeholder result, using every
+    # parameter without suppressing warnings. Explicit type arguments select
+    # the standard collection function even when the stub is named listOf.
+    param_list = ", ".join(f"{p}: Any? = null" for p in params)
+    result = f"listOf<Any?>({', '.join(params)})"
     if len(parts) == 1:
-        return (f"fun {parts[0]}({param_list}): Any? = null",)
+        return (f"fun {parts[0]}({param_list}): Any? = {result}",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     if len(fields) == 0:
         cls = f"_{root.title()}Type"
         return (
-            f"class {cls} {{ fun {method}({param_list}): Any? = null }}",
+            f"class {cls} {{ fun {method}({param_list}): Any? = {result} }}",
             f"val {root} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"_{fields[-1].title()}Type"
     lines.append(
-        f"class {inner_cls} {{ fun {method}({param_list}): Any? = null }}"
+        f"class {inner_cls} {{ fun {method}({param_list}): Any? = {result} }}"
     )
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):

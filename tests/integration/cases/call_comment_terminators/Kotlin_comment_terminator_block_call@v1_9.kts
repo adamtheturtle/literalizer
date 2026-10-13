@@ -1,4 +1,4 @@
-fun process(@Suppress("UNUSED_PARAMETER") value: Any? = null): Any? = null
+fun process(value: Any? = null): Any? = listOf<Any?>(value)
 process(value = "Dune")  /* first: * / |# -} *) ) =# ]] %} ]# % #> */
 process(value = "Solaris")
 process(value = "Neuromancer")  /* third: * / |# -} *) ) =# ]] %} ]# % #> */

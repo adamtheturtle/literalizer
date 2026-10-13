@@ -1,4 +1,4 @@
-class _ClientType { fun post(@Suppress("UNUSED_PARAMETER") data: Any? = null): Any? = null }
+class _ClientType { fun post(data: Any? = null): Any? = listOf<Any?>(data) }
 class _ApiType { val client = _ClientType() }
 class _ObjType { val api = _ApiType() }
 val obj = _ObjType()

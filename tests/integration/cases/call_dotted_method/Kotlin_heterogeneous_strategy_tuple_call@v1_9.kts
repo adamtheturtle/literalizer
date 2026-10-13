@@ -1,4 +1,4 @@
-class _ClientType { fun fetch(@Suppress("UNUSED_PARAMETER") payload: Any? = null): Any? = null }
+class _ClientType { fun fetch(payload: Any? = null): Any? = listOf<Any?>(payload) }
 class _AppType { val client = _ClientType() }
 val app = _AppType()
 app.client.fetch(payload = "hello")

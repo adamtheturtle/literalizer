@@ -1,4 +1,4 @@
-fun process(@Suppress("UNUSED_PARAMETER") a: Any? = null): Any? = null
+fun process(a: Any? = null): Any? = listOf<Any?>(a)
 val big_list = arrayOf(
     "x",
 )

@@ -1,4 +1,4 @@
-fun process(@Suppress("UNUSED_PARAMETER") data: Any? = null, @Suppress("UNUSED_PARAMETER") count: Any? = null): Any? = null
+fun process(data: Any? = null, count: Any? = null): Any? = listOf<Any?>(data, count)
 val my_var = intArrayOf(
     1,
     2,

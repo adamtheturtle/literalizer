@@ -1,4 +1,4 @@
-fun process(@Suppress("UNUSED_PARAMETER") value: Any? = null, @Suppress("UNUSED_PARAMETER") label: Any? = null): Any? = null
+fun process(value: Any? = null, label: Any? = null): Any? = listOf<Any?>(value, label)
 process(value = "hello", label = "a")
 process(value = 42, label = "b")
 process(value = true, label = "c")

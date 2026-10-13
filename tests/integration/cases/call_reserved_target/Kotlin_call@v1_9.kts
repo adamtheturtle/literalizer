@@ -1,2 +1,2 @@
-fun op(@Suppress("UNUSED_PARAMETER") value: Any? = null): Any? = null
+fun op(value: Any? = null): Any? = listOf<Any?>(value)
 op(value = "hello")

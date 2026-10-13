@@ -68,6 +68,11 @@ def main() -> None:
     kotlin = shutil.which(cmd="kotlin")
     if kotlin is None or kotlin == "":
         kotlin = "kotlin"
+    script_runtime = (
+        Path(kotlin).resolve().parent.parent
+        / "lib"
+        / "kotlin-script-runtime.jar"
+    )
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.kts",
@@ -76,6 +81,8 @@ def main() -> None:
             roundtrip_common.Step(
                 args=[
                     kotlin,
+                    "-classpath",
+                    str(object=script_runtime),
                     str(object=Path(__file__).parent / "lint-kotlin.main.kts"),
                     "main.kts",
                 ],

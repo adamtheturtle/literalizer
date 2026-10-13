@@ -1,2 +1,2 @@
-fun process(@Suppress("UNUSED_PARAMETER") data: Any? = null): Any? = null
+fun process(data: Any? = null): Any? = listOf<Any?>(data)
 process(data = 1)

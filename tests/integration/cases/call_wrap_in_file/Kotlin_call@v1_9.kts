@@ -1,3 +1,3 @@
-fun process(@Suppress("UNUSED_PARAMETER") a: Any? = null, @Suppress("UNUSED_PARAMETER") b: Any? = null): Any? = null
+fun process(a: Any? = null, b: Any? = null): Any? = listOf<Any?>(a, b)
 process(a = 1, b = 2)
 process(a = 3, b = 4)

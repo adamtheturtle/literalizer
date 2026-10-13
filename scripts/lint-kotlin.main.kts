@@ -1,5 +1,5 @@
-@file:DependsOn("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.3.20")
-@file:DependsOn("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.20")
+@file:DependsOn("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.21")
+@file:DependsOn("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.1.21")
 
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
@@ -78,8 +78,6 @@ for (path in files) {
             // then instantiate the emitted script class only on strict success.
             "-Xallow-any-scripts-in-source-roots",
             "-Werror",
-            // The pinned compiler deprecates 1.9 mode; keep source warnings fatal.
-            "-Xsuppress-version-warnings",
             "-language-version", "1.9",
             "-api-version", "1.9",
             "-d", out.absolutePath,

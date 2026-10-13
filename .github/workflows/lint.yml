@@ -2209,15 +2209,11 @@ jobs:
   lint-kotlin:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # 2.3.10's kotlin-scripting-jvm references a legacy
-    # ``ScriptExpectedLocation`` class that is no longer shipped, so
-    # ``K2JVMCompiler.exec("-script", ...)`` from inside a
-    # ``.main.kts`` host blows up with NoClassDefFoundError.  2.3.20
-    # drops the stale reference.  Every Kotlin fixture on disk carries
-    # the tag from ``Kotlin.VersionFormats`` (e.g. `Kotlin@v1_9.kts`);
-    # the compiler pin and that enum member name are reviewed together.
+    # Keep the compiler in sync with the embedded host dependencies.
+    # 2.1.21 supports the v1_9 fixtures without deprecation warnings;
+    # later compilers deprecate or remove that language mode.
     env:
-      KOTLIN_VERSION: 2.3.20
+      KOTLIN_VERSION: 2.1.21
       KOTLINX_SERIALIZATION_VERSION: 1.7.3
       KOTLIN_FIXTURE_TAG: v1_9
     steps:
@@ -2270,7 +2266,10 @@ jobs:
       - name: Check Kotlin syntax
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
-        run: kotlin scripts/lint-kotlin.main.kts < /tmp/files-to-lint
+        # The embedded script compiler needs its matching script runtime on
+        # the host classpath, including the legacy ScriptExpectedLocation API.
+        run: kotlin -classpath "$KOTLIN_HOME/lib/kotlin-script-runtime.jar" scripts/lint-kotlin.main.kts
+          < /tmp/files-to-lint
       # `uv` is needed by the `Kotlin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv

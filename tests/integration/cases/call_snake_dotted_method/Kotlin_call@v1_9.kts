@@ -1,4 +1,4 @@
-class _Http_ClientType { fun fetch(@Suppress("UNUSED_PARAMETER") payload: Any? = null): Any? = null }
+class _Http_ClientType { fun fetch(payload: Any? = null): Any? = listOf<Any?>(payload) }
 class _My_AppType { val http_client = _Http_ClientType() }
 val my_app = _My_AppType()
 my_app.http_client.fetch(payload = "hello")
