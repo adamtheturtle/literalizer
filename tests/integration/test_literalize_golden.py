@@ -31,6 +31,7 @@ from .golden_scenarios import (
     golden_groups,
 )
 from .language_specs import make_golden_path, with_per_fixture_module_name
+from .yaml_warnings import expected_yaml_warnings
 
 
 @beartype
@@ -49,17 +50,20 @@ def _literalize(
     cannot name a variable reaches its golden.
     """
     render = rendering.render
-    return literalizer.literalize(
-        source=source_text,
-        input_format=input_info.input_format,
-        language=spec,
-        pre_indent_level=render.pre_indent_level,
-        include_delimiters=True,
-        variable_form=variable_form,
-        wrap_in_file=render.wrap_in_file,
-        collection_layout=render.collection_layout,
-        record_null_substitutions=render.record_null_substitutions,
-    )
+    with expected_yaml_warnings(
+        expectation=input_info.expected_reused_anchor_warning,
+    ):
+        return literalizer.literalize(
+            source=source_text,
+            input_format=input_info.input_format,
+            language=spec,
+            pre_indent_level=render.pre_indent_level,
+            include_delimiters=True,
+            variable_form=variable_form,
+            wrap_in_file=render.wrap_in_file,
+            collection_layout=render.collection_layout,
+            record_null_substitutions=render.record_null_substitutions,
+        )
 
 
 @beartype
