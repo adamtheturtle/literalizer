@@ -13,6 +13,7 @@ pub fn main() {
     // Enable debug mode
     #("debug", GBool(True)),
   ])
+  let _ = my_data
   let my_data = GDict([
     // Server configuration
     #("host", GStr("localhost")),  // default host

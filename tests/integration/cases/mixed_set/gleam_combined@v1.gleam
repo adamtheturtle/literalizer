@@ -11,6 +11,7 @@ pub fn main() {
     GInt(42),
     GStr("apple"),
   ])
+  let _ = my_data
   let my_data = GSet([
     GBool(True),
     GInt(42),

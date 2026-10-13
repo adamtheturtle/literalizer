@@ -8,6 +8,7 @@ pub fn main() {
     GStr("100% done"),
     GStr("%(name) is here"),
   ])
+  let _ = my_data
   let my_data = GList([
     GStr("100% done"),
     GStr("%(name) is here"),

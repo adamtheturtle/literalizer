@@ -6,5 +6,5 @@ pub type GVal {
 pub fn process(_data: a) -> Nil { Nil }
 
 pub fn main() {
-  process(GList([GInt(1), GStr("x")]))
+  let _ = process(GList([GInt(1), GStr("x")]))
 }

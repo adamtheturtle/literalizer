@@ -85,7 +85,7 @@ def main() -> None:
             escaped = str(object=fixture)
             escaped = escaped.replace("\\", "\\\\").replace('"', '\\"')
             runner_calls.append(f'  io.println("RUN: {escaped}")')
-            runner_calls.append(f"  {module_alias}.main()")
+            runner_calls.append(f"  let _ = {module_alias}.main()")
 
         runner_src = (
             "import gleam/io\n"
@@ -98,6 +98,20 @@ def main() -> None:
             data=runner_src,
             encoding="utf-8",
         )
+
+        # Build the complete generated package strictly before executing it.
+        # `gleam run` reuses the build artifacts but has no fatal-warning flag.
+        build = subprocess.run(
+            args=[gleam_path, "build", "--warnings-as-errors"],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=tmpdir,
+        )
+        if build.returncode != 0:
+            _ = sys.stderr.write(build.stderr)
+            _ = sys.stderr.write(build.stdout)
+            sys.exit(1)
 
         result = subprocess.run(
             args=[gleam_path, "run", "-m", "runner"],

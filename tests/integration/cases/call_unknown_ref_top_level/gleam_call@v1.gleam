@@ -8,5 +8,5 @@ pub fn main() {
   let unknown_value = GList([
     GInt(1),
   ])
-  process(unknown_value)
+  let _ = process(unknown_value)
 }

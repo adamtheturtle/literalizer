@@ -7,6 +7,7 @@ pub fn main() {
   let my_data = GDict([
     #("key", GStr("it's here")),  // a comment
   ])
+  let _ = my_data
   let my_data = GDict([
     #("key", GStr("it's here")),  // a comment
   ])

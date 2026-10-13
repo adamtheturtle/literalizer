@@ -9,6 +9,7 @@ pub fn main() {
     #("another-key", GStr("value2")),
     #("normal_key", GStr("value3")),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("my-key", GStr("value1")),
     #("another-key", GStr("value2")),

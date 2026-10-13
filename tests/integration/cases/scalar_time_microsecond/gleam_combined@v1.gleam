@@ -8,6 +8,7 @@ pub fn main() {
     #("exact_millisecond", GStr("09:30:15.123000")),
     #("sub_millisecond", GStr("09:30:15.123456")),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("exact_millisecond", GStr("09:30:15.123000")),
     #("sub_millisecond", GStr("09:30:15.123456")),

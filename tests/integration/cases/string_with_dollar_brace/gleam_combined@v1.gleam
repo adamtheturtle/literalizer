@@ -8,6 +8,7 @@ pub fn main() {
     GStr("prefix ${HOME} suffix"),
     GStr("${interpolated}"),
   ])
+  let _ = my_data
   let my_data = GList([
     GStr("prefix ${HOME} suffix"),
     GStr("${interpolated}"),

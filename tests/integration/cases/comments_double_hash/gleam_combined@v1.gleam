@@ -8,6 +8,7 @@ pub fn main() {
     // # section
     GStr("a"),
   ])
+  let _ = my_data
   let my_data = GList([
     // # section
     GStr("a"),

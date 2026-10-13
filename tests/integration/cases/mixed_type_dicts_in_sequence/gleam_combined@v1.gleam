@@ -10,6 +10,7 @@ pub fn main() {
     GDict([#("type", GStr("create")), #("pr_id", GStr("pr_1")), #("draft", GBool(True))]),
     GDict([#("type", GStr("create")), #("pr_id", GStr("pr_2"))]),
   ])
+  let _ = my_data
   let my_data = GList([
     GDict([#("type", GStr("create")), #("pr_id", GStr("pr_1")), #("draft", GBool(True))]),
     GDict([#("type", GStr("create")), #("pr_id", GStr("pr_2"))]),

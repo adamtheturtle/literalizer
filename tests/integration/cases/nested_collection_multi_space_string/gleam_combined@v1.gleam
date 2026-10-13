@@ -9,6 +9,7 @@ pub fn main() {
   let my_data = GList([
     GDict([#("key", GStr("hello   world")), #("value", GInt(1))]),
   ])
+  let _ = my_data
   let my_data = GList([
     GDict([#("key", GStr("hello   world")), #("value", GInt(1))]),
   ])

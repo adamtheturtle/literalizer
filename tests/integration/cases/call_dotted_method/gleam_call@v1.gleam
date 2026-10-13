@@ -7,7 +7,7 @@ pub type GVal {
 pub fn app_client_fetch(_payload: a) -> Nil { Nil }
 
 pub fn main() {
-  app_client_fetch(GStr("hello"))
-  app_client_fetch(GInt(42))
-  app_client_fetch(GBool(True))
+  let _ = app_client_fetch(GStr("hello"))
+  let _ = app_client_fetch(GInt(42))
+  let _ = app_client_fetch(GBool(True))
 }

@@ -11,7 +11,7 @@ pub fn main() {
     GInt(6),
   ])
   let repeated_var = GInt(1)
-  process(repeated_var, GInt(1))
-  process(single_var, GInt(0))
-  process(repeated_var, GInt(8))
+  let _ = process(repeated_var, GInt(1))
+  let _ = process(single_var, GInt(0))
+  let _ = process(repeated_var, GInt(8))
 }
