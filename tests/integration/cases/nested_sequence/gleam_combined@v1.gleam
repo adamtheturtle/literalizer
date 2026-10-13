@@ -13,6 +13,7 @@ pub fn main() {
     GList([GInt(1), GInt(2)]),
     GNull,
   ])
+  let _ = my_data
   let my_data = GList([
     GBool(True),
     GStr("hi"),

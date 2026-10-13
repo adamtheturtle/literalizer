@@ -10,6 +10,7 @@ pub fn main() {
     GStr("banana"),  // banana inline
     // trailing
   ])
+  let _ = my_data
   let my_data = GSet([
     // before apple
     GStr("apple"),

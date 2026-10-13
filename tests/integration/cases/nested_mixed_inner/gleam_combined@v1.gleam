@@ -9,6 +9,7 @@ pub fn main() {
     GList([GInt(1), GStr("a")]),
     GList([GInt(2), GStr("b")]),
   ])
+  let _ = my_data
   let my_data = GList([
     GList([GInt(1), GStr("a")]),
     GList([GInt(2), GStr("b")]),

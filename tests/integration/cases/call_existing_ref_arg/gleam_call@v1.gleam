@@ -6,5 +6,5 @@ pub fn process(_value: a) -> Nil { Nil }
 
 pub fn main() {
   let existing = GInt(42)
-  process(existing)
+  let _ = process(existing)
 }

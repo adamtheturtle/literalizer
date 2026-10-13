@@ -9,5 +9,5 @@ pub fn main() {
   let big_list = GList([
     GStr("x"),
   ])
-  process(GDict([#("m", big_list)]))
+  let _ = process(GDict([#("m", big_list)]))
 }

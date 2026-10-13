@@ -25,6 +25,7 @@ pub fn main() {
     #("true", GInt(1)),
     #("ordinary", GInt(1)),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("assert", GInt(1)),
     #("else", GInt(1)),

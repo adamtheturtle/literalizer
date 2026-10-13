@@ -8,6 +8,7 @@ pub fn main() {
     #("0a", GStr("first")),
     #("1b", GStr("second")),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("0a", GStr("first")),
     #("1b", GStr("second")),

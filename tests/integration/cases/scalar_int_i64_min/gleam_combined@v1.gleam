@@ -4,6 +4,7 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GInt(-9223372036854775808)
+  let _ = my_data
   let my_data = GInt(-9223372036854775808)
   let _ = my_data
 }

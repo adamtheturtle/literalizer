@@ -9,6 +9,7 @@ pub fn main() {
     #("b", GNull),
     // trailing
   ])
+  let _ = my_data
   let my_data = GDict([
     #("a", GNull),
     #("b", GNull),

@@ -10,6 +10,7 @@ pub fn main() {
     #("averyveryverylongkeynamethatgoesonandonandon", GInt(3)),
     #("averyveryverylongkeynamethatgoesonandmore", GInt(4)),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("a_b", GInt(1)),
     #("a-b", GInt(2)),

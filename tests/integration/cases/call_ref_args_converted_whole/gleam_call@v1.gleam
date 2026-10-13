@@ -10,5 +10,5 @@ pub fn main() {
     GInt(2),
     GInt(3),
   ])
-  process(my_var)
+  let _ = process(my_var)
 }

@@ -5,5 +5,5 @@ pub type GVal {
 pub fn process(_value: a) -> Nil { Nil }
 
 pub fn main() {
-  process(GDict([#("a", GInt(1)), #("b", GInt(2))]))
+  let _ = process(GDict([#("a", GInt(1)), #("b", GInt(2))]))
 }

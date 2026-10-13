@@ -15,6 +15,7 @@ pub fn main() {
     GStr("2020-01-01T00:00:00+00:00"),
     GList([]),
   ])
+  let _ = my_data
   let my_data = GList([
     GBool(True),
     GFloat(1.5),

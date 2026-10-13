@@ -25,6 +25,7 @@ pub fn main() {
     #("alias", GInt(4)),
     // On the alias.
   ])
+  let _ = my_data
   let my_data = GDict([
     #("flow", GList([
       GInt(1),

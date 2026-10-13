@@ -8,6 +8,7 @@ pub fn main() {
     GStr("a"),  // note a
     GStr("b"),  // note b
   ])
+  let _ = my_data
   let my_data = GList([
     GStr("a"),  // note a
     GStr("b"),  // note b

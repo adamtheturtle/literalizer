@@ -11,6 +11,7 @@ pub fn main() {
     #("plain", GStr("ok")),
     // trailing
   ])
+  let _ = my_data
   let my_data = GDict([
     // before
     #("answer", GInt(42)),  // inline

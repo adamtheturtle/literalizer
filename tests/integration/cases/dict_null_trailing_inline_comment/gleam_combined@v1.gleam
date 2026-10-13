@@ -9,6 +9,7 @@ pub fn main() {
     #("host", GStr("localhost")),
     #("port", GNull),  // not configured yet
   ])
+  let _ = my_data
   let my_data = GDict([
     #("host", GStr("localhost")),
     #("port", GNull),  // not configured yet

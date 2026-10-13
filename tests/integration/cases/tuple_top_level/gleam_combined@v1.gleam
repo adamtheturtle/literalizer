@@ -11,6 +11,7 @@ pub fn main() {
     GStr("a@gmail.com"),
     GInt(100),
   ])
+  let _ = my_data
   let my_data = GList([
     GInt(1),
     GStr("email"),

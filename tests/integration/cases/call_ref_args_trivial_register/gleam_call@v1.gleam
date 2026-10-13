@@ -15,8 +15,8 @@ pub fn main() {
     GInt(2),
     GInt(3),
   ])
-  process(my_int, GInt(42))
-  process(my_bool, GInt(7))
-  process(my_float, GInt(9))
-  process(my_list, GInt(1))
+  let _ = process(my_int, GInt(42))
+  let _ = process(my_bool, GInt(7))
+  let _ = process(my_float, GInt(9))
+  let _ = process(my_list, GInt(1))
 }

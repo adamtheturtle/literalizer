@@ -9,6 +9,7 @@ pub fn main() {
     #("host", GStr("it's here")),  // a comment
     #("port", GInt(80)),  // another
   ])
+  let _ = my_data
   let my_data = GDict([
     #("host", GStr("it's here")),  // a comment
     #("port", GInt(80)),  // another
