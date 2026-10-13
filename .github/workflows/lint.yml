@@ -2972,7 +2972,7 @@ jobs:
             printf 'require "./%s"\n' "$name" >> "$driver"
             printf '%s.cr <- %s\n' "$name" "$f"
           done < /tmp/files-to-lint
-          crystal run "$driver"
+          crystal run --error-on-warnings "$driver"
       # `uv` is needed by the `Crystal roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
