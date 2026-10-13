@@ -193,7 +193,14 @@ def _elixir_call_stub(
     # alias root is named by its stub module and needs no binding.
     if root[:1].isupper():
         return ()
-    return (f"{root} = {_elixir_root_module(root)}",)
+    fields = parts[1:-1]
+    if len(fields) == 0:
+        return (f"{root} = {_elixir_root_module(root)}",)
+    # Intermediate dot access is map field access; only the leaf is a module.
+    value = fields[-1].capitalize() + "Type_"
+    for field in reversed(fields):
+        value = f"%{{{field}: {value}}}"
+    return (f"{root} = {value}",)
 
 
 @beartype
@@ -236,8 +243,8 @@ def _elixir_call_preamble_stub(
     """Return file-scope Elixir module stubs for dotted call *parts*.
 
     For simple (non-dotted) names nothing is needed at preamble scope.
-    For dotted names a chain of ``defmodule`` stubs is emitted so each
-    intermediate module exposes the next step as a function.
+    For dotted names the leaf module provides the method. Intermediate
+    fields are maps.
     """
     if len(parts) == 1:
         return ()
@@ -254,16 +261,6 @@ def _elixir_call_preamble_stub(
     inner_module = fields[-1].capitalize() + "Type_"
     inner_sig = f"{method}({param_list}), do: nil"
     lines.append(f"defmodule {inner_module} do\n  def {inner_sig}\nend")
-    prev_module = inner_module
-    for i in range(len(fields) - 2, -1, -1):
-        curr_module = fields[i].capitalize() + "Type_"
-        next_field = fields[i + 1]
-        loop_sig = f"{next_field}, do: {prev_module}"
-        lines.append(f"defmodule {curr_module} do\n  def {loop_sig}\nend")
-        prev_module = curr_module
-    root_module = _elixir_root_module(root)
-    root_sig = f"{fields[0]}, do: {prev_module}"
-    lines.append(f"defmodule {root_module} do\n  def {root_sig}\nend")
     return tuple(lines)
 
 
