@@ -12,9 +12,15 @@ failed =
   Enum.reduce(paths, false, fn path, acc ->
     result =
       try do
-        Code.compile_file(path)
-        Check.x()
-        acc
+        {_, diagnostics} = Code.with_diagnostics([log: true], fn -> Code.compile_file(path) end)
+
+        if Enum.any?(diagnostics, &(&1.severity == :warning)) do
+          IO.puts(:stderr, "FAIL #{path}: compiler warnings")
+          true
+        else
+          Check.x()
+          acc
+        end
       rescue
         e ->
           IO.puts(
