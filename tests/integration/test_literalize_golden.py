@@ -50,7 +50,9 @@ def _literalize(
     cannot name a variable reaches its golden.
     """
     render = rendering.render
-    with expected_yaml_warnings(input_path=input_info.path):
+    with expected_yaml_warnings(
+        expectation=input_info.expected_reused_anchor_warning,
+    ):
         return literalizer.literalize(
             source=source_text,
             input_format=input_info.input_format,

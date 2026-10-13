@@ -1,34 +1,33 @@
 """Expected warnings for fixtures that deliberately reuse YAML anchors."""
 
+import re
 from collections.abc import Generator
 from contextlib import contextmanager
-from pathlib import Path
 
 import pytest
 from beartype import beartype
 from ruamel.yaml.error import ReusedAnchorWarning
 
-_REBOUND_ANCHOR_CASES = frozenset(
-    {
-        "yaml_rebound_anchor_scalar",
-        "yaml_rebound_anchor_collection",
-        "yaml_rebound_anchor_nested",
-    }
-)
+from .case_inputs import ReusedAnchorWarningSpec
 
 
 @contextmanager
 @beartype
-def expected_yaml_warnings(*, input_path: Path) -> Generator[None, None, None]:
-    """Assert the deliberate duplicate-anchor warning for its owning cases.
+def expected_yaml_warnings(
+    *, expectation: ReusedAnchorWarningSpec | None
+) -> Generator[None]:
+    """Assert the duplicate-anchor warning declared by a fixture's
+    manifest.
 
     ``pytest.warns`` re-emits warnings that do not match, so unrelated
-    warnings remain visible even while loading these three fixtures.
+    warnings remain visible while loading a fixture with an expectation.
     """
-    if input_path.parent.name in _REBOUND_ANCHOR_CASES:
+    if expectation is not None:
         with pytest.warns(
             expected_warning=ReusedAnchorWarning,
-            match="found duplicate anchor 'x'",
+            match=re.escape(
+                pattern=f"found duplicate anchor {expectation.anchor!r}",
+            ),
         ) as recorded:
             yield
         anchor_warnings = [
@@ -36,7 +35,12 @@ def expected_yaml_warnings(*, input_path: Path) -> Generator[None, None, None]:
             for warning in recorded
             if isinstance(warning.message, ReusedAnchorWarning)
         ]
-        if len(anchor_warnings) != 1:
-            pytest.fail(reason="Expected one reused-anchor warning")
+        if len(anchor_warnings) != expectation.count:
+            pytest.fail(
+                reason=(
+                    f"Expected {expectation.count} reused-anchor warnings "
+                    f"for {expectation.anchor!r}, got {len(anchor_warnings)}"
+                ),
+            )
     else:
         yield

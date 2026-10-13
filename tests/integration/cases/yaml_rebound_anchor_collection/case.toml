@@ -2,3 +2,7 @@ schema_version = 1
 suites = ["base"]
 languages = ["Python"]
 languages_reason = "Sampled: resolving rebound YAML aliases is independent of the target language."
+
+[expected_reused_anchor_warning]
+anchor = "x"
+count = 1

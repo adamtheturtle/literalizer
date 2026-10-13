@@ -221,7 +221,9 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
     ``ruamel`` yields its comment-tracking mappings; both are walked
     structurally by the ``has_*`` predicates.
     """
-    with expected_yaml_warnings(input_path=input_info.path):
+    with expected_yaml_warnings(
+        expectation=input_info.expected_reused_anchor_warning,
+    ):
         parsed = _load_case_source(
             source=input_info.path.read_text(encoding="utf-8"),
             input_format=input_info.input_format,
