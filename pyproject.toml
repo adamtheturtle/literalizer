@@ -255,6 +255,8 @@ lint.per-file-ignores."tests/integration/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
 ]
+# This shared golden harness helper asserts the fixture's warning contract.
+lint.per-file-ignores."tests/integration/yaml_warnings.py" = [ "S101" ]
 # Do not automatically remove commented out code.
 # We comment out code during development, and with VSCode auto-save, this code
 # is sometimes annoyingly removed.
