@@ -7,4 +7,4 @@ parameter_names = ["x", "_x"]
 per_element = true
 wrap_in_file = true
 languages = ["Elixir", "Swift", "Ada"]
-languages_reason = "Elixir alone prefixes generated stub parameters with underscores."
+languages_reason = "Elixir prefixes stub parameters with underscores, Swift preserves both names, and Ada rejects the leading underscore."

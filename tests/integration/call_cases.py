@@ -353,7 +353,7 @@ def _is_reserved_call_target(
 
 
 @beartype
-def expected_call_shape_exception(
+def _expected_call_shape_exception(
     *,
     lang_cls: literalizer.LanguageCls,
     config: CallCaseSpec,
@@ -486,7 +486,7 @@ def discover_call_cases() -> list[CallCase]:
                 default_style = styles[0]
                 if isinstance(default_style.value, config.call_style_type):
                     continue
-            expected_exception = expected_call_shape_exception(
+            expected_exception = _expected_call_shape_exception(
                 lang_cls=lang_cls,
                 config=config,
             )
