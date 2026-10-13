@@ -3488,7 +3488,7 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.check_v_syntax
           < /tmp/files-to-lint
       - name: Run V files
-        run: xargs -0 -P "$(nproc)" -n1 v -cc gcc run < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 v -W -cc gcc run < /tmp/files-to-lint
       # Driven from `lint-v` because that is the job where the pinned
       # `v` binary (installed by the `Install V` step above) is on
       # `PATH`; `uv run` (project mode, not `--no-project`) is required
