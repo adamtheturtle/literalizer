@@ -35,9 +35,12 @@ def expected_yaml_warnings(
             for warning in recorded
             if isinstance(warning.message, ReusedAnchorWarning)
         ]
-        assert len(anchor_warnings) == expectation.count, (
-            f"Expected {expectation.count} reused-anchor warnings "
-            f"for {expectation.anchor!r}, got {len(anchor_warnings)}"
-        )
+        if len(anchor_warnings) != expectation.count:
+            pytest.fail(
+                reason=(
+                    f"Expected {expectation.count} reused-anchor warnings "
+                    f"for {expectation.anchor!r}, got {len(anchor_warnings)}"
+                ),
+            )
     else:
         yield

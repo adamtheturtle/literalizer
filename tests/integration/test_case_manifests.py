@@ -7,6 +7,7 @@ import pytest
 import literalizer
 import literalizer.languages
 
+from .case_discovery import load_case_data
 from .case_manifests import (
     CASE_ROLE_NAMES,
     INDENT_ROLE,
@@ -535,6 +536,34 @@ def test_anchor_warning_metadata_is_loaded(
     assert expectation.anchor == "other+"
     expected_count = 2
     assert expectation.count == expected_count
+
+
+@pytest.mark.parametrize(argnames="count", argvalues=[1, 3])
+def test_anchor_warning_count_must_match_input(
+    tmp_path: Path, count: int
+) -> None:
+    """Reject a manifest whose warning count disagrees with its YAML."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            'schema_version = 1\nsuites = ["base"]\n'
+            '[expected_reused_anchor_warning]\nanchor = "other+"\n'
+            f"count = {count}\n"
+        ),
+        input_name="input.yaml",
+    )
+    source = (
+        Path(__file__).parent
+        / "cases"
+        / "yaml_rebound_anchor_multiple"
+        / "input.yaml"
+    ).read_text(encoding="utf-8")
+    _ = (case_dir / "input.yaml").write_text(data=source, encoding="utf-8")
+    with pytest.raises(
+        expected_exception=pytest.fail.Exception,
+        match=f"Expected {count} reused-anchor warnings for 'other\\+', got 2",
+    ):
+        _ = load_case_data(input_info=case_input(case_dir=case_dir))
 
 
 def test_anchor_warning_requires_yaml(tmp_path: Path) -> None:
