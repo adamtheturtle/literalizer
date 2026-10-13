@@ -1129,8 +1129,8 @@ class Roc(metaclass=LanguageCls):
         effecting.
 
         The ``Val`` type alias is kept only when the wrapped output
-        actually annotates a binding with ``: Val`` (the literal-binding
-        declaration ``my_data : Val``).  It is dropped for every call
+        contains a literal-binding declaration, recorded in the wrapper
+        context before source rendering.  It is dropped for every call
         mode -- both the discarded-result form (exposed ``main``) and
         the inference-style call binding ``my_data = make_widget ...``
         whose right-hand side is a call expression with no tag, hence
@@ -1149,16 +1149,10 @@ class Roc(metaclass=LanguageCls):
             string=content,
         )
         variable_name = context.variable_name
-        body_preamble = context.body_preamble
         exposed = "main"
         if variable_name != "":
             exposed = variable_name
-        if f" : {self.type_name}\n" in content:
-            effective_preamble = body_preamble
-        else:
-            effective_preamble = self._strip_type_alias(
-                body_preamble=body_preamble,
-            )
+        effective_preamble = self._used_body_preamble(context=context)
         preamble_str = ""
         if len(effective_preamble) > 0:
             preamble_str = "\n".join(effective_preamble) + "\n\n"
@@ -1167,20 +1161,20 @@ class Roc(metaclass=LanguageCls):
             content = f"main =\n{body}\n{self.indent}{{}}"
         return f"module [{exposed}]\n\n{preamble_str}{content}"
 
-    def _strip_type_alias(
-        self,
+    @staticmethod
+    def _used_body_preamble(
         *,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> tuple[str, ...]:
-        """Drop the ``Val`` tag-union alias from *body_preamble*.
-
-        Used in call modes where nothing in the wrapped output
-        references ``: Val``, so emitting the alias would generate an
-        ``UNUSED DEFINITION`` warning in Roc.
+        """Keep generated aliases only for literal-binding
+        declarations.
         """
-        prefix = f"{self.type_name} : ["
+        if context.has_literal_declarations:
+            return context.body_preamble
         return tuple(
-            line for line in body_preamble if not line.startswith(prefix)
+            entry
+            for entry in context.body_preamble
+            if entry not in context.generated_body_preamble
         )
 
     def wrap_calls_with_declarations(
@@ -1196,17 +1190,12 @@ class Roc(metaclass=LanguageCls):
         alias and call stubs; only the top-level call lines inside
         ``main`` are wrapped in ``dbg (...)``.
         """
-        body_preamble = context.body_preamble
         decl_block = ""
         if len(declarations) > 0:
             decl_block = "\n".join(declarations) + "\n"
         body = _indent_call_lines(content=calls, indent=self.indent)
         main_block = f"main =\n{body}\n{self.indent}{{}}"
-        effective_preamble = body_preamble
-        if len(declarations) == 0:
-            effective_preamble = self._strip_type_alias(
-                body_preamble=body_preamble
-            )
+        effective_preamble = self._used_body_preamble(context=context)
         preamble_str = ""
         if len(effective_preamble) > 0:
             preamble_str = "\n".join(effective_preamble) + "\n\n"
