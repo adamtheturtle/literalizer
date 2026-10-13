@@ -1,6 +1,6 @@
 import java.util.Map;
 class Main {
-static Object process(Object... args) { return null; }
+static Object process(Object arg0) { return null; }
     public static void main() {
 var my_var = 42;
 process(Map.ofEntries(Map.entry("key", my_var), Map.entry("count", 42), Map.entry("label", "example")));

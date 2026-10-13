@@ -253,16 +253,17 @@ def _is_java_class_field(modifiers: frozenset[enum.Enum], /) -> bool:
 @beartype
 def _java_call_stub(
     parts: Sequence[str],
-    _params: Sequence[str],
+    params: Sequence[str],
     _stub_return: StubReturn,
     _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
-    """Return Java stub declarations for a call name."""
+    """Return fixed-arity Java stubs preserving null and array
+    arguments.
+    """
+    parameters = ", ".join(f"Object arg{i}" for i in range(len(params)))
     if len(parts) == 1:
-        return (
-            f"static Object {parts[0]}(Object... args) {{ return null; }}",
-        )
+        return (f"static Object {parts[0]}({parameters}) {{ return null; }}",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -271,7 +272,7 @@ def _java_call_stub(
         return (
             (
                 f"static class {type_name} {{"
-                f" Object {method}(Object... args) {{ return null; }} }}"
+                f" Object {method}({parameters}) {{ return null; }} }}"
             ),
             f"static {type_name} {root} = new {type_name}();",
         )
@@ -279,7 +280,7 @@ def _java_call_stub(
     inner_type = f"{fields[-1].title()}Type_"
     lines.append(
         f"static class {inner_type} {{"
-        f" Object {method}(Object... args) {{ return null; }} }}"
+        f" Object {method}({parameters}) {{ return null; }} }}"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):

@@ -61,7 +61,7 @@ public class CheckJavaSyntax {
                 final Iterable<? extends JavaFileObject> units =
                         fileManager.getJavaFileObjectsFromStrings(List.of(filename));
                 final List<String> options = new ArrayList<>(List.of(
-                        "-d", classDir.toString(), "-proc:none", "--release", release));
+                        "-d", classDir.toString(), "-proc:none", "-Werror", "--release", release));
                 if (!classpathArg.isEmpty()) {
                     options.add("-classpath");
                     options.add(classpathArg);

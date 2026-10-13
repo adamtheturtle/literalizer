@@ -1,5 +1,5 @@
 class Main {
-static Object process(Object... args) { return null; }
+static Object process() { return null; }
     public static void main() {
 process();
 process();
