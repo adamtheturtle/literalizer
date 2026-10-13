@@ -174,6 +174,7 @@ def main() -> None:
             roundtrip_common.Step(
                 args=[
                     cobc,
+                    "-Werror",
                     "-x",
                     "-free",
                     "check.cob",

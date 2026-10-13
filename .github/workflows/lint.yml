@@ -2075,7 +2075,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.cob"
-          cobc -free -fsyntax-only "$tmpdir/check.cob"
+          cobc -Werror -free -fsyntax-only "$tmpdir/check.cob"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-cobol.sh < /tmp/files-to-lint
       # ``-lcjson`` links the cJSON library that the
@@ -2089,7 +2089,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.cob"
-          cobc -x -free "$tmpdir/check.cob" -o "$tmpdir/run" -lcjson || exit 1
+          cobc -Werror -x -free "$tmpdir/check.cob" -o "$tmpdir/run" -lcjson || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
