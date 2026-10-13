@@ -2375,10 +2375,12 @@ jobs:
       - name: Install yojson
         timeout-minutes: 10
         run: opam install -y yojson ocamlfind
+      # All enabled warnings are fatal, including new warnings on OCaml upgrades.
+      # Audit the complete corpus whenever the selected OCaml 5.x compiler changes.
       - name: Check OCaml syntax
         run: |-
           tmpdir=$(mktemp -d)
-          xargs -0 -n1 opam exec -- ocamlfind ocamlopt -package yojson -c -o "$tmpdir/check.o" < /tmp/files-to-lint
+          xargs -0 -n1 opam exec -- ocamlfind ocamlopt -warn-error +a -package yojson -c -o "$tmpdir/check.o" < /tmp/files-to-lint
       # Fixtures only declare ``module Check = struct ... end`` with a
       # ``my_data`` let-binding; OCaml evaluates struct bodies when the
       # module is initialized, so running the file as a script forces
@@ -2390,8 +2392,14 @@ jobs:
           cat > /tmp/yojson_prelude.ml <<'EOF'
           # use "topfind";;
           # require "yojson";;
+          let fixture = Sys.argv.(1);;
+          let fixture =
+            if Filename.is_relative fixture then
+              Filename.concat (Sys.getcwd ()) fixture
+            else fixture;;
+          if not (Toploop.use_file Format.err_formatter fixture) then exit 1;;
           EOF
-          xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml /tmp/yojson_prelude.ml < /tmp/files-to-lint
+          xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml -warn-error +a /tmp/yojson_prelude.ml < /tmp/files-to-lint
       # ``uv`` is needed by the ``OCaml roundtrip`` step below; it runs
       # the helper in project mode so ``import literalizer`` resolves.
       - name: Install uv
