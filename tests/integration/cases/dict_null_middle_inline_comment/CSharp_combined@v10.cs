@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, object> {
     ["server"] = new Dictionary<string, object> {
@@ -13,3 +14,4 @@ my_data = new Dictionary<string, object> {
         ["debug"] = true
     }
 };
+    _ = my_data;

@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 class Check {
 static object process(object value = null) => null;

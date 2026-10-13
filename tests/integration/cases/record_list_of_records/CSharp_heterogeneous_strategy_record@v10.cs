@@ -1,3 +1,4 @@
+#nullable enable annotations
 record Record1(int Id, string Label);
 record Record0(string Name, Record1[] Items);
 class Check {
@@ -15,5 +16,6 @@ var my_data = new Record0(
         )
     }
 );
+    _ = my_data;
     }
 }

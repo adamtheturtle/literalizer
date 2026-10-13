@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 record Record0(string S, int I, double F, bool B, object N, DateOnly D, int Dt, string By);
 class Check {
@@ -12,5 +13,6 @@ var my_data = new Record0(
     1705320000,
     "48656c6c6f"
 );
+    _ = my_data;
     }
 }

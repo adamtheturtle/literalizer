@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Text.Json.Nodes;
 class Check {
 static object process(object value = null) => null;

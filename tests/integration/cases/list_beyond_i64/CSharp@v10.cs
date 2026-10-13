@@ -1,5 +1,7 @@
+#nullable enable annotations
 using System;
 var my_data = (
     9223372036854775807UL,
     9223372036854775808UL
 );
+    _ = my_data;

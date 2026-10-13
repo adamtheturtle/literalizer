@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 class Check {
 static (int, int) RefData = (
@@ -5,5 +6,5 @@ static (int, int) RefData = (
     2
 );
 static (int, int) my_data = RefData;
-    public static void Main() {}
+    public static void Main() { _ = my_data; }
 }

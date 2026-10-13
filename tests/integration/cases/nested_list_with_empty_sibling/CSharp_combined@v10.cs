@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 var my_data = (
     (1, 2),
@@ -9,3 +10,4 @@ my_data = (
     ValueTuple.Create(),
     (3, 4)
 );
+    _ = my_data;

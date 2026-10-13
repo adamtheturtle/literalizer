@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 record Record0(Dictionary<string, int> Input);
 class Check {
@@ -14,5 +15,6 @@ var my_data = new[] {
         }
     )
 };
+    _ = my_data;
     }
 }

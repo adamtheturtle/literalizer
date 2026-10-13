@@ -1,3 +1,4 @@
+#nullable enable annotations
 record Record1(int A, string B, object C);
 record Record0(Record1 Outer);
 class Check {
@@ -9,5 +10,6 @@ var my_data = new Record0(
         (object?)null
     )
 );
+    _ = my_data;
     }
 }

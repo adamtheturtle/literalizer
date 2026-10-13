@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 var my_data = (
     // first
@@ -11,3 +12,4 @@ my_data = (
     // second
     "b"
 );
+    _ = my_data;

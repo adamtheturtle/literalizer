@@ -1,7 +1,9 @@
+#nullable enable annotations
 record Record0(int One);
 class Check {
 protected Record0 my_data = new Record0(
     1
 );
-    public static void Main() {}
+    public static void Main() { }
+    public void _Read_my_data() { _ = my_data; }
 }

@@ -1,4 +1,6 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, object> {
     ["outer"] = new Dictionary<string, object> {["a"] = 1, ["b"] = "x", ["c"] = (object?)null}
 };
+    _ = my_data;

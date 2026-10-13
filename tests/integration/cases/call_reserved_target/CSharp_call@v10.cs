@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 class Check {
 static object op(object value = null) => null;

@@ -1,3 +1,4 @@
+#nullable enable annotations
 record Record0(string Call, object[] Args);
 class Check {
     public static void Main() {
@@ -8,5 +9,6 @@ var my_data = new Record0(
         "email"
     }
 );
+    _ = my_data;
     }
 }

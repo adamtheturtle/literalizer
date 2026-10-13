@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 var my_data = (
     /* before first: * / |# -} *) (* ) =# ]] %} ]# % #> */
@@ -6,3 +7,4 @@ var my_data = (
     "second"
     /* trailing: * / |# -} *) (* ) =# ]] %} ]# % #> */
 );
+    _ = my_data;

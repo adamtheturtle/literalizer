@@ -1,3 +1,4 @@
+#nullable enable annotations
 record Record0(int Quantity, ulong Big, double Ratio, string Label, bool Ok);
 class Check {
     public static void Main() {
@@ -8,5 +9,6 @@ var my_data = new Record0(
     "tag",
     true
 );
+    _ = my_data;
     }
 }

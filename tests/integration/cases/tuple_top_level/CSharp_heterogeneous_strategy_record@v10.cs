@@ -1,3 +1,4 @@
+#nullable enable annotations
 class Check {
     public static void Main() {
 var my_data = new object[] {
@@ -6,5 +7,6 @@ var my_data = new object[] {
     "a@gmail.com",
     100
 };
+    _ = my_data;
     }
 }

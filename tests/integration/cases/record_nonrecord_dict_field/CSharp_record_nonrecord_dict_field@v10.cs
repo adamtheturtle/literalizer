@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 record Record0(string Label, object Meta);
 class Check {
@@ -6,5 +7,6 @@ var my_data = new Record0(
     "tag",
     new Dictionary<string, object> {}
 );
+    _ = my_data;
     }
 }

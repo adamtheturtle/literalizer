@@ -1,3 +1,4 @@
+#nullable enable annotations
 class Check {
 static object make_widget(object count = null) => null;
     public static void Main() {

@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new HashSet<string> {
     "apple",  // inline comment
@@ -11,3 +12,4 @@ my_data = new HashSet<string> {
     "banana"
     // trailing
 };
+    _ = my_data;

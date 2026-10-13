@@ -1,3 +1,4 @@
+#nullable enable annotations
 record Record0(int[][] A, int[][] B);
 class Check {
     public static void Main() {
@@ -18,5 +19,6 @@ var my_data = new Record0(
         }
     }
 );
+    _ = my_data;
     }
 }

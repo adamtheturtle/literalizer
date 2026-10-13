@@ -1,3 +1,4 @@
+#nullable enable annotations
 record Record0(string Title, string[] Tags, int Priority);
 class Check {
     public static void Main() {
@@ -10,5 +11,6 @@ var my_data = new Record0(
     },
     2
 );
+    _ = my_data;
     }
 }

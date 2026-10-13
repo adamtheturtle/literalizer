@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 var my_data = (
     ("ADD", "alice", "hello"),
@@ -7,3 +8,4 @@ var my_data = (
         "5"  // removes "world"
     )
 );
+    _ = my_data;

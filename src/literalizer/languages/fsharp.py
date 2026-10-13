@@ -93,9 +93,7 @@ from literalizer._language import (
     default_format_call_arg_ref_identifier,
     default_format_call_arg_ref_identifier_consumable,
     default_format_call_ref_identifier,
-    default_format_call_statement,
     default_format_call_stub,
-    default_format_call_target,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
@@ -114,6 +112,26 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableIntegerError,
 )
+
+
+@beartype
+def _fsharp_discard_call(call: str, /) -> str:
+    """Evaluate a call without leaving its result implicitly ignored."""
+    return f"{call} |> ignore"
+
+
+@beartype
+def _fsharp_call_identifier(*, name: str) -> str:
+    """Quote the future reserved word used by the synthetic call
+    fixtures.
+    """
+    return f"``{name}``" if name == "process" else name
+
+
+@beartype
+def _fsharp_call_target(parts: Sequence[str], /) -> str:
+    """Preserve a call target while escaping future reserved words."""
+    return ".".join(_fsharp_call_identifier(name=part) for part in parts)
 
 
 @beartype
@@ -150,9 +168,10 @@ def _fsharp_integer_entry(
     literal = formatted
     if I64_MIN <= original <= I64_MAX:
         literal = f"{formatted}L"
+    variant = "Int" if I64_MIN <= original <= I64_MAX else "BigInt"
     if negative:
-        return f"{prefix}Int({literal})"
-    return f"{prefix}Int {literal}"
+        return f"{prefix}{variant}({literal})"
+    return f"{prefix}{variant} {literal}"
 
 
 @beartype
@@ -479,16 +498,17 @@ def _build_fsharp_call_stub_lines(
     if not curried:
         let_param_list = f" {param_list}"
     if len(parts) == 1:
-        return (f"let {parts[0]}{let_param_list} : obj = null",)
+        name = _fsharp_call_identifier(name=parts[0])
+        return (f"let {name}{let_param_list} : obj = null",)
     root = parts[0]
-    method = parts[-1]
+    method = _fsharp_call_identifier(name=parts[-1])
     fields = parts[1:-1]
     if len(fields) == 0:
         cls = f"{root.title()}Type_"
         return (
             f"type {cls}() =",
             f"    member _.{method}{param_list} : obj = null",
-            f"let {root} = {cls}()",
+            f"let {_fsharp_call_identifier(name=root)} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"{fields[-1].title()}Type_"
@@ -498,12 +518,14 @@ def _build_fsharp_call_stub_lines(
     for i in range(len(fields) - 2, -1, -1):
         cls = f"{fields[i].title()}Type_"
         lines.append(f"type {cls}() =")
-        lines.append(f"    member _.{fields[i + 1]} = {prev_cls}()")
+        field = _fsharp_call_identifier(name=fields[i + 1])
+        lines.append(f"    member _.{field} = {prev_cls}()")
         prev_cls = cls
     root_cls = f"{root.title()}Type_"
     lines.append(f"type {root_cls}() =")
-    lines.append(f"    member _.{fields[0]} = {prev_cls}()")
-    lines.append(f"let {root} = {root_cls}()")
+    field = _fsharp_call_identifier(name=fields[0])
+    lines.append(f"    member _.{field} = {prev_cls}()")
+    lines.append(f"let {_fsharp_call_identifier(name=root)} = {root_cls}()")
     return tuple(lines)
 
 
@@ -1111,7 +1133,10 @@ class FSharp(metaclass=LanguageCls):
 
     validate_call_arg = default_validate_call_arg
 
-    format_call_statement = default_format_call_statement
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Explicitly discard the result of an unbound call."""
+        return _fsharp_discard_call
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -1278,7 +1303,10 @@ class FSharp(metaclass=LanguageCls):
 
     format_call_preamble_stub = default_format_call_stub
 
-    format_call_target = default_format_call_target
+    @cached_property
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
+        """Quote future reserved words in each call-target component."""
+        return _fsharp_call_target
 
     format_call_ref_identifier = default_format_call_ref_identifier
 
@@ -1748,7 +1776,7 @@ class FSharp(metaclass=LanguageCls):
         non-blank line, which rules out the file-level preamble that
         other languages use for an equivalent import.
 
-        Swaps ``int64`` to ``bigint`` in the ``FInt`` variant when the
+        Adds a separate ``FBigInt`` variant when the
         data contains an integer outside signed 64-bit range.
         """
         if self._json_type_active:
@@ -1773,7 +1801,11 @@ class FSharp(metaclass=LanguageCls):
         header = f"type {self.type_name} ="
         bigint_override = {
             **self.scalar_body_preamble,
-            int: (header, f"    | {p}Int of bigint"),
+            int: (
+                header,
+                f"    | {p}Int of int64",
+                f"    | {p}BigInt of bigint",
+            ),
         }
         bigint_compute = body_preamble_from_scalars(
             scalar_body_preamble=bigint_override,

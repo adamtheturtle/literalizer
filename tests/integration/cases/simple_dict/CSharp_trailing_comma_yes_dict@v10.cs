@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, object> {
     ["name"] = "Alice",
@@ -5,3 +6,4 @@ var my_data = new Dictionary<string, object> {
     ["active"] = true,
     ["score"] = (object?)null,
 };
+    _ = my_data;

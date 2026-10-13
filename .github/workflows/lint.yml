@@ -1415,7 +1415,7 @@ jobs:
             printf '#load "%s"\n' "$(realpath "$f")"
           done < /tmp/files-fs > "$driver"
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
-            dotnet fsi --nologo --langversion:8.0 --exec "$driver"
+            dotnet fsi --nologo --warnaserror+ --langversion:8.0 --exec "$driver"
 
       # Basic JSON -> F# -> JSON round-trip (issue 2653). Runs here
       # because this is the job with the .NET toolchain; `uv run`

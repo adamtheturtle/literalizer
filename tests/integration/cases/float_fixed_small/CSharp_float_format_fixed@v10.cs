@@ -1,5 +1,7 @@
+#nullable enable annotations
 using System;
 var my_data = (
     0.000000001,
     -0.000000001
 );
+    _ = my_data;

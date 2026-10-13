@@ -1,3 +1,4 @@
+#nullable enable annotations
 record Record0(int A, string B);
 class Check {
     public static void Main() {
@@ -9,5 +10,6 @@ my_data = new Record0(
     1,
     "x"
 );
+    _ = my_data;
     }
 }

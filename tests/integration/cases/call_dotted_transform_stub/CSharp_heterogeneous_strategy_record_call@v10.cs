@@ -1,3 +1,4 @@
+#nullable enable annotations
 class Check {
 static object process(object value = null) => null;
 class TracerType_ { public object emit(object _arg = null) => null; }

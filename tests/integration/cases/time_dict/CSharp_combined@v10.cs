@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 using System.Collections.Generic;
 var my_data = new Dictionary<string, TimeOnly> {
@@ -10,3 +11,4 @@ my_data = new Dictionary<string, TimeOnly> {
     ["afternoon"] = new TimeOnly(14, 15, 0),
     ["evening"] = new TimeOnly(23, 59, 59)
 };
+    _ = my_data;

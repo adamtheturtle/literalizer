@@ -4,6 +4,6 @@ type Val =
     | FNull
     | FStr of string
     | FList of Val list
-let process (_value: obj) : obj = null
-process(FNull)
-process(FStr "hello")
+let ``process`` (_value: obj) : obj = null
+``process``(FNull) |> ignore
+``process``(FStr "hello") |> ignore

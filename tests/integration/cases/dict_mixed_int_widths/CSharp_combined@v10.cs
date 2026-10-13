@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, object> {
     ["a"] = 1,
@@ -9,3 +10,4 @@ my_data = new Dictionary<string, object> {
     ["b"] = 3000000000,
     ["c"] = "x"
 };
+    _ = my_data;

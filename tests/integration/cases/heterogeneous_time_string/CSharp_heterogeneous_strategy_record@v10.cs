@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 record Record0(object[] Vals);
 class Check {
@@ -8,5 +9,6 @@ var my_data = new Record0(
         "hello"
     }
 );
+    _ = my_data;
     }
 }

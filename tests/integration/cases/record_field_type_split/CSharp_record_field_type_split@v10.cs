@@ -1,3 +1,4 @@
+#nullable enable annotations
 record Record1(int Status);
 record Record2(string Status);
 record Record4(string Kind, bool Urgent);
@@ -45,5 +46,6 @@ var my_data = new Record0(
         }
     )
 );
+    _ = my_data;
     }
 }

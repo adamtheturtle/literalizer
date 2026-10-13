@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 var my_data = (
     1,
@@ -9,3 +10,4 @@ my_data = (
     2.5,
     3
 );
+    _ = my_data;

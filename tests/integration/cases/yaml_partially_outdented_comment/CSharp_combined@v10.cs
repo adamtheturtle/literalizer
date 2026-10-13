@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 using System;
 var my_data = new Dictionary<string, object> {
@@ -18,3 +19,4 @@ my_data = new Dictionary<string, object> {
     // Outdented from the inner mapping too, so the root claims this.
     ["d"] = 3
 };
+    _ = my_data;

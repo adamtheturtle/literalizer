@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 using System;
 var my_data = (
@@ -10,3 +11,4 @@ my_data = (
     new HashSet<int> {1, 2},
     ValueTuple.Create()
 );
+    _ = my_data;

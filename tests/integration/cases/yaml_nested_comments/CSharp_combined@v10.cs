@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 using System;
 var my_data = new Dictionary<string, object> {
@@ -20,3 +21,4 @@ my_data = new Dictionary<string, object> {
         2  // second
     )
 };
+    _ = my_data;

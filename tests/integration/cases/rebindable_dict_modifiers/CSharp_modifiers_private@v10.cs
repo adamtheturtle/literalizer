@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 class Check {
 private Dictionary<string, int> my_data = new Dictionary<string, int> {
@@ -12,5 +13,6 @@ my_data = new Dictionary<string, int> {
     ["two"] = 2
 };
     }
-    public static void Main() {}
+    public static void Main() { }
+    public void _Read_my_data() { _ = my_data; }
 }

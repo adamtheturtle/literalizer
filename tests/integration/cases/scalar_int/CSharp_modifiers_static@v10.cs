@@ -1,4 +1,5 @@
+#nullable enable annotations
 class Check {
 static int my_data = 42;
-    public static void Main() {}
+    public static void Main() { _ = my_data; }
 }

@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, string> {
     ["0a"] = "first",
@@ -7,3 +8,4 @@ my_data = new Dictionary<string, string> {
     ["0a"] = "first",
     ["1b"] = "second"
 };
+    _ = my_data;

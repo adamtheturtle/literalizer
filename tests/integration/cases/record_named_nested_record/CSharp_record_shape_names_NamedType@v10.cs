@@ -1,3 +1,4 @@
+#nullable enable annotations
 record NamedType(int Id, string Label, bool Enabled, int[] RelatedIds);
 record Record0(string Collection, NamedType FeaturedEntry);
 class Check {
@@ -14,5 +15,6 @@ var my_data = new Record0(
         }
     )
 );
+    _ = my_data;
     }
 }

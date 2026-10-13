@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, object> {
     // Server configuration
@@ -6,3 +7,4 @@ var my_data = new Dictionary<string, object> {
     // Enable debug mode
     ["debug"] = true
 };
+    _ = my_data;

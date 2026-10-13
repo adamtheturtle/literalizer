@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 class Check {
 class Http_ClientType_ { public object fetch(object payload = null) => null; }

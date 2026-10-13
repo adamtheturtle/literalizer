@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, object> {
     ["a"] = (object?)null,
@@ -9,3 +10,4 @@ my_data = new Dictionary<string, object> {
     ["b"] = (object?)null
     // trailing
 };
+    _ = my_data;

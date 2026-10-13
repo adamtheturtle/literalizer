@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 class Check {
     public static void Main() {
@@ -6,5 +7,6 @@ var my_data = new Dictionary<string, object> {
     ["age"] = 30,
     ["active"] = true
 };
+    _ = my_data;
     }
 }

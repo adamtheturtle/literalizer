@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, int> {
     ["a_b"] = 1,
@@ -11,3 +12,4 @@ my_data = new Dictionary<string, int> {
     ["averyveryverylongkeynamethatgoesonandonandon"] = 3,
     ["averyveryverylongkeynamethatgoesonandmore"] = 4
 };
+    _ = my_data;

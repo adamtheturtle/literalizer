@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 class Check {
 class ThrottlerType_ { public object check(object user_id = null, object ts = null) => null; }

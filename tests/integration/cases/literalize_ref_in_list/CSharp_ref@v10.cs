@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 using System;
 var ValX = new Dictionary<string, string> {
@@ -10,3 +11,4 @@ var my_data = (
     ValX,
     ValY
 );
+    _ = my_data;

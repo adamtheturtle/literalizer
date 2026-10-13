@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 record Record0(Dictionary<string, object> Values, bool Flag, Dictionary<string, object> NestedValues, Dictionary<string, object> ListValues);
 class Check {
@@ -18,5 +19,6 @@ var my_data = new Record0(
         }
     }
 );
+    _ = my_data;
     }
 }

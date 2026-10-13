@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 class Check {
 static object process(object value = null, object label = null) => null;

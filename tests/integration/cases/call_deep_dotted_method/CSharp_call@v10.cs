@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 class Check {
 class ClientType_ { public object post(object data = null) => null; }

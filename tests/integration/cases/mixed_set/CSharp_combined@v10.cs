@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new HashSet<object> {
     true,
@@ -9,3 +10,4 @@ my_data = new HashSet<object> {
     42,
     "apple"
 };
+    _ = my_data;

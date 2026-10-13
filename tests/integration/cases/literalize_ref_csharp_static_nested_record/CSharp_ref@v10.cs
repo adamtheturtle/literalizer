@@ -1,3 +1,4 @@
+#nullable enable annotations
 record Record1(string X);
 record Record2(int X);
 record Record0(Record1 Direct, Record2 Bound);
@@ -11,5 +12,5 @@ static Record0 my_data = new Record0(
     ),
     RefData
 );
-    public static void Main() {}
+    public static void Main() { _ = my_data; }
 }

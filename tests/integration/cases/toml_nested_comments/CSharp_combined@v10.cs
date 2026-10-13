@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 using System;
 var my_data = new Dictionary<string, object> {
@@ -22,3 +23,4 @@ my_data = new Dictionary<string, object> {
     // Inside the table.
     ["table"] = new Dictionary<string, int> {["inner"] = 4}
 };
+    _ = my_data;

@@ -1,5 +1,7 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var ABC = new Dictionary<string, string> {
     ["_"] = "_"
 };
 var my_data = ABC;
+    _ = my_data;

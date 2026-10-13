@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 using System.Collections.Generic;
 var Deep = (
@@ -17,3 +18,4 @@ var my_data = new Dictionary<string, object> {
         }
     }
 };
+    _ = my_data;

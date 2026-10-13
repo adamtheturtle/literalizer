@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 var RefX = 3;
 var my_data = (
@@ -5,3 +6,4 @@ var my_data = (
     1,
     2
 );
+    _ = my_data;

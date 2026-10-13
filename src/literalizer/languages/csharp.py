@@ -99,6 +99,7 @@ from literalizer._language import (
     JsonType,
     KeywordCallStyle,
     LanguageCls,
+    LeadingPreamble,
     ModifierCombination,
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
@@ -131,9 +132,7 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_data_preamble,
     no_format_integer_widened,
-    no_leading_preamble,
     prepend_body_preamble,
-    wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._statements import split_trailing_line_comments
@@ -170,6 +169,15 @@ A record named after one of these either shadows the
 type the same file uses or clashes with what its import line brings
 in, so the compiler rejects the output (issue #4536).
 """
+
+
+@beartype
+def _csharp_annotation_context(
+    _data: Value, /, *, has_variable_declaration: bool
+) -> tuple[str, ...]:
+    """Declare the annotation context for generated ``nullable`` types."""
+    del has_variable_declaration
+    return ("#nullable enable annotations",)
 
 
 @beartype
@@ -822,7 +830,13 @@ class CSharp(metaclass=LanguageCls):
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
-    leading_preamble = no_leading_preamble
+    @cached_property
+    def leading_preamble(self) -> LeadingPreamble:
+        """Permit ``nullable`` annotations without enabling ``nullable``
+        warnings.
+        """
+        return _csharp_annotation_context
+
     extension = ".cs"
     pygments_name = "csharp"
     stringifies_nested_collections = False
@@ -1496,6 +1510,12 @@ class CSharp(metaclass=LanguageCls):
         which is the only context where ``var`` declarations are valid.
         """
         body_preamble = context.body_preamble
+        variable_name = context.variable_name
+        use_line = (
+            f"\n{self.indent}_ = {variable_name};"
+            if variable_name != ""
+            else ""
+        )
         stub_lines = context.class_preamble
         stub_block = ""
         if len(stub_lines) > 0:
@@ -1506,8 +1526,22 @@ class CSharp(metaclass=LanguageCls):
                 f"{preamble_block}class Check {{\n"
                 f"{stub_block}"
                 f"{content}\n"
-                f"{self.indent}public static void Main() {{}}\n"
-                "}"
+                f"{self.indent}public static void Main() {{"
+                + (
+                    f" _ = {variable_name};"
+                    if _CSharpModifiers.STATIC in context.modifiers
+                    else ""
+                )
+                + " }\n"
+                + (
+                    ""
+                    if _CSharpModifiers.STATIC in context.modifiers
+                    else (
+                        f"{self.indent}public void _Read_{variable_name}() "
+                        f"{{ _ = {variable_name}; }}\n"
+                    )
+                )
+                + "}"
             )
         if len(stub_lines) > 0:
             body = prepend_body_preamble(
@@ -1518,7 +1552,7 @@ class CSharp(metaclass=LanguageCls):
                 f"class Check {{\n"
                 f"{stub_block}"
                 f"{self.indent}public static void Main() {{\n"
-                f"{body}\n"
+                f"{body}{use_line}\n"
                 f"{self.indent}}}\n"
                 f"}}"
             )
@@ -1530,12 +1564,12 @@ class CSharp(metaclass=LanguageCls):
             return (
                 f"class Check {{\n"
                 f"{self.indent}public static void Main() {{\n"
-                f"{body}\n"
+                f"{body}{use_line}\n"
                 f"{self.indent}}}\n"
                 f"}}"
             )
         return wrap_in_file_noop(
-            content=content,
+            content=content + use_line,
             context=context,
         )
 
@@ -1578,9 +1612,8 @@ class CSharp(metaclass=LanguageCls):
                 content=declaration + "\n" + assignment,
                 context=context,
             )
-        return wrap_combined_in_file_noop(
-            declaration=declaration,
-            assignment=assignment,
+        return self.wrap_in_file(
+            content=declaration + "\n" + assignment,
             context=context,
         )
 

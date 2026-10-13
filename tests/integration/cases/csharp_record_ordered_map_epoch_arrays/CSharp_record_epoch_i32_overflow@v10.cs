@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 record Record0(Dictionary<string, object> Values, bool Flag, long[][] DirectArrays);
 class Check {
@@ -43,5 +44,6 @@ var my_data = new Record0(
         new long[] {}
     }
 );
+    _ = my_data;
     }
 }

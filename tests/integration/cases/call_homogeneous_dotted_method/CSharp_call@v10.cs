@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 class Check {
 class ClientType_ { public object fetch(object value = null) => null; }

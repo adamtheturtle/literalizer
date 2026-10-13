@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 var my_data = (
     double.PositiveInfinity,
@@ -9,3 +10,4 @@ my_data = (
     double.NegativeInfinity,
     double.NaN
 );
+    _ = my_data;

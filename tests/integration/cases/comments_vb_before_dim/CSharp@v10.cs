@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, object> {
     // Configuration
@@ -5,3 +6,4 @@ var my_data = new Dictionary<string, object> {
     // Port setting
     ["port"] = 3000
 };
+    _ = my_data;

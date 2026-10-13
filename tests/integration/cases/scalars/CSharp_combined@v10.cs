@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 var my_data = (
     42,
@@ -13,3 +14,4 @@ my_data = (
     false,
     "hello \"world\""
 );
+    _ = my_data;

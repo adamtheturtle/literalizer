@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 var my_data = (
     true,
@@ -5,3 +6,4 @@ var my_data = (
     (1, 2),
     (object?)null
 );
+    _ = my_data;

@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 record Record1(int[] Numbers, string[] Strings);
 record Record0(Dictionary<string, object> OmapValue, Record1 SiblingLists, string[] RefMarkerPresent);
@@ -22,5 +23,6 @@ var my_data = new Record0(
         "z"
     }
 );
+    _ = my_data;
     }
 }

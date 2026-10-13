@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 record Record1(string Kind, string PrId);
 record Record0(string Name, Record1 Input, Dictionary<string, string> Expected);
@@ -26,5 +27,6 @@ var my_data = new[] {
         }
     )
 };
+    _ = my_data;
     }
 }

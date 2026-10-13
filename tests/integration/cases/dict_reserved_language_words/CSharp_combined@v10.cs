@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, int> {
     ["assert"] = 1,
@@ -41,3 +42,4 @@ my_data = new Dictionary<string, int> {
     ["true"] = 1,
     ["ordinary"] = 1
 };
+    _ = my_data;

@@ -1,3 +1,4 @@
+#nullable enable annotations
 class Check {
 static object process(object data = null) => null;
     public static void Main() {

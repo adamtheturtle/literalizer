@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 var my_data = (
     @"C:\path\to\file",
@@ -9,3 +10,4 @@ var my_data = (
     @"line1\nline2
 with newline"
 );
+    _ = my_data;

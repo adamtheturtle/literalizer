@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 using System.Collections.Generic;
 var my_data = new Dictionary<string, object> {
@@ -10,3 +11,4 @@ var my_data = new Dictionary<string, object> {
     ["dt"] = new DateTime(2024, 1, 15, 12, 0, 0),
     ["by"] = "48656c6c6f"
 };
+    _ = my_data;

@@ -16,6 +16,7 @@ var references = tpa.Split(Path.PathSeparator)
 // `<Nullable>disable</Nullable>` and `<ImplicitUsings>disable</ImplicitUsings>`
 // — the fixtures bring their own `using` directives.
 var options = new CSharpCompilationOptions(OutputKind.ConsoleApplication)
+    .WithGeneralDiagnosticOption(ReportDiagnostic.Error)
     .WithNullableContextOptions(NullableContextOptions.Disable);
 
 // `LanguageVersion.CSharp10` matches `CSharp.language_version` in

@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System;
 class Check {
 static object process(object known_value = null, object nested_missing = null) => null;

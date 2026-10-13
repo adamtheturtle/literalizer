@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new SortedSet<long> {
     -2147483649,
@@ -6,3 +7,4 @@ var my_data = new SortedSet<long> {
     2147483648,
     4085195400
 };
+    _ = my_data;

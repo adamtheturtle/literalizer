@@ -1,3 +1,4 @@
+#nullable enable annotations
 record Record1(string Name, int Age);
 record Record0(int Id, Record1 Owner);
 class Check {
@@ -9,5 +10,6 @@ var my_data = new Record0(
         30
     )
 );
+    _ = my_data;
     }
 }

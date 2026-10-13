@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 using System;
 var my_data = new Dictionary<string, object> {
@@ -7,3 +8,4 @@ var my_data = new Dictionary<string, object> {
     ),
     ["second"] = 3  // About the second key.
 };
+    _ = my_data;

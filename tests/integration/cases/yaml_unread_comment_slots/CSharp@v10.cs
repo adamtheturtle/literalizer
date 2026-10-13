@@ -1,3 +1,4 @@
+#nullable enable annotations
 using System.Collections.Generic;
 using System;
 var my_data = new Dictionary<string, object> {
@@ -19,3 +20,4 @@ var my_data = new Dictionary<string, object> {
     ["alias"] = 4
     // On the alias.
 };
+    _ = my_data;
