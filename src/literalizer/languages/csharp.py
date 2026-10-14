@@ -1749,7 +1749,7 @@ class CSharp(metaclass=LanguageCls):
         formats (so an ``ISO`` datetime field is typed ``string``,
         matching the rendered literal).  A type with no entry in that
         mapping (e.g. ``NoneType``) yields ``None`` so the caller can
-        fall back to the nullable top type ``object?``.
+        fall back to the top type ``object?`` that permits null.
         """
         cfg = self._opener_config
         return cfg.element_to_type(
