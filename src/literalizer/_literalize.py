@@ -7965,6 +7965,7 @@ def _wrap_call_result_in_file(
     )
 
 
+@beartype
 class _ReferenceValues(dict[str, Value]):
     """Inference hints with separate knowledge of actual null bindings."""
 

@@ -261,7 +261,7 @@ def _apply_elm_float_wrapper(
 ) -> str:
     """Format a float with a constructor prefix."""
     formatted = inner(value)
-    if formatted.startswith("-"):
+    if math.copysign(1, value) < 0:
         return f"{prefix}Float ({formatted})"
     return f"{prefix}Float {formatted}"
 
@@ -636,14 +636,16 @@ _JSON_ENCODE_VALUE_TYPE = "Json.Encode.Value"
 
 
 @beartype
-def _format_elm_json_with_ctor(formatted: str, ctor: str) -> str:
+def _format_elm_json_with_ctor(
+    formatted: str, ctor: str, *, negative: bool
+) -> str:
     """Apply ``ctor`` to a ``formatted`` numeric literal.
 
     Elm parses ``Json.Encode.int -3`` as the subtraction
     ``Json.Encode.int - 3``, so negative numeric arguments are wrapped in
     parentheses; positive numerals pass through bare.
     """
-    if formatted.startswith("-"):
+    if negative:
         return f"{ctor} ({formatted})"
     return f"{ctor} {formatted}"
 
@@ -657,7 +659,7 @@ def _build_elm_json_int_formatter(
     def _format(value: int) -> str:
         """Apply the ``Json.Encode.int`` constructor."""
         return _format_elm_json_with_ctor(
-            formatted=base(value), ctor="Json.Encode.int"
+            formatted=base(value), ctor="Json.Encode.int", negative=value < 0
         )
 
     return _format
@@ -672,7 +674,9 @@ def _build_elm_json_float_formatter(
     def _format(value: float) -> str:
         """Apply the ``Json.Encode.float`` constructor."""
         return _format_elm_json_with_ctor(
-            formatted=inner(value), ctor="Json.Encode.float"
+            formatted=inner(value),
+            ctor="Json.Encode.float",
+            negative=math.copysign(1, value) < 0,
         )
 
     return _format
