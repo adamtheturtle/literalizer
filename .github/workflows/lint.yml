@@ -2512,7 +2512,7 @@ jobs:
             printf '  val _%s = %s\n' "$name" "$name" >> "$main"
           done < /tmp/files-to-lint
           printf '}\n' >> "$main"
-          scala-cli run "$workspace" -S 3 \
+          scala-cli run "$workspace" --server=false -S 3 --scalac-option -deprecation --scalac-option -Werror \
             --dep io.circe::circe-core:0.14.10 \
             --main-class __run
       # `uv` is needed by the `Scala roundtrip` step below; it runs the
