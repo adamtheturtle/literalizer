@@ -9,3 +9,4 @@ my_data = (
     ValueTuple.Create(),
     ValueTuple.Create((3, 4))
 );
+    _ = my_data;

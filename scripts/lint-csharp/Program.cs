@@ -12,11 +12,11 @@ var references = tpa.Split(Path.PathSeparator)
     .Select(f => (MetadataReference)MetadataReference.CreateFromFile(f))
     .ToList();
 
-// Match the per-fixture .csproj that this host replaces:
-// `<Nullable>disable</Nullable>` and `<ImplicitUsings>disable</ImplicitUsings>`
-// — the fixtures bring their own `using` directives.
+// Check annotations and nullable flow together, matching the host project
+// and round-trip project. Fixtures bring their own `using` directives.
 var options = new CSharpCompilationOptions(OutputKind.ConsoleApplication)
-    .WithNullableContextOptions(NullableContextOptions.Disable);
+    .WithGeneralDiagnosticOption(ReportDiagnostic.Error)
+    .WithNullableContextOptions(NullableContextOptions.Enable);
 
 // `LanguageVersion.CSharp10` matches `CSharp.language_version` in
 // `src/literalizer/languages/csharp.py`; keep them in sync.

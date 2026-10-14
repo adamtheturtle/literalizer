@@ -9,3 +9,4 @@ my_data = (
     false,
     true
 );
+    _ = my_data;

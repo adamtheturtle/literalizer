@@ -6,5 +6,6 @@ var my_data = new Record0(
     3000000000,
     "x"
 );
+    _ = my_data;
     }
 }

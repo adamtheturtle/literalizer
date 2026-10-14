@@ -13,5 +13,6 @@ var my_data = new Record0(
         30
     )
 );
+    _ = my_data;
     }
 }

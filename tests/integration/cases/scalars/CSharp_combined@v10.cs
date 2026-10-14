@@ -13,3 +13,4 @@ my_data = (
     false,
     "hello \"world\""
 );
+    _ = my_data;

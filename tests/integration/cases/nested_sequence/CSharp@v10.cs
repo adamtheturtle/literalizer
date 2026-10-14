@@ -5,3 +5,4 @@ var my_data = (
     (1, 2),
     (object?)null
 );
+    _ = my_data;

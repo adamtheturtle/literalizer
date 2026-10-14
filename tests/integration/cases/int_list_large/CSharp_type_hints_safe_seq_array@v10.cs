@@ -4,3 +4,4 @@ var my_data = new int[] {
     255,
     -10
 };
+    _ = my_data;

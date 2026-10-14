@@ -7,3 +7,4 @@ my_data = new Dictionary<string, string> {
     ["0a"] = "first",
     ["1b"] = "second"
 };
+    _ = my_data;

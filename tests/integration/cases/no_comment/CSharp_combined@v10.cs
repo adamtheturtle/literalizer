@@ -5,3 +5,4 @@ var my_data = new Dictionary<string, string> {
 my_data = new Dictionary<string, string> {
     ["message"] = "no comment here"
 };
+    _ = my_data;

@@ -3,7 +3,7 @@ module Main
 type Val =
     | FInt of int64
     | FList of Val list
-let process (_data: obj, _count: obj) : obj = null
+let ``process`` (_data: obj, _count: obj) : obj = null
 let myVar: Val = FList [
     FInt 1L;
     FInt 2L;
@@ -14,5 +14,5 @@ let myOther: Val = FList [
     FInt 5L;
     FInt 6L
 ]
-process(myVar, FInt 42L)
-process(myOther, FInt 7L)
+``process``(myVar, FInt 42L) |> ignore
+``process``(myOther, FInt 7L) |> ignore

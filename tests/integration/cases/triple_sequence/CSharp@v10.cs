@@ -4,3 +4,4 @@ var my_data = (
     "hello",
     true
 );
+    _ = my_data;

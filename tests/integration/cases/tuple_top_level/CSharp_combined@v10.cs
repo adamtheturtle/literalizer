@@ -11,3 +11,4 @@ my_data = (
     "a@gmail.com",
     100
 );
+    _ = my_data;

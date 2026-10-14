@@ -20,3 +20,4 @@ var my_data = new Dictionary<string, int> {
     ["true"] = 1,
     ["ordinary"] = 1
 };
+    _ = my_data;

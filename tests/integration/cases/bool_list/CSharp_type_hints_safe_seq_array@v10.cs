@@ -3,3 +3,4 @@ var my_data = new bool[] {
     false,
     true
 };
+    _ = my_data;

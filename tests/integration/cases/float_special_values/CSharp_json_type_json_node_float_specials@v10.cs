@@ -4,3 +4,4 @@ JsonNode? my_data = new JsonArray {
     double.NegativeInfinity,
     double.NaN
 };
+    _ = my_data;

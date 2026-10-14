@@ -133,7 +133,6 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
-    wrap_combined_in_file_noop,
     wrap_in_file_noop,
 )
 from literalizer._statements import split_trailing_line_comments
@@ -323,7 +322,7 @@ def _csharp_scalar_type(
         case str() | bytes():
             result = "string"
         case _:
-            result = "object"
+            result = "object?"
     return result
 
 
@@ -338,7 +337,7 @@ def _csharp_common_element_type(
 ) -> str:
     """Return the common C# type for a list of elements."""
     if len(items) == 0:
-        return "object"
+        return "object?"
     types = {
         _csharp_type_hint(
             data=item,
@@ -353,7 +352,7 @@ def _csharp_common_element_type(
         return next(iter(types))
     if types == {"int", "double"}:
         return "double"
-    return "object"
+    return "object?"
 
 
 @beartype
@@ -556,9 +555,9 @@ def _csharp_call_stub(
     named-argument call styles bind to real parameters instead of
     failing at runtime.
     """
-    param_list = ", ".join(f"object {p} = null" for p in params)
+    param_list = ", ".join(f"object? {p} = null" for p in params)
     if len(parts) == 1:
-        return (f"static object {parts[0]}({param_list}) => null;",)
+        return (f"static object? {parts[0]}({param_list}) => null;",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -567,7 +566,7 @@ def _csharp_call_stub(
         return (
             (
                 f"class {type_name} {{"
-                f" public object {method}({param_list}) => null; }}"
+                f" public object? {method}({param_list}) => null; }}"
             ),
             f"static {type_name} {root} = new {type_name}();",
         )
@@ -575,7 +574,7 @@ def _csharp_call_stub(
     inner_type = f"{fields[-1].title()}Type_"
     lines.append(
         f"class {inner_type} {{"
-        f" public object {method}({param_list}) => null; }}"
+        f" public object? {method}({param_list}) => null; }}"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
@@ -803,7 +802,7 @@ class CSharp(metaclass=LanguageCls):
                 f"var {name} = {comments.code};" + comments.trailing_comments
             )
         return (
-            f"{prefix}object {name} = {comments.code};"
+            f"{prefix}object? {name} = {comments.code};"
             + comments.trailing_comments
         )
 
@@ -823,6 +822,7 @@ class CSharp(metaclass=LanguageCls):
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
     leading_preamble = no_leading_preamble
+
     extension = ".cs"
     pygments_name = "csharp"
     stringifies_nested_collections = False
@@ -985,7 +985,7 @@ class CSharp(metaclass=LanguageCls):
         dict_opener_template="new Dictionary<{key_type}, {type_name}> {{",
         set_opener_template="new HashSet<{type_name}> {{",
         dict_type_template="Dictionary<{key_type}, {inner}>",
-        fallback_value_type="object",
+        fallback_value_type="object?",
     )
 
     class DateFormats(DateFormatEnum):
@@ -1496,6 +1496,12 @@ class CSharp(metaclass=LanguageCls):
         which is the only context where ``var`` declarations are valid.
         """
         body_preamble = context.body_preamble
+        variable_name = context.variable_name
+        use_line = (
+            f"\n{self.indent}_ = {variable_name};"
+            if variable_name != ""
+            else ""
+        )
         stub_lines = context.class_preamble
         stub_block = ""
         if len(stub_lines) > 0:
@@ -1506,8 +1512,22 @@ class CSharp(metaclass=LanguageCls):
                 f"{preamble_block}class Check {{\n"
                 f"{stub_block}"
                 f"{content}\n"
-                f"{self.indent}public static void Main() {{}}\n"
-                "}"
+                f"{self.indent}public static void Main() {{"
+                + (
+                    f" _ = {variable_name};"
+                    if _CSharpModifiers.STATIC in context.modifiers
+                    else ""
+                )
+                + " }\n"
+                + (
+                    ""
+                    if _CSharpModifiers.STATIC in context.modifiers
+                    else (
+                        f"{self.indent}public void _Read_{variable_name}() "
+                        f"{{ _ = {variable_name}; }}\n"
+                    )
+                )
+                + "}"
             )
         if len(stub_lines) > 0:
             body = prepend_body_preamble(
@@ -1518,7 +1538,7 @@ class CSharp(metaclass=LanguageCls):
                 f"class Check {{\n"
                 f"{stub_block}"
                 f"{self.indent}public static void Main() {{\n"
-                f"{body}\n"
+                f"{body}{use_line}\n"
                 f"{self.indent}}}\n"
                 f"}}"
             )
@@ -1530,12 +1550,12 @@ class CSharp(metaclass=LanguageCls):
             return (
                 f"class Check {{\n"
                 f"{self.indent}public static void Main() {{\n"
-                f"{body}\n"
+                f"{body}{use_line}\n"
                 f"{self.indent}}}\n"
                 f"}}"
             )
         return wrap_in_file_noop(
-            content=content,
+            content=content + use_line,
             context=context,
         )
 
@@ -1578,9 +1598,8 @@ class CSharp(metaclass=LanguageCls):
                 content=declaration + "\n" + assignment,
                 context=context,
             )
-        return wrap_combined_in_file_noop(
-            declaration=declaration,
-            assignment=assignment,
+        return self.wrap_in_file(
+            content=declaration + "\n" + assignment,
             context=context,
         )
 
@@ -1589,10 +1608,10 @@ class CSharp(metaclass=LanguageCls):
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.TUPLE
     set_format: SetFormats = SetFormats.HASH_SET
-    default_set_element_type: str = "object"
-    default_sequence_element_type: str = "object"
+    default_set_element_type: str = "object?"
+    default_sequence_element_type: str = "object?"
     default_dict_key_type: str = "string"
-    default_dict_value_type: str = "object"
+    default_dict_value_type: str = "object?"
     variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_SLASH
     declaration_style: DeclarationStyles = DeclarationStyles.VAR
@@ -1730,7 +1749,7 @@ class CSharp(metaclass=LanguageCls):
         formats (so an ``ISO`` datetime field is typed ``string``,
         matching the rendered literal).  A type with no entry in that
         mapping (e.g. ``NoneType``) yields ``None`` so the caller can
-        fall back to the top type ``object``.
+        fall back to the top type ``object?`` that permits null.
         """
         cfg = self._opener_config
         return cfg.element_to_type(
@@ -1747,7 +1766,7 @@ class CSharp(metaclass=LanguageCls):
     def _csharp_scalar_field_type(self, *, value: Value) -> str:
         """Resolve the scalar field type with the object fallback."""
         scalar_type = self._csharp_record_scalar_resolver(type(value))
-        field_type = "object"
+        field_type = "object?"
         if scalar_type is not None and scalar_type != "":
             field_type = scalar_type
         return field_type
@@ -1776,10 +1795,10 @@ class CSharp(metaclass=LanguageCls):
         A record-eligible dict with no ``record_name`` was widened out
         of record inference because its nested sibling maps cannot
         share one shape.  Type that field as ``Dictionary<string,
-        object>`` so the uniform enclosing record survives (#2913).  A
+        object?>`` so the uniform enclosing record survives (#2913).  A
         set or a genuinely non-record dict (empty or non-string-keyed)
         still has no precise component type; per the cross-language
-        decision in #2317, C# folds it into the ``object`` top type.
+        decision in #2317, C# folds it into the ``object?`` top type.
         """
         if request.record_name is not None:
             return request.record_name
@@ -1802,7 +1821,7 @@ class CSharp(metaclass=LanguageCls):
             case dict() if record_shape_for_dict(value=value) is not None:
                 field_type = self._csharp_derecordized_map_field_type()
             case dict():
-                field_type = "object"
+                field_type = "object?"
             case list():
                 field_type = self._array_type(value).declared_type
             case _:
@@ -1854,7 +1873,7 @@ class CSharp(metaclass=LanguageCls):
             """Return the fallback-map opener for the current pass."""
             value_type = narrowing.value_type
             if value_type is None or value_type == "":
-                value_type = "object"
+                value_type = "object?"
             return f"new Dictionary<string, {value_type}> {{"
 
         return dataclasses.replace(
@@ -1870,7 +1889,7 @@ class CSharp(metaclass=LanguageCls):
         """Return the component type for a widened fallback map."""
         value_type = self._derecordized_map_narrowing.value_type
         if value_type is None or value_type == "":
-            value_type = "object"
+            value_type = "object?"
         return f"Dictionary<string, {value_type}>"
 
     def _csharp_narrow_derecordized_map_type(
@@ -1916,7 +1935,9 @@ class CSharp(metaclass=LanguageCls):
             )
             for scalar in scalars
         }
-        return single_concrete_type(types=scalar_types, fallback_type="object")
+        return single_concrete_type(
+            types=scalar_types, fallback_type="object?"
+        )
 
     @cached_property
     def _derecordized_map_narrowing(self) -> _CSharpWidenedMapNarrowing:

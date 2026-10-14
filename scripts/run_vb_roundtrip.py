@@ -41,6 +41,7 @@ _VBPROJ = (
     "    <OutputType>Exe</OutputType>\n"
     "    <TargetFramework>net8.0</TargetFramework>\n"
     "    <RollForward>LatestMajor</RollForward>\n"
+    "    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>\n"
     "    <OptionStrict>Off</OptionStrict>\n"
     "    <OptionInfer>On</OptionInfer>\n"
     "    <LangVersion>16.9</LangVersion>\n"

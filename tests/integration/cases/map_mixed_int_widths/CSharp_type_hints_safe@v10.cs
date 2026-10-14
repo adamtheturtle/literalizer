@@ -3,3 +3,4 @@ var my_data = new Dictionary<string, long> {
     ["a"] = 1,
     ["b"] = 1099511627776
 };
+    _ = my_data;

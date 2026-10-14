@@ -83,6 +83,7 @@ def main() -> None:
                 args=[
                     dotnet,
                     "fsi",
+                    "--warnaserror+",
                     "--nologo",
                     "--langversion:8.0",
                     "--exec",

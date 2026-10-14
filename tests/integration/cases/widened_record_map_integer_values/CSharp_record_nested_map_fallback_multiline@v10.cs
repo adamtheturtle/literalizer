@@ -14,5 +14,6 @@ var my_data = new[] {
         }
     )
 };
+    _ = my_data;
     }
 }

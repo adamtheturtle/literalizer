@@ -3,5 +3,5 @@ class Check {
     static Check() {
     my_data = 1;
     }
-    public static void Main() {}
+    public static void Main() { _ = my_data; }
 }

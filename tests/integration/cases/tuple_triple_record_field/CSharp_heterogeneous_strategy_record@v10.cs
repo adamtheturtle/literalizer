@@ -1,13 +1,14 @@
-record Record0(string Call, object[] Args);
+record Record0(string Call, object?[] Args);
 class Check {
     public static void Main() {
 var my_data = new Record0(
     "send",
-    new object[] {
+    new object?[] {
         1,
         "email",
         true
     }
 );
+    _ = my_data;
     }
 }

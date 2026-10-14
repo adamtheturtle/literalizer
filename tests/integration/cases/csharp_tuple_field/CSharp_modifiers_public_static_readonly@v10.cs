@@ -4,5 +4,5 @@ public static readonly (int, int) my_data = (
     1,
     2
 );
-    public static void Main() {}
+    public static void Main() { _ = my_data; }
 }
