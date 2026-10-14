@@ -7,5 +7,5 @@ fn main() {
         empty_values,
         integer_values,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

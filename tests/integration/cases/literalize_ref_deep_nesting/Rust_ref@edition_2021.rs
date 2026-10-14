@@ -17,5 +17,5 @@ fn main() {
             ])),
         ])),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

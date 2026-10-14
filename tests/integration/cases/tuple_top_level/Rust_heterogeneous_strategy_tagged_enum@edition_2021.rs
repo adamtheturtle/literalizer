@@ -1,5 +1,5 @@
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     I32(i32),
     Str(&'static str),
 }
@@ -10,5 +10,5 @@ fn main() {
         Value::Str("a@gmail.com"),
         Value::I32(100),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

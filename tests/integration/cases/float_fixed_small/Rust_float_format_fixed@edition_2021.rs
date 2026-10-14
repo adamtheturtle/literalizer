@@ -3,5 +3,5 @@ fn main() {
         0.000000001,
         -0.000000001,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -168,6 +168,12 @@ class VariantPolicy(  # noqa: NOD001
     file names a value to exercise it with.
     """
 
+    declaration_style_variable_names: dict[
+        Annotated[str, Field(min_length=1)],
+        Annotated[str, Field(min_length=1)],
+    ] = Field(default_factory=_empty_string_mapping)
+    """Variable names the declaration-style goldens select."""
+
     declaration_style_sequence_format_overrides: dict[
         Annotated[str, Field(min_length=1)],
         Annotated[str, Field(min_length=1)],

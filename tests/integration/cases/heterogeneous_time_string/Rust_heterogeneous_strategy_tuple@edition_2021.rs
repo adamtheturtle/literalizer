@@ -1,6 +1,6 @@
 #[derive(Clone)]
-struct Record0 {
-    vals: (&'static str, &'static str),
+pub struct Record0 {
+    pub vals: (&'static str, &'static str),
 }
 fn main() {
     let my_data = Record0 {
@@ -9,5 +9,5 @@ fn main() {
             "hello",
         ),
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

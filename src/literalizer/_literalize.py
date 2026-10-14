@@ -422,6 +422,7 @@ def _file_wrapper_context(
         modifiers = variable_form.modifiers
     return FileWrapperContext(
         variable_name="" if variable_form is None else variable_form.name,
+        bound_variable_names=(),
         modifiers=modifiers,
         body_preamble=body_preamble,
         class_preamble=class_preamble,
@@ -5143,6 +5144,7 @@ class _BoundRefComposition:
     """Per-ref declaration results paired with the main binding."""
 
     declarations: tuple[LiteralizeResult, ...]
+    bound_variable_names: tuple[str, ...]
     resolved_preamble_data: Value
     main_result: LiteralizeResult
     assignment_result: LiteralizeResult | None
@@ -5355,6 +5357,7 @@ def literalize_bound_refs(
         ref_key=ref_key,
     )
     decl_results: list[LiteralizeResult] = []
+    bound_variable_names: list[str] = []
     for name in ordered_names:
         bound_value = contextual_bound_refs[name]
         bound_modifiers = frozenset[enum.Enum]()
@@ -5372,6 +5375,7 @@ def literalize_bound_refs(
         converted_name = name
         if ref_case is not None:
             converted_name = ref_case.convert(name=name)
+        bound_variable_names.append(converted_name)
         decl_results.append(
             _literalize_value_binding(
                 value=bound_value,
@@ -5388,6 +5392,7 @@ def literalize_bound_refs(
         )
     composition = _BoundRefComposition(
         declarations=tuple(decl_results),
+        bound_variable_names=tuple(bound_variable_names),
         resolved_preamble_data=pre_form.data_for_preamble,
         main_result=main_result,
         assignment_result=assignment_result,
@@ -5630,6 +5635,9 @@ def _compose_bound_refs(
             )
         ),
         generated_body_preamble=unified_body_preamble,
+    )
+    context = dataclasses.replace(
+        context, bound_variable_names=composition.bound_variable_names
     )
     if composition.assignment_result is None:
         wrapped = language.wrap_in_file(

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 #[derive(Clone)]
-struct Record0 {
-    input: HashMap<&'static str, i32>,
+pub struct Record0 {
+    pub input: HashMap<&'static str, i32>,
 }
 fn main() {
     let my_data = vec![
@@ -16,5 +16,5 @@ fn main() {
             ]),
         },
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -7,5 +7,5 @@ fn main() {
             "5",  // removes "world"
         ],
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

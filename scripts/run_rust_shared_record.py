@@ -2,12 +2,13 @@
 
 Literalize both documents in :mod:`scripts.shared_record_common` under
 ``Rust(heterogeneous_strategy=RECORD, record_map_value_typing=WIDE)``,
-build one program from the *declaring* document's ``enum`` and ``struct``
-declarations plus both documents' ``vec![...]`` literals, and compile and
-run it with ``rustc``.  The dependent document's widened maps are all
-strings, so under the default ``NARROW`` typing they would render
-``HashMap<&'static str, &'static str>`` and fail to compile against the
-declaring document's ``HashMap<&'static str, Value>`` field.
+compile the *declaring* document's public ``enum`` and ``struct``
+declarations as a library, then construct and inspect both documents'
+``vec![...]`` literals in a separate consumer crate.  The dependent
+document's widened maps are all strings, so under the default ``NARROW``
+typing they would render ``HashMap<&'static str, &'static str>`` and fail
+to compile against the declaring document's ``HashMap<&'static str, Value>``
+field.
 
 This lives here, driven by a step of the ``lint-rust`` job in
 ``.github/workflows/lint.yml``, because that job is where the Rust
@@ -22,8 +23,8 @@ from scripts import roundtrip_common, shared_record_common
 _LABEL = "Rust shared-record"
 
 
-def _build_program() -> str:
-    """Return a runnable Rust program built from both documents."""
+def _build_sources() -> tuple[str, str]:
+    """Return a consumer program and its shared data-type library."""
     language = Rust(
         heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD,
         record_map_value_typing=Rust.record_map_value_typings.WIDE,
@@ -40,26 +41,30 @@ def _build_program() -> str:
         var_name=shared_record_common.DEPENDENT_VAR_NAME_SNAKE,
         pre_indent_level=1,
     )
-    # Only the declaring document's preamble is emitted; the dependent
-    # literals bind to the ``Value`` and ``Record0`` declarations it
-    # brings, which is the property under test.
+    # Both documents use only the declaring document's exported types.
     preamble = "\n".join((*declaring.preamble, *declaring.body_preamble))
     ok_document = shared_record_common.OK_DOCUMENT
-    return (
-        f"{preamble}\n"
+    program = (
+        "use std::collections::HashMap;\n"
+        "use record_data::{Record0, Value};\n"
         "fn main() {\n"
         f"{declaring.code}\n"
         f"{dependent.code}\n"
-        f"    let _ = {shared_record_common.DECLARING_VAR_NAME_SNAKE};\n"
-        f"    let _ = {shared_record_common.DEPENDENT_VAR_NAME_SNAKE};\n"
+        '    assert_eq!(declaring_data[0].name, "row_1");\n'
+        '    assert!(matches!(declaring_data[0].attributes.get("discounted"), '
+        "Some(Value::Bool(true))));\n"
+        '    assert_eq!(dependent_data[0].name, "row_3");\n'
+        '    assert!(matches!(dependent_data[0].attributes.get("colour"), '
+        'Some(Value::Str("green"))));\n'
         f'    print!("{{}}", r#"{ok_document}"#);\n'
         "}\n"
     )
+    return program, preamble
 
 
 def main() -> None:
     """Compile both documents against one set of declarations."""
-    program = _build_program()
+    program, library = _build_sources()
     rustc = shutil.which(cmd="rustc")
     if rustc is None or rustc == "":
         rustc = "rustc"
@@ -69,7 +74,33 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[rustc, "--edition", "2021", "main.rs", "-o", "main"],
+                args=[
+                    rustc,
+                    "--edition",
+                    "2021",
+                    "-D",
+                    "warnings",
+                    "--crate-type",
+                    "lib",
+                    "record_data.rs",
+                    "-o",
+                    "librecord_data.rlib",
+                ],
+                failure_label="library rustc error",
+            ),
+            roundtrip_common.Step(
+                args=[
+                    rustc,
+                    "--edition",
+                    "2021",
+                    "-D",
+                    "warnings",
+                    "--extern",
+                    "record_data=librecord_data.rlib",
+                    "main.rs",
+                    "-o",
+                    "main",
+                ],
                 failure_label="rustc error",
             ),
             roundtrip_common.Step(
@@ -79,7 +110,7 @@ def main() -> None:
         ],
         excluded_keys=(),
         expected_json=shared_record_common.OK_DOCUMENT,
-        extra_files=None,
+        extra_files={"record_data.rs": library},
     )
 
 

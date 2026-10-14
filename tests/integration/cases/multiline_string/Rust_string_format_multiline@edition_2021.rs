@@ -35,5 +35,5 @@ value"#,
         "NUL followed by a digit: \07",
         "carriage\rreturn",
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

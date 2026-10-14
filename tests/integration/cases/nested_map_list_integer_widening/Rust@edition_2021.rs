@@ -4,5 +4,5 @@ fn main() {
         ("a", vec![1]),
         ("b", vec![1099511627776i64]),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

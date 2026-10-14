@@ -7,5 +7,5 @@ fn main() {
 nested last line
 "#]]),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

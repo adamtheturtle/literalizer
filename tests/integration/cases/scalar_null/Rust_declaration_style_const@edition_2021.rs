@@ -1,4 +1,4 @@
 fn main() {
-    const my_data: Option<()> = None::<()>;
-    let _ = my_data;
+    const MY_DATA: Option<()> = None::<()>;
+    let _ = &MY_DATA;
 }

@@ -3,5 +3,5 @@ fn main() {
         Vec::<String>::new(),
         Vec::<String>::new(),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

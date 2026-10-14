@@ -4,9 +4,10 @@ fn main() {
         (true, "yes"),
         (false, "no"),
     ]);
+    let _ = &my_data;
     my_data = HashMap::from([
         (true, "yes"),
         (false, "no"),
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

@@ -1,7 +1,7 @@
 use chrono::NaiveDate;
 use std::collections::HashMap;
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     Str(&'static str),
     I32(i32),
     F64(f64),
@@ -22,5 +22,5 @@ fn main() {
         ("dt", Value::DateTime("2024-01-15T12:00:00")),
         ("by", Value::Bytes("48656c6c6f")),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -1,8 +1,8 @@
 #[derive(Clone)]
-struct Record0 {
-    title: &'static str,
-    tags: Vec<&'static str>,
-    priority: i32,
+pub struct Record0 {
+    pub title: &'static str,
+    pub tags: Vec<&'static str>,
+    pub priority: i32,
 }
 fn main() {
     let my_data = Record0 {
@@ -14,5 +14,5 @@ fn main() {
         ],
         priority: 2,
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

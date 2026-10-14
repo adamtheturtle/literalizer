@@ -3,5 +3,5 @@ fn main() {
         "a",  // note a
         "b",  // note b
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

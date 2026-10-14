@@ -1,4 +1,4 @@
 fn main() {
-    const my_data: &str = "hello";
-    let _ = my_data;
+    const MY_DATA: &str = "hello";
+    let _ = &MY_DATA;
 }

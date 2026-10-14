@@ -5,5 +5,5 @@ fn main() {
         ("another-key", "value2"),
         ("normal_key", "value3"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

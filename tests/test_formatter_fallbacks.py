@@ -15,6 +15,7 @@ def test_roc_call_wrapper_without_preamble() -> None:
         declarations=(),
         calls="call",
         context=FileWrapperContext(
+            bound_variable_names=(),
             variable_name="",
             modifiers=frozenset(),
             body_preamble=(),

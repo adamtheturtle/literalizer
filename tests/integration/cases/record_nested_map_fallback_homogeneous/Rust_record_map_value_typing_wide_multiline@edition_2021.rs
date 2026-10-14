@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     Str(&'static str),
 }
 #[derive(Clone)]
-struct Record1 {
-    kind: &'static str,
-    pr_id: &'static str,
+pub struct Record1 {
+    pub kind: &'static str,
+    pub pr_id: &'static str,
 }
 #[derive(Clone)]
-struct Record0 {
-    name: &'static str,
-    input: Record1,
-    expected: HashMap<&'static str, Value>,
+pub struct Record0 {
+    pub name: &'static str,
+    pub input: Record1,
+    pub expected: HashMap<&'static str, Value>,
 }
 fn main() {
     let my_data = vec![
@@ -38,5 +38,5 @@ fn main() {
             ]),
         },
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

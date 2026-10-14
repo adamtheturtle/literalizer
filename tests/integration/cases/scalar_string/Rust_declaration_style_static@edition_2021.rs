@@ -1,4 +1,4 @@
 fn main() {
-    static my_data: &str = "hello";
-    let _ = my_data;
+    static MY_DATA: &str = "hello";
+    let _ = &MY_DATA;
 }

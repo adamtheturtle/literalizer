@@ -21,3 +21,8 @@ heterogeneous_value_enum_name = "JsonValue"
 [variants.declaration_style_sequence_format_overrides]
 CONST = "ARRAY"
 STATIC = "ARRAY"
+
+[variants.declaration_style_variable_names]
+CONST = "MY_DATA"
+STATIC = "MY_DATA"
+LAZY_STATIC = "MY_DATA"

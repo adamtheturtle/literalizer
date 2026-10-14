@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     I32(i32),
     I64(i64),
     Str(&'static str),
@@ -11,5 +11,5 @@ fn main() {
         ("b", Value::I64(3000000000i64)),
         ("c", Value::Str("x")),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -6,5 +6,5 @@ fn main() {
         ("averyveryverylongkeynamethatgoesonandonandon", 3),
         ("averyveryverylongkeynamethatgoesonandmore", 4),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -5,5 +5,5 @@ fn main() {
         ("b", None::<()>),
         // trailing
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

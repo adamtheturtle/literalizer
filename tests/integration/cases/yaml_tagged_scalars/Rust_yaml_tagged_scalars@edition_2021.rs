@@ -4,5 +4,5 @@ fn main() {
         ("explicit_string", "5"),
         ("six", "explicitly tagged key"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

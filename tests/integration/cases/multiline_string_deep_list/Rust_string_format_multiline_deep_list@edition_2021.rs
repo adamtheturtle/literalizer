@@ -7,5 +7,5 @@ first line
 last line
 "#]],
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

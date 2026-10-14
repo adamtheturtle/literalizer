@@ -10,5 +10,5 @@ fn main() {
         val_x,
         val_y,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

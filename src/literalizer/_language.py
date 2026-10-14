@@ -57,6 +57,9 @@ class FileWrapperContext:
     variable_name: str
     """The bound name, or an empty string for unbound call output."""
 
+    bound_variable_names: tuple[str, ...]
+    """Reference bindings declared before the main binding."""
+
     modifiers: frozenset[enum.Enum]
     """Declaration modifiers before they are rendered as keywords."""
 

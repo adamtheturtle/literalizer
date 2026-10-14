@@ -1,12 +1,12 @@
 #[derive(Clone)]
-struct Record1 {
-    a: i32,
-    b: &'static str,
-    c: Option<()>,
+pub struct Record1 {
+    pub a: i32,
+    pub b: &'static str,
+    pub c: Option<()>,
 }
 #[derive(Clone)]
-struct Record0 {
-    outer: Record1,
+pub struct Record0 {
+    pub outer: Record1,
 }
 fn main() {
     let my_data = Record0 {
@@ -16,5 +16,5 @@ fn main() {
             c: None::<()>,
         },
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

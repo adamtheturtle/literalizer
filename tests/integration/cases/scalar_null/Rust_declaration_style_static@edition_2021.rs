@@ -1,4 +1,4 @@
 fn main() {
-    static my_data: Option<()> = None::<()>;
-    let _ = my_data;
+    static MY_DATA: Option<()> = None::<()>;
+    let _ = &MY_DATA;
 }
