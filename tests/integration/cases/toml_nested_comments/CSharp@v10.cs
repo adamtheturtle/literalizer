@@ -1,7 +1,6 @@
-#nullable enable annotations
 using System.Collections.Generic;
 using System;
-var my_data = new Dictionary<string, object> {
+var my_data = new Dictionary<string, object?> {
     // About the first dotted key.
     // About the second dotted key.
     ["dotted"] = new Dictionary<string, int> {["first"] = 1, ["second"] = 2},

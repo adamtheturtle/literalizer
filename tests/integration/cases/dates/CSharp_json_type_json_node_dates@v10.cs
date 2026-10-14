@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Text.Json.Nodes;
 JsonNode? my_data = new JsonObject {
     ["date"] = "2024-01-15",

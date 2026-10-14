@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record1(int Status);
 record Record2(string Status);
 record Record4(string Kind, bool Urgent);

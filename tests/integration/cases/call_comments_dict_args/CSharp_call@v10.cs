@@ -1,8 +1,7 @@
-#nullable enable annotations
 using System.Collections.Generic;
 using System;
 class Check {
-static object process(object value = null) => null;
+static object? process(object? value = null) => null;
     public static void Main() {
 // Test cases
 process(new Dictionary<string, string> {["type"] = "create", ["pr_id"] = "pr_1"});  // first case

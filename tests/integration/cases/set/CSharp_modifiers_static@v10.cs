@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Collections.Generic;
 class Check {
 static HashSet<string> my_data = new HashSet<string> {

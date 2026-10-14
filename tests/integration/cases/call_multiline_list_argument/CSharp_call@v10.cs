@@ -1,7 +1,6 @@
-#nullable enable annotations
 using System;
 class Check {
-static object process(object xs = null) => null;
+static object? process(object? xs = null) => null;
     public static void Main() {
 process((
     1,

@@ -1,4 +1,3 @@
-#nullable enable annotations
 var my_data = new int[] {
     1000000,
     -1234,

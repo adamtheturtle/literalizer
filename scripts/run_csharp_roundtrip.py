@@ -40,7 +40,7 @@ _CSPROJ = (
     "    <TargetFramework>net8.0</TargetFramework>\n"
     "    <RollForward>LatestMajor</RollForward>\n"
     "    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>\n"
-    "    <Nullable>disable</Nullable>\n"
+    "    <Nullable>enable</Nullable>\n"
     "    <ImplicitUsings>disable</ImplicitUsings>\n"
     "    <LangVersion>10</LangVersion>\n"
     "  </PropertyGroup>\n"

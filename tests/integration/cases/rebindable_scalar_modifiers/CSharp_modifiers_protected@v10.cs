@@ -1,4 +1,3 @@
-#nullable enable annotations
 class Check {
     protected int my_data = 1;
     public Check() {

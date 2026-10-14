@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System;
 using System.Collections.Generic;
 class Check {

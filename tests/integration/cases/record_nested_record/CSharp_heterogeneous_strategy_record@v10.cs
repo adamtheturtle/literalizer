@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record1(string Name, int Age);
 record Record0(int Id, Record1 Owner);
 class Check {

@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Text.Json.Nodes;
 JsonNode? my_data = new JsonArray {
     9223372036854775807UL,

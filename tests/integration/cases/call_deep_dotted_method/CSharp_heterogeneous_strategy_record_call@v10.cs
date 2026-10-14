@@ -1,6 +1,5 @@
-#nullable enable annotations
 class Check {
-class ClientType_ { public object post(object data = null) => null; }
+class ClientType_ { public object? post(object? data = null) => null; }
 class ApiType_ { public ClientType_ client = new ClientType_(); }
 class ObjType_ { public ApiType_ api = new ApiType_(); }
 static ObjType_ obj = new ObjType_();

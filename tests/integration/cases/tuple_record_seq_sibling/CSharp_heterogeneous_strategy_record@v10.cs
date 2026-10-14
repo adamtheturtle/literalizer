@@ -1,5 +1,4 @@
-#nullable enable annotations
-record Record0(int[] Scores, object[] Args);
+record Record0(int[] Scores, object?[] Args);
 class Check {
     public static void Main() {
 var my_data = new Record0(
@@ -8,7 +7,7 @@ var my_data = new Record0(
         20,
         30
     },
-    new object[] {
+    new object?[] {
         1,
         "email",
         "a@gmail.com",

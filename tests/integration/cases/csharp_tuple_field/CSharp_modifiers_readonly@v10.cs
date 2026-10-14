@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System;
 class Check {
 readonly (int, int) my_data = (

@@ -1,4 +1,3 @@
-#nullable enable annotations
 class Check {
 readonly int[] my_data = new int[] {
     1,

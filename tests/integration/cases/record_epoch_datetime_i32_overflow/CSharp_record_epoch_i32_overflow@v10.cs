@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record0(int WithinI32, long BeyondI32);
 class Check {
     public static void Main() {

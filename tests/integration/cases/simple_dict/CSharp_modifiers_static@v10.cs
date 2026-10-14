@@ -1,7 +1,6 @@
-#nullable enable annotations
 using System.Collections.Generic;
 class Check {
-static Dictionary<string, object> my_data = new Dictionary<string, object> {
+static Dictionary<string, object?> my_data = new Dictionary<string, object?> {
     ["name"] = "Alice",
     ["age"] = 30,
     ["active"] = true,

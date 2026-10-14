@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Collections.Generic;
 record Record0(Dictionary<string, int> Input);
 class Check {

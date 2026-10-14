@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Collections.Generic;
 using System;
 var my_data = ValueTuple.Create(

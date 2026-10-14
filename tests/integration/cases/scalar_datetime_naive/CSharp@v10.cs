@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System;
 var my_data = new DateTime(2024, 1, 15, 12, 30, 0);
     _ = my_data;

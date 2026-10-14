@@ -1,7 +1,6 @@
-#nullable enable annotations
 using System.Collections.Generic;
-var my_data = new Dictionary<string, object> {
-    ["server"] = new Dictionary<string, object> {
+var my_data = new Dictionary<string, object?> {
+    ["server"] = new Dictionary<string, object?> {
         ["host"] = "localhost",
         ["port"] = (object?)null,  // not configured yet
         ["debug"] = true

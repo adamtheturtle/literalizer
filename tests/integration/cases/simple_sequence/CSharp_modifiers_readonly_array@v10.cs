@@ -1,6 +1,5 @@
-#nullable enable annotations
 class Check {
-readonly object[] my_data = new object[] {
+readonly object?[] my_data = new object?[] {
     1,
     "hello",
     true,

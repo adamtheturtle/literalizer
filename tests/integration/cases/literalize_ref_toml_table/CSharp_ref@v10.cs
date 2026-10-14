@@ -1,9 +1,8 @@
-#nullable enable annotations
 using System.Collections.Generic;
 var MyVar = new Dictionary<string, string> {
     ["_"] = "_"
 };
-var my_data = new Dictionary<string, object> {
+var my_data = new Dictionary<string, object?> {
     ["key"] = MyVar
 };
     _ = my_data;

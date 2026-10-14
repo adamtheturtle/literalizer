@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record1(int Count, int Rate);
 record Record2(int Retries, int Timeout);
 record Record0(Record1 Metrics, Record2 Flags);

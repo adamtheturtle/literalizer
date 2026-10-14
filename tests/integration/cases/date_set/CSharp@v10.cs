@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System;
 using System.Collections.Generic;
 var my_data = new HashSet<DateOnly> {

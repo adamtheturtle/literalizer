@@ -1,7 +1,6 @@
-#nullable enable annotations
 using System;
 class Check {
-public static readonly (ValueTuple, ValueTuple<int>, (int, int), (int, string, bool, object), (int, int, int, int, int, int, int, int)) my_data = (
+public static readonly (ValueTuple, ValueTuple<int>, (int, int), (int, string, bool, object?), (int, int, int, int, int, int, int, int)) my_data = (
     ValueTuple.Create(),
     ValueTuple.Create(1),
     (1, 2),

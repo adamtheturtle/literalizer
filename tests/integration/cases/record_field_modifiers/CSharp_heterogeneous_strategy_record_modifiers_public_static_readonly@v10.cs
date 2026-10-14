@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record0(int One);
 class Check {
 public static readonly Record0 my_data = new Record0(

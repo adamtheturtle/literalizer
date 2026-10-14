@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record0(int[][] A, int[][] B);
 class Check {
     public static void Main() {

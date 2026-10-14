@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System;
 var IntegerValue = 1.0;
 var my_data = (

@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System;
 var my_data = ValueTuple.Create(
     "48656c6c6f"

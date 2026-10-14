@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, string> {
     ["within_i32"] = "2024-01-15T12:00:00",

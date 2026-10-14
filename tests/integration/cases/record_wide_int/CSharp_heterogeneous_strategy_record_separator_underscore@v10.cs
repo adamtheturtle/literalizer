@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record0(int Quantity, ulong Big, double Ratio, string Label, bool Ok);
 class Check {
     public static void Main() {

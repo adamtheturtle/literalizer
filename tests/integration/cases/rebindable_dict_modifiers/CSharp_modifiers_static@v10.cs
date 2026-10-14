@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Collections.Generic;
 class Check {
 static Dictionary<string, int> my_data = new Dictionary<string, int> {

@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record1(string X);
 record Record2(int X);
 record Record0(Record1 Direct, Record2 Bound);

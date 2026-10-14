@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record0(int Id, string Label, bool Enabled, int[] RelatedIds);
 class Check {
     public static void Main() {

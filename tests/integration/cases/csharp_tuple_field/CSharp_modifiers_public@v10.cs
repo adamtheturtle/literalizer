@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System;
 class Check {
 public (int, int) my_data = (

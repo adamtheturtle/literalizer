@@ -1,7 +1,6 @@
-#nullable enable annotations
 using System.Collections.Generic;
 using System;
-var my_data = new Dictionary<string, object> {
+var my_data = new Dictionary<string, object?> {
     ["a"] = new Dictionary<string, int> {
         // inner note
         ["b"] = 1  // inline b
@@ -11,7 +10,7 @@ var my_data = new Dictionary<string, object> {
         2  // second
     )
 };
-my_data = new Dictionary<string, object> {
+my_data = new Dictionary<string, object?> {
     ["a"] = new Dictionary<string, int> {
         // inner note
         ["b"] = 1  // inline b

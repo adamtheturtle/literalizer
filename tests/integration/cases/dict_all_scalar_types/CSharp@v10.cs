@@ -1,7 +1,6 @@
-#nullable enable annotations
 using System;
 using System.Collections.Generic;
-var my_data = new Dictionary<string, object> {
+var my_data = new Dictionary<string, object?> {
     ["s"] = "string",
     ["i"] = 1,
     ["f"] = 1.5,

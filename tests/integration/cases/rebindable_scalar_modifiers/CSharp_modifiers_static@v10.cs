@@ -1,4 +1,3 @@
-#nullable enable annotations
 class Check {
     static int my_data = 1;
     static Check() {

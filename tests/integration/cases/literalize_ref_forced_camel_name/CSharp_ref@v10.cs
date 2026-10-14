@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Collections.Generic;
 var userObj = new Dictionary<string, string> {
     ["_"] = "_"

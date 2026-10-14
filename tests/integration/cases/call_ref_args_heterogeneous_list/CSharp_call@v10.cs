@@ -1,7 +1,6 @@
-#nullable enable annotations
 using System;
 class Check {
-static object process(object data = null, object count = null) => null;
+static object? process(object? data = null, object? count = null) => null;
     public static void Main() {
 var my_ints = (
     1,

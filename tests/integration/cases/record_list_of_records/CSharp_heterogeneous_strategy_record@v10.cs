@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record1(int Id, string Label);
 record Record0(string Name, Record1[] Items);
 class Check {

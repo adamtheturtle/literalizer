@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, ulong> {
     ["a"] = 9223372036854775807UL,

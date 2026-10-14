@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Collections.Generic;
 var ABC = new Dictionary<string, string> {
     ["_"] = "_"

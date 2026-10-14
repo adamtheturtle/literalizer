@@ -1,11 +1,10 @@
-#nullable enable annotations
 using System.Collections.Generic;
-var my_data = new Dictionary<string, object> {
+var my_data = new Dictionary<string, object?> {
     ["first"] = "one",
     ["second"] = "two",
     ["third"] = "three"
 };
-my_data = new Dictionary<string, object> {
+my_data = new Dictionary<string, object?> {
     ["first"] = "one",
     ["second"] = "two",
     ["third"] = "three"

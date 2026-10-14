@@ -1,4 +1,3 @@
-#nullable enable annotations
 using System.Collections.Generic;
 var my_data = new Dictionary<string, int> {
     ["user_name"] = 1,

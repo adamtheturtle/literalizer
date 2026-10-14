@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record0(string Name, int Age, bool Active, double Score);
 class Check {
     public static void Main() {

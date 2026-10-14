@@ -1,4 +1,3 @@
-#nullable enable annotations
 record Record0(int A);
 class Check {
     public static void Main() {
