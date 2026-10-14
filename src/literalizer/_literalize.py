@@ -235,6 +235,34 @@ class CallContext:
     """
 
 
+@runtime_checkable
+class _KnownZipUsageTransform(Protocol):
+    """A transform whose producer knows whether it substitutes zipped text."""
+
+    uses_zipped: bool
+
+
+@beartype
+@dataclasses.dataclass
+class _CallTransformUsage:
+    """Collect usage at each actual transform invocation."""
+
+    transform: Callable[[CallContext], str]
+    uses_zipped: bool
+
+    def __call__(self, context: CallContext, /) -> str:
+        """Retain known usage or handle opaque caller text at its boundary."""
+        result = self.transform(context)
+        if isinstance(self.transform, _KnownZipUsageTransform):
+            emitted_zip = self.transform.uses_zipped
+        else:
+            emitted_zip = (
+                context.zipped is not None and context.zipped in result
+            )
+        self.uses_zipped = self.uses_zipped or emitted_zip
+        return result
+
+
 @beartype
 @dataclasses.dataclass(frozen=True)
 class LiteralizeResult:
@@ -8723,6 +8751,14 @@ def literalize_call_parsed(
         ref_values=materialized_ref_values,
     )
 
+    transform_usage = None
+    rendering_transform = call_transform
+    if call_transform is not None:
+        transform_usage = _CallTransformUsage(
+            transform=call_transform, uses_zipped=False
+        )
+        rendering_transform = transform_usage
+
     result = _render_parsed_call(
         data=data,
         per_element_data=per_element_data,
@@ -8731,7 +8767,7 @@ def literalize_call_parsed(
         style=style,
         target_function=target_function,
         parameter_names=parameter_names,
-        call_transform=call_transform,
+        call_transform=rendering_transform,
         zip_literals=zip_literals,
         ref_case=ref_case,
         consumable_refs=consumable_refs,
@@ -8741,11 +8777,8 @@ def literalize_call_parsed(
         variable_form=variable_form,
         collection_layout=collection_layout,
     )
-    rendered_uses_zip = zip_resolution is not None and any(
-        literal in result for literal in zip_resolution.literals
-    )
     effective_zip_resolution = None
-    if rendered_uses_zip:
+    if transform_usage is not None and transform_usage.uses_zipped:
         effective_zip_resolution = zip_resolution
     preamble_data = _preamble_data_with_zip(
         data_for_preamble=resolved_preamble_data.value,
