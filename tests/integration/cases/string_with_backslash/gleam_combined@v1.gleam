@@ -13,6 +13,7 @@ pub fn main() {
     GStr("both \"quotes''' here"),
     GStr("line1\\nline2\nwith newline"),
   ])
+  let _ = my_data
   let my_data = GList([
     GStr("C:\\path\\to\\file"),
     GStr("back\\\\slash"),

@@ -9,5 +9,5 @@ pub fn main() {
   let my_list = GDict([
     #("unused", GStr("value")),
   ])
-  process(GList([GList([GDict([#("inner", my_list)])])]))
+  let _ = process(GList([GList([GDict([#("inner", my_list)])])]))
 }

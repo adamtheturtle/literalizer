@@ -11,6 +11,7 @@ pub fn main() {
     #("collection", GStr("alpha")),
     #("featured_entry", GDict([#("id", GInt(100)), #("label", GStr("first entry")), #("enabled", GBool(False)), #("related_ids", GList([GInt(102), GInt(103)]))])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("collection", GStr("alpha")),
     #("featured_entry", GDict([#("id", GInt(100)), #("label", GStr("first entry")), #("enabled", GBool(False)), #("related_ids", GList([GInt(102), GInt(103)]))])),

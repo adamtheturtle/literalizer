@@ -92,14 +92,12 @@ from literalizer._language import (
     default_format_call_arg_ref_identifier,
     default_format_call_arg_ref_identifier_consumable,
     default_format_call_ref_identifier,
-    default_format_call_statement,
     default_format_call_stub,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
-    default_wrap_combined_in_file,
     identity_call_arg,
     identity_constructor_target,
     no_call_binding_body_preamble,
@@ -117,6 +115,12 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableSpecialFloatError,
 )
+
+
+@beartype
+def _gleam_discard_call(call: str, /) -> str:
+    """Evaluate a call while explicitly discarding its result."""
+    return f"let _ = {call}"
 
 
 @beartype
@@ -1268,7 +1272,10 @@ class Gleam(metaclass=LanguageCls):
             return _reject_gleam_native_call_arg
         return no_validate_call_arg
 
-    format_call_statement = default_format_call_statement
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Explicitly discard the value of an unbound call."""
+        return _gleam_discard_call
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -1295,7 +1302,20 @@ class Gleam(metaclass=LanguageCls):
             use_line = f"\n{self.indent}let _ = {variable_name}"
         return f"\npub fn main() {{\n{indented}{use_line}\n}}"
 
-    wrap_combined_in_file = default_wrap_combined_in_file
+    def wrap_combined_in_file(
+        self,
+        declaration: str,
+        assignment: str,
+        context: FileWrapperContext,
+    ) -> str:
+        """Consume both bindings before the second shadows the first."""
+        return self.wrap_in_file(
+            content=(
+                f"{declaration}\nlet _ = {context.variable_name}\n"
+                + assignment
+            ),
+            context=context,
+        )
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO

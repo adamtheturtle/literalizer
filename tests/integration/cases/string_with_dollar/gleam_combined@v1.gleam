@@ -8,6 +8,7 @@ pub fn main() {
     GStr("price $10"),
     GStr("$HOME"),
   ])
+  let _ = my_data
   let my_data = GList([
     GStr("price $10"),
     GStr("$HOME"),

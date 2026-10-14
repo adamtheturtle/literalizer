@@ -10,6 +10,7 @@ pub fn main() {
     #("name", GStr("Alice")),
     #("score", GNull),
   ])
+  let _ = my_data
   let my_data = GDict([
     // comment
     #("name", GStr("Alice")),

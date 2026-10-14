@@ -1,0 +1,10 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Elm"]
+languages_reason = "Elm's value constructors preserve the unary minus of negative zero."
+
+[[variants]]
+axis = "float_format"
+
+[[variants]]
+axis = "constructor_prefix"

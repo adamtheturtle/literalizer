@@ -11,6 +11,7 @@ pub fn main() {
     // Port setting
     #("port", GInt(3000)),
   ])
+  let _ = my_data
   let my_data = GDict([
     // Configuration
     #("name", GStr("app")),

@@ -11,6 +11,7 @@ pub fn main() {
     #("field_name_that_is_really_quite_long_one", GInt(4)),
     #("field_name_that_is_really_quite_long_two", GInt(5)),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("user_name", GInt(1)),
     #("user.name", GInt(2)),

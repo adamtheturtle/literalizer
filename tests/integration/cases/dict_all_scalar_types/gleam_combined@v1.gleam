@@ -18,6 +18,7 @@ pub fn main() {
     #("dt", GStr("2024-01-15T12:00:00")),
     #("by", GStr("48656c6c6f")),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("s", GStr("string")),
     #("i", GInt(1)),

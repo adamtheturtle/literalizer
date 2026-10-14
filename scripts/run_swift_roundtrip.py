@@ -68,7 +68,13 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[swift, "-swift-version", "5", "main.swift"],
+                args=[
+                    swift,
+                    "-swift-version",
+                    "5",
+                    "-warnings-as-errors",
+                    "main.swift",
+                ],
                 failure_label="swift run error",
             ),
         ],

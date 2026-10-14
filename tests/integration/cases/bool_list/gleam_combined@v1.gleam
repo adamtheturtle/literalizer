@@ -9,6 +9,7 @@ pub fn main() {
     GBool(False),
     GBool(True),
   ])
+  let _ = my_data
   let my_data = GList([
     GBool(True),
     GBool(False),

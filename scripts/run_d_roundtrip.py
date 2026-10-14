@@ -70,7 +70,7 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[dmd, "-of=main", "main.d"],
+                args=[dmd, "-w", "-of=main", "main.d"],
                 failure_label="dmd error",
             ),
             roundtrip_common.Step(

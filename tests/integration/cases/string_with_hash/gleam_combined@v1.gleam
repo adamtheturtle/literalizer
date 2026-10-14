@@ -8,6 +8,7 @@ pub fn main() {
     GStr("issue #{42}"),
     GStr("color #red"),
   ])
+  let _ = my_data
   let my_data = GList([
     GStr("issue #{42}"),
     GStr("color #red"),

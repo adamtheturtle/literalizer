@@ -43,7 +43,7 @@ def main() -> None:
             _ = sys.stderr.write(msg)
             sys.exit(1)
         result = subprocess.run(
-            args=[v_path, "-check", target],
+            args=[v_path, "-W", "-check", target],
             capture_output=True,
             text=True,
             check=False,

@@ -1,9 +1,10 @@
-"""Check syntax of Gleam golden files using a single ``gleam check``.
+"""Check syntax of Gleam golden files using a single strict ``gleam
+build``.
 
 Each Gleam invocation boots the BEAM VM, which costs ~1s. With 350+
 fixtures that dominated the lint job's wall-clock (3+ minutes). Instead
 we drop every fixture into one project as its own module and run
-``gleam check`` once.
+``gleam build --warnings-as-errors`` once.
 
 Each fixture lives under ``tests/integration/cases/<case>/<gleam>.gleam``
 where both ``<case>`` and ``<gleam>`` are valid Gleam module identifiers
@@ -72,7 +73,7 @@ def main() -> None:
             )
 
         result = subprocess.run(
-            args=[gleam_path, "check"],
+            args=[gleam_path, "build", "--warnings-as-errors"],
             capture_output=True,
             text=True,
             check=False,

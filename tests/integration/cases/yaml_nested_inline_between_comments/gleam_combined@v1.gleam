@@ -10,6 +10,7 @@ pub fn main() {
     // next element
     GList([GInt(3), GStr("world")]),
   ])
+  let _ = my_data
   let my_data = GList([
     GList([GInt(2), GStr("hello")]),  // trailing note
     // next element

@@ -4,6 +4,6 @@ pub type GVal {
 pub fn process() -> Nil { Nil }
 
 pub fn main() {
-  process()
-  process()
+  let _ = process()
+  let _ = process()
 }

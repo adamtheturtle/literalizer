@@ -73,6 +73,20 @@ def main() -> None:
         source_path = tmpdir / "src" / "main.gleam"
         source_path.parent.mkdir(parents=True, exist_ok=True)
         _ = source_path.write_text(data=program, encoding="utf-8")
+        # Build the complete generated package strictly before executing it.
+        # `gleam run` reuses the build artifacts but has no fatal-warning flag.
+        build = subprocess.run(
+            args=[gleam_path, "build", "--warnings-as-errors"],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=tmpdir,
+        )
+        if build.returncode != 0:
+            _ = sys.stderr.write(build.stderr)
+            _ = sys.stderr.write(build.stdout)
+            sys.exit(1)
+
         result = subprocess.run(
             args=[gleam_path, "run", "-m", "main"],
             capture_output=True,

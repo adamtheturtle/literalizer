@@ -9,6 +9,7 @@ pub fn main() {
   let my_data = GDict([
     #("outer", GDict([#("a", GInt(1)), #("b", GStr("x")), #("c", GNull)])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("outer", GDict([#("a", GInt(1)), #("b", GStr("x")), #("c", GNull)])),
   ])

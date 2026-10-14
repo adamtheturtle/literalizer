@@ -48,6 +48,8 @@ def _build_program(json_text: str) -> str:
     return (
         "#!/usr/bin/env escript\n"
         "%% -*- coding: utf-8 -*-\n"
+        "-mode(compile).\n"
+        "-compile(warnings_as_errors).\n"
         "\n"
         "main(_) ->\n"
         f"    {indented_decl}\n"

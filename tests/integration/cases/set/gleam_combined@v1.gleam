@@ -9,6 +9,7 @@ pub fn main() {
     GStr("banana"),
     GStr("cherry"),
   ])
+  let _ = my_data
   let my_data = GSet([
     GStr("apple"),
     GStr("banana"),

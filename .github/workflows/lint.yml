@@ -65,7 +65,7 @@ jobs:
           persist-credentials: false
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -259,7 +259,7 @@ jobs:
           echo "/tmp/powershell" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           # Pinned to the ``requires-python = ">=3.12"`` floor in
           # ``pyproject.toml``; keep this in sync with that floor so the
@@ -508,15 +508,15 @@ jobs:
         run: |-
           find tests/integration/cases -name '*@v2003.f90' -print0 > /tmp/files-fortran2003 && test -s /tmp/files-fortran2003
           find tests/integration/cases -name '*@v2008.f90' -print0 > /tmp/files-fortran2008 && test -s /tmp/files-fortran2008
-          xargs -0 gfortran -std=f2003 -fsyntax-only < /tmp/files-fortran2003
-          xargs -0 gfortran -std=f2008 -fsyntax-only < /tmp/files-fortran2008
+          xargs -0 gfortran -Werror -std=f2003 -fsyntax-only < /tmp/files-fortran2003
+          xargs -0 gfortran -Werror -std=f2008 -fsyntax-only < /tmp/files-fortran2008
           cat > /tmp/run-fortran.sh <<'SCRIPT'
           std=$1
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           src=$(realpath "$2")
           cd "$tmpdir" || exit 1
-          gfortran "-std=$std" "$src" -o run || exit 1
+          gfortran -Werror "-std=$std" "$src" -o run || exit 1
           ./run || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2003 < /tmp/files-fortran2003
@@ -673,7 +673,7 @@ jobs:
           cat > /tmp/run-c.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c99 "$1" -o "$tmpdir/run" -lcjson || exit 1
+          clang -std=c99 -Werror "$1" -o "$tmpdir/run" -lcjson || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-c
@@ -738,30 +738,19 @@ jobs:
           mapfile -d '' -t files < <(python3 -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
           n=${#files[@]}
           test "$n" -gt 0
-          run_odin() {
-            local src="$1"
-            local wd
-            wd=$(mktemp -d)
-            trap 'rm -rf "$wd"' RETURN
-            cp "$src" "$wd/main.odin"
-            # Bound each compiler attempt.  A retry is useful for
-            # transient segfaults, but without this timeout the retry can
-            # hang forever and leave only "operation was canceled" plus
-            # an orphan odin process in the Actions log.
-            ( cd "$wd" && timeout --verbose --kill-after=10s 60s odin run . -out:"$wd/prog" )
-          }
           for (( i=0; i<n; i+=1 )); do
             src=$(realpath "${files[i]}")
             # Print before running so a timeout log identifies the
             # fixture to minimize for an upstream Odin bug report.
             printf 'Running %s\n' "$src"
-            run_odin "$src" || run_odin "$src" || exit 1
+            bash scripts/lint-odin-fixture.sh "$src" || \
+              bash scripts/lint-odin-fixture.sh "$src" || exit 1
           done
       # `uv` is needed by the `Odin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -830,7 +819,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -871,7 +860,7 @@ jobs:
 
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -924,7 +913,7 @@ jobs:
 
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -955,7 +944,7 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1027,7 +1016,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1105,7 +1094,7 @@ jobs:
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1153,7 +1142,7 @@ jobs:
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1192,7 +1181,7 @@ jobs:
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1229,7 +1218,7 @@ jobs:
           version: 1.1
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1371,7 +1360,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1453,7 +1442,7 @@ jobs:
           echo "/tmp/mlton-20241230-1.amd64-linux.ubuntu-24.04_static/bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
 
       # Every fixture defines its own entry point at top level, so compile
       # and run each file directly. Each invocation gets a private tmpdir
@@ -1514,7 +1503,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1592,7 +1581,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1630,7 +1619,7 @@ jobs:
           otp-version: '27'
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1749,7 +1738,7 @@ jobs:
       # `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1814,7 +1803,7 @@ jobs:
           purescript: 0.15.15
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1921,7 +1910,7 @@ jobs:
           persist-credentials: false
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1975,7 +1964,7 @@ jobs:
           persist-credentials: false
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2062,7 +2051,7 @@ jobs:
           version: ${{ env.GNUCOBOL_VERSION }}
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2075,7 +2064,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.cob"
-          cobc -free -fsyntax-only "$tmpdir/check.cob"
+          cobc -Werror -free -fsyntax-only "$tmpdir/check.cob"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-cobol.sh < /tmp/files-to-lint
       # ``-lcjson`` links the cJSON library that the
@@ -2089,7 +2078,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.cob"
-          cobc -x -free "$tmpdir/check.cob" -o "$tmpdir/run" -lcjson || exit 1
+          cobc -Werror -x -free "$tmpdir/check.cob" -o "$tmpdir/run" -lcjson || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
@@ -2169,7 +2158,7 @@ jobs:
       - name: Build precompiled headers
         run: |-
           for standard in c++14 c++17 c++20; do
-            clang++ "-std=$standard" -x c++-header scripts/lint-cpp-pch.hpp \
+            clang++ "-std=$standard" -Werror -x c++-header scripts/lint-cpp-pch.hpp \
               -o "/tmp/lint-cpp-$standard.hpp.pch"
           done
       # Each fixture defines its own main, so compile and run directly.
@@ -2186,7 +2175,7 @@ jobs:
       - name: Install uv
         timeout-minutes: 10
         if: matrix.shard == 0
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2275,7 +2264,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2335,7 +2324,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2375,10 +2364,12 @@ jobs:
       - name: Install yojson
         timeout-minutes: 10
         run: opam install -y yojson ocamlfind
+      # All enabled warnings are fatal, including new warnings on OCaml upgrades.
+      # Audit the complete corpus whenever the selected OCaml 5.x compiler changes.
       - name: Check OCaml syntax
         run: |-
           tmpdir=$(mktemp -d)
-          xargs -0 -n1 opam exec -- ocamlfind ocamlopt -package yojson -c -o "$tmpdir/check.o" < /tmp/files-to-lint
+          xargs -0 -n1 opam exec -- ocamlfind ocamlopt -warn-error +a -package yojson -c -o "$tmpdir/check.o" < /tmp/files-to-lint
       # Fixtures only declare ``module Check = struct ... end`` with a
       # ``my_data`` let-binding; OCaml evaluates struct bodies when the
       # module is initialized, so running the file as a script forces
@@ -2390,13 +2381,19 @@ jobs:
           cat > /tmp/yojson_prelude.ml <<'EOF'
           # use "topfind";;
           # require "yojson";;
+          let fixture = Sys.argv.(1);;
+          let fixture =
+            if Filename.is_relative fixture then
+              Filename.concat (Sys.getcwd ()) fixture
+            else fixture;;
+          if not (Toploop.use_file Format.err_formatter fixture) then exit 1;;
           EOF
-          xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml /tmp/yojson_prelude.ml < /tmp/files-to-lint
+          xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml -warn-error +a /tmp/yojson_prelude.ml < /tmp/files-to-lint
       # ``uv`` is needed by the ``OCaml roundtrip`` step below; it runs
       # the helper in project mode so ``import literalizer`` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2455,7 +2452,7 @@ jobs:
       # resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2486,7 +2483,7 @@ jobs:
         uses: coursier/cache-action@v8
       - name: Install scala-cli
         timeout-minutes: 10
-        uses: VirtusLab/scala-cli-setup@v1.17.1
+        uses: VirtusLab/scala-cli-setup@v1.18.0
       # Compile every fixture in a single scala-cli invocation to pay
       # the Scala compile + Bloop daemon startup cost once instead of
       # per fixture. Each fixture already carries a unique object name
@@ -2515,14 +2512,14 @@ jobs:
             printf '  val _%s = %s\n' "$name" "$name" >> "$main"
           done < /tmp/files-to-lint
           printf '}\n' >> "$main"
-          scala-cli run "$workspace" -S 3 \
+          scala-cli run "$workspace" --server=false -S 3 --scalac-option -deprecation --scalac-option -Werror \
             --dep io.circe::circe-core:0.14.10 \
             --main-class __run
       # `uv` is needed by the `Scala roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2580,7 +2577,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2620,7 +2617,7 @@ jobs:
       # to force evaluation without interpreting Dart source text.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2668,7 +2665,7 @@ jobs:
           < /tmp/files-to-lint
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2718,7 +2715,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2791,7 +2788,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2850,7 +2847,7 @@ jobs:
           Rscript -e 'install.packages("jsonlite", lib="/tmp/r-lint-libs", repos="https://cloud.r-project.org")'
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2898,7 +2895,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.d"
-          dmd -o- -c "$tmpdir/check.d"
+          dmd -w -o- -c "$tmpdir/check.d"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-d.sh < /tmp/files-to-lint
       # Each fixture defines its own main, so compile and run directly.
@@ -2910,7 +2907,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.d"
-          dmd -of="$tmpdir/run" -od="$tmpdir" "$tmpdir/check.d" || exit 1
+          dmd -w -of="$tmpdir/run" -od="$tmpdir" "$tmpdir/check.d" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-d.sh < /tmp/files-to-lint
@@ -2918,7 +2915,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2972,12 +2969,12 @@ jobs:
             printf 'require "./%s"\n' "$name" >> "$driver"
             printf '%s.cr <- %s\n' "$name" "$f"
           done < /tmp/files-to-lint
-          crystal run "$driver"
+          crystal run --error-on-warnings "$driver"
       # `uv` is needed by the `Crystal roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3014,7 +3011,7 @@ jobs:
           && test -s /tmp/files-to-lint
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3165,7 +3162,7 @@ jobs:
       # the helper in project mode so ``import literalizer`` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3187,7 +3184,7 @@ jobs:
           persist-credentials: false
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3246,7 +3243,7 @@ jobs:
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3297,7 +3294,7 @@ jobs:
 
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3369,7 +3366,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3417,7 +3414,7 @@ jobs:
       # runs the helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3480,7 +3477,7 @@ jobs:
           v -cc gcc run /tmp/v-warmup.v > /dev/null 2>&1 || true
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3488,7 +3485,7 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.check_v_syntax
           < /tmp/files-to-lint
       - name: Run V files
-        run: xargs -0 -P "$(nproc)" -n1 v -cc gcc run < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 v -W -cc gcc run < /tmp/files-to-lint
       # Driven from `lint-v` because that is the job where the pinned
       # `v` binary (installed by the `Install V` step above) is on
       # `PATH`; `uv run` (project mode, not `--no-project`) is required
@@ -3545,7 +3542,7 @@ jobs:
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'

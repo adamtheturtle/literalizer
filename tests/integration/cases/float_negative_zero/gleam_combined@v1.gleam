@@ -8,6 +8,7 @@ pub fn main() {
     GFloat(-0.0),
     GFloat(1.5),
   ])
+  let _ = my_data
   let my_data = GList([
     GFloat(-0.0),
     GFloat(1.5),

@@ -8,6 +8,7 @@ pub fn main() {
     GStr("48656c6c6f"),
     GList([]),
   ])
+  let _ = my_data
   let my_data = GList([
     GStr("48656c6c6f"),
     GList([]),

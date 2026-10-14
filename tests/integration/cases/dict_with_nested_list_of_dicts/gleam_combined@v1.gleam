@@ -8,6 +8,7 @@ pub fn main() {
   let my_data = GDict([
     #("a", GList([GList([GDict([#("b", GInt(1))])])])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("a", GList([GList([GDict([#("b", GInt(1))])])])),
   ])
