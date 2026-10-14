@@ -1376,9 +1376,12 @@ def _maybe_format_record_literal(
         return None
     if not is_multiline:
         joined = spec.element_separator.join(rendered.entries)
-        return (
-            f"{rendered.head}{rendered.compact_pad}{joined}"
-            f"{rendered.compact_pad}{rendered.closer.lstrip()}"
+        return finish_collection_initializer(
+            opener=rendered.head,
+            code=(
+                f"{rendered.head}{rendered.compact_pad}{joined}"
+                f"{rendered.compact_pad}{rendered.closer.lstrip()}"
+            ),
         )
     # Respect the language's trailing-comma policy: Go/Rust permit a
     # trailing comma after the last field (config ``True`` -> unchanged),
