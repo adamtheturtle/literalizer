@@ -1,7 +1,6 @@
 use std::collections::HashMap;
-#[allow(dead_code)]
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     I32(i32),
     I64(i64),
     Str(&'static str),

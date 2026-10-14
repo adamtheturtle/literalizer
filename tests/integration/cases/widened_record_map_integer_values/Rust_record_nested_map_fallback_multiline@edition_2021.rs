@@ -1,8 +1,7 @@
 use std::collections::HashMap;
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    input: HashMap<&'static str, i32>,
+pub struct Record0 {
+    pub input: HashMap<&'static str, i32>,
 }
 fn main() {
     let my_data = vec![

@@ -1,18 +1,15 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record1 {
-    x: &'static str,
+pub struct Record1 {
+    pub x: &'static str,
 }
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record2 {
-    x: i32,
+pub struct Record2 {
+    pub x: i32,
 }
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    direct: Record1,
-    bound: Record2,
+pub struct Record0 {
+    pub direct: Record1,
+    pub bound: Record2,
 }
 fn main() {
     let first = Record2 {

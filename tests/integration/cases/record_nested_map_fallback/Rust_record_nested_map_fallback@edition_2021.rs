@@ -1,17 +1,15 @@
 use std::collections::HashMap;
-#[allow(dead_code)]
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     Str(&'static str),
     Bool(bool),
     Null,
 }
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    name: &'static str,
-    input: HashMap<&'static str, Value>,
-    expected: HashMap<&'static str, Value>,
+pub struct Record0 {
+    pub name: &'static str,
+    pub input: HashMap<&'static str, Value>,
+    pub expected: HashMap<&'static str, Value>,
 }
 fn main() {
     let my_data = vec![

@@ -1,8 +1,7 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    short: [i32; 1],
-    long: [i32; 2],
+pub struct Record0 {
+    pub short: [i32; 1],
+    pub long: [i32; 2],
 }
 fn main() {
     let my_data = Record0 {

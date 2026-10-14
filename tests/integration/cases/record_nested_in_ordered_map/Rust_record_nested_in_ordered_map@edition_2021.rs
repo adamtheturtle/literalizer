@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    name: Option<()>,
-    id: i32,
+pub struct Record0 {
+    pub name: Option<()>,
+    pub id: i32,
 }
 fn main() {
     let my_data = HashMap::from([

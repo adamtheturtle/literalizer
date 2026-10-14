@@ -1,17 +1,16 @@
 use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::NaiveTime;
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    s: &'static str,
-    i: i32,
-    f: f64,
-    b: bool,
-    n: Option<()>,
-    d: NaiveDate,
-    dt: NaiveDateTime,
-    by: &'static str,
+pub struct Record0 {
+    pub s: &'static str,
+    pub i: i32,
+    pub f: f64,
+    pub b: bool,
+    pub n: Option<()>,
+    pub d: NaiveDate,
+    pub dt: NaiveDateTime,
+    pub by: &'static str,
 }
 fn main() {
     let my_data = Record0 {

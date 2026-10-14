@@ -1,9 +1,8 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    a: i32,
-    b: i64,
-    c: &'static str,
+pub struct Record0 {
+    pub a: i32,
+    pub b: i64,
+    pub c: &'static str,
 }
 fn main() {
     let my_data = Record0 {

@@ -1,24 +1,23 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    r#type: &'static str,
-    r#match: &'static str,
-    error: &'static str,
-    switch: &'static str,
-    class: &'static str,
-    inout: &'static str,
-    int: &'static str,
-    new: &'static str,
-    r#static: &'static str,
-    fun: &'static str,
-    object: &'static str,
-    val: &'static str,
-    when: &'static str,
-    func: &'static str,
-    r#let: &'static str,
-    var: &'static str,
-    template: &'static str,
-    id: i32,
+pub struct Record0 {
+    pub r#type: &'static str,
+    pub r#match: &'static str,
+    pub error: &'static str,
+    pub switch: &'static str,
+    pub class: &'static str,
+    pub inout: &'static str,
+    pub int: &'static str,
+    pub new: &'static str,
+    pub r#static: &'static str,
+    pub fun: &'static str,
+    pub object: &'static str,
+    pub val: &'static str,
+    pub when: &'static str,
+    pub func: &'static str,
+    pub r#let: &'static str,
+    pub var: &'static str,
+    pub template: &'static str,
+    pub id: i32,
 }
 fn main() {
     let my_data = vec![

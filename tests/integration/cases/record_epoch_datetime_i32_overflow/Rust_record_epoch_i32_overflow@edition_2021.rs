@@ -1,8 +1,7 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    within_i32: i64,
-    beyond_i32: i64,
+pub struct Record0 {
+    pub within_i32: i64,
+    pub beyond_i32: i64,
 }
 fn main() {
     let my_data = Record0 {

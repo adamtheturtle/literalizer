@@ -1,10 +1,9 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    name: &'static str,
-    age: i32,
-    active: bool,
-    score: f64,
+pub struct Record0 {
+    pub name: &'static str,
+    pub age: i32,
+    pub active: bool,
+    pub score: f64,
 }
 fn main() {
     let my_data = Record0 {

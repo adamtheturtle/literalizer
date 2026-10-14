@@ -1,7 +1,6 @@
 use std::collections::HashMap;
-#[allow(dead_code)]
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     Str(&'static str),
     Bool(bool),
 }

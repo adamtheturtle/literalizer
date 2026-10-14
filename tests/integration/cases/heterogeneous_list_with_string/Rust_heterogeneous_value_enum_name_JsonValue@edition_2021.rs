@@ -1,6 +1,5 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-enum JsonValue {
+pub enum JsonValue {
     Str(&'static str),
     I32(i32),
 }

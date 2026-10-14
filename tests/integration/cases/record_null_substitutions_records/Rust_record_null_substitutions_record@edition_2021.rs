@@ -1,9 +1,8 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    due_date: i32,
-    parent_id: i32,
-    assignee: &'static str,
+pub struct Record0 {
+    pub due_date: i32,
+    pub parent_id: i32,
+    pub assignee: &'static str,
 }
 fn main() {
     let my_data = vec![

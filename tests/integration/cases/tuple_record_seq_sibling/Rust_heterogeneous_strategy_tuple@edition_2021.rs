@@ -1,8 +1,7 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    scores: Vec<i32>,
-    args: (i32, &'static str, &'static str, i32),
+pub struct Record0 {
+    pub scores: Vec<i32>,
+    pub args: (i32, &'static str, &'static str, i32),
 }
 fn main() {
     let my_data = Record0 {

@@ -1,8 +1,7 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    a: i32,
-    b: &'static str,
+pub struct Record0 {
+    pub a: i32,
+    pub b: &'static str,
 }
 fn main() {
     #[allow(unused_mut)]

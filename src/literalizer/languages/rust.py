@@ -1516,11 +1516,10 @@ def _rust_value_enum_lines(
         )
     if len(variants) == 0:
         return []
-    # Payloads are intentionally opaque until a caller inspects the value.
+    # Export the carrier so callers can inspect its variant payloads.
     lines: list[str] = [
-        "#[allow(dead_code)]",
         "#[derive(Clone)]",
-        f"enum {enum_name} {{",
+        f"pub enum {enum_name} {{",
     ]
     for variant in variants:
         if variant.inner_type is None:
@@ -2866,9 +2865,8 @@ def _record_preamble_impl(
         struct_blocks: list[str] = []
         for shape in emit_order:
             block: list[str] = [
-                "#[allow(dead_code)]",
                 "#[derive(Clone)]",
-                f"struct {record_names[shape]} {{",
+                f"pub struct {record_names[shape]} {{",
             ]
             for key in shape.keys:
                 example = field_values[shape].get(key)
@@ -2895,7 +2893,7 @@ def _record_preamble_impl(
                 if key in shape.optional_keys:
                     field_type = f"Option<{field_type}>"
                 field_name = _rust_record_field_identifier(key)
-                block.append(f"    {field_name}: {field_type},")
+                block.append(f"    pub {field_name}: {field_type},")
             block.append("}")
             struct_blocks.append("\n".join(block))
         enum_lines: Sequence[str]
@@ -3930,8 +3928,9 @@ class Rust(metaclass=LanguageCls):
             build_behavior=_build_tagged_enum_behavior,
             build_preamble=_build_tagged_enum_preamble,
         )
-        """Auto-generate a tagged ``enum`` in the preamble containing
-        only the variants actually present in the data, and wrap each
+        """Generate a public tagged ``enum`` in the preamble.
+
+        Include only the variants actually present in the data, and wrap each
         heterogeneous scalar value with ``{EnumName}::{Variant}(value)``.
 
         Integer variants use narrowest-width names (``I32``, ``I64``,
@@ -3948,7 +3947,8 @@ class Rust(metaclass=LanguageCls):
         generated ``struct`` literals.
 
         Each distinct ordered-key tuple becomes a struct declared in
-        the preamble (``struct Record0 { field: Type, ... }``) and
+        the preamble with public fields
+        (``pub struct Record0 { pub field: Type, ... }``) and
         each matching dict in the data renders as a struct literal
         (``Record0 { field: value, ... }``) rather than a
         ``HashMap::from([...])`` call.  Useful for inputs whose dict

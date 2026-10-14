@@ -1,8 +1,7 @@
 use chrono::NaiveDate;
 use std::collections::HashMap;
-#[allow(dead_code)]
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     Str(&'static str),
     I32(i32),
     F64(f64),

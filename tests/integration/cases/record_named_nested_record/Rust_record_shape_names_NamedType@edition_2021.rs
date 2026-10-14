@@ -1,16 +1,14 @@
-#[allow(dead_code)]
 #[derive(Clone)]
-struct NamedType {
-    id: i32,
-    label: &'static str,
-    enabled: bool,
-    related_ids: Vec<i32>,
+pub struct NamedType {
+    pub id: i32,
+    pub label: &'static str,
+    pub enabled: bool,
+    pub related_ids: Vec<i32>,
 }
-#[allow(dead_code)]
 #[derive(Clone)]
-struct Record0 {
-    collection: &'static str,
-    featured_entry: NamedType,
+pub struct Record0 {
+    pub collection: &'static str,
+    pub featured_entry: NamedType,
 }
 fn main() {
     let my_data = Record0 {

@@ -2,9 +2,8 @@ use chrono::NaiveDate;
 use chrono::NaiveDateTime;
 use chrono::NaiveTime;
 use std::collections::HashMap;
-#[allow(dead_code)]
 #[derive(Clone)]
-enum JsonValue {
+pub enum JsonValue {
     Str(&'static str),
     I32(i32),
     F64(f64),
