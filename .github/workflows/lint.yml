@@ -738,24 +738,13 @@ jobs:
           mapfile -d '' -t files < <(python3 -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
           n=${#files[@]}
           test "$n" -gt 0
-          run_odin() {
-            local src="$1"
-            local wd
-            wd=$(mktemp -d)
-            trap 'rm -rf "$wd"' RETURN
-            cp "$src" "$wd/main.odin"
-            # Bound each compiler attempt.  A retry is useful for
-            # transient segfaults, but without this timeout the retry can
-            # hang forever and leave only "operation was canceled" plus
-            # an orphan odin process in the Actions log.
-            ( cd "$wd" && timeout --verbose --kill-after=10s 60s odin run . -out:"$wd/prog" )
-          }
           for (( i=0; i<n; i+=1 )); do
             src=$(realpath "${files[i]}")
             # Print before running so a timeout log identifies the
             # fixture to minimize for an upstream Odin bug report.
             printf 'Running %s\n' "$src"
-            run_odin "$src" || run_odin "$src" || exit 1
+            bash scripts/lint-odin-fixture.sh "$src" || \
+              bash scripts/lint-odin-fixture.sh "$src" || exit 1
           done
       # `uv` is needed by the `Odin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
