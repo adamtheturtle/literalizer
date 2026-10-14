@@ -1,6 +1,5 @@
 use chrono::NaiveDate;
 fn main() {
-    #[allow(unused_mut)]
     let mut my_data = vec![
         NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
         NaiveDate::from_ymd_opt(2024, 2, 20).unwrap(),

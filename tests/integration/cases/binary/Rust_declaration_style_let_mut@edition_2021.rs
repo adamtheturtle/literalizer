@@ -1,5 +1,4 @@
 fn main() {
-    #[allow(unused_mut)]
     let mut my_data = vec![
         "48656c6c6f",
     ];

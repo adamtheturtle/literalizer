@@ -1,6 +1,5 @@
 fn main() {
     // inline
-    #[allow(unused_mut)]
     let mut my_data = // before
     "plain";
     let _ = &my_data;

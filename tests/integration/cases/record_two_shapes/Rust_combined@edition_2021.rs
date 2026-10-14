@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 fn main() {
-    #[allow(unused_mut)]
     let mut my_data = HashMap::from([
         ("metrics", HashMap::from([("count", 100), ("rate", 50)])),
         ("flags", HashMap::from([("retries", 3), ("timeout", 30)])),

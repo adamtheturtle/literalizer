@@ -1,6 +1,5 @@
 use std::sync::LazyLock;
 fn main() {
-    #[allow(non_upper_case_globals)]
-    static my_data: LazyLock<f64> = LazyLock::new(|| 3.14);
-    let _ = &my_data;
+    static MY_DATA: LazyLock<f64> = LazyLock::new(|| 3.14);
+    let _ = &MY_DATA;
 }

@@ -4,7 +4,6 @@ pub struct Record0 {
     pub args: (i32, &'static str, &'static str, i32),
 }
 fn main() {
-    #[allow(unused_mut)]
     let mut my_data = Record0 {
         call: "send",
         args: (

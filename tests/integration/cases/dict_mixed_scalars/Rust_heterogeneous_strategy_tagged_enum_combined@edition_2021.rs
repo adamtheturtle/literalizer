@@ -5,7 +5,6 @@ pub enum Value {
     Str(&'static str),
 }
 fn main() {
-    #[allow(unused_mut)]
     let mut my_data = HashMap::from([
         ("a", Value::I32(1)),
         ("b", Value::Str("x")),

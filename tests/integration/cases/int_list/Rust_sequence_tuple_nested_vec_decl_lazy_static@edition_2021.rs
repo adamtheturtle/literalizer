@@ -1,10 +1,9 @@
 use std::sync::LazyLock;
 fn main() {
-    #[allow(non_upper_case_globals)]
-    static my_data: LazyLock<Vec<i32>> = LazyLock::new(|| vec![
+    static MY_DATA: LazyLock<Vec<i32>> = LazyLock::new(|| vec![
         1,
         2,
         3,
     ]);
-    let _ = &my_data;
+    let _ = &MY_DATA;
 }

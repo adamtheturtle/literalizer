@@ -4,7 +4,6 @@ pub struct Record0 {
     pub b: &'static str,
 }
 fn main() {
-    #[allow(unused_mut)]
     let mut my_data = Record0 {
         a: 1,
         b: "x",

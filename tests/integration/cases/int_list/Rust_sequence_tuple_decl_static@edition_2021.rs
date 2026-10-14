@@ -1,9 +1,8 @@
 fn main() {
-    #[allow(non_upper_case_globals)]
-    static my_data: (i32, i32, i32) = (
+    static MY_DATA: (i32, i32, i32) = (
         1,
         2,
         3,
     );
-    let _ = &my_data;
+    let _ = &MY_DATA;
 }

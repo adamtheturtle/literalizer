@@ -1,5 +1,4 @@
 fn main() {
-    #[allow(non_upper_case_globals)]
-    static my_data: i64 = 2147483648i64;
-    let _ = &my_data;
+    static MY_DATA: i64 = 2147483648i64;
+    let _ = &MY_DATA;
 }

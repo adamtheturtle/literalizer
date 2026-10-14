@@ -1,2 +1,1 @@
-#[allow(unused_mut)]
 let mut p = Playlist::new();

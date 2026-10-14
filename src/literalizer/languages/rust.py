@@ -792,12 +792,7 @@ def _format_typed_declaration(
         default_dict_key_type="",
         default_dict_value_type="",
     )
-    # Keep the caller's requested constant/static name, even when it differs
-    # from Rust's naming convention. This exemption is on this item only.
-    attribute = (
-        "#[allow(non_upper_case_globals)]\n" if name != name.upper() else ""
-    )
-    return f"{attribute}{keyword} {name}: {type_annotation} = {value};"
+    return f"{keyword} {name}: {type_annotation} = {value};"
 
 
 @beartype
@@ -833,7 +828,6 @@ def _format_lazy_static_declaration(
         default_dict_value_type=default_dict_value_type,
     )
     return (
-        "#[allow(non_upper_case_globals)]\n"
         f"static {name}: LazyLock<{type_annotation}> = "
         f"LazyLock::new(|| {value});"
     )
@@ -881,8 +875,6 @@ def _format_let_declaration(
     keyword = "let"
     if _RustModifiers.MUT in modifiers:
         keyword = "let mut"
-        # Explicitly mutable references need not mutate in this document.
-        return f"#[allow(unused_mut)]\n{keyword} {name} = {value};"
     return f"{keyword} {name} = {value};"
 
 
@@ -3535,7 +3527,7 @@ class Rust(metaclass=LanguageCls):
         )
         LET_MUT = DeclarationStyleConfig(
             formatter=variable_declaration_formatter(
-                template="#[allow(unused_mut)]\nlet mut {name} = {value};"
+                template="let mut {name} = {value};"
             ),
             supports_redefinition=True,
         )
@@ -3574,7 +3566,6 @@ class Rust(metaclass=LanguageCls):
                     """Format a lazy static JSON-backed declaration."""
                     expr = _rust_json_value_expression(data, value)
                     return (
-                        "#[allow(non_upper_case_globals)]\n"
                         f"static {name}: LazyLock<{json_type}> = "
                         f"LazyLock::new(|| {expr});"
                     )
@@ -4053,6 +4044,9 @@ class Rust(metaclass=LanguageCls):
                 else "&"
             )
             use_line = f"\n{self.indent}let _ = {borrow}{variable_name};"
+        if self.declaration_style is self.declaration_styles.LET_MUT:
+            for name in context.bound_variable_names:
+                use_line += f"\n{self.indent}let _ = &mut {name};"
         return f"fn main() {{\n{indented}{use_line}\n}}"
 
     def wrap_combined_in_file(

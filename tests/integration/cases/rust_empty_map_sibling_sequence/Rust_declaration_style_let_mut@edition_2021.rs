@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 fn main() {
-    #[allow(unused_mut)]
     let mut my_data = vec![
         HashMap::from([("a", 1)]),
         <HashMap<&str, i32>>::from([]),
