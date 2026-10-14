@@ -50,6 +50,15 @@ from literalizer.exceptions import (
 
 
 @beartype
+@dataclasses.dataclass(frozen=True)
+class RenderedCallStub:
+    """A generated call stub and the identifiers it declares."""
+
+    code: str
+    declared_names: frozenset[str]
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class FileWrapperContext:
     """Declaration metadata and explicitly placed wrapper preambles."""
@@ -75,6 +84,8 @@ class FileWrapperContext:
     generated_body_preamble: tuple[str, ...]
     """Body blocks produced by the language for the rendered data."""
 
+    call_stub_names: frozenset[str]
+    """Identifiers retained by generated body-scope call stubs."""
     root_is_object_literal: bool
     """Whether an unbound literal uses the object-expression
     representation.
@@ -2971,7 +2982,7 @@ class Language(Protocol):
         self,
     ) -> Callable[
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
-        tuple[str, ...],
+        tuple[str | RenderedCallStub, ...],
     ]:
         """Return stub declaration lines for a name used in a call
         expression.
@@ -2999,6 +3010,9 @@ class Language(Protocol):
         inside ``func main()`` for Go, inside ``class Check`` for
         Java).  Languages that need stubs at file/package scope should
         use :attr:`format_call_preamble_stub` instead.
+
+        A stub may retain its declared identifiers with its source text
+        in :class:`RenderedCallStub`.
 
         Returns an empty tuple when no stub is needed (e.g. for
         built-in functions, or in languages whose lint checks only

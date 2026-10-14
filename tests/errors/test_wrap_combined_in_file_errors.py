@@ -43,6 +43,7 @@ def test_wrap_combined_in_file_unsupported_raises(
                 class_preamble=(),
                 has_literal_declarations=True,
                 generated_body_preamble=(),
+                call_stub_names=frozenset(),
                 root_is_object_literal=False,
             ),
         )
