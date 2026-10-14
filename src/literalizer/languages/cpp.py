@@ -570,11 +570,32 @@ def _make_cpp_element_to_type(
         beyond_i64_type=None,
     )
 
+    def _dependencies(
+        element_type: type | ListType | DictType | None, /
+    ) -> frozenset[str]:
+        """Retain dependencies from the descriptor before emitting its
+        type.
+        """
+        if isinstance(element_type, ListType):
+            return frozenset({"#include <vector>"}) | _dependencies(
+                element_type.inner
+            )
+        if isinstance(element_type, DictType):
+            return frozenset(
+                {"#include <string>", _CPP_MAP_HEADERS[dict_type_name]}
+            ) | _dependencies(element_type.value_type)
+        if element_type is None:
+            return frozenset[str]()
+        return _cpp_native_atomic_headers(resolve(element_type))
+
     def _resolve(element_type: type | ListType | DictType, /) -> str | None:
-        """Retain native scalar policy beside the resolved type."""
+        """Retain the selected type's dependencies and scalar policy."""
+        headers = _dependencies(element_type)
         type_name = resolve(element_type)
         if type_name is None:
             return None
+        if isinstance(element_type, (ListType, DictType)):
+            return _CppTypeDependencies.create(type_name, headers=headers)
         return _cpp_owned_atomic_type(type_name)
 
     return _resolve
@@ -598,13 +619,53 @@ def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
     return isinstance(value, (bool, int, float, dt.date))
 
 
-class _CppScalarFieldType(str):
+class _CppTypeDependencies(str):
+    """A type or declaration with dependencies retained by its
+    producer.
+    """
+
+    __slots__ = ("_headers",)
+
+    _headers: frozenset[str]
+
+    @classmethod
+    def create(cls, code: str, /, *, headers: frozenset[str]) -> Self:
+        """Keep required headers alongside the generated type spelling."""
+        result = cls(object=code)
+        result._headers = headers
+        return result
+
+    @property
+    def headers(self) -> frozenset[str]:
+        """Headers selected by the native type and declaration
+        producers.
+        """
+        return self._headers
+
+
+@beartype
+def _cpp_type_headers(type_name: str, /) -> frozenset[str]:
+    """Read retained dependencies without interpreting opaque type
+    names.
+    """
+    if isinstance(type_name, _CppTypeDependencies):
+        return type_name.headers
+    return frozenset[str]()
+
+
+_CPP_MAP_HEADERS: dict[str, str] = {
+    "std::map": "#include <map>",
+    "std::unordered_map": "#include <unordered_map>",
+}
+
+
+class _CppScalarFieldType(_CppTypeDependencies):
     """An owned scalar type that needs a value initializer."""
 
     __slots__ = ()
 
 
-class _CppVariantType(str):
+class _CppVariantType(_CppTypeDependencies):
     """A carrier selected by heterogeneous type inference."""
 
     __slots__ = ()
@@ -616,7 +677,7 @@ class _CppNarrowedMapScalar(str):
     __slots__ = ()
 
 
-class _CppArrayType(str):
+class _CppArrayType(_CppTypeDependencies):
     """An owned fixed array with its scalar-leaf initialization policy."""
 
     __slots__ = ("_scalar_leaves",)
@@ -624,10 +685,13 @@ class _CppArrayType(str):
     _scalar_leaves: bool
 
     @classmethod
-    def create(cls, code: str, /, *, scalar_leaves: bool) -> Self:
+    def create_array(
+        cls, code: str, /, *, scalar_leaves: bool, headers: frozenset[str]
+    ) -> Self:
         """Retain the leaf policy before the type is written as source."""
         result = cls(object=code)
         result._scalar_leaves = scalar_leaves
+        result._headers = headers
         return result
 
     @property
@@ -637,13 +701,30 @@ class _CppArrayType(str):
 
 
 @beartype
+def _cpp_native_atomic_headers(type_name: str | None, /) -> frozenset[str]:
+    """Select dependencies for the producer's finite native atom
+    choices.
+    """
+    native_headers = {
+        "std::string": "#include <string>",
+        "std::nullptr_t": "#include <cstddef>",
+        "std::chrono::year_month_day": "#include <chrono>",
+        "std::chrono::system_clock::time_point": "#include <chrono>",
+    }
+    return frozenset(
+        header for name, header in native_headers.items() if name == type_name
+    )
+
+
+@beartype
 def _cpp_owned_atomic_type(type_name: str, /) -> str:
     """Retain initialization policy for the producer's native type
     choice.
     """
+    factory = _CppTypeDependencies.create
     if type_name in _CPP_SCALAR_FIELD_TYPES:
-        return _CppScalarFieldType(object=type_name)
-    return type_name
+        factory = _CppScalarFieldType.create
+    return factory(type_name, headers=_cpp_native_atomic_headers(type_name))
 
 
 @beartype
@@ -689,24 +770,41 @@ class _CppTypeCtx:
     def sequence_type(self, *, inner: str, length: int) -> str:
         """Return the type the active sequence format renders."""
         if self.sequence_is_array:
-            return _CppArrayType.create(
+            return _CppArrayType.create_array(
                 f"std::array<{inner}, {length}>",
                 scalar_leaves=_cpp_record_field_needs_value_initialization(
                     inner
                 ),
+                headers=frozenset({"#include <array>"})
+                | _cpp_type_headers(inner),
             )
-        return f"std::vector<{inner}>"
+        return _CppTypeDependencies.create(
+            f"std::vector<{inner}>",
+            headers=frozenset({"#include <vector>"})
+            | _cpp_type_headers(inner),
+        )
 
     def dict_type(self, value_type: str, /) -> str:
         """Return the active string-keyed mapping type."""
-        return f"{self.dict_type_name}<std::string, {value_type}>"
+        return _CppTypeDependencies.create(
+            f"{self.dict_type_name}<std::string, {value_type}>",
+            headers=frozenset(
+                {"#include <string>", _CPP_MAP_HEADERS[self.dict_type_name]}
+            )
+            | _cpp_type_headers(value_type),
+        )
 
     def variant_type(self, types: Sequence[str], /) -> str:
         """Return the active heterogeneous-value carrier type."""
         if self.variant_type_name != "std::variant":
-            return _CppVariantType(object=self.variant_type_name)
-        return _CppVariantType(
-            object=f"{self.variant_type_name}<{', '.join(types)}>"
+            return _CppVariantType.create(
+                self.variant_type_name, headers=frozenset()
+            )
+        return _CppVariantType.create(
+            f"{self.variant_type_name}<{', '.join(types)}>",
+            headers=frozenset({"#include <variant>"}).union(
+                *(_cpp_type_headers(type_name) for type_name in types)
+            ),
         )
 
     def element_to_type(
@@ -732,8 +830,10 @@ def _cpp_array_type(
 ) -> str | None:
     """Return the recursive ``std::array`` type for *items*."""
     if len(items) == 0:
-        return _CppArrayType.create(
-            "std::array<std::nullptr_t, 0>", scalar_leaves=True
+        return _CppArrayType.create_array(
+            "std::array<std::nullptr_t, 0>",
+            scalar_leaves=True,
+            headers=frozenset({"#include <array>", "#include <cstddef>"}),
         )
     int_type = type_ctx.int_resolver(
         [
@@ -910,7 +1010,12 @@ def _cpp_tuple_type(
         _cpp_tuple_element_type(value=element, type_ctx=type_ctx)
         for element in items
     ]
-    return f"std::tuple<{', '.join(element_types)}>"
+    return _CppTypeDependencies.create(
+        f"std::tuple<{', '.join(element_types)}>",
+        headers=frozenset({"#include <tuple>"}).union(
+            *(_cpp_type_headers(type_name) for type_name in element_types)
+        ),
+    )
 
 
 @beartype
@@ -939,7 +1044,17 @@ def _compute_cpp_type(
                 type_ctx=type_ctx,
                 in_mapping_value=True,
             )
-            return f"std::vector<std::pair<std::string, {value_type}>>"
+            return _CppTypeDependencies.create(
+                f"std::vector<std::pair<std::string, {value_type}>>",
+                headers=frozenset(
+                    {
+                        "#include <vector>",
+                        "#include <utility>",
+                        "#include <string>",
+                    }
+                )
+                | _cpp_type_headers(value_type),
+            )
         case dict():
             record_name = type_ctx.record_name_for_value(item)
             if record_name is not None:
@@ -1926,7 +2041,12 @@ def _cpp_render_record_declaration(
             f"{effective_value};"
         )
     members = " ".join(collected_members)
-    return f"struct {name} {{ {members} }};"
+    return _CppTypeDependencies.create(
+        f"struct {name} {{ {members} }};",
+        headers=frozenset[str]().union(
+            *(_cpp_type_headers(field.type_name) for field in fields)
+        ),
+    )
 
 
 @beartype
@@ -2096,24 +2216,23 @@ def _cpp_record_field_headers(
     *, declarations: tuple[str, ...]
 ) -> tuple[str, ...]:
     """Include dependencies named by the emitted native field types."""
-    type_headers = (
-        ("std::string", "#include <string>"),
-        ("std::vector", "#include <vector>"),
-        ("std::array", "#include <array>"),
-        ("std::map", "#include <map>"),
-        ("std::unordered_map", "#include <unordered_map>"),
-        ("std::set", "#include <set>"),
-        ("std::tuple", "#include <tuple>"),
-        ("std::pair", "#include <utility>"),
-        ("std::chrono::", "#include <chrono>"),
-        ("std::nullptr_t", "#include <cstddef>"),
-        ("std::variant", "#include <variant>"),
+    header_order = (
+        "#include <string>",
+        "#include <vector>",
+        "#include <array>",
+        "#include <map>",
+        "#include <unordered_map>",
+        "#include <set>",
+        "#include <tuple>",
+        "#include <utility>",
+        "#include <chrono>",
+        "#include <cstddef>",
+        "#include <variant>",
     )
-    return tuple(
-        header
-        for type_name, header in type_headers
-        if any(type_name in declaration for declaration in declarations)
+    required = frozenset[str]().union(
+        *(_cpp_type_headers(declaration) for declaration in declarations)
     )
+    return tuple(header for header in header_order if header in required)
 
 
 @beartype
@@ -4184,7 +4303,10 @@ class Cpp(metaclass=LanguageCls):
         if request.record_name is not None:
             return request.record_name
         if request.element_record_name is not None:
-            return f"std::vector<{request.element_record_name}>"
+            return _CppTypeDependencies.create(
+                f"std::vector<{request.element_record_name}>",
+                headers=frozenset({"#include <vector>"}),
+            )
         value = request.value
         if (
             isinstance(value, dict)
@@ -4193,8 +4315,15 @@ class Cpp(metaclass=LanguageCls):
         ):
             narrow_value_type = self._record_map_narrowing.value_type
             if narrow_value_type is not None:
-                return f"std::map<std::string, {narrow_value_type}>"
-            return _CPP_RECORD_MAP_TYPE
+                return _CppTypeDependencies.create(
+                    f"std::map<std::string, {narrow_value_type}>",
+                    headers=frozenset({"#include <map>", "#include <string>"})
+                    | _cpp_type_headers(narrow_value_type),
+                )
+            return _CppTypeDependencies.create(
+                _CPP_RECORD_MAP_TYPE,
+                headers=frozenset({"#include <map>", "#include <string>"}),
+            )
         if isinstance(value, int) and not isinstance(value, bool):
             int_type = _cpp_int_field_type(
                 value=value,
