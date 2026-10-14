@@ -24,6 +24,7 @@ def test_roc_call_wrapper_without_preamble() -> None:
             generated_body_preamble=(),
             call_stub_names=frozenset(),
             root_is_object_literal=False,
+            root_mapping_entries=None,
         ),
     ) == dedent(
         text="""\

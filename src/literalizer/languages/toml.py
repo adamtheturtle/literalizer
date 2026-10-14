@@ -4,7 +4,6 @@ import dataclasses
 import datetime as dt
 import enum
 import re
-import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import TYPE_CHECKING, ClassVar
@@ -108,50 +107,6 @@ from literalizer.exceptions import (
 def _format_time_toml(value: dt.time) -> str:
     """Format a time as an unquoted TOML time literal."""
     return value.isoformat()
-
-
-@beartype
-def _toml_comment_start(*, line: str) -> int:
-    """Return the index of *line*'s comment marker, or its length.
-
-    A ``#`` inside a basic string is content rather than a comment
-    marker, so the scan tracks whether it is inside one.  Only basic
-    strings need tracking: the renderer quotes both keys and string
-    values with ``"``, so a ``'`` only ever appears as content
-    (issue #4485).
-    """
-    in_string = False
-    escaped = False
-    for index, character in enumerate(iterable=line):
-        if not in_string:
-            if character == "#":
-                return index
-            in_string = character == '"'
-        elif escaped:
-            escaped = False
-        elif character == "\\":
-            escaped = True
-        elif character == '"':
-            in_string = False
-    return len(line)
-
-
-@beartype
-def _strip_structural_trailing_comma(*, line: str) -> str:
-    """Remove the inline table's trailing comma from a table line.
-
-    The comma that ends an inline table entry is structural and has no
-    place in the ``[table]`` form, but a comma inside a string value is
-    content.  Splitting the comment off first and then removing one
-    comma from the end of what remains distinguishes them without a
-    pattern that could match inside a string (issue #4485).
-    """
-    comment_start = _toml_comment_start(line=line)
-    value, comment = line[:comment_start], line[comment_start:]
-    stripped = value.rstrip()
-    if not stripped.endswith(","):
-        return line
-    return f"{stripped[:-1]}{value[len(stripped) :]}{comment}"
 
 
 _TOML_BARE_KEY_RE = re.compile(pattern=r"^[A-Za-z0-9_-]+$")
@@ -279,6 +234,7 @@ class Toml(metaclass=LanguageCls):
     # on one line whatever layout the caller asked for
     # (issue #4538).
     supports_multiline_dict_layout: ClassVar[bool] = False
+    supports_root_mapping_table: ClassVar[bool] = True
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_multi_param_call_wrapper_stub = True
@@ -589,27 +545,9 @@ class Toml(metaclass=LanguageCls):
         than a multiline inline table, whose newlines TOML 1.0 forbids.
         """
         variable_name = context.variable_name
-        mapping_prefix = f"{variable_name} = {{\n"
-        if variable_name != "" and content.startswith(mapping_prefix):
-            entries = content[len(mapping_prefix) :].removesuffix("\n}")
-            dedented = textwrap.dedent(text=entries)
-            # ``str.splitlines`` also breaks on U+0085, U+2028 and
-            # U+2029, which a basic string may carry raw, so split on
-            # real line separators only (issue #4486).
-            collected_table_lines: list[str] = []
-            for entry_line in dedented.split(sep="\n"):
-                effective_strip_structural_trailing_comma = entry_line
-                if effective_strip_structural_trailing_comma != "" and (
-                    not effective_strip_structural_trailing_comma[0].isspace()
-                ):
-                    effective_strip_structural_trailing_comma = (
-                        _strip_structural_trailing_comma(line=entry_line)
-                    )
-                collected_table_lines.append(
-                    effective_strip_structural_trailing_comma
-                )
-            table_lines = collected_table_lines
-            return f"[{variable_name}]\n" + "\n".join(table_lines)
+        entries = context.root_mapping_entries
+        if variable_name != "" and entries is not None:
+            return f"[{variable_name}]\n" + "\n".join(entries)
         return wrap_in_file_noop(
             content=content,
             context=context,

@@ -91,6 +91,9 @@ class FileWrapperContext:
     representation.
     """
 
+    root_mapping_entries: tuple[str, ...] | None
+    """Formatted root table entries retained by the mapping producer."""
+
 
 class NewVariableNameSyntax(enum.Enum):
     """Conservative lexical grammars for ``NewVariable`` declarations.
