@@ -2339,6 +2339,37 @@ def _format_sequence_child(
     )
 
 
+@runtime_checkable
+class _SourceSequenceEntryLanguage(Protocol):
+    """A language whose entry layout depends on the emitted value role."""
+
+    def format_sequence_entry_from_source(
+        self, original: Value, formatted: str, /, *, is_reference: bool
+    ) -> str:
+        """Format an entry with the reference decision made during
+        rendering.
+        """
+        ...
+
+
+@beartype
+def _format_source_sequence_entry(
+    original: Value, formatted: str, /, *, ctx: _RenderContext
+) -> str:
+    """Preserve the reference role when choosing an entry's layout."""
+    spec = ctx.spec
+    if isinstance(spec, _SourceSequenceEntryLanguage):
+        return spec.format_sequence_entry_from_source(
+            original,
+            formatted,
+            is_reference=(
+                _extract_call_arg_ref_name(value=original, ref_key=ctx.ref_key)
+                is not None
+            ),
+        )
+    return spec.format_sequence_entry(original, formatted)
+
+
 @beartype
 def _format_list_value(
     *,
@@ -2400,7 +2431,7 @@ def _format_list_value(
     if int_formatter is None:
         int_formatter = _widened_int_formatter(items=value, spec=spec)
     items = [
-        spec.format_sequence_entry(
+        _format_source_sequence_entry(
             v,
             _maybe_wrap_child(
                 parent_id=parent_id,
@@ -2418,6 +2449,7 @@ def _format_list_value(
                 ),
                 ctx=ctx,
             ),
+            ctx=ctx,
         )
         for position, v in enumerate(iterable=value)
     ]
@@ -3389,7 +3421,7 @@ def _format_collection_lines(
                     items=list_data, spec=spec
                 )
             formatted_entries = [
-                spec.format_sequence_entry(
+                _format_source_sequence_entry(
                     element,
                     _maybe_wrap_child(
                         parent_id=parent_id,
@@ -3405,6 +3437,7 @@ def _format_collection_lines(
                         ),
                         ctx=ctx,
                     ),
+                    ctx=ctx,
                 )
                 for position, element in enumerate(iterable=list_data)
             ]

@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Crystal"]
+languages_reason = "Crystal tuple entries distinguish record constructors, map literals and references before choosing macro-safe spacing."
+
+[ref]
+sequence_format = "TUPLE"
+heterogeneous_strategy = "RECORD"
+languages = ["Crystal"]
+languages_reason = "Crystal tuple entries distinguish record constructors, map literals and references before choosing macro-safe spacing."
+
+[ref.value_sources]
+value = "{\"field\": 2}"
