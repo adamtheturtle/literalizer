@@ -4431,30 +4431,18 @@ class _PreFormState:
     """
 
 
-@runtime_checkable
-class _ObjectLiteralLanguage(Protocol):
-    """A language whose mapping representation can be an object
-    literal.
-    """
-
-    def is_object_literal(self, value: Value, /) -> bool:
-        """Identify the selected representation of a non-reference
-        value.
-        """
-        ...
-
-
 @beartype
 def _root_is_object_literal(
     *, data: Value, language: Language, ref_key: str, include_delimiters: bool
 ) -> bool:
     """Retain the chosen root expression kind before text assembly."""
-    return (
-        include_delimiters
-        and isinstance(language, _ObjectLiteralLanguage)
-        and _extract_call_arg_ref_name(value=data, ref_key=ref_key) is None
-        and language.is_object_literal(data)
-    )
+    if not include_delimiters or not isinstance(data, dict):
+        return False
+    if _extract_call_arg_ref_name(value=data, ref_key=ref_key) is not None:
+        return False
+    if isinstance(data, OrderedMap):
+        return language.ordered_map_format_config.is_object_literal
+    return language.dict_format_config.is_object_literal
 
 
 @runtime_checkable

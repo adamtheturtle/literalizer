@@ -503,6 +503,11 @@ class CommentConfig:
 class DictFormatConfig:
     """Configuration for dict formatting."""
 
+    is_object_literal: ClassVar[bool] = False
+    """Whether this format emits an ECMAScript object-literal
+    expression.
+    """
+
     dict_open: Callable[[dict[Scalar, Value]], str]
     close: str
     format_entry: Callable[[str, Value, str], str]
@@ -560,6 +565,11 @@ class DictFormatBuilder(Protocol):
 @dataclasses.dataclass(frozen=True)
 class OrderedMapFormatConfig:
     """Configuration for ordered-map formatting."""
+
+    is_object_literal: ClassVar[bool] = False
+    """Whether this format emits an ECMAScript object-literal
+    expression.
+    """
 
     ordered_map_open: Callable[[dict[Scalar, Value]], str]
     close: str

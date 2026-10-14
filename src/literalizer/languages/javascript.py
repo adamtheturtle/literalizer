@@ -109,7 +109,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import Value
 
 # An object literal reads a ``__proto__`` property key -- quoted or
 # not -- as setting the prototype rather than defining an own
@@ -130,6 +130,8 @@ def _format_computed_key(*, raw_key: str, formatted_key: str) -> str:
 class _JavaScriptObjectDictFormatConfig(DictFormatConfig):
     """Object-literal config that classifies keys from source names."""
 
+    is_object_literal: ClassVar[bool] = True
+
     @staticmethod
     @override
     def format_key(*, raw_key: str, formatted_key: str) -> str:
@@ -141,7 +143,7 @@ class _JavaScriptObjectDictFormatConfig(DictFormatConfig):
 
 @beartype
 @dataclasses.dataclass(frozen=True)
-class _JavaScriptComputedDictFormatConfig(DictFormatConfig):
+class _JavaScriptComputedDictFormatConfig(_JavaScriptObjectDictFormatConfig):
     """Object-literal config that computes every property name."""
 
     format_key = staticmethod(_format_computed_key)
@@ -152,6 +154,8 @@ class _JavaScriptComputedDictFormatConfig(DictFormatConfig):
 class _JavaScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Ordered-object config that classifies keys from source names."""
 
+    is_object_literal: ClassVar[bool] = True
+
     @staticmethod
     @override
     def format_key(*, raw_key: str, formatted_key: str) -> str:
@@ -162,7 +166,9 @@ class _JavaScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
 
 
 @dataclasses.dataclass(frozen=True)
-class _JavaScriptComputedOrderedMapFormatConfig(OrderedMapFormatConfig):
+class _JavaScriptComputedOrderedMapFormatConfig(
+    _JavaScriptObjectOrderedMapFormatConfig
+):
     """Ordered-object config that computes every property name."""
 
     format_key = staticmethod(_format_computed_key)
@@ -778,12 +784,6 @@ class JavaScript(metaclass=LanguageCls):
     format_call_statement = default_format_call_statement
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
-
-    def is_object_literal(self, value: Value, /) -> bool:
-        """Identify a mapping rendered with the object-literal format."""
-        return isinstance(value, OrderedMap) or (
-            isinstance(value, dict) and self.dict_format.name == "OBJECT"
-        )
 
     @staticmethod
     def wrap_in_file(
