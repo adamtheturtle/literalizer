@@ -108,10 +108,10 @@ def _powershell_call_arg(
             is_type_literal = True
         case float():
             is_type_literal = not math.isfinite(value)
-        case datetime.datetime():
+        case dt.datetime():
             is_type_literal = False
-        case datetime.date():
-            is_type_literal = date_type is datetime.date
+        case dt.date():
+            is_type_literal = date_type is dt.date
         case _:
             is_type_literal = False
     if is_type_literal:
