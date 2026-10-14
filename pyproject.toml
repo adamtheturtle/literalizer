@@ -109,7 +109,7 @@ dev = [
     # ``towncrier`` at docs-build time, so towncrier is required here as
     # well as in the ``release`` extra (used by the release workflow).
     "sphinxcontrib-towncrier==0.5.0a0",
-    "strict-kwargs==2026.8.28.post2",
+    "strict-kwargs==2026.10.9",
     "tenacity==9.2.1",
     "towncrier==26.9.0",
     # ``tree-sitter`` resolves the ``tree-sitter-norg`` grammar for the
