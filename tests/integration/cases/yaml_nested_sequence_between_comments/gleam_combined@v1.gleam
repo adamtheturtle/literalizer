@@ -15,6 +15,7 @@ pub fn main() {
     // This comment describes the last pair.
     GList([GDict([#("item", GStr("last"))]), GStr("kept too")]),
   ])
+  let _ = my_data
   let my_data = GList([
     GList([
       GDict([#("item", GStr("existing"))]),

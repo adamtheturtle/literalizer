@@ -18,6 +18,7 @@ string-keyed maps, which is everything the shared input carries.
 """
 
 import shutil
+from pathlib import Path
 
 from literalizer.languages import Elixir
 from scripts import roundtrip_common
@@ -53,13 +54,19 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[elixir, "main.exs"],
+                args=[elixir, "strict.exs", "main.exs"],
                 failure_label="elixir runtime error",
             ),
         ],
         excluded_keys=(),
         expected_json=json_text,
-        extra_files=None,
+        extra_files={
+            "strict.exs": (
+                Path(__file__).parent / "run-elixir-strict.exs"
+            ).read_text(
+                encoding="utf-8",
+            ),
+        },
     )
 
 

@@ -10,6 +10,7 @@ pub fn main() {
     #("name", GStr("Alice")),
     #("scores", GList([GInt(10), GInt(20), GInt(30)])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("name", GStr("Alice")),
     #("scores", GList([GInt(10), GInt(20), GInt(30)])),

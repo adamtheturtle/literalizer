@@ -64,7 +64,7 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[crystal, "run", "main.cr"],
+                args=[crystal, "run", "--error-on-warnings", "main.cr"],
                 failure_label="crystal run error",
             ),
         ],

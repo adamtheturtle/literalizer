@@ -13,6 +13,7 @@ pub fn main() {
     #("active", GBool(True)),
     #("score", GFloat(4.5)),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("name", GStr("Alice")),
     #("age", GInt(30)),

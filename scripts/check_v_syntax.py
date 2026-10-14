@@ -50,7 +50,7 @@ def main() -> None:
             sys.exit(1)
         result = subprocess.run(
             args=bounded_command(
-                args=[v_path, "-check", target],
+                args=[v_path, "-W", "-check", target],
                 fixture=filename,
                 timeout_seconds=60,
             ),

@@ -11,6 +11,7 @@ pub fn main() {
     ])),
     #("b", GInt(2)),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("a", GDict([
       // indented

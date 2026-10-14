@@ -65,6 +65,8 @@ def main() -> None:
                 args=[
                     ocamlfind,
                     "ocamlopt",
+                    "-warn-error",
+                    "+a",
                     "-package",
                     "yojson",
                     "-linkpkg",

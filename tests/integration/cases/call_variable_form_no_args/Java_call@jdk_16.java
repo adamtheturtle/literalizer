@@ -1,5 +1,5 @@
 class Main {
-static Object make_widget(Object... args) { return null; }
+static Object make_widget() { return null; }
     public static void main() {
 var my_data = make_widget();
     }

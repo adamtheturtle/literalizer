@@ -187,7 +187,7 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[v, "-gc", "none", "-cc", "gcc", "run", "main.v"],
+                args=[v, "-W", "-gc", "none", "-cc", "gcc", "run", "main.v"],
                 failure_label="v run error",
             ),
         ],

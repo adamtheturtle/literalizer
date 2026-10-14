@@ -94,7 +94,15 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[clang, "-std=c99", "main.c", "-lcjson", "-o", "main"],
+                args=[
+                    clang,
+                    "-std=c99",
+                    "-Werror",
+                    "main.c",
+                    "-lcjson",
+                    "-o",
+                    "main",
+                ],
                 failure_label="clang error",
             ),
             roundtrip_common.Step(

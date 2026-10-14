@@ -5,5 +5,5 @@ pub type GVal {
 pub fn op(_value: a) -> Nil { Nil }
 
 pub fn main() {
-  op(GStr("hello"))
+  let _ = op(GStr("hello"))
 }

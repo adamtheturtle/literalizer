@@ -7,6 +7,6 @@ pub fn throttler_check(_user_id: a, _ts: b) -> Nil { Nil }
 pub fn emit(__arg: a) -> Nil { Nil }
 
 pub fn main() {
-  emit(throttler_check(GStr("user_1"), GFloat(1000.0)))
-  emit(throttler_check(GStr("user_2"), GFloat(2000.5)))
+  let _ = emit(throttler_check(GStr("user_1"), GFloat(1000.0)))
+  let _ = emit(throttler_check(GStr("user_2"), GFloat(2000.5)))
 }

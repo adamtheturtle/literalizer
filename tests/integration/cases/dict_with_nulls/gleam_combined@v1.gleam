@@ -11,6 +11,7 @@ pub fn main() {
     #("score", GNull),
     #("age", GInt(30)),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("name", GStr("Alice")),
     #("score", GNull),

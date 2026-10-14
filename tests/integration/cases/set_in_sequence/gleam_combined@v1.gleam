@@ -8,6 +8,7 @@ pub fn main() {
   let my_data = GList([
     GSet([GStr("a"), GStr("b")]),
   ])
+  let _ = my_data
   let my_data = GList([
     GSet([GStr("a"), GStr("b")]),
   ])

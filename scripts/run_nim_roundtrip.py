@@ -24,6 +24,7 @@ program is even produced.  Same shape as the Go, TypeScript, Zig,
 Swift, Rust, D, and C++ exclusions.
 """
 
+import os
 import shutil
 
 from literalizer.languages import Nim
@@ -72,7 +73,7 @@ def main() -> None:
                     "c",
                     "-r",
                     "--hints:off",
-                    "--warnings:off",
+                    *os.environ["NIM_WARNING_FLAGS"].split(),
                     "--nimcache:.",
                     "main.nim",
                 ],

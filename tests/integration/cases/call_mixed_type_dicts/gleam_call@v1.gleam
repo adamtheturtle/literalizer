@@ -7,6 +7,6 @@ pub type GVal {
 pub fn app_mgr_run(_operation: a) -> Nil { Nil }
 
 pub fn main() {
-  app_mgr_run(GDict([#("type", GStr("create")), #("pr_id", GStr("pr_1")), #("draft", GBool(True))]))
-  app_mgr_run(GDict([#("type", GStr("create")), #("pr_id", GStr("pr_2"))]))
+  let _ = app_mgr_run(GDict([#("type", GStr("create")), #("pr_id", GStr("pr_1")), #("draft", GBool(True))]))
+  let _ = app_mgr_run(GDict([#("type", GStr("create")), #("pr_id", GStr("pr_2"))]))
 }

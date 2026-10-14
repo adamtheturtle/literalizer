@@ -9,6 +9,7 @@ pub fn main() {
     GStr("hello"),
     GInt(42),
   ])
+  let _ = my_data
   let my_data = GList([
     GStr("hello"),
     GInt(42),

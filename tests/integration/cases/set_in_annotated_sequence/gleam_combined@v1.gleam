@@ -10,6 +10,7 @@ pub fn main() {
     GSet([GInt(1), GInt(2)]),
     GList([]),
   ])
+  let _ = my_data
   let my_data = GList([
     GSet([]),
     GSet([GInt(1), GInt(2)]),

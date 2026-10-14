@@ -13,6 +13,7 @@ pub fn main() {
       #("debug", GBool(True)),
     ])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("server", GDict([
       #("host", GStr("localhost")),

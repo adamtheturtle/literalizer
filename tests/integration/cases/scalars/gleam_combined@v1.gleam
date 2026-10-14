@@ -14,6 +14,7 @@ pub fn main() {
     GBool(False),
     GStr("hello \"world\""),
   ])
+  let _ = my_data
   let my_data = GList([
     GInt(42),
     GFloat(3.14),

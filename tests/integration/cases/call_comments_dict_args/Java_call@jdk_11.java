@@ -1,6 +1,6 @@
 import java.util.Map;
 class Main {
-static Object process(Object... args) { return null; }
+static Object process(Object arg0) { return null; }
     public static void main() {
 // Test cases
 process(Map.ofEntries(Map.entry("type", "create"), Map.entry("pr_id", "pr_1")));  // first case

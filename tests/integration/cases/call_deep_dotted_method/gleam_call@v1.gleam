@@ -7,7 +7,7 @@ pub type GVal {
 pub fn obj_api_client_post(_data: a) -> Nil { Nil }
 
 pub fn main() {
-  obj_api_client_post(GStr("hello"))
-  obj_api_client_post(GInt(42))
-  obj_api_client_post(GBool(True))
+  let _ = obj_api_client_post(GStr("hello"))
+  let _ = obj_api_client_post(GInt(42))
+  let _ = obj_api_client_post(GBool(True))
 }

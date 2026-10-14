@@ -14,6 +14,7 @@ pub fn main() {
     // Outdented from the inner mapping too, so the root claims this.
     #("d", GInt(3)),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("a", GDict([
       #("b", GList([GInt(1)])),

@@ -10,6 +10,7 @@ pub fn main() {
     // second
     GStr("b"),
   ])
+  let _ = my_data
   let my_data = GList([
     // first
     GStr("a"),

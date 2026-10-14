@@ -8,6 +8,7 @@ pub fn main() {
     #("a", GInt(1)),
     #("b", GInt(1099511627776)),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("a", GInt(1)),
     #("b", GInt(1099511627776)),

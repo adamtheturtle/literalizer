@@ -11,6 +11,7 @@ pub fn main() {
     #("name", GStr("Alice")),
     #("tags", GSet([GBool(True), GInt(42), GStr("apple")])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("name", GStr("Alice")),
     #("tags", GSet([GBool(True), GInt(42), GStr("apple")])),

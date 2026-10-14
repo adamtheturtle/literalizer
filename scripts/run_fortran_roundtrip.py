@@ -82,6 +82,7 @@ def main() -> None:
             roundtrip_common.Step(
                 args=[
                     gfortran,
+                    "-Werror",
                     "-std=f2008",
                     _FVAL_M_SRC.name,
                     "main.f90",

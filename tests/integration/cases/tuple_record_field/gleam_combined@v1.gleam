@@ -10,6 +10,7 @@ pub fn main() {
     #("call", GStr("send")),
     #("args", GList([GInt(1), GStr("email"), GStr("a@gmail.com"), GInt(100)])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("call", GStr("send")),
     #("args", GList([GInt(1), GStr("email"), GStr("a@gmail.com"), GInt(100)])),

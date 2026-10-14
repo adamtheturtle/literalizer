@@ -15,6 +15,7 @@ pub fn main() {
       GInt(2),  // second
     ])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("a", GDict([
       // inner note

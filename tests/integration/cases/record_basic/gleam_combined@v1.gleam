@@ -13,6 +13,7 @@ pub fn main() {
     #("enabled", GBool(False)),
     #("related_ids", GList([GInt(1), GInt(2), GInt(3)])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("id", GInt(1)),
     #("label", GStr("She said \"hello\", then waved")),
