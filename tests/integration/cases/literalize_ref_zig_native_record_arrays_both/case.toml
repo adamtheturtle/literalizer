@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Zig"]
+languages_reason = "Zig native array reassignment must retain generated record element identities."
+
+[ref]
+languages = ["Zig"]
+languages_reason = "Zig native array reassignment must retain generated record element identities."
+declaration_style = "VAR"
+heterogeneous_strategy = "RECORD"
+variable_form = "both"
+
+[ref.value_sources]
+shared = '[{"id": 1}]'
+second = '[{"id": 2}]'

@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Zig"]
+languages_reason = "Zig native array reassignment must retain empty bound-array coercion."
+
+[ref]
+languages = ["Zig"]
+languages_reason = "Zig native array reassignment must retain empty bound-array coercion."
+declaration_style = "VAR"
+heterogeneous_strategy = "RECORD"
+variable_form = "both"
+
+[ref.value_sources]
+shared = "[]"
+second = "[1, 2]"
