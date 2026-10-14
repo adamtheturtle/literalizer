@@ -71,8 +71,10 @@ from literalizer._language import (
     PositionalCallStyle,
     PostfixCallStyle,
     PrefixCallStyle,
+    RenderedEmptySequence,
     StubReturn,
     decode_file_sections,
+    empty_container_code,
     is_reserved_identifier,
     validate_call_parameter_names,
     validate_new_variable_name,
@@ -676,7 +678,7 @@ class _RenderContext:
     dict_open_overrides: Mapping[int, str]
     sequence_open_overrides: Mapping[int, str]
     dict_int_formatters: Mapping[int, Callable[[int], str]]
-    empty_container_overrides: Mapping[int, str]
+    empty_container_overrides: Mapping[int, str | RenderedEmptySequence]
     list_int_formatters: Mapping[int, Callable[[int], str]]
     ref_case: IdentifierCase | None
     ref_values: Mapping[str, Value] | None
@@ -869,11 +871,11 @@ def _compute_tuple_list_ids(*, data: Value, spec: Language) -> frozenset[int]:
 @beartype
 def _empty_container_literal_overrides(
     *, data: Value, spec: Language
-) -> Mapping[int, str]:
+) -> Mapping[int, str | RenderedEmptySequence]:
     """Return language-specific literal replacements for empty
     containers.
     """
-    overrides = dict(
+    overrides: dict[int, str | RenderedEmptySequence] = dict(
         spec.heterogeneous_behavior.empty_container_literal_overrides(data)
     )
     _accumulate_sibling_list_empty_overrides(
@@ -902,8 +904,10 @@ def _empty_container_literal_overrides(
 def _accumulate_cousin_empty_list_overrides(
     *,
     value: Value,
-    narrowed_empty_sequence: Callable[[Sequence[list[Value]]], str],
-    out: dict[int, str],
+    narrowed_empty_sequence: Callable[
+        [Sequence[list[Value]]], str | RenderedEmptySequence
+    ],
+    out: dict[int, str | RenderedEmptySequence],
 ) -> None:
     """Type empty lists at corresponding paths through sibling lists."""
     children: Sequence[Value]
@@ -932,8 +936,10 @@ def _accumulate_cousin_empty_list_overrides(
 def _accumulate_positional_empty_list_overrides(
     *,
     sibling_lists: Sequence[list[Value]],
-    narrowed_empty_sequence: Callable[[Sequence[list[Value]]], str],
-    out: dict[int, str],
+    narrowed_empty_sequence: Callable[
+        [Sequence[list[Value]]], str | RenderedEmptySequence
+    ],
+    out: dict[int, str | RenderedEmptySequence],
 ) -> None:
     """Walk equal-length sibling lists and type corresponding empties."""
     lengths = {len(sibling) for sibling in sibling_lists}
@@ -965,7 +971,10 @@ def _accumulate_positional_empty_list_overrides(
 
 @beartype
 def _accumulate_sibling_list_empty_overrides(
-    *, value: Value, spec: Language, out: dict[int, str]
+    *,
+    value: Value,
+    spec: Language,
+    out: dict[int, str | RenderedEmptySequence],
 ) -> None:
     """Type empty lists from homogeneous non-empty list siblings."""
     if isinstance(value, list):
@@ -1009,7 +1018,7 @@ def _accumulate_cousin_empty_dict_overrides(
     *,
     value: Value,
     narrowed_empty_dict: Callable[[Sequence[dict[Scalar, Value]]], str],
-    out: dict[int, str],
+    out: dict[int, str | RenderedEmptySequence],
 ) -> None:
     """Type empty maps from the same field in sibling dictionaries.
 
@@ -1049,7 +1058,7 @@ def _accumulate_sibling_dict_empty_overrides(
     *,
     sibling_dicts: Sequence[dict[Scalar, Value]],
     narrowed_empty_dict: Callable[[Sequence[dict[Scalar, Value]]], str],
-    out: dict[int, str],
+    out: dict[int, str | RenderedEmptySequence],
 ) -> None:
     """Type empty maps at corresponding paths through sibling dicts."""
     keys = {key for sibling in sibling_dicts for key in sibling}
@@ -1536,7 +1545,9 @@ def _format_dict_entry_value(
                     ctx.spec.sequence_format_config.narrowed_empty_form
                 )
                 if narrowed_empty_form is not None:
-                    return narrowed_empty_form(non_empty_siblings)
+                    return empty_container_code(
+                        narrowed_empty_form(non_empty_siblings)
+                    )
                 outer_sequence_override = sibling_opener
         tuple_literal = _maybe_format_tuple_literal(
             value=value,
@@ -2308,7 +2319,9 @@ def _format_sequence_child(
                 for other in value
                 if isinstance(other, list) and bool(other)
             ]
-            return narrowed_empty_form(non_empty_siblings)
+            return empty_container_code(
+                narrowed_empty_form(non_empty_siblings)
+            )
     if (
         parent_override is None
         and isinstance(child, dict)
@@ -2337,6 +2350,39 @@ def _format_sequence_child(
         ctx=child_ctx,
         int_formatter=int_formatter,
     )
+
+
+@runtime_checkable
+class _SequenceEntryContextLanguage(Protocol):
+    """A sequence-entry formatter that consumes retained empty types."""
+
+    def format_sequence_entry_with_context(
+        self,
+        original: Value,
+        formatted: str,
+        /,
+        *,
+        empty_container_overrides: Mapping[int, str | RenderedEmptySequence],
+    ) -> str:
+        """Format an entry using its empty-container inference
+        metadata.
+        """
+        ...
+
+
+@beartype
+def _format_sequence_entry(
+    ctx: _RenderContext, original: Value, formatted: str, /
+) -> str:
+    """Keep inferred empty types available to an entry's formatter."""
+    spec = ctx.spec
+    if isinstance(spec, _SequenceEntryContextLanguage):
+        return spec.format_sequence_entry_with_context(
+            original,
+            formatted,
+            empty_container_overrides=ctx.empty_container_overrides,
+        )
+    return spec.format_sequence_entry(original, formatted)
 
 
 @beartype
@@ -2400,7 +2446,8 @@ def _format_list_value(
     if int_formatter is None:
         int_formatter = _widened_int_formatter(items=value, spec=spec)
     items = [
-        spec.format_sequence_entry(
+        _format_sequence_entry(
+            ctx,
             v,
             _maybe_wrap_child(
                 parent_id=parent_id,
@@ -2643,7 +2690,7 @@ def _format_value(
             )
     empty_override = ctx.empty_container_overrides.get(id(value))
     if empty_override is not None:
-        return empty_override
+        return empty_container_code(empty_override)
     if isinstance(value, dict) and not isinstance(value, OrderedMap):
         record_literal = _maybe_format_record_literal(
             value=value,
@@ -3389,7 +3436,8 @@ def _format_collection_lines(
                     items=list_data, spec=spec
                 )
             formatted_entries = [
-                spec.format_sequence_entry(
+                _format_sequence_entry(
+                    ctx,
                     element,
                     _maybe_wrap_child(
                         parent_id=parent_id,
@@ -3616,7 +3664,7 @@ class _RecordContextFormatting:
     dict_open_overrides: Mapping[int, str]
     sequence_open_overrides: Mapping[int, str]
     dict_int_formatters: Mapping[int, Callable[[int], str]]
-    empty_overrides: Mapping[int, str]
+    empty_overrides: Mapping[int, str | RenderedEmptySequence]
     list_int_formatters: Mapping[int, Callable[[int], str]]
 
 
