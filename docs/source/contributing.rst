@@ -31,6 +31,8 @@ Run lint tools either by committing, or with:
    $ prek run --all-files --hook-stage pre-push --verbose
    $ prek run --all-files --hook-stage manual --verbose
 
+For C++ platform discrepancies, follow :doc:`cpp-toolchain-validation` to compare the same fixture and strict configuration across standard libraries.
+
 Running tests
 -------------
 

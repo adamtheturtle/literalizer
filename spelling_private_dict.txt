@@ -61,6 +61,7 @@ HStr
 HashiCorp
 Haxe
 Hcl
+Homebrew
 JSONDecodeError
 Jsonnet
 LUB
@@ -132,6 +133,7 @@ ZVal
 Zig
 accessor
 accessors
+allocator
 allowlist
 arity
 backend
@@ -205,6 +207,7 @@ literalizer's
 literalizing
 localhost
 luac
+macOS
 matlab
 misclassifies
 misclassify
@@ -240,6 +243,7 @@ pyright
 pytest
 pytest's
 rakudo
+reachability
 readonly
 recordization
 recordized
