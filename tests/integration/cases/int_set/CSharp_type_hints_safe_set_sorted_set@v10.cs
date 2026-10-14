@@ -4,3 +4,4 @@ var my_data = new SortedSet<int> {
     2,
     3
 };
+    _ = my_data;

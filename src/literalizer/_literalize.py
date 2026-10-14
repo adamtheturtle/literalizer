@@ -1,7 +1,7 @@
 """Core conversion logic: formatting values and entry points."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -443,7 +443,7 @@ def _format_scalar_integer(
 @beartype
 def _format_scalar_datetime(
     *,
-    value: datetime.datetime,
+    value: dt.datetime,
     spec: Language,
     int_formatter: Callable[[int], str] | None,
 ) -> str:
@@ -487,11 +487,11 @@ def _format_scalar(
             result = spec.format_string(value)
         case bytes():
             result = spec.format_bytes(value)
-        case datetime.datetime():
+        case dt.datetime():
             result = _format_scalar_datetime(
                 value=value, spec=spec, int_formatter=int_formatter
             )
-        case datetime.time():
+        case dt.time():
             result = spec.format_time(value)
         case _:
             result = spec.format_date(value)
@@ -567,7 +567,7 @@ def _map_widened_int_formatter(
     if spec.datetime_format.value.type_produced is int:
         items = [
             datetime_epoch_seconds(value=value)
-            if isinstance(value, datetime.datetime)
+            if isinstance(value, dt.datetime)
             else value
             for value in items
         ]
@@ -658,9 +658,9 @@ _SCALAR_TYPES: Final = (
     float,
     bool,
     type(None),
-    datetime.date,
-    datetime.datetime,
-    datetime.time,
+    dt.date,
+    dt.datetime,
+    dt.time,
     bytes,
 )
 

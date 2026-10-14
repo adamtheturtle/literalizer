@@ -1,7 +1,7 @@
 """Erlang language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -177,19 +177,19 @@ def _format_bytes_otp_json(value: bytes) -> str:
 
 
 @beartype
-def _format_date_otp_json(value: datetime.date) -> str:
+def _format_date_otp_json(value: dt.date) -> str:
     """Format a date as an ISO 8601 UTF-8 binary literal."""
     return _wrap_utf8_binary(quoted=format_date_iso(value=value))
 
 
 @beartype
-def _format_datetime_otp_json(value: datetime.datetime) -> str:
+def _format_datetime_otp_json(value: dt.datetime) -> str:
     """Format a datetime as an ISO 8601 UTF-8 binary literal."""
     return _wrap_utf8_binary(quoted=format_datetime_iso(value=value))
 
 
 @beartype
-def _format_time_otp_json(value: datetime.time) -> str:
+def _format_time_otp_json(value: dt.time) -> str:
     """Format a time as an ISO 8601 UTF-8 binary literal."""
     return _wrap_utf8_binary(quoted=format_time_iso(value=value))
 
@@ -242,13 +242,13 @@ def _format_variable_declaration(
 
 
 @beartype
-def _format_date_erlang(value: datetime.date) -> str:
+def _format_date_erlang(value: dt.date) -> str:
     """Format a date as an Erlang ``{Year, Month, Day}`` tuple."""
     return f"{{{value.year}, {value.month}, {value.day}}}"
 
 
 @beartype
-def _format_datetime_erlang(value: datetime.datetime) -> str:
+def _format_datetime_erlang(value: dt.datetime) -> str:
     """Format a datetime as an Erlang ``{{Y, M, D}, {H, Min, S}}``
     tuple.
     """
@@ -502,7 +502,7 @@ class Erlang(metaclass=LanguageCls):
         ERLANG = DateFormatConfig(
             formatter=_format_date_erlang,
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
 
     class DatetimeFormats(DatetimeFormatEnum):
@@ -518,7 +518,7 @@ class Erlang(metaclass=LanguageCls):
         ERLANG = DatetimeFormatConfig(
             formatter=_format_datetime_erlang,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
 
         EPOCH = DatetimeFormatConfig(
@@ -1095,21 +1095,21 @@ class Erlang(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return _format_date_otp_json
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if self._json_type_active:
             return _format_datetime_otp_json
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self._json_type_active:
             return _format_time_otp_json

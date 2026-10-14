@@ -1,7 +1,7 @@
 """TOML language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -105,7 +105,7 @@ from literalizer.exceptions import (
 
 
 @beartype
-def _format_time_toml(value: datetime.time) -> str:
+def _format_time_toml(value: dt.time) -> str:
     """Format a time as an unquoted TOML time literal."""
     return value.isoformat()
 
@@ -329,7 +329,7 @@ class Toml(metaclass=LanguageCls):
         TOML = DateFormatConfig(
             formatter=date_iso_formatter(template="{iso}"),
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -341,7 +341,7 @@ class Toml(metaclass=LanguageCls):
         TOML = DatetimeFormatConfig(
             formatter=datetime_iso_formatter(template="{iso}"),
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -791,17 +791,17 @@ class Toml(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return _format_time_toml
 

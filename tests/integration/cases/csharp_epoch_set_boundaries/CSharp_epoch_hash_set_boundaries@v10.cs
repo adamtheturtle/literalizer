@@ -6,3 +6,4 @@ var my_data = new HashSet<long> {
     2147483648,
     4085195400
 };
+    _ = my_data;

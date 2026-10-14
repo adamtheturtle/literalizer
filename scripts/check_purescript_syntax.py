@@ -6,6 +6,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+from scripts.bounded_command import bounded_command
 from scripts.purescript_common import write_lint_environment
 
 
@@ -20,14 +21,18 @@ def main() -> None:
         output_dir = Path(tmpdir) / "output"
 
         result = subprocess.run(
-            args=[
-                purs_path,
-                "compile",
-                filename,
-                *(p.as_posix() for p in env_purs_paths),
-                "-o",
-                output_dir.as_posix(),
-            ],
+            args=bounded_command(
+                args=[
+                    purs_path,
+                    "compile",
+                    filename,
+                    *(p.as_posix() for p in env_purs_paths),
+                    "-o",
+                    output_dir.as_posix(),
+                ],
+                fixture=filename,
+                timeout_seconds=60,
+            ),
             capture_output=True,
             text=True,
             check=False,

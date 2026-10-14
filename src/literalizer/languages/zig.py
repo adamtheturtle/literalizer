@@ -1,7 +1,7 @@
 """Zig language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -135,15 +135,15 @@ from literalizer.exceptions import (
 
 
 @beartype
-def _format_date_zig(value: datetime.date) -> str:
+def _format_date_zig(value: dt.date) -> str:
     """Format a date as epoch seconds (midnight UTC)."""
-    dt = datetime.datetime(
+    midnight = dt.datetime(
         year=value.year,
         month=value.month,
         day=value.day,
-        tzinfo=datetime.UTC,
+        tzinfo=dt.UTC,
     )
-    return str(object=int(dt.timestamp()))
+    return str(object=int(midnight.timestamp()))
 
 
 @beartype
@@ -236,11 +236,11 @@ def _format_zig_entry(
             tag = "float"
         case str() | bytes():
             tag = "str"
-        case datetime.datetime():
+        case dt.datetime():
             tag = _zig_temporal_variant(produced_type=datetime_type)
-        case datetime.time():
+        case dt.time():
             tag = "str"
-        case datetime.date():
+        case dt.date():
             tag = _zig_temporal_variant(produced_type=date_type)
         case _:
             return formatted
@@ -1606,12 +1606,12 @@ class Zig(metaclass=LanguageCls):
                 value_type = "f64"
             case None:
                 value_type = "?i64"
-            case datetime.datetime():
+            case dt.datetime():
                 value_type = _ZIG_EPOCH_INT_FIELD_TYPES.get(
                     self.datetime_format.value.type_produced,
                     "[]const u8",
                 )
-            case datetime.date():
+            case dt.date():
                 value_type = _ZIG_EPOCH_INT_FIELD_TYPES.get(
                     self.date_format.value.type_produced,
                     "[]const u8",
@@ -1961,17 +1961,17 @@ class Zig(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

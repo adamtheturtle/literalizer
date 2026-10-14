@@ -1,6 +1,6 @@
 """Collection opener functions and typed opener configuration."""
 
-import datetime
+import datetime as dt
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
@@ -144,9 +144,9 @@ def make_element_to_type(
             (MixedNumeric, mixed_numeric_type),
             (WideInt, effective_wide_int_type),
             (BeyondI64, effective_beyond_i64_type),
-            (datetime.date, date_type),
-            (datetime.datetime, datetime_type),
-            (datetime.time, time_type),
+            (dt.date, date_type),
+            (dt.datetime, datetime_type),
+            (dt.time, time_type),
         )
         if entry_name is not None
     }
@@ -580,9 +580,9 @@ class TypedOpenerConfig:
                 (MixedNumeric, self._mixed_numeric_type),
                 (WideInt, effective_self),
                 (BeyondI64, self._beyond_i64_type),
-                (datetime.date, self._date_type),
-                (datetime.datetime, self._datetime_type),
-                (datetime.time, self._time_type),
+                (dt.date, self._date_type),
+                (dt.datetime, self._datetime_type),
+                (dt.time, self._time_type),
             )
             if entry_name is not None
         }

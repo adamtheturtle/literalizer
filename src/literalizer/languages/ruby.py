@@ -1,7 +1,7 @@
 """Ruby language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Sequence
@@ -218,7 +218,7 @@ def _ruby_call_stub(
 
 
 @beartype
-def _format_datetime_ruby(value: datetime.datetime) -> str:
+def _format_datetime_ruby(value: dt.datetime) -> str:
     """Format a datetime as a Ruby Time constructor call.
 
     UTC-aware datetimes use ``Time.utc``. Datetimes with a non-UTC
@@ -448,7 +448,7 @@ class Ruby(metaclass=LanguageCls):
                 template="Date.new({year}, {month}, {day})",
             ),
             preamble_lines=("require 'date'",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -462,7 +462,7 @@ class Ruby(metaclass=LanguageCls):
         RUBY = DatetimeFormatConfig(
             formatter=_format_datetime_ruby,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -934,17 +934,17 @@ class Ruby(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

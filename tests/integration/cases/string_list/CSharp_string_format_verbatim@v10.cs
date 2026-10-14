@@ -4,3 +4,4 @@ var my_data = (
     @"bar",
     @"baz"
 );
+    _ = my_data;

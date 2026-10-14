@@ -9,3 +9,4 @@ my_data = new HashSet<string> {
     "banana",
     "cherry"
 };
+    _ = my_data;

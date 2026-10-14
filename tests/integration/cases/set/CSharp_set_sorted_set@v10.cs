@@ -4,3 +4,4 @@ var my_data = new SortedSet<string> {
     "banana",
     "cherry"
 };
+    _ = my_data;

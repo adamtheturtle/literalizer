@@ -3,6 +3,7 @@
 set -euo pipefail
 
 source_path=$(realpath "$1")
+bounded_runner=$(realpath "$(dirname "$0")/run-bounded.sh")
 workspace=$(mktemp -d)
 trap 'rm -rf "$workspace"' EXIT
 cp "$source_path" "$workspace/main.odin"
@@ -12,7 +13,7 @@ cp "$source_path" "$workspace/main.odin"
 printf 'Compiling and running %s\n' "$source_path"
 (
     cd "$workspace"
-    timeout --verbose --kill-after=10s 60s \
+    "$bounded_runner" "$source_path" --kill-after=10s 60s \
         odin run . -out:"$workspace/prog" -show-system-calls
 ) || {
     status=$?

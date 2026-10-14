@@ -28,6 +28,7 @@ var globalImports = GlobalImport.Parse(
 ).ToList();
 
 var options = new VisualBasicCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+    .WithGeneralDiagnosticOption(ReportDiagnostic.Error)
     .WithGlobalImports(globalImports)
     .WithOptionInfer(true)
     .WithOptionExplicit(true)

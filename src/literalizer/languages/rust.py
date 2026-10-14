@@ -1,7 +1,7 @@
 """Rust language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections import Counter
@@ -576,11 +576,11 @@ def _rust_scalar_type(
             result = "f64"
         case str() | bytes():
             result = "&str"
-        case datetime.date():
+        case dt.date():
             result = date_type
-            if isinstance(data, datetime.datetime):
+            if isinstance(data, dt.datetime):
                 result = datetime_type
-        case datetime.time():
+        case dt.time():
             result = "&str"
         case None:
             result = "Option<()>"
@@ -903,7 +903,7 @@ def _format_rust_json_assignment(name: str, value: str, data: Value) -> str:
 
 
 @beartype
-def _format_date_rust(value: datetime.date) -> str:
+def _format_date_rust(value: dt.date) -> str:
     """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call."""
     return (
         f"NaiveDate::from_ymd_opt({value.year}, {value.month}, {value.day})"
@@ -912,7 +912,7 @@ def _format_date_rust(value: datetime.date) -> str:
 
 
 @beartype
-def _format_datetime_rust(value: datetime.datetime) -> str:
+def _format_datetime_rust(value: dt.datetime) -> str:
     """Format a datetime as a Rust ``NaiveDateTime::new(...)`` call."""
     date = _format_date_rust(value=value)
     if value.microsecond != 0:
@@ -946,13 +946,13 @@ class _VariantSignature:
 @beartype
 def _temporal_variant_signature(
     *,
-    value: datetime.date | datetime.time,
+    value: dt.date | dt.time,
     date_type: str,
     datetime_type: str,
 ) -> _VariantSignature:
     """Return the tagged-enum signature for one temporal value."""
     match value:
-        case datetime.datetime():
+        case dt.datetime():
             effective_name = "DateTime"
             if datetime_type in {"i32", "i64", "i128"}:
                 effective_name = datetime_type.upper()
@@ -960,7 +960,7 @@ def _temporal_variant_signature(
                 name=effective_name,
                 inner_type=datetime_type,
             )
-        case datetime.date():
+        case dt.date():
             return _VariantSignature(name="Date", inner_type=date_type)
         case _:
             return _VariantSignature(
@@ -1003,7 +1003,7 @@ def _heterogeneous_variant_for_scalar(
                 name="Bytes",
                 inner_type="&'static str",
             )
-        case datetime.datetime() | datetime.date() | datetime.time():
+        case dt.datetime() | dt.date() | dt.time():
             signature = _temporal_variant_signature(
                 value=value,
                 date_type=date_type,
@@ -1115,7 +1115,7 @@ def _rust_is_scalar(value: object, /) -> TypeIs[Scalar]:
     """Return whether *value* is a scalar rather than a ref/container."""
     return value is None or isinstance(
         value,
-        (str, int, float, datetime.date, datetime.time, bytes),
+        (str, int, float, dt.date, dt.time, bytes),
     )
 
 
@@ -3341,7 +3341,7 @@ class Rust(metaclass=LanguageCls):
         RUST = DateFormatConfig(
             formatter=_format_date_rust,
             preamble_lines=("use chrono::NaiveDate;",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -3359,7 +3359,7 @@ class Rust(metaclass=LanguageCls):
                 "use chrono::NaiveDateTime;",
                 "use chrono::NaiveTime;",
             ),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -4553,7 +4553,7 @@ class Rust(metaclass=LanguageCls):
             )
         if (
             not self._json_type_active
-            and self.datetime_format.value.type_produced is datetime.datetime
+            and self.datetime_format.value.type_produced is dt.datetime
         ):
             reject_aware_datetimes(
                 data=data, language_name="Rust", allow_utc_offset=False
@@ -4715,19 +4715,19 @@ class Rust(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return format_date_iso
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if self.datetime_format.value.type_produced is int:
 
             @beartype
-            def _format_epoch(value: datetime.datetime) -> str:
+            def _format_epoch(value: dt.datetime) -> str:
                 """Give wide epoch literals their required Rust suffix."""
                 return _apply_rust_integer_suffix(
                     value=datetime_epoch_seconds(value=value), base=str
@@ -4739,7 +4739,7 @@ class Rust(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

@@ -5,7 +5,7 @@ no offset-carrying time, so the value these bind cannot be written in
 one.
 """
 
-import datetime
+import datetime as dt
 from textwrap import dedent
 
 import pytest
@@ -14,11 +14,11 @@ from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.exceptions import UnrepresentableInputError
 from literalizer.languages import Go, Hcl, Python
 
-_AWARE_TIME = datetime.time(
+_AWARE_TIME = dt.time(
     hour=12,
     minute=30,
     second=15,
-    tzinfo=datetime.timezone(offset=datetime.timedelta(hours=2)),
+    tzinfo=dt.timezone(offset=dt.timedelta(hours=2)),
 )
 
 

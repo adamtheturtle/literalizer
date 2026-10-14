@@ -1,6 +1,6 @@
 """Date and datetime formatting functions."""
 
-import datetime
+import datetime as dt
 from collections.abc import Callable
 
 from beartype import beartype
@@ -10,13 +10,13 @@ from literalizer.exceptions import UnrepresentableInputError
 
 @beartype
 def normalize_datetime_utc(
-    value: datetime.datetime, *, language_name: str
-) -> datetime.datetime:
+    value: dt.datetime, *, language_name: str
+) -> dt.datetime:
     """Normalize an aware datetime or raise a typed representation
     error.
     """
     try:
-        return value.astimezone(tz=datetime.UTC)
+        return value.astimezone(tz=dt.UTC)
     except OverflowError as error:
         msg = (
             f"{language_name} cannot normalize datetime to UTC within "
@@ -26,7 +26,7 @@ def normalize_datetime_utc(
 
 
 @beartype
-def format_date_iso(value: datetime.date) -> str:
+def format_date_iso(value: dt.date) -> str:
     """Format a date as an ISO 8601 quoted string literal.
 
     Example: ``datetime.date(2024, 1, 15)`` -> ``"2024-01-15"``.
@@ -50,7 +50,7 @@ def _javascript_date_expression(*, year: int, args: str) -> str:
 
 
 @beartype
-def format_date_javascript(value: datetime.date) -> str:
+def format_date_javascript(value: dt.date) -> str:
     """Format a date as a JavaScript local-midnight ``Date``.
 
     The numeric constructor uses local calendar components. Its month is
@@ -63,7 +63,7 @@ def format_date_javascript(value: datetime.date) -> str:
 
 
 @beartype
-def format_datetime_javascript(value: datetime.datetime) -> str:
+def format_datetime_javascript(value: dt.datetime) -> str:
     """Format an exactly representable JavaScript ``Date``.
 
     Naive values use the numeric constructor so their calendar components do
@@ -88,7 +88,7 @@ def format_datetime_javascript(value: datetime.datetime) -> str:
 
 
 @beartype
-def format_datetime_iso(value: datetime.datetime) -> str:
+def format_datetime_iso(value: dt.datetime) -> str:
     """Format a datetime as an ISO 8601 quoted string literal.
 
     Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` ->
@@ -98,7 +98,7 @@ def format_datetime_iso(value: datetime.datetime) -> str:
 
 
 @beartype
-def format_time_iso(value: datetime.time) -> str:
+def format_time_iso(value: dt.time) -> str:
     """Format a time as an ISO 8601 quoted string literal.
 
     Example: ``datetime.time(9, 30)`` -> ``"09:30:00"``.
@@ -107,7 +107,7 @@ def format_time_iso(value: datetime.time) -> str:
 
 
 @beartype
-def format_time_local_time_of(value: datetime.time) -> str:
+def format_time_local_time_of(value: dt.time) -> str:
     """Format a time as a ``LocalTime.of(...)`` call.
 
     Shared by Java, Kotlin, Scala, and Groovy, which all use the
@@ -125,7 +125,7 @@ def format_time_local_time_of(value: datetime.time) -> str:
 
 
 @beartype
-def _time_only_args(value: datetime.time) -> str:
+def _time_only_args(value: dt.time) -> str:
     """Return the comma-separated argument list for a ``TimeOnly``
     call.
     """
@@ -143,13 +143,13 @@ def _time_only_args(value: datetime.time) -> str:
 
 
 @beartype
-def format_time_csharp(value: datetime.time) -> str:
+def format_time_csharp(value: dt.time) -> str:
     """Format a time as a C# ``new TimeOnly(...)`` expression."""
     return f"new TimeOnly({_time_only_args(value=value)})"
 
 
 @beartype
-def format_time_fsharp(value: datetime.time) -> str:
+def format_time_fsharp(value: dt.time) -> str:
     """Format a time as an F# ``System.TimeOnly(...)`` expression.
 
     Fully qualifies ``System.TimeOnly`` so the rendered output does not
@@ -160,13 +160,13 @@ def format_time_fsharp(value: datetime.time) -> str:
 
 
 @beartype
-def format_time_vb(value: datetime.time) -> str:
+def format_time_vb(value: dt.time) -> str:
     """Format a time as a VB.NET ``New TimeOnly(...)`` expression."""
     return f"New TimeOnly({_time_only_args(value=value)})"
 
 
 @beartype
-def datetime_epoch_seconds(value: datetime.datetime) -> int:
+def datetime_epoch_seconds(value: dt.datetime) -> int:
     """Return exact integer Unix epoch seconds for a datetime."""
     if value.microsecond != 0:
         msg = (
@@ -175,32 +175,30 @@ def datetime_epoch_seconds(value: datetime.datetime) -> int:
         )
         raise UnrepresentableInputError(msg)
     offset = value.utcoffset()
-    if offset is None or offset == datetime.timedelta():
-        offset = datetime.timedelta()
-    elapsed = datetime.timedelta(
+    if offset is None or offset == dt.timedelta():
+        offset = dt.timedelta()
+    elapsed = dt.timedelta(
         days=value.toordinal()
-        - datetime.date(year=1970, month=1, day=1).toordinal(),
+        - dt.date(year=1970, month=1, day=1).toordinal(),
         seconds=value.hour * 3600 + value.minute * 60 + value.second,
         microseconds=value.microsecond,
     )
-    return (elapsed - offset) // datetime.timedelta(seconds=1)
+    return (elapsed - offset) // dt.timedelta(seconds=1)
 
 
 @beartype
-def format_datetime_epoch_fractional(value: datetime.datetime) -> str:
+def format_datetime_epoch_fractional(value: dt.datetime) -> str:
     """Format exact Unix epoch seconds, retaining a fractional part."""
     offset = value.utcoffset()
-    if offset is None or offset == datetime.timedelta():
-        offset = datetime.timedelta()
-    elapsed = datetime.timedelta(
+    if offset is None or offset == dt.timedelta():
+        offset = dt.timedelta()
+    elapsed = dt.timedelta(
         days=value.toordinal()
-        - datetime.date(year=1970, month=1, day=1).toordinal(),
+        - dt.date(year=1970, month=1, day=1).toordinal(),
         seconds=value.hour * 3600 + value.minute * 60 + value.second,
         microseconds=value.microsecond,
     )
-    total_microseconds = (elapsed - offset) // datetime.timedelta(
-        microseconds=1
-    )
+    total_microseconds = (elapsed - offset) // dt.timedelta(microseconds=1)
     sign = ""
     if total_microseconds < 0:
         sign = "-"
@@ -212,7 +210,7 @@ def format_datetime_epoch_fractional(value: datetime.datetime) -> str:
 
 
 @beartype
-def format_datetime_epoch(value: datetime.datetime) -> str:
+def format_datetime_epoch(value: dt.datetime) -> str:
     """Format a datetime as integer Unix epoch seconds."""
     return str(object=datetime_epoch_seconds(value=value))
 
@@ -221,12 +219,12 @@ def format_datetime_epoch(value: datetime.datetime) -> str:
 def datetime_epoch_formatter(
     *,
     format_integer: Callable[[int], str],
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Return a datetime formatter that delegates epoch seconds to an
     integer formatter.
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Format using the supplied integer formatter."""
         return format_integer(datetime_epoch_seconds(value=value))
 
@@ -234,7 +232,7 @@ def datetime_epoch_formatter(
 
 
 @beartype
-def _format_date_ymd(value: datetime.date, template: str) -> str:
+def _format_date_ymd(value: dt.date, template: str) -> str:
     """Format a date using a year/month/day template."""
     return template.format(
         year=value.year,
@@ -247,7 +245,7 @@ def _format_date_ymd(value: datetime.date, template: str) -> str:
 def date_ymd_formatter(
     *,
     template: str,
-) -> Callable[[datetime.date], str]:
+) -> Callable[[dt.date], str]:
     """Return a date formatter that substitutes year, month, and day
     into *template*.
 
@@ -262,7 +260,7 @@ def date_ymd_formatter(
         fmt(datetime.date(2024, 1, 15))  # => "LocalDate.of(2024, 1, 15)"
     """
 
-    def _format(value: datetime.date) -> str:
+    def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _format_date_ymd(value=value, template=template)
 
@@ -274,7 +272,7 @@ _MICROSECONDS_PER_MILLISECOND = 1000
 
 @beartype
 def _format_datetime_ymdhms(
-    value: datetime.datetime,
+    value: dt.datetime,
     template: str,
     millisecond_template: str | None,
 ) -> str:
@@ -324,7 +322,7 @@ def datetime_ymdhms_formatter(
     *,
     template: str,
     millisecond_template: str | None,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Return a datetime formatter that substitutes year, month, day,
     hour, minute, and second into *template*.
 
@@ -345,7 +343,7 @@ def datetime_ymdhms_formatter(
         )
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _format_datetime_ymdhms(
             value=value,
@@ -357,7 +355,7 @@ def datetime_ymdhms_formatter(
 
 
 @beartype
-def _format_date_iso_template(value: datetime.date, template: str) -> str:
+def _format_date_iso_template(value: dt.date, template: str) -> str:
     """Format a date using the ISO template."""
     return template.format(iso=value.isoformat())
 
@@ -366,7 +364,7 @@ def _format_date_iso_template(value: datetime.date, template: str) -> str:
 def date_iso_formatter(
     *,
     template: str,
-) -> Callable[[datetime.date], str]:
+) -> Callable[[dt.date], str]:
     """Return a date formatter that substitutes the ISO 8601 string
     into *template*.
 
@@ -380,7 +378,7 @@ def date_iso_formatter(
         fmt(datetime.date(2024, 1, 15))  # => 'DateTime.parse("2024-01-15")'
     """
 
-    def _format(value: datetime.date) -> str:
+    def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _format_date_iso_template(value=value, template=template)
 
@@ -388,9 +386,7 @@ def date_iso_formatter(
 
 
 @beartype
-def _format_datetime_iso_template(
-    value: datetime.datetime, template: str
-) -> str:
+def _format_datetime_iso_template(value: dt.datetime, template: str) -> str:
     """Format a datetime using the ISO template."""
     return template.format(iso=value.isoformat())
 
@@ -399,7 +395,7 @@ def _format_datetime_iso_template(
 def datetime_iso_formatter(
     *,
     template: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Return a datetime formatter that substitutes the ISO 8601 string
     into *template*.
 
@@ -412,7 +408,7 @@ def datetime_iso_formatter(
         )
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _format_datetime_iso_template(value=value, template=template)
 

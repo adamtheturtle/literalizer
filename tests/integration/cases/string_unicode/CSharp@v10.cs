@@ -4,3 +4,4 @@ var my_data = (
     "中文",
     "😀"
 );
+    _ = my_data;

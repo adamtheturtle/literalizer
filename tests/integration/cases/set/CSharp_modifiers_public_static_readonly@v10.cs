@@ -5,5 +5,5 @@ public static readonly HashSet<string> my_data = new HashSet<string> {
     "banana",
     "cherry"
 };
-    public static void Main() {}
+    public static void Main() { _ = my_data; }
 }

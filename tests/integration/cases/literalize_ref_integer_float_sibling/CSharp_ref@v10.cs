@@ -4,3 +4,4 @@ var my_data = (
     IntegerValue,
     1.5
 );
+    _ = my_data;

@@ -5,7 +5,7 @@ from several threads at once, which a case file cannot declare
 (issue #4699).
 """
 
-import datetime
+import datetime as dt
 from concurrent.futures import ThreadPoolExecutor
 from textwrap import dedent
 
@@ -20,7 +20,7 @@ def test_time_key_in_public_substitution_uses_time_formatter() -> None:
         input_format=InputFormat.JSON,
         language=Python(),
         record_null_substitutions={
-            "value": {datetime.time(hour=1, minute=2, second=3): 1}
+            "value": {dt.time(hour=1, minute=2, second=3): 1}
         },
     )
 

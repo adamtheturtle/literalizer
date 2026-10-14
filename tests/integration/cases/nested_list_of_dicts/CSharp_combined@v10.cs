@@ -8,3 +8,4 @@ my_data = (
     (new Dictionary<string, string> {["name"] = "Alice"}, new Dictionary<string, string> {["name"] = "Bob"}),
     (new Dictionary<string, string> {["name"] = "Charlie"}, new Dictionary<string, string> {["name"] = "Dave"})
 );
+    _ = my_data;

@@ -9,3 +9,4 @@ my_data = (
     // next element
     (3, "world")
 );
+    _ = my_data;

@@ -1,7 +1,7 @@
 """V language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -529,9 +529,9 @@ _V_SCALAR_FIELD_TYPE: Mapping[type, str] = MappingProxyType(
         float: "f64",
         str: "string",
         bytes: "string",
-        datetime.date: "string",
-        datetime.datetime: "string",
-        datetime.time: "string",
+        dt.date: "string",
+        dt.datetime: "string",
+        dt.time: "string",
     },
 )
 
@@ -1350,7 +1350,7 @@ class V(metaclass=LanguageCls):
         branch is exercised independently of the datetime format.
         """
         match value:
-            case datetime.datetime() if (
+            case dt.datetime() if (
                 self.datetime_format.value.type_produced is int
             ):
                 return datetime_epoch_seconds(value=value)
@@ -1694,12 +1694,12 @@ class V(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
         ``EPOCH`` seconds are routed through :attr:`format_integer` so
@@ -1710,9 +1710,7 @@ class V(metaclass=LanguageCls):
         for it.  In-range epoch seconds format identically to the plain
         integer, so every checked-in golden file stays byte-identical.
         """
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return datetime_epoch_formatter(
                 format_integer=self.format_integer,
@@ -1720,7 +1718,7 @@ class V(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

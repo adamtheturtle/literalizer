@@ -1,7 +1,7 @@
 """Groovy language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import math
 import re
@@ -143,10 +143,10 @@ def _groovy_key_is_native_temporal(
     *, raw_key: Scalar, native_dates: bool
 ) -> bool:
     """Return whether a source key renders as a ``java.time`` call."""
-    return isinstance(raw_key, datetime.time) or (
+    return isinstance(raw_key, dt.time) or (
         native_dates
-        and isinstance(raw_key, datetime.date)
-        and not isinstance(raw_key, datetime.datetime)
+        and isinstance(raw_key, dt.date)
+        and not isinstance(raw_key, dt.datetime)
     )
 
 
@@ -483,7 +483,7 @@ class Groovy(metaclass=LanguageCls):
             formatter=date_ymd_formatter(
                 template="java.time.LocalDate.of({year}, {month}, {day})",
             ),
-            type_produced=datetime.date,
+            type_produced=dt.date,
             preamble_lines=(),
         )
 
@@ -893,9 +893,7 @@ class Groovy(metaclass=LanguageCls):
             narrowed_open=None,
             supports_trailing_comma=True,
             narrowed_empty_form=None,
-            native_dates=(
-                self.date_format.value.type_produced is datetime.date
-            ),
+            native_dates=(self.date_format.value.type_produced is dt.date),
         )
 
     @cached_property
@@ -909,17 +907,17 @@ class Groovy(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_local_time_of
 
@@ -940,9 +938,7 @@ class Groovy(metaclass=LanguageCls):
             ordered_map_open=fixed_open(open_str="["),
             close="]",
             preamble_lines=(),
-            native_dates=(
-                self.date_format.value.type_produced is datetime.date
-            ),
+            native_dates=(self.date_format.value.type_produced is dt.date),
         )
 
     @cached_property
@@ -970,7 +966,7 @@ class Groovy(metaclass=LanguageCls):
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble."""
-        return {datetime.time: ("import java.time.LocalTime",)}
+        return {dt.time: ("import java.time.LocalTime",)}
 
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:

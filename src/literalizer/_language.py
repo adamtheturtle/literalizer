@@ -1,7 +1,7 @@
 """Language protocol and internal spec dataclass."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import math
 import re
@@ -47,9 +47,6 @@ from literalizer.exceptions import (
     UnsupportedOptionError,
     WrapCombinedInFileNotSupportedError,
 )
-
-if TYPE_CHECKING:
-    from abc import abstractmethod
 
 
 @beartype
@@ -364,7 +361,7 @@ class SequenceFormatConfig(Generic[_Declaration_co]):
 class DateFormatConfig:
     """Configuration for a single date format."""
 
-    formatter: Callable[[datetime.date], str]
+    formatter: Callable[[dt.date], str]
     preamble_lines: tuple[str, ...]
     type_produced: type
 
@@ -374,7 +371,7 @@ class DateFormatConfig:
 class DatetimeFormatConfig:
     """Configuration for a single datetime format."""
 
-    formatter: Callable[[datetime.datetime], str]
+    formatter: Callable[[dt.datetime], str]
     preamble_lines: tuple[str, ...]
     type_produced: type
 
@@ -384,7 +381,7 @@ class DateFormatEnum(enum.Enum):
 
     _value_: DateFormatConfig
 
-    def __call__(self, date_value: datetime.date, /) -> str:
+    def __call__(self, date_value: dt.date, /) -> str:
         """Format a date with this member's configuration."""
         # Pylint does not yet infer the standardized Enum _value_ annotation:
         # https://github.com/pylint-dev/pylint/issues/11413
@@ -398,7 +395,7 @@ class DatetimeFormatEnum(enum.Enum):
 
     _value_: DatetimeFormatConfig
 
-    def __call__(self, dt_value: datetime.datetime, /) -> str:
+    def __call__(self, dt_value: dt.datetime, /) -> str:
         """Format a datetime with this member's configuration."""
         # Pylint does not yet infer the standardized Enum _value_ annotation:
         # https://github.com/pylint-dev/pylint/issues/11413
@@ -436,8 +433,8 @@ def date_scalar_preamble(
         **{
             t: p
             for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (datetime.datetime, datetime_format.value.preamble_lines),
+                (dt.date, date_format.value.preamble_lines),
+                (dt.datetime, datetime_format.value.preamble_lines),
             )
             if p
         },
@@ -1882,29 +1879,24 @@ class Language(Protocol):
         # A class-level ``None`` marks a runtime Protocol member as absent.
         # These optional metadata values therefore remain static-only until
         # https://github.com/python/cpython/issues/156413 is fixed.
-        # Pylint rejects ellipsis bodies here until
-        # https://github.com/pylint-dev/pylint/issues/11459 is fixed.
         @property
-        @abstractmethod
         def call_target_name_syntax(self) -> NewVariableNameSyntax | None:
             """Return the specialized call-target grammar, when
             present.
             """
-            raise NotImplementedError
+            ...
 
         @property
-        @abstractmethod
         def max_variable_identifier_length(self) -> int | None:
             """Return the maximum identifier length, when bounded."""
-            raise NotImplementedError
+            ...
 
         @property
-        @abstractmethod
         def reserved_variable_identifier_pattern(
             self,
         ) -> re.Pattern[str] | None:
             """Return the reserved variable-name pattern, when present."""
-            raise NotImplementedError
+            ...
 
     # Each language class defines PascalCase nested Enum classes
     # (``DateFormats``, ``SequenceFormats``, …) and snake_case class
@@ -2341,21 +2333,21 @@ class Language(Protocol):
         ...
 
     @property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a :class:`datetime.date` as a string
         literal.
         """
         ...
 
     @property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a :class:`datetime.datetime` as a string
         literal.
         """
         ...
 
     @property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a :class:`datetime.time` as a string
         literal.
         """

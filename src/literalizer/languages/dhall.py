@@ -1,7 +1,7 @@
 """Dhall language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Sequence
@@ -327,7 +327,7 @@ def _dhall_format_call_arg(original: Value, formatted: str, /) -> str:
             return f"DVal.DInteger {formatted}"
         case float():
             return f"DVal.DDouble {formatted}"
-        case str() | bytes() | datetime.datetime() | datetime.date() | None:
+        case str() | bytes() | dt.datetime() | dt.date() | None:
             return f"DVal.DText {formatted}"
         case _:
             raise CallArgNotSupportedError(
@@ -455,7 +455,7 @@ _DHALL_TYPE_FOR_PYTHON_TYPE: dict[type, str] = {
 
 @beartype
 def _dhall_text_variant_for_scalar(
-    *, value: str | bytes | datetime.date | datetime.time
+    *, value: str | bytes | dt.date | dt.time
 ) -> _VariantSignature:
     """Return the Dhall variant for a scalar rendered as ``Text``.
 
@@ -467,9 +467,9 @@ def _dhall_text_variant_for_scalar(
             name = "Str"
         case bytes():
             name = "Bytes"
-        case datetime.date():
+        case dt.date():
             name = "Date"
-        case datetime.time():
+        case dt.time():
             name = "Time"
         case _ as unreachable:
             assert_never(unreachable)
@@ -497,11 +497,11 @@ def _dhall_variant_for_scalar(
             signature = _VariantSignature(name="Int", inner_type="Integer")
         case float():
             signature = _VariantSignature(name="Double", inner_type="Double")
-        case datetime.datetime():
+        case dt.datetime():
             signature = _VariantSignature(
                 name="DateTime", inner_type=datetime_inner_type
             )
-        case str() | bytes() | datetime.date() | datetime.time():
+        case str() | bytes() | dt.date() | dt.time():
             signature = _dhall_text_variant_for_scalar(value=value)
         case None:
             signature = _VariantSignature(name="Null", inner_type=None)
@@ -1337,17 +1337,17 @@ class Dhall(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

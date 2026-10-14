@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System;
-var my_data = new Dictionary<string, object> {
+var my_data = new Dictionary<string, object?> {
     ["flow"] = (
         1,
         // After the first element.
@@ -19,7 +19,7 @@ var my_data = new Dictionary<string, object> {
     ["alias"] = 4
     // On the alias.
 };
-my_data = new Dictionary<string, object> {
+my_data = new Dictionary<string, object?> {
     ["flow"] = (
         1,
         // After the first element.
@@ -38,3 +38,4 @@ my_data = new Dictionary<string, object> {
     ["alias"] = 4
     // On the alias.
 };
+    _ = my_data;

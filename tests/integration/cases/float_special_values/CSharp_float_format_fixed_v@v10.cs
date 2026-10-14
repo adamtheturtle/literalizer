@@ -4,3 +4,4 @@ var my_data = (
     double.NegativeInfinity,
     double.NaN
 );
+    _ = my_data;

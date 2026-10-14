@@ -5,3 +5,4 @@ var my_data = new HashSet<string> {
     "banana"
     // trailing
 };
+    _ = my_data;

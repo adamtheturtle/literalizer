@@ -1,7 +1,7 @@
 module Main
 
-let process (_v: obj) : obj = null
+let ``process`` (_v: obj) : obj = null
 type Val =
     | FStr of string
     | FList of Val list
-process(FStr "a\"b")
+``process``(FStr "a\"b") |> ignore

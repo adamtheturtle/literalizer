@@ -3,5 +3,5 @@ class Check {
 public static readonly Record0 my_data = new Record0(
     1
 );
-    public static void Main() {}
+    public static void Main() { _ = my_data; }
 }
