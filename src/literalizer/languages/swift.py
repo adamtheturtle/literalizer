@@ -1676,8 +1676,10 @@ class Swift(metaclass=LanguageCls):
         *,
         inferred_empty_sequence: bool,
         is_reference_binding: bool,
+        initializer_type: str | None,
     ) -> str:
         """Use the selected literal or reference representation."""
+        del initializer_type
         formatter = self.format_variable_declaration
         if inferred_empty_sequence or is_reference_binding:
             formatter = self._variable_declaration_formatter(

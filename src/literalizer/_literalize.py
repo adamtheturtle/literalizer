@@ -44,6 +44,13 @@ from literalizer._comments_resolve import (
 from literalizer._dictionary_keys import dictionary_key_formatter
 from literalizer._document_formatting import format_document_fast
 from literalizer._formatters.format_dates import datetime_epoch_seconds
+from literalizer._formatters.initializer_types import (
+    finish_collection_initializer,
+    prefix_initializer,
+)
+from literalizer._formatters.initializer_types import (
+    initializer_type as retained_initializer_type,
+)
 from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
@@ -1212,7 +1219,10 @@ def _format_set_value(
         for v, item in zip(sorted_items, formatted, strict=True)
     ]
     joined = spec.element_separator.join(entries)
-    return set_cfg.set_open(items_as_values) + joined + set_cfg.close
+    opening = set_cfg.set_open(items_as_values)
+    return finish_collection_initializer(
+        opener=opening, code=opening + joined + set_cfg.close
+    )
 
 
 @beartype
@@ -1309,7 +1319,9 @@ def _format_ordered_map_value(
     ]
     joined = spec.element_separator.join(pairs)
     opening = _ordered_map_open_for_ref_inference(data=value, ctx=ctx)
-    return opening + joined + ordered_map_cfg.close
+    return finish_collection_initializer(
+        opener=opening, code=opening + joined + ordered_map_cfg.close
+    )
 
 
 @beartype
@@ -1364,9 +1376,12 @@ def _maybe_format_record_literal(
         return None
     if not is_multiline:
         joined = spec.element_separator.join(rendered.entries)
-        return (
-            f"{rendered.head}{rendered.compact_pad}{joined}"
-            f"{rendered.compact_pad}{rendered.closer.lstrip()}"
+        return finish_collection_initializer(
+            opener=rendered.head,
+            code=(
+                f"{rendered.head}{rendered.compact_pad}{joined}"
+                f"{rendered.compact_pad}{rendered.closer.lstrip()}"
+            ),
         )
     # Respect the language's trailing-comma policy: Go/Rust permit a
     # trailing comma after the last field (config ``True`` -> unchanged),
@@ -1382,7 +1397,10 @@ def _maybe_format_record_literal(
             effective_sep = sep
         collected_body.append(f"{body_prefix}{entry_entry}{(effective_sep)}")
     body = "\n".join(collected_body)
-    return f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}"
+    return finish_collection_initializer(
+        opener=rendered.head,
+        code=f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}",
+    )
 
 
 @beartype
@@ -1433,9 +1451,12 @@ def _maybe_format_tuple_literal(
     rendered = render_tuple_literal(value, formatted_elements)
     if not is_multiline:
         joined = ", ".join(rendered.entries)
-        return (
-            f"{rendered.head}{rendered.compact_pad}{joined}"
-            f"{rendered.compact_pad}{rendered.closer}"
+        return finish_collection_initializer(
+            opener=rendered.head,
+            code=(
+                f"{rendered.head}{rendered.compact_pad}{joined}"
+                f"{rendered.compact_pad}{rendered.closer}"
+            ),
         )
     # Rust permits a trailing comma after the last tuple element
     # (config ``True`` -> unchanged); C++'s literal is a
@@ -1459,7 +1480,10 @@ def _maybe_format_tuple_literal(
             f"{body_prefix}{entry_entry_entry}{(effective_sep_2)}"
         )
     body = "\n".join(collected_body_2)
-    return f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}"
+    return finish_collection_initializer(
+        opener=rendered.head,
+        code=f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}",
+    )
 
 
 @beartype
@@ -1548,7 +1572,9 @@ def _format_dict_value(
             opener = ctx.dict_open_overrides[id(value)]
         case _:
             opener = _dict_open_for_ref_inference(data=dict_items, ctx=ctx)
-    return opener + joined + dict_cfg.close
+    return finish_collection_initializer(
+        opener=opener, code=opener + joined + dict_cfg.close
+    )
 
 
 @beartype
@@ -2573,7 +2599,9 @@ def _format_list_value(
             opener = sequence_open_override
         case _:
             opener = _sequence_open_for_ref_inference(data=value, ctx=ctx)
-    return f"{opener}{joined}{sequence_cfg.close}"
+    return finish_collection_initializer(
+        opener=opener, code=f"{opener}{joined}{sequence_cfg.close}"
+    )
 
 
 @beartype
@@ -2835,11 +2863,13 @@ def _wrap_body(
             closing = f"{close_prefix}{ordered_map_cfg.close}"
         case dict() if dict_open_override is not None:
             dict_cfg = spec.dict_format_config
-            opening = f"{line_prefix}{dict_open_override}"
+            open_str = dict_open_override
+            opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{dict_cfg.close}"
         case dict():
             dict_cfg = spec.dict_format_config
-            opening = f"{line_prefix}{dict_cfg.dict_open(data)}"
+            open_str = dict_cfg.dict_open(data)
+            opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{dict_cfg.close}"
         case set():
             sorted_set: list[Value] = sorted(
@@ -2847,7 +2877,8 @@ def _wrap_body(
                 key=set_sort_key,
             )
             set_cfg = spec.set_format_config
-            opening = f"{line_prefix}{set_cfg.set_open(sorted_set)}"
+            open_str = set_cfg.set_open(sorted_set)
+            opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{set_cfg.close}"
         case _:
             sequence_cfg = spec.sequence_format_config
@@ -2862,7 +2893,9 @@ def _wrap_body(
                 close_str = sequence_cfg.close
             opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{close_str}"
-    return f"{opening.rstrip()}\n{body}\n{closing}"
+    return finish_collection_initializer(
+        opener=open_str, code=f"{opening.rstrip()}\n{body}\n{closing}"
+    )
 
 
 @beartype
@@ -3132,13 +3165,14 @@ def _format_multiline_collection_value(
         ctx=ctx,
     )
     body = "\n".join(lines)
-    opening = _collection_open_for_multiline_value(
+    raw_opening = _collection_open_for_multiline_value(
         data=value,
         is_ordered_map=is_ordered_map,
         dict_open_override=dict_open_override,
         sequence_open_override=sequence_open_override,
         ctx=ctx,
-    ).rstrip()
+    )
+    opening = raw_opening.rstrip()
     closing_indent = ""
     if spec.indent_closing_delimiter:
         closing_indent = spec.indent
@@ -3160,7 +3194,9 @@ def _format_multiline_collection_value(
                 close = delimiters[1]
             else:
                 close = spec.sequence_format_config.close
-    return f"{opening}\n{body}\n{close_prefix}{close}"
+    return finish_collection_initializer(
+        opener=raw_opening, code=f"{opening}\n{body}\n{close_prefix}{close}"
+    )
 
 
 @beartype
@@ -3972,7 +4008,7 @@ def _format_root_collection_override(
             ctx=ctx,
             int_formatter=None,
         )
-        return f"{line_prefix}{formatted}"
+        return prefix_initializer(code=formatted, prefix=line_prefix)
     if (
         isinstance(data, dict)
         and include_delimiters
@@ -3989,7 +4025,7 @@ def _format_root_collection_override(
             ctx=ctx,
             int_formatter=None,
         )
-        return f"{line_prefix}{formatted}"
+        return prefix_initializer(code=formatted, prefix=line_prefix)
     if (
         include_delimiters
         and isinstance(data, dict)
@@ -4000,14 +4036,14 @@ def _format_root_collection_override(
             ctx=ctx.with_multiline(multiline_prefix=line_prefix),
         )
         if record_literal is not None:
-            return f"{line_prefix}{record_literal}"
+            return prefix_initializer(code=record_literal, prefix=line_prefix)
     if include_delimiters and isinstance(data, list):
         tuple_literal = _maybe_format_tuple_literal(
             value=data,
             ctx=ctx.with_multiline(multiline_prefix=line_prefix),
         )
         if tuple_literal is not None:
-            return f"{line_prefix}{tuple_literal}"
+            return prefix_initializer(code=tuple_literal, prefix=line_prefix)
     return None
 
 
@@ -4232,7 +4268,7 @@ def _literalize_impl(
             spec=language,
             int_formatter=None,
         )
-        return f"{line_prefix}{formatted_scalar}"
+        return prefix_initializer(code=formatted_scalar, prefix=line_prefix)
 
     # Root ref markers returned above. Only child refs can change here,
     # so inference retains a collection rather than resolving to a scalar.
@@ -4445,6 +4481,7 @@ class _ContextualVariableDeclarationLanguage(Protocol):
         *,
         inferred_empty_sequence: bool,
         is_reference_binding: bool,
+        initializer_type: str | None,
     ) -> str:
         """Declare the selected literal or an already bound identifier."""
         ...
@@ -4461,6 +4498,7 @@ def _apply_variable_wrapper(
     is_call_binding: bool,
     is_reference_binding: bool,
     inferred_empty_sequence: bool,
+    initializer_type: str | None,
 ) -> str:
     """Optionally wrap *result* in a variable declaration or
     assignment.
@@ -4512,6 +4550,7 @@ def _apply_variable_wrapper(
                     language.format_contextual_variable_declaration,
                     inferred_empty_sequence=inferred_empty_sequence,
                     is_reference_binding=is_reference_binding,
+                    initializer_type=initializer_type,
                 )
             else:
                 declaration_formatter = language.format_variable_declaration
@@ -4578,6 +4617,8 @@ class _PreFormState:
     """The ref key the render actually used, or the disabled sentinel."""
     ref_case: IdentifierCase | None
     """The case a ref identifier was converted to, if any."""
+    initializer_type: str | None
+    """Declaration type retained before comments or binding."""
     root_is_object_literal: bool
     """The literal producer's expression kind, before comments or
     binding.
@@ -4684,7 +4725,7 @@ def _literalize_pre_form_impl(
     effective_toml_comment_doc = None
     if isinstance(parsed, ParsedToml):
         effective_toml_comment_doc = parsed.toml_doc
-    result = _literalize(
+    result: str = _literalize(
         preserve_ref_values=preserve_ref_values,
         data=data,
         language=language,
@@ -4700,6 +4741,7 @@ def _literalize_pre_form_impl(
         validate_data=True,
     )
 
+    root_initializer_type = retained_initializer_type(result)
     comment_line_prefix = line_prefix
     if include_delimiters:
         comment_line_prefix = line_prefix + language.indent
@@ -4767,6 +4809,7 @@ def _literalize_pre_form_impl(
         line_prefix=line_prefix,
         active_ref_key=active_ref_key,
         ref_case=ref_case,
+        initializer_type=root_initializer_type,
         root_is_object_literal=_root_is_object_literal(
             data=data,
             language=language,
@@ -5010,6 +5053,7 @@ def reject_undeclared_assignment(
         )
         is not None,
         inferred_empty_sequence=False,
+        initializer_type=pre_form.initializer_type,
     )
 
     def _render(styled: Language) -> str:
@@ -5029,6 +5073,7 @@ def reject_undeclared_assignment(
             )
             is not None,
             inferred_empty_sequence=False,
+            initializer_type=pre_form.initializer_type,
         )
 
     if assignment not in _declaration_spellings(
@@ -5078,6 +5123,7 @@ def literalize_apply_form(
         )
         is not None,
         inferred_empty_sequence=False,
+        initializer_type=pre_form.initializer_type,
     )
 
     resolved = pre_form.resolved
@@ -5590,6 +5636,7 @@ def _literalize_value_binding(
                 data=record_context_data, spec=language
             )
         ),
+        initializer_type=retained_initializer_type(result_text),
     )
     computed = compute_preamble(
         data=value,
@@ -6930,6 +6977,7 @@ def _render_variable_bound_call(
             is_call_binding=True,
             is_reference_binding=False,
             inferred_empty_sequence=False,
+            initializer_type=None,
         ),
         comment=comment,
         language=language,
