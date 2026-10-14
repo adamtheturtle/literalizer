@@ -1,6 +1,3 @@
-@file:DependsOn("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.21")
-@file:DependsOn("org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.1.21")
-
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 import java.util.Locale

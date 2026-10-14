@@ -1726,7 +1726,7 @@ class Kotlin(metaclass=LanguageCls):
         hash=False,
     )
     # Keep in sync with the version flags passed to the Kotlin lint host in
-    # `scripts/lint-kotlin.main.kts`.
+    # `scripts/lint-kotlin.kts`.
     language_version: VersionFormats = VersionFormats.V1_9
     indent: str = "    "
     skip_null_dict_values: bool = False

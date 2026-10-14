@@ -2209,7 +2209,7 @@ jobs:
   lint-kotlin:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Keep the compiler in sync with the embedded host dependencies.
+    # The host uses the compiler bundled with this distribution.
     # 2.1.21 supports the v1_9 fixtures without deprecation warnings;
     # later compilers deprecate or remove that language mode.
     env:
@@ -2234,7 +2234,7 @@ jobs:
       # K2JVMCompiler script host. Pinned to a recent 1.x release;
       # bump together. The classpath is exported through
       # `LITERALIZER_LINT_CLASSPATH`, which
-      # `scripts/lint-kotlin.main.kts` forwards via `-classpath`
+      # `scripts/lint-kotlin.kts` forwards via `-classpath`
       # to every per-fixture compile. Keep this enum value paired with
       # the literal in `Kotlin.JsonTypes.KOTLINX_JSON_ELEMENT` in
       # `src/literalizer/languages/kotlin.py`.
@@ -2259,16 +2259,17 @@ jobs:
           ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-core-jvm-${{
             env.KOTLINX_SERIALIZATION_VERSION }}.jar
         with: *download
-      # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
+      # Invoke K2JVMCompiler from a single `.kts` JVM instead of
       # spawning one `kotlinc -script` per fixture. The JVM + compiler
       # classes load once and each fixture is compiled against the warm
       # compiler, cutting ~355 cold JVM starts to one.
       - name: Check Kotlin syntax
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
-        # The embedded script compiler needs its matching script runtime on
-        # the host classpath, including the legacy ScriptExpectedLocation API.
-        run: kotlin -classpath "$KOTLIN_HOME/lib/kotlin-script-runtime.jar" scripts/lint-kotlin.main.kts
+        # Use the distribution's compiler in a plain script. A `.main.kts`
+        # host loads duplicate scripting classes in an isolated class loader
+        # that cannot see the legacy ScriptExpectedLocation runtime API.
+        run: kotlin -classpath "$KOTLIN_HOME/lib/kotlin-compiler.jar" scripts/lint-kotlin.kts
           < /tmp/files-to-lint
       # `uv` is needed by the `Kotlin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
