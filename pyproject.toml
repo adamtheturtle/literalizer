@@ -68,7 +68,7 @@ dev = [
     # ``j178/prek-action`` steps in ``.github/workflows/lint.yml`` and
     # ``.github/workflows/autofix.yml``.
     "prek==0.5.5",
-    "pydantic==2.14.0",
+    "pydantic==2.14.1",
     "pydocstringformatter==1.0.0",
     "pygments==2.21.0",
     "pylint[spelling]==4.1.3",
