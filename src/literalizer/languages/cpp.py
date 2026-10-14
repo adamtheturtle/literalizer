@@ -3598,11 +3598,9 @@ class Cpp(metaclass=LanguageCls):
 
         Under :attr:`json_type` the body is additionally wrapped in
         ``try { ... } catch (...) { return 1; }`` so potentially-throwing
-        ``nlohmann::json`` construction cannot make ``main`` itself
-        throwing — clang-tidy's
-        ``bugprone-exception-escape`` check rejects an implicitly
-        ``noexcept`` ``main`` that calls a function whose signature permits
-        exceptions.
+        ``nlohmann::json`` construction cannot let exceptions escape
+        ``main``. The ``bugprone-exception-escape`` check includes ``main``
+        even without a ``noexcept`` specification.
         """
         variable_name = context.variable_name
         body_preamble = context.body_preamble
@@ -3613,6 +3611,13 @@ class Cpp(metaclass=LanguageCls):
         use_line = ""
         if variable_name != "":
             use_line = f"\n{self.indent}(void){variable_name};"
+        # clang-tidy follows visible throw bodies, so standard-library
+        # implementations can produce different exception diagnostics.
+        # https://github.com/llvm/llvm-project/issues/109927
+        # https://github.com/llvm/llvm-project/issues/152026
+        # https://github.com/llvm/llvm-project/issues/109587
+        # Track the native-output validation discrepancy in:
+        # https://github.com/adamtheturtle/literalizer/issues/5449
         if self._json_type_active:
             return (
                 f"int {self.module_name}() {{\n"

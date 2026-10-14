@@ -253,4 +253,3 @@ Reference
    unreleased
    changelog
    contributing
-   cpp-toolchain-validation
