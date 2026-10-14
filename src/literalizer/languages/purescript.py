@@ -346,7 +346,7 @@ def _apply_purescript_float_wrapper(
 ) -> str:
     """Format a float with a constructor prefix."""
     formatted = inner(value)
-    if formatted.startswith("-"):
+    if math.copysign(1, value) < 0:
         return f"{prefix}Float ({formatted})"
     return f"{prefix}Float {formatted}"
 

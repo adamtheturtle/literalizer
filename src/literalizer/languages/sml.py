@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
@@ -17,6 +18,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
+    datetime_epoch_seconds,
     datetime_ymdhms_formatter,
     format_date_iso,
     format_datetime_epoch,
@@ -182,9 +184,9 @@ def _sml_scientific(value: float) -> str:
 
 
 @beartype
-def _sml_int_entry(*, formatted: str, prefix: str) -> str:
+def _sml_int_entry(*, original: int, formatted: str, prefix: str) -> str:
     """Wrap a formatted integer in the SML value constructor."""
-    negative = formatted.startswith("~")
+    negative = original < 0
     if negative:
         result = f"{prefix}Int ({formatted})"
     else:
@@ -193,10 +195,12 @@ def _sml_int_entry(*, formatted: str, prefix: str) -> str:
 
 
 @beartype
-def _sml_float_entry(*, formatted: str, prefix: str) -> str:
+def _sml_float_entry(*, original: float, formatted: str, prefix: str) -> str:
     """Wrap a formatted real in the SML value constructor."""
-    negative = formatted.startswith(("~", "("))
-    if negative:
+    needs_parentheses = math.copysign(1, original) < 0 or not math.isfinite(
+        original
+    )
+    if needs_parentheses:
         result = f"{prefix}Real ({formatted})"
     else:
         result = f"{prefix}Real {formatted}"
@@ -204,9 +208,11 @@ def _sml_float_entry(*, formatted: str, prefix: str) -> str:
 
 
 @beartype
-def _sml_epoch_entry(*, formatted: str, prefix: str) -> str:
+def _sml_epoch_entry(
+    *, original: datetime.datetime, formatted: str, prefix: str
+) -> str:
     """Convert an epoch integer to SML signed literal syntax."""
-    negative = formatted.startswith("-")
+    negative = datetime_epoch_seconds(value=original) < 0
     literal = formatted
     if negative:
         literal = f"~{formatted[1:]}"
@@ -248,13 +254,19 @@ def _apply_sml_entry_formatter(
         case bool():
             result = formatted
         case int():
-            result = _sml_int_entry(formatted=formatted, prefix=prefix)
+            result = _sml_int_entry(
+                original=original, formatted=formatted, prefix=prefix
+            )
         case float():
-            result = _sml_float_entry(formatted=formatted, prefix=prefix)
+            result = _sml_float_entry(
+                original=original, formatted=formatted, prefix=prefix
+            )
         case str() | bytes():
             result = f"{prefix}Str {formatted}"
         case datetime.datetime() if datetime_type is int:
-            result = _sml_epoch_entry(formatted=formatted, prefix=prefix)
+            result = _sml_epoch_entry(
+                original=original, formatted=formatted, prefix=prefix
+            )
         case datetime.datetime():
             result = _sml_temporal_entry(
                 formatted=formatted,

@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -17,6 +18,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
+    datetime_epoch_seconds,
     datetime_ymdhms_formatter,
     format_date_iso,
     format_datetime_epoch,
@@ -221,6 +223,25 @@ def _ocaml_entry_tag(
 
 
 @beartype
+def _ocaml_constructor_argument(
+    original: Value, formatted: str, /, *, epoch_datetimes: bool
+) -> str:
+    """Parenthesize a negative numeric constructor argument."""
+    match original:
+        case int():
+            negative = original < 0
+        case float():
+            negative = (
+                math.isfinite(original) and math.copysign(1, original) < 0
+            )
+        case datetime.datetime() if epoch_datetimes:
+            negative = datetime_epoch_seconds(value=original) < 0
+        case _:
+            negative = False
+    return f"({formatted})" if negative else formatted
+
+
+@beartype
 def _apply_ocaml_entry(
     original: Value,
     formatted: str,
@@ -238,9 +259,9 @@ def _apply_ocaml_entry(
     )
     if tag is None:
         return formatted
-    literal = formatted
-    if literal.startswith("-"):
-        literal = f"({formatted})"
+    literal = _ocaml_constructor_argument(
+        original, formatted, epoch_datetimes=datetime_type is int
+    )
     return f"{prefix}{tag} {literal}"
 
 
@@ -301,9 +322,9 @@ def _apply_yojson_entry(original: Value, formatted: str) -> str:
             tag = "Float"
         case _:
             tag = "String"
-    literal = formatted
-    if literal.startswith("-"):
-        literal = f"({formatted})"
+    literal = _ocaml_constructor_argument(
+        original, formatted, epoch_datetimes=False
+    )
     return f"`{tag} {literal}"
 
 
