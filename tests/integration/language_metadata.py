@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 from beartype import beartype
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 LANGUAGES_DIR = Path(__file__).parent / "languages"
 
@@ -258,7 +258,7 @@ def load_language_metadata(
         raise _fail(path=path, message=f"invalid TOML: {exc}") from exc
     try:
         data = _LanguageMetadataData.model_validate(obj=raw)
-    except (ValidationError, ValueError) as exc:
+    except ValueError as exc:
         raise _fail(path=path, message=str(object=exc)) from exc
 
     return LanguageMetadata(

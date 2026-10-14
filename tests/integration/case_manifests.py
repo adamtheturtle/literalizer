@@ -16,7 +16,6 @@ from pydantic import (
     BeforeValidator,
     Field,
     InstanceOf,
-    ValidationError,
     ValidationInfo,
     model_validator,
 )
@@ -807,7 +806,7 @@ def _load_manifest_data(*, path: Path) -> _CaseManifestData:
             obj=raw,
             context={"case_dir_name": path.parent.name},
         )
-    except (ValidationError, ValueError) as exc:
+    except ValueError as exc:
         raise _fail(path=path, message=str(object=exc)) from exc
     return data
 
