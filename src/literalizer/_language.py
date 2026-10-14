@@ -48,9 +48,6 @@ from literalizer.exceptions import (
     WrapCombinedInFileNotSupportedError,
 )
 
-if TYPE_CHECKING:
-    from abc import abstractmethod
-
 
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -1882,29 +1879,24 @@ class Language(Protocol):
         # A class-level ``None`` marks a runtime Protocol member as absent.
         # These optional metadata values therefore remain static-only until
         # https://github.com/python/cpython/issues/156413 is fixed.
-        # Pylint rejects ellipsis bodies here until
-        # https://github.com/pylint-dev/pylint/issues/11459 is fixed.
         @property
-        @abstractmethod
         def call_target_name_syntax(self) -> NewVariableNameSyntax | None:
             """Return the specialized call-target grammar, when
             present.
             """
-            raise NotImplementedError
+            ...
 
         @property
-        @abstractmethod
         def max_variable_identifier_length(self) -> int | None:
             """Return the maximum identifier length, when bounded."""
-            raise NotImplementedError
+            ...
 
         @property
-        @abstractmethod
         def reserved_variable_identifier_pattern(
             self,
         ) -> re.Pattern[str] | None:
             """Return the reserved variable-name pattern, when present."""
-            raise NotImplementedError
+            ...
 
     # Each language class defines PascalCase nested Enum classes
     # (``DateFormats``, ``SequenceFormats``, …) and snake_case class
