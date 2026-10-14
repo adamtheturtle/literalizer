@@ -2,7 +2,8 @@
 
 import datetime as dt
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Protocol, Self, override, runtime_checkable
 
 from beartype import beartype
 
@@ -15,6 +16,210 @@ from literalizer._formatters.type_inference import (
     infer_element_type,
 )
 from literalizer._types import Scalar, Value
+
+
+@beartype
+@dataclass(frozen=True, kw_only=True)
+class CollectionSignature:
+    """The producer's selected type, length policy, and fallback
+    policy.
+    """
+
+    type_key: str | None
+    arity: int | None
+    arity_decision: bool | Callable[[], bool] = field(compare=False)
+    fallback_decision: bool | Callable[[], bool] = field(compare=False)
+    narrowing_decision: bool | Callable[[], bool] = field(compare=False)
+    uses_fallback_decision: bool | Callable[[], bool] = field(compare=False)
+
+    @property
+    def arity_dependent(self) -> bool:
+        """Read the producer's arity dependent decision."""
+        return _decision_value(decision=self.arity_decision)
+
+    @property
+    def stable_fallback(self) -> bool:
+        """Read the producer's stable fallback decision."""
+        return _decision_value(decision=self.fallback_decision)
+
+    @property
+    def narrows(self) -> bool:
+        """Read the producer's narrows decision."""
+        return _decision_value(decision=self.narrowing_decision)
+
+    @property
+    def uses_fallback(self) -> bool:
+        """Read the producer's uses fallback decision."""
+        return _decision_value(decision=self.uses_fallback_decision)
+
+    @override
+    def __hash__(self) -> int:
+        """Compare target identity and arity independently of policy flags."""
+        return hash((self.type_key, self.arity))
+
+
+@runtime_checkable
+class _SignatureOpen(Protocol):
+    """An opener that can retain its decision before spelling a
+    literal.
+    """
+
+    def signature(
+        self, items: list[Value] | dict[Scalar, Value], /
+    ) -> CollectionSignature:
+        """Infer the target collection signature."""
+        ...
+
+
+@beartype
+def collection_signature(
+    opener: Callable[..., str],
+    items: list[Value] | dict[Scalar, Value],
+    /,
+) -> CollectionSignature:
+    """Read native inference facts, retaining opaque callback
+    compatibility.
+
+    Custom openers without a signature still own their text-only contract.
+    Their compatibility probes stay at this callback boundary.
+    """
+    if isinstance(opener, _SignatureOpen):
+        return opener.signature(items)
+    return _opaque_collection_signature(opener=opener, items=items)
+
+
+@beartype
+def _decision_value(*, decision: bool | Callable[[], bool]) -> bool:
+    """Evaluate opaque policy only at the boundary that needs it."""
+    if isinstance(decision, bool):
+        return decision
+    return decision()
+
+
+@beartype
+def _opaque_collection_signature(
+    *, opener: Callable[..., str], items: list[Value] | dict[Scalar, Value]
+) -> CollectionSignature:
+    """Preserve conditional inference for text-only custom callbacks."""
+    code = opener(items)
+    if isinstance(items, dict):
+
+        def _narrows() -> bool:
+            """Infer narrowing only when map widening asks for it."""
+            return opener({"_probe": "s"}) != opener({"_probe": 1})
+
+        def _stable() -> bool:
+            """Infer map fallback policy only after narrowing is known."""
+            return opener({"_a": 1, "_b": "s"}) == opener(
+                {"_a": 1.5, "_b": False}
+            )
+
+        return CollectionSignature(
+            type_key=code,
+            arity=None,
+            arity_decision=False,
+            fallback_decision=_stable,
+            narrowing_decision=_narrows,
+            uses_fallback_decision=False,
+        )
+
+    def _length_bearing() -> bool:
+        """Probe length only where a sibling's literal might be
+        borrowed.
+        """
+        return code != opener([*items, items[0]])
+
+    def _fallback() -> bool:
+        """Infer the custom sequence's fallback only when widening needs
+        it.
+        """
+        return opener([]) == opener([1, "probe"])
+
+    def _uses_fallback() -> bool:
+        """Check anonymous-element elision against the custom empty opener."""
+        return code == opener([])
+
+    return CollectionSignature(
+        type_key=code,
+        arity=None,
+        arity_decision=_length_bearing if bool(items) else False,
+        fallback_decision=_fallback,
+        narrowing_decision=True,
+        uses_fallback_decision=_uses_fallback,
+    )
+
+
+@beartype
+@dataclass(frozen=True, kw_only=True)
+class SignatureOpen[Items: list[Value] | dict[Scalar, Value]]:
+    """Keep a producer's inference callable beside its existing
+    renderer.
+    """
+
+    render: Callable[[Items], str]
+    infer: Callable[[Items], CollectionSignature]
+
+    def __call__(self, items: Items, /) -> str:
+        """Spell the opener selected by the producer."""
+        return self.render(items)
+
+    def signature(self, items: Items, /) -> CollectionSignature:
+        """Return the producer's retained inference facts."""
+        return self.infer(items)
+
+
+@beartype
+def signature_open[Items: list[Value] | dict[Scalar, Value]](
+    *,
+    render: Callable[[Items], str],
+    infer: Callable[[Items], CollectionSignature],
+) -> SignatureOpen[Items]:
+    """Attach producer-owned inference to the compatible string
+    callback.
+    """
+    return SignatureOpen(render=render, infer=infer)
+
+
+class CollectionOverride(str):
+    """A selected opener whose inference facts survive sibling
+    inference.
+    """
+
+    __slots__ = ("_original", "_signature")
+
+    _signature: CollectionSignature
+    _original: str
+
+    @classmethod
+    def create(cls, code: str, /, *, signature: CollectionSignature) -> Self:
+        """Keep a chosen opener and its original type-bearing value."""
+        result = cls(object=code)
+        result._signature = signature
+        result._original = code
+        return result
+
+    @property
+    def signature(self) -> CollectionSignature:
+        """The producer's already selected collection signature."""
+        return self._signature
+
+    @property
+    def original(self) -> str:
+        """The original opener, including initializer type metadata."""
+        return self._original
+
+
+@beartype
+def selected_collection_open(
+    opener: Callable[..., str],
+    items: list[Value] | dict[Scalar, Value],
+    /,
+) -> str:
+    """Infer first, then spell an opener that carries the same
+    decision.
+    """
+    signature = collection_signature(opener, items)
+    return CollectionOverride.create(opener(items), signature=signature)
 
 
 @beartype
@@ -32,6 +237,20 @@ class FixedOpen:
     """
 
     open_str: str
+
+    @staticmethod
+    def signature(
+        _items: list[Value] | dict[Scalar, Value], /
+    ) -> CollectionSignature:
+        """A fixed delimiter never narrows or depends on collection length."""
+        return CollectionSignature(
+            type_key=None,
+            arity=None,
+            arity_decision=False,
+            fallback_decision=True,
+            narrowing_decision=False,
+            uses_fallback_decision=True,
+        )
 
     def __call__(self, _items: list[Value] | dict[Scalar, Value], /) -> str:
         """Return the fixed opening delimiter, ignoring *_items*."""
@@ -319,16 +538,21 @@ def _resolve_dict_value_type(
 
 
 @beartype
-def _apply_type_to_opener(
-    element_type: type | ListType | DictType,
-    element_to_type: Callable[[type | ListType | DictType], str | None],
-    opener_template: str,
-) -> str | None:
-    """Resolve a Python element type to a collection opener."""
-    type_name = element_to_type(element_type)
-    if type_name is None:
-        return None
-    return opener_template.format(type_name=type_name)
+@dataclass(frozen=True, kw_only=True)
+class _TypeOpen:
+    """Resolve a target type before spelling the collection delimiter."""
+
+    element_to_type: Callable[[type | ListType | DictType], str | None]
+    opener_template: str
+
+    def __call__(
+        self, element_type: type | ListType | DictType, /
+    ) -> str | None:
+        """Spell the opener for an inferred target type."""
+        type_name = self.element_to_type(element_type)
+        if type_name is None:
+            return None
+        return self.opener_template.format(type_name=type_name)
 
 
 @beartype
@@ -349,16 +573,35 @@ def make_type_to_opener(
             opener_template="[]{type_name}{{",
         )
     """
+    return _TypeOpen(
+        element_to_type=element_to_type, opener_template=opener_template
+    )
 
-    def type_to_opener(element_type: type | ListType | DictType) -> str | None:
-        """Delegate to module-level implementation."""
-        return _apply_type_to_opener(
-            element_type=element_type,
-            element_to_type=element_to_type,
-            opener_template=opener_template,
-        )
 
-    return type_to_opener
+@beartype
+def _typed_signature(
+    *,
+    items: list[Value],
+    type_to_opener: Callable[[type | ListType | DictType], str | None],
+    fallback: str,
+) -> CollectionSignature:
+    """Retain the typed producer's target identity and stable fallback."""
+    element_type = infer_element_type(items=items)
+    type_name = None
+    if element_type is not None:
+        if isinstance(type_to_opener, _TypeOpen):
+            type_name = type_to_opener.element_to_type(element_type)
+        else:
+            type_name = type_to_opener(element_type)
+    uses_fallback = type_name is None or type_name == ""
+    return CollectionSignature(
+        type_key=fallback if uses_fallback else type_name,
+        arity=None,
+        arity_decision=False,
+        fallback_decision=True,
+        narrowing_decision=True,
+        uses_fallback_decision=uses_fallback,
+    )
 
 
 @beartype
@@ -411,7 +654,13 @@ def typed_collection_open(
             items=items, type_to_opener=type_to_opener, fallback=fallback
         )
 
-    return _open
+    def _signature(items: list[Value], /) -> CollectionSignature:
+        """Infer the collection signature before rendering its opener."""
+        return _typed_signature(
+            items=items, type_to_opener=type_to_opener, fallback=fallback
+        )
+
+    return signature_open(render=_open, infer=_signature)
 
 
 @beartype
@@ -461,7 +710,15 @@ def typed_dict_open(
             items=items, type_to_opener=type_to_opener, fallback=fallback
         )
 
-    return _open
+    def _signature(items: dict[Scalar, Value], /) -> CollectionSignature:
+        """Infer the mapping signature before rendering its opener."""
+        return _typed_signature(
+            items=list(items.values()),
+            type_to_opener=type_to_opener,
+            fallback=fallback,
+        )
+
+    return signature_open(render=_open, infer=_signature)
 
 
 @beartype
@@ -492,6 +749,45 @@ def infer_collection_type(
     return CollectionType(
         opener=opener_template.format(type_name=type_name),
         declared_type=declared_type_template.format(type_name=type_name),
+    )
+
+
+@beartype
+def collection_type_open[Items: list[Value] | dict[Scalar, Value]](
+    *, infer: Callable[[Items], CollectionType], fallback_type: str
+) -> SignatureOpen[Items]:
+    """Keep an explicit target type as the collection's inference key."""
+
+    def _render(items: Items, /) -> str:
+        """Spell the opener selected with the target type."""
+        return infer(items).opener
+
+    def _signature(items: Items, /) -> CollectionSignature:
+        """Keep target identity rather than comparing literal
+        delimiters.
+        """
+        selected = infer(items)
+        return CollectionSignature(
+            type_key=selected.declared_type,
+            arity=None,
+            arity_decision=False,
+            fallback_decision=True,
+            narrowing_decision=True,
+            uses_fallback_decision=selected.declared_type == fallback_type,
+        )
+
+    return signature_open(render=_render, infer=_signature)
+
+
+@beartype
+def validated_fixed_open[Items: list[Value] | dict[Scalar, Value]](
+    *, render: Callable[[Items], str]
+) -> SignatureOpen[Items]:
+    """Preserve validation around a content-insensitive native
+    delimiter.
+    """
+    return signature_open(
+        render=render, infer=FixedOpen(open_str="").signature
     )
 
 

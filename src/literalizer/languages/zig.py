@@ -15,7 +15,9 @@ from beartype import beartype
 from literalizer._comments import ControlCharacterFreeCommentPrefix
 from literalizer._document_formatting import format_document_fast
 from literalizer._formatters.collection_openers import (
+    CollectionSignature,
     fixed_open,
+    signature_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -1918,7 +1920,21 @@ class Zig(metaclass=LanguageCls):
                 return ".{"
             return "&.{"
 
-        return _open
+        def _signature(items: list[Value], /) -> CollectionSignature:
+            """Retain the producer's array representation choice."""
+            tuple_items = (
+                len(items) > 0 and infer_element_type(items=items) is None
+            )
+            return CollectionSignature(
+                type_key="tuple" if tuple_items else "slice",
+                arity=None,
+                arity_decision=False,
+                fallback_decision=False,
+                narrowing_decision=True,
+                uses_fallback_decision=not tuple_items,
+            )
+
+        return signature_open(render=_open, infer=_signature)
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:

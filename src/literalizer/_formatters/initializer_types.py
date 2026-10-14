@@ -4,6 +4,8 @@ from typing import Self
 
 from beartype import beartype
 
+from literalizer._formatters.collection_openers import CollectionOverride
+
 
 class TypedCollectionOpen(str):
     """An opening delimiter with its selected declaration type."""
@@ -48,6 +50,8 @@ class TypedInitializer(str):
 @beartype
 def finish_collection_initializer(*, opener: str, code: str) -> str:
     """Carry an opener's type through the completed collection."""
+    if isinstance(opener, CollectionOverride):
+        opener = opener.original
     if isinstance(opener, TypedCollectionOpen):
         return TypedInitializer.create(
             code, declared_type=opener.declared_type

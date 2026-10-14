@@ -14,7 +14,9 @@ from beartype import beartype
 
 from literalizer._checks import reject_cjson_unrepresentable
 from literalizer._formatters.collection_openers import (
+    CollectionSignature,
     fixed_open,
+    signature_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -1851,7 +1853,19 @@ class C(metaclass=LanguageCls):
                 return "{"
             return "(CVal[]){"
 
-        return _open
+        def _signature(items: list[Value], /) -> CollectionSignature:
+            """Retain the producer's array representation choice."""
+            record_items = _all_record_shaped(items)
+            return CollectionSignature(
+                type_key="record-array" if record_items else "CVal-array",
+                arity=None,
+                arity_decision=False,
+                fallback_decision=True,
+                narrowing_decision=True,
+                uses_fallback_decision=not record_items,
+            )
+
+        return signature_open(render=_open, infer=_signature)
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:

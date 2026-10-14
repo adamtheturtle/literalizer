@@ -14,9 +14,12 @@ from beartype import beartype
 from ruamel.yaml.compat import ordereddict as _ordereddict
 
 from literalizer._formatters.collection_openers import (
+    CollectionSignature,
+    collection_signature,
     fixed_open,
     make_element_to_type,
     make_type_to_opener,
+    signature_open,
     typed_collection_open,
     typed_dict_open,
 )
@@ -1531,7 +1534,31 @@ class Go(metaclass=LanguageCls):
                 return f"[]{self.default_sequence_element_type}{{"
             return base(items)
 
-        return _open
+        def _signature(items: list[Value], /) -> CollectionSignature:
+            """Retain the chosen record element type or shared
+            fallback.
+            """
+            nested_type = nested_record_sequence_type(
+                value=items, record_name_for_value=record_name_for_value
+            )
+            if nested_type is not None:
+                depth, name = nested_type
+                return CollectionSignature(
+                    type_key="[]" * depth + name,
+                    arity=None,
+                    arity_decision=False,
+                    fallback_decision=True,
+                    narrowing_decision=True,
+                    uses_fallback_decision=False,
+                )
+            if any(
+                isinstance(item, dict) and not isinstance(item, _ordereddict)
+                for item in items
+            ):
+                return collection_signature(base, [])
+            return collection_signature(base, items)
+
+        return signature_open(render=_open, infer=_signature)
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
