@@ -10,6 +10,7 @@ pub fn main() {
     #("lint", GList([GInt(2), GList([])])),
     #("test", GList([GInt(5), GList([GStr("compile")])])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("lint", GList([GInt(2), GList([])])),
     #("test", GList([GInt(5), GList([GStr("compile")])])),

@@ -6,5 +6,5 @@ let Playlist = PlaylistType_()
 type Val =
     | FInt of int64
     | FList of Val list
-Playlist.new(FInt 1L)
-Playlist.new(FInt 2L)
+Playlist.new(FInt 1L) |> ignore
+Playlist.new(FInt 2L) |> ignore

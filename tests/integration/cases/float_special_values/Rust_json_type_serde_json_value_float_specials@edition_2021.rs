@@ -6,5 +6,5 @@ fn main() {
         f64::NEG_INFINITY,
         f64::NAN,
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

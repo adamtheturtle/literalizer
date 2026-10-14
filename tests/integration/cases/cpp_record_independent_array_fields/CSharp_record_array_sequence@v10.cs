@@ -9,5 +9,6 @@ var my_data = new Record0(
         "s"
     }
 );
+    _ = my_data;
     }
 }

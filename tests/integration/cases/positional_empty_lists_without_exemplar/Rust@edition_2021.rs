@@ -7,5 +7,5 @@ fn main() {
             Vec::<String>::new(),
         ],
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

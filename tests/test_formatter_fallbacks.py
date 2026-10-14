@@ -15,10 +15,15 @@ def test_roc_call_wrapper_without_preamble() -> None:
         declarations=(),
         calls="call",
         context=FileWrapperContext(
+            bound_variable_names=(),
             variable_name="",
             modifiers=frozenset(),
             body_preamble=(),
             class_preamble=(),
+            has_literal_declarations=False,
+            generated_body_preamble=(),
+            call_stub_names=frozenset(),
+            root_is_object_literal=False,
         ),
     ) == dedent(
         text="""\

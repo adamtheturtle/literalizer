@@ -2,6 +2,7 @@
 name: CI
 
 on:
+  workflow_dispatch: {}
   push:
     branches: [main]
   pull_request:
@@ -21,6 +22,7 @@ concurrency:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.12', '3.13', '3.14', '3.15']
         platform: [ubuntu-latest, windows-latest]
@@ -34,7 +36,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -60,7 +62,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -105,7 +107,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -125,7 +127,7 @@ jobs:
           uv pip install --group=benchmark
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v5.4.0
+        uses: CodSpeedHQ/action@v5.4.2
         with:
           mode: simulation
           run: .venv/bin/python -m pytest tests/benchmarks --codspeed -o addopts=

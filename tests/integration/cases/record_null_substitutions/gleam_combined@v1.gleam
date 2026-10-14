@@ -9,6 +9,7 @@ pub fn main() {
   let my_data = GDict([
     #("rows", GList([GDict([#("replacement", GNull), #("present", GInt(1))]), GDict([#("replacement", GInt(2)), #("present", GInt(3))])])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("rows", GList([GDict([#("replacement", GNull), #("present", GInt(1))]), GDict([#("replacement", GInt(2)), #("present", GInt(3))])])),
   ])

@@ -4,5 +4,6 @@ class Check {
 var ZKV = new Record0(
     1
 );
+    _ = ZKV;
     }
 }

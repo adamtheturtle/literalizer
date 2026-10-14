@@ -1,14 +1,14 @@
 use chrono::NaiveDate;
 #[derive(Clone)]
-struct Record0 {
-    s: &'static str,
-    i: i32,
-    f: f64,
-    b: bool,
-    n: Option<()>,
-    d: NaiveDate,
-    dt: i64,
-    by: &'static str,
+pub struct Record0 {
+    pub s: &'static str,
+    pub i: i32,
+    pub f: f64,
+    pub b: bool,
+    pub n: Option<()>,
+    pub d: NaiveDate,
+    pub dt: i64,
+    pub by: &'static str,
 }
 fn main() {
     let my_data = Record0 {
@@ -21,5 +21,5 @@ fn main() {
         dt: 1705320000,
         by: "48656c6c6f",
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

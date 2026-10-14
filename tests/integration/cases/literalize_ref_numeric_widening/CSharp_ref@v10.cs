@@ -5,3 +5,4 @@ var my_data = (
     FloatingValue,
     IntegerValue
 );
+    _ = my_data;

@@ -15,3 +15,4 @@ my_data = (
         "5"  // removes "world"
     )
 );
+    _ = my_data;

@@ -5,5 +5,6 @@ var my_data = new Record0(
     1705320000,
     4085195400
 );
+    _ = my_data;
     }
 }

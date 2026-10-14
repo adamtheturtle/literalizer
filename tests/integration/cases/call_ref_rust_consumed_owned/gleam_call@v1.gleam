@@ -9,5 +9,5 @@ pub fn main() {
     GInt(1),
     GInt(2),
   ])
-  process(item)
+  let _ = process(item)
 }

@@ -1,3 +1,3 @@
 make_widget = @(varargin) [];
-my_data = [];
+my_data = make_widget([]);
 my_data = make_widget(42) // note;

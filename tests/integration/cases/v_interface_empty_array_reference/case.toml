@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "INTERFACE" },
+]
+heterogeneous_strategy = "INTERFACE"
+
+[ref.value_sources]
+seed = "1"

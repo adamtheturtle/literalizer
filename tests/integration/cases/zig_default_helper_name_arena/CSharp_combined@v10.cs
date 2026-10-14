@@ -5,3 +5,4 @@ var my_data = new Dictionary<string, int> {
 my_data = new Dictionary<string, int> {
     ["a"] = 1
 };
+    _ = my_data;

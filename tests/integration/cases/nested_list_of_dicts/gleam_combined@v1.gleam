@@ -9,6 +9,7 @@ pub fn main() {
     GList([GDict([#("name", GStr("Alice"))]), GDict([#("name", GStr("Bob"))])]),
     GList([GDict([#("name", GStr("Charlie"))]), GDict([#("name", GStr("Dave"))])]),
   ])
+  let _ = my_data
   let my_data = GList([
     GList([GDict([#("name", GStr("Alice"))]), GDict([#("name", GStr("Bob"))])]),
     GList([GDict([#("name", GStr("Charlie"))]), GDict([#("name", GStr("Dave"))])]),

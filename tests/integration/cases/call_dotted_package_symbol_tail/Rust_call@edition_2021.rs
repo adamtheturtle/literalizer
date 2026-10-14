@@ -1,6 +1,6 @@
 fn main() {
-    struct HelperType_;
-    impl HelperType_ { fn list<A>(&self, _a: A) {} }
-    let helper = HelperType_;
+    struct HelperType;
+    impl HelperType { fn list<A>(&self, _a: A) {} }
+    let helper = HelperType;
     helper.list(1);
 }

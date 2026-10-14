@@ -136,8 +136,9 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
         for config in ref_case_specs(cases_dir=CASES_DIR, owner=REF_OWNER)
         for lang_cls in sorted_languages()
         if config.admits_language(lang_cls=lang_cls)
-        if config.ref_case_override is None
-        or config.ref_case_override in lang_cls.supported_ref_cases
+        if config.ref_case_for(lang_cls=lang_cls) is None
+        or config.ref_case_for(lang_cls=lang_cls)
+        in lang_cls.supported_ref_cases
     ]
 
 

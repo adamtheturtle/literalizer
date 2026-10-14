@@ -4,3 +4,4 @@ var my_data = (
     MyNull,
     (object?)null
 );
+    _ = my_data;

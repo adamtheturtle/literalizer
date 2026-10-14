@@ -4,5 +4,5 @@ fn main() {
         ("a", HashMap::from([("k", "07:30:00")])),
         ("b", HashMap::from([("k", "string")])),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

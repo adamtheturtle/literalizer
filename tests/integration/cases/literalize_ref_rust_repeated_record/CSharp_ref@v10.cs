@@ -11,5 +11,6 @@ var my_data = new[] {
     Shared,
     Shared
 };
+    _ = my_data;
     }
 }

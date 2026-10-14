@@ -4,7 +4,7 @@
 int main() {
 auto my_data = std::map<std::string, long long>{
     {"i32_below", -020000000001LL},
-    {"i32_minimum", -020000000000LL},
+    {"i32_minimum", (-017777777777 - 1)},
     {"i32_above", -017777777777},
     {"i32_maximum", 017777777777},
     {"i32_over", 020000000000},

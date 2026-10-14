@@ -9,3 +9,4 @@ my_data = (
     1,
     -1
 );
+    _ = my_data;

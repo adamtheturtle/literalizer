@@ -3,5 +3,5 @@ fn main() {
     let my_data = HashMap::from([
         ("key", "\"bang!\""),  // real
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process.api.fetch"
+parameter_names = ["data"]
+per_element = true
+wrap_in_file = true

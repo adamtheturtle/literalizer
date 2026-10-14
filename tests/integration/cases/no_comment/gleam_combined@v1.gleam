@@ -7,6 +7,7 @@ pub fn main() {
   let my_data = GDict([
     #("message", GStr("no comment here")),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("message", GStr("no comment here")),
   ])

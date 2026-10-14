@@ -8,5 +8,5 @@ fn main() {
         ("line_separator", "x y"),
         ("paragraph_separator", "x y"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

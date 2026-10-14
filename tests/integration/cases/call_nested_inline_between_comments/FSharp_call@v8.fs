@@ -5,6 +5,6 @@ type Val =
     | FStr of string
     | FList of Val list
 let f (_a: obj, _b: obj) : obj = null
-f(FInt 2L, FStr "hello")  // trailing note
+f(FInt 2L, FStr "hello") |> ignore  // trailing note
 // next element
-f(FInt 3L, FStr "world")
+f(FInt 3L, FStr "world") |> ignore

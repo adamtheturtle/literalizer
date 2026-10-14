@@ -4,5 +4,5 @@ pub type GVal {
 pub fn class(_a: a) -> Nil { Nil }
 
 pub fn main() {
-  class(GInt(42))
+  let _ = class(GInt(42))
 }

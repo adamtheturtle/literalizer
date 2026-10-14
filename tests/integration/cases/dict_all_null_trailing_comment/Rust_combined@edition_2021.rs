@@ -5,10 +5,11 @@ fn main() {
         ("b", None::<()>),
         // trailing
     ]);
+    let _ = &my_data;
     my_data = HashMap::from([
         ("a", None::<()>),
         ("b", None::<()>),
         // trailing
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

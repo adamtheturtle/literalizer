@@ -12,5 +12,6 @@ var my_data = new Record0(
     ),
     First
 );
+    _ = my_data;
     }
 }

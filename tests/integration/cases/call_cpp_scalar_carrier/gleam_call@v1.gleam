@@ -8,8 +8,8 @@ pub type GVal {
 pub fn process(_value: a) -> Nil { Nil }
 
 pub fn main() {
-  process(GStr("hello"))
-  process(GInt(42))
-  process(GBool(True))
-  process(GNull)
+  let _ = process(GStr("hello"))
+  let _ = process(GInt(42))
+  let _ = process(GBool(True))
+  let _ = process(GNull)
 }

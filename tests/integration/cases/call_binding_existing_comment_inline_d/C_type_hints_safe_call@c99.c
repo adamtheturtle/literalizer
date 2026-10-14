@@ -16,7 +16,7 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 static CVal make_widget(CVal _a0) { (void)_a0; return (CVal){0}; }
 int main(void) {
-CVal my_data = ((CVal){.i = 42});
+CVal my_data = make_widget(((CVal){.i = 42}));
 my_data = make_widget(((CVal){.i = 42})); // note
     return 0;
 }

@@ -10,5 +10,5 @@ fn main() {
         2.5,
         None::<()>,
     );
-    let _ = my_data;
+    let _ = &my_data;
 }

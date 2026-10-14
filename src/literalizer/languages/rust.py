@@ -1,7 +1,7 @@
 """Rust language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections import Counter
@@ -21,6 +21,7 @@ from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import fixed_open
 from literalizer._formatters.fallbacks import nonempty_or_default
 from literalizer._formatters.format_dates import (
+    datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -123,7 +124,6 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
-    default_wrap_combined_in_file,
     identity_call_arg,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -575,11 +575,11 @@ def _rust_scalar_type(
             result = "f64"
         case str() | bytes():
             result = "&str"
-        case datetime.date():
+        case dt.date():
             result = date_type
-            if isinstance(data, datetime.datetime):
+            if isinstance(data, dt.datetime):
                 result = datetime_type
-        case datetime.time():
+        case dt.time():
             result = "&str"
         case None:
             result = "Option<()>"
@@ -902,7 +902,7 @@ def _format_rust_json_assignment(name: str, value: str, data: Value) -> str:
 
 
 @beartype
-def _format_date_rust(value: datetime.date) -> str:
+def _format_date_rust(value: dt.date) -> str:
     """Format a date as a Rust ``NaiveDate::from_ymd_opt(...)`` call."""
     return (
         f"NaiveDate::from_ymd_opt({value.year}, {value.month}, {value.day})"
@@ -911,7 +911,7 @@ def _format_date_rust(value: datetime.date) -> str:
 
 
 @beartype
-def _format_datetime_rust(value: datetime.datetime) -> str:
+def _format_datetime_rust(value: dt.datetime) -> str:
     """Format a datetime as a Rust ``NaiveDateTime::new(...)`` call."""
     date = _format_date_rust(value=value)
     if value.microsecond != 0:
@@ -945,13 +945,13 @@ class _VariantSignature:
 @beartype
 def _temporal_variant_signature(
     *,
-    value: datetime.date | datetime.time,
+    value: dt.date | dt.time,
     date_type: str,
     datetime_type: str,
 ) -> _VariantSignature:
     """Return the tagged-enum signature for one temporal value."""
     match value:
-        case datetime.datetime():
+        case dt.datetime():
             effective_name = "DateTime"
             if datetime_type in {"i32", "i64", "i128"}:
                 effective_name = datetime_type.upper()
@@ -959,7 +959,7 @@ def _temporal_variant_signature(
                 name=effective_name,
                 inner_type=datetime_type,
             )
-        case datetime.date():
+        case dt.date():
             return _VariantSignature(name="Date", inner_type=date_type)
         case _:
             return _VariantSignature(
@@ -1002,7 +1002,7 @@ def _heterogeneous_variant_for_scalar(
                 name="Bytes",
                 inner_type="&'static str",
             )
-        case datetime.datetime() | datetime.date() | datetime.time():
+        case dt.datetime() | dt.date() | dt.time():
             signature = _temporal_variant_signature(
                 value=value,
                 date_type=date_type,
@@ -1114,7 +1114,7 @@ def _rust_is_scalar(value: object, /) -> TypeIs[Scalar]:
     """Return whether *value* is a scalar rather than a ref/container."""
     return value is None or isinstance(
         value,
-        (str, int, float, datetime.date, datetime.time, bytes),
+        (str, int, float, dt.date, dt.time, bytes),
     )
 
 
@@ -1508,7 +1508,11 @@ def _rust_value_enum_lines(
         )
     if len(variants) == 0:
         return []
-    lines: list[str] = ["#[derive(Clone)]", f"enum {enum_name} {{"]
+    # Export the carrier so callers can inspect its variant payloads.
+    lines: list[str] = [
+        "#[derive(Clone)]",
+        f"pub enum {enum_name} {{",
+    ]
     for variant in variants:
         if variant.inner_type is None:
             body = variant.name
@@ -2854,7 +2858,7 @@ def _record_preamble_impl(
         for shape in emit_order:
             block: list[str] = [
                 "#[derive(Clone)]",
-                f"struct {record_names[shape]} {{",
+                f"pub struct {record_names[shape]} {{",
             ]
             for key in shape.keys:
                 example = field_values[shape].get(key)
@@ -2881,7 +2885,7 @@ def _record_preamble_impl(
                 if key in shape.optional_keys:
                     field_type = f"Option<{field_type}>"
                 field_name = _rust_record_field_identifier(key)
-                block.append(f"    {field_name}: {field_type},")
+                block.append(f"    pub {field_name}: {field_type},")
             block.append("}")
             struct_blocks.append("\n".join(block))
         enum_lines: Sequence[str]
@@ -3061,7 +3065,7 @@ def _rust_call_stub(
         method_param_list = f"&self, {param_list}"
     fields = parts[1:-1]
     if len(fields) == 0:
-        type_name = f"{root.title()}Type_"
+        type_name = f"{IdentifierCase.PASCAL.convert(name=root)}Type"
         return (
             f"struct {type_name};",
             (
@@ -3072,7 +3076,7 @@ def _rust_call_stub(
             f"let {root} = {type_name};",
         )
     lines: list[str] = []
-    inner_type = f"{fields[-1].title()}Type_"
+    inner_type = f"{IdentifierCase.PASCAL.convert(name=fields[-1])}Type"
     lines.append(f"struct {inner_type};")
     lines.append(
         f"impl {inner_type} {{"
@@ -3081,14 +3085,14 @@ def _rust_call_stub(
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = f"{IdentifierCase.PASCAL.convert(name=fields[i])}Type"
         lines.append(f"struct {curr_type} {{ {fields[i + 1]}: {prev_type} }}")
         prev_type = curr_type
-    root_type = f"{root.title()}Type_"
+    root_type = f"{IdentifierCase.PASCAL.convert(name=root)}Type"
     lines.append(f"struct {root_type} {{ {fields[0]}: {prev_type} }}")
     construction = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = f"{IdentifierCase.PASCAL.convert(name=fields[i])}Type"
         construction = f"{curr_type} {{ {fields[i + 1]}: {construction} }}"
     construction = f"{root_type} {{ {fields[0]}: {construction} }}"
     lines.append(f"let {root} = {construction};")
@@ -3340,7 +3344,7 @@ class Rust(metaclass=LanguageCls):
         RUST = DateFormatConfig(
             formatter=_format_date_rust,
             preamble_lines=("use chrono::NaiveDate;",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -3358,7 +3362,7 @@ class Rust(metaclass=LanguageCls):
                 "use chrono::NaiveDateTime;",
                 "use chrono::NaiveTime;",
             ),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -3915,8 +3919,9 @@ class Rust(metaclass=LanguageCls):
             build_behavior=_build_tagged_enum_behavior,
             build_preamble=_build_tagged_enum_preamble,
         )
-        """Auto-generate a tagged ``enum`` in the preamble containing
-        only the variants actually present in the data, and wrap each
+        """Generate a public tagged ``enum`` in the preamble.
+
+        Include only the variants actually present in the data, and wrap each
         heterogeneous scalar value with ``{EnumName}::{Variant}(value)``.
 
         Integer variants use narrowest-width names (``I32``, ``I64``,
@@ -3933,7 +3938,8 @@ class Rust(metaclass=LanguageCls):
         generated ``struct`` literals.
 
         Each distinct ordered-key tuple becomes a struct declared in
-        the preamble (``struct Record0 { field: Type, ... }``) and
+        the preamble with public fields
+        (``pub struct Record0 { pub field: Type, ... }``) and
         each matching dict in the data renders as a struct literal
         (``Record0 { field: value, ... }``) rather than a
         ``HashMap::from([...])`` call.  Useful for inputs whose dict
@@ -4031,10 +4037,34 @@ class Rust(metaclass=LanguageCls):
         )
         use_line = ""
         if variable_name != "":
-            use_line = f"\n{self.indent}let _ = {variable_name};"
+            borrow = (
+                "&mut "
+                if self.declaration_style is self.declaration_styles.LET_MUT
+                or _RustModifiers.MUT in context.modifiers
+                else "&"
+            )
+            use_line = f"\n{self.indent}let _ = {borrow}{variable_name};"
+        if self.declaration_style is self.declaration_styles.LET_MUT:
+            for name in context.bound_variable_names:
+                use_line += f"\n{self.indent}let _ = &mut {name};"
         return f"fn main() {{\n{indented}{use_line}\n}}"
 
-    wrap_combined_in_file = default_wrap_combined_in_file
+    def wrap_combined_in_file(
+        self,
+        declaration: str,
+        assignment: str,
+        context: FileWrapperContext,
+    ) -> str:
+        """Read the original binding before exercising its
+        reassignment.
+        """
+        return self.wrap_in_file(
+            content=(
+                f"{declaration}\nlet _ = &{context.variable_name};\n"
+                + assignment
+            ),
+            context=context,
+        )
 
     date_format: DateFormats = DateFormats.RUST
     datetime_format: DatetimeFormats = DatetimeFormats.RUST
@@ -4552,7 +4582,7 @@ class Rust(metaclass=LanguageCls):
             )
         if (
             not self._json_type_active
-            and self.datetime_format.value.type_produced is datetime.datetime
+            and self.datetime_format.value.type_produced is dt.datetime
         ):
             reject_aware_datetimes(
                 data=data, language_name="Rust", allow_utc_offset=False
@@ -4714,24 +4744,31 @@ class Rust(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return format_date_iso
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
-        if (
-            self._json_type_active
-            and self.datetime_format.value.type_produced is not int
-        ):
+        if self.datetime_format.value.type_produced is int:
+
+            @beartype
+            def _format_epoch(value: dt.datetime) -> str:
+                """Give wide epoch literals their required Rust suffix."""
+                return _apply_rust_integer_suffix(
+                    value=datetime_epoch_seconds(value=value), base=str
+                )
+
+            return _format_epoch
+        if self._json_type_active:
             return format_datetime_iso
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

@@ -1,11 +1,11 @@
 #[derive(Clone)]
-struct Record0 {
-    flags: (bool, bool),
-    values: (f64, f64),
-    ints: (i32, i32),
-    text: (&'static str,),
-    nested_flags: ((bool,), (bool,)),
-    nested_values: ((f64,), (f64,)),
+pub struct Record0 {
+    pub flags: (bool, bool),
+    pub values: (f64, f64),
+    pub ints: (i32, i32),
+    pub text: (&'static str,),
+    pub nested_flags: ((bool,), (bool,)),
+    pub nested_values: ((f64,), (f64,)),
 }
 fn main() {
     let my_data = Record0 {
@@ -41,5 +41,5 @@ fn main() {
             ),
         ),
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

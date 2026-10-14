@@ -4,5 +4,5 @@ pub type GVal {
 pub fn outer_thing_go() -> Nil { Nil }
 
 pub fn main() {
-  outer_thing_go()
+  let _ = outer_thing_go()
 }

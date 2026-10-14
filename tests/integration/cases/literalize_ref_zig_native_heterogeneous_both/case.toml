@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member_present", option = "declaration_style", member = "VAR" },
+]
+declaration_style = "VAR"
+heterogeneous_strategy = "RECORD"
+variable_form = "both"
+
+[ref.value_sources]
+shared = "[1, 2]"
+second = '"two"'

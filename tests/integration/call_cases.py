@@ -11,6 +11,7 @@ import dataclasses
 import enum
 import functools
 import json
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -19,7 +20,7 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer._language import is_reserved_identifier
+from literalizer._language import RenderedCallStub, is_reserved_identifier
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -43,7 +44,9 @@ from .golden_checks import (
     skip_golden,
 )
 from .language_specs import (
+    find_redefinition_styles,
     make_golden_path,
+    make_spec,
     sorted_languages,
     with_per_fixture_module_name,
 )
@@ -245,10 +248,72 @@ def _is_reserved_parameter_name(
     *, lang_cls: literalizer.LanguageCls, name: str
 ) -> bool:
     """Compare reserved names using the identifier case policy."""
-    return is_reserved_identifier(
+    pattern = lang_cls.reserved_variable_identifier_pattern
+    return (
+        pattern is not None and pattern.fullmatch(string=name) is not None
+    ) or is_reserved_identifier(
         case_sensitive=lang_cls.reserved_variable_identifiers_case_sensitive,
         name=name,
         reserved_identifiers=lang_cls.reserved_variable_identifiers,
+    )
+
+
+@beartype
+def _invalid_parameter_grammar(
+    *, lang_cls: literalizer.LanguageCls, name: str
+) -> bool:
+    """Apply the declared grammar and parameter-only restrictions."""
+    pattern = lang_cls.reserved_call_parameter_identifier_pattern
+    return (
+        not lang_cls.new_variable_name_syntax.accepts(name=name)
+        or (
+            lang_cls.max_variable_identifier_length is not None
+            and len(name) > lang_cls.max_variable_identifier_length
+        )
+        or name in lang_cls.reserved_call_parameter_identifiers
+        or (pattern is not None and pattern.fullmatch(string=name) is not None)
+    )
+
+
+@beartype
+def _invalid_target_grammar(
+    *, lang_cls: literalizer.LanguageCls, target: str, wrapped: bool
+) -> bool:
+    """Recognize targets a call or its generated declarations reject."""
+    parts = target.split(sep=".")
+    syntax = lang_cls.call_target_name_syntax
+    if syntax is None:
+        syntax = lang_cls.new_variable_name_syntax
+    constructor = any(
+        make_spec(lang_cls=lang_cls).format_constructor_target(candidate)
+        == target
+        for candidate in re.findall(pattern=r"[^\W\d]\w*", string=target)
+        if re.fullmatch(pattern=r"[A-Z][A-Za-z0-9_]*", string=candidate)
+        is not None
+    )
+    if any(
+        part == ""
+        or (
+            lang_cls.max_variable_identifier_length is not None
+            and len(part) > lang_cls.max_variable_identifier_length
+        )
+        or (
+            not syntax.accepts(name=part)
+            and not (
+                constructor
+                and (len(parts) > 1 or lang_cls.accepts_type_name_call_target)
+            )
+        )
+        for part in parts
+    ):
+        return True
+    return (
+        wrapped
+        and not (constructor and lang_cls.declares_type_name_call_target)
+        and any(
+            not lang_cls.new_variable_name_syntax.accepts(name=part)
+            for part in parts
+        )
     )
 
 
@@ -325,6 +390,11 @@ def _expected_call_shape_exception(
         or bound_refs_wrap
         or isinstance(effective_style.value, literalizer.KeywordCallStyle)
     )
+    if any(
+        _invalid_parameter_grammar(lang_cls=lang_cls, name=name)
+        for name in config.parameter_names
+    ):
+        return InvalidCallParameterNameError
     if (
         rejects_reserved_parameters
         and lang_cls.declares_call_parameter_names
@@ -334,7 +404,11 @@ def _expected_call_shape_exception(
         )
     ):
         return InvalidCallParameterNameError
-    if _is_reserved_call_target(
+    if _invalid_target_grammar(
+        lang_cls=lang_cls,
+        target=config.target_function,
+        wrapped=config.wrap_in_file or bound_refs_wrap,
+    ) or _is_reserved_call_target(
         lang_cls=lang_cls, target_function=config.target_function
     ):
         return InvalidCallTargetError
@@ -530,6 +604,49 @@ class _CallWithDeclarations:
 
 
 @beartype
+def _render_ref_declaration(
+    *,
+    config: CallCaseSpec,
+    spec: literalizer.Language,
+    declaration_name: str,
+    ref_source: str,
+) -> literalizer.LiteralizeResult:
+    """Seed an existing binding using the synthetic function return
+    carrier.
+    """
+    variable_form = literalizer.NewVariable(
+        name=declaration_name,
+        modifiers=frozenset(),
+    )
+    if (
+        isinstance(config.variable_form, literalizer.ExistingVariable)
+        and config.variable_form.name == declaration_name
+    ):
+        styles = find_redefinition_styles(spec=spec)
+        seed_spec = spec
+        if len(styles) > 0:
+            seed_spec = dataclasses.replace(spec, declaration_style=styles[0])
+        return literalizer.literalize_call(
+            source=ref_source,
+            input_format=literalizer.InputFormat.JSON,
+            language=seed_spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            per_element=False,
+            variable_form=variable_form,
+        )
+    return literalizer.literalize(
+        source=ref_source,
+        input_format=literalizer.InputFormat.JSON,
+        language=spec,
+        variable_form=variable_form,
+        collection_layout=literalizer.CollectionLayout(
+            value=config.collection_layout
+        ),
+    )
+
+
+@beartype
 def _run_call_with_declarations(
     *,
     config: CallCaseSpec,
@@ -552,17 +669,11 @@ def _run_call_with_declarations(
         config=file_regression.request.config,
     ):
         decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
-            ref_name: literalizer.literalize(
-                source=ref_source,
-                input_format=literalizer.InputFormat.JSON,
-                language=spec,
-                variable_form=literalizer.NewVariable(
-                    name=declaration_names[ref_name],
-                    modifiers=frozenset(),
-                ),
-                collection_layout=literalizer.CollectionLayout(
-                    value=config.collection_layout,
-                ),
+            ref_name: _render_ref_declaration(
+                config=config,
+                spec=spec,
+                declaration_name=declaration_names[ref_name],
+                ref_source=ref_source,
             )
             for ref_name, ref_source in config.ref_declarations.items()
         }
@@ -747,10 +858,12 @@ def run_call_golden_case(
     decl_results = call_outcome.decl_results
     result = call_outcome.result
     # Build stub declarations for undefined names.
-    body_stubs: list[str] = []
+    body_stubs: list[str | RenderedCallStub] = []
     class_stubs: list[str] = []
     preamble_stubs: list[str] = []
-    if config.call_transform is not None:
+    if config.call_transform is not None or isinstance(
+        config.variable_form, literalizer.ExistingVariable
+    ):
         stub_return = literalizer.StubReturn.VALUE
     else:
         stub_return = literalizer.StubReturn.VOID

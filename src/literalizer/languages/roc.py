@@ -1,7 +1,7 @@
 """Roc language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import math
 import re
@@ -11,6 +11,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._comments import TabFreeCommentPrefix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -139,7 +140,7 @@ def _format_roc_string_literal(value: str) -> str:
 
 
 @beartype
-def _apply_roc_str_wrapped_date(value: datetime.date, prefix: str) -> str:
+def _apply_roc_str_wrapped_date(value: dt.date, prefix: str) -> str:
     """Format a date as a Roc string via ISO 8601."""
     return f"{prefix}Str {format_date_iso(value=value)}"
 
@@ -147,12 +148,12 @@ def _apply_roc_str_wrapped_date(value: datetime.date, prefix: str) -> str:
 @beartype
 def _build_roc_date_iso(
     prefix: str,
-) -> Callable[[datetime.date], str]:
+) -> Callable[[dt.date], str]:
     """Build a date formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.date) -> str:
+    def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_date(value=value, prefix=prefix)
 
@@ -160,7 +161,7 @@ def _build_roc_date_iso(
 
 
 @beartype
-def _apply_roc_str_wrapped_time(value: datetime.time, prefix: str) -> str:
+def _apply_roc_str_wrapped_time(value: dt.time, prefix: str) -> str:
     """Format a time as a Roc string via ISO 8601."""
     return f"{prefix}Str {format_time_iso(value=value)}"
 
@@ -168,12 +169,12 @@ def _apply_roc_str_wrapped_time(value: datetime.time, prefix: str) -> str:
 @beartype
 def _build_roc_time_iso(
     prefix: str,
-) -> Callable[[datetime.time], str]:
+) -> Callable[[dt.time], str]:
     """Build a time formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.time) -> str:
+    def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_time(value=value, prefix=prefix)
 
@@ -181,9 +182,7 @@ def _build_roc_time_iso(
 
 
 @beartype
-def _apply_roc_str_wrapped_datetime(
-    value: datetime.datetime, prefix: str
-) -> str:
+def _apply_roc_str_wrapped_datetime(value: dt.datetime, prefix: str) -> str:
     """Format a datetime as a Roc string via ISO 8601."""
     return f"{prefix}Str {format_datetime_iso(value=value)}"
 
@@ -191,12 +190,12 @@ def _apply_roc_str_wrapped_datetime(
 @beartype
 def _build_roc_datetime_iso(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_datetime(value=value, prefix=prefix)
 
@@ -206,7 +205,7 @@ def _build_roc_datetime_iso(
 @beartype
 def _build_roc_datetime_epoch(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Int`` from
     Unix epoch seconds.
     """
@@ -354,40 +353,13 @@ def _build_roc_float_formatter(
 
 
 @beartype
-def _apply_roc_dict_entry(
+def _roc_dict_entry(
     key: str,
     _raw_value: Value,
     formatted_value: str,
-    str_prefix: str,
 ) -> str:
-    """Format a dict entry as a tuple with a plain-string key.
-
-    Dict keys are ``Str``, not ``Val``, so the ``{prefix}Str`` constructor
-    must be stripped from the formatted key.
-    """
-    key = key.removeprefix(str_prefix)
+    """Format a dict entry with its already-rendered plain-string key."""
     return f"({key}, {formatted_value})"
-
-
-@beartype
-def _build_roc_dict_entry(
-    prefix: str,
-) -> Callable[[str, Value, str], str]:
-    """Build a dict-entry formatter that strips the ``{prefix}Str`` prefix
-    from keys.
-    """
-    _str_prefix = f"{prefix}Str "
-
-    def _format(key: str, _raw_value: Value, formatted_value: str) -> str:
-        """Delegate to module-level implementation."""
-        return _apply_roc_dict_entry(
-            key=key,
-            _raw_value=_raw_value,
-            formatted_value=formatted_value,
-            str_prefix=_str_prefix,
-        )
-
-    return _format
 
 
 # Backward-compatible module-level aliases used by the Enum members.
@@ -425,7 +397,6 @@ _format_roc_float_fixed = _build_roc_float_formatter(
     prefix="R",
     inner=format_float_fixed,
 )
-_roc_dict_entry = _build_roc_dict_entry(prefix="R")
 
 
 _ROC_INT_BASE: dict[str, Callable[[int], str]] = {
@@ -469,11 +440,11 @@ def _build_roc_body_preamble(
         del data  # unused
         p = constructor_prefix
         int_types: set[type] = {int}
-        str_types: set[type] = {str, bytes, datetime.date}
+        str_types: set[type] = {str, bytes, dt.date}
         if datetime_type_produced is int:
-            int_types.add(datetime.datetime)
+            int_types.add(dt.datetime)
         else:
-            str_types.add(datetime.datetime)
+            str_types.add(dt.datetime)
         constructors = [
             constructor
             for type_set, constructor in (
@@ -566,7 +537,7 @@ def _roc_native_type_shape(data: Value) -> str:
         result = "int"
     elif isinstance(data, float):
         result = "float"
-    elif isinstance(data, (str, bytes, datetime.date, datetime.time)):
+    elif isinstance(data, (str, bytes, dt.date, dt.time)):
         result = "str"
     elif data is None:
         result = "null"
@@ -959,7 +930,7 @@ class Roc(metaclass=LanguageCls):
         """Comment style options."""
 
         HASH = CommentConfig(
-            prefix="#",
+            prefix=TabFreeCommentPrefix(object="#"),
             suffix="",
         )
 
@@ -1156,8 +1127,8 @@ class Roc(metaclass=LanguageCls):
         effecting.
 
         The ``Val`` type alias is kept only when the wrapped output
-        actually annotates a binding with ``: Val`` (the literal-binding
-        declaration ``my_data : Val``).  It is dropped for every call
+        contains a literal-binding declaration, recorded in the wrapper
+        context before source rendering.  It is dropped for every call
         mode -- both the discarded-result form (exposed ``main``) and
         the inference-style call binding ``my_data = make_widget ...``
         whose right-hand side is a call expression with no tag, hence
@@ -1176,16 +1147,10 @@ class Roc(metaclass=LanguageCls):
             string=content,
         )
         variable_name = context.variable_name
-        body_preamble = context.body_preamble
         exposed = "main"
         if variable_name != "":
             exposed = variable_name
-        if f" : {self.type_name}\n" in content:
-            effective_preamble = body_preamble
-        else:
-            effective_preamble = self._strip_type_alias(
-                body_preamble=body_preamble,
-            )
+        effective_preamble = self._used_body_preamble(context=context)
         preamble_str = ""
         if len(effective_preamble) > 0:
             preamble_str = "\n".join(effective_preamble) + "\n\n"
@@ -1194,20 +1159,20 @@ class Roc(metaclass=LanguageCls):
             content = f"main =\n{body}\n{self.indent}{{}}"
         return f"module [{exposed}]\n\n{preamble_str}{content}"
 
-    def _strip_type_alias(
-        self,
+    @staticmethod
+    def _used_body_preamble(
         *,
-        body_preamble: tuple[str, ...],
+        context: FileWrapperContext,
     ) -> tuple[str, ...]:
-        """Drop the ``Val`` tag-union alias from *body_preamble*.
-
-        Used in call modes where nothing in the wrapped output
-        references ``: Val``, so emitting the alias would generate an
-        ``UNUSED DEFINITION`` warning in Roc.
+        """Keep generated aliases only for literal-binding
+        declarations.
         """
-        prefix = f"{self.type_name} : ["
+        if context.has_literal_declarations:
+            return context.body_preamble
         return tuple(
-            line for line in body_preamble if not line.startswith(prefix)
+            entry
+            for entry in context.body_preamble
+            if entry not in context.generated_body_preamble
         )
 
     def wrap_calls_with_declarations(
@@ -1223,17 +1188,12 @@ class Roc(metaclass=LanguageCls):
         alias and call stubs; only the top-level call lines inside
         ``main`` are wrapped in ``dbg (...)``.
         """
-        body_preamble = context.body_preamble
         decl_block = ""
         if len(declarations) > 0:
             decl_block = "\n".join(declarations) + "\n"
         body = _indent_call_lines(content=calls, indent=self.indent)
         main_block = f"main =\n{body}\n{self.indent}{{}}"
-        effective_preamble = body_preamble
-        if len(declarations) == 0:
-            effective_preamble = self._strip_type_alias(
-                body_preamble=body_preamble
-            )
+        effective_preamble = self._used_body_preamble(context=context)
         preamble_str = ""
         if len(effective_preamble) > 0:
             preamble_str = "\n".join(effective_preamble) + "\n\n"
@@ -1402,7 +1362,7 @@ class Roc(metaclass=LanguageCls):
     @cached_property
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
-        return _build_roc_dict_entry(prefix=self.constructor_prefix)
+        return _roc_dict_entry
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
@@ -1484,7 +1444,7 @@ class Roc(metaclass=LanguageCls):
         )
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
             formatter = _build_roc_date_iso(prefix=self.constructor_prefix)
@@ -1495,7 +1455,7 @@ class Roc(metaclass=LanguageCls):
         return _build_roc_date_iso(prefix=self.constructor_prefix)
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
             if self.datetime_format is type(self.datetime_format).EPOCH:
@@ -1509,9 +1469,7 @@ class Roc(metaclass=LanguageCls):
                 )
                 tag = f"{self.constructor_prefix}Str "
             return lambda value: formatter(value).removeprefix(tag)
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_roc_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "R":
@@ -1519,13 +1477,18 @@ class Roc(metaclass=LanguageCls):
         return _build_roc_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         formatter = _build_roc_time_iso(prefix=self.constructor_prefix)
         if self.dict_format is type(self.dict_format).RECORD:
             tag = f"{self.constructor_prefix}Str "
             return lambda value: formatter(value).removeprefix(tag)
         return formatter
+
+    @cached_property
+    def format_dict_key(self) -> Callable[[str], str]:
+        """Render a string key without a value constructor."""
+        return _format_roc_string_literal
 
     @cached_property
     def format_string(self) -> Callable[[str], str]:

@@ -4,3 +4,4 @@ var my_data = // before
 // inline
 my_data = // before
 "plain";
+    _ = my_data;

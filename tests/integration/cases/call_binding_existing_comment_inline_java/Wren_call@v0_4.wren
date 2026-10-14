@@ -3,5 +3,5 @@ class Make_widget_ {
     call(count) {}
 }
 var make_widget = Make_widget_.new()
-var my_data = null
+var my_data = make_widget.call(null)
 my_data = make_widget.call(42) // note

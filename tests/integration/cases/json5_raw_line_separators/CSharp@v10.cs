@@ -6,3 +6,4 @@ var my_data = new Dictionary<string, string> {
     ["continued"] = "hi",
     ["escaped backslash"] = "j\\\u2028k"
 };
+    _ = my_data;

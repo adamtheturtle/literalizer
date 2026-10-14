@@ -4,3 +4,4 @@ var my_data = new Dictionary<string, int> {
     /* balanced {- nested -} and trailing -} stay readable */
     ["x"] = 1
 };
+    _ = my_data;

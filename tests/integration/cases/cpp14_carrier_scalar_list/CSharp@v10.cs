@@ -4,3 +4,4 @@ var my_data = (
     "a",
     2.5
 );
+    _ = my_data;

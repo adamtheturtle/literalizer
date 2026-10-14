@@ -1,6 +1,6 @@
 fn main() {
-    const my_data: [&str; 1] = [
+    const MY_DATA: [&str; 1] = [
         "48656c6c6f",
     ];
-    let _ = my_data;
+    let _ = &MY_DATA;
 }

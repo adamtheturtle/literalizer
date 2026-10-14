@@ -17,6 +17,7 @@ pub fn main() {
     // Inside the table.
     #("table", GDict([#("inner", GInt(4))])),
   ])
+  let _ = my_data
   let my_data = GDict([
     // About the first dotted key.
     // About the second dotted key.

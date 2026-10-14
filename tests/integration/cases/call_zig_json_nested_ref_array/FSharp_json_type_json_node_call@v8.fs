@@ -6,4 +6,4 @@ let shared: JsonNode = JsonArray([|
     (JsonValue.Create(1L) :> JsonNode);
     (JsonValue.Create(2L) :> JsonNode)
 |])
-consume((JsonArray([|(shared :> JsonNode); (JsonValue.Create(42L) :> JsonNode)|]) :> JsonNode))
+consume((JsonArray([|(shared :> JsonNode); (JsonValue.Create(42L) :> JsonNode)|]) :> JsonNode)) |> ignore

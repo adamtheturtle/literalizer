@@ -3,5 +3,5 @@ fn main() {
     let allocator = HashMap::from([
         ("a", 1),
     ]);
-    let _ = allocator;
+    let _ = &allocator;
 }

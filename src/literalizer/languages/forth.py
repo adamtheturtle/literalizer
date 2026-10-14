@@ -2,7 +2,7 @@
 
 import base64
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Sequence
@@ -121,7 +121,7 @@ def _format_float_forth(value: float) -> str:
 
 
 @beartype
-def _format_date_forth(value: datetime.date) -> str:
+def _format_date_forth(value: dt.date) -> str:
     r"""Format a date as a Forth ``s\"`` ISO 8601 string.
 
     Example: ``datetime.date(2024, 1, 15)`` -> ``s\" 2024-01-15"``.
@@ -130,7 +130,7 @@ def _format_date_forth(value: datetime.date) -> str:
 
 
 @beartype
-def _format_datetime_forth(value: datetime.datetime) -> str:
+def _format_datetime_forth(value: dt.datetime) -> str:
     r"""Format a datetime as a Forth ``s\"`` ISO 8601 string.
 
     Example: ``datetime.datetime(2024, 1, 15, 12, 30)`` ->
@@ -140,7 +140,7 @@ def _format_datetime_forth(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_time_forth(value: datetime.time) -> str:
+def _format_time_forth(value: dt.time) -> str:
     r"""Format a time as a Forth ``s\"`` ISO 8601 string.
 
     Example: ``datetime.time(9, 30)`` -> ``s\" 09:30:00"``.
@@ -175,11 +175,11 @@ def _forth_scalar_marker(value: Value, *, datetime_as_int: bool) -> str:
             return "+bool"
         case float():
             return "+float"
-        case datetime.datetime():
+        case dt.datetime():
             if datetime_as_int:
                 return "+int"
             return "+str"
-        case str() | bytes() | datetime.date() | datetime.time():
+        case str() | bytes() | dt.date() | dt.time():
             return "+str"
         case _:
             return "+int"
@@ -848,17 +848,17 @@ class Forth(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return _format_time_forth
 

@@ -1,10 +1,10 @@
 #[derive(Clone)]
-struct Record1 {
-    value: i32,
+pub struct Record1 {
+    pub value: i32,
 }
 #[derive(Clone)]
-struct Record0 {
-    child: Record1,
+pub struct Record0 {
+    pub child: Record1,
 }
 fn main() {
     let first = Record0 {
@@ -13,5 +13,5 @@ fn main() {
         },
     };
     let my_data = first;
-    let _ = my_data;
+    let _ = &my_data;
 }

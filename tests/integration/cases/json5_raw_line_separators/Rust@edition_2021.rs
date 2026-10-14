@@ -7,5 +7,5 @@ fn main() {
         ("continued", "hi"),
         ("escaped backslash", "j\\ k"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

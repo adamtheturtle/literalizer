@@ -8,6 +8,7 @@ pub fn main() {
     GList([GList([GInt(1)])]),
     GList([GList([])]),
   ])
+  let _ = my_data
   let my_data = GList([
     GList([GList([GInt(1)])]),
     GList([GList([])]),

@@ -5,7 +5,7 @@ pub type GVal {
 pub fn process(_value: a) -> Nil { Nil }
 
 pub fn main() {
-  process(GStr("Dune"))  // first edition
-  process(GStr("Solaris"))
-  process(GStr("Neuromancer"))  // cyberpunk
+  let _ = process(GStr("Dune"))  // first edition
+  let _ = process(GStr("Solaris"))
+  let _ = process(GStr("Neuromancer"))  // cyberpunk
 }

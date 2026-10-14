@@ -8,3 +8,4 @@ using System;
             "first\n{ \"quoted\" // text }",
             Shared
         );
+    _ = my_data;

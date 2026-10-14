@@ -4,4 +4,4 @@ type Val =
     | FStr of string
     | FList of Val list
 let op (_value: obj) : obj = null
-op(FStr "hello")
+op(FStr "hello") |> ignore

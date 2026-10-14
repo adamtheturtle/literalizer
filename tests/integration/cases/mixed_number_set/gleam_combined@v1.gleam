@@ -9,6 +9,7 @@ pub fn main() {
     GFloat(2.5),
     GInt(1),
   ])
+  let _ = my_data
   let my_data = GSet([
     GFloat(2.5),
     GInt(1),

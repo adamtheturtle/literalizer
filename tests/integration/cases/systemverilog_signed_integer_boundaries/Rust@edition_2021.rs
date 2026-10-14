@@ -9,5 +9,5 @@ fn main() {
         ("i64_minimum", -9223372036854775808i64),
         ("i64_maximum", 9223372036854775807i64),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -121,3 +121,4 @@ JsonNode? my_data = new JsonArray {
     118,
     119
 };
+    _ = my_data;

@@ -3,5 +3,5 @@ fn main() {
     let arena = HashMap::from([
         ("a", 1),
     ]);
-    let _ = arena;
+    let _ = &arena;
 }

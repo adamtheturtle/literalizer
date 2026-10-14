@@ -11,3 +11,4 @@ var my_data = (
     Shared,
     Second
 );
+    _ = my_data;

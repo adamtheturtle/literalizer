@@ -10,5 +10,5 @@ pub fn main() {
   let big_list = GList([
     GStr("x"),
   ])
-  process(GDict([#("k", big_list)]), GInt(2))
+  let _ = process(GDict([#("k", big_list)]), GInt(2))
 }

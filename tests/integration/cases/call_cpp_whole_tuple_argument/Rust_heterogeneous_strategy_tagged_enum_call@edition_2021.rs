@@ -1,5 +1,5 @@
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     Str(&'static str),
     I32(i32),
     Bool(bool),

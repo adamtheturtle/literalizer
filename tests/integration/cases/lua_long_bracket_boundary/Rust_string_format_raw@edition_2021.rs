@@ -5,5 +5,5 @@ fn main() {
         r#"a]="#,
         r#"a]b"#,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

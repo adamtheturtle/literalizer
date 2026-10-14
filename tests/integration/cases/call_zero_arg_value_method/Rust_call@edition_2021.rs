@@ -1,6 +1,6 @@
 fn main() {
-    struct ThingType_;
-    impl ThingType_ { fn go(&self) {} }
-    let thing = ThingType_;
+    struct ThingType;
+    impl ThingType { fn go(&self) {} }
+    let thing = ThingType;
     thing.go();
 }

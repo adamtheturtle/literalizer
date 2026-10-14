@@ -3,3 +3,4 @@ var my_data = new Dictionary<string, string> {
     ["x"] = "="
     // unrelated
 };
+    _ = my_data;

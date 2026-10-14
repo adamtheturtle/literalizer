@@ -5,5 +5,5 @@ fn main() {
         (2, "two"),
         (42, "answer"),
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

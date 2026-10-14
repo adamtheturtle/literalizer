@@ -1,19 +1,19 @@
 #[derive(Clone)]
-struct Record0 {
-    r#enum: i32,
-    export: i32,
-    given: i32,
-    then: i32,
-    r#as: i32,
-    derives: i32,
-    end: i32,
-    extension: i32,
-    infix: i32,
-    inline: i32,
-    opaque: i32,
-    open: i32,
-    transparent: i32,
-    using: i32,
+pub struct Record0 {
+    pub r#enum: i32,
+    pub export: i32,
+    pub given: i32,
+    pub then: i32,
+    pub r#as: i32,
+    pub derives: i32,
+    pub end: i32,
+    pub extension: i32,
+    pub infix: i32,
+    pub inline: i32,
+    pub opaque: i32,
+    pub open: i32,
+    pub transparent: i32,
+    pub using: i32,
 }
 fn main() {
     let my_data = Record0 {
@@ -32,5 +32,5 @@ fn main() {
         transparent: 13,
         using: 14,
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

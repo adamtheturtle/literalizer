@@ -1,4 +1,4 @@
 sub make_widget(*@a, *%kw) {}
-my $my_data = Nil;
+my $my_data = make_widget(Nil);
 $my_data = make_widget(42) // note
 // extra;

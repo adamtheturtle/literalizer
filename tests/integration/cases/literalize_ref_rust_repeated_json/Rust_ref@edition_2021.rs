@@ -6,5 +6,5 @@ fn main() {
         shared.clone(),
         shared.clone(),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

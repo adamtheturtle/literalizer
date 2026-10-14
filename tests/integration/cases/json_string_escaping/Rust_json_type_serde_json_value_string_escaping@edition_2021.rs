@@ -5,5 +5,5 @@ fn main() {
         "$key": "a\"b\tcé #{world} $ident",
         "trailing multi-byte": "café",
     });
-    let _ = my_data;
+    let _ = &my_data;
 }

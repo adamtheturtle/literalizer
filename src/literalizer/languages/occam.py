@@ -1,7 +1,7 @@
 """Occam-pi language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -110,7 +110,7 @@ def _format_occam_entry(
     match original:
         case bool():
             return formatted
-        case datetime.datetime():
+        case dt.datetime():
             tag = "str"
             if datetime_as_int:
                 tag = "int"
@@ -122,7 +122,7 @@ def _format_occam_entry(
             return f"MOBILE LIT(lit.int; {formatted})"
         case float():
             return f"MOBILE LIT(lit.float; {formatted}(REAL64))"
-        case str() | bytes() | datetime.date() | datetime.time():
+        case str() | bytes() | dt.date() | dt.time():
             return f"MOBILE LIT(lit.str; MOBILE []BYTE {formatted})"
         case _:
             return formatted
@@ -798,17 +798,17 @@ class Occam(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

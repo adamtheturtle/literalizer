@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+requires_call_returns_expression = true
+
+[[call.variants]]
+axis = "type_name"

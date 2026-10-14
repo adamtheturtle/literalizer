@@ -8,3 +8,4 @@ var my_data = new Dictionary<string, long> {
     ["i64_minimum"] = -0x8000000000000000,
     ["i64_maximum"] = 0x7fffffffffffffff
 };
+    _ = my_data;

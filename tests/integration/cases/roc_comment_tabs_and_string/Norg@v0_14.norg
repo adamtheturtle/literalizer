@@ -1,0 +1,8 @@
+* my_data
+@code javascript
+{
+    // before	line
+    "value": "left\tright"  // inline	line
+    // after	line
+}
+@end

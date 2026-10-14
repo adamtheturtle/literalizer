@@ -1526,3 +1526,27 @@ gates = [
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "TUPLE" },
 ]
+
+[axes.epoch_hash_set_boundaries]
+plan = "fixed_overrides"
+name_template = "{lang}_epoch_hash_set_boundaries"
+gates = [
+  { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
+  { kind = "enum_member_present", option = "set_format", member = "HASH_SET" },
+]
+overrides = [
+  { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
+  { kind = "enum_member", option = "set_format", member = "HASH_SET" },
+]
+
+[axes.epoch_sorted_set_boundaries]
+plan = "fixed_overrides"
+name_template = "{lang}_epoch_sorted_set_boundaries"
+gates = [
+  { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
+  { kind = "enum_member_present", option = "set_format", member = "SORTED_SET" },
+]
+overrides = [
+  { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
+  { kind = "enum_member", option = "set_format", member = "SORTED_SET" },
+]

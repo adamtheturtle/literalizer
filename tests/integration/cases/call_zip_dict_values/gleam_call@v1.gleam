@@ -8,6 +8,6 @@ pub fn process(_value: a) -> Nil { Nil }
 pub fn emit(__call: a, __zip: b) -> Nil { Nil }
 
 pub fn main() {
-  emit(process(GStr("hello")), GDict([#("a", GInt(1)), #("b", GInt(2))]))
-  emit(process(GInt(42)), GDict([#("c", GInt(3)), #("d", GInt(4))]))
+  let _ = emit(process(GStr("hello")), GDict([#("a", GInt(1)), #("b", GInt(2))]))
+  let _ = emit(process(GInt(42)), GDict([#("c", GInt(3)), #("d", GInt(4))]))
 }

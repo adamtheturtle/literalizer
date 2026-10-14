@@ -6,5 +6,5 @@ pub fn main() {
     json.int(1),
     json.int(2),
   ])
-  consume(json.preprocessed_array([shared, json.int(42)]))
+  let _ = consume(json.preprocessed_array([shared, json.int(42)]))
 }

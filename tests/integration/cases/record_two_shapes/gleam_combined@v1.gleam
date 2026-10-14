@@ -8,6 +8,7 @@ pub fn main() {
     #("metrics", GDict([#("count", GInt(100)), #("rate", GInt(50))])),
     #("flags", GDict([#("retries", GInt(3)), #("timeout", GInt(30))])),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("metrics", GDict([#("count", GInt(100)), #("rate", GInt(50))])),
     #("flags", GDict([#("retries", GInt(3)), #("timeout", GInt(30))])),

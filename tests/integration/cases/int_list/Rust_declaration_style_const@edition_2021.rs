@@ -1,8 +1,8 @@
 fn main() {
-    const my_data: [i32; 3] = [
+    const MY_DATA: [i32; 3] = [
         1,
         2,
         3,
     ];
-    let _ = my_data;
+    let _ = &MY_DATA;
 }

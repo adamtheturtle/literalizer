@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-record Record0(string Name, Dictionary<string, object> Payload);
+record Record0(string Name, Dictionary<string, object?> Payload);
 class Check {
     public static void Main() {
 var my_data = new[] {
     new Record0(
         "one",
-        new Dictionary<string, object> {
+        new Dictionary<string, object?> {
             ["scalar"] = 1,
             ["items"] = new HashSet<int> {
                 2,
@@ -15,10 +15,11 @@ var my_data = new[] {
     ),
     new Record0(
         "two",
-        new Dictionary<string, object> {
+        new Dictionary<string, object?> {
             ["other"] = 2
         }
     )
 };
+    _ = my_data;
     }
 }

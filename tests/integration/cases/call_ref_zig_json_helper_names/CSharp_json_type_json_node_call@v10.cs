@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 class Check {
-static object process(object value = null) => null;
+static object? process(object? value = null) => null;
     public static void Main() {
 JsonNode? arena = new JsonObject {
     ["a"] = 1
@@ -11,8 +11,8 @@ JsonNode? ZVal = new JsonObject {
 JsonNode? ZKV = new JsonObject {
     ["a"] = 1
 };
-process(arena);
-process(ZVal);
-process(ZKV);
+process(((JsonNode?)arena)?.DeepClone());
+process(((JsonNode?)ZVal)?.DeepClone());
+process(((JsonNode?)ZKV)?.DeepClone());
     }
 }

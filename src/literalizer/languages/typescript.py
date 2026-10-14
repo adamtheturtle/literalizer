@@ -1,7 +1,7 @@
 """TypeScript language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import re
@@ -134,6 +134,8 @@ def _format_computed_key(*, raw_key: str, formatted_key: str) -> str:
 class _TypeScriptObjectDictFormatConfig(DictFormatConfig):
     """Object-literal config that classifies keys from source names."""
 
+    is_object_literal: ClassVar[bool] = True
+
     @staticmethod
     @override
     def format_key(*, raw_key: str, formatted_key: str) -> str:
@@ -145,7 +147,7 @@ class _TypeScriptObjectDictFormatConfig(DictFormatConfig):
 
 @beartype
 @dataclasses.dataclass(frozen=True)
-class _TypeScriptComputedDictFormatConfig(DictFormatConfig):
+class _TypeScriptComputedDictFormatConfig(_TypeScriptObjectDictFormatConfig):
     """Object-literal config that computes every property name."""
 
     format_key = staticmethod(_format_computed_key)
@@ -156,6 +158,8 @@ class _TypeScriptComputedDictFormatConfig(DictFormatConfig):
 class _TypeScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Ordered-object config that classifies keys from source names."""
 
+    is_object_literal: ClassVar[bool] = True
+
     @staticmethod
     @override
     def format_key(*, raw_key: str, formatted_key: str) -> str:
@@ -166,7 +170,9 @@ class _TypeScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
 
 
 @dataclasses.dataclass(frozen=True)
-class _TypeScriptComputedOrderedMapFormatConfig(OrderedMapFormatConfig):
+class _TypeScriptComputedOrderedMapFormatConfig(
+    _TypeScriptObjectOrderedMapFormatConfig
+):
     """Ordered-object config that computes every property name."""
 
     format_key = staticmethod(_format_computed_key)
@@ -284,11 +290,11 @@ def _ts_scalar_hint(
             hint = "number"
         case str() | bytes():
             hint = "string"
-        case datetime.datetime():
+        case dt.datetime():
             hint = datetime_hint
-        case datetime.date():
+        case dt.date():
             hint = date_hint
-        case datetime.time():
+        case dt.time():
             hint = "string"
         case None:
             hint = "null"
@@ -757,7 +763,7 @@ class TypeScript(metaclass=LanguageCls):
         JS = DateFormatConfig(
             formatter=format_date_javascript,
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -771,7 +777,7 @@ class TypeScript(metaclass=LanguageCls):
         JS = DatetimeFormatConfig(
             formatter=format_datetime_javascript,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1223,12 +1229,11 @@ class TypeScript(metaclass=LanguageCls):
         context: FileWrapperContext,
     ) -> str:
         """Wrap a TypeScript declaration as a module."""
-        variable_name = context.variable_name
         body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=parenthesize_bare_object(
                 content=content,
-                variable_name=variable_name,
+                context=context,
             ),
             body_preamble=body_preamble,
         )
@@ -1398,17 +1403,17 @@ class TypeScript(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

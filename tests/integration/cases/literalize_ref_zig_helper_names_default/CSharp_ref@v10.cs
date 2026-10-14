@@ -14,3 +14,4 @@ var my_data = (
     Arena,
     Allocator
 );
+    _ = my_data;

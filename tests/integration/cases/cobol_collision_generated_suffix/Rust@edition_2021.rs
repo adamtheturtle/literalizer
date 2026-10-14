@@ -5,5 +5,5 @@ fn main() {
         ("a b", 2),
         ("a-b-2", 3),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

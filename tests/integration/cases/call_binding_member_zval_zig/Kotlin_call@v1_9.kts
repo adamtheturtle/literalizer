@@ -1,3 +1,3 @@
-class _ObjType { fun ZVal(_arg: Any? = null): Any? = null }
+class _ObjType { fun ZVal(_arg: Any? = null): Any? = listOf<Any?>(_arg) }
 val obj = _ObjType()
 val my_data = obj.ZVal(_arg = 42) // note

@@ -15,7 +15,7 @@ pub fn main() {
       GInt(4),
     ]),
   ])
-  f(GList([
+  let _ = f(GList([
     GList([
       ref_data,
     ]),

@@ -63,6 +63,7 @@ def test_wrap_in_file_case_handles_stale_rejected_call_arg(
             input_info=CaseInput(
                 path=tmp_path / "input.yaml",
                 input_format=InputFormat.YAML,
+                expected_reused_anchor_warning=None,
             ),
             effective_ref_case=None,
             lang_name="Bash",

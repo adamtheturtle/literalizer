@@ -8,3 +8,4 @@ var my_data = (
     2.5,
     (object?)null
 );
+    _ = my_data;

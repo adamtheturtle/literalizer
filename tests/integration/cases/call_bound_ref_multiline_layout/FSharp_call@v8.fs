@@ -18,4 +18,4 @@ f(FList [
     FList [
         ref_data
     ]
-])
+]) |> ignore

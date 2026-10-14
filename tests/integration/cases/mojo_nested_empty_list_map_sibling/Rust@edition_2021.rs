@@ -4,5 +4,5 @@ fn main() {
         HashMap::from([("values", Vec::<String>::new())]),
         <HashMap<&str, Vec<String>>>::from([]),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

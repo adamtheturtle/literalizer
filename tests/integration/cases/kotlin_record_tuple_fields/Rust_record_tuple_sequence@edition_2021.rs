@@ -1,12 +1,12 @@
 #[derive(Clone)]
-struct Record0 {
-    pair: (i32, i32),
-    mixed: (i32, &'static str),
-    triple: (i32, &'static str, bool),
-    nested: ((i32, &'static str), (i32, bool, f64)),
-    empty: (),
-    single: (i32,),
-    long: (i32, i32, i32, i32),
+pub struct Record0 {
+    pub pair: (i32, i32),
+    pub mixed: (i32, &'static str),
+    pub triple: (i32, &'static str, bool),
+    pub nested: ((i32, &'static str), (i32, bool, f64)),
+    pub empty: (),
+    pub single: (i32,),
+    pub long: (i32, i32, i32, i32),
 }
 fn main() {
     let my_data = Record0 {
@@ -45,5 +45,5 @@ fn main() {
             4,
         ),
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

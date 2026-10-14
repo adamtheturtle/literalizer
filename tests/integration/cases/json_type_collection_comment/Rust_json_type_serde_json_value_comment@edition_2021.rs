@@ -5,5 +5,5 @@ fn main() {
         "a": 1,  // About a.
         "b": 2,
     });
-    let _ = my_data;
+    let _ = &my_data;
 }

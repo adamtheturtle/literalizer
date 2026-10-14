@@ -3,5 +3,5 @@ fn main() {
     let my_data = make_widget(r#"first "quote"
 // string body"#) // note
     // extra;
-    let _ = my_data;
+    let _ = &my_data;
 }

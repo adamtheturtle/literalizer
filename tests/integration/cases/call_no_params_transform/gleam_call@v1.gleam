@@ -5,6 +5,6 @@ pub fn process() -> Nil { Nil }
 pub fn emit(__arg: a) -> Nil { Nil }
 
 pub fn main() {
-  emit(process())
-  emit(process())
+  let _ = emit(process())
+  let _ = emit(process())
 }

@@ -4,5 +4,5 @@ fn main() {
         HashMap::from([("timestamp", "2040-01-01T03:00:00+03:00")]),
         <HashMap<&str, &str>>::from([]),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

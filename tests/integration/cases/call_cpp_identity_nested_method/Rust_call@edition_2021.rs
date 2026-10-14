@@ -1,7 +1,7 @@
 fn main() {
-    struct ThingType_;
-    impl ThingType_ { fn go(&self) {} }
-    struct OuterType_ { thing: ThingType_ }
-    let outer = OuterType_ { thing: ThingType_ };
+    struct ThingType;
+    impl ThingType { fn go(&self) {} }
+    struct OuterType { thing: ThingType }
+    let outer = OuterType { thing: ThingType };
     outer.thing.go();
 }

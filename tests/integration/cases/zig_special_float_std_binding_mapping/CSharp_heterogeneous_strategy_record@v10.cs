@@ -6,5 +6,6 @@ var std = new Record0(
     double.PositiveInfinity,
     double.NegativeInfinity
 );
+    _ = std;
     }
 }

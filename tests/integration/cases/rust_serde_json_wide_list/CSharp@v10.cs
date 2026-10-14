@@ -121,3 +121,4 @@ var my_data = (
     118,
     119
 );
+    _ = my_data;

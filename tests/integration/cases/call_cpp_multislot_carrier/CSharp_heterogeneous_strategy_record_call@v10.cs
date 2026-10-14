@@ -1,5 +1,5 @@
 class Check {
-static object process(object value = null, object extra = null) => null;
+static object? process(object? value = null, object? extra = null) => null;
     public static void Main() {
 process(1, "hello");
 process("two", false);

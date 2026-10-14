@@ -85,7 +85,7 @@ program main
     use fval_m
     implicit none
     type(fval_t) :: my_data
-    my_data = fint(42_int64)
+    my_data = make_widget(fint(42_int64))
     my_data = make_widget(fint(42_int64)) // note
 contains
     function make_widget(count) result(r)

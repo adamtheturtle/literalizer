@@ -5,5 +5,5 @@ pub type GVal {
 pub fn helper_list(_a: a) -> Nil { Nil }
 
 pub fn main() {
-  helper_list(GInt(1))
+  let _ = helper_list(GInt(1))
 }

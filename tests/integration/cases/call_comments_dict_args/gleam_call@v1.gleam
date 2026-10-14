@@ -7,9 +7,9 @@ pub fn process(_value: a) -> Nil { Nil }
 
 pub fn main() {
   // Test cases
-  process(GDict([#("type", GStr("create")), #("pr_id", GStr("pr_1"))]))  // first case
-  process(GDict([#("type", GStr("update")), #("pr_id", GStr("pr_2"))]))  // second case
+  let _ = process(GDict([#("type", GStr("create")), #("pr_id", GStr("pr_1"))]))  // first case
+  let _ = process(GDict([#("type", GStr("update")), #("pr_id", GStr("pr_2"))]))  // second case
   // third case
-  process(GDict([#("type", GStr("delete")), #("pr_id", GStr("pr_3"))]))
+  let _ = process(GDict([#("type", GStr("delete")), #("pr_id", GStr("pr_3"))]))
   // trailing comment
 }

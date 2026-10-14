@@ -3,3 +3,4 @@ var my_data = new Dictionary<string, int> {
     /* nested openers / * and {- remain */
     ["x"] = 1
 };
+    _ = my_data;

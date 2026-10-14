@@ -4,6 +4,7 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GStr("hello \"world\" -- not a comment")
+  let _ = my_data
   let my_data = GStr("hello \"world\" -- not a comment")
   let _ = my_data
 }

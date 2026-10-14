@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var my_data = new object[] {
+var my_data = new object?[] {
     new Dictionary<string, int> {["a"] = 1},
     1,
     "x",
@@ -7,3 +7,4 @@ var my_data = new object[] {
     2.5,
     (object?)null
 };
+    _ = my_data;

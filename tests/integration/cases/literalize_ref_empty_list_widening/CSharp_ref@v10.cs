@@ -7,3 +7,4 @@ var my_data = (
     EmptyValues,
     IntegerValues
 );
+    _ = my_data;

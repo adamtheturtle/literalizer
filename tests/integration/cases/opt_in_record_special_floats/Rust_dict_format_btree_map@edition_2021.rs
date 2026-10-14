@@ -6,5 +6,5 @@ fn main() {
         ("nan_value", f64::NAN),
         ("finite", 1.5),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -25,5 +25,6 @@ var my_data = new Record0(
     Trivial,
     Nested
 );
+    _ = my_data;
     }
 }

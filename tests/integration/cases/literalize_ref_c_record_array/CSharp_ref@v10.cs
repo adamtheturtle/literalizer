@@ -6,5 +6,6 @@ var First = new[] {
     new Record0(2)
 };
 var my_data = First;
+    _ = my_data;
     }
 }

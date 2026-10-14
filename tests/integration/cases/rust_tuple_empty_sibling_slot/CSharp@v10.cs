@@ -3,3 +3,4 @@ var my_data = (
     (1, ValueTuple.Create()),
     (2, ValueTuple.Create(3))
 );
+    _ = my_data;

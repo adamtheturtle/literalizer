@@ -1,7 +1,7 @@
 def make_widget(count: Int) -> None:
     pass
 def main():
-    var my_data = 42
+    var my_data = make_widget(42)
     my_data = make_widget(my_data) // note
     // extra
     make_widget(my_data)

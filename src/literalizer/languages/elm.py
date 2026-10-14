@@ -1,7 +1,7 @@
 """Elm language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import math
 import re
@@ -110,7 +110,7 @@ from literalizer.exceptions import (
 
 
 @beartype
-def _apply_elm_date_iso(value: datetime.date, prefix: str) -> str:
+def _apply_elm_date_iso(value: dt.date, prefix: str) -> str:
     """Format a date as an Elm string via ISO 8601."""
     return f"{prefix}Str {format_date_iso(value=value)}"
 
@@ -118,12 +118,12 @@ def _apply_elm_date_iso(value: datetime.date, prefix: str) -> str:
 @beartype
 def _build_elm_date_iso(
     prefix: str,
-) -> Callable[[datetime.date], str]:
+) -> Callable[[dt.date], str]:
     """Build a date formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.date) -> str:
+    def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_date_iso(value=value, prefix=prefix)
 
@@ -131,7 +131,7 @@ def _build_elm_date_iso(
 
 
 @beartype
-def _apply_elm_time_iso(value: datetime.time, prefix: str) -> str:
+def _apply_elm_time_iso(value: dt.time, prefix: str) -> str:
     """Format a time as an Elm string via ISO 8601."""
     return f"{prefix}Str {format_time_iso(value=value)}"
 
@@ -139,12 +139,12 @@ def _apply_elm_time_iso(value: datetime.time, prefix: str) -> str:
 @beartype
 def _build_elm_time_iso(
     prefix: str,
-) -> Callable[[datetime.time], str]:
+) -> Callable[[dt.time], str]:
     """Build a time formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.time) -> str:
+    def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_time_iso(value=value, prefix=prefix)
 
@@ -152,7 +152,7 @@ def _build_elm_time_iso(
 
 
 @beartype
-def _apply_elm_datetime_iso(value: datetime.datetime, prefix: str) -> str:
+def _apply_elm_datetime_iso(value: dt.datetime, prefix: str) -> str:
     """Format a datetime as an Elm string via ISO 8601."""
     return f"{prefix}Str {format_datetime_iso(value=value)}"
 
@@ -160,12 +160,12 @@ def _apply_elm_datetime_iso(value: datetime.datetime, prefix: str) -> str:
 @beartype
 def _build_elm_datetime_iso(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_datetime_iso(value=value, prefix=prefix)
 
@@ -175,7 +175,7 @@ def _build_elm_datetime_iso(
 @beartype
 def _build_elm_datetime_epoch(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Int`` from
     Unix epoch seconds.
     """
@@ -261,7 +261,7 @@ def _apply_elm_float_wrapper(
 ) -> str:
     """Format a float with a constructor prefix."""
     formatted = inner(value)
-    if formatted.startswith("-"):
+    if math.copysign(1, value) < 0:
         return f"{prefix}Float ({formatted})"
     return f"{prefix}Float {formatted}"
 
@@ -364,13 +364,13 @@ def _build_elm_body_preamble(
         str_types: set[type] = {
             str,
             bytes,
-            datetime.date,
-            datetime.time,
+            dt.date,
+            dt.time,
         }
         if datetime_type_produced is int:
-            int_types.add(datetime.datetime)
+            int_types.add(dt.datetime)
         else:
-            str_types.add(datetime.datetime)
+            str_types.add(dt.datetime)
         constructors = [
             constructor
             for type_set, constructor in (
@@ -636,14 +636,16 @@ _JSON_ENCODE_VALUE_TYPE = "Json.Encode.Value"
 
 
 @beartype
-def _format_elm_json_with_ctor(formatted: str, ctor: str) -> str:
+def _format_elm_json_with_ctor(
+    formatted: str, ctor: str, *, negative: bool
+) -> str:
     """Apply ``ctor`` to a ``formatted`` numeric literal.
 
     Elm parses ``Json.Encode.int -3`` as the subtraction
     ``Json.Encode.int - 3``, so negative numeric arguments are wrapped in
     parentheses; positive numerals pass through bare.
     """
-    if formatted.startswith("-"):
+    if negative:
         return f"{ctor} ({formatted})"
     return f"{ctor} {formatted}"
 
@@ -657,7 +659,7 @@ def _build_elm_json_int_formatter(
     def _format(value: int) -> str:
         """Apply the ``Json.Encode.int`` constructor."""
         return _format_elm_json_with_ctor(
-            formatted=base(value), ctor="Json.Encode.int"
+            formatted=base(value), ctor="Json.Encode.int", negative=value < 0
         )
 
     return _format
@@ -672,7 +674,9 @@ def _build_elm_json_float_formatter(
     def _format(value: float) -> str:
         """Apply the ``Json.Encode.float`` constructor."""
         return _format_elm_json_with_ctor(
-            formatted=inner(value), ctor="Json.Encode.float"
+            formatted=inner(value),
+            ctor="Json.Encode.float",
+            negative=math.copysign(1, value) < 0,
         )
 
     return _format
@@ -686,19 +690,19 @@ def _format_elm_json_string(value: str) -> str:
 
 
 @beartype
-def _format_elm_json_date_iso(value: datetime.date) -> str:
+def _format_elm_json_date_iso(value: dt.date) -> str:
     """Format a date as ``Json.Encode.string`` of its ISO 8601 form."""
     return f"Json.Encode.string {format_date_iso(value=value)}"
 
 
 @beartype
-def _format_elm_json_time_iso(value: datetime.time) -> str:
+def _format_elm_json_time_iso(value: dt.time) -> str:
     """Format a time as ``Json.Encode.string`` of its ISO 8601 form."""
     return f"Json.Encode.string {format_time_iso(value=value)}"
 
 
 @beartype
-def _format_elm_json_datetime_iso(value: datetime.datetime) -> str:
+def _format_elm_json_datetime_iso(value: dt.datetime) -> str:
     """Format a datetime as ``Json.Encode.string`` of its ISO form."""
     return f"Json.Encode.string {format_datetime_iso(value=value)}"
 
@@ -1624,7 +1628,7 @@ class Elm(metaclass=LanguageCls):
         )
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_active:
             return _format_elm_json_date_iso
@@ -1635,11 +1639,9 @@ class Elm(metaclass=LanguageCls):
         return _build_elm_date_iso(prefix=self.constructor_prefix)
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self._json_active:
             if self.datetime_format is type(self.datetime_format).EPOCH:
                 return datetime_epoch_formatter(
@@ -1659,7 +1661,7 @@ class Elm(metaclass=LanguageCls):
         return _build_elm_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self._json_active:
             return _format_elm_json_time_iso

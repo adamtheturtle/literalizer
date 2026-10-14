@@ -5,3 +5,4 @@ var my_data = (
     0xff,
     -0xa
 );
+    _ = my_data;

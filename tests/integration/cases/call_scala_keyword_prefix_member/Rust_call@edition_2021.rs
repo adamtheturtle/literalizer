@@ -1,6 +1,6 @@
 fn main() {
-    struct PlaylistType_;
-    impl PlaylistType_ { fn newValue<A>(&self, _x: A) {} }
-    let Playlist = PlaylistType_;
+    struct PlaylistType;
+    impl PlaylistType { fn newValue<A>(&self, _x: A) {} }
+    let Playlist = PlaylistType;
     Playlist.newValue(1);
 }

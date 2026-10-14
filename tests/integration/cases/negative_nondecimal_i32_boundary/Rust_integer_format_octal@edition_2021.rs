@@ -4,5 +4,5 @@ fn main() {
         ("minimum", -0o20000000000),
         ("below", -0o26264057000i64),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

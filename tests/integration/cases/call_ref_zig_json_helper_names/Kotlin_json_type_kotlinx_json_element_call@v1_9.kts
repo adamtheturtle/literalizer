@@ -1,6 +1,6 @@
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-fun process(value: Any? = null): Any? = null
+fun process(value: Any? = null): Any? = listOf<Any?>(value)
 val arena: JsonElement = Json.parseToJsonElement("{\"a\": 1}")
 val ZVal: JsonElement = Json.parseToJsonElement("{\"a\": 1}")
 val ZKV: JsonElement = Json.parseToJsonElement("{\"a\": 1}")

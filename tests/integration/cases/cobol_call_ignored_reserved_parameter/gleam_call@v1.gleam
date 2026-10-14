@@ -4,5 +4,5 @@ pub type GVal {
 pub fn process(_count: a) -> Nil { Nil }
 
 pub fn main() {
-  process(GInt(42))
+  let _ = process(GInt(42))
 }

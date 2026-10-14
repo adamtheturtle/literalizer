@@ -3,5 +3,5 @@ fn main() {
     let my_data = HashMap::from([
         ("_", vec![HashMap::from([("type", "create"), ("name", "a")]), HashMap::from([("type", "update"), ("name", "b")])]),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

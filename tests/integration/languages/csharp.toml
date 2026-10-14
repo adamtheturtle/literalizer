@@ -6,5 +6,5 @@ record = ["field_type_split", "list_field_type_split", "nonrecord_dict_field"]
 [variants.non_default_kwargs]
 default_set_element_type = "string"
 default_sequence_element_type = "string"
-default_dict_value_type = "object?"
+default_dict_value_type = "System.Object?"
 default_dict_key_type = "object"

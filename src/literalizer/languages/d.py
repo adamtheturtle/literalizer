@@ -1,7 +1,7 @@
 """D language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import sys
@@ -1326,12 +1326,12 @@ class D(metaclass=LanguageCls):
                 value_type = "double"
             case None:
                 value_type = "typeof(null)"
-            case datetime.datetime():
+            case dt.datetime():
                 value_type = _D_EPOCH_INT_FIELD_TYPES.get(
                     self.datetime_format.value.type_produced,
                     "string",
                 )
-            case datetime.date():
+            case dt.date():
                 value_type = _D_EPOCH_INT_FIELD_TYPES.get(
                     self.date_format.value.type_produced,
                     "string",
@@ -1656,17 +1656,17 @@ class D(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
@@ -1698,6 +1698,7 @@ class D(metaclass=LanguageCls):
             base = make_negative_nondecimal_i64_formatter(
                 base=base,
                 suffix="L",
+                base_suffix="",
             )
 
         @beartype

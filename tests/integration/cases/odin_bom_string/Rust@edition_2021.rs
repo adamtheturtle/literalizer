@@ -3,5 +3,5 @@ fn main() {
     let my_data = HashMap::from([
         ("v", "a﻿b"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

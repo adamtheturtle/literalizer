@@ -1,7 +1,7 @@
 """Elixir language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -137,14 +137,14 @@ _constructor_target: Callable[[str], str] = _format_constructor_target
 
 
 @beartype
-def _format_datetime_elixir(value: datetime.datetime) -> str:
+def _format_datetime_elixir(value: dt.datetime) -> str:
     """Format a datetime as an Elixir sigil.
 
     Uses ``~U`` for timezone-aware datetimes (converted to UTC, since
     the ``~U`` sigil only accepts UTC offsets) and ``~N`` for naive ones.
     """
     if value.tzinfo is not None:
-        utc_value = value.astimezone(tz=datetime.UTC)
+        utc_value = value.astimezone(tz=dt.UTC)
         iso = utc_value.isoformat()
         # Elixir sigil syntax uses a space separator instead of T.
         iso = iso.replace("T", " ")
@@ -193,7 +193,14 @@ def _elixir_call_stub(
     # alias root is named by its stub module and needs no binding.
     if root[:1].isupper():
         return ()
-    return (f"{root} = {_elixir_root_module(root)}",)
+    fields = parts[1:-1]
+    if len(fields) == 0:
+        return (f"{root} = {_elixir_root_module(root)}",)
+    # Intermediate dot access is map field access; only the leaf is a module.
+    value = fields[-1].capitalize() + "Type_"
+    for field in reversed(fields):
+        value = f"%{{{field}: {value}}}"
+    return (f"{root} = {value}",)
 
 
 @beartype
@@ -236,8 +243,8 @@ def _elixir_call_preamble_stub(
     """Return file-scope Elixir module stubs for dotted call *parts*.
 
     For simple (non-dotted) names nothing is needed at preamble scope.
-    For dotted names a chain of ``defmodule`` stubs is emitted so each
-    intermediate module exposes the next step as a function.
+    For dotted names the leaf module provides the method. Intermediate
+    fields are maps.
     """
     if len(parts) == 1:
         return ()
@@ -254,16 +261,6 @@ def _elixir_call_preamble_stub(
     inner_module = fields[-1].capitalize() + "Type_"
     inner_sig = f"{method}({param_list}), do: nil"
     lines.append(f"defmodule {inner_module} do\n  def {inner_sig}\nend")
-    prev_module = inner_module
-    for i in range(len(fields) - 2, -1, -1):
-        curr_module = fields[i].capitalize() + "Type_"
-        next_field = fields[i + 1]
-        loop_sig = f"{next_field}, do: {prev_module}"
-        lines.append(f"defmodule {curr_module} do\n  def {loop_sig}\nend")
-        prev_module = curr_module
-    root_module = _elixir_root_module(root)
-    root_sig = f"{fields[0]}, do: {prev_module}"
-    lines.append(f"defmodule {root_module} do\n  def {root_sig}\nend")
     return tuple(lines)
 
 
@@ -478,7 +475,7 @@ class Elixir(metaclass=LanguageCls):
         ELIXIR = DateFormatConfig(
             formatter=date_iso_formatter(template="~D[{iso}]"),
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
 
     class DatetimeFormats(DatetimeFormatEnum):
@@ -494,7 +491,7 @@ class Elixir(metaclass=LanguageCls):
         ELIXIR = DatetimeFormatConfig(
             formatter=_format_datetime_elixir,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
 
         EPOCH = DatetimeFormatConfig(
@@ -1005,17 +1002,17 @@ class Elixir(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

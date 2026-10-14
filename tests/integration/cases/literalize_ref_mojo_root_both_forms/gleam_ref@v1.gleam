@@ -9,6 +9,7 @@ pub fn main() {
     GInt(2),
   ])
   let my_data = whole
+  let _ = my_data
   let my_data = whole
   let _ = my_data
 }

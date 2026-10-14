@@ -7,4 +7,4 @@ type OuterType_() =
 let outer = OuterType_()
 type Val =
     | FList of Val list
-outer.thing.go()
+outer.thing.go() |> ignore

@@ -4,5 +4,5 @@ pub type GVal {
 pub fn check_wrapper(_a: a) -> Nil { Nil }
 
 pub fn main() {
-  check_wrapper(GInt(42))
+  let _ = check_wrapper(GInt(42))
 }

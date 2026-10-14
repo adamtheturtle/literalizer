@@ -5,4 +5,4 @@ type Val =
 type ObjType_() =
     member _.ZVal(_value: obj) : obj = null
 let obj = ObjType_()
-obj.ZVal(FInt 1L)
+obj.ZVal(FInt 1L) |> ignore

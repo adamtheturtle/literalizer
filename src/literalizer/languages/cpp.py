@@ -1,7 +1,7 @@
 """C++ language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import itertools
@@ -10,7 +10,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, ClassVar, TypeGuard
+from typing import TYPE_CHECKING, ClassVar, Self, TypeGuard
 
 from beartype import beartype
 
@@ -59,6 +59,10 @@ from literalizer._formatters.format_strings import (
     format_string_backslash_nul_octal,
     format_string_c_utf8_characters,
     has_bidi_formatting_character,
+)
+from literalizer._formatters.initializer_types import (
+    TypedCollectionOpen,
+    TypedInitializer,
 )
 from literalizer._formatters.record_strategy import (
     ActiveRecordStrategy,
@@ -297,7 +301,9 @@ def _format_string_cpp_escaped(value: str) -> str:
     r"""Format *value* without embedding a null byte in a C++ literal."""
     if has_bidi_formatting_character(value=value):
         entries = format_string_c_utf8_characters(value=value)
-        return f"std::string{{{entries}}}"
+        return TypedInitializer.create(
+            f"std::string{{{entries}}}", declared_type="std::string"
+        )
     segments = value.split(sep="\0")
     if len(segments) == 1:
         return format_string_backslash_nul_octal(value=value)
@@ -381,6 +387,22 @@ _CPP_FIELD_IDENTIFIER = re.compile(pattern=r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 _IntTypeResolver = Callable[[list[int]], str]
+
+
+@beartype
+def _make_cpp_i32_min_safe_formatter(
+    *, base: Callable[[int], str]
+) -> Callable[[int], str]:
+    """Keep the Int32 minimum expression typed as ``int``."""
+
+    @beartype
+    def _format(value: int) -> str:
+        """Avoid a positive operand outside the signed Int32 range."""
+        if value == _INT32_MIN:
+            return f"({base(_INT32_MIN + 1)} - 1)"
+        return base(value)
+
+    return _format
 
 
 @beartype
@@ -482,18 +504,21 @@ def _collect_direct_ints(items: list[Value]) -> list[int]:
 
 
 @beartype
-def _format_date_cpp(value: datetime.date) -> str:
+def _format_date_cpp(value: dt.date) -> str:
     """Format a date as a C++ chrono year_month_day literal."""
-    return (
+    code = (
         f"std::chrono::year_month_day{{"
         f"std::chrono::year{{{value.year}}}, "
         f"std::chrono::month{{{value.month}}}, "
         f"std::chrono::day{{{value.day}}}}}"
     )
+    return TypedInitializer.create(
+        code, declared_type="std::chrono::year_month_day"
+    )
 
 
 @beartype
-def _format_datetime_cpp(value: datetime.datetime) -> str:
+def _format_datetime_cpp(value: dt.datetime) -> str:
     """Format a datetime as a C++ chrono time_point construction."""
     ymd = _format_date_cpp(value=value)
     parts = [f"std::chrono::sys_days{{{ymd}}}"]
@@ -505,7 +530,10 @@ def _format_datetime_cpp(value: datetime.datetime) -> str:
         parts.append(f"std::chrono::seconds{{{value.second}}}")
     if value.microsecond != 0:
         parts.append(f"std::chrono::microseconds{{{value.microsecond}}}")
-    return f"std::chrono::system_clock::time_point{{{' + '.join(parts)}}}"
+    return TypedInitializer.create(
+        f"std::chrono::system_clock::time_point{{{' + '.join(parts)}}}",
+        declared_type="std::chrono::system_clock::time_point",
+    )
 
 
 @beartype
@@ -523,7 +551,7 @@ def _make_cpp_element_to_type(
     format, whose type carries the length this resolver has no value to
     read (issue #3948).
     """
-    return make_element_to_type(
+    resolve = make_element_to_type(
         dict_value_to_type=None,
         str_type="std::string",
         bool_type="bool",
@@ -542,6 +570,36 @@ def _make_cpp_element_to_type(
         beyond_i64_type=None,
     )
 
+    def _dependencies(
+        element_type: type | ListType | DictType | None, /
+    ) -> frozenset[str]:
+        """Retain dependencies from the descriptor before emitting its
+        type.
+        """
+        if isinstance(element_type, ListType):
+            return frozenset({"#include <vector>"}) | _dependencies(
+                element_type.inner
+            )
+        if isinstance(element_type, DictType):
+            return frozenset(
+                {"#include <string>", _CPP_MAP_HEADERS[dict_type_name]}
+            ) | _dependencies(element_type.value_type)
+        if element_type is None:
+            return frozenset[str]()
+        return _cpp_native_atomic_headers(resolve(element_type))
+
+    def _resolve(element_type: type | ListType | DictType, /) -> str | None:
+        """Retain the selected type's dependencies and scalar policy."""
+        headers = _dependencies(element_type)
+        type_name = resolve(element_type)
+        if type_name is None:
+            return None
+        if isinstance(element_type, (ListType, DictType)):
+            return _CppTypeDependencies.create(type_name, headers=headers)
+        return _cpp_owned_atomic_type(type_name)
+
+    return _resolve
+
 
 @beartype
 def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
@@ -558,7 +616,115 @@ def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
     """
     if isinstance(value, (list, dict, set)):
         return False
-    return isinstance(value, (bool, int, float, datetime.date))
+    return isinstance(value, (bool, int, float, dt.date))
+
+
+class _CppTypeDependencies(str):
+    """A type or declaration with dependencies retained by its
+    producer.
+    """
+
+    __slots__ = ("_headers",)
+
+    _headers: frozenset[str]
+
+    @classmethod
+    def create(cls, code: str, /, *, headers: frozenset[str]) -> Self:
+        """Keep required headers alongside the generated type spelling."""
+        result = cls(object=code)
+        result._headers = headers
+        return result
+
+    @property
+    def headers(self) -> frozenset[str]:
+        """Headers selected by the native type and declaration
+        producers.
+        """
+        return self._headers
+
+
+@beartype
+def _cpp_type_headers(type_name: str, /) -> frozenset[str]:
+    """Read retained dependencies without interpreting opaque type
+    names.
+    """
+    if isinstance(type_name, _CppTypeDependencies):
+        return type_name.headers
+    return frozenset[str]()
+
+
+_CPP_MAP_HEADERS: dict[str, str] = {
+    "std::map": "#include <map>",
+    "std::unordered_map": "#include <unordered_map>",
+}
+
+
+class _CppScalarFieldType(_CppTypeDependencies):
+    """An owned scalar type that needs a value initializer."""
+
+    __slots__ = ()
+
+
+class _CppVariantType(_CppTypeDependencies):
+    """A carrier selected by heterogeneous type inference."""
+
+    __slots__ = ()
+
+
+class _CppNarrowedMapScalar(str):
+    """A scalar whose narrowed map already supplies its concrete type."""
+
+    __slots__ = ()
+
+
+class _CppArrayType(_CppTypeDependencies):
+    """An owned fixed array with its scalar-leaf initialization policy."""
+
+    __slots__ = ("_scalar_leaves",)
+
+    _scalar_leaves: bool
+
+    @classmethod
+    def create_array(
+        cls, code: str, /, *, scalar_leaves: bool, headers: frozenset[str]
+    ) -> Self:
+        """Retain the leaf policy before the type is written as source."""
+        result = cls(object=code)
+        result._scalar_leaves = scalar_leaves
+        result._headers = headers
+        return result
+
+    @property
+    def scalar_leaves(self) -> bool:
+        """Whether default initialization must reach scalar elements."""
+        return self._scalar_leaves
+
+
+@beartype
+def _cpp_native_atomic_headers(type_name: str | None, /) -> frozenset[str]:
+    """Select dependencies for the producer's finite native atom
+    choices.
+    """
+    native_headers = {
+        "std::string": "#include <string>",
+        "std::nullptr_t": "#include <cstddef>",
+        "std::chrono::year_month_day": "#include <chrono>",
+        "std::chrono::system_clock::time_point": "#include <chrono>",
+    }
+    return frozenset(
+        header for name, header in native_headers.items() if name == type_name
+    )
+
+
+@beartype
+def _cpp_owned_atomic_type(type_name: str, /) -> str:
+    """Retain initialization policy for the producer's native type
+    choice.
+    """
+    factory = _CppTypeDependencies.create
+    if type_name in _CPP_SCALAR_FIELD_TYPES:
+        factory = _CppScalarFieldType.create
+    return factory(type_name, headers=_cpp_native_atomic_headers(type_name))
 
 
 @beartype
@@ -604,18 +770,42 @@ class _CppTypeCtx:
     def sequence_type(self, *, inner: str, length: int) -> str:
         """Return the type the active sequence format renders."""
         if self.sequence_is_array:
-            return f"std::array<{inner}, {length}>"
-        return f"std::vector<{inner}>"
+            return _CppArrayType.create_array(
+                f"std::array<{inner}, {length}>",
+                scalar_leaves=_cpp_record_field_needs_value_initialization(
+                    inner
+                ),
+                headers=frozenset({"#include <array>"})
+                | _cpp_type_headers(inner),
+            )
+        return _CppTypeDependencies.create(
+            f"std::vector<{inner}>",
+            headers=frozenset({"#include <vector>"})
+            | _cpp_type_headers(inner),
+        )
 
     def dict_type(self, value_type: str, /) -> str:
         """Return the active string-keyed mapping type."""
-        return f"{self.dict_type_name}<std::string, {value_type}>"
+        return _CppTypeDependencies.create(
+            f"{self.dict_type_name}<std::string, {value_type}>",
+            headers=frozenset(
+                {"#include <string>", _CPP_MAP_HEADERS[self.dict_type_name]}
+            )
+            | _cpp_type_headers(value_type),
+        )
 
     def variant_type(self, types: Sequence[str], /) -> str:
         """Return the active heterogeneous-value carrier type."""
         if self.variant_type_name != "std::variant":
-            return self.variant_type_name
-        return f"{self.variant_type_name}<{', '.join(types)}>"
+            return _CppVariantType.create(
+                self.variant_type_name, headers=frozenset()
+            )
+        return _CppVariantType.create(
+            f"{self.variant_type_name}<{', '.join(types)}>",
+            headers=frozenset({"#include <variant>"}).union(
+                *(_cpp_type_headers(type_name) for type_name in types)
+            ),
+        )
 
     def element_to_type(
         self,
@@ -640,7 +830,11 @@ def _cpp_array_type(
 ) -> str | None:
     """Return the recursive ``std::array`` type for *items*."""
     if len(items) == 0:
-        return "std::array<std::nullptr_t, 0>"
+        return _CppArrayType.create_array(
+            "std::array<std::nullptr_t, 0>",
+            scalar_leaves=True,
+            headers=frozenset({"#include <array>", "#include <cstddef>"}),
+        )
     int_type = type_ctx.int_resolver(
         [
             item
@@ -687,7 +881,9 @@ def _build_cpp_array_open(
         type_name = _cpp_array_type(items=items, type_ctx=type_ctx)
         if type_name is None:
             return "{"
-        return f"{type_name}{{"
+        return TypedCollectionOpen.create(
+            f"{type_name}{{", declared_type=type_name
+        )
 
     return _open
 
@@ -761,15 +957,6 @@ def _cpp_narrowed_empty_sequence(
 
 @beartype
 @dataclasses.dataclass(frozen=True)
-class _DictFormatOption:
-    """A dict format bundled with its typed opener template."""
-
-    config: DictFormatConfig
-    opener_template: str
-
-
-@beartype
-@dataclasses.dataclass(frozen=True)
 class _NumericLiteralSuffixConfig:
     """Configuration for a numeric literal suffix option."""
 
@@ -823,7 +1010,12 @@ def _cpp_tuple_type(
         _cpp_tuple_element_type(value=element, type_ctx=type_ctx)
         for element in items
     ]
-    return f"std::tuple<{', '.join(element_types)}>"
+    return _CppTypeDependencies.create(
+        f"std::tuple<{', '.join(element_types)}>",
+        headers=frozenset({"#include <tuple>"}).union(
+            *(_cpp_type_headers(type_name) for type_name in element_types)
+        ),
+    )
 
 
 @beartype
@@ -852,7 +1044,17 @@ def _compute_cpp_type(
                 type_ctx=type_ctx,
                 in_mapping_value=True,
             )
-            return f"std::vector<std::pair<std::string, {value_type}>>"
+            return _CppTypeDependencies.create(
+                f"std::vector<std::pair<std::string, {value_type}>>",
+                headers=frozenset(
+                    {
+                        "#include <vector>",
+                        "#include <utility>",
+                        "#include <string>",
+                    }
+                )
+                | _cpp_type_headers(value_type),
+            )
         case dict():
             record_name = type_ctx.record_name_for_value(item)
             if record_name is not None:
@@ -880,7 +1082,7 @@ def _compute_cpp_type(
             return cpp_type
         case _:
             scalar_type = element_to_type(type(item))
-            resolved_result_1: str = "std::nullptr_t"
+            resolved_result_1: str = _cpp_owned_atomic_type("std::nullptr_t")
             if scalar_type is not None:
                 resolved_result_1 = scalar_type
             return resolved_result_1
@@ -950,7 +1152,7 @@ def _compute_element_type_for_items(
     ``std::vector<std::variant<...>>``).
     """
     if len(items) == 0:
-        return "std::nullptr_t"
+        return _cpp_owned_atomic_type("std::nullptr_t")
     element_type = _infer_cpp_collection_element(
         items=items, type_ctx=type_ctx
     )
@@ -1577,8 +1779,8 @@ def _cpp14_explicit_variant_behavior(
                         float,
                         str,
                         bytes,
-                        datetime.date,
-                        datetime.time,
+                        dt.date,
+                        dt.time,
                     ),
                 )
                 or value is None
@@ -1589,7 +1791,7 @@ def _cpp14_explicit_variant_behavior(
         """Retain a homogeneous fallback map's concrete scalar type."""
         if base.wrap_scalar is not None:
             wrapped = base.wrap_scalar(value, formatted)
-            if wrapped == formatted:
+            if isinstance(wrapped, _CppNarrowedMapScalar):
                 return formatted
         return _wrap(value, formatted)
 
@@ -1713,7 +1915,7 @@ def _cpp_narrow_widened_map_value_type(
         in_mapping_value=True,
     )
     if (
-        value_type.startswith("std::variant<")
+        isinstance(value_type, _CppVariantType)
         or value_type == type_ctx.variant_type_name
     ):
         return None
@@ -1755,7 +1957,7 @@ def _cpp_record_literal(
     trailing-comma config applies unchanged.
     """
     return RenderedRecordLiteral(
-        head=f"{name}{{",
+        head=TypedCollectionOpen.create(f"{name}{{", declared_type=name),
         entries=tuple(
             f".{field.identifier} = {_cpp_record_member_value(field)}"
             for field in fields
@@ -1778,7 +1980,7 @@ def _cpp_record_literal_positional(
     literals, so positional aggregate initialization remains well-formed.
     """
     return RenderedRecordLiteral(
-        head=f"{name}{{",
+        head=TypedCollectionOpen.create(f"{name}{{", declared_type=name),
         entries=tuple(_cpp_record_member_value(field) for field in fields),
         closer="}",
         compact_pad="",
@@ -1793,10 +1995,13 @@ def _cpp_record_member_value(field: RecordLiteralField, /) -> str:
     initializer beginning with that exact declared type and ``{`` can use
     C++'s nested braced-initializer form directly.
     """
-    prefix = f"{field.type_name}{{"
-    if field.formatted.startswith(prefix):
-        return field.formatted.removeprefix(field.type_name)
-    return field.formatted
+    initializer = field.formatted
+    if (
+        isinstance(initializer, TypedInitializer)
+        and initializer.declared_type == field.type_name
+    ):
+        return initializer[len(initializer.declared_type) :]
+    return initializer
 
 
 @beartype
@@ -1807,11 +2012,9 @@ def _cpp_record_field_needs_value_initialization(type_name: str, /) -> bool:
     in particular, an externally supplied array element type may have no
     default constructor.
     """
-    while type_name.startswith("std::array<"):
-        type_name = type_name.removeprefix("std::array<").rsplit(
-            sep=", ", maxsplit=1
-        )[0]
-    return type_name in _CPP_SCALAR_FIELD_TYPES
+    if isinstance(type_name, _CppArrayType):
+        return type_name.scalar_leaves
+    return isinstance(type_name, _CppScalarFieldType)
 
 
 @beartype
@@ -1838,7 +2041,12 @@ def _cpp_render_record_declaration(
             f"{effective_value};"
         )
     members = " ".join(collected_members)
-    return f"struct {name} {{ {members} }};"
+    return _CppTypeDependencies.create(
+        f"struct {name} {{ {members} }};",
+        headers=frozenset[str]().union(
+            *(_cpp_type_headers(field.type_name) for field in fields)
+        ),
+    )
 
 
 @beartype
@@ -1910,10 +2118,14 @@ def _cpp14_record_list_open(
     if all(frozenset(item.keys()) == keys for item in items):
         name = record_shape_names.get(keys)
         if name is not None:
-            return f"std::vector<{name}>{{"
+            return TypedCollectionOpen.create(
+                f"std::vector<{name}>{{", declared_type=f"std::vector<{name}>"
+            )
     if record_rendering_active:
         name = record_name_for_value(first_item)
-        return f"std::vector<{name}>{{"
+        return TypedCollectionOpen.create(
+            f"std::vector<{name}>{{", declared_type=f"std::vector<{name}>"
+        )
     return None
 
 
@@ -1923,7 +2135,9 @@ def _cpp14_nested_record_list_open(*, depth: int, name: str) -> str:
     element_type = name
     for _ in range(depth):
         element_type = f"std::vector<{element_type}>"
-    return f"{element_type}{{"
+    return TypedCollectionOpen.create(
+        f"{element_type}{{", declared_type=element_type
+    )
 
 
 @beartype
@@ -2002,24 +2216,23 @@ def _cpp_record_field_headers(
     *, declarations: tuple[str, ...]
 ) -> tuple[str, ...]:
     """Include dependencies named by the emitted native field types."""
-    type_headers = (
-        ("std::string", "#include <string>"),
-        ("std::vector", "#include <vector>"),
-        ("std::array", "#include <array>"),
-        ("std::map", "#include <map>"),
-        ("std::unordered_map", "#include <unordered_map>"),
-        ("std::set", "#include <set>"),
-        ("std::tuple", "#include <tuple>"),
-        ("std::pair", "#include <utility>"),
-        ("std::chrono::", "#include <chrono>"),
-        ("std::nullptr_t", "#include <cstddef>"),
-        ("std::variant", "#include <variant>"),
+    header_order = (
+        "#include <string>",
+        "#include <vector>",
+        "#include <array>",
+        "#include <map>",
+        "#include <unordered_map>",
+        "#include <set>",
+        "#include <tuple>",
+        "#include <utility>",
+        "#include <chrono>",
+        "#include <cstddef>",
+        "#include <variant>",
     )
-    return tuple(
-        header
-        for type_name, header in type_headers
-        if any(type_name in declaration for declaration in declarations)
+    required = frozenset[str]().union(
+        *(_cpp_type_headers(declaration) for declaration in declarations)
     )
+    return tuple(header for header in header_order if header in required)
 
 
 @beartype
@@ -2150,7 +2363,10 @@ def _apply_cpp_variant_sequence_open(
         type_ctx=type_ctx,
         in_mapping_value=False,
     )
-    return f"std::vector<{inner}>{{"
+    type_name = f"std::vector<{inner}>"
+    return TypedCollectionOpen.create(
+        f"{type_name}{{", declared_type=type_name
+    )
 
 
 @beartype
@@ -2158,7 +2374,6 @@ def _apply_cpp_variant_dict_open(
     *,
     items: dict[Scalar, Value],
     type_ctx: _CppTypeCtx,
-    opener_template: str,
 ) -> str:
     """Return a typed ``std::map`` or ``std::unordered_map`` opener."""
     value_type = _compute_element_type_for_items(
@@ -2166,10 +2381,10 @@ def _apply_cpp_variant_dict_open(
         type_ctx=type_ctx,
         in_mapping_value=True,
     )
-    map_kind = "std::map"
-    if "unordered" in opener_template:
-        map_kind = "std::unordered_map"
-    return f"{map_kind}<std::string, {value_type}>{{"
+    type_name = type_ctx.dict_type(value_type)
+    return TypedCollectionOpen.create(
+        f"{type_name}{{", declared_type=type_name
+    )
 
 
 @beartype
@@ -2185,7 +2400,10 @@ def _apply_cpp_variant_ordered_map_open(
         type_ctx=type_ctx,
         in_mapping_value=True,
     )
-    return f"std::vector<std::pair<std::string, {value_type}>>{{"
+    type_name = f"std::vector<std::pair<std::string, {value_type}>>"
+    return TypedCollectionOpen.create(
+        f"{type_name}{{", declared_type=type_name
+    )
 
 
 @beartype
@@ -2208,7 +2426,6 @@ def _build_variant_sequence_open(
 def _build_variant_dict_open(
     *,
     type_ctx: _CppTypeCtx,
-    opener_template: str,
 ) -> Callable[[dict[Scalar, Value]], str]:
     """Build a dict opener that uses ``std::variant`` for
     heterogeneous dict values.
@@ -2219,7 +2436,6 @@ def _build_variant_dict_open(
         return _apply_cpp_variant_dict_open(
             items=items,
             type_ctx=type_ctx,
-            opener_template=opener_template,
         )
 
     return _open
@@ -2344,11 +2560,11 @@ def _renders_as_string_literal(
             value=data
         ):
             return False
-        case bytes() | str() | datetime.time():
+        case bytes() | str() | dt.time():
             return True
-        case datetime.datetime():
+        case dt.datetime():
             return datetime_type is str
-        case datetime.date():
+        case dt.date():
             return date_type is str
         case _:
             return False
@@ -2925,7 +3141,7 @@ class Cpp(metaclass=LanguageCls):
         CPP = DateFormatConfig(
             formatter=_format_date_cpp,
             preamble_lines=("#include <chrono>",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
@@ -2950,7 +3166,7 @@ class Cpp(metaclass=LanguageCls):
         CPP = DatetimeFormatConfig(
             formatter=_format_datetime_cpp,
             preamble_lines=("#include <chrono>",),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -3040,35 +3256,29 @@ class Cpp(metaclass=LanguageCls):
     class DictFormats(enum.Enum):
         """Dict/map format options."""
 
-        MAP = _DictFormatOption(
-            config=DictFormatConfig(
-                dict_open=lambda _items: "{",
-                close="}",
-                format_entry=braced_dict_entry(
-                    format_value=passthrough_sequence_entry
-                ),
-                empty_dict=None,
-                preamble_lines=("#include <map>",),
-                narrowed_open=None,
-                supports_trailing_comma=True,
-                narrowed_empty_form=None,
+        MAP = DictFormatConfig(
+            dict_open=lambda _items: "{",
+            close="}",
+            format_entry=braced_dict_entry(
+                format_value=passthrough_sequence_entry
             ),
-            opener_template="std::map<std::string, {type_name}>{{",
+            empty_dict=None,
+            preamble_lines=("#include <map>",),
+            narrowed_open=None,
+            supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
-        UNORDERED_MAP = _DictFormatOption(
-            config=DictFormatConfig(
-                dict_open=lambda _items: "{",
-                close="}",
-                format_entry=braced_dict_entry(
-                    format_value=passthrough_sequence_entry
-                ),
-                empty_dict=None,
-                preamble_lines=("#include <unordered_map>",),
-                narrowed_open=None,
-                supports_trailing_comma=True,
-                narrowed_empty_form=None,
+        UNORDERED_MAP = DictFormatConfig(
+            dict_open=lambda _items: "{",
+            close="}",
+            format_entry=braced_dict_entry(
+                format_value=passthrough_sequence_entry
             ),
-            opener_template=("std::unordered_map<std::string, {type_name}>{{"),
+            empty_dict=None,
+            preamble_lines=("#include <unordered_map>",),
+            narrowed_open=None,
+            supports_trailing_comma=True,
+            narrowed_empty_form=None,
         )
 
         def get_config(
@@ -3077,12 +3287,11 @@ class Cpp(metaclass=LanguageCls):
             type_ctx: _CppTypeCtx,
         ) -> DictFormatConfig:
             """Return the dict format config with variant opener."""
-            option: _DictFormatOption = self.value
+            option: DictFormatConfig = self.value
             return dataclasses.replace(
-                option.config,
+                option,
                 dict_open=_build_variant_dict_open(
                     type_ctx=type_ctx,
-                    opener_template=option.opener_template,
                 ),
             )
 
@@ -3582,11 +3791,9 @@ class Cpp(metaclass=LanguageCls):
 
         Under :attr:`json_type` the body is additionally wrapped in
         ``try { ... } catch (...) { return 1; }`` so potentially-throwing
-        ``nlohmann::json`` construction cannot make ``main`` itself
-        throwing — clang-tidy's
-        ``bugprone-exception-escape`` check rejects an implicitly
-        ``noexcept`` ``main`` that calls a function whose signature permits
-        exceptions.
+        ``nlohmann::json`` construction cannot let exceptions escape
+        ``main``. The ``bugprone-exception-escape`` check includes ``main``
+        even without a ``noexcept`` specification.
         """
         variable_name = context.variable_name
         body_preamble = context.body_preamble
@@ -3597,6 +3804,13 @@ class Cpp(metaclass=LanguageCls):
         use_line = ""
         if variable_name != "":
             use_line = f"\n{self.indent}(void){variable_name};"
+        # clang-tidy follows visible throw bodies, so standard-library
+        # implementations can produce different exception diagnostics.
+        # https://github.com/llvm/llvm-project/issues/109927
+        # https://github.com/llvm/llvm-project/issues/152026
+        # https://github.com/llvm/llvm-project/issues/109587
+        # Track the native-output validation discrepancy in:
+        # https://github.com/adamtheturtle/literalizer/issues/5449
         if self._json_type_active:
             return (
                 f"int {self.module_name}() {{\n"
@@ -3869,11 +4083,11 @@ class Cpp(metaclass=LanguageCls):
                 and self._cpp_record_field_is_trivial(item)
                 for item in value
             )
-        if isinstance(value, datetime.datetime):
+        if isinstance(value, dt.datetime):
             return (
                 self._resolved_datetime_format.value.type_produced is not str
             )
-        if isinstance(value, datetime.date):
+        if isinstance(value, dt.date):
             return self._resolved_date_format.value.type_produced is not str
         return value is None or isinstance(value, (bool, int, float))
 
@@ -4089,7 +4303,10 @@ class Cpp(metaclass=LanguageCls):
         if request.record_name is not None:
             return request.record_name
         if request.element_record_name is not None:
-            return f"std::vector<{request.element_record_name}>"
+            return _CppTypeDependencies.create(
+                f"std::vector<{request.element_record_name}>",
+                headers=frozenset({"#include <vector>"}),
+            )
         value = request.value
         if (
             isinstance(value, dict)
@@ -4098,8 +4315,15 @@ class Cpp(metaclass=LanguageCls):
         ):
             narrow_value_type = self._record_map_narrowing.value_type
             if narrow_value_type is not None:
-                return f"std::map<std::string, {narrow_value_type}>"
-            return _CPP_RECORD_MAP_TYPE
+                return _CppTypeDependencies.create(
+                    f"std::map<std::string, {narrow_value_type}>",
+                    headers=frozenset({"#include <map>", "#include <string>"})
+                    | _cpp_type_headers(narrow_value_type),
+                )
+            return _CppTypeDependencies.create(
+                _CPP_RECORD_MAP_TYPE,
+                headers=frozenset({"#include <map>", "#include <string>"}),
+            )
         if isinstance(value, int) and not isinstance(value, bool):
             int_type = _cpp_int_field_type(
                 value=value,
@@ -4171,14 +4395,19 @@ class Cpp(metaclass=LanguageCls):
             construction is needed (issue #3605).
             """
             if narrowing.value_type is not None:
-                return formatted
+                return _CppNarrowedMapScalar(object=formatted)
             return f"{_CPP_RECORD_MAP_VALUE}{{{formatted}}}"
 
         def _widened_map_open() -> str:
             """Return the widened-map opener for the current pass."""
             if narrowing.value_type is not None:
-                return f"std::map<std::string, {narrowing.value_type}>{{"
-            return f"{_CPP_RECORD_MAP_TYPE}{{"
+                type_name = f"std::map<std::string, {narrowing.value_type}>"
+                return TypedCollectionOpen.create(
+                    f"{type_name}{{", declared_type=type_name
+                )
+            return TypedCollectionOpen.create(
+                f"{_CPP_RECORD_MAP_TYPE}{{", declared_type=_CPP_RECORD_MAP_TYPE
+            )
 
         return dataclasses.replace(
             strategy,
@@ -4246,7 +4475,7 @@ class Cpp(metaclass=LanguageCls):
         if self.language_version is self.version_formats.CPP14:
             effective_variant_type_name = self.heterogeneous_value_variant_name
         effective_dict_type_name = "std::map"
-        if self.dict_format.name == "UNORDERED_MAP":
+        if self.dict_format is self.dict_formats.UNORDERED_MAP:
             effective_dict_type_name = "std::unordered_map"
         return _CppTypeCtx(
             int_resolver=self.numeric_literal_suffix.int_resolver,
@@ -4373,14 +4602,14 @@ class Cpp(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return format_date_iso
         return self._resolved_date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if (
             self._json_type_active
@@ -4390,7 +4619,7 @@ class Cpp(metaclass=LanguageCls):
         return self._resolved_datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
@@ -4437,6 +4666,16 @@ class Cpp(metaclass=LanguageCls):
             base_int_formatter = make_negative_nondecimal_i64_formatter(
                 base=base_int_formatter,
                 suffix="LL",
+                base_suffix=(
+                    "L"
+                    if self.numeric_literal_suffix
+                    is self.numeric_literal_suffixes.AUTO
+                    else ""
+                ),
+            )
+        if self.numeric_literal_suffix is self.numeric_literal_suffixes.NONE:
+            base_int_formatter = _make_cpp_i32_min_safe_formatter(
+                base=base_int_formatter,
             )
         return make_overflow_fallback_formatter(
             base=make_i64_min_safe_formatter(

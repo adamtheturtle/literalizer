@@ -4,3 +4,4 @@ var my_data = new SortedDictionary<string, double> {
     ["negative"] = double.NegativeInfinity,
     ["nan_value"] = double.NaN
 };
+    _ = my_data;

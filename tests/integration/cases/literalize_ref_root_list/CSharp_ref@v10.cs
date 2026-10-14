@@ -4,3 +4,4 @@ var Whole = (
     2
 );
 var my_data = Whole;
+    _ = my_data;

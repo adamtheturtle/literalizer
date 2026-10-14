@@ -1,11 +1,11 @@
 #[derive(Clone)]
-struct Record0 {
-    flags: Vec<bool>,
-    values: Vec<f64>,
-    ints: Vec<i32>,
-    text: Vec<&'static str>,
-    nested_flags: Vec<Vec<bool>>,
-    nested_values: Vec<Vec<f64>>,
+pub struct Record0 {
+    pub flags: Vec<bool>,
+    pub values: Vec<f64>,
+    pub ints: Vec<i32>,
+    pub text: Vec<&'static str>,
+    pub nested_flags: Vec<Vec<bool>>,
+    pub nested_values: Vec<Vec<f64>>,
 }
 fn main() {
     let my_data = Record0 {
@@ -41,5 +41,5 @@ fn main() {
             ],
         ],
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

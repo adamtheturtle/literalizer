@@ -70,9 +70,9 @@ project Roundtrip_Main is
    for Source_Dirs use (".");
    for Object_Dir use ".";
    for Main use ("main.adb");
-   package Builder is
-      for Switches ("Ada") use ("-gnat2022");
-   end Builder;
+   package Compiler is
+      for Default_Switches ("Ada") use ("-gnat2022", "-gnatwe", "-Werror");
+   end Compiler;
 end Roundtrip_Main;
 """
 

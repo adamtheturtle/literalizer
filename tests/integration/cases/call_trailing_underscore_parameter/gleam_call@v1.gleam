@@ -5,6 +5,6 @@ pub type GVal {
 pub fn do_thing(_x_: a) -> Nil { Nil }
 
 pub fn main() {
-  do_thing(GInt(1))
-  do_thing(GInt(2))
+  let _ = do_thing(GInt(1))
+  let _ = do_thing(GInt(2))
 }

@@ -1,9 +1,9 @@
 #[derive(Clone)]
-struct Record0 {
-    numbers: [i32; 2],
-    nested_numbers: [[i32; 2]; 2],
-    words: [&'static str; 1],
-    flag: bool,
+pub struct Record0 {
+    pub numbers: [i32; 2],
+    pub nested_numbers: [[i32; 2]; 2],
+    pub words: [&'static str; 1],
+    pub flag: bool,
 }
 fn main() {
     let my_data = Record0 {
@@ -26,5 +26,5 @@ fn main() {
         ],
         flag: true,
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

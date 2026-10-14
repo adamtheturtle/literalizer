@@ -6,5 +6,5 @@ pub fn main() {
     json.int(1),
     json.int(2),
   ])
-  consume(json.object([#("field", shared), #("nested", json.preprocessed_array([shared, json.object([])]))]))
+  let _ = consume(json.object([#("field", shared), #("nested", json.preprocessed_array([shared, json.object([])]))]))
 }

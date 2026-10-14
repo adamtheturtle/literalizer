@@ -8,6 +8,7 @@ pub fn main() {
     GStr("a"),
     // trailing
   ])
+  let _ = my_data
   let my_data = GList([
     GStr("a"),
     // trailing

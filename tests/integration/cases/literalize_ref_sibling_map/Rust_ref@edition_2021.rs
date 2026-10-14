@@ -7,5 +7,5 @@ fn main() {
         HashMap::from([("k", 1)]),
         sibling_map,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

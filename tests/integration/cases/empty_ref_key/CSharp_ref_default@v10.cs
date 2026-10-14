@@ -6,3 +6,4 @@ var external_value = new Dictionary<string, string> {
 var my_data = ValueTuple.Create(
     external_value
 );
+    _ = my_data;

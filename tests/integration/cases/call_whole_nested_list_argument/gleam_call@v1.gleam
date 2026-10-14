@@ -5,5 +5,5 @@ pub type GVal {
 pub fn f(_a: a) -> Nil { Nil }
 
 pub fn main() {
-  f(GList([GList([GInt(1), GInt(2)]), GList([GInt(3)])]))
+  let _ = f(GList([GList([GInt(1), GInt(2)]), GList([GInt(3)])]))
 }

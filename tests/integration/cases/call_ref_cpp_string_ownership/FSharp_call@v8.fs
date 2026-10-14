@@ -5,4 +5,4 @@ type Val =
     | FList of Val list
 let consume (_value: obj) : obj = null
 let item: Val = FStr "s"
-consume(item)
+consume(item) |> ignore

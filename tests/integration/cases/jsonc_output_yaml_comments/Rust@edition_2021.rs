@@ -4,5 +4,5 @@ fn main() {
         // server
         ("host", "localhost"),  // default
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

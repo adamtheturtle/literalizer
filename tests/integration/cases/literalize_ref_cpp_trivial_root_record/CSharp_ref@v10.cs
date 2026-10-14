@@ -8,5 +8,6 @@ var First = new Record0(
     )
 );
 var my_data = First;
+    _ = my_data;
     }
 }

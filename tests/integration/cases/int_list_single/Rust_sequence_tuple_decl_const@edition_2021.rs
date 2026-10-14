@@ -1,6 +1,6 @@
 fn main() {
-    const my_data: (i32,) = (
+    const MY_DATA: (i32,) = (
         1,
     );
-    let _ = my_data;
+    let _ = &MY_DATA;
 }

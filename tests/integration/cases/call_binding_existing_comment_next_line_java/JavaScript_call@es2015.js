@@ -1,4 +1,4 @@
 function make_widget() {}
-const my_data = null;
+let my_data = make_widget({ count: null });
 my_data = make_widget({ count: 42 })
 // note;

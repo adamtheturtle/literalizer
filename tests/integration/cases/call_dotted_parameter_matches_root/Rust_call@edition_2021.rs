@@ -1,6 +1,6 @@
 fn main() {
-    struct OuterType_;
-    impl OuterType_ { fn inner<A, B>(&self, _outer: A, _n: B) {} }
-    let outer = OuterType_;
+    struct OuterType;
+    impl OuterType { fn inner<A, B>(&self, _outer: A, _n: B) {} }
+    let outer = OuterType;
     outer.inner(1, 2);
 }

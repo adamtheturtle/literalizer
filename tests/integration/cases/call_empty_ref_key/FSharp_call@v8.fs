@@ -5,4 +5,4 @@ type Val =
     | FList of Val list
 let consume (_value: obj) : obj = null
 let external_value: Val = FInt 1L
-consume(external_value)
+consume(external_value) |> ignore

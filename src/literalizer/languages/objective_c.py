@@ -2,7 +2,7 @@
 
 import base64
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Sequence
@@ -108,17 +108,15 @@ def _stub_parameter_signature(*, parameters: str) -> str:
 
 
 @beartype
-def _format_date_objc(value: datetime.date) -> str:
+def _format_date_objc(value: dt.date) -> str:
     """Format a date as an ``NSDate`` at midnight UTC."""
-    midnight = datetime.datetime.combine(
-        date=value, time=datetime.time(), tzinfo=datetime.UTC
-    )
+    midnight = dt.datetime.combine(date=value, time=dt.time(), tzinfo=dt.UTC)
     seconds = datetime_epoch_seconds(value=midnight)
     return f"[NSDate dateWithTimeIntervalSince1970:{seconds}]"
 
 
 @beartype
-def _format_datetime_objc(value: datetime.datetime) -> str:
+def _format_datetime_objc(value: dt.datetime) -> str:
     """Format a datetime as an ``NSDate`` preserving its instant."""
     seconds = format_datetime_epoch_fractional(value=value)
     return f"[NSDate dateWithTimeIntervalSince1970:{seconds}]"
@@ -151,7 +149,7 @@ def _format_objc_entry(
     match original:
         case bool():
             return formatted
-        case datetime.datetime() if datetime_as_number:
+        case dt.datetime() if datetime_as_number:
             pass
         case int() | float():
             pass
@@ -791,7 +789,7 @@ class ObjectiveC(metaclass=LanguageCls):
         OBJC = DateFormatConfig(
             formatter=_format_date_objc,
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=date_iso_formatter(template='@"{iso}"'),
@@ -807,7 +805,7 @@ class ObjectiveC(metaclass=LanguageCls):
         OBJC = DatetimeFormatConfig(
             formatter=_format_datetime_objc,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=datetime_iso_formatter(template='@"{iso}"'),
@@ -1301,20 +1299,20 @@ class ObjectiveC(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
 
-        def _format(value: datetime.time) -> str:
+        def _format(value: dt.time) -> str:
             """Format a time as an Objective-C ``NSString`` literal."""
             return f"@{format_time_iso(value=value)}"
 

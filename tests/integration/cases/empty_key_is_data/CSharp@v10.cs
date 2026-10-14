@@ -3,3 +3,4 @@ using System;
 var my_data = ValueTuple.Create(
     new Dictionary<string, string> {[""] = "external_value"}
 );
+    _ = my_data;

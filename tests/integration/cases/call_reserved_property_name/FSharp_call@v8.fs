@@ -6,4 +6,4 @@ type Val =
 type FooType_() =
     member _.class(_value: obj) : obj = null
 let foo = FooType_()
-foo.class(FInt 1L)
+foo.class(FInt 1L) |> ignore

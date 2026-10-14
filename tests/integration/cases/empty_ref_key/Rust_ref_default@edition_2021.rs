@@ -6,5 +6,5 @@ fn main() {
     let my_data = vec![
         external_value,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

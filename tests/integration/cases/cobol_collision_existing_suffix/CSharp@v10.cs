@@ -4,3 +4,4 @@ var my_data = new Dictionary<string, int> {
     ["a-b-2"] = 2,
     ["a b"] = 3
 };
+    _ = my_data;

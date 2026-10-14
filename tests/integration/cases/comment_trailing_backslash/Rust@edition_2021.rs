@@ -4,5 +4,5 @@ fn main() {
         // comment ending backslash \ .
         ("x", 1),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

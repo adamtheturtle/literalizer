@@ -1,6 +1,6 @@
 #[derive(Clone)]
-struct Record0 {
-    x: i32,
+pub struct Record0 {
+    pub x: i32,
 }
 fn main() {
     let first = vec![
@@ -8,5 +8,5 @@ fn main() {
         Record0 { x: 2 },
     ];
     let my_data = first;
-    let _ = my_data;
+    let _ = &my_data;
 }

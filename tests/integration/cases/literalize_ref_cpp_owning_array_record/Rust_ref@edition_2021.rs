@@ -1,6 +1,6 @@
 #[derive(Clone)]
-struct Record0 {
-    labels: [&'static str; 1],
+pub struct Record0 {
+    pub labels: [&'static str; 1],
 }
 fn main() {
     let first = Record0 {
@@ -9,5 +9,5 @@ fn main() {
         ],
     };
     let my_data = first;
-    let _ = my_data;
+    let _ = &my_data;
 }

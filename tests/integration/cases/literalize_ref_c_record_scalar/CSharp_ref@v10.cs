@@ -2,5 +2,6 @@ class Check {
     public static void Main() {
 var First = 42;
 var my_data = First;
+    _ = my_data;
     }
 }

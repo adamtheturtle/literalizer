@@ -1,23 +1,23 @@
 #[derive(Clone)]
-struct Record1 {
-    x: i32,
-    y: Option<()>,
+pub struct Record1 {
+    pub x: i32,
+    pub y: Option<()>,
 }
 #[derive(Clone)]
-struct Record2 {
-    x: Option<()>,
-    y: Option<()>,
+pub struct Record2 {
+    pub x: Option<()>,
+    pub y: Option<()>,
 }
 #[derive(Clone)]
-struct Record3 {
-    x: i32,
-    y: i32,
+pub struct Record3 {
+    pub x: i32,
+    pub y: i32,
 }
 #[derive(Clone)]
-struct Record0 {
-    nullable: Record1,
-    null_fields: Record2,
-    plain: Record3,
+pub struct Record0 {
+    pub nullable: Record1,
+    pub null_fields: Record2,
+    pub plain: Record3,
 }
 fn main() {
     let nullable = Record1 {
@@ -37,5 +37,5 @@ fn main() {
         null_fields: null_fields,
         plain: plain,
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

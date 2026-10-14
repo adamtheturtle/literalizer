@@ -6,5 +6,5 @@ pub fn consume(_value: a) -> Nil { Nil }
 
 pub fn main() {
   let item = GStr("s")
-  consume(item)
+  let _ = consume(item)
 }

@@ -1,11 +1,12 @@
 """Core conversion logic: formatting values and entry points."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
+from functools import partial
 from typing import (
     Final,
     Protocol,
@@ -43,6 +44,13 @@ from literalizer._comments_resolve import (
 from literalizer._dictionary_keys import dictionary_key_formatter
 from literalizer._document_formatting import format_document_fast
 from literalizer._formatters.format_dates import datetime_epoch_seconds
+from literalizer._formatters.initializer_types import (
+    finish_collection_initializer,
+    prefix_initializer,
+)
+from literalizer._formatters.initializer_types import (
+    initializer_type as retained_initializer_type,
+)
 from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
@@ -71,8 +79,11 @@ from literalizer._language import (
     PositionalCallStyle,
     PostfixCallStyle,
     PrefixCallStyle,
+    RenderedCallStub,
+    RenderedEmptySequence,
     StubReturn,
     decode_file_sections,
+    empty_container_code,
     is_reserved_identifier,
     validate_call_parameter_names,
     validate_new_variable_name,
@@ -409,8 +420,11 @@ VariableForm = NewVariable | ExistingVariable | BothVariableForms
 def _file_wrapper_context(
     *,
     variable_form: VariableForm | None,
-    body_preamble: tuple[str, ...],
+    body_preamble: tuple[str | RenderedCallStub, ...],
     class_preamble: tuple[str, ...],
+    has_literal_declarations: bool,
+    generated_body_preamble: tuple[str, ...],
+    root_is_object_literal: bool,
 ) -> FileWrapperContext:
     """Keep declaration metadata available after rendering the binding."""
     modifiers = frozenset[enum.Enum]()
@@ -418,9 +432,22 @@ def _file_wrapper_context(
         modifiers = variable_form.modifiers
     return FileWrapperContext(
         variable_name="" if variable_form is None else variable_form.name,
+        bound_variable_names=(),
         modifiers=modifiers,
-        body_preamble=body_preamble,
+        body_preamble=tuple(
+            stub.code if isinstance(stub, RenderedCallStub) else stub
+            for stub in body_preamble
+        ),
+        call_stub_names=frozenset(
+            name
+            for stub in body_preamble
+            if isinstance(stub, RenderedCallStub)
+            for name in stub.declared_names
+        ),
         class_preamble=class_preamble,
+        has_literal_declarations=has_literal_declarations,
+        generated_body_preamble=generated_body_preamble,
+        root_is_object_literal=root_is_object_literal,
     )
 
 
@@ -439,7 +466,7 @@ def _format_scalar_integer(
 @beartype
 def _format_scalar_datetime(
     *,
-    value: datetime.datetime,
+    value: dt.datetime,
     spec: Language,
     int_formatter: Callable[[int], str] | None,
 ) -> str:
@@ -483,11 +510,11 @@ def _format_scalar(
             result = spec.format_string(value)
         case bytes():
             result = spec.format_bytes(value)
-        case datetime.datetime():
+        case dt.datetime():
             result = _format_scalar_datetime(
                 value=value, spec=spec, int_formatter=int_formatter
             )
-        case datetime.time():
+        case dt.time():
             result = spec.format_time(value)
         case _:
             result = spec.format_date(value)
@@ -563,7 +590,7 @@ def _map_widened_int_formatter(
     if spec.datetime_format.value.type_produced is int:
         items = [
             datetime_epoch_seconds(value=value)
-            if isinstance(value, datetime.datetime)
+            if isinstance(value, dt.datetime)
             else value
             for value in items
         ]
@@ -654,9 +681,9 @@ _SCALAR_TYPES: Final = (
     float,
     bool,
     type(None),
-    datetime.date,
-    datetime.datetime,
-    datetime.time,
+    dt.date,
+    dt.datetime,
+    dt.time,
     bytes,
 )
 
@@ -672,7 +699,7 @@ class _RenderContext:
     dict_open_overrides: Mapping[int, str]
     sequence_open_overrides: Mapping[int, str]
     dict_int_formatters: Mapping[int, Callable[[int], str]]
-    empty_container_overrides: Mapping[int, str]
+    empty_container_overrides: Mapping[int, str | RenderedEmptySequence]
     list_int_formatters: Mapping[int, Callable[[int], str]]
     ref_case: IdentifierCase | None
     ref_values: Mapping[str, Value] | None
@@ -865,11 +892,11 @@ def _compute_tuple_list_ids(*, data: Value, spec: Language) -> frozenset[int]:
 @beartype
 def _empty_container_literal_overrides(
     *, data: Value, spec: Language
-) -> Mapping[int, str]:
+) -> Mapping[int, str | RenderedEmptySequence]:
     """Return language-specific literal replacements for empty
     containers.
     """
-    overrides = dict(
+    overrides: dict[int, str | RenderedEmptySequence] = dict(
         spec.heterogeneous_behavior.empty_container_literal_overrides(data)
     )
     _accumulate_sibling_list_empty_overrides(
@@ -898,8 +925,10 @@ def _empty_container_literal_overrides(
 def _accumulate_cousin_empty_list_overrides(
     *,
     value: Value,
-    narrowed_empty_sequence: Callable[[Sequence[list[Value]]], str],
-    out: dict[int, str],
+    narrowed_empty_sequence: Callable[
+        [Sequence[list[Value]]], str | RenderedEmptySequence
+    ],
+    out: dict[int, str | RenderedEmptySequence],
 ) -> None:
     """Type empty lists at corresponding paths through sibling lists."""
     children: Sequence[Value]
@@ -928,8 +957,10 @@ def _accumulate_cousin_empty_list_overrides(
 def _accumulate_positional_empty_list_overrides(
     *,
     sibling_lists: Sequence[list[Value]],
-    narrowed_empty_sequence: Callable[[Sequence[list[Value]]], str],
-    out: dict[int, str],
+    narrowed_empty_sequence: Callable[
+        [Sequence[list[Value]]], str | RenderedEmptySequence
+    ],
+    out: dict[int, str | RenderedEmptySequence],
 ) -> None:
     """Walk equal-length sibling lists and type corresponding empties."""
     lengths = {len(sibling) for sibling in sibling_lists}
@@ -961,7 +992,10 @@ def _accumulate_positional_empty_list_overrides(
 
 @beartype
 def _accumulate_sibling_list_empty_overrides(
-    *, value: Value, spec: Language, out: dict[int, str]
+    *,
+    value: Value,
+    spec: Language,
+    out: dict[int, str | RenderedEmptySequence],
 ) -> None:
     """Type empty lists from homogeneous non-empty list siblings."""
     if isinstance(value, list):
@@ -1005,7 +1039,7 @@ def _accumulate_cousin_empty_dict_overrides(
     *,
     value: Value,
     narrowed_empty_dict: Callable[[Sequence[dict[Scalar, Value]]], str],
-    out: dict[int, str],
+    out: dict[int, str | RenderedEmptySequence],
 ) -> None:
     """Type empty maps from the same field in sibling dictionaries.
 
@@ -1045,7 +1079,7 @@ def _accumulate_sibling_dict_empty_overrides(
     *,
     sibling_dicts: Sequence[dict[Scalar, Value]],
     narrowed_empty_dict: Callable[[Sequence[dict[Scalar, Value]]], str],
-    out: dict[int, str],
+    out: dict[int, str | RenderedEmptySequence],
 ) -> None:
     """Type empty maps at corresponding paths through sibling dicts."""
     keys = {key for sibling in sibling_dicts for key in sibling}
@@ -1072,16 +1106,59 @@ def _accumulate_sibling_dict_empty_overrides(
             )
 
 
+@runtime_checkable
+class _SourceMappingEntryLanguage(Protocol):
+    """A language that distinguishes literal and reference entry
+    values.
+    """
+
+    def format_mapping_entry_from_source(
+        self,
+        key: str,
+        original: Value,
+        formatted: str,
+        /,
+        *,
+        is_reference: bool,
+    ) -> str:
+        """Format an entry with the expression role selected during
+        rendering.
+        """
+        ...
+
+
 @beartype
-def _build_dict_entry(
+def _build_mapping_entry(
     *,
     raw_key: Scalar,
     key_str: str,
     raw_value: Value,
     formatted_value: str,
-    spec: Language,
+    ctx: _RenderContext,
+    is_ordered_map: bool,
 ) -> str:
     """Format a single dict key-value entry using the language spec."""
+    spec = ctx.spec
+    if isinstance(spec, _SourceMappingEntryLanguage):
+        return spec.format_mapping_entry_from_source(
+            key_str,
+            raw_value,
+            formatted_value,
+            is_reference=(
+                _extract_call_arg_ref_name(
+                    value=raw_value, ref_key=ctx.ref_key
+                )
+                is not None
+            ),
+        )
+    if is_ordered_map:
+        return spec.ordered_map_format_config.format_entry_from_source(
+            raw_key=raw_key,
+            formatted_key=key_str,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            format_entry=spec.format_ordered_map_entry,
+        )
     config = spec.dict_format_config
     formatted_key = key_str
     if isinstance(raw_key, str):
@@ -1142,7 +1219,10 @@ def _format_set_value(
         for v, item in zip(sorted_items, formatted, strict=True)
     ]
     joined = spec.element_separator.join(entries)
-    return set_cfg.set_open(items_as_values) + joined + set_cfg.close
+    opening = set_cfg.set_open(items_as_values)
+    return finish_collection_initializer(
+        opener=opening, code=opening + joined + set_cfg.close
+    )
 
 
 @beartype
@@ -1211,9 +1291,9 @@ def _format_ordered_map_value(
         spec=spec,
     )
     pairs = [
-        ordered_map_cfg.format_entry_from_source(
+        _build_mapping_entry(
             raw_key=k,
-            formatted_key=_format_ordered_map_key(
+            key_str=_format_ordered_map_key(
                 raw_key=k,
                 key_str=_format_dictionary_key(key=k, ctx=ctx.compact()),
                 spec=spec,
@@ -1232,13 +1312,16 @@ def _format_ordered_map_value(
                 ),
                 ctx=ctx,
             ),
-            format_entry=spec.format_ordered_map_entry,
+            ctx=ctx,
+            is_ordered_map=True,
         )
         for k, v in ordered_map_items
     ]
     joined = spec.element_separator.join(pairs)
     opening = _ordered_map_open_for_ref_inference(data=value, ctx=ctx)
-    return opening + joined + ordered_map_cfg.close
+    return finish_collection_initializer(
+        opener=opening, code=opening + joined + ordered_map_cfg.close
+    )
 
 
 @beartype
@@ -1293,9 +1376,12 @@ def _maybe_format_record_literal(
         return None
     if not is_multiline:
         joined = spec.element_separator.join(rendered.entries)
-        return (
-            f"{rendered.head}{rendered.compact_pad}{joined}"
-            f"{rendered.compact_pad}{rendered.closer.lstrip()}"
+        return finish_collection_initializer(
+            opener=rendered.head,
+            code=(
+                f"{rendered.head}{rendered.compact_pad}{joined}"
+                f"{rendered.compact_pad}{rendered.closer.lstrip()}"
+            ),
         )
     # Respect the language's trailing-comma policy: Go/Rust permit a
     # trailing comma after the last field (config ``True`` -> unchanged),
@@ -1311,7 +1397,10 @@ def _maybe_format_record_literal(
             effective_sep = sep
         collected_body.append(f"{body_prefix}{entry_entry}{(effective_sep)}")
     body = "\n".join(collected_body)
-    return f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}"
+    return finish_collection_initializer(
+        opener=rendered.head,
+        code=f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}",
+    )
 
 
 @beartype
@@ -1362,9 +1451,12 @@ def _maybe_format_tuple_literal(
     rendered = render_tuple_literal(value, formatted_elements)
     if not is_multiline:
         joined = ", ".join(rendered.entries)
-        return (
-            f"{rendered.head}{rendered.compact_pad}{joined}"
-            f"{rendered.compact_pad}{rendered.closer}"
+        return finish_collection_initializer(
+            opener=rendered.head,
+            code=(
+                f"{rendered.head}{rendered.compact_pad}{joined}"
+                f"{rendered.compact_pad}{rendered.closer}"
+            ),
         )
     # Rust permits a trailing comma after the last tuple element
     # (config ``True`` -> unchanged); C++'s literal is a
@@ -1388,7 +1480,10 @@ def _maybe_format_tuple_literal(
             f"{body_prefix}{entry_entry_entry}{(effective_sep_2)}"
         )
     body = "\n".join(collected_body_2)
-    return f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}"
+    return finish_collection_initializer(
+        opener=rendered.head,
+        code=f"{rendered.head}\n{body}\n{ctx.multiline_prefix}{rendered.closer}",
+    )
 
 
 @beartype
@@ -1442,7 +1537,7 @@ def _format_dict_value(
             spec=spec,
         )
     pairs = [
-        _build_dict_entry(
+        _build_mapping_entry(
             raw_key=k,
             key_str=_format_dictionary_key(key=k, ctx=ctx.compact()),
             raw_value=v,
@@ -1459,7 +1554,8 @@ def _format_dict_value(
                 ),
                 ctx=ctx,
             ),
-            spec=spec,
+            ctx=ctx,
+            is_ordered_map=False,
         )
         for k, v in dict_items.items()
     ]
@@ -1476,7 +1572,9 @@ def _format_dict_value(
             opener = ctx.dict_open_overrides[id(value)]
         case _:
             opener = _dict_open_for_ref_inference(data=dict_items, ctx=ctx)
-    return opener + joined + dict_cfg.close
+    return finish_collection_initializer(
+        opener=opener, code=opener + joined + dict_cfg.close
+    )
 
 
 @beartype
@@ -1532,7 +1630,9 @@ def _format_dict_entry_value(
                     ctx.spec.sequence_format_config.narrowed_empty_form
                 )
                 if narrowed_empty_form is not None:
-                    return narrowed_empty_form(non_empty_siblings)
+                    return empty_container_code(
+                        narrowed_empty_form(non_empty_siblings)
+                    )
                 outer_sequence_override = sibling_opener
         tuple_literal = _maybe_format_tuple_literal(
             value=value,
@@ -2304,7 +2404,9 @@ def _format_sequence_child(
                 for other in value
                 if isinstance(other, list) and bool(other)
             ]
-            return narrowed_empty_form(non_empty_siblings)
+            return empty_container_code(
+                narrowed_empty_form(non_empty_siblings)
+            )
     if (
         parent_override is None
         and isinstance(child, dict)
@@ -2333,6 +2435,61 @@ def _format_sequence_child(
         ctx=child_ctx,
         int_formatter=int_formatter,
     )
+
+
+@runtime_checkable
+class _SequenceEntryContextLanguage(Protocol):
+    """A sequence-entry formatter that consumes retained empty types."""
+
+    def format_sequence_entry_with_context(
+        self,
+        original: Value,
+        formatted: str,
+        /,
+        *,
+        empty_container_overrides: Mapping[int, str | RenderedEmptySequence],
+    ) -> str:
+        """Format an entry using its empty-container inference
+        metadata.
+        """
+        ...
+
+
+@runtime_checkable
+class _SourceSequenceEntryLanguage(Protocol):
+    """A language whose entry layout depends on the emitted value role."""
+
+    def format_sequence_entry_from_source(
+        self, original: Value, formatted: str, /, *, is_reference: bool
+    ) -> str:
+        """Format an entry with the reference decision made during
+        rendering.
+        """
+        ...
+
+
+@beartype
+def _format_source_sequence_entry(
+    original: Value, formatted: str, /, *, ctx: _RenderContext
+) -> str:
+    """Preserve the reference role when choosing an entry's layout."""
+    spec = ctx.spec
+    if isinstance(spec, _SequenceEntryContextLanguage):
+        return spec.format_sequence_entry_with_context(
+            original,
+            formatted,
+            empty_container_overrides=ctx.empty_container_overrides,
+        )
+    if isinstance(spec, _SourceSequenceEntryLanguage):
+        return spec.format_sequence_entry_from_source(
+            original,
+            formatted,
+            is_reference=(
+                _extract_call_arg_ref_name(value=original, ref_key=ctx.ref_key)
+                is not None
+            ),
+        )
+    return spec.format_sequence_entry(original, formatted)
 
 
 @beartype
@@ -2396,7 +2553,7 @@ def _format_list_value(
     if int_formatter is None:
         int_formatter = _widened_int_formatter(items=value, spec=spec)
     items = [
-        spec.format_sequence_entry(
+        _format_source_sequence_entry(
             v,
             _maybe_wrap_child(
                 parent_id=parent_id,
@@ -2414,6 +2571,7 @@ def _format_list_value(
                 ),
                 ctx=ctx,
             ),
+            ctx=ctx,
         )
         for position, v in enumerate(iterable=value)
     ]
@@ -2441,7 +2599,9 @@ def _format_list_value(
             opener = sequence_open_override
         case _:
             opener = _sequence_open_for_ref_inference(data=value, ctx=ctx)
-    return f"{opener}{joined}{sequence_cfg.close}"
+    return finish_collection_initializer(
+        opener=opener, code=f"{opener}{joined}{sequence_cfg.close}"
+    )
 
 
 @beartype
@@ -2639,7 +2799,7 @@ def _format_value(
             )
     empty_override = ctx.empty_container_overrides.get(id(value))
     if empty_override is not None:
-        return empty_override
+        return empty_container_code(empty_override)
     if isinstance(value, dict) and not isinstance(value, OrderedMap):
         record_literal = _maybe_format_record_literal(
             value=value,
@@ -2703,11 +2863,13 @@ def _wrap_body(
             closing = f"{close_prefix}{ordered_map_cfg.close}"
         case dict() if dict_open_override is not None:
             dict_cfg = spec.dict_format_config
-            opening = f"{line_prefix}{dict_open_override}"
+            open_str = dict_open_override
+            opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{dict_cfg.close}"
         case dict():
             dict_cfg = spec.dict_format_config
-            opening = f"{line_prefix}{dict_cfg.dict_open(data)}"
+            open_str = dict_cfg.dict_open(data)
+            opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{dict_cfg.close}"
         case set():
             sorted_set: list[Value] = sorted(
@@ -2715,7 +2877,8 @@ def _wrap_body(
                 key=set_sort_key,
             )
             set_cfg = spec.set_format_config
-            opening = f"{line_prefix}{set_cfg.set_open(sorted_set)}"
+            open_str = set_cfg.set_open(sorted_set)
+            opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{set_cfg.close}"
         case _:
             sequence_cfg = spec.sequence_format_config
@@ -2730,7 +2893,9 @@ def _wrap_body(
                 close_str = sequence_cfg.close
             opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{close_str}"
-    return f"{opening.rstrip()}\n{body}\n{closing}"
+    return finish_collection_initializer(
+        opener=open_str, code=f"{opening.rstrip()}\n{body}\n{closing}"
+    )
 
 
 @beartype
@@ -3000,13 +3165,14 @@ def _format_multiline_collection_value(
         ctx=ctx,
     )
     body = "\n".join(lines)
-    opening = _collection_open_for_multiline_value(
+    raw_opening = _collection_open_for_multiline_value(
         data=value,
         is_ordered_map=is_ordered_map,
         dict_open_override=dict_open_override,
         sequence_open_override=sequence_open_override,
         ctx=ctx,
-    ).rstrip()
+    )
+    opening = raw_opening.rstrip()
     closing_indent = ""
     if spec.indent_closing_delimiter:
         closing_indent = spec.indent
@@ -3028,7 +3194,9 @@ def _format_multiline_collection_value(
                 close = delimiters[1]
             else:
                 close = spec.sequence_format_config.close
-    return f"{opening}\n{body}\n{close_prefix}{close}"
+    return finish_collection_initializer(
+        opener=raw_opening, code=f"{opening}\n{body}\n{close_prefix}{close}"
+    )
 
 
 @beartype
@@ -3253,26 +3421,19 @@ def _format_dict_lines(
             ),
             ctx=ctx,
         )
+        key_str = formatted_key
         if is_ordered_map:
-            entry = spec.ordered_map_format_config.format_entry_from_source(
-                raw_key=k,
-                formatted_key=_format_ordered_map_key(
-                    raw_key=k,
-                    key_str=formatted_key,
-                    spec=spec,
-                ),
-                raw_value=v,
-                formatted_value=formatted_val,
-                format_entry=spec.format_ordered_map_entry,
+            key_str = _format_ordered_map_key(
+                raw_key=k, key_str=formatted_key, spec=spec
             )
-        else:
-            entry = _build_dict_entry(
-                raw_key=k,
-                key_str=formatted_key,
-                raw_value=v,
-                formatted_value=formatted_val,
-                spec=spec,
-            )
+        entry = _build_mapping_entry(
+            raw_key=k,
+            key_str=key_str,
+            raw_value=v,
+            formatted_value=formatted_val,
+            ctx=ctx,
+            is_ordered_map=is_ordered_map,
+        )
         formatted_entries.append(entry)
     dict_trailing = (
         trailing_comma and spec.dict_format_config.supports_trailing_comma
@@ -3385,7 +3546,7 @@ def _format_collection_lines(
                     items=list_data, spec=spec
                 )
             formatted_entries = [
-                spec.format_sequence_entry(
+                _format_source_sequence_entry(
                     element,
                     _maybe_wrap_child(
                         parent_id=parent_id,
@@ -3401,6 +3562,7 @@ def _format_collection_lines(
                         ),
                         ctx=ctx,
                     ),
+                    ctx=ctx,
                 )
                 for position, element in enumerate(iterable=list_data)
             ]
@@ -3612,7 +3774,7 @@ class _RecordContextFormatting:
     dict_open_overrides: Mapping[int, str]
     sequence_open_overrides: Mapping[int, str]
     dict_int_formatters: Mapping[int, Callable[[int], str]]
-    empty_overrides: Mapping[int, str]
+    empty_overrides: Mapping[int, str | RenderedEmptySequence]
     list_int_formatters: Mapping[int, Callable[[int], str]]
 
 
@@ -3846,7 +4008,7 @@ def _format_root_collection_override(
             ctx=ctx,
             int_formatter=None,
         )
-        return f"{line_prefix}{formatted}"
+        return prefix_initializer(code=formatted, prefix=line_prefix)
     if (
         isinstance(data, dict)
         and include_delimiters
@@ -3863,7 +4025,7 @@ def _format_root_collection_override(
             ctx=ctx,
             int_formatter=None,
         )
-        return f"{line_prefix}{formatted}"
+        return prefix_initializer(code=formatted, prefix=line_prefix)
     if (
         include_delimiters
         and isinstance(data, dict)
@@ -3874,14 +4036,14 @@ def _format_root_collection_override(
             ctx=ctx.with_multiline(multiline_prefix=line_prefix),
         )
         if record_literal is not None:
-            return f"{line_prefix}{record_literal}"
+            return prefix_initializer(code=record_literal, prefix=line_prefix)
     if include_delimiters and isinstance(data, list):
         tuple_literal = _maybe_format_tuple_literal(
             value=data,
             ctx=ctx.with_multiline(multiline_prefix=line_prefix),
         )
         if tuple_literal is not None:
-            return f"{line_prefix}{tuple_literal}"
+            return prefix_initializer(code=tuple_literal, prefix=line_prefix)
     return None
 
 
@@ -4106,7 +4268,7 @@ def _literalize_impl(
             spec=language,
             int_formatter=None,
         )
-        return f"{line_prefix}{formatted_scalar}"
+        return prefix_initializer(code=formatted_scalar, prefix=line_prefix)
 
     # Root ref markers returned above. Only child refs can change here,
     # so inference retains a collection rather than resolving to a scalar.
@@ -4298,6 +4460,26 @@ class _ReferenceBindingLanguage(Protocol):
         ...
 
 
+@runtime_checkable
+class _ContextualVariableDeclarationLanguage(Protocol):
+    """A declaration formatter using retained literal inference facts."""
+
+    def format_contextual_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+        *,
+        inferred_empty_sequence: bool,
+        is_reference_binding: bool,
+        initializer_type: str | None,
+    ) -> str:
+        """Declare the selected literal or an already bound identifier."""
+        ...
+
+
 @beartype
 def _apply_variable_wrapper(
     *,
@@ -4308,6 +4490,8 @@ def _apply_variable_wrapper(
     line_prefix: str,
     is_call_binding: bool,
     is_reference_binding: bool,
+    inferred_empty_sequence: bool,
+    initializer_type: str | None,
 ) -> str:
     """Optionally wrap *result* in a variable declaration or
     assignment.
@@ -4353,6 +4537,13 @@ def _apply_variable_wrapper(
             elif is_call_binding:
                 declaration_formatter = (
                     language.format_call_variable_declaration
+                )
+            elif isinstance(language, _ContextualVariableDeclarationLanguage):
+                declaration_formatter = partial(
+                    language.format_contextual_variable_declaration,
+                    inferred_empty_sequence=inferred_empty_sequence,
+                    is_reference_binding=is_reference_binding,
+                    initializer_type=initializer_type,
                 )
             else:
                 declaration_formatter = language.format_variable_declaration
@@ -4419,6 +4610,26 @@ class _PreFormState:
     """The ref key the render actually used, or the disabled sentinel."""
     ref_case: IdentifierCase | None
     """The case a ref identifier was converted to, if any."""
+    initializer_type: str | None
+    """Declaration type retained before comments or binding."""
+    root_is_object_literal: bool
+    """The literal producer's expression kind, before comments or
+    binding.
+    """
+
+
+@beartype
+def _root_is_object_literal(
+    *, data: Value, language: Language, ref_key: str, include_delimiters: bool
+) -> bool:
+    """Retain the chosen root expression kind before text assembly."""
+    if not include_delimiters or not isinstance(data, dict):
+        return False
+    if _extract_call_arg_ref_name(value=data, ref_key=ref_key) is not None:
+        return False
+    if isinstance(data, OrderedMap):
+        return language.ordered_map_format_config.is_object_literal
+    return language.dict_format_config.is_object_literal
 
 
 @runtime_checkable
@@ -4507,7 +4718,7 @@ def _literalize_pre_form_impl(
     effective_toml_comment_doc = None
     if isinstance(parsed, ParsedToml):
         effective_toml_comment_doc = parsed.toml_doc
-    result = _literalize(
+    result: str = _literalize(
         preserve_ref_values=preserve_ref_values,
         data=data,
         language=language,
@@ -4523,6 +4734,7 @@ def _literalize_pre_form_impl(
         validate_data=True,
     )
 
+    root_initializer_type = retained_initializer_type(result)
     comment_line_prefix = line_prefix
     if include_delimiters:
         comment_line_prefix = line_prefix + language.indent
@@ -4590,6 +4802,13 @@ def _literalize_pre_form_impl(
         line_prefix=line_prefix,
         active_ref_key=active_ref_key,
         ref_case=ref_case,
+        initializer_type=root_initializer_type,
+        root_is_object_literal=_root_is_object_literal(
+            data=data,
+            language=language,
+            ref_key=active_ref_key,
+            include_delimiters=include_delimiters,
+        ),
     )
 
 
@@ -4826,6 +5045,8 @@ def reject_undeclared_assignment(
             value=pre_form.data, ref_key=pre_form.active_ref_key
         )
         is not None,
+        inferred_empty_sequence=False,
+        initializer_type=pre_form.initializer_type,
     )
 
     def _render(styled: Language) -> str:
@@ -4844,6 +5065,8 @@ def reject_undeclared_assignment(
                 value=pre_form.data, ref_key=pre_form.active_ref_key
             )
             is not None,
+            inferred_empty_sequence=False,
+            initializer_type=pre_form.initializer_type,
         )
 
     if assignment not in _declaration_spellings(
@@ -4892,6 +5115,8 @@ def literalize_apply_form(
             value=pre_form.data, ref_key=pre_form.active_ref_key
         )
         is not None,
+        inferred_empty_sequence=False,
+        initializer_type=pre_form.initializer_type,
     )
 
     resolved = pre_form.resolved
@@ -4953,6 +5178,11 @@ def literalize_apply_form(
                 variable_form=variable_form,
                 body_preamble=scoped.body + computed.body,
                 class_preamble=(),
+                has_literal_declarations=(
+                    isinstance(variable_form, NewVariable) or len(pre_decl) > 0
+                ),
+                generated_body_preamble=computed.body,
+                root_is_object_literal=pre_form.root_is_object_literal,
             ),
         )
         if len(scoped.file_scope) > 0:
@@ -5062,6 +5292,9 @@ def literalize_both_forms(
             variable_form=variable_form,
             body_preamble=decl_preamble,
             class_preamble=(),
+            has_literal_declarations=True,
+            generated_body_preamble=declaration.body_preamble,
+            root_is_object_literal=False,
         ),
     )
     if len(scoped.file_scope) > 0:
@@ -5085,6 +5318,7 @@ class _BoundRefComposition:
     """Per-ref declaration results paired with the main binding."""
 
     declarations: tuple[LiteralizeResult, ...]
+    bound_variable_names: tuple[str, ...]
     resolved_preamble_data: Value
     main_result: LiteralizeResult
     assignment_result: LiteralizeResult | None
@@ -5297,6 +5531,7 @@ def literalize_bound_refs(
         ref_key=ref_key,
     )
     decl_results: list[LiteralizeResult] = []
+    bound_variable_names: list[str] = []
     for name in ordered_names:
         bound_value = contextual_bound_refs[name]
         bound_modifiers = frozenset[enum.Enum]()
@@ -5314,6 +5549,7 @@ def literalize_bound_refs(
         converted_name = name
         if ref_case is not None:
             converted_name = ref_case.convert(name=name)
+        bound_variable_names.append(converted_name)
         decl_results.append(
             _literalize_value_binding(
                 value=bound_value,
@@ -5330,6 +5566,7 @@ def literalize_bound_refs(
         )
     composition = _BoundRefComposition(
         declarations=tuple(decl_results),
+        bound_variable_names=tuple(bound_variable_names),
         resolved_preamble_data=pre_form.data_for_preamble,
         main_result=main_result,
         assignment_result=assignment_result,
@@ -5382,6 +5619,17 @@ def _literalize_value_binding(
         line_prefix=line_prefix,
         is_call_binding=False,
         is_reference_binding=False,
+        inferred_empty_sequence=(
+            isinstance(value, list)
+            and len(value) == 0
+            and record_context_data is not None
+            and isinstance(language, _ContextualVariableDeclarationLanguage)
+            and id(value)
+            in _empty_container_literal_overrides(
+                data=record_context_data, spec=language
+            )
+        ),
+        initializer_type=retained_initializer_type(result_text),
     )
     computed = compute_preamble(
         data=value,
@@ -5565,6 +5813,17 @@ def _compose_bound_refs(
         variable_form=composition.variable_form,
         body_preamble=body_preamble,
         class_preamble=(),
+        has_literal_declarations=(
+            len(decl_results) > 0
+            or isinstance(
+                composition.variable_form, (NewVariable, BothVariableForms)
+            )
+        ),
+        generated_body_preamble=unified_body_preamble,
+        root_is_object_literal=False,
+    )
+    context = dataclasses.replace(
+        context, bound_variable_names=composition.bound_variable_names
     )
     if composition.assignment_result is None:
         wrapped = language.wrap_in_file(
@@ -6710,6 +6969,8 @@ def _render_variable_bound_call(
             line_prefix="",
             is_call_binding=True,
             is_reference_binding=False,
+            inferred_empty_sequence=False,
+            initializer_type=None,
         ),
         comment=comment,
         language=language,
@@ -7738,6 +7999,9 @@ def _wrap_call_in_file(
             + body_stubs
             + computed_body,
             class_preamble=class_stubs,
+            has_literal_declarations=False,
+            generated_body_preamble=computed_body,
+            root_is_object_literal=False,
         ),
     )
     call_binding_pragmas: tuple[str, ...] = ()
@@ -7946,6 +8210,7 @@ def _wrap_call_result_in_file(
     )
 
 
+@beartype
 class _ReferenceValues(dict[str, Value]):
     """Inference hints with separate knowledge of actual null bindings."""
 
@@ -8599,7 +8864,7 @@ def literalize_call_with_declarations(
     language: Language,
     declarations: Sequence[LiteralizeResult],
     call: LiteralizeResult,
-    extra_body_preamble: tuple[str, ...],
+    extra_body_preamble: tuple[str | RenderedCallStub, ...],
     extra_class_preamble: tuple[str, ...],
     extra_preamble: tuple[str, ...],
 ) -> LiteralizeResult:
@@ -8778,6 +9043,9 @@ def literalize_call_with_declarations(
             + unified_body_preamble
             + extra_body_preamble,
             class_preamble=extra_class_preamble,
+            has_literal_declarations=len(declarations) > 0,
+            generated_body_preamble=unified_body_preamble,
+            root_is_object_literal=False,
         ),
     )
     if len(scoped.file_scope) > 0:

@@ -13,18 +13,10 @@ that interface declares instead, which accepts any ``Sequence`` or
 mapping.
 """
 
-import datetime
+import datetime as dt
 
 type Scalar = (
-    str
-    | int
-    | float
-    | bool
-    | datetime.date
-    | datetime.datetime
-    | datetime.time
-    | bytes
-    | None
+    str | int | float | bool | dt.date | dt.datetime | dt.time | bytes | None
 )
 type ParsedValue = (
     Scalar | list[ParsedValue] | dict[Scalar, ParsedValue] | set[Scalar]

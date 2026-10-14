@@ -4,5 +4,5 @@ fn main() {
     let my_data = HashMap::from([
         ("nested", vec![0, existing]),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

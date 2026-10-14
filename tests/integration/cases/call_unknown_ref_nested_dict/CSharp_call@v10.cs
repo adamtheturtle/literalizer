@@ -1,11 +1,11 @@
 using System.Collections.Generic;
 using System;
 class Check {
-static object process(object data = null) => null;
+static object? process(object? data = null) => null;
     public static void Main() {
 var my_list = new Dictionary<string, string> {
     ["unused"] = "value"
 };
-process(ValueTuple.Create(ValueTuple.Create(new Dictionary<string, object> {["inner"] = my_list})));
+process(ValueTuple.Create(ValueTuple.Create(new Dictionary<string, object?> {["inner"] = my_list})));
     }
 }

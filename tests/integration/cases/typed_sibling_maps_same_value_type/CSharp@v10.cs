@@ -4,3 +4,4 @@ var my_data = (
     new Dictionary<string, int> {["s"] = 1},
     new Dictionary<string, int> {["t"] = 3}
 );
+    _ = my_data;

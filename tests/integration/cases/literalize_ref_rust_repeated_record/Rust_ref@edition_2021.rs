@@ -1,6 +1,6 @@
 #[derive(Clone)]
-struct Record0 {
-    value: Vec<i32>,
+pub struct Record0 {
+    pub value: Vec<i32>,
 }
 fn main() {
     let shared = Record0 {
@@ -13,5 +13,5 @@ fn main() {
         shared.clone(),
         shared.clone(),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

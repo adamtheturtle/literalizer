@@ -5,3 +5,4 @@ var my_data = (
     One,
     Two
 );
+    _ = my_data;

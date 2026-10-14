@@ -1,7 +1,7 @@
 #[derive(Clone)]
-struct Record0 {
-    numbers: [[i32; 1]; 2],
-    words: [[&'static str; 1]; 2],
+pub struct Record0 {
+    pub numbers: [[i32; 1]; 2],
+    pub words: [[&'static str; 1]; 2],
 }
 fn main() {
     let my_data = Record0 {
@@ -22,5 +22,5 @@ fn main() {
             ],
         ],
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

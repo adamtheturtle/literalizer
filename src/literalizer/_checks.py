@@ -3,7 +3,7 @@ collection-shape constraints.
 """
 
 import copy
-import datetime
+import datetime as dt
 import math
 import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
@@ -69,12 +69,12 @@ def _format_scalar_identity(*, value: Scalar, spec: Language) -> str:
             result = spec.format_string(value)
         case bytes():
             result = spec.format_bytes(value)
-        case datetime.datetime():
+        case dt.datetime():
             result = spec.format_datetime(value)
-        case datetime.time():
+        case dt.time():
             result = spec.format_time(value)
         case _:
-            date_value: datetime.date = value
+            date_value: dt.date = value
             result = spec.format_date(date_value)
     return result
 
@@ -304,8 +304,8 @@ def reject_aware_datetimes(
     while len(stack) > 0:
         value = stack.pop()
         match value:
-            case datetime.datetime() if value.utcoffset() is not None and not (
-                allow_utc_offset and value.utcoffset() == datetime.timedelta()
+            case dt.datetime() if value.utcoffset() is not None and not (
+                allow_utc_offset and value.utcoffset() == dt.timedelta()
             ):
                 msg = (
                     f"{language_name} native datetime format cannot preserve "
@@ -447,7 +447,7 @@ def _reject_unpreserved_aware_times(*, data: Value, spec: Language) -> None:
     while len(stack) > 0:
         value = stack.pop()
         match value:
-            case datetime.time() if value.utcoffset() is not None:
+            case dt.time() if value.utcoffset() is not None:
                 naive = value.replace(tzinfo=None)
                 if spec.format_time(value) == spec.format_time(naive):
                     msg = (
@@ -564,9 +564,9 @@ def scalar_type_bucket(*, value: Value) -> type | None:
         float,
         str,
         bytes,
-        datetime.datetime,
-        datetime.date,
-        datetime.time,
+        dt.datetime,
+        dt.date,
+        dt.time,
     )
     return next(
         (bucket for bucket in bucket_types if isinstance(value, bucket)),
@@ -1427,9 +1427,9 @@ def _sibling_map_type_family(
             scalar_families: dict[object, object] = {
                 WideInt: int,
                 BeyondI64: int,
-                datetime.date: spec.date_format.value.type_produced,
-                datetime.datetime: spec.datetime_format.value.type_produced,
-                datetime.time: str,
+                dt.date: spec.date_format.value.type_produced,
+                dt.datetime: spec.datetime_format.value.type_produced,
+                dt.time: str,
             }
             return scalar_families.get(inferred, inferred)
 

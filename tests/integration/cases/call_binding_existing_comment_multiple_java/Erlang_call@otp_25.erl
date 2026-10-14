@@ -2,6 +2,6 @@
 -export([x/0]).
 make_widget(_) -> undefined.
 x() ->
-    My_data = undefined,
+    My_data = make_widget(undefined),
     My_data = make_widget(42) // note
     // extra.

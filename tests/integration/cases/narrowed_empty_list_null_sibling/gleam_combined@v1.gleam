@@ -8,6 +8,7 @@ pub fn main() {
     GList([GNull]),
     GList([]),
   ])
+  let _ = my_data
   let my_data = GList([
     GList([GNull]),
     GList([]),

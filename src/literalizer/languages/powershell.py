@@ -1,8 +1,9 @@
 """PowerShell language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
+import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -87,12 +88,14 @@ from literalizer._language import (
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop_static,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import InvalidDictKeyError
 
 
 @beartype
-def _powershell_call_arg(_value: Value, formatted: str, /) -> str:
+def _powershell_call_arg(
+    value: Value, formatted: str, /, *, date_type: type
+) -> str:
     """Return a call argument the command parser reads as one value.
 
     A command argument that opens with a type literal -- the
@@ -100,7 +103,18 @@ def _powershell_call_arg(_value: Value, formatted: str, /) -> str:
     of what follows rather than as the argument, which the parser
     then refuses.  Parentheses make it one value again (issue #4735).
     """
-    if formatted.startswith("["):
+    match value:
+        case OrderedMap():
+            is_type_literal = True
+        case float():
+            is_type_literal = not math.isfinite(value)
+        case dt.datetime():
+            is_type_literal = False
+        case dt.date():
+            is_type_literal = date_type is dt.date
+        case _:
+            is_type_literal = False
+    if is_type_literal:
         return f"({formatted})"
     return formatted
 
@@ -371,7 +385,13 @@ class PowerShell(metaclass=LanguageCls):
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Return the rewriting a formatted call argument goes through."""
-        return _powershell_call_arg
+        date_type = self.date_format.value.type_produced
+
+        def _format(value: Value, formatted: str) -> str:
+            """Parenthesize arguments emitted with a type literal."""
+            return _powershell_call_arg(value, formatted, date_type=date_type)
+
+        return _format
 
     class DateFormats(DateFormatEnum):
         """Date format options for PowerShell."""
@@ -385,7 +405,7 @@ class PowerShell(metaclass=LanguageCls):
             formatter=date_ymd_formatter(
                 template="[datetime]::new({year}, {month}, {day})",
             ),
-            type_produced=datetime.date,
+            type_produced=dt.date,
             preamble_lines=(),
         )
 
@@ -821,17 +841,17 @@ class PowerShell(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

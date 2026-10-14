@@ -8,5 +8,6 @@ var my_data = new Record0(
     "tag",
     true
 );
+    _ = my_data;
     }
 }

@@ -5,3 +5,4 @@ var Shared = (
 );
 var my_data = Shared;
 my_data = Shared;
+    _ = my_data;

@@ -3,7 +3,7 @@ Module Check
         Return Nothing
     End Function
     Sub _calls()
-        Dim my_data = Nothing
+        Dim my_data = make_widget(Nothing)
         my_data = make_widget(42) // note
         // extra
     End Sub

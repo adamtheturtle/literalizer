@@ -9,3 +9,4 @@ my_data = (
     //
     "b"
 );
+    _ = my_data;

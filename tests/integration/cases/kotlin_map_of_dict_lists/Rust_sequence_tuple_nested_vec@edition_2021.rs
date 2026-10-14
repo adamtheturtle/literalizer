@@ -4,5 +4,5 @@ fn main() {
         ("a", vec![HashMap::from([("k", 1)])]),
         ("b", vec![HashMap::from([("k", 2)])]),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

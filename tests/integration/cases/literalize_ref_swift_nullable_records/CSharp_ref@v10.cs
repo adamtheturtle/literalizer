@@ -1,5 +1,5 @@
-record Record1(int X, object Y);
-record Record2(object X, object Y);
+record Record1(int X, object? Y);
+record Record2(object? X, object? Y);
 record Record3(int X, int Y);
 record Record0(Record1 Nullable, Record2 NullFields, Record3 Plain);
 class Check {
@@ -21,5 +21,6 @@ var my_data = new Record0(
     NullFields,
     Plain
 );
+    _ = my_data;
     }
 }

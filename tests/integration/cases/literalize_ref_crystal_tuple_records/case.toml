@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" },
+  { kind = "enum_member_present", option = "sequence_format", member = "TUPLE" },
+]
+sequence_format = "TUPLE"
+heterogeneous_strategy = "RECORD"
+
+[ref.value_sources]
+value = "{\"field\": 2}"

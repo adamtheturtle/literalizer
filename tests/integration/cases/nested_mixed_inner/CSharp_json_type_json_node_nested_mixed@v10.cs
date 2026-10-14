@@ -3,3 +3,4 @@ JsonNode? my_data = new JsonArray {
     new JsonArray {1, "a"},
     new JsonArray {2, "b"}
 };
+    _ = my_data;

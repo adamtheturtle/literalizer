@@ -14,5 +14,5 @@ fn main() {
         arena,
         allocator,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

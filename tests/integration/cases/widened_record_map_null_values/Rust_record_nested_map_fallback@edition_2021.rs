@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     Null,
 }
 #[derive(Clone)]
-struct Record0 {
-    input: HashMap<&'static str, Value>,
+pub struct Record0 {
+    pub input: HashMap<&'static str, Value>,
 }
 fn main() {
     let my_data = vec![
         Record0 { input: HashMap::from([("a", Value::Null)]) },
         Record0 { input: HashMap::from([("b", Value::Null)]) },
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

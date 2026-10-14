@@ -5,4 +5,4 @@ type ObjType_() =
 let obj = ObjType_()
 type Val =
     | FInt of int64
-obj.BEGIN(FInt 42L)
+obj.BEGIN(FInt 42L) |> ignore

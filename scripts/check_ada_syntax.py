@@ -6,6 +6,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from scripts.bounded_command import bounded_command
+
 
 def main() -> None:
     """Check syntax of the given Ada golden file."""
@@ -15,13 +17,24 @@ def main() -> None:
         gnatmake_path = "gnatmake"
     src = Path(filename)
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_src = Path(tmpdir) / "check.adb"
+        tmp_src = Path(tmpdir) / "main.adb"
         content: str = src.read_text(encoding="utf-8")
         _ = tmp_src.write_text(data=content, encoding="utf-8")
         # `-gnat2022` matches `Ada.language_version` in
         # `src/literalizer/languages/ada.py`; keep them in sync.
         result = subprocess.run(
-            args=[gnatmake_path, "-gnat2022", "-gnats", "check.adb"],
+            args=bounded_command(
+                args=[
+                    gnatmake_path,
+                    "-gnat2022",
+                    "-gnatwe",
+                    "-Werror",
+                    "-gnats",
+                    "main.adb",
+                ],
+                fixture=filename,
+                timeout_seconds=60,
+            ),
             capture_output=True,
             text=True,
             check=False,

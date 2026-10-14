@@ -1,10 +1,10 @@
 #[derive(Clone)]
-struct Record0 {
-    quantity: i32,
-    big: i128,
-    ratio: f64,
-    label: &'static str,
-    ok: bool,
+pub struct Record0 {
+    pub quantity: i32,
+    pub big: i128,
+    pub ratio: f64,
+    pub label: &'static str,
+    pub ok: bool,
 }
 fn main() {
     let my_data = Record0 {
@@ -14,5 +14,5 @@ fn main() {
         label: "tag",
         ok: true,
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -9,5 +9,5 @@ fn main() {
         ("max_milli", NaiveDateTime::new(NaiveDate::from_ymd_opt(1979, 5, 27).unwrap(), NaiveTime::from_hms_micro_opt(7, 32, 0, 999000).unwrap())),
         ("whole", NaiveDateTime::new(NaiveDate::from_ymd_opt(1979, 5, 27).unwrap(), NaiveTime::from_hms_opt(7, 32, 0).unwrap())),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

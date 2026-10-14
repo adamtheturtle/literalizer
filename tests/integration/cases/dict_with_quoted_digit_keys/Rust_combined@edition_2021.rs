@@ -4,9 +4,10 @@ fn main() {
         ("0a", "first"),
         ("1b", "second"),
     ]);
+    let _ = &my_data;
     my_data = HashMap::from([
         ("0a", "first"),
         ("1b", "second"),
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

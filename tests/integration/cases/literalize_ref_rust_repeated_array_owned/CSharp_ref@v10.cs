@@ -6,3 +6,4 @@ var my_data = new Dictionary<string, int>[][] {
     Shared,
     Shared
 };
+    _ = my_data;

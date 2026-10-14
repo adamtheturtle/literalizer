@@ -65,6 +65,11 @@ def main() -> None:
                 args=[
                     scala_cli,
                     "run",
+                    "--server=false",
+                    "--scalac-option",
+                    "-Werror",
+                    "--scalac-option",
+                    "-deprecation",
                     ".",
                     "-S",
                     "3",

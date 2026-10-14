@@ -2,7 +2,7 @@
 static id make_widget(id _a0) { (void)_a0; return nil; }
 int main(void) {
 @autoreleasepool {
-id my_data = [NSNull null];
+id my_data = make_widget([NSNull null]);
 my_data = make_widget(@42); // note
 }
     return 0;

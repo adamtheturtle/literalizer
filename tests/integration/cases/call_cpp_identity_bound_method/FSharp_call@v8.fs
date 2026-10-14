@@ -10,4 +10,4 @@ let item: Val = FList [
     FInt 1L;
     FInt 2L
 ]
-thing.go(item)
+thing.go(item) |> ignore

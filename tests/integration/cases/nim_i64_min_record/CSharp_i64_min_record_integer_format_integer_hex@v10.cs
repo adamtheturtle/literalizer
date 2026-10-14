@@ -4,5 +4,6 @@ class Check {
 var my_data = new Record0(
     -0x8000000000000000
 );
+    _ = my_data;
     }
 }

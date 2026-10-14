@@ -12,7 +12,8 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 fn make_widget(count: ZVal) ZVal { _ = count; return .nil; }
 pub fn main() void {
-    const my_data: ZVal = .{ .int = 42 };
+    var my_data = make_widget(.{ .int = 42 });
     my_data = make_widget(.{ .int = 42 }); // note
     // extra
+    _ = &my_data;
 }

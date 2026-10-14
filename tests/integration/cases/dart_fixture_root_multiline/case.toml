@@ -1,0 +1,25 @@
+schema_version = 1
+suites = ["base"]
+
+[base_context]
+variable_name = "custom_data"
+
+[[variants]]
+axis = "multiline_string"
+
+[variants.context]
+variable_name = "custom_data"
+
+[[variants]]
+axis = "multiline_string"
+suffix = "_private"
+
+[variants.context]
+variable_name = "_customRoot"
+
+[[variants]]
+axis = "multiline_string"
+suffix = "_accessor_collision"
+
+[variants.context]
+variable_name = "fixtureRoot"

@@ -44,10 +44,10 @@ struct Value {
 };
 int main() {
 auto my_data = std::map<std::string, Value>{
-    {"minimum", Value{-2147483648}},
+    {"minimum", Value{(-2147483647 - 1)}},
     {"neighbor", Value{-2147483647}},
     {"maximum", Value{2147483647}},
-    {"nested", Value{std::vector<int>{-2147483648}}},
+    {"nested", Value{std::vector<int>{(-2147483647 - 1)}}},
 };
     (void)my_data;
     return 0;

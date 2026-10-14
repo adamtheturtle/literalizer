@@ -4,3 +4,4 @@ var std = new Dictionary<string, double> {
     ["positive"] = double.PositiveInfinity,
     ["negative"] = double.NegativeInfinity
 };
+    _ = std;

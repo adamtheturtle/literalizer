@@ -3,5 +3,5 @@ fn main() {
         vec![None::<()>],
         vec![],
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

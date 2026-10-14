@@ -1,4 +1,4 @@
-record Record0(int[] Pair, object[] Mixed, object[] Triple, object[] Nested, object[] Empty, int[] Single, int[] Long);
+record Record0(int[] Pair, object?[] Mixed, object?[] Triple, object?[] Nested, object?[] Empty, int[] Single, int[] Long);
 class Check {
     public static void Main() {
 var my_data = new Record0(
@@ -6,27 +6,27 @@ var my_data = new Record0(
         1,
         2
     },
-    new object[] {
+    new object?[] {
         1,
         "text"
     },
-    new object[] {
+    new object?[] {
         1,
         "text",
         true
     },
-    new object[] {
-        new object[] {
+    new object?[] {
+        new object?[] {
             1,
             "text"
         },
-        new object[] {
+        new object?[] {
             2,
             false,
             3.5
         }
     },
-    new object[] {},
+    new object?[] {},
     new int[] {
         1
     },
@@ -37,5 +37,6 @@ var my_data = new Record0(
         4
     }
 );
+    _ = my_data;
     }
 }

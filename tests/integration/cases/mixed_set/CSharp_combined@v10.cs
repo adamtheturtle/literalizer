@@ -1,11 +1,12 @@
 using System.Collections.Generic;
-var my_data = new HashSet<object> {
+var my_data = new HashSet<object?> {
     true,
     42,
     "apple"
 };
-my_data = new HashSet<object> {
+my_data = new HashSet<object?> {
     true,
     42,
     "apple"
 };
+    _ = my_data;

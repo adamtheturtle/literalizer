@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+ref_declarations = { shared = '{"value": [1, 2]}' }
+variant_only = true
+
+[[call.variants]]
+axis = "json_type"

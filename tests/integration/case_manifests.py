@@ -16,7 +16,6 @@ from pydantic import (
     BeforeValidator,
     Field,
     InstanceOf,
-    ValidationError,
     ValidationInfo,
     model_validator,
 )
@@ -25,7 +24,7 @@ import literalizer
 from literalizer import ValueInput
 from literalizer.languages import ALL_LANGUAGES
 
-from .case_inputs import CaseInput, infer_case_input
+from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
 from .language_metadata import language_metadata
 from .language_specs import make_spec
 from .suite_gates import SuiteGate, gates_admit, no_gates, validate_gate_names
@@ -408,6 +407,13 @@ def _empty_sources() -> dict[str, str]:
     return {}
 
 
+def _empty_ref_cases() -> dict[
+    literalizer.LanguageCls, literalizer.IdentifierCase
+]:
+    """Return a typed empty language-to-reference-case mapping."""
+    return {}
+
+
 class _OwnedCaseSpec(
     BaseModel,
     arbitrary_types_allowed=True,
@@ -463,7 +469,8 @@ class RefCaseSpec(  # noqa: NOD001
     case for the ``ref_case`` argument of :func:`literalizer.literalize`
     instead of using the language's default (``identifier_cases[0]``).
     Discovery skips any language whose ``supported_ref_cases`` does not
-    include the override.
+    include the override. ``ref_case_by_language`` can choose a different
+    explicit case for a language with a compiler-enforced naming convention.
     """
 
     ref_key: str = "$ref"
@@ -479,6 +486,9 @@ class RefCaseSpec(  # noqa: NOD001
     json_type: str | None = None
     dict_format: str | None = None
     ref_case_override: RefIdentifierCase | None = None
+    ref_case_by_language: dict[ManifestLanguage, RefIdentifierCase] = Field(
+        default_factory=_empty_ref_cases,
+    )
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
     bound_refs: Mapping[str, ValueInput] | None = None
     extra_ref_value_sources: dict[str, str] = Field(
@@ -487,6 +497,12 @@ class RefCaseSpec(  # noqa: NOD001
     explicit_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
+
+    def ref_case_for(
+        self, *, lang_cls: literalizer.LanguageCls
+    ) -> literalizer.IdentifierCase | None:
+        """Resolve the explicitly requested case for one language."""
+        return self.ref_case_by_language.get(lang_cls, self.ref_case_override)
 
     def resolved_variable_form(self) -> literalizer.VariableForm:
         """Return the public API variable form selected by the
@@ -658,6 +674,7 @@ class _CaseManifestData(  # noqa: NOD001
 
     schema_version: Literal[1]
     input: str | None = None
+    expected_reused_anchor_warning: ReusedAnchorWarningSpec | None = None
     suites: list[SuiteName] = Field(default_factory=_empty_suites)
     owner: OwnerName | None = None
     # The load-bearing parts this input plays, beyond its participation
@@ -787,7 +804,7 @@ def _load_manifest_data(*, path: Path) -> _CaseManifestData:
             obj=raw,
             context={"case_dir_name": path.parent.name},
         )
-    except (ValidationError, ValueError) as exc:
+    except ValueError as exc:
         raise _fail(path=path, message=str(object=exc)) from exc
     return data
 
@@ -804,9 +821,19 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         input_info = infer_case_input(
             case_dir=case_dir,
             input_name=data.input,
+            expected_reused_anchor_warning=data.expected_reused_anchor_warning,
         )
     except ValueError as exc:
         raise _fail(path=path, message=str(object=exc)) from exc
+
+    if (
+        input_info.expected_reused_anchor_warning is not None
+        and input_info.input_format is not literalizer.InputFormat.YAML
+    ):
+        raise _fail(
+            path=path,
+            message="expected_reused_anchor_warning requires YAML input",
+        )
 
     return CaseManifest(
         path=path,

@@ -1,5 +1,5 @@
 class Check {
-static object process(object data = null, object count = null) => null;
+static object? process(object? data = null, object? count = null) => null;
     public static void Main() {
 var single_var = new int[] {
     4,

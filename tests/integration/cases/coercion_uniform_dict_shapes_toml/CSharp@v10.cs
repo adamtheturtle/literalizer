@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System;
-var my_data = new Dictionary<string, object> {
+var my_data = new Dictionary<string, object?> {
     ["_"] = (new Dictionary<string, string> {["type"] = "create", ["name"] = "a"}, new Dictionary<string, string> {["type"] = "update", ["name"] = "b"})
 };
+    _ = my_data;

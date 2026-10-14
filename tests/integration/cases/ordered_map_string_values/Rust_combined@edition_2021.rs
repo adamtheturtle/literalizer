@@ -5,10 +5,11 @@ fn main() {
         ("second", "two"),
         ("third", "three"),
     ]);
+    let _ = &my_data;
     my_data = HashMap::from([
         ("first", "one"),
         ("second", "two"),
         ("third", "three"),
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

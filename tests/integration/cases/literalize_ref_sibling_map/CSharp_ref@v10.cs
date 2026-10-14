@@ -7,3 +7,4 @@ var my_data = (
     new Dictionary<string, int> {["k"] = 1},
     SiblingMap
 );
+    _ = my_data;

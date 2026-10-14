@@ -4,5 +4,5 @@ fn main() {
     let ZVal: serde_json::Value = serde_json::json!({
         "a": 1,
     });
-    let _ = ZVal;
+    let _ = &ZVal;
 }

@@ -4,3 +4,4 @@ JsonNode? my_data = new JsonArray {
     false,
     true
 };
+    _ = my_data;

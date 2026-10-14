@@ -1,7 +1,7 @@
 """COBOL language specification (GnuCOBOL free-format)."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -66,6 +66,7 @@ from literalizer._language import (
     ModifierCombination,
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
+    RenderedCallStub,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -342,11 +343,11 @@ def _pic_from_value(
     """Return a COBOL PIC (or storage) clause for a source value."""
     if original is None:
         return "PIC X(1)"
-    if isinstance(original, datetime.datetime) and datetime_as_int:
+    if isinstance(original, dt.datetime) and datetime_as_int:
         return "PIC S9(18) COMP-5"
     if isinstance(
         original,
-        (str, bytes, datetime.date, datetime.time),
+        (str, bytes, dt.date, dt.time),
     ):
         inner = formatted[1:-1].replace('""', '"')
         return f"PIC X({max(1, len(inner.encode(encoding='utf-8')))})"
@@ -665,7 +666,7 @@ def _cobol_call_stub(
     /,
     *,
     indent: str,
-) -> tuple[str, ...]:
+) -> tuple[RenderedCallStub, ...]:
     """Return a nested COBOL program stub for a call target.
 
     The stub is a minimal nested program that accepts any arguments
@@ -682,20 +683,14 @@ def _cobol_call_stub(
             f"END PROGRAM {name}.",
         ]
     )
-    return (stub,)
+    return (RenderedCallStub(code=stub, declared_names=frozenset({name})),)
 
 
 @beartype
-def _cobol_wrapper_program_name(*, body_preamble: tuple[str, ...]) -> str:
+def _cobol_wrapper_program_name(*, program_ids: frozenset[str]) -> str:
     """Choose a wrapper name distinct from its generated nested
     programs.
     """
-    program_ids = {
-        line.removeprefix("PROGRAM-ID. ").removesuffix(".")
-        for stub in body_preamble
-        for line in stub.splitlines()
-        if line.startswith("PROGRAM-ID. ")
-    }
     name = "CHECK"
     while name in program_ids:
         name += "-WRAPPER"
@@ -1695,7 +1690,7 @@ class Cobol(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix=self.indent)
         stubs = "\n".join(body_preamble)
         program_name = _cobol_wrapper_program_name(
-            body_preamble=body_preamble,
+            program_ids=context.call_stub_names,
         )
         program_prefix = Cobol._PROGRAM_PREFIX.replace(
             "PROGRAM-ID. CHECK.", f"PROGRAM-ID. {program_name}."
@@ -1922,7 +1917,7 @@ class Cobol(metaclass=LanguageCls):
         self,
     ) -> Callable[
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
-        tuple[str, ...],
+        tuple[RenderedCallStub, ...],
     ]:
         """Return nested-program stub declarations for a call
         expression.
@@ -2051,17 +2046,17 @@ class Cobol(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

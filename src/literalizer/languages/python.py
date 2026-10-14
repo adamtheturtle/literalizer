@@ -1,14 +1,14 @@
 """Python language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, ClassVar, assert_never
+from typing import TYPE_CHECKING, ClassVar, Self, assert_never
 
 from beartype import beartype
 
@@ -213,7 +213,7 @@ def _format_string_multiline(value: str) -> str:
 
 @beartype
 def _format_datetime_python(
-    value: datetime.datetime,
+    value: dt.datetime,
     /,
     *,
     utc_tzinfo_expr: str,
@@ -232,7 +232,7 @@ def _format_datetime_python(
     if value.microsecond != 0:
         parts.append(f"microsecond={value.microsecond}")
     if value.tzinfo is not None and (offset := value.utcoffset()) is not None:
-        if offset == datetime.timedelta():
+        if offset == dt.timedelta():
             parts.append(f"tzinfo={utc_tzinfo_expr}")
         else:
             total_seconds = int(offset.total_seconds())
@@ -254,7 +254,7 @@ def _format_datetime_python(
 
 
 @beartype
-def _format_time_python(value: datetime.time) -> str:
+def _format_time_python(value: dt.time) -> str:
     """Format a time as a Python ``datetime.time(...)`` constructor
     call.
     """
@@ -408,6 +408,26 @@ def _format_inline_type_hint_declaration(
     return f"{name}: {hint} = {value}"
 
 
+class _PythonTypeDependencies(str):
+    """Source whose type producer retained its typing dependency."""
+
+    __slots__ = ("_requires_union",)
+
+    _requires_union: bool
+
+    @classmethod
+    def create(cls, code: str, /, *, requires_union: bool) -> Self:
+        """Keep the union import decision alongside the emitted type."""
+        result = cls(object=code)
+        result._requires_union = requires_union
+        return result
+
+    @property
+    def requires_union(self) -> bool:
+        """Whether this producer selected a typing.Union annotation."""
+        return self._requires_union
+
+
 @beartype
 def _join_union_pipe(types: list[str]) -> str:
     """Join *types* with ``|`` (Python 3.10+ union syntax)."""
@@ -511,18 +531,18 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
 @beartype
 def _python_temporal_hint(
     *,
-    data: datetime.date | datetime.time,
+    data: dt.date | dt.time,
     date_hint: str,
     datetime_hint: str,
     time_hint: str,
 ) -> str:
     """Derive a Python type hint for a temporal scalar value."""
     match data:
-        case datetime.datetime():
+        case dt.datetime():
             hint = datetime_hint
-        case datetime.date():
+        case dt.date():
             hint = date_hint
-        case datetime.time():
+        case dt.time():
             hint = time_hint
         case _ as unreachable:
             assert_never(unreachable)
@@ -552,7 +572,7 @@ def _python_scalar_hint(
             hint = "str"
         case bytes():
             hint = bytes_hint
-        case datetime.datetime() | datetime.date() | datetime.time():
+        case dt.datetime() | dt.date() | dt.time():
             hint = _python_temporal_hint(
                 data=data,
                 date_hint=date_hint,
@@ -1155,7 +1175,7 @@ class Python(metaclass=LanguageCls):
                 "year={year}, month={month}, day={day})",
             ),
             preamble_lines=("import datetime",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -1179,7 +1199,7 @@ class Python(metaclass=LanguageCls):
                 utc_tzinfo_expr="datetime.UTC",
             ),
             preamble_lines=("import datetime",),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
@@ -1760,7 +1780,52 @@ class Python(metaclass=LanguageCls):
             f"{self.indent}{field.identifier}: {field.type_name}"
             for field in fields
         ]
-        return "\n".join(lines)
+        return _PythonTypeDependencies.create(
+            "\n".join(lines),
+            requires_union=any(
+                isinstance(field.type_name, _PythonTypeDependencies)
+                and field.type_name.requires_union
+                for field in fields
+            ),
+        )
+
+    def _type_hint_with_dependencies(
+        self, data: Value, /
+    ) -> _PythonTypeDependencies:
+        """Retain imports when the annotation producer chooses its
+        syntax.
+        """
+        requires_union = False
+        union_formatter = self._join_union
+
+        def _join_types(types: list[str], /) -> str:
+            """Record the selected union syntax before spelling the
+            annotation.
+            """
+            nonlocal requires_union
+            requires_union = self._uses_typing_union
+            return union_formatter(types)
+
+        sequence_hint, set_hint, dict_hint = self._collection_type_hint_names
+        code = _python_type_hint(
+            data=data,
+            bytes_hint=self.bytes_format.type_hint,
+            date_hint=self.date_format.type_hint,
+            datetime_hint=self.datetime_format.type_hint,
+            time_hint="datetime.time",
+            sequence_hint=sequence_hint,
+            set_hint=set_hint,
+            dict_hint=dict_hint,
+            default_set_element_type=self.default_set_element_type,
+            default_sequence_element_type=self.default_sequence_element_type,
+            default_dict_value_type=self.default_dict_value_type,
+            default_dict_key_type=self.default_dict_key_type,
+            join_union=_join_types,
+            record_name_for_value=self._record_strategy.record_name_for_value,
+        )
+        return _PythonTypeDependencies.create(
+            code, requires_union=requires_union
+        )
 
     @cached_property
     def _record_field_type(self) -> Callable[[RecordFieldType], str]:
@@ -1780,8 +1845,7 @@ class Python(metaclass=LanguageCls):
         sequence/set/dict/date/datetime formats and the targeted
         Python version.
         """
-        sequence_hint, set_hint, dict_hint = self._collection_type_hint_names
-        join_union = self._join_union
+        sequence_hint, _, _ = self._collection_type_hint_names
 
         def _field_type(request: RecordFieldType, /) -> str:
             """Type a record field from its nested-record name or its
@@ -1795,26 +1859,7 @@ class Python(metaclass=LanguageCls):
                         f"{sequence_hint}[{request.element_record_name}, ...]"
                     )
                 return f"{sequence_hint}[{request.element_record_name}]"
-            return _python_type_hint(
-                data=request.value,
-                bytes_hint=self.bytes_format.type_hint,
-                date_hint=self.date_format.type_hint,
-                datetime_hint=self.datetime_format.type_hint,
-                time_hint="datetime.time",
-                sequence_hint=sequence_hint,
-                set_hint=set_hint,
-                dict_hint=dict_hint,
-                default_set_element_type=self.default_set_element_type,
-                default_sequence_element_type=(
-                    self.default_sequence_element_type
-                ),
-                default_dict_value_type=self.default_dict_value_type,
-                default_dict_key_type=self.default_dict_key_type,
-                join_union=join_union,
-                record_name_for_value=(
-                    self._record_strategy.record_name_for_value
-                ),
-            )
+            return self._type_hint_with_dependencies(request.value)
 
         return _field_type
 
@@ -1874,18 +1919,22 @@ class Python(metaclass=LanguageCls):
             blocks = record_preamble(data)
             if len(blocks) == 0:
                 return ()
-            typing_import: tuple[str, ...]
-            # Root annotations can contain nominal unions even when the
-            # dataclass fields and structural scalar types are uniform.
-            root_declaration = self.format_variable_declaration(
-                "_", "", data, frozenset()
+            requires_union = any(
+                isinstance(block, _PythonTypeDependencies)
+                and block.requires_union
+                for block in blocks
             )
-            if any("Union[" in block for block in blocks) or (
-                "Union[" in root_declaration
+            if (
+                self.variable_type_hints
+                is self.variable_type_hints_formats.ALWAYS
             ):
+                requires_union = (
+                    requires_union
+                    or self._type_hint_with_dependencies(data).requires_union
+                )
+            typing_import: tuple[str, ...] = ()
+            if requires_union:
                 typing_import = ("from typing import Union",)
-            else:
-                typing_import = ()
             return ("import dataclasses", *typing_import, *blocks)
 
         return _preamble
@@ -1966,12 +2015,12 @@ class Python(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if (
             self.datetime_format is self.datetime_formats.PYTHON
@@ -1984,7 +2033,7 @@ class Python(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return _format_time_python
 
@@ -2191,7 +2240,7 @@ class Python(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            extra={datetime.time: ("import datetime",)},
+            extra={dt.time: ("import datetime",)},
         )
 
     @cached_property

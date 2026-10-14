@@ -4,5 +4,5 @@ fn main() {
         HashMap::from([("mapping", HashMap::<String, String>::from([]))]),
         <HashMap<&str, HashMap<String, String>>>::from([]),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

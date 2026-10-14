@@ -1,7 +1,7 @@
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 class Main {
-static Object consume(Object... args) { return null; }
+static Object consume(Object arg0) { return null; }
     public static void main() throws Exception {
 JsonNode my_null = new ObjectMapper().readTree("null");
 JsonNode regular_null = new ObjectMapper().readTree("null");

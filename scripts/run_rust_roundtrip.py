@@ -80,6 +80,8 @@ def main() -> None:
                     rustc,
                     "--edition",
                     "2021",
+                    "-D",
+                    "warnings",
                     "-L",
                     f"dependency={deps_dir}",
                     "--extern",

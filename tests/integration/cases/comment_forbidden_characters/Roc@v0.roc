@@ -8,6 +8,6 @@ Val : [
 
 my_data : Val
 my_data = RDict [
-    ("a", RInt 1i128),  # tab	here and bidi <U+202E>after
+    ("a", RInt 1i128),  # tab here and bidi <U+202E>after
     ("b", RInt 2i128),
 ]

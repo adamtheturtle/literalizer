@@ -5,6 +5,6 @@ pub type GVal {
 pub fn process(_value: a) -> Nil { Nil }
 
 pub fn main() {
-  process(GInt(1))
-  process(GInt(2))
+  let _ = process(GInt(1))
+  let _ = process(GInt(2))
 }

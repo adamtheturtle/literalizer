@@ -7,3 +7,4 @@ my_data = (
     ValueTuple.Create((object?)null),
     ValueTuple.Create()
 );
+    _ = my_data;

@@ -1,6 +1,6 @@
 fn main() {
-    struct ObjType_;
-    impl ObjType_ { fn class<A>(&self, _a: A) {} }
-    let obj = ObjType_;
+    struct ObjType;
+    impl ObjType { fn class<A>(&self, _a: A) {} }
+    let obj = ObjType;
     obj.class(42);
 }

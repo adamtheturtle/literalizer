@@ -1,8 +1,9 @@
 """OCaml language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
+import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -17,6 +18,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
+    datetime_epoch_seconds,
     datetime_ymdhms_formatter,
     format_date_iso,
     format_datetime_epoch,
@@ -123,7 +125,7 @@ _OCAML_SCALAR_ENTRY_TAGS: dict[type[object], str] = {
     float: "Float",
     str: "Str",
     bytes: "Str",
-    datetime.time: "Str",
+    dt.time: "Str",
 }
 
 
@@ -207,17 +209,36 @@ def _ocaml_entry_tag(
     datetime_type: type,
 ) -> str | None:
     """Return the ``val_t`` tag required for a source value."""
-    if isinstance(original, datetime.datetime):
-        if datetime_type is datetime.datetime:
+    if isinstance(original, dt.datetime):
+        if datetime_type is dt.datetime:
             return None
         if datetime_type is int:
             return "Int"
         return "Str"
-    if isinstance(original, datetime.date):
-        if date_type is datetime.date:
+    if isinstance(original, dt.date):
+        if date_type is dt.date:
             return None
         return "Str"
     return _OCAML_SCALAR_ENTRY_TAGS.get(type(original))
+
+
+@beartype
+def _ocaml_constructor_argument(
+    original: Value, formatted: str, /, *, epoch_datetimes: bool
+) -> str:
+    """Parenthesize a negative numeric constructor argument."""
+    match original:
+        case int():
+            negative = original < 0
+        case float():
+            negative = (
+                math.isfinite(original) and math.copysign(1, original) < 0
+            )
+        case dt.datetime() if epoch_datetimes:
+            negative = datetime_epoch_seconds(value=original) < 0
+        case _:
+            negative = False
+    return f"({formatted})" if negative else formatted
 
 
 @beartype
@@ -238,9 +259,9 @@ def _apply_ocaml_entry(
     )
     if tag is None:
         return formatted
-    literal = formatted
-    if literal.startswith("-"):
-        literal = f"({formatted})"
+    literal = _ocaml_constructor_argument(
+        original, formatted, epoch_datetimes=datetime_type is int
+    )
     return f"{prefix}{tag} {literal}"
 
 
@@ -301,9 +322,9 @@ def _apply_yojson_entry(original: Value, formatted: str) -> str:
             tag = "Float"
         case _:
             tag = "String"
-    literal = formatted
-    if literal.startswith("-"):
-        literal = f"({formatted})"
+    literal = _ocaml_constructor_argument(
+        original, formatted, epoch_datetimes=False
+    )
     return f"`{tag} {literal}"
 
 
@@ -660,7 +681,7 @@ class OCaml(metaclass=LanguageCls):
                 template="ODate ({year}, {month}, {day})",
             ),
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -678,7 +699,7 @@ class OCaml(metaclass=LanguageCls):
                 millisecond_template=None,
             ),
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1091,22 +1112,22 @@ class OCaml(metaclass=LanguageCls):
             float: "float",
             str: "string",
             bytes: "string",
-            datetime.time: "string",
+            dt.time: "string",
         }
         scalar_type = scalar_types.get(type(data))
         if scalar_type is not None:
             return scalar_type
-        if isinstance(data, datetime.datetime):
+        if isinstance(data, dt.datetime):
             datetime_types: dict[type, str] = {
                 int: "int",
                 str: "string",
-                datetime.datetime: ("((int * int * int) * (int * int * int))"),
+                dt.datetime: ("((int * int * int) * (int * int * int))"),
             }
             return datetime_types[self.datetime_format.value.type_produced]
-        if isinstance(data, datetime.date):
+        if isinstance(data, dt.date):
             date_types: dict[type, str] = {
                 str: "string",
-                datetime.date: "(int * int * int)",
+                dt.date: "(int * int * int)",
             }
             return date_types[self.date_format.value.type_produced]
         msg = f"OCaml record mode cannot type {type(data).__name__}"
@@ -1340,9 +1361,9 @@ class OCaml(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
-        base_formatter: Callable[[datetime.date], str] = self.date_format
+        base_formatter: Callable[[dt.date], str] = self.date_format
         if self._json_type_active:
             return format_date_iso
         if self.date_format is type(self.date_format).OCAML:
@@ -1357,11 +1378,9 @@ class OCaml(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self._json_type_active:
             return format_datetime_iso
         if self.datetime_format is type(self.datetime_format).OCAML:
@@ -1382,7 +1401,7 @@ class OCaml(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
@@ -1543,9 +1562,9 @@ class OCaml(metaclass=LanguageCls):
             float: (_h, f"  | {p}Float of float"),
             str: (_h, f"  | {p}Str of string"),
             bytes: (_h, f"  | {p}Str of string"),
-            datetime.time: (_h, f"  | {p}Str of string"),
-            datetime.date: (_h, _date_constructor),
-            datetime.datetime: (_h, _datetime_constructor),
+            dt.time: (_h, f"  | {p}Str of string"),
+            dt.date: (_h, _date_constructor),
+            dt.datetime: (_h, _datetime_constructor),
             list: (
                 _h,
                 f"  | {p}Array of {self.type_name} array"

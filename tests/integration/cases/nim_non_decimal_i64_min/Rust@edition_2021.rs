@@ -4,5 +4,5 @@ fn main() {
         -1,
         9223372036854775807i64,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

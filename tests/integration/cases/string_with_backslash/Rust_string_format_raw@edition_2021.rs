@@ -8,5 +8,5 @@ fn main() {
         r#"both "quotes''' here"#,
         "line1\\nline2\nwith newline",
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

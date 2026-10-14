@@ -5,5 +5,5 @@ pub fn process(_data: a) -> Nil { Nil }
 
 pub fn main() {
   let unknown_value = GList([])
-  process(GList([unknown_value]))
+  let _ = process(GList([unknown_value]))
 }

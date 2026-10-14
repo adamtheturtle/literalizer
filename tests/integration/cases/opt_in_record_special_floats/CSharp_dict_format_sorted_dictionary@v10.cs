@@ -5,3 +5,4 @@ var my_data = new SortedDictionary<string, double> {
     ["nan_value"] = double.NaN,
     ["finite"] = 1.5
 };
+    _ = my_data;

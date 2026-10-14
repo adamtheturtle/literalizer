@@ -7,3 +7,4 @@ var my_data = (
     Shared,
     Shared
 );
+    _ = my_data;

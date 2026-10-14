@@ -3,5 +3,5 @@ fn main() {
         "hello",
         42,
     );
-    let _ = my_data;
+    let _ = &my_data;
 }

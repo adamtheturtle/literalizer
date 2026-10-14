@@ -1,7 +1,7 @@
 """V language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -15,7 +15,6 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
-    make_narrowed_empty_form,
 )
 from literalizer._formatters.format_dates import (
     datetime_epoch_formatter,
@@ -60,6 +59,8 @@ from literalizer._formatters.record_strategy import (
     identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
     infer_element_type,
     record_shape_for_dict,
 )
@@ -90,6 +91,7 @@ from literalizer._language import (
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedEmptySequence,
     RenderedRecordLiteral,
     RoundTripCapability,
     SequenceFormatConfig,
@@ -135,30 +137,74 @@ _format_string = make_backslash_string_formatter(
 
 
 @beartype
-def _v_empty_array_rank(value: Value, /) -> int | None:
-    """Infer the rank of a uniform array tree containing only empty leaves."""
+@dataclasses.dataclass(frozen=True)
+class _VEmptyArrayShape:
+    """Uniform empty-array rank and retained fallback-element use."""
+
+    rank: int
+    uses_fallback_element_type: bool
+
+
+@beartype
+def _v_empty_array_shape(
+    value: Value,
+    /,
+    *,
+    empty_container_overrides: Mapping[int, str | RenderedEmptySequence],
+) -> _VEmptyArrayShape | None:
+    """Infer an empty array's rank and the types chosen for its leaves."""
     if not isinstance(value, list):
         return None
     if len(value) == 0:
-        return 1
-    ranks = {_v_empty_array_rank(item) for item in value}
+        override = empty_container_overrides.get(id(value))
+        uses_fallback = override is None
+        if isinstance(override, RenderedEmptySequence):
+            uses_fallback = override.uses_fallback_element_type
+        return _VEmptyArrayShape(
+            rank=1, uses_fallback_element_type=uses_fallback
+        )
+    shapes = [
+        _v_empty_array_shape(
+            item, empty_container_overrides=empty_container_overrides
+        )
+        for item in value
+    ]
+    ranks = {None if shape is None else shape.rank for shape in shapes}
     if len(ranks) != 1:
         return None
     (rank,) = ranks
     if rank is None:
         return None
-    return rank + 1
+    return _VEmptyArrayShape(
+        rank=rank + 1,
+        uses_fallback_element_type=any(
+            shape is not None and shape.uses_fallback_element_type
+            for shape in shapes
+        ),
+    )
 
 
 @beartype
-def _format_v_empty_array_entry(original: Value, formatted: str, /) -> str:
+def _format_v_empty_array_entry(
+    original: Value,
+    formatted: str,
+    /,
+    *,
+    empty_container_overrides: Mapping[int, str | RenderedEmptySequence],
+) -> str:
     """Name the type of nested empty arrays that V cannot infer
     together.
     """
-    rank = _v_empty_array_rank(original)
-    if rank is None or rank == 1 or f"[]{_V_IFACE_NAME}{{}}" not in formatted:
+    shape = _v_empty_array_shape(
+        original, empty_container_overrides=empty_container_overrides
+    )
+    if (
+        shape is None
+        or shape.rank == 1
+        or not shape.uses_fallback_element_type
+    ):
         return formatted
-    return f"{'[]' * rank}{_V_IFACE_NAME}({formatted})"
+    return f"{'[]' * shape.rank}{_V_IFACE_NAME}({formatted})"
 
 
 @beartype
@@ -200,11 +246,35 @@ _v_element_to_type = make_element_to_type(
     fallback_value_type=_V_IFACE_NAME,
 )
 
-_v_narrowed_empty_form = make_narrowed_empty_form(
-    element_to_type=_v_element_to_type,
-    template="[]{type}{{}}",
-    fallback_type=_V_IFACE_NAME,
-)
+
+@beartype
+def _v_empty_element_uses_fallback(
+    element_type: type | ListType | DictType | None,
+    /,
+) -> bool:
+    """Retain whether inference needs the interface-valued leaf type."""
+    if isinstance(element_type, ListType):
+        return _v_empty_element_uses_fallback(element_type.inner)
+    return element_type is None or _v_element_to_type(element_type) is None
+
+
+@beartype
+def _v_narrowed_empty_form(
+    siblings: Sequence[list[Value]],
+) -> RenderedEmptySequence:
+    """Render a sibling-typed empty array with its inference decision."""
+    element_type = infer_element_type(items=siblings[0])
+    type_name = None
+    if element_type is not None:
+        type_name = _v_element_to_type(element_type)
+    if type_name is None:
+        type_name = _V_IFACE_NAME
+    return RenderedEmptySequence(
+        code=f"[]{type_name}{{}}",
+        uses_fallback_element_type=_v_empty_element_uses_fallback(
+            element_type
+        ),
+    )
 
 
 @beartype
@@ -529,9 +599,9 @@ _V_SCALAR_FIELD_TYPE: Mapping[type, str] = MappingProxyType(
         float: "f64",
         str: "string",
         bytes: "string",
-        datetime.date: "string",
-        datetime.datetime: "string",
-        datetime.time: "string",
+        dt.date: "string",
+        dt.datetime: "string",
+        dt.time: "string",
     },
 )
 
@@ -1318,12 +1388,27 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
-        """Format an entry with an explicit rank for nested empty
-        arrays.
+        """Return the ordinary sequence-entry formatter."""
+        return passthrough_sequence_entry
+
+    def format_sequence_entry_with_context(
+        self,
+        original: Value,
+        formatted: str,
+        /,
+        *,
+        empty_container_overrides: Mapping[int, str | RenderedEmptySequence],
+    ) -> str:
+        """Use retained empty types when an entry needs an explicit
+        rank.
         """
         if self.heterogeneous_strategy.name == "ERROR":
-            return _format_v_empty_array_entry
-        return passthrough_sequence_entry
+            return _format_v_empty_array_entry(
+                original,
+                formatted,
+                empty_container_overrides=empty_container_overrides,
+            )
+        return self.format_sequence_entry(original, formatted)
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
@@ -1350,7 +1435,7 @@ class V(metaclass=LanguageCls):
         branch is exercised independently of the datetime format.
         """
         match value:
-            case datetime.datetime() if (
+            case dt.datetime() if (
                 self.datetime_format.value.type_produced is int
             ):
                 return datetime_epoch_seconds(value=value)
@@ -1694,12 +1779,12 @@ class V(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
         ``EPOCH`` seconds are routed through :attr:`format_integer` so
@@ -1710,9 +1795,7 @@ class V(metaclass=LanguageCls):
         for it.  In-range epoch seconds format identically to the plain
         integer, so every checked-in golden file stays byte-identical.
         """
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return datetime_epoch_formatter(
                 format_integer=self.format_integer,
@@ -1720,7 +1803,7 @@ class V(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

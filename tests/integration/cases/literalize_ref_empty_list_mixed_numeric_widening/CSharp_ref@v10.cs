@@ -11,3 +11,4 @@ var my_data = (
     IntegerValues,
     FloatValues
 );
+    _ = my_data;

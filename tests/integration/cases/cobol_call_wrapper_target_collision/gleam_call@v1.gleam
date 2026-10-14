@@ -4,5 +4,5 @@ pub type GVal {
 pub fn check(_a: a) -> Nil { Nil }
 
 pub fn main() {
-  check(GInt(42))
+  let _ = check(GInt(42))
 }

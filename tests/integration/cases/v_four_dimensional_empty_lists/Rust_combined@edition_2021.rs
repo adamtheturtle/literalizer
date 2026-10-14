@@ -3,9 +3,10 @@ fn main() {
         vec![vec![Vec::<String>::new()]],
         vec![vec![Vec::<String>::new()]],
     ];
+    let _ = &my_data;
     my_data = vec![
         vec![vec![Vec::<String>::new()]],
         vec![vec![Vec::<String>::new()]],
     ];
-    let _ = my_data;
+    let _ = &mut my_data;
 }

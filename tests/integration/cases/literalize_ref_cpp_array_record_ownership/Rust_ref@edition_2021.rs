@@ -1,15 +1,15 @@
 #[derive(Clone)]
-struct Record1 {
-    values: [i32; 2],
+pub struct Record1 {
+    pub values: [i32; 2],
 }
 #[derive(Clone)]
-struct Record2 {
-    nested: [[i32; 2]; 2],
+pub struct Record2 {
+    pub nested: [[i32; 2]; 2],
 }
 #[derive(Clone)]
-struct Record0 {
-    trivial: Record1,
-    nested: Record2,
+pub struct Record0 {
+    pub trivial: Record1,
+    pub nested: Record2,
 }
 fn main() {
     let trivial = Record1 {
@@ -34,5 +34,5 @@ fn main() {
         trivial: trivial,
         nested: nested,
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

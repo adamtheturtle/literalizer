@@ -6,3 +6,4 @@ var my_data = (
     "second"
     /* trailing: * / |# -} *) (* ) =# ]] %} ]# % #> */
 );
+    _ = my_data;

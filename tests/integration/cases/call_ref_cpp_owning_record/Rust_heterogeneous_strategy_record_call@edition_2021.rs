@@ -1,6 +1,6 @@
 #[derive(Clone)]
-struct Record0 {
-    value: &'static str,
+pub struct Record0 {
+    pub value: &'static str,
 }
 fn main() {
     fn consume<A>(_value: A) {}

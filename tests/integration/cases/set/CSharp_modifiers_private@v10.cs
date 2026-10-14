@@ -5,5 +5,6 @@ private HashSet<string> my_data = new HashSet<string> {
     "banana",
     "cherry"
 };
-    public static void Main() {}
+    public static void Main() { }
+    public void _Read_my_data() { _ = my_data; }
 }

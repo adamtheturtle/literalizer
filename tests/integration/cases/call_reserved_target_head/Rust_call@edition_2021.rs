@@ -1,6 +1,6 @@
 fn main() {
-    struct ClassType_;
-    impl ClassType_ { fn member<A>(&self, _a: A) {} }
-    let class = ClassType_;
+    struct ClassType;
+    impl ClassType { fn member<A>(&self, _a: A) {} }
+    let class = ClassType;
     class.member(42);
 }

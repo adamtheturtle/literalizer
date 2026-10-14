@@ -7,5 +7,5 @@ fn main() {
         shared,
         shared,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

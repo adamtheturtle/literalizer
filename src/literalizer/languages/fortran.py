@@ -1,7 +1,7 @@
 """Fortran language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -170,7 +170,7 @@ def _format_fortran_bytes_base64(value: bytes) -> str:
 
 
 @beartype
-def _format_fortran_datetime_epoch(value: datetime.datetime, /) -> str:
+def _format_fortran_datetime_epoch(value: dt.datetime, /) -> str:
     """Format a datetime as an int64 Fortran epoch literal."""
     return f"{format_datetime_epoch(value=value)}_int64"
 
@@ -211,7 +211,7 @@ def _apply_fortran_entry(
     match original:
         case bool():
             return formatted
-        case datetime.datetime():
+        case dt.datetime():
             name = str_name
             if datetime_as_int:
                 name = int_name
@@ -220,7 +220,7 @@ def _apply_fortran_entry(
             return f"{int_name}({formatted})"
         case float():
             return f"{real_name}({formatted})"
-        case str() | bytes() | datetime.date() | datetime.time():
+        case str() | bytes() | dt.date() | dt.time():
             return f"{str_name}({formatted})"
         case _:
             return formatted
@@ -1511,17 +1511,17 @@ class Fortran(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

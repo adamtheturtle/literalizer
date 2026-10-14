@@ -10,5 +10,5 @@ type MgrType_() =
 type AppType_() =
     member _.mgr = MgrType_()
 let app = AppType_()
-app.mgr.run(FMap [("type", FStr "create"); ("pr_id", FStr "pr_1"); ("draft", FBool true)])
-app.mgr.run(FMap [("type", FStr "create"); ("pr_id", FStr "pr_2")])
+app.mgr.run(FMap [("type", FStr "create"); ("pr_id", FStr "pr_1"); ("draft", FBool true)]) |> ignore
+app.mgr.run(FMap [("type", FStr "create"); ("pr_id", FStr "pr_2")]) |> ignore

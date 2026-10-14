@@ -1,9 +1,10 @@
 class Check {
     public static void Main() {
-var my_data = new object[] {
+var my_data = new object?[] {
     1,
     "email",
     true
 };
+    _ = my_data;
     }
 }

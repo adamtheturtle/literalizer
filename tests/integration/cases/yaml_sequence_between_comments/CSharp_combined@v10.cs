@@ -10,3 +10,4 @@ my_data = (
     // This comment describes the next item.
     new Dictionary<string, string> {["item"] = "next"}
 );
+    _ = my_data;

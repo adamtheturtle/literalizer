@@ -4,5 +4,5 @@ fn main() {
     let arena: serde_json::Value = serde_json::json!({
         "a": 1,
     });
-    let _ = arena;
+    let _ = &arena;
 }

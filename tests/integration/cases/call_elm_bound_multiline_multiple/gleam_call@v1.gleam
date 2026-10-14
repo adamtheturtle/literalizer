@@ -9,10 +9,10 @@ pub fn main() {
     GInt(1),
     GInt(2),
   ])
-  f(GList([
+  let _ = f(GList([
     ref_data,
   ]))
-  f(GList([
+  let _ = f(GList([
     ref_data,
   ]))
 }

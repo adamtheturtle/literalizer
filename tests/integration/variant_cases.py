@@ -298,6 +298,16 @@ def case_for_manifest_variant(
 ) -> VariantCase:
     """Combine typed language expansion with case-local render context."""
     context = manifest_variant.context
+    variable_names = language_metadata(
+        language_id=variant.lang_cls.language_id
+    ).variants.declaration_style_variable_names
+    context = context.model_copy(
+        update={
+            "variable_name": variable_names.get(
+                variant.spec.declaration_style.name, context.variable_name
+            )
+        }
+    )
     variant = dataclasses.replace(
         variant,
         fixture_prefix=(

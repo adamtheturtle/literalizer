@@ -5,5 +5,5 @@ fn main() {
         (r#"crlf"#, "a\r\nb"),
         (r#"lf"#, "a\nb"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

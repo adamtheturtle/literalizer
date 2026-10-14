@@ -1,7 +1,7 @@
 """Gleam language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import math
 import re
@@ -92,14 +92,12 @@ from literalizer._language import (
     default_format_call_arg_ref_identifier,
     default_format_call_arg_ref_identifier_consumable,
     default_format_call_ref_identifier,
-    default_format_call_statement,
     default_format_call_stub,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
-    default_wrap_combined_in_file,
     identity_call_arg,
     identity_constructor_target,
     no_call_binding_body_preamble,
@@ -117,6 +115,12 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableSpecialFloatError,
 )
+
+
+@beartype
+def _gleam_discard_call(call: str, /) -> str:
+    """Evaluate a call while explicitly discarding its result."""
+    return f"let _ = {call}"
 
 
 @beartype
@@ -230,7 +234,7 @@ def _gleam_signed_base(
 
 
 @beartype
-def _apply_gleam_str_wrapped_date(value: datetime.date, prefix: str) -> str:
+def _apply_gleam_str_wrapped_date(value: dt.date, prefix: str) -> str:
     """Format a date as a Gleam string via ISO 8601."""
     return f"{prefix}Str({format_date_iso(value=value)})"
 
@@ -238,12 +242,12 @@ def _apply_gleam_str_wrapped_date(value: datetime.date, prefix: str) -> str:
 @beartype
 def _build_gleam_date_iso(
     prefix: str,
-) -> Callable[[datetime.date], str]:
+) -> Callable[[dt.date], str]:
     """Build a date formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.date) -> str:
+    def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_str_wrapped_date(value=value, prefix=prefix)
 
@@ -251,7 +255,7 @@ def _build_gleam_date_iso(
 
 
 @beartype
-def _apply_gleam_str_wrapped_time(value: datetime.time, prefix: str) -> str:
+def _apply_gleam_str_wrapped_time(value: dt.time, prefix: str) -> str:
     """Format a time as a Gleam string via ISO 8601."""
     return f"{prefix}Str({format_time_iso(value=value)})"
 
@@ -259,12 +263,12 @@ def _apply_gleam_str_wrapped_time(value: datetime.time, prefix: str) -> str:
 @beartype
 def _build_gleam_time_iso(
     prefix: str,
-) -> Callable[[datetime.time], str]:
+) -> Callable[[dt.time], str]:
     """Build a time formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.time) -> str:
+    def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_str_wrapped_time(value=value, prefix=prefix)
 
@@ -272,9 +276,7 @@ def _build_gleam_time_iso(
 
 
 @beartype
-def _apply_gleam_str_wrapped_datetime(
-    value: datetime.datetime, prefix: str
-) -> str:
+def _apply_gleam_str_wrapped_datetime(value: dt.datetime, prefix: str) -> str:
     """Format a datetime as a Gleam string via ISO 8601."""
     return f"{prefix}Str({format_datetime_iso(value=value)})"
 
@@ -282,12 +284,12 @@ def _apply_gleam_str_wrapped_datetime(
 @beartype
 def _build_gleam_datetime_iso(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_str_wrapped_datetime(value=value, prefix=prefix)
 
@@ -297,7 +299,7 @@ def _build_gleam_datetime_iso(
 @beartype
 def _build_gleam_datetime_epoch(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Int`` from
     Unix epoch seconds.
     """
@@ -523,10 +525,10 @@ def _gleam_format_call_target(parts: Sequence[str]) -> str:
 def _scalar_gleam_type(*, value: Value) -> type:
     """Return the preamble-relevant type bucket for a scalar *value*."""
     match value:
-        case datetime.datetime():
-            return datetime.datetime
-        case datetime.date():
-            return datetime.date
+        case dt.datetime():
+            return dt.datetime
+        case dt.date():
+            return dt.date
         case None:
             return type(None)
         case _:
@@ -571,11 +573,11 @@ def _gleam_preamble_for_types(
     """Render the shared carrier declaration for the collected types."""
     p = constructor_prefix
     int_types: set[type] = {int}
-    str_types: set[type] = {str, bytes, datetime.date, datetime.time}
+    str_types: set[type] = {str, bytes, dt.date, dt.time}
     if datetime_type_produced is int:
-        int_types.add(datetime.datetime)
+        int_types.add(dt.datetime)
     else:
-        str_types.add(datetime.datetime)
+        str_types.add(dt.datetime)
     constructors = [
         constructor
         for type_set, constructor in (
@@ -666,19 +668,19 @@ def _format_gleam_json_float_factory(
 
 
 @beartype
-def _format_gleam_json_date(value: datetime.date) -> str:
+def _format_gleam_json_date(value: dt.date) -> str:
     """Format a date as a ``json.string("...")`` ISO 8601 builder call."""
     return f"{_GLEAM_JSON_STRING_OPEN}{format_date_iso(value=value)})"
 
 
 @beartype
-def _format_gleam_json_time(value: datetime.time) -> str:
+def _format_gleam_json_time(value: dt.time) -> str:
     """Format a time as a ``json.string("...")`` ISO 8601 builder call."""
     return f"{_GLEAM_JSON_STRING_OPEN}{format_time_iso(value=value)})"
 
 
 @beartype
-def _format_gleam_json_datetime_iso(value: datetime.datetime) -> str:
+def _format_gleam_json_datetime_iso(value: dt.datetime) -> str:
     """Format a datetime as a ``json.string("...")`` ISO 8601 builder
     call.
     """
@@ -686,7 +688,7 @@ def _format_gleam_json_datetime_iso(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_gleam_json_datetime_epoch(value: datetime.datetime) -> str:
+def _format_gleam_json_datetime_epoch(value: dt.datetime) -> str:
     """Format a datetime as a ``json.int(<epoch>)`` builder call."""
     return f"json.int({format_datetime_epoch(value=value)})"
 
@@ -1268,7 +1270,10 @@ class Gleam(metaclass=LanguageCls):
             return _reject_gleam_native_call_arg
         return no_validate_call_arg
 
-    format_call_statement = default_format_call_statement
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Explicitly discard the value of an unbound call."""
+        return _gleam_discard_call
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -1295,7 +1300,20 @@ class Gleam(metaclass=LanguageCls):
             use_line = f"\n{self.indent}let _ = {variable_name}"
         return f"\npub fn main() {{\n{indented}{use_line}\n}}"
 
-    wrap_combined_in_file = default_wrap_combined_in_file
+    def wrap_combined_in_file(
+        self,
+        declaration: str,
+        assignment: str,
+        context: FileWrapperContext,
+    ) -> str:
+        """Consume both bindings before the second shadows the first."""
+        return self.wrap_in_file(
+            content=(
+                f"{declaration}\nlet _ = {context.variable_name}\n"
+                + assignment
+            ),
+            context=context,
+        )
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
@@ -1458,13 +1476,13 @@ class Gleam(metaclass=LanguageCls):
             float: "Float",
             str: "String",
             bytes: "String",
-            datetime.time: "String",
-            datetime.date: "String",
+            dt.time: "String",
+            dt.date: "String",
         }
         scalar_type = scalar_types.get(type(data))
         if scalar_type is not None:
             return scalar_type
-        if isinstance(data, datetime.datetime):
+        if isinstance(data, dt.datetime):
             if self.datetime_format.value.type_produced is int:
                 return "Int"
             return "String"
@@ -1694,7 +1712,7 @@ class Gleam(metaclass=LanguageCls):
         )
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return _format_gleam_json_date
@@ -1705,19 +1723,15 @@ class Gleam(metaclass=LanguageCls):
         return _build_gleam_date_iso(prefix=self.constructor_prefix)
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self._json_type_active:
             if self.datetime_format is type(self.datetime_format).EPOCH:
                 return _format_gleam_json_datetime_epoch
             return _format_gleam_json_datetime_iso
         if self.dict_format is type(self.dict_format).RECORD:
-            native_formatters: dict[
-                type, Callable[[datetime.datetime], str]
-            ] = {
+            native_formatters: dict[type, Callable[[dt.datetime], str]] = {
                 int: format_datetime_epoch,
                 str: format_datetime_iso,
             }
@@ -1729,7 +1743,7 @@ class Gleam(metaclass=LanguageCls):
         return _build_gleam_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self._json_type_active:
             return _format_gleam_json_time

@@ -18,9 +18,8 @@ sets and binary -- are declared in ``tests/errors/rejections``.
 
 import json
 import re
-from collections.abc import Mapping
 from io import StringIO
-from typing import assert_never
+from typing import TYPE_CHECKING, assert_never
 
 import pytest
 import tomlkit
@@ -37,6 +36,9 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import Dhall, Mojo
 from tests.yaml_support import as_yaml_parser
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 type _SourceData = (
     dict[str, _SourceData]

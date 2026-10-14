@@ -1,6 +1,6 @@
 import java.util.Map;
 class Main {
-static class MgrType_ { Object run(Object... args) { return null; } }
+static class MgrType_ { Object run(Object arg0) { return null; } }
 static class AppType_ { MgrType_ mgr = new MgrType_(); }
 static AppType_ app = new AppType_();
     public static void main() {

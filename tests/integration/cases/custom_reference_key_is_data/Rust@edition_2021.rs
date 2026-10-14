@@ -3,5 +3,5 @@ fn main() {
     let my_data = HashMap::from([
         ("reference", "whole"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

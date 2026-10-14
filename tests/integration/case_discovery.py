@@ -6,7 +6,7 @@ imports from this module to enumerate every expected golden filename.
 """
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import json
@@ -53,6 +53,7 @@ from .language_specs import (
     make_spec,
     sorted_languages,
 )
+from .yaml_warnings import expected_yaml_warnings
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -116,15 +117,7 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
 # spelled out so strict pyright keeps it fully known (the ruamel
 # library ships no type stubs).
 type _CaseScalar = (
-    str
-    | int
-    | float
-    | bool
-    | datetime.date
-    | datetime.datetime
-    | datetime.time
-    | bytes
-    | None
+    str | int | float | bool | dt.date | dt.datetime | dt.time | bytes | None
 )
 # Parsed case data.  ``load_case_data`` parses YAML with the ``safe``
 # loader (and JSON/JSON5/TOML natively), so containers are plain
@@ -220,10 +213,13 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
     ``ruamel`` yields its comment-tracking mappings; both are walked
     structurally by the ``has_*`` predicates.
     """
-    parsed = _load_case_source(
-        source=input_info.path.read_text(encoding="utf-8"),
-        input_format=input_info.input_format,
-    )
+    with expected_yaml_warnings(
+        expectation=input_info.expected_reused_anchor_warning,
+    ):
+        parsed = _load_case_source(
+            source=input_info.path.read_text(encoding="utf-8"),
+            input_format=input_info.input_format,
+        )
     return TypeAdapter[CaseData](type=CaseData).validate_python(
         parsed,
         strict=True,

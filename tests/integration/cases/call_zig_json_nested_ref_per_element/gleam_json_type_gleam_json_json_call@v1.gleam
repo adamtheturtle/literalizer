@@ -6,6 +6,6 @@ pub fn main() {
     json.int(1),
     json.int(2),
   ])
-  consume(json.object([#("field", shared)]))
-  consume(shared)
+  let _ = consume(json.object([#("field", shared)]))
+  let _ = consume(shared)
 }

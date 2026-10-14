@@ -5,4 +5,4 @@ type ThingType_() =
 let thing = ThingType_()
 type Val =
     | FList of Val list
-thing.go()
+thing.go() |> ignore

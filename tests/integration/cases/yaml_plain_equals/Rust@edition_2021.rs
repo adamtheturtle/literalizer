@@ -4,5 +4,5 @@ fn main() {
         ("x", "="),
         // unrelated
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

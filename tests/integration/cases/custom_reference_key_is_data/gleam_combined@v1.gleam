@@ -7,6 +7,7 @@ pub fn main() {
   let my_data = GDict([
     #("reference", GStr("whole")),
   ])
+  let _ = my_data
   let my_data = GDict([
     #("reference", GStr("whole")),
   ])

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
 class Check {
-static HashSet<object> my_data = new HashSet<object>();
-    public static void Main() {}
+static HashSet<object?> my_data = new HashSet<object?>();
+    public static void Main() { _ = my_data; }
 }

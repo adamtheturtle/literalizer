@@ -16,7 +16,7 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 static CVal make_widget(CVal _a0) { (void)_a0; return (CVal){0}; }
 int main(void) {
-CVal my_data = ((CVal){.s = NULL});
+CVal my_data = make_widget(((CVal){.s = NULL}));
 my_data = ($"{$"{1:;//}"}").Length >= 0 ? make_widget(((CVal){.i = 42})) : make_widget(((CVal){.i = 42})) // trailing
 // extra
     return 0;

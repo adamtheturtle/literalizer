@@ -1,7 +1,7 @@
 fn main() {
-    struct ThingType_;
-    impl ThingType_ { fn go<A>(&self, _value: A) {} }
-    let thing = ThingType_;
+    struct ThingType;
+    impl ThingType { fn go<A>(&self, _value: A) {} }
+    let thing = ThingType;
     let item = vec![
         1,
         2,

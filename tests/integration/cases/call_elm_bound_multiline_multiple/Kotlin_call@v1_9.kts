@@ -1,4 +1,4 @@
-fun f(value: Any? = null): Any? = null
+fun f(value: Any? = null): Any? = listOf<Any?>(value)
 val ref_data = intArrayOf(
     1,
     2,

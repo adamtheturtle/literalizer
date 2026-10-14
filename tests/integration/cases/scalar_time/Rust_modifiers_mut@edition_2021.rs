@@ -3,5 +3,5 @@ fn main() {
     let mut my_data = HashMap::from([
         ("starts_at", "09:30:00"),
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

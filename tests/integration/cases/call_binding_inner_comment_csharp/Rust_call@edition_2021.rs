@@ -3,5 +3,5 @@ fn main() {
     let my_data = (
     make_widget(42) // inner
     ) // trailing;
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -5,5 +5,5 @@ pub fn consume(_value: a) -> Nil { Nil }
 
 pub fn main() {
   let value = GNull
-  consume(value)
+  let _ = consume(value)
 }

@@ -1,7 +1,7 @@
 """Language protocol and internal spec dataclass."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import math
 import re
@@ -48,8 +48,14 @@ from literalizer.exceptions import (
     WrapCombinedInFileNotSupportedError,
 )
 
-if TYPE_CHECKING:
-    from abc import abstractmethod
+
+@beartype
+@dataclasses.dataclass(frozen=True)
+class RenderedCallStub:
+    """A generated call stub and the identifiers it declares."""
+
+    code: str
+    declared_names: frozenset[str]
 
 
 @beartype
@@ -60,6 +66,9 @@ class FileWrapperContext:
     variable_name: str
     """The bound name, or an empty string for unbound call output."""
 
+    bound_variable_names: tuple[str, ...]
+    """Reference bindings declared before the main binding."""
+
     modifiers: frozenset[enum.Enum]
     """Declaration modifiers before they are rendered as keywords."""
 
@@ -68,6 +77,19 @@ class FileWrapperContext:
 
     class_preamble: tuple[str, ...]
     """Supporting declarations placed directly in the wrapper class."""
+
+    has_literal_declarations: bool
+    """Whether the wrapper contains a literal-binding declaration."""
+
+    generated_body_preamble: tuple[str, ...]
+    """Body blocks produced by the language for the rendered data."""
+
+    call_stub_names: frozenset[str]
+    """Identifiers retained by generated body-scope call stubs."""
+    root_is_object_literal: bool
+    """Whether an unbound literal uses the object-expression
+    representation.
+    """
 
 
 class NewVariableNameSyntax(enum.Enum):
@@ -321,6 +343,25 @@ _Declaration_co = TypeVar(
 
 @beartype
 @dataclasses.dataclass(frozen=True)
+class RenderedEmptySequence:
+    """An empty literal and its retained element-type decision."""
+
+    code: str
+    uses_fallback_element_type: bool
+
+
+@beartype
+def empty_container_code(literal: str | RenderedEmptySequence, /) -> str:
+    """Return source text without discarding metadata stored by its
+    owner.
+    """
+    if isinstance(literal, RenderedEmptySequence):
+        return literal.code
+    return literal
+
+
+@beartype
+@dataclasses.dataclass(frozen=True)
 class SequenceFormatConfig(Generic[_Declaration_co]):
     """Configuration for a sequence format and its declared type.
 
@@ -340,7 +381,9 @@ class SequenceFormatConfig(Generic[_Declaration_co]):
     uses_typed_literal_for_scalars: bool
     requires_uniform_record_shapes: bool
     declared_type: _Declaration_co
-    narrowed_empty_form: Callable[[Sequence[list[Value]]], str] | None
+    narrowed_empty_form: (
+        Callable[[Sequence[list[Value]]], str | RenderedEmptySequence] | None
+    )
     single_element_template: str | None
     """How a one-element sequence is spelled, if not as the openers.
 
@@ -358,7 +401,7 @@ class SequenceFormatConfig(Generic[_Declaration_co]):
 class DateFormatConfig:
     """Configuration for a single date format."""
 
-    formatter: Callable[[datetime.date], str]
+    formatter: Callable[[dt.date], str]
     preamble_lines: tuple[str, ...]
     type_produced: type
 
@@ -368,7 +411,7 @@ class DateFormatConfig:
 class DatetimeFormatConfig:
     """Configuration for a single datetime format."""
 
-    formatter: Callable[[datetime.datetime], str]
+    formatter: Callable[[dt.datetime], str]
     preamble_lines: tuple[str, ...]
     type_produced: type
 
@@ -378,7 +421,7 @@ class DateFormatEnum(enum.Enum):
 
     _value_: DateFormatConfig
 
-    def __call__(self, date_value: datetime.date, /) -> str:
+    def __call__(self, date_value: dt.date, /) -> str:
         """Format a date with this member's configuration."""
         # Pylint does not yet infer the standardized Enum _value_ annotation:
         # https://github.com/pylint-dev/pylint/issues/11413
@@ -392,7 +435,7 @@ class DatetimeFormatEnum(enum.Enum):
 
     _value_: DatetimeFormatConfig
 
-    def __call__(self, dt_value: datetime.datetime, /) -> str:
+    def __call__(self, dt_value: dt.datetime, /) -> str:
         """Format a datetime with this member's configuration."""
         # Pylint does not yet infer the standardized Enum _value_ annotation:
         # https://github.com/pylint-dev/pylint/issues/11413
@@ -430,8 +473,8 @@ def date_scalar_preamble(
         **{
             t: p
             for t, p in (
-                (datetime.date, date_format.value.preamble_lines),
-                (datetime.datetime, datetime_format.value.preamble_lines),
+                (dt.date, date_format.value.preamble_lines),
+                (dt.datetime, datetime_format.value.preamble_lines),
             )
             if p
         },
@@ -495,6 +538,11 @@ class CommentConfig:
 class DictFormatConfig:
     """Configuration for dict formatting."""
 
+    is_object_literal: ClassVar[bool] = False
+    """Whether this format emits an ECMAScript object-literal
+    expression.
+    """
+
     dict_open: Callable[[dict[Scalar, Value]], str]
     close: str
     format_entry: Callable[[str, Value, str], str]
@@ -552,6 +600,11 @@ class DictFormatBuilder(Protocol):
 @dataclasses.dataclass(frozen=True)
 class OrderedMapFormatConfig:
     """Configuration for ordered-map formatting."""
+
+    is_object_literal: ClassVar[bool] = False
+    """Whether this format emits an ECMAScript object-literal
+    expression.
+    """
 
     ordered_map_open: Callable[[dict[Scalar, Value]], str]
     close: str
@@ -1876,29 +1929,24 @@ class Language(Protocol):
         # A class-level ``None`` marks a runtime Protocol member as absent.
         # These optional metadata values therefore remain static-only until
         # https://github.com/python/cpython/issues/156413 is fixed.
-        # Pylint rejects ellipsis bodies here until
-        # https://github.com/pylint-dev/pylint/issues/11459 is fixed.
         @property
-        @abstractmethod
         def call_target_name_syntax(self) -> NewVariableNameSyntax | None:
             """Return the specialized call-target grammar, when
             present.
             """
-            raise NotImplementedError
+            ...
 
         @property
-        @abstractmethod
         def max_variable_identifier_length(self) -> int | None:
             """Return the maximum identifier length, when bounded."""
-            raise NotImplementedError
+            ...
 
         @property
-        @abstractmethod
         def reserved_variable_identifier_pattern(
             self,
         ) -> re.Pattern[str] | None:
             """Return the reserved variable-name pattern, when present."""
-            raise NotImplementedError
+            ...
 
     # Each language class defines PascalCase nested Enum classes
     # (``DateFormats``, ``SequenceFormats``, …) and snake_case class
@@ -2335,21 +2383,21 @@ class Language(Protocol):
         ...
 
     @property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a :class:`datetime.date` as a string
         literal.
         """
         ...
 
     @property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a :class:`datetime.datetime` as a string
         literal.
         """
         ...
 
     @property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a :class:`datetime.time` as a string
         literal.
         """
@@ -2934,7 +2982,7 @@ class Language(Protocol):
         self,
     ) -> Callable[
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
-        tuple[str, ...],
+        tuple[str | RenderedCallStub, ...],
     ]:
         """Return stub declaration lines for a name used in a call
         expression.
@@ -2962,6 +3010,9 @@ class Language(Protocol):
         inside ``func main()`` for Go, inside ``class Check`` for
         Java).  Languages that need stubs at file/package scope should
         use :attr:`format_call_preamble_stub` instead.
+
+        A stub may retain its declared identifiers with its source text
+        in :class:`RenderedCallStub`.
 
         Returns an empty tuple when no stub is needed (e.g. for
         built-in functions, or in languages whose lint checks only
@@ -3870,7 +3921,9 @@ def wrap_in_file_noop(
 
 
 @beartype
-def parenthesize_bare_object(*, content: str, variable_name: str) -> str:
+def parenthesize_bare_object(
+    *, content: str, context: FileWrapperContext
+) -> str:
     """Return *content* readable as an expression at statement scope.
 
     A file that binds no name holds the value on its own, and in the
@@ -3879,7 +3932,7 @@ def parenthesize_bare_object(*, content: str, variable_name: str) -> str:
     expression reading; every other value already is one, and a name to
     bind to makes the question moot (issue #4774).
     """
-    if variable_name != "" or not content.lstrip().startswith("{"):
+    if context.variable_name != "" or not context.root_is_object_literal:
         return content
     return f"({content})"
 

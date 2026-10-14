@@ -5,4 +5,4 @@ type Val =
 type ObjType_() =
     member _.ZKV(_value: obj) : obj = null
 let obj = ObjType_()
-obj.ZKV(FInt 1L)
+obj.ZKV(FInt 1L) |> ignore

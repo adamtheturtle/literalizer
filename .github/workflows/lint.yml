@@ -19,9 +19,22 @@ concurrency:
   group: lint-pr-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
+env:
+  DOWNLOAD_COMMAND: |
+    mkdir -p "$(dirname "$ARTIFACT_DESTINATION")"
+    temporary=$(mktemp "${ARTIFACT_DESTINATION}.XXXXXX")
+    trap 'rm -f "$temporary"' EXIT
+    printf 'download %s\n' "$ARTIFACT_URL"
+    curl --fail --show-error --silent --location \
+      --connect-timeout 10 --max-time 30 \
+      --write-out 'download HTTP %{http_code}\n' \
+      "$ARTIFACT_URL" --output "$temporary"
+    mv "$temporary" "$ARTIFACT_DESTINATION"
+
 jobs:
   pre-commit:
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.12', '3.13', '3.14']
         # We select hooks by prek group (defined via ``groups:`` in
@@ -53,7 +66,7 @@ jobs:
           persist-credentials: false
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -65,7 +78,7 @@ jobs:
           # sync. prek reimplements the ``pre-commit-hooks`` checks
           # natively, so a version difference changes their verdicts and
           # not merely their scheduling (issue 4013).
-          prek-version: 0.4.13
+          prek-version: 0.5.5
           extra-args: >-
             --all-files --group ${{ matrix.group }} --verbose
         env:
@@ -79,6 +92,8 @@ jobs:
   lint-fast:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      JACKSON_VERSION: 2.18.2
     steps:
       - uses: actions/checkout@v7
         with:
@@ -175,27 +190,49 @@ jobs:
           git clone https://github.com/aconchillo/guile-json.git /tmp/guile-json
           git -C /tmp/guile-json checkout --quiet 4.7.3
           echo "LITERALIZER_GUILE_JSON_PATH=/tmp/guile-json" >> "$GITHUB_ENV"
-      - name: Install Dhall
-        timeout-minutes: 10
+      - name: Download Dhall
         # The pinned ``dhall-haskell`` 1.42.2 binary implements Dhall
         # language standard 23.1.0, which is ``>=`` the ``V17`` (Dhall
         # standard 17.0.0) default of ``Dhall.language_version`` in
         # ``src/literalizer/languages/dhall.py``; keep them in sync.
         # Note the binary version (1.42.2) is distinct from the Dhall
         # *language* standard version (23.1.0) it implements.
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/dhall.tar.bz2
+          ARTIFACT_URL: https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2
+        with: &download
+          timeout_seconds: 45
+          max_attempts: 3
+          retry_wait_seconds: 5
+          shell: bash
+          command: bash -euo pipefail -c "$DOWNLOAD_COMMAND"
+          new_command_on_retry: >-
+            ARTIFACT_URL="${ARTIFACT_FALLBACK_URL:-$ARTIFACT_URL}" bash -euo pipefail
+            -c "$DOWNLOAD_COMMAND"
+
+      - name: Install Dhall
+        timeout-minutes: 10
         run: |-
-          curl -fsSL https://github.com/dhall-lang/dhall-haskell/releases/download/1.42.2/dhall-1.42.2-x86_64-linux.tar.bz2 \
-            | tar -xj
+          tar -xjf /tmp/dhall.tar.bz2
           echo "$PWD/bin" >> "$GITHUB_PATH"
       # The ``0.4.0`` wren-cli release downloaded here matches
       # ``Wren.language_version`` (``V0_4``) in
       # ``src/literalizer/languages/wren.py``; keep them in sync. Wren
       # has no ``--langversion``-style flag, so the pinned CLI release
       # is the only mechanism for pinning the language version.
+      - name: Download Wren CLI
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/wren.zip
+          ARTIFACT_URL: https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip
+        with: *download
+
       - name: Install Wren CLI
         timeout-minutes: 10
-        run: |
-          curl -fsSL https://github.com/wren-lang/wren-cli/releases/download/0.4.0/wren-cli-linux-0.4.0.zip -o /tmp/wren.zip
+        run: |-
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
       # ``ubuntu-latest`` preinstalls a ``pwsh``, but that runner default
@@ -206,17 +243,24 @@ jobs:
       # ``src/literalizer/languages/powershell.py``; keep them in sync.
       # PowerShell has no ``--langversion``-style flag, so the pinned
       # release is the only mechanism for pinning the language version.
+      - name: Download PowerShell
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/powershell.tar.gz
+          ARTIFACT_URL: https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-linux-x64.tar.gz
+        with: *download
+
       - name: Install PowerShell
         timeout-minutes: 10
         run: |-
           mkdir -p /tmp/powershell
-          curl -fsSL https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-linux-x64.tar.gz \
-            | tar -xz -C /tmp/powershell
+          tar -xzf /tmp/powershell.tar.gz -C /tmp/powershell
           chmod +x /tmp/powershell/pwsh
           echo "/tmp/powershell" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           # Pinned to the ``requires-python = ">=3.12"`` floor in
           # ``pyproject.toml``; keep this in sync with that floor so the
@@ -348,24 +392,38 @@ jobs:
       # `URLClassLoader`. Keep this enum value paired with the literal in
       # `Java.JsonTypes.JACKSON_JSON_NODE` in
       # `src/literalizer/languages/java.py`.
-      - name: Set up Jackson for Java
-        timeout-minutes: 10
-        run: |-
-          mkdir -p /tmp/jackson-jars
-          jackson_version=2.18.2
-          for f in jackson-databind/$jackson_version/jackson-databind-$jackson_version.jar \
-                   jackson-core/$jackson_version/jackson-core-$jackson_version.jar \
-                   jackson-annotations/$jackson_version/jackson-annotations-$jackson_version.jar; do
-            name=$(basename "$f")
-            # curl's default retry delay backs off exponentially. Bound
-            # both the retry window and each individual attempt so a
-            # persistent Maven Central failure still terminates the job.
-            curl --fail --show-error --silent --location \
-              --retry 5 --retry-all-errors --retry-max-time 120 \
-              --connect-timeout 10 --max-time 30 \
-              "https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/$f" \
-              --output "/tmp/jackson-jars/$name"
-          done
+      - name: Download jackson-databind
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/jackson-jars/jackson-databind-${{ env.JACKSON_VERSION }}.jar
+          ARTIFACT_URL: https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/${{ env.JACKSON_VERSION }}/jackson-databind-${{
+            env.JACKSON_VERSION }}.jar
+          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/${{ env.JACKSON_VERSION }}/jackson-databind-${{
+            env.JACKSON_VERSION }}.jar
+        with: *download
+
+      - name: Download jackson-core
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/jackson-jars/jackson-core-${{ env.JACKSON_VERSION }}.jar
+          ARTIFACT_URL: https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/${{ env.JACKSON_VERSION }}/jackson-core-${{
+            env.JACKSON_VERSION }}.jar
+          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/${{ env.JACKSON_VERSION }}/jackson-core-${{
+            env.JACKSON_VERSION }}.jar
+        with: *download
+
+      - name: Download jackson-annotations
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/jackson-jars/jackson-annotations-${{ env.JACKSON_VERSION }}.jar
+          ARTIFACT_URL: https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-annotations/${{ env.JACKSON_VERSION }}/jackson-annotations-${{
+            env.JACKSON_VERSION }}.jar
+          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/${{ env.JACKSON_VERSION }}/jackson-annotations-${{
+            env.JACKSON_VERSION }}.jar
+        with: *download
 
       - name: Lint Java
         env:
@@ -451,15 +509,15 @@ jobs:
         run: |-
           find tests/integration/cases -name '*@v2003.f90' -print0 > /tmp/files-fortran2003 && test -s /tmp/files-fortran2003
           find tests/integration/cases -name '*@v2008.f90' -print0 > /tmp/files-fortran2008 && test -s /tmp/files-fortran2008
-          xargs -0 gfortran -std=f2003 -fsyntax-only < /tmp/files-fortran2003
-          xargs -0 gfortran -std=f2008 -fsyntax-only < /tmp/files-fortran2008
+          xargs -0 gfortran -Werror -std=f2003 -fsyntax-only < /tmp/files-fortran2003
+          xargs -0 gfortran -Werror -std=f2008 -fsyntax-only < /tmp/files-fortran2008
           cat > /tmp/run-fortran.sh <<'SCRIPT'
           std=$1
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           src=$(realpath "$2")
           cd "$tmpdir" || exit 1
-          gfortran "-std=$std" "$src" -o run || exit 1
+          gfortran -Werror "-std=$std" "$src" -o run || exit 1
           ./run || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2003 < /tmp/files-fortran2003
@@ -616,7 +674,7 @@ jobs:
           cat > /tmp/run-c.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c99 "$1" -o "$tmpdir/run" -lcjson || exit 1
+          clang -std=c99 -Werror "$1" -o "$tmpdir/run" -lcjson || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-c
@@ -681,30 +739,19 @@ jobs:
           mapfile -d '' -t files < <(python3 -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
           n=${#files[@]}
           test "$n" -gt 0
-          run_odin() {
-            local src="$1"
-            local wd
-            wd=$(mktemp -d)
-            trap 'rm -rf "$wd"' RETURN
-            cp "$src" "$wd/main.odin"
-            # Bound each compiler attempt.  A retry is useful for
-            # transient segfaults, but without this timeout the retry can
-            # hang forever and leave only "operation was canceled" plus
-            # an orphan odin process in the Actions log.
-            ( cd "$wd" && timeout --verbose --kill-after=10s 60s odin run . -out:"$wd/prog" )
-          }
           for (( i=0; i<n; i+=1 )); do
             src=$(realpath "${files[i]}")
             # Print before running so a timeout log identifies the
             # fixture to minimize for an upstream Odin bug report.
             printf 'Running %s\n' "$src"
-            run_odin "$src" || run_odin "$src" || exit 1
+            bash scripts/lint-odin-fixture.sh "$src" || \
+              bash scripts/lint-odin-fixture.sh "$src" || exit 1
           done
       # `uv` is needed by the `Odin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -739,11 +786,17 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Download Roc
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/roc.tar.gz
+          ARTIFACT_URL: https://github.com/roc-lang/roc/releases/download/nightly/roc_nightly-linux_x86_64-latest.tar.gz
+        with: *download
+
       - name: Install Roc
         timeout-minutes: 10
         run: |-
-          curl -fsSL https://github.com/roc-lang/roc/releases/download/nightly/roc_nightly-linux_x86_64-latest.tar.gz \
-            -o /tmp/roc.tar.gz
           mkdir -p /tmp/roc-nightly
           tar -xzf /tmp/roc.tar.gz -C /tmp/roc-nightly
           # Read the extracted top-level directory by globbing rather
@@ -767,7 +820,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -808,7 +861,7 @@ jobs:
 
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -861,7 +914,7 @@ jobs:
 
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -886,13 +939,16 @@ jobs:
           persist-credentials: false
       - name: Install Go-sourced linters
         timeout-minutes: 10
+        env:
+          RETRY_ATTEMPTS: '2'
+          RETRY_ATTEMPT_SECONDS: '130'
         run: |-
-          go install github.com/google/go-jsonnet/cmd/jsonnet@v0.22.0
-          go install github.com/tmccombs/hcl2json@v0.6.9
+          scripts/retry.sh go install github.com/google/go-jsonnet/cmd/jsonnet@v0.22.0
+          scripts/retry.sh go install github.com/tmccombs/hcl2json@v0.6.9
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -964,7 +1020,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1042,7 +1098,7 @@ jobs:
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1090,7 +1146,7 @@ jobs:
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1099,7 +1155,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
           while IFS= read -r -d '' f; do
-            elm-format --stdin < "$f" > /dev/null || exit 1
+            label="Elm formatting: $f"
+            scripts/run-bounded.sh "$label" --kill-after=5s 60s elm-format --stdin < "$f" > /dev/null || exit "$?"
           done < /tmp/files-elm
           xargs -0 uv run python -m scripts.check_elm_syntax < /tmp/files-elm
 
@@ -1129,7 +1186,7 @@ jobs:
           echo "$GITHUB_WORKSPACE/.github/npm-linters/node_modules/.bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1166,7 +1223,7 @@ jobs:
           version: 1.1
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1308,7 +1365,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1352,7 +1409,7 @@ jobs:
             printf '#load "%s"\n' "$(realpath "$f")"
           done < /tmp/files-fs > "$driver"
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
-            dotnet fsi --nologo --langversion:8.0 --exec "$driver"
+            dotnet fsi --nologo --warnaserror+ --langversion:8.0 --exec "$driver"
 
       # Basic JSON -> F# -> JSON round-trip (issue 2653). Runs here
       # because this is the job with the .NET toolchain; `uv run`
@@ -1375,14 +1432,22 @@ jobs:
       # ``src/literalizer/languages/sml.py``; keep them in sync.
       # ``SML_97`` is a fixed standard, so the version pin here is for
       # reproducibility rather than language selection.
+      - name: Download MLton
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/mlton.tgz
+          ARTIFACT_URL: https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz
+        with: *download
+
       - name: Install MLton
         timeout-minutes: 10
-        run: |
-          curl -fsSL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-24.04_static.tgz | tar xz -C /tmp
+        run: |-
+          tar -xzf /tmp/mlton.tgz -C /tmp
           echo "/tmp/mlton-20241230-1.amd64-linux.ubuntu-24.04_static/bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
 
       # Every fixture defines its own entry point at top level, so compile
       # and run each file directly. Each invocation gets a private tmpdir
@@ -1443,7 +1508,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1521,7 +1586,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1559,7 +1624,7 @@ jobs:
           otp-version: '27'
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1636,16 +1701,18 @@ jobs:
       # Ubuntu ``groovy`` apt package is Groovy 2.4.x (``< V4``), so the
       # pinned binary distribution is the only mechanism for installing a
       # Groovy ``>= V4``.
+      - name: Download Groovy
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/groovy.zip
+          ARTIFACT_URL: https://repo.maven.apache.org/maven2/org/apache/groovy/groovy-binary/4.0.32/groovy-binary-4.0.32.zip
+          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/org/apache/groovy/groovy-binary/4.0.32/groovy-binary-4.0.32.zip
+        with: *download
+
       - name: Install Groovy
         timeout-minutes: 10
         run: |-
-          # Maven Central retains this pinned binary distribution. Apache's
-          # historical archive can exceed this step's download timeout.
-          curl --fail --show-error --silent --location \
-            --retry 5 --retry-all-errors --retry-max-time 600 \
-            --connect-timeout 15 --max-time 600 \
-            https://repo.maven.apache.org/maven2/org/apache/groovy/groovy-binary/4.0.32/groovy-binary-4.0.32.zip \
-            --output /tmp/groovy.zip
           unzip -q -o /tmp/groovy.zip -d /tmp/groovy
           echo "/tmp/groovy/groovy-4.0.32/bin" >> "$GITHUB_PATH"
 
@@ -1676,7 +1743,7 @@ jobs:
       # `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1741,7 +1808,7 @@ jobs:
           purescript: 0.15.15
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1848,7 +1915,7 @@ jobs:
           persist-credentials: false
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1869,12 +1936,12 @@ jobs:
           key: cjson-header-${{ env.CJSON_VERSION }}
       - name: Fetch cJSON header
         if: steps.cache-cjson-header.outputs.cache-hit != 'true'
-        timeout-minutes: 10
-        run: |-
-          mkdir -p "${RUNNER_TEMP}/cjson-include/cjson"
-          scripts/retry.sh curl --fail --location --silent --show-error \
-            --output "${RUNNER_TEMP}/cjson-include/cjson/cJSON.h" \
-            "https://raw.githubusercontent.com/DaveGamble/cJSON/v${CJSON_VERSION}/cJSON.h"
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: ${{ runner.temp }}/cjson-include/cjson/cJSON.h
+          ARTIFACT_URL: https://raw.githubusercontent.com/DaveGamble/cJSON/v${{ env.CJSON_VERSION }}/cJSON.h
+        with: *download
       - name: Put the cJSON header on the include path
         run: echo "C_INCLUDE_PATH=${RUNNER_TEMP}/cjson-include${C_INCLUDE_PATH:+:${C_INCLUDE_PATH}}"
           >> "${GITHUB_ENV}"
@@ -1887,6 +1954,7 @@ jobs:
 
   lint-cpp-tidy:
     strategy:
+      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
@@ -1902,7 +1970,7 @@ jobs:
           persist-credentials: false
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -1924,12 +1992,12 @@ jobs:
           key: nlohmann-json-${{ env.NLOHMANN_JSON_VERSION }}
       - name: Fetch nlohmann/json
         if: steps.cache-nlohmann-json.outputs.cache-hit != 'true'
-        timeout-minutes: 10
-        run: |-
-          mkdir -p "${RUNNER_TEMP}/nlohmann-include/nlohmann"
-          scripts/retry.sh curl --fail --location --silent --show-error \
-            --output "${RUNNER_TEMP}/nlohmann-include/nlohmann/json.hpp" \
-            "https://github.com/nlohmann/json/releases/download/v${NLOHMANN_JSON_VERSION}/json.hpp"
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: ${{ runner.temp }}/nlohmann-include/nlohmann/json.hpp
+          ARTIFACT_URL: https://github.com/nlohmann/json/releases/download/v${{ env.NLOHMANN_JSON_VERSION }}/json.hpp
+        with: *download
       - name: Put nlohmann/json on the include path
         run: echo "CPLUS_INCLUDE_PATH=${RUNNER_TEMP}/nlohmann-include${CPLUS_INCLUDE_PATH:+:${CPLUS_INCLUDE_PATH}}"
           >> "${GITHUB_ENV}"
@@ -1989,7 +2057,7 @@ jobs:
           version: ${{ env.GNUCOBOL_VERSION }}
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2002,7 +2070,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.cob"
-          cobc -free -fsyntax-only "$tmpdir/check.cob"
+          cobc -Werror -free -fsyntax-only "$tmpdir/check.cob"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-cobol.sh < /tmp/files-to-lint
       # ``-lcjson`` links the cJSON library that the
@@ -2016,7 +2084,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.cob"
-          cobc -x -free "$tmpdir/check.cob" -o "$tmpdir/run" -lcjson || exit 1
+          cobc -Werror -x -free "$tmpdir/check.cob" -o "$tmpdir/run" -lcjson || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
@@ -2031,6 +2099,7 @@ jobs:
 
   lint-cpp:
     strategy:
+      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
@@ -2077,12 +2146,12 @@ jobs:
           key: nlohmann-json-${{ env.NLOHMANN_JSON_VERSION }}
       - name: Fetch nlohmann/json
         if: steps.cache-nlohmann-json.outputs.cache-hit != 'true'
-        timeout-minutes: 10
-        run: |-
-          mkdir -p "${RUNNER_TEMP}/nlohmann-include/nlohmann"
-          scripts/retry.sh curl --fail --location --silent --show-error \
-            --output "${RUNNER_TEMP}/nlohmann-include/nlohmann/json.hpp" \
-            "https://github.com/nlohmann/json/releases/download/v${NLOHMANN_JSON_VERSION}/json.hpp"
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: ${{ runner.temp }}/nlohmann-include/nlohmann/json.hpp
+          ARTIFACT_URL: https://github.com/nlohmann/json/releases/download/v${{ env.NLOHMANN_JSON_VERSION }}/json.hpp
+        with: *download
       - name: Put nlohmann/json on the include path
         run: echo "CPLUS_INCLUDE_PATH=${RUNNER_TEMP}/nlohmann-include${CPLUS_INCLUDE_PATH:+:${CPLUS_INCLUDE_PATH}}"
           >> "${GITHUB_ENV}"
@@ -2096,7 +2165,7 @@ jobs:
       - name: Build precompiled headers
         run: |-
           for standard in c++14 c++17 c++20; do
-            clang++ "-std=$standard" -x c++-header scripts/lint-cpp-pch.hpp \
+            clang++ "-std=$standard" -Werror -x c++-header scripts/lint-cpp-pch.hpp \
               -o "/tmp/lint-cpp-$standard.hpp.pch"
           done
       # Each fixture defines its own main, so compile and run directly.
@@ -2113,7 +2182,7 @@ jobs:
       - name: Install uv
         timeout-minutes: 10
         if: matrix.shard == 0
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2136,15 +2205,12 @@ jobs:
   lint-kotlin:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # 2.3.10's kotlin-scripting-jvm references a legacy
-    # ``ScriptExpectedLocation`` class that is no longer shipped, so
-    # ``K2JVMCompiler.exec("-script", ...)`` from inside a
-    # ``.main.kts`` host blows up with NoClassDefFoundError.  2.3.20
-    # drops the stale reference.  Every Kotlin fixture on disk carries
-    # the tag from ``Kotlin.VersionFormats`` (e.g. `Kotlin@v1_9.kts`);
-    # the compiler pin and that enum member name are reviewed together.
+    # The host uses the compiler bundled with this distribution.
+    # 2.1.21 supports the v1_9 fixtures without deprecation warnings;
+    # later compilers deprecate or remove that language mode.
     env:
-      KOTLIN_VERSION: 2.3.20
+      KOTLIN_VERSION: 2.1.21
+      KOTLINX_SERIALIZATION_VERSION: 1.7.3
       KOTLIN_FIXTURE_TAG: v1_9
     steps:
       - uses: actions/checkout@v7
@@ -2164,40 +2230,48 @@ jobs:
       # K2JVMCompiler script host. Pinned to a recent 1.x release;
       # bump together. The classpath is exported through
       # `LITERALIZER_LINT_CLASSPATH`, which
-      # `scripts/lint-kotlin.main.kts` forwards via `-classpath`
+      # `scripts/lint-kotlin.kts` forwards via `-classpath`
       # to every per-fixture compile. Keep this enum value paired with
       # the literal in `Kotlin.JsonTypes.KOTLINX_JSON_ELEMENT` in
       # `src/literalizer/languages/kotlin.py`.
-      - name: Set up kotlinx-serialization-json for Kotlin
-        timeout-minutes: 10
-        run: |-
-          mkdir -p /tmp/kotlinx-jars
-          serialization_version=1.7.3
-          for f in kotlinx-serialization-json-jvm/$serialization_version/kotlinx-serialization-json-jvm-$serialization_version.jar \
-                   kotlinx-serialization-core-jvm/$serialization_version/kotlinx-serialization-core-jvm-$serialization_version.jar; do
-            name=$(basename "$f")
-            # curl's default retry delay backs off exponentially. Bound
-            # both the retry window and each individual attempt so a
-            # persistent Maven Central failure still terminates the job.
-            curl --fail --show-error --silent --location \
-              --retry 5 --retry-all-errors --retry-max-time 120 \
-              --connect-timeout 10 --max-time 30 \
-              "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/$f" \
-              --output "/tmp/kotlinx-jars/$name"
-          done
-      # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
+      - name: Download kotlinx-serialization-json-jvm
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/kotlinx-jars/kotlinx-serialization-json-jvm-${{ env.KOTLINX_SERIALIZATION_VERSION }}.jar
+          ARTIFACT_URL: https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-json-jvm-${{
+            env.KOTLINX_SERIALIZATION_VERSION }}.jar
+          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-json-jvm-${{
+            env.KOTLINX_SERIALIZATION_VERSION }}.jar
+        with: *download
+
+      - name: Download kotlinx-serialization-core-jvm
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/kotlinx-jars/kotlinx-serialization-core-jvm-${{ env.KOTLINX_SERIALIZATION_VERSION }}.jar
+          ARTIFACT_URL: https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-core-jvm-${{
+            env.KOTLINX_SERIALIZATION_VERSION }}.jar
+          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-core-jvm-${{
+            env.KOTLINX_SERIALIZATION_VERSION }}.jar
+        with: *download
+      # Invoke K2JVMCompiler from a single `.kts` JVM instead of
       # spawning one `kotlinc -script` per fixture. The JVM + compiler
       # classes load once and each fixture is compiled against the warm
       # compiler, cutting ~355 cold JVM starts to one.
       - name: Check Kotlin syntax
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
-        run: kotlin scripts/lint-kotlin.main.kts < /tmp/files-to-lint
+        # Use the distribution's compiler in a plain script. A `.main.kts`
+        # host loads duplicate scripting classes in an isolated class loader
+        # that cannot see the legacy ScriptExpectedLocation runtime API.
+        run: kotlin -classpath "$KOTLIN_HOME/lib/kotlin-compiler.jar" scripts/lint-kotlin.kts
+          < /tmp/files-to-lint
       # `uv` is needed by the `Kotlin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2242,14 +2316,14 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
-            swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
+          scripts/run-bounded.sh "$1" --signal=KILL 60s \
+            swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit "$?"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
         run: |-
           cat > /tmp/run-swift.sh <<'SCRIPT'
-          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
+          scripts/run-bounded.sh "$1" --signal=KILL 60s \
             swift -swift-version 5 -warnings-as-errors "$1"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-swift.sh < /tmp/files-to-lint
@@ -2257,7 +2331,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2297,10 +2371,12 @@ jobs:
       - name: Install yojson
         timeout-minutes: 10
         run: opam install -y yojson ocamlfind
+      # All enabled warnings are fatal, including new warnings on OCaml upgrades.
+      # Audit the complete corpus whenever the selected OCaml 5.x compiler changes.
       - name: Check OCaml syntax
         run: |-
           tmpdir=$(mktemp -d)
-          xargs -0 -n1 opam exec -- ocamlfind ocamlopt -package yojson -c -o "$tmpdir/check.o" < /tmp/files-to-lint
+          xargs -0 -n1 opam exec -- ocamlfind ocamlopt -warn-error +a -package yojson -c -o "$tmpdir/check.o" < /tmp/files-to-lint
       # Fixtures only declare ``module Check = struct ... end`` with a
       # ``my_data`` let-binding; OCaml evaluates struct bodies when the
       # module is initialized, so running the file as a script forces
@@ -2312,13 +2388,19 @@ jobs:
           cat > /tmp/yojson_prelude.ml <<'EOF'
           # use "topfind";;
           # require "yojson";;
+          let fixture = Sys.argv.(1);;
+          let fixture =
+            if Filename.is_relative fixture then
+              Filename.concat (Sys.getcwd ()) fixture
+            else fixture;;
+          if not (Toploop.use_file Format.err_formatter fixture) then exit 1;;
           EOF
-          xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml /tmp/yojson_prelude.ml < /tmp/files-to-lint
+          xargs -0 -P "$(nproc)" -n1 opam exec -- ocaml -warn-error +a /tmp/yojson_prelude.ml < /tmp/files-to-lint
       # ``uv`` is needed by the ``OCaml roundtrip`` step below; it runs
       # the helper in project mode so ``import literalizer`` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2377,7 +2459,7 @@ jobs:
       # resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2408,7 +2490,7 @@ jobs:
         uses: coursier/cache-action@v8
       - name: Install scala-cli
         timeout-minutes: 10
-        uses: VirtusLab/scala-cli-setup@v1.17.1
+        uses: VirtusLab/scala-cli-setup@v1.18.0
       # Compile every fixture in a single scala-cli invocation to pay
       # the Scala compile + Bloop daemon startup cost once instead of
       # per fixture. Each fixture already carries a unique object name
@@ -2437,14 +2519,14 @@ jobs:
             printf '  val _%s = %s\n' "$name" "$name" >> "$main"
           done < /tmp/files-to-lint
           printf '}\n' >> "$main"
-          scala-cli run "$workspace" -S 3 \
+          scala-cli run "$workspace" --server=false -S 3 --scalac-option -deprecation --scalac-option -Werror \
             --dep io.circe::circe-core:0.14.10 \
             --main-class __run
       # `uv` is needed by the `Scala roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2502,7 +2584,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2537,51 +2619,17 @@ jobs:
       # basename (e.g. `Dart.dart`); the mapping is printed so failures
       # still point back to the original path.
       #
-      # Fixtures only declare a top-level `final my_data = ...`, and
-      # Dart initializes top-level `final` lazily — `dart run` on a
-      # bare fixture would never evaluate its initializer. Generate a
-      # `main.dart` driver that imports every fixture and references
-      # each `my_data`, so one `dart run` forces all initializers to
-      # execute and surfaces runtime errors (e.g. a bad
-      # `DateTime.parse` argument). Paying Dart VM startup once across
-      # all fixtures keeps this step cheap.
-      - name: Check Dart syntax and run fixtures
-        run: |-
-          tmpdir=$(mktemp -d)
-          # `sdk: ^3.0.0` matches `Dart.language_version` (`V3`) in
-          # `src/literalizer/languages/dart.py`; keep them in sync. Dart
-          # has no `--langversion`-style flag, so the pubspec SDK
-          # constraint is the only mechanism for pinning the version.
-          printf 'name: check\nenvironment:\n  sdk: ^3.0.0\n' > "$tmpdir/pubspec.yaml"
-          driver="$tmpdir/main.dart"
-          : > "$driver"
-          i=0
-          while IFS= read -r -d '' f; do
-            cp "$f" "$tmpdir/fixture_$i.dart"
-            printf 'import "fixture_%d.dart" as f%d;\n' "$i" "$i" >> "$driver"
-            printf 'fixture_%s.dart <- %s\n' "$i" "$f"
-            i=$((i+1))
-          done < /tmp/files-to-lint
-          {
-            printf 'void main() {\n'
-            printf '  final sink = <Object?>[\n'
-            for ((j=0; j<i; j++)); do
-              printf '    f%d.my_data,\n' "$j"
-            done
-            printf '  ];\n'
-            printf "  if (sink.isEmpty) throw StateError('unreachable');\n"
-            printf '}\n'
-          } >> "$driver"
-          dart analyze --fatal-infos "$tmpdir"
-          (cd "$tmpdir" && dart run main.dart)
-      # `uv` is needed by the `Dart roundtrip` step below; it runs the
-      # helper in project mode so `import literalizer` resolves.
+      # Top-level final bindings initialize lazily. Resolve their names
+      # from the golden registries, then reference each one in a driver
+      # to force evaluation without interpreting Dart source text.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      - name: Check Dart syntax and run fixtures
+        run: uv run --group=dev python -m scripts.run_dart_fixtures < /tmp/files-to-lint
       # Basic JSON -> Dart -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Dart toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
@@ -2624,7 +2672,7 @@ jobs:
           < /tmp/files-to-lint
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2674,7 +2722,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2735,7 +2783,7 @@ jobs:
           while IFS= read -r -d '' f; do
             stem=$(basename "$f" .rs)
             crate_name=${stem//@/_}
-            rustc --edition 2021 \
+            rustc --edition 2021 -D warnings \
               --crate-name "$crate_name" \
               -L "dependency=$RUST_DEPS" \
               --extern "chrono=$RUST_CHRONO_RLIB" \
@@ -2747,7 +2795,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2806,7 +2854,7 @@ jobs:
           Rscript -e 'install.packages("jsonlite", lib="/tmp/r-lint-libs", repos="https://cloud.r-project.org")'
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2854,7 +2902,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.d"
-          dmd -o- -c "$tmpdir/check.d"
+          dmd -w -o- -c "$tmpdir/check.d"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-d.sh < /tmp/files-to-lint
       # Each fixture defines its own main, so compile and run directly.
@@ -2866,7 +2914,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.d"
-          dmd -of="$tmpdir/run" -od="$tmpdir" "$tmpdir/check.d" || exit 1
+          dmd -w -of="$tmpdir/run" -od="$tmpdir" "$tmpdir/check.d" || exit 1
           "$tmpdir/run" || exit 1
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-d.sh < /tmp/files-to-lint
@@ -2874,7 +2922,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2928,12 +2976,12 @@ jobs:
             printf 'require "./%s"\n' "$name" >> "$driver"
             printf '%s.cr <- %s\n' "$name" "$f"
           done < /tmp/files-to-lint
-          crystal run "$driver"
+          crystal run --error-on-warnings "$driver"
       # `uv` is needed by the `Crystal roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -2970,7 +3018,7 @@ jobs:
           && test -s /tmp/files-to-lint
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3121,7 +3169,7 @@ jobs:
       # the helper in project mode so ``import literalizer`` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3143,7 +3191,7 @@ jobs:
           persist-credentials: false
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3202,7 +3250,7 @@ jobs:
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3253,7 +3301,7 @@ jobs:
 
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3265,7 +3313,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_raku_roundtrip.py`.
       - name: Raku roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 5
         run: uv run python -m scripts.run_raku_roundtrip
 
   lint-zig:
@@ -3325,7 +3373,7 @@ jobs:
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3373,7 +3421,7 @@ jobs:
       # runs the helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3411,10 +3459,17 @@ jobs:
       # generated C on this runner (``undefined symbol
       # builtin__memdup``), so the build uses the runner's system
       # ``gcc`` as the C backend (``-cc gcc``) instead.
+      - name: Download V
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/v_linux.zip
+          ARTIFACT_URL: https://github.com/vlang/v/releases/download/weekly.2026.08/v_linux.zip
+        with: *download
+
       - name: Install V
         timeout-minutes: 10
-        run: |
-          curl -fsSL -o /tmp/v_linux.zip https://github.com/vlang/v/releases/download/weekly.2026.08/v_linux.zip
+        run: |-
           unzip -q /tmp/v_linux.zip -d /tmp
           sudo ln -s /tmp/v/v /usr/local/bin/v
           # The prebuilt binary lazily creates ``~/.vmodules`` (and the
@@ -3429,7 +3484,7 @@ jobs:
           v -cc gcc run /tmp/v-warmup.v > /dev/null 2>&1 || true
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
@@ -3437,7 +3492,7 @@ jobs:
         run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.check_v_syntax
           < /tmp/files-to-lint
       - name: Run V files
-        run: xargs -0 -P "$(nproc)" -n1 v -cc gcc run < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 v -W -cc gcc run < /tmp/files-to-lint
       # Driven from `lint-v` because that is the job where the pinned
       # `v` binary (installed by the `Install V` step above) is on
       # `PATH`; `uv run` (project mode, not `--no-project`) is required
@@ -3461,6 +3516,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install GNU timeout
+        run: brew install --quiet coreutils
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
@@ -3494,7 +3551,7 @@ jobs:
       # the helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.2.0
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'

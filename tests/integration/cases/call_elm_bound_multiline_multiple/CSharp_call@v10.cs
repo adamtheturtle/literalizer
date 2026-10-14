@@ -1,6 +1,6 @@
 using System;
 class Check {
-static object f(object value = null) => null;
+static object? f(object? value = null) => null;
     public static void Main() {
 var ref_data = (
     1,

@@ -10,7 +10,7 @@ let ref_data: Val = FList [
 ]
 f(FList [
     ref_data
-])
+]) |> ignore
 f(FList [
     ref_data
-])
+]) |> ignore

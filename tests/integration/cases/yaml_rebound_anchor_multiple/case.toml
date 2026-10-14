@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+
+[expected_reused_anchor_warning]
+anchor = "other+"
+count = 2

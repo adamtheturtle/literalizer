@@ -1,4 +1,4 @@
-fun process(value: Any? = null, count: Any? = null): Any? = null
+fun process(value: Any? = null, count: Any? = null): Any? = listOf<Any?>(value, count)
 val my_int = 1
 val my_bool = true
 val my_float = 3.14

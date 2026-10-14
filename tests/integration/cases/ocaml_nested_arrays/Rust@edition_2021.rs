@@ -3,5 +3,5 @@ fn main() {
         vec![vec![1]],
         vec![Vec::<String>::new()],
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -4,5 +4,6 @@ class Check {
 var ZVal = new Record0(
     1
 );
+    _ = ZVal;
     }
 }

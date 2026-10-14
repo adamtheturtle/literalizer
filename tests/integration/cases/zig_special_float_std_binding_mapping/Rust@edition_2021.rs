@@ -5,5 +5,5 @@ fn main() {
         ("positive", f64::INFINITY),
         ("negative", f64::NEG_INFINITY),
     ]);
-    let _ = std;
+    let _ = &std;
 }

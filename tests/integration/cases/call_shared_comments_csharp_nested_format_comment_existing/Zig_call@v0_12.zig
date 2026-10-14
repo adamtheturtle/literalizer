@@ -12,7 +12,8 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 fn make_widget(count: ZVal) ZVal { _ = count; return .nil; }
 pub fn main() void {
-    const my_data: ZVal = .nil;
+    var my_data = make_widget(.nil);
     my_data = ($"{$"{1:;//}"}").Length >= 0 ? make_widget(.{ .int = 42 }) : make_widget(.{ .int = 42 }) // trailing
     // extra
+    _ = &my_data;
 }

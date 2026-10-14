@@ -36,9 +36,10 @@ def test_literalize_ref_golden_file(
                 lang_cls=lang_cls,
                 language_version=version_format,
             )
-            if ref_case.config.ref_case_override is not None:
-                effective_ref_case = ref_case.config.ref_case_override
-            else:
+            effective_ref_case = ref_case.config.ref_case_for(
+                lang_cls=lang_cls
+            )
+            if effective_ref_case is None:
                 effective_ref_case = spec.identifier_cases[0]
             run_literalize_ref_golden_case(
                 config=ref_case.config,

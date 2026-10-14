@@ -5,3 +5,4 @@ var my_data = (
     "a]=",
     "a]b"
 );
+    _ = my_data;

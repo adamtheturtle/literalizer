@@ -1,4 +1,5 @@
-var my_data = new object[] {
+var my_data = new object?[] {
     new int[][] {new int[] {1}},
-    new object[] {new int[] {}}
+    new object?[] {new int[] {}}
 };
+    _ = my_data;

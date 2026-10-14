@@ -9,5 +9,5 @@ pub fn main() {
     GInt(1),
     GInt(2),
   ])
-  thing_go(item)
+  let _ = thing_go(item)
 }

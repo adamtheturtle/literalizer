@@ -7,3 +7,4 @@ var my_data = new Dictionary<string, string> {
     ["line_separator"] = "x\u2028y",
     ["paragraph_separator"] = "x\u2029y"
 };
+    _ = my_data;

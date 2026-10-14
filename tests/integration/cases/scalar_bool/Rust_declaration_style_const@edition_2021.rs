@@ -1,4 +1,4 @@
 fn main() {
-    const my_data: bool = true;
-    let _ = my_data;
+    const MY_DATA: bool = true;
+    let _ = &MY_DATA;
 }

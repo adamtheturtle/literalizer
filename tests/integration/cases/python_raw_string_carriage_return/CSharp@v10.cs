@@ -4,3 +4,4 @@ var my_data = new Dictionary<string, string> {
     ["crlf"] = "a\r\nb",
     ["lf"] = "a\nb"
 };
+    _ = my_data;
