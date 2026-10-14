@@ -6,6 +6,7 @@ import enum
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from contextlib import suppress
+from functools import partial
 from typing import (
     Final,
     Protocol,
@@ -4363,6 +4364,25 @@ class _ReferenceBindingLanguage(Protocol):
         ...
 
 
+@runtime_checkable
+class _ContextualVariableDeclarationLanguage(Protocol):
+    """A declaration formatter using retained literal inference facts."""
+
+    def format_contextual_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+        *,
+        inferred_empty_sequence: bool,
+        is_reference_binding: bool,
+    ) -> str:
+        """Declare the selected literal or an already bound identifier."""
+        ...
+
+
 @beartype
 def _apply_variable_wrapper(
     *,
@@ -4373,6 +4393,7 @@ def _apply_variable_wrapper(
     line_prefix: str,
     is_call_binding: bool,
     is_reference_binding: bool,
+    inferred_empty_sequence: bool,
 ) -> str:
     """Optionally wrap *result* in a variable declaration or
     assignment.
@@ -4418,6 +4439,12 @@ def _apply_variable_wrapper(
             elif is_call_binding:
                 declaration_formatter = (
                     language.format_call_variable_declaration
+                )
+            elif isinstance(language, _ContextualVariableDeclarationLanguage):
+                declaration_formatter = partial(
+                    language.format_contextual_variable_declaration,
+                    inferred_empty_sequence=inferred_empty_sequence,
+                    is_reference_binding=is_reference_binding,
                 )
             else:
                 declaration_formatter = language.format_variable_declaration
@@ -4915,6 +4942,7 @@ def reject_undeclared_assignment(
             value=pre_form.data, ref_key=pre_form.active_ref_key
         )
         is not None,
+        inferred_empty_sequence=False,
     )
 
     def _render(styled: Language) -> str:
@@ -4933,6 +4961,7 @@ def reject_undeclared_assignment(
                 value=pre_form.data, ref_key=pre_form.active_ref_key
             )
             is not None,
+            inferred_empty_sequence=False,
         )
 
     if assignment not in _declaration_spellings(
@@ -4981,6 +5010,7 @@ def literalize_apply_form(
             value=pre_form.data, ref_key=pre_form.active_ref_key
         )
         is not None,
+        inferred_empty_sequence=False,
     )
 
     resolved = pre_form.resolved
@@ -5483,6 +5513,16 @@ def _literalize_value_binding(
         line_prefix=line_prefix,
         is_call_binding=False,
         is_reference_binding=False,
+        inferred_empty_sequence=(
+            isinstance(value, list)
+            and len(value) == 0
+            and record_context_data is not None
+            and isinstance(language, _ContextualVariableDeclarationLanguage)
+            and id(value)
+            in _empty_container_literal_overrides(
+                data=record_context_data, spec=language
+            )
+        ),
     )
     computed = compute_preamble(
         data=value,
@@ -6822,6 +6862,7 @@ def _render_variable_bound_call(
             line_prefix="",
             is_call_binding=True,
             is_reference_binding=False,
+            inferred_empty_sequence=False,
         ),
         comment=comment,
         language=language,

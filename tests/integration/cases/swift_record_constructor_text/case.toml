@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base", "combined"]
+languages = ["Swift"]
+languages_reason = "Swift declaration inference must distinguish string contents from generated record constructors."
