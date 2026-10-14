@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["Go"]
+languages_reason = "Sampled: a custom Go language exercises the callback extension contract with compiling output."
+owner = "variant"
+
+[[variants]]
+axis = "typed_collection_callback"
