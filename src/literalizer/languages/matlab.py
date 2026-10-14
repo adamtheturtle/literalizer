@@ -110,18 +110,20 @@ def _format_matlab_string(value: str) -> str:
         return _matlab_char_vector(s=value)
     control_char_threshold = 32
     parts: list[str] = []
+    has_character_segments = False
     for segment in re.split(pattern=r"([\\\x00-\x1f])", string=value):
         if not bool(segment):
             continue
         if len(segment) == 1 and (
             segment == "\\" or ord(segment) < control_char_threshold
         ):
+            has_character_segments = True
             parts.append(f"char({ord(segment)})")
         else:
             parts.append(f'"{segment.replace(chr(34), chr(34) * 2)}"')
     if len(parts) == 0:
         return '""'
-    if len(parts) == 1 and parts[0].startswith('"'):
+    if not has_character_segments:
         return parts[0]
     placeholders = "%s" * len(parts)
     return f"sprintf('{placeholders}', {', '.join(parts)})"
