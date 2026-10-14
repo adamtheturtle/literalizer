@@ -1076,16 +1076,59 @@ def _accumulate_sibling_dict_empty_overrides(
             )
 
 
+@runtime_checkable
+class _SourceMappingEntryLanguage(Protocol):
+    """A language that distinguishes literal and reference entry
+    values.
+    """
+
+    def format_mapping_entry_from_source(
+        self,
+        key: str,
+        original: Value,
+        formatted: str,
+        /,
+        *,
+        is_reference: bool,
+    ) -> str:
+        """Format an entry with the expression role selected during
+        rendering.
+        """
+        ...
+
+
 @beartype
-def _build_dict_entry(
+def _build_mapping_entry(
     *,
     raw_key: Scalar,
     key_str: str,
     raw_value: Value,
     formatted_value: str,
-    spec: Language,
+    ctx: _RenderContext,
+    is_ordered_map: bool,
 ) -> str:
     """Format a single dict key-value entry using the language spec."""
+    spec = ctx.spec
+    if isinstance(spec, _SourceMappingEntryLanguage):
+        return spec.format_mapping_entry_from_source(
+            key_str,
+            raw_value,
+            formatted_value,
+            is_reference=(
+                _extract_call_arg_ref_name(
+                    value=raw_value, ref_key=ctx.ref_key
+                )
+                is not None
+            ),
+        )
+    if is_ordered_map:
+        return spec.ordered_map_format_config.format_entry_from_source(
+            raw_key=raw_key,
+            formatted_key=key_str,
+            raw_value=raw_value,
+            formatted_value=formatted_value,
+            format_entry=spec.format_ordered_map_entry,
+        )
     config = spec.dict_format_config
     formatted_key = key_str
     if isinstance(raw_key, str):
@@ -1215,9 +1258,9 @@ def _format_ordered_map_value(
         spec=spec,
     )
     pairs = [
-        ordered_map_cfg.format_entry_from_source(
+        _build_mapping_entry(
             raw_key=k,
-            formatted_key=_format_ordered_map_key(
+            key_str=_format_ordered_map_key(
                 raw_key=k,
                 key_str=_format_dictionary_key(key=k, ctx=ctx.compact()),
                 spec=spec,
@@ -1236,7 +1279,8 @@ def _format_ordered_map_value(
                 ),
                 ctx=ctx,
             ),
-            format_entry=spec.format_ordered_map_entry,
+            ctx=ctx,
+            is_ordered_map=True,
         )
         for k, v in ordered_map_items
     ]
@@ -1446,7 +1490,7 @@ def _format_dict_value(
             spec=spec,
         )
     pairs = [
-        _build_dict_entry(
+        _build_mapping_entry(
             raw_key=k,
             key_str=_format_dictionary_key(key=k, ctx=ctx.compact()),
             raw_value=v,
@@ -1463,7 +1507,8 @@ def _format_dict_value(
                 ),
                 ctx=ctx,
             ),
-            spec=spec,
+            ctx=ctx,
+            is_ordered_map=False,
         )
         for k, v in dict_items.items()
     ]
@@ -2339,6 +2384,37 @@ def _format_sequence_child(
     )
 
 
+@runtime_checkable
+class _SourceSequenceEntryLanguage(Protocol):
+    """A language whose entry layout depends on the emitted value role."""
+
+    def format_sequence_entry_from_source(
+        self, original: Value, formatted: str, /, *, is_reference: bool
+    ) -> str:
+        """Format an entry with the reference decision made during
+        rendering.
+        """
+        ...
+
+
+@beartype
+def _format_source_sequence_entry(
+    original: Value, formatted: str, /, *, ctx: _RenderContext
+) -> str:
+    """Preserve the reference role when choosing an entry's layout."""
+    spec = ctx.spec
+    if isinstance(spec, _SourceSequenceEntryLanguage):
+        return spec.format_sequence_entry_from_source(
+            original,
+            formatted,
+            is_reference=(
+                _extract_call_arg_ref_name(value=original, ref_key=ctx.ref_key)
+                is not None
+            ),
+        )
+    return spec.format_sequence_entry(original, formatted)
+
+
 @beartype
 def _format_list_value(
     *,
@@ -2400,7 +2476,7 @@ def _format_list_value(
     if int_formatter is None:
         int_formatter = _widened_int_formatter(items=value, spec=spec)
     items = [
-        spec.format_sequence_entry(
+        _format_source_sequence_entry(
             v,
             _maybe_wrap_child(
                 parent_id=parent_id,
@@ -2418,6 +2494,7 @@ def _format_list_value(
                 ),
                 ctx=ctx,
             ),
+            ctx=ctx,
         )
         for position, v in enumerate(iterable=value)
     ]
@@ -3257,26 +3334,19 @@ def _format_dict_lines(
             ),
             ctx=ctx,
         )
+        key_str = formatted_key
         if is_ordered_map:
-            entry = spec.ordered_map_format_config.format_entry_from_source(
-                raw_key=k,
-                formatted_key=_format_ordered_map_key(
-                    raw_key=k,
-                    key_str=formatted_key,
-                    spec=spec,
-                ),
-                raw_value=v,
-                formatted_value=formatted_val,
-                format_entry=spec.format_ordered_map_entry,
+            key_str = _format_ordered_map_key(
+                raw_key=k, key_str=formatted_key, spec=spec
             )
-        else:
-            entry = _build_dict_entry(
-                raw_key=k,
-                key_str=formatted_key,
-                raw_value=v,
-                formatted_value=formatted_val,
-                spec=spec,
-            )
+        entry = _build_mapping_entry(
+            raw_key=k,
+            key_str=key_str,
+            raw_value=v,
+            formatted_value=formatted_val,
+            ctx=ctx,
+            is_ordered_map=is_ordered_map,
+        )
         formatted_entries.append(entry)
     dict_trailing = (
         trailing_comma and spec.dict_format_config.supports_trailing_comma
@@ -3389,7 +3459,7 @@ def _format_collection_lines(
                     items=list_data, spec=spec
                 )
             formatted_entries = [
-                spec.format_sequence_entry(
+                _format_source_sequence_entry(
                     element,
                     _maybe_wrap_child(
                         parent_id=parent_id,
@@ -3405,6 +3475,7 @@ def _format_collection_lines(
                         ),
                         ctx=ctx,
                     ),
+                    ctx=ctx,
                 )
                 for position, element in enumerate(iterable=list_data)
             ]
