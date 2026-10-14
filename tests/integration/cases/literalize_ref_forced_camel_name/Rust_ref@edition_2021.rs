@@ -1,9 +1,8 @@
 use std::collections::HashMap;
-#[allow(non_snake_case)]
 fn main() {
-    let userObj = HashMap::from([
+    let user_obj = HashMap::from([
         ("_", "_"),
     ]);
-    let my_data = userObj;
+    let my_data = user_obj;
     let _ = &my_data;
 }

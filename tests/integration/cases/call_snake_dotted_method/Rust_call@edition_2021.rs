@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     struct HttpClientType;
     impl HttpClientType { fn fetch<A>(&self, _payload: A) {} }

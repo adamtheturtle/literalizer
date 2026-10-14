@@ -13,7 +13,6 @@ struct Record0 {
     dt: NaiveDateTime,
     by: &'static str,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         s: "string",

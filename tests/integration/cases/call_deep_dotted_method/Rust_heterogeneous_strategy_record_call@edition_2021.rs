@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     struct ClientType;
     impl ClientType { fn post<A>(&self, _data: A) {} }

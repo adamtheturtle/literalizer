@@ -13,7 +13,6 @@ struct Record0 {
     input: HashMap<&'static str, Value>,
     expected: HashMap<&'static str, Value>,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         Record0 { name: "test_1", input: HashMap::from([("type", Value::Str("create")), ("pr_id", Value::Str("pr_1")), ("draft", Value::Bool(true)), ("missing", Value::Null)]), expected: HashMap::from([("pr_id", Value::Str("pr_1")), ("status", Value::Str("draft"))]) },

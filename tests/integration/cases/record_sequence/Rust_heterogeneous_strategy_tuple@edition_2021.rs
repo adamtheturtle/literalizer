@@ -5,7 +5,6 @@ struct Record0 {
     label: &'static str,
     tags: Vec<String>,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         Record0 { id: 1, label: "first", tags: Vec::<String>::new() },

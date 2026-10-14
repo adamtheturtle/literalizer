@@ -5,7 +5,6 @@ enum Value {
     Str(&'static str),
     Bool(bool),
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         Value::I32(1),

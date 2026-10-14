@@ -4,7 +4,6 @@ enum Value {
     Str(&'static str),
     I32(i32),
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         Value::Str("hello"),

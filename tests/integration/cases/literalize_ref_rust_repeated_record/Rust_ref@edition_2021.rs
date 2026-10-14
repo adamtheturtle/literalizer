@@ -3,7 +3,6 @@
 struct Record0 {
     value: Vec<i32>,
 }
-#[allow(non_snake_case)]
 fn main() {
     let shared = Record0 {
         value: vec![

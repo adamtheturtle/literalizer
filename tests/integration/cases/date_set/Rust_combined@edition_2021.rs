@@ -1,6 +1,5 @@
 use chrono::NaiveDate;
 use std::collections::HashSet;
-#[allow(non_snake_case)]
 fn main() {
     #[allow(unused_mut)]
     let mut my_data = HashSet::from([

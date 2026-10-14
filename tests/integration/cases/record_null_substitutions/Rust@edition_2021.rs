@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("rows", vec![HashMap::from([("replacement", -1), ("present", 1)]), HashMap::from([("replacement", 2), ("present", 3)])]),

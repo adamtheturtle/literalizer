@@ -5,7 +5,6 @@ struct Record0 {
     b: i64,
     c: &'static str,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         a: 1,

@@ -4,7 +4,6 @@ enum Value {
     I32(i32),
     Str(&'static str),
 }
-#[allow(non_snake_case)]
 fn main() {
     fn process<A, B>(_data: A, _count: B) {}
     let my_ints = vec![

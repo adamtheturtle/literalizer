@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     fn make_widget() {}
     let my_data = make_widget();

@@ -20,7 +20,6 @@ struct Record0 {
     template: &'static str,
     id: i32,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         Record0 { r#type: "a", r#match: "b", error: "c", switch: "d", class: "e", inout: "ee", int: "f", new: "g", r#static: "h", fun: "i", object: "j", val: "k", when: "l", func: "m", r#let: "n", var: "o", template: "p", id: 1 },

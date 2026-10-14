@@ -12,7 +12,6 @@ enum Value {
     DateTime(&'static str),
     Bytes(&'static str),
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("s", Value::Str("string")),

@@ -5,7 +5,6 @@ enum Value {
     I32(i32),
     Map(HashMap<String, String>),
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         Value::I32(1),

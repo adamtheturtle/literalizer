@@ -14,7 +14,6 @@ struct Record0 {
     direct: Record1,
     bound: Record2,
 }
-#[allow(non_snake_case)]
 fn main() {
     let first = Record2 {
         x: 1,

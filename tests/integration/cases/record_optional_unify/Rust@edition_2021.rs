@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("items", vec![HashMap::from([("id", 1)]), HashMap::from([("id", 2), ("count", 10)]), HashMap::from([("id", 3), ("count", 20)])]),

@@ -7,7 +7,6 @@ struct Record0 {
     label: &'static str,
     ok: bool,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         quantity: 0xf4240,

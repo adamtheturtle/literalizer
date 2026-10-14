@@ -4053,9 +4053,7 @@ class Rust(metaclass=LanguageCls):
                 else "&"
             )
             use_line = f"\n{self.indent}let _ = {borrow}{variable_name};"
-        # A forced identifier case is a caller-owned naming choice.
-        name_policy = "#[allow(non_snake_case)]\n"
-        return f"{name_policy}fn main() {{\n{indented}{use_line}\n}}"
+        return f"fn main() {{\n{indented}{use_line}\n}}"
 
     def wrap_combined_in_file(
         self,

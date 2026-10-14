@@ -6,7 +6,6 @@ struct NamedType {
     enabled: bool,
     related_ids: Vec<i32>,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         NamedType { id: 100, label: "first entry", enabled: false, related_ids: vec![102, 103] },

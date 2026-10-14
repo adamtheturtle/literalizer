@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-#[allow(non_snake_case)]
 fn main() {
     let shared = [
         HashMap::from([("value", 1)]),

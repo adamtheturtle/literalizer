@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         "1901-12-13T20:45:51",

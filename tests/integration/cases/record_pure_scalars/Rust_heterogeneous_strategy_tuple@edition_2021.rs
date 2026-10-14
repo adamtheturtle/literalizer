@@ -6,7 +6,6 @@ struct Record0 {
     active: bool,
     score: f64,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         name: "Alice",

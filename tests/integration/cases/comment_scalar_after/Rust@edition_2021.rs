@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     // after
     let my_data = 42;

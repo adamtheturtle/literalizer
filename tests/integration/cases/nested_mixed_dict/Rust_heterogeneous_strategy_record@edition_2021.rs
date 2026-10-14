@@ -10,7 +10,6 @@ struct Record1 {
 struct Record0 {
     outer: Record1,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         outer: Record1 {

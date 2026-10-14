@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     fn consume<A>(_value: A) {}
     consume(-2147483649i64);

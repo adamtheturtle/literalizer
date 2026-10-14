@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("metrics", HashMap::from([("count", 100), ("rate", 50)])),

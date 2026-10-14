@@ -4,7 +4,6 @@ enum Value {
     I32(i32),
     Str(&'static str),
 }
-#[allow(non_snake_case)]
 fn main() {
     let shared = vec![
         Value::I32(1),

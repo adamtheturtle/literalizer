@@ -4,7 +4,6 @@ struct Record0 {
     scores: Vec<i32>,
     args: (i32, &'static str, &'static str, i32),
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         scores: vec![

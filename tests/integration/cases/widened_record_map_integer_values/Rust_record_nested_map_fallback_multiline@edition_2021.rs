@@ -4,7 +4,6 @@ use std::collections::HashMap;
 struct Record0 {
     input: HashMap<&'static str, i32>,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         Record0 {

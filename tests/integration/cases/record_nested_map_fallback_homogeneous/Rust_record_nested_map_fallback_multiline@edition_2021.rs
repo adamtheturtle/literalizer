@@ -12,7 +12,6 @@ struct Record0 {
     input: Record1,
     expected: HashMap<&'static str, &'static str>,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         Record0 {

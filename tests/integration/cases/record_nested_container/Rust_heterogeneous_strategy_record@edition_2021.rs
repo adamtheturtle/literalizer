@@ -5,7 +5,6 @@ struct Record0 {
     tags: Vec<&'static str>,
     priority: i32,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         title: "report",

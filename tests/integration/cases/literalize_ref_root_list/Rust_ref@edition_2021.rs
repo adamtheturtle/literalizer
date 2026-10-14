@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     let whole = vec![
         1,

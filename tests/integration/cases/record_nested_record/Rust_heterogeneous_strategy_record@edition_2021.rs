@@ -10,7 +10,6 @@ struct Record0 {
     id: i32,
     owner: Record1,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         id: 1,

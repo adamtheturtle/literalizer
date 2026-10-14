@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-#[allow(non_snake_case)]
 fn main() {
     let a_b_c = HashMap::from([
         ("_", "_"),

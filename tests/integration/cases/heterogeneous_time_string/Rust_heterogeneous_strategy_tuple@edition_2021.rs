@@ -3,7 +3,6 @@
 struct Record0 {
     vals: (&'static str, &'static str),
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         vals: (

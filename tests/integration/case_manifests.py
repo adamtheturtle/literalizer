@@ -427,6 +427,13 @@ def _empty_sources() -> dict[str, str]:
     return {}
 
 
+def _empty_ref_cases() -> dict[
+    literalizer.LanguageCls, literalizer.IdentifierCase
+]:
+    """Return a typed empty language-to-reference-case mapping."""
+    return {}
+
+
 class _OwnedCaseSpec(
     BaseModel,
     arbitrary_types_allowed=True,
@@ -482,7 +489,8 @@ class RefCaseSpec(  # noqa: NOD001
     case for the ``ref_case`` argument of :func:`literalizer.literalize`
     instead of using the language's default (``identifier_cases[0]``).
     Discovery skips any language whose ``supported_ref_cases`` does not
-    include the override.
+    include the override. ``ref_case_by_language`` can choose a different
+    explicit case for a language with a compiler-enforced naming convention.
     """
 
     ref_key: str = "$ref"
@@ -498,6 +506,9 @@ class RefCaseSpec(  # noqa: NOD001
     json_type: str | None = None
     dict_format: str | None = None
     ref_case_override: RefIdentifierCase | None = None
+    ref_case_by_language: dict[ManifestLanguage, RefIdentifierCase] = Field(
+        default_factory=_empty_ref_cases,
+    )
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
     bound_refs: Mapping[str, ValueInput] | None = None
     extra_ref_value_sources: dict[str, str] = Field(
@@ -506,6 +517,12 @@ class RefCaseSpec(  # noqa: NOD001
     explicit_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
+
+    def ref_case_for(
+        self, *, lang_cls: literalizer.LanguageCls
+    ) -> literalizer.IdentifierCase | None:
+        """Resolve the explicitly requested case for one language."""
+        return self.ref_case_by_language.get(lang_cls, self.ref_case_override)
 
     def resolved_variable_form(self) -> literalizer.VariableForm:
         """Return the public API variable form selected by the

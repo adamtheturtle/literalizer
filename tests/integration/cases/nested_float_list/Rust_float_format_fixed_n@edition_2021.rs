@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         vec![1.500000, 2.500000],

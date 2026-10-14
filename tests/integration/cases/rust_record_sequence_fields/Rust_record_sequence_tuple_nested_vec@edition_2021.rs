@@ -4,7 +4,6 @@ struct Record0 {
     short: Vec<i32>,
     long: Vec<i32>,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         short: vec![

@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         HashMap::from([("items", vec![HashMap::from([("inner", HashMap::from([("x", 1)]))]), HashMap::from([("inner", <HashMap<&str, i32>>::from([]))])])]),

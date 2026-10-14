@@ -5,7 +5,6 @@ enum Value {
     I32(i32),
     Str(&'static str),
 }
-#[allow(non_snake_case)]
 fn main() {
     fn process<A>(_value: A) {}
     process(HashMap::from([("value", Value::I32(1))]));

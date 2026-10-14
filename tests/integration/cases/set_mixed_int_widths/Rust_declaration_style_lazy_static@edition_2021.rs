@@ -1,6 +1,5 @@
 use std::sync::LazyLock;
 use std::collections::HashSet;
-#[allow(non_snake_case)]
 fn main() {
     #[allow(non_upper_case_globals)]
     static my_data: LazyLock<HashSet<i64>> = LazyLock::new(|| HashSet::from([

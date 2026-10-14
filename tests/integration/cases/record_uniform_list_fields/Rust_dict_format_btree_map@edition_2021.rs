@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         BTreeMap::from([("scores", vec![1, 2])]),

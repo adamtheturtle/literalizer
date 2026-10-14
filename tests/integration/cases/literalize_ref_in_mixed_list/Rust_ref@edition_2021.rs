@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     let ref_x = 3;
     let my_data = vec![

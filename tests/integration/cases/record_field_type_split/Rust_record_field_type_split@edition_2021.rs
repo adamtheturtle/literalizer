@@ -55,7 +55,6 @@ struct Record0 {
     wrap_b: Record8,
     wide: Record9,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         plain: Record1 {

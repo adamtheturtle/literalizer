@@ -5,7 +5,6 @@ enum Value {
     Str(&'static str),
     Bool(bool),
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         HashMap::from([("type", Value::Str("create")), ("pr_id", Value::Str("pr_1")), ("draft", Value::Bool(true))]),

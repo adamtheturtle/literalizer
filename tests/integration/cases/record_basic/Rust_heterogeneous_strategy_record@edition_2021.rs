@@ -6,7 +6,6 @@ struct Record0 {
     enabled: bool,
     related_ids: Vec<i32>,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         id: 1,

@@ -1,6 +1,5 @@
 use chrono::NaiveDate;
 use std::collections::HashMap;
-#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         (NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(), "new_year"),

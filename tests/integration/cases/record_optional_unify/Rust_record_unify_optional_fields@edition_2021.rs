@@ -9,7 +9,6 @@ struct Record1 {
 struct Record0 {
     items: Vec<Record1>,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         items: vec![

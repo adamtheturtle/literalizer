@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     struct ThrottlerType;
     impl ThrottlerType { fn check<A, B>(&self, _user_id: A, _ts: B) {} }

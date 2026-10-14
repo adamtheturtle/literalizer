@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     fn process<A, B>(_value: A, _count: B) {}
     let my_int = 1;

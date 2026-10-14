@@ -5,7 +5,6 @@ enum JsonValue {
     Str(&'static str),
     Bool(bool),
 }
-#[allow(non_snake_case)]
 fn main() {
     struct MgrType;
     impl MgrType { fn run<A>(&self, _operation: A) {} }

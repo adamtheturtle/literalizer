@@ -5,7 +5,6 @@ enum Value {
     I32(i32),
     Str(&'static str),
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("scores", vec![Value::I32(10), Value::I32(20), Value::I32(30)]),

@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         "48656c6c6f",

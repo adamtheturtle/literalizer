@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     let empty_values = vec![];
     let integer_values = vec![

@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     struct ClientType;
     impl ClientType { fn fetch<A>(&self, _value: A) {} }

@@ -12,7 +12,6 @@ struct Record0 {
     collection: &'static str,
     featured_entry: NamedType,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         collection: "alpha",

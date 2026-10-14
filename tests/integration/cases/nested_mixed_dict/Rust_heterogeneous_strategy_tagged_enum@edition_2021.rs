@@ -6,7 +6,6 @@ enum Value {
     Str(&'static str),
     Null,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("outer", HashMap::from([("a", Value::I32(1)), ("b", Value::Str("x")), ("c", Value::Null)])),

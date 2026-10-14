@@ -16,7 +16,6 @@ struct Record0 {
     metrics: Record1,
     flags: Record2,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = Record0 {
         metrics: Record1 {

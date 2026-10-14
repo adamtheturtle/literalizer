@@ -4,7 +4,6 @@ struct Record0 {
     a: i32,
     b: &'static str,
 }
-#[allow(non_snake_case)]
 fn main() {
     #[allow(unused_mut)]
     let mut my_data = Record0 {

@@ -7,7 +7,6 @@ enum JsonValue {
     Bool(bool),
     F64(f64),
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = HashMap::from([
         ("name", JsonValue::Str("Alice")),

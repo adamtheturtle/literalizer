@@ -5,7 +5,6 @@ struct Record0 {
     parent_id: i32,
     assignee: &'static str,
 }
-#[allow(non_snake_case)]
 fn main() {
     let my_data = vec![
         Record0 { due_date: -1, parent_id: -1, assignee: "" },

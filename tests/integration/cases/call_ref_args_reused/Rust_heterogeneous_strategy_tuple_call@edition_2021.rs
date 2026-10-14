@@ -1,4 +1,3 @@
-#[allow(non_snake_case)]
 fn main() {
     fn process<A, B>(_data: A, _count: B) {}
     let single_var = vec![
