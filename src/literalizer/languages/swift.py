@@ -358,50 +358,55 @@ def _swift_scalar_hint(
     return hint
 
 
-@beartype
-def _swift_collapse(types: list[str]) -> str:
-    """Return a single Swift element type or ``Any`` / ``Any?``
-    fallback.
-    """
-    unique = list(dict.fromkeys(types))
-    match unique:
-        case [single]:
-            return single
-        case _ if "Any?" in unique:
-            return "Any?"
-        case _:
-            return "Any"
+class _SwiftTypeKind(enum.Enum):
+    """Atomic erased types selected by Swift inference."""
+
+    NAMED = enum.auto()
+    ANY = enum.auto()
+    OPTIONAL_ANY = enum.auto()
+
+
+@dataclasses.dataclass(frozen=True)
+class _SwiftTypeHint:
+    """A target type and the inference facts retained by its producer."""
+
+    code: str
+    needs_context: bool
+    kind: _SwiftTypeKind
+    contains_record: bool
+    array_element_is_any: bool
 
 
 @beartype
-def _swift_dict_hint(
-    *,
-    val_types: list[str],
-    is_empty: bool,
-    default_dict_value_type: str,
-) -> str:
-    """Derive a Swift dictionary type annotation."""
-    if is_empty:
-        return f"[String: {default_dict_value_type}]"
-    return f"[String: {_swift_collapse(types=val_types)}]"
+def _swift_named_hint(name: str) -> _SwiftTypeHint:
+    """Describe a selected scalar or caller-provided element type."""
+    return _SwiftTypeHint(
+        code=name,
+        needs_context=name in {"Any", "Any?", "AnyHashable", "AnyObject"},
+        kind={
+            "Any": _SwiftTypeKind.ANY,
+            "Any?": _SwiftTypeKind.OPTIONAL_ANY,
+        }.get(name, _SwiftTypeKind.NAMED),
+        contains_record=False,
+        array_element_is_any=False,
+    )
 
 
 @beartype
-def _swift_list_hint(
-    *,
-    elem_types: list[str],
-    is_empty: bool,
-    sequence_is_tuple: bool,
-    default_sequence_element_type: str,
-) -> str:
-    """Derive a Swift array/tuple type annotation."""
-    if is_empty:
-        if sequence_is_tuple:
-            return "()"
-        return f"[{default_sequence_element_type}]"
-    if sequence_is_tuple:
-        return f"({', '.join(elem_types)})"
-    return f"[{_swift_collapse(types=elem_types)}]"
+def _swift_collapse(types: list[_SwiftTypeHint]) -> _SwiftTypeHint:
+    """Retain a uniform element type or select an erased fallback."""
+    unique = {hint.code: hint for hint in types}
+    if len(unique) == 1:
+        return next(iter(unique.values()))
+    fallback = _swift_named_hint(
+        name="Any?"
+        if any(hint.kind is _SwiftTypeKind.OPTIONAL_ANY for hint in types)
+        else "Any"
+    )
+    return dataclasses.replace(
+        fallback,
+        contains_record=any(hint.contains_record for hint in types),
+    )
 
 
 @beartype
@@ -415,12 +420,18 @@ def _swift_type_hint(
     default_dict_value_type: str,
     sequence_is_tuple: bool,
     record_name_for_value: Callable[[Value], str | None] | None,
-) -> str:
-    """Derive a Swift type annotation from *data*."""
+) -> _SwiftTypeHint:
+    """Derive a Swift annotation and retain its inference requirements."""
     if record_name_for_value is not None:
         record_name = record_name_for_value(data)
         if record_name is not None:
-            return record_name
+            return _SwiftTypeHint(
+                code=record_name,
+                needs_context=False,
+                kind=_SwiftTypeKind.NAMED,
+                contains_record=True,
+                array_element_is_any=False,
+            )
     recurse = functools.partial(
         _swift_type_hint,
         date_hint=date_hint,
@@ -433,27 +444,55 @@ def _swift_type_hint(
     )
     match data:
         case dict():
-            hint = _swift_dict_hint(
-                val_types=[recurse(data=v) for v in data.values()],
-                is_empty=len(data) == 0,
-                default_dict_value_type=default_dict_value_type,
+            value_hint = (
+                _swift_collapse(types=[recurse(data=v) for v in data.values()])
+                if len(data) > 0
+                else _swift_named_hint(name=default_dict_value_type)
+            )
+            return dataclasses.replace(
+                value_hint,
+                code=f"[String: {value_hint.code}]",
+                kind=_SwiftTypeKind.NAMED,
+                array_element_is_any=False,
             )
         case set():
-            hint = f"Set<{default_set_element_type}>"
+            element_hint = _swift_named_hint(name=default_set_element_type)
+            return dataclasses.replace(
+                element_hint,
+                code=f"Set<{element_hint.code}>",
+                kind=_SwiftTypeKind.NAMED,
+            )
         case list():
-            hint = _swift_list_hint(
-                elem_types=[recurse(data=e) for e in data],
-                is_empty=len(data) == 0,
-                sequence_is_tuple=sequence_is_tuple,
-                default_sequence_element_type=default_sequence_element_type,
+            element_hints = [recurse(data=e) for e in data]
+            if sequence_is_tuple:
+                return _SwiftTypeHint(
+                    code=f"({', '.join(hint.code for hint in element_hints)})",
+                    kind=_SwiftTypeKind.NAMED,
+                    array_element_is_any=False,
+                    needs_context=any(
+                        hint.needs_context for hint in element_hints
+                    ),
+                    contains_record=any(
+                        hint.contains_record for hint in element_hints
+                    ),
+                )
+            element_hint = (
+                _swift_collapse(types=element_hints)
+                if len(data) > 0
+                else _swift_named_hint(name=default_sequence_element_type)
+            )
+            return dataclasses.replace(
+                element_hint,
+                code=f"[{element_hint.code}]",
+                kind=_SwiftTypeKind.NAMED,
+                array_element_is_any=element_hint.kind is _SwiftTypeKind.ANY,
             )
         case _:
-            hint = _swift_scalar_hint(
-                data=data,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
+            return _swift_named_hint(
+                name=_swift_scalar_hint(
+                    data=data, date_hint=date_hint, datetime_hint=datetime_hint
+                )
             )
-    return hint
 
 
 @beartype
@@ -516,7 +555,7 @@ def _format_swift_typed_declaration(
         sequence_is_tuple=sequence_is_tuple,
         record_name_for_value=None,
     )
-    return f"{keyword} {name}: {hint} = {value}"
+    return f"{keyword} {name}: {hint.code} = {value}"
 
 
 # The ``RECORD`` strategy supports only auto ``Record0``/``Record1``/...
@@ -1107,6 +1146,9 @@ class Swift(metaclass=LanguageCls):
             default_sequence_element_type: str,
             default_dict_value_type: str,
             sequence_is_tuple: bool,
+            record_name_for_value: Callable[[Value], str | None] | None,
+            inferred_empty_sequence: bool,
+            is_reference_binding: bool,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             if self in {type(self).NEVER, type(self).SAFE}:
@@ -1123,40 +1165,48 @@ class Swift(metaclass=LanguageCls):
                         date_hint=date_hint,
                         datetime_hint=datetime_hint,
                         default_set_element_type=default_set_element_type,
-                        default_sequence_element_type=(
-                            default_sequence_element_type
-                        ),
+                        default_sequence_element_type=default_sequence_element_type,
                         default_dict_value_type=default_dict_value_type,
                         sequence_is_tuple=sequence_is_tuple,
-                        record_name_for_value=None,
+                        record_name_for_value=(
+                            None
+                            if is_reference_binding
+                            else record_name_for_value
+                        ),
+                    )
+                    empty_tuple = (
+                        isinstance(data, list)
+                        and len(data) == 0
+                        and sequence_is_tuple
+                        and not is_reference_binding
+                    )
+                    heterogeneous_ordered_map = (
+                        isinstance(data, OrderedMap)
+                        and len({type(item) for item in data.values()}) > 1
                     )
                     needs_context = (
                         data is None
-                        or value == "[]"
+                        or inferred_empty_sequence
                         or (
                             bool(data)
                             and (
-                                (
-                                    isinstance(data, OrderedMap)
-                                    and len(
-                                        {type(item) for item in data.values()}
-                                    )
-                                    > 1
-                                )
-                                or "Record0(" not in value
-                                or hint == "[Any]"
+                                heterogeneous_ordered_map
+                                or not hint.contains_record
+                                or hint.array_element_is_any
                             )
                         )
                     )
                     if isinstance(data, dict) and any(
                         not isinstance(key, str) for key in data
                     ):
-                        hint = "Any"
-                    if value == "()":
-                        hint = "Any"
+                        hint = _swift_named_hint(name="Any")
+                    if empty_tuple:
+                        hint = _swift_named_hint(name="Any")
                         needs_context = True
-                    if needs_context and ("Any" in hint or value == "[]"):
-                        return f"{keyword} {name}: {hint} = {value}"
+                    if needs_context and (
+                        hint.needs_context or inferred_empty_sequence
+                    ):
+                        return f"{keyword} {name}: {hint.code} = {value}"
                     return auto_formatter(name, value, data, modifiers)
 
                 return _inferred_formatter
@@ -1428,7 +1478,7 @@ class Swift(metaclass=LanguageCls):
                 self.sequence_format is type(self.sequence_format).TUPLE
             ),
             record_name_for_value=self._record_strategy.record_name_for_value,
-        )
+        ).code
 
     @cached_property
     def _record_renderer(self) -> RecordRenderer:
@@ -1611,7 +1661,39 @@ class Swift(metaclass=LanguageCls):
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Return the formatter for an independently rendered literal."""
+        return self._variable_declaration_formatter(
+            inferred_empty_sequence=False, is_reference_binding=False
+        )
+
+    def format_contextual_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+        *,
+        inferred_empty_sequence: bool,
+        is_reference_binding: bool,
+    ) -> str:
+        """Use the selected literal or reference representation."""
+        formatter = self.format_variable_declaration
+        if inferred_empty_sequence or is_reference_binding:
+            formatter = self._variable_declaration_formatter(
+                inferred_empty_sequence=inferred_empty_sequence,
+                is_reference_binding=is_reference_binding,
+            )
+        return formatter(name, value, data, modifiers)
+
+    def _variable_declaration_formatter(
+        self,
+        *,
+        inferred_empty_sequence: bool,
+        is_reference_binding: bool,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
+        lookup = self._record_strategy.record_name_for_value
         formatter = self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self.declaration_style.name.lower(),
@@ -1623,8 +1705,10 @@ class Swift(metaclass=LanguageCls):
             sequence_is_tuple=(
                 self.sequence_format is type(self.sequence_format).TUPLE
             ),
+            record_name_for_value=lookup,
+            inferred_empty_sequence=inferred_empty_sequence,
+            is_reference_binding=is_reference_binding,
         )
-        lookup = self._record_strategy.record_name_for_value
         if lookup is None:
             return formatter
 
@@ -1657,7 +1741,7 @@ class Swift(metaclass=LanguageCls):
                     record_name_for_value=lookup,
                 )
                 keyword = self.declaration_style.name.lower()
-                return f"{keyword} {name}: {hint} = {value}"
+                return f"{keyword} {name}: {hint.code} = {value}"
             record_name = lookup(data)
             if record_name is None:
                 return formatter(name, value, data, modifiers)
