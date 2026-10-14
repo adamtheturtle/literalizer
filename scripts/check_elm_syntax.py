@@ -45,6 +45,8 @@ def _check_fixture(
             ],
             cwd=tmpdir,
             env=env,
+            fixture=filename,
+            timeout_seconds=60,
         )
     if result.returncode == 0:
         return False

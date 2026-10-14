@@ -12,6 +12,7 @@ import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
+from scripts.bounded_command import bounded_command
 from scripts.elm_common import (
     ELM_JSON,
     NOINDEX_SUFFIX,
@@ -128,6 +129,8 @@ def _run_fixture(
             ],
             cwd=tmpdir,
             env=env,
+            fixture=filename,
+            timeout_seconds=60,
         )
         if compile_result.returncode != 0:
             msg = f"{filename}: elm make failed\n"
@@ -135,7 +138,11 @@ def _run_fixture(
             _ = sys.stderr.write(msg)
             return True
         run_result = subprocess.run(
-            args=[node_path, str(object=output_js)],
+            args=bounded_command(
+                args=[node_path, str(object=output_js)],
+                fixture=filename,
+                timeout_seconds=60,
+            ),
             capture_output=True,
             text=True,
             check=False,

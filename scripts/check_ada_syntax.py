@@ -6,6 +6,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from scripts.bounded_command import bounded_command
+
 
 def main() -> None:
     """Check syntax of the given Ada golden file."""
@@ -21,14 +23,18 @@ def main() -> None:
         # `-gnat2022` matches `Ada.language_version` in
         # `src/literalizer/languages/ada.py`; keep them in sync.
         result = subprocess.run(
-            args=[
-                gnatmake_path,
-                "-gnat2022",
-                "-gnatwe",
-                "-Werror",
-                "-gnats",
-                "main.adb",
-            ],
+            args=bounded_command(
+                args=[
+                    gnatmake_path,
+                    "-gnat2022",
+                    "-gnatwe",
+                    "-Werror",
+                    "-gnats",
+                    "main.adb",
+                ],
+                fixture=filename,
+                timeout_seconds=60,
+            ),
             capture_output=True,
             text=True,
             check=False,

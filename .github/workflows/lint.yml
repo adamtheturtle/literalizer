@@ -1151,7 +1151,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
           while IFS= read -r -d '' f; do
-            elm-format --stdin < "$f" > /dev/null || exit 1
+            label="Elm formatting: $f"
+            scripts/run-bounded.sh "$label" --kill-after=5s 60s elm-format --stdin < "$f" > /dev/null || exit "$?"
           done < /tmp/files-elm
           xargs -0 uv run python -m scripts.check_elm_syntax < /tmp/files-elm
 
@@ -2309,14 +2310,14 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
-            swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
+          scripts/run-bounded.sh "$1" --signal=KILL 60s \
+            swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit "$?"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
         run: |-
           cat > /tmp/run-swift.sh <<'SCRIPT'
-          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
+          scripts/run-bounded.sh "$1" --signal=KILL 60s \
             swift -swift-version 5 -warnings-as-errors "$1"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-swift.sh < /tmp/files-to-lint
@@ -3509,6 +3510,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install GNU timeout
+        run: brew install --quiet coreutils
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
