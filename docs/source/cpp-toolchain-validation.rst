@@ -94,7 +94,7 @@ This local Linux comparison does not constitute a new hosted CI result.
 Diagnosis and limits
 --------------------
 
-`LLVM's check documentation <https://github.com/llvm/llvm-project/blob/llvmorg-22.1.8/clang-tools-extra/docs/clang-tidy/checks/bugprone/exception-escape.rst>`__ includes ``main`` among functions checked for escaping exceptions.
+`LLVM's check documentation <https://raw.githubusercontent.com/llvm/llvm-project/llvmorg-22.1.8/clang-tools-extra/docs/clang-tidy/checks/bugprone/exception-escape.rst>`__ includes ``main`` among functions checked for escaping exceptions.
 This is a checker policy; C++ does not implicitly declare ``main`` as ``noexcept``.
 The allocator and string diagnostics follow throw expressions visible inside ``libc++`` headers, including ``bad_array_new_length`` and ``length_error``.
 GNU's corresponding helpers are declarations in `bits/functexcept.h <https://raw.githubusercontent.com/gcc-mirror/gcc/releases/gcc-13.3.0/libstdc%2B%2B-v3/include/bits/functexcept.h>`__ with definitions outside the translation unit.
