@@ -134,6 +134,8 @@ def _format_computed_key(*, raw_key: str, formatted_key: str) -> str:
 class _TypeScriptObjectDictFormatConfig(DictFormatConfig):
     """Object-literal config that classifies keys from source names."""
 
+    is_object_literal: ClassVar[bool] = True
+
     @staticmethod
     @override
     def format_key(*, raw_key: str, formatted_key: str) -> str:
@@ -145,7 +147,7 @@ class _TypeScriptObjectDictFormatConfig(DictFormatConfig):
 
 @beartype
 @dataclasses.dataclass(frozen=True)
-class _TypeScriptComputedDictFormatConfig(DictFormatConfig):
+class _TypeScriptComputedDictFormatConfig(_TypeScriptObjectDictFormatConfig):
     """Object-literal config that computes every property name."""
 
     format_key = staticmethod(_format_computed_key)
@@ -156,6 +158,8 @@ class _TypeScriptComputedDictFormatConfig(DictFormatConfig):
 class _TypeScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Ordered-object config that classifies keys from source names."""
 
+    is_object_literal: ClassVar[bool] = True
+
     @staticmethod
     @override
     def format_key(*, raw_key: str, formatted_key: str) -> str:
@@ -166,7 +170,9 @@ class _TypeScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
 
 
 @dataclasses.dataclass(frozen=True)
-class _TypeScriptComputedOrderedMapFormatConfig(OrderedMapFormatConfig):
+class _TypeScriptComputedOrderedMapFormatConfig(
+    _TypeScriptObjectOrderedMapFormatConfig
+):
     """Ordered-object config that computes every property name."""
 
     format_key = staticmethod(_format_computed_key)
@@ -1223,12 +1229,11 @@ class TypeScript(metaclass=LanguageCls):
         context: FileWrapperContext,
     ) -> str:
         """Wrap a TypeScript declaration as a module."""
-        variable_name = context.variable_name
         body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=parenthesize_bare_object(
                 content=content,
-                variable_name=variable_name,
+                context=context,
             ),
             body_preamble=body_preamble,
         )

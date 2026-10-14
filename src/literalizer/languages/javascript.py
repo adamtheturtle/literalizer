@@ -130,6 +130,8 @@ def _format_computed_key(*, raw_key: str, formatted_key: str) -> str:
 class _JavaScriptObjectDictFormatConfig(DictFormatConfig):
     """Object-literal config that classifies keys from source names."""
 
+    is_object_literal: ClassVar[bool] = True
+
     @staticmethod
     @override
     def format_key(*, raw_key: str, formatted_key: str) -> str:
@@ -141,7 +143,7 @@ class _JavaScriptObjectDictFormatConfig(DictFormatConfig):
 
 @beartype
 @dataclasses.dataclass(frozen=True)
-class _JavaScriptComputedDictFormatConfig(DictFormatConfig):
+class _JavaScriptComputedDictFormatConfig(_JavaScriptObjectDictFormatConfig):
     """Object-literal config that computes every property name."""
 
     format_key = staticmethod(_format_computed_key)
@@ -152,6 +154,8 @@ class _JavaScriptComputedDictFormatConfig(DictFormatConfig):
 class _JavaScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
     """Ordered-object config that classifies keys from source names."""
 
+    is_object_literal: ClassVar[bool] = True
+
     @staticmethod
     @override
     def format_key(*, raw_key: str, formatted_key: str) -> str:
@@ -162,7 +166,9 @@ class _JavaScriptObjectOrderedMapFormatConfig(OrderedMapFormatConfig):
 
 
 @dataclasses.dataclass(frozen=True)
-class _JavaScriptComputedOrderedMapFormatConfig(OrderedMapFormatConfig):
+class _JavaScriptComputedOrderedMapFormatConfig(
+    _JavaScriptObjectOrderedMapFormatConfig
+):
     """Ordered-object config that computes every property name."""
 
     format_key = staticmethod(_format_computed_key)
@@ -785,11 +791,10 @@ class JavaScript(metaclass=LanguageCls):
         context: FileWrapperContext,
     ) -> str:
         """Wrap code in a valid file, as an expression if unbound."""
-        variable_name = context.variable_name
         return wrap_in_file_noop(
             content=parenthesize_bare_object(
                 content=content,
-                variable_name=variable_name,
+                context=context,
             ),
             context=context,
         )
