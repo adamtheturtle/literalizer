@@ -1,7 +1,7 @@
 """MATLAB language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Sequence
@@ -218,7 +218,7 @@ def _format_matlab_dict_entry(
 
 
 @beartype
-def _format_datetime_matlab(value: datetime.datetime) -> str:
+def _format_datetime_matlab(value: dt.datetime) -> str:
     """Format a datetime as a MATLAB ``datetime`` expression."""
     seconds = str(object=value.second)
     if value.microsecond != 0:
@@ -424,7 +424,7 @@ class Matlab(metaclass=LanguageCls):
                 template="datetime({year}, {month}, {day})",
             ),
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -438,7 +438,7 @@ class Matlab(metaclass=LanguageCls):
         MATLAB = DatetimeFormatConfig(
             formatter=_format_datetime_matlab,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -846,17 +846,17 @@ class Matlab(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

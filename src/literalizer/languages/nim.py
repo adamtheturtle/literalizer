@@ -1,7 +1,7 @@
 """Nim language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Mapping, Sequence
@@ -392,19 +392,19 @@ class _VariantSignature:
 @beartype
 def _nim_temporal_variant_signature(
     *,
-    value: datetime.date | datetime.time,
+    value: dt.date | dt.time,
     date_type: str,
     datetime_type: str,
 ) -> _VariantSignature:
     """Return the object-variant signature for one temporal value."""
     match value:
-        case datetime.datetime():
+        case dt.datetime():
             return _VariantSignature(
                 kind_name="vkDateTime",
                 field_name="dateTimeVal",
                 field_type=datetime_type,
             )
-        case datetime.date():
+        case dt.date():
             return _VariantSignature(
                 kind_name="vkDate",
                 field_name="dateVal",
@@ -457,7 +457,7 @@ def _nim_variant_for_scalar(
                 field_name="bytesVal",
                 field_type="string",
             )
-        case datetime.datetime() | datetime.date() | datetime.time():
+        case dt.datetime() | dt.date() | dt.time():
             signature = _nim_temporal_variant_signature(
                 value=value,
                 date_type=date_type,
@@ -1332,7 +1332,7 @@ class Nim(metaclass=LanguageCls):
                 template='{{"year": {year}, "month": {month}, "day": {day}}}',
             ),
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
@@ -1353,7 +1353,7 @@ class Nim(metaclass=LanguageCls):
                 millisecond_template=None,
             ),
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -2057,9 +2057,9 @@ class Nim(metaclass=LanguageCls):
                 element_type = self._nim_value_field_type(value[0])
         return f"seq[{element_type}]"
 
-    def _nim_temporal_field_type(self, value: datetime.date, /) -> str:
+    def _nim_temporal_field_type(self, value: dt.date, /) -> str:
         """Resolve the field type for the selected temporal representation."""
-        if isinstance(value, datetime.datetime):
+        if isinstance(value, dt.datetime):
             return self._heterogeneous_variant_datetime_type
         return self._heterogeneous_variant_date_type
 
@@ -2097,9 +2097,9 @@ class Nim(metaclass=LanguageCls):
                 field_type = "int"
             case float():
                 field_type = "float"
-            case str() | bytes() | datetime.time():
+            case str() | bytes() | dt.time():
                 field_type = "string"
-            case datetime.date():
+            case dt.date():
                 field_type = self._nim_temporal_field_type(value)
             case list():
                 field_type = self._nim_list_field_type(value=value)
@@ -2491,7 +2491,7 @@ class Nim(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal.
 
         ``json_type`` overrides the configured ``date_format`` with the
@@ -2503,7 +2503,7 @@ class Nim(metaclass=LanguageCls):
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
         ``json_type`` overrides the configured ``datetime_format`` with
@@ -2518,7 +2518,7 @@ class Nim(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
@@ -2766,12 +2766,12 @@ class Nim(metaclass=LanguageCls):
             if self.datetime_format.value.type_produced in {str, int}:
                 datetime_preamble = ()
             return {
-                datetime.date: date_preamble,
-                datetime.datetime: datetime_preamble,
+                dt.date: date_preamble,
+                dt.datetime: datetime_preamble,
             }
         return {
-            datetime.date: self.date_format.value.preamble_lines,
-            datetime.datetime: self.datetime_format.value.preamble_lines,
+            dt.date: self.date_format.value.preamble_lines,
+            dt.datetime: self.datetime_format.value.preamble_lines,
         }
 
     @cached_property

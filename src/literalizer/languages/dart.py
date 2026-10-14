@@ -1,7 +1,7 @@
 """Dart language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import re
@@ -118,13 +118,13 @@ from literalizer.exceptions import (
 
 
 @beartype
-def _format_date_dart(value: datetime.date) -> str:
+def _format_date_dart(value: dt.date) -> str:
     """Format a date as a deterministic UTC ``DateTime``."""
     return f"DateTime.utc({value.year}, {value.month}, {value.day})"
 
 
 @beartype
-def _format_datetime_dart(value: datetime.datetime) -> str:
+def _format_datetime_dart(value: dt.datetime) -> str:
     """Format a datetime without consulting the runtime time zone."""
     if value.utcoffset() is not None:
         return f'DateTime.parse("{value.isoformat()}")'
@@ -272,11 +272,11 @@ def _dart_scalar_hint(
             hint = "int"
         case float():
             hint = "double"
-        case str() | bytes() | datetime.time():
+        case str() | bytes() | dt.time():
             hint = "String"
-        case datetime.datetime():
+        case dt.datetime():
             hint = datetime_hint
-        case datetime.date():
+        case dt.date():
             hint = date_hint
         case None:
             hint = "Null"
@@ -742,7 +742,7 @@ class Dart(metaclass=LanguageCls):
         DART = DateFormatConfig(
             formatter=_format_date_dart,
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -756,7 +756,7 @@ class Dart(metaclass=LanguageCls):
         DART = DatetimeFormatConfig(
             formatter=_format_datetime_dart,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1222,8 +1222,7 @@ class Dart(metaclass=LanguageCls):
         if self.date_format is _date_cls.DART and value_contains(
             data=data,
             predicate=lambda v: (
-                isinstance(v, datetime.date)
-                and not isinstance(v, datetime.datetime)
+                isinstance(v, dt.date) and not isinstance(v, dt.datetime)
             ),
         ):
             msg = (
@@ -1235,7 +1234,7 @@ class Dart(metaclass=LanguageCls):
             raise IncompatibleFormatsError(msg)
         if self.datetime_format is _datetime_cls.DART and value_contains(
             data=data,
-            predicate=lambda v: isinstance(v, datetime.datetime),
+            predicate=lambda v: isinstance(v, dt.datetime),
         ):
             msg = (
                 "Dart CONST requires a constant-expression initializer, "
@@ -1424,17 +1423,17 @@ class Dart(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

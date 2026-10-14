@@ -2,7 +2,7 @@
 
 import collections.abc
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Mapping, Sequence
@@ -147,11 +147,11 @@ def _apply_format_c_entry(
 ) -> str:
     """Wrap a formatted entry in the appropriate union literal."""
     match original:
-        case datetime.datetime():
+        case dt.datetime():
             field = string_field
             if datetime_as_int:
                 field = int_field
-        case str() | bytes() | datetime.date() | datetime.time():
+        case str() | bytes() | dt.date() | dt.time():
             field = string_field
         case bool():
             return formatted
@@ -918,11 +918,11 @@ def _c_integer_field_type(*, value: int) -> str:
 
 @beartype
 def _c_temporal_field_type(
-    *, value: str | bytes | datetime.date | datetime.time, epoch: bool
+    *, value: str | bytes | dt.date | dt.time, epoch: bool
 ) -> str:
     """Choose the C field type for string and temporal values."""
     field_type = "const char *"
-    if epoch and isinstance(value, datetime.datetime):
+    if epoch and isinstance(value, dt.datetime):
         field_type = "long long"
     return field_type
 
@@ -1602,7 +1602,7 @@ class C(metaclass=LanguageCls):
                 field_type = "double"
             case None:
                 field_type = "const void *"
-            case str() | bytes() | datetime.date() | datetime.time():
+            case str() | bytes() | dt.date() | dt.time():
                 field_type = _c_temporal_field_type(value=value, epoch=epoch)
             case list():
                 field_type = "const CVal *"
@@ -1746,7 +1746,7 @@ class C(metaclass=LanguageCls):
             """Wrap time arguments omitted by the shared entry
             formatter.
             """
-            if isinstance(raw_value, datetime.time):
+            if isinstance(raw_value, dt.time):
                 return f"((CVal){{.{string_field} = {formatted}}})"
             return format_entry(raw_value, formatted)
 
@@ -1953,17 +1953,17 @@ class C(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

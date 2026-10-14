@@ -1,7 +1,7 @@
 """Lua language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import math
 import re
@@ -170,21 +170,21 @@ def _format_string_multiline(value: str) -> str:
 
 
 @beartype
-def _format_date_lua(value: datetime.date) -> str:
+def _format_date_lua(value: dt.date) -> str:
     """Format a date as UTC Unix epoch seconds.
 
     The Lua ``os.time`` function interprets table fields in the machine's
     local timezone,
     so embedding an epoch literal is the only deterministic representation.
     """
-    midnight_utc = datetime.datetime.combine(
-        date=value, time=datetime.time(), tzinfo=datetime.UTC
+    midnight_utc = dt.datetime.combine(
+        date=value, time=dt.time(), tzinfo=dt.UTC
     )
     return str(object=datetime_epoch_seconds(value=midnight_utc))
 
 
 @beartype
-def _format_datetime_lua(value: datetime.datetime) -> str:
+def _format_datetime_lua(value: dt.datetime) -> str:
     """Format a datetime as deterministic Unix epoch seconds."""
     return format_datetime_epoch_fractional(value=value)
 
@@ -371,7 +371,7 @@ class Lua(metaclass=LanguageCls):
         LUA = DateFormatConfig(
             formatter=_format_date_lua,
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -385,7 +385,7 @@ class Lua(metaclass=LanguageCls):
         LUA = DatetimeFormatConfig(
             formatter=_format_datetime_lua,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -799,17 +799,17 @@ class Lua(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

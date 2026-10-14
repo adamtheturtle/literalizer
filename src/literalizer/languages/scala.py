@@ -1,7 +1,7 @@
 """Scala language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Mapping, Sequence
@@ -235,7 +235,7 @@ def _format_scala_bigint_literal(value: int) -> str:
 
 
 @beartype
-def _format_datetime_scala(value: datetime.datetime) -> str:
+def _format_datetime_scala(value: dt.datetime) -> str:
     """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call."""
     raw_timezone_name = value.tzname()
     timezone_name = "UTC"
@@ -340,7 +340,7 @@ def _scala_parameter_declaration(name: str, /) -> str:
 
 
 @beartype
-def _format_scala_datetime_epoch(value: datetime.datetime, /) -> str:
+def _format_scala_datetime_epoch(value: dt.datetime, /) -> str:
     """Format epoch seconds as a Scala ``Long`` literal."""
     return f"{datetime_epoch_seconds(value=value)}L"
 
@@ -841,7 +841,7 @@ class Scala(metaclass=LanguageCls):
                 template="LocalDate.of({year}, {month}, {day})",
             ),
             preamble_lines=("import java.time.LocalDate",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -858,7 +858,7 @@ class Scala(metaclass=LanguageCls):
                 "import java.time.ZoneId",
                 "import java.time.ZonedDateTime",
             ),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1493,7 +1493,7 @@ class Scala(metaclass=LanguageCls):
         # ``Long``); other datetime formats stay datetime-typed via the
         # scalar resolver below.
         if (
-            isinstance(value, datetime.datetime)
+            isinstance(value, dt.datetime)
             and self.datetime_format.value.type_produced is int
         ):
             field_type = "Long"
@@ -1960,14 +1960,14 @@ class Scala(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return format_date_iso
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
         ``EPOCH`` seconds carry the ``L`` suffix whatever their
@@ -1977,9 +1977,7 @@ class Scala(metaclass=LanguageCls):
         2038 the value falls, so the two are pinned together
         (issue #3965).
         """
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self._json_type_active:
             return format_datetime_iso
         if self.datetime_format is type(self.datetime_format).EPOCH:
@@ -1987,7 +1985,7 @@ class Scala(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self._json_type_active:
             return format_time_iso
@@ -2086,7 +2084,7 @@ class Scala(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            extra={datetime.time: ("import java.time.LocalTime",)},
+            extra={dt.time: ("import java.time.LocalTime",)},
         )
 
     @cached_property

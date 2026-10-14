@@ -1,7 +1,7 @@
 """PureScript language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import itertools
 import math
@@ -115,7 +115,7 @@ from literalizer.exceptions import (
 
 
 @beartype
-def _apply_purescript_date_iso(value: datetime.date, prefix: str) -> str:
+def _apply_purescript_date_iso(value: dt.date, prefix: str) -> str:
     """Format a date as a PureScript string via ISO 8601."""
     return f"{prefix}Str {format_date_iso(value=value)}"
 
@@ -123,12 +123,12 @@ def _apply_purescript_date_iso(value: datetime.date, prefix: str) -> str:
 @beartype
 def _build_purescript_date_iso(
     prefix: str,
-) -> Callable[[datetime.date], str]:
+) -> Callable[[dt.date], str]:
     """Build a date formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.date) -> str:
+    def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_date_iso(value=value, prefix=prefix)
 
@@ -136,7 +136,7 @@ def _build_purescript_date_iso(
 
 
 @beartype
-def _apply_purescript_time_iso(value: datetime.time, prefix: str) -> str:
+def _apply_purescript_time_iso(value: dt.time, prefix: str) -> str:
     """Format a time as a PureScript string via ISO 8601."""
     return f"{prefix}Str {format_time_iso(value=value)}"
 
@@ -144,12 +144,12 @@ def _apply_purescript_time_iso(value: datetime.time, prefix: str) -> str:
 @beartype
 def _build_purescript_time_iso(
     prefix: str,
-) -> Callable[[datetime.time], str]:
+) -> Callable[[dt.time], str]:
     """Build a time formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.time) -> str:
+    def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_time_iso(value=value, prefix=prefix)
 
@@ -157,9 +157,7 @@ def _build_purescript_time_iso(
 
 
 @beartype
-def _apply_purescript_datetime_iso(
-    value: datetime.datetime, prefix: str
-) -> str:
+def _apply_purescript_datetime_iso(value: dt.datetime, prefix: str) -> str:
     """Format a datetime as a PureScript string via ISO 8601."""
     return f"{prefix}Str {format_datetime_iso(value=value)}"
 
@@ -167,12 +165,12 @@ def _apply_purescript_datetime_iso(
 @beartype
 def _build_purescript_datetime_iso(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_datetime_iso(value=value, prefix=prefix)
 
@@ -182,7 +180,7 @@ def _build_purescript_datetime_iso(
 @beartype
 def _build_purescript_datetime_epoch(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Int`` from
     Unix epoch seconds.
     """
@@ -248,7 +246,7 @@ def _purescript_int_fits_in_int32(value: int) -> bool:
 
 @beartype
 def _purescript_datetime_has_large_int(
-    value: datetime.datetime, datetime_type_produced: type
+    value: dt.datetime, datetime_type_produced: type
 ) -> bool:
     """Return whether an epoch datetime requires the wide integer
     carrier.
@@ -279,7 +277,7 @@ def _purescript_has_large_int(
             case int():
                 if not _purescript_int_fits_in_int32(value=value):
                     return True
-            case datetime.datetime():
+            case dt.datetime():
                 if _purescript_datetime_has_large_int(
                     value=value,
                     datetime_type_produced=datetime_type_produced,
@@ -478,7 +476,7 @@ def _purescript_children(val: Value) -> list[Value]:
             return [
                 member
                 for member in val
-                if isinstance(member, (int, float, datetime.datetime))
+                if isinstance(member, (int, float, dt.datetime))
                 and not isinstance(member, bool)
             ]
         case _:
@@ -498,7 +496,7 @@ def _purescript_scalar_needs_prelude(
             return val < 0
         case float():
             return _purescript_negative_float(val=val)
-        case datetime.datetime():
+        case dt.datetime():
             return (
                 datetime_type_produced is int
                 and datetime_epoch_seconds(value=val) < 0
@@ -550,11 +548,11 @@ def _build_purescript_body_preamble(
         p = constructor_prefix
         needs_tuple = bool(types & {dict, OrderedMap})
         int_types: set[type] = {int}
-        str_types: set[type] = {str, bytes, datetime.date, datetime.time}
+        str_types: set[type] = {str, bytes, dt.date, dt.time}
         if datetime_type_produced is int:
-            int_types.add(datetime.datetime)
+            int_types.add(dt.datetime)
         else:
-            str_types.add(datetime.datetime)
+            str_types.add(dt.datetime)
         has_large_int = bool(types & int_types) and _purescript_has_large_int(
             val=data,
             datetime_type_produced=datetime_type_produced,
@@ -732,7 +730,7 @@ def _purescript_native_shape(data: Value) -> str:
         return "Int" if _purescript_int_fits_in_int32(value=data) else "Number"
     if isinstance(data, float):
         return "Number"
-    if isinstance(data, (str, bytes, datetime.date, datetime.time)):
+    if isinstance(data, (str, bytes, dt.date, dt.time)):
         return "String"
     return type(data).__name__
 
@@ -1927,7 +1925,7 @@ class PureScript(metaclass=LanguageCls):
         )
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
             return format_date_iso
@@ -1936,11 +1934,9 @@ class PureScript(metaclass=LanguageCls):
         return _build_purescript_date_iso(prefix=self.constructor_prefix)
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self.dict_format is type(self.dict_format).RECORD:
             return (
                 datetime_epoch_formatter(format_integer=self.format_integer)
@@ -1956,7 +1952,7 @@ class PureScript(metaclass=LanguageCls):
         return _build_purescript_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
             return format_time_iso

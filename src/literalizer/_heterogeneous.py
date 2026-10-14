@@ -8,7 +8,7 @@ children wrapped and to iterate those scalars when building the
 type declaration.
 """
 
-import datetime
+import datetime as dt
 from collections.abc import Sequence
 
 from beartype import beartype
@@ -33,9 +33,9 @@ def _scalar_bucket(value: Value) -> type | None:
         float,
         str,
         bytes,
-        datetime.datetime,
-        datetime.date,
-        datetime.time,
+        dt.datetime,
+        dt.date,
+        dt.time,
     )
     for bucket in buckets:
         if isinstance(value, bucket):

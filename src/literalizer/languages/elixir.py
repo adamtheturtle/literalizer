@@ -1,7 +1,7 @@
 """Elixir language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -137,14 +137,14 @@ _constructor_target: Callable[[str], str] = _format_constructor_target
 
 
 @beartype
-def _format_datetime_elixir(value: datetime.datetime) -> str:
+def _format_datetime_elixir(value: dt.datetime) -> str:
     """Format a datetime as an Elixir sigil.
 
     Uses ``~U`` for timezone-aware datetimes (converted to UTC, since
     the ``~U`` sigil only accepts UTC offsets) and ``~N`` for naive ones.
     """
     if value.tzinfo is not None:
-        utc_value = value.astimezone(tz=datetime.UTC)
+        utc_value = value.astimezone(tz=dt.UTC)
         iso = utc_value.isoformat()
         # Elixir sigil syntax uses a space separator instead of T.
         iso = iso.replace("T", " ")
@@ -475,7 +475,7 @@ class Elixir(metaclass=LanguageCls):
         ELIXIR = DateFormatConfig(
             formatter=date_iso_formatter(template="~D[{iso}]"),
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
 
     class DatetimeFormats(DatetimeFormatEnum):
@@ -491,7 +491,7 @@ class Elixir(metaclass=LanguageCls):
         ELIXIR = DatetimeFormatConfig(
             formatter=_format_datetime_elixir,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
 
         EPOCH = DatetimeFormatConfig(
@@ -1002,17 +1002,17 @@ class Elixir(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

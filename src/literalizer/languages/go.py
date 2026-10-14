@@ -1,7 +1,7 @@
 """Go language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import math
 import re
@@ -319,7 +319,7 @@ def _go_month_name(month: int) -> str:
 
 
 @beartype
-def _format_date_go(value: datetime.date) -> str:
+def _format_date_go(value: dt.date) -> str:
     """Format a date as a Go ``time.Date(...)`` call."""
     month = _go_month_name(month=value.month)
     return (
@@ -328,7 +328,7 @@ def _format_date_go(value: datetime.date) -> str:
 
 
 @beartype
-def _format_datetime_go(value: datetime.datetime) -> str:
+def _format_datetime_go(value: dt.datetime) -> str:
     """Format a datetime as a Go ``time.Date(...)`` call."""
     month = _go_month_name(month=value.month)
     nanoseconds = value.microsecond * 1000
@@ -347,7 +347,7 @@ def _format_datetime_go(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_time_go(value: datetime.time) -> str:
+def _format_time_go(value: dt.time) -> str:
     """Format a local time as a Go ``time.Time`` with a zero date."""
     nanoseconds = value.microsecond * 1000
     return (
@@ -685,7 +685,7 @@ class Go(metaclass=LanguageCls):
         GO = DateFormatConfig(
             formatter=_format_date_go,
             preamble_lines=('import "time"',),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -699,7 +699,7 @@ class Go(metaclass=LanguageCls):
         GO = DatetimeFormatConfig(
             formatter=_format_datetime_go,
             preamble_lines=('import "time"',),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1434,8 +1434,8 @@ class Go(metaclass=LanguageCls):
     ) -> Callable[[type | ListType | DictType], str | None]:
         """Element-to-type resolver for the configured Go types."""
         _type_names: dict[type, str] = {
-            datetime.date: "time.Time",
-            datetime.datetime: "time.Time",
+            dt.date: "time.Time",
+            dt.datetime: "time.Time",
             str: "string",
         }
         suffix_is_auto = (
@@ -1567,17 +1567,17 @@ class Go(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return _format_time_go
 
@@ -1706,7 +1706,7 @@ class Go(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            extra={datetime.time: ('import "time"',)},
+            extra={dt.time: ('import "time"',)},
         )
 
     @cached_property

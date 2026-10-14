@@ -1,7 +1,7 @@
 """Haskell language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import itertools
 import re
@@ -311,7 +311,7 @@ def _haskell_format_call_arg(_original: Value, formatted: str, /) -> str:
 
 
 @beartype
-def _haskell_utc_time_expression(value: datetime.datetime) -> str:
+def _haskell_utc_time_expression(value: dt.datetime) -> str:
     """Format a datetime as a native Haskell UTC time expression.
 
     Timezone-aware datetimes are converted to UTC first, since
@@ -333,7 +333,7 @@ def _haskell_utc_time_expression(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_haskell_datetime(value: datetime.datetime, prefix: str) -> str:
+def _format_haskell_datetime(value: dt.datetime, prefix: str) -> str:
     """Wrap a UTC time expression in the tagged datetime constructor."""
     return f"{prefix}Datetime ({_haskell_utc_time_expression(value=value)})"
 
@@ -341,12 +341,12 @@ def _format_haskell_datetime(value: datetime.datetime, prefix: str) -> str:
 @beartype
 def _build_haskell_datetime_formatter(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Datetime``
     constructors.
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _format_haskell_datetime(value=value, prefix=prefix)
 
@@ -427,15 +427,15 @@ def _validate_haskell_native_record(
 class _DateTimeFormatters:
     """Resolved date and datetime formatters."""
 
-    format_date: Callable[[datetime.date], str]
-    format_datetime: Callable[[datetime.datetime], str]
+    format_date: Callable[[dt.date], str]
+    format_datetime: Callable[[dt.datetime], str]
 
 
 @beartype
 def _wrap_with_str_constructor_date(
-    value: datetime.date,
+    value: dt.date,
     str_prefix: str,
-    formatter: Callable[[datetime.date], str],
+    formatter: Callable[[dt.date], str],
 ) -> str:
     """Wrap an ISO date string with the HStr constructor."""
     return f"{str_prefix}{formatter(value)}"
@@ -443,9 +443,9 @@ def _wrap_with_str_constructor_date(
 
 @beartype
 def _wrap_with_str_constructor_datetime(
-    value: datetime.datetime,
+    value: dt.datetime,
     str_prefix: str,
-    formatter: Callable[[datetime.datetime], str],
+    formatter: Callable[[dt.datetime], str],
 ) -> str:
     """Wrap an ISO datetime string with the HStr constructor."""
     return f"{str_prefix}{formatter(value)}"
@@ -455,16 +455,16 @@ def _wrap_with_str_constructor_datetime(
 def _build_date_formatters(
     *,
     date_format_name: str,
-    date_formatter: Callable[[datetime.date], str],
+    date_formatter: Callable[[dt.date], str],
     datetime_format_name: str,
-    datetime_formatter: Callable[[datetime.datetime], str],
+    datetime_formatter: Callable[[dt.datetime], str],
     constructor_prefix: str,
     is_explicit: bool,
 ) -> _DateTimeFormatters:
     """Build date and datetime formatters based on format settings."""
     match date_format_name:
         case "HASKELL":
-            fmt_date: Callable[[datetime.date], str] = date_ymd_formatter(
+            fmt_date: Callable[[dt.date], str] = date_ymd_formatter(
                 template=(
                     f"{constructor_prefix}Date "
                     f"(fromGregorian {{year}} {{month}} {{day}})"
@@ -473,7 +473,7 @@ def _build_date_formatters(
         case _ if is_explicit:
             _str_pfx = f"{constructor_prefix}Str "
 
-            def _explicit_date(value: datetime.date) -> str:
+            def _explicit_date(value: dt.date) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_with_str_constructor_date(
                     value=value, str_prefix=_str_pfx, formatter=date_formatter
@@ -485,7 +485,7 @@ def _build_date_formatters(
 
     match datetime_format_name:
         case "HASKELL":
-            fmt_datetime: Callable[[datetime.datetime], str] = (
+            fmt_datetime: Callable[[dt.datetime], str] = (
                 _build_haskell_datetime_formatter(prefix=constructor_prefix)
             )
         case "EPOCH":
@@ -493,7 +493,7 @@ def _build_date_formatters(
         case _ if is_explicit:
             _str_pfx_dt = f"{constructor_prefix}Str "
 
-            def _explicit_datetime(value: datetime.datetime) -> str:
+            def _explicit_datetime(value: dt.datetime) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_with_str_constructor_datetime(
                     value=value,
@@ -728,9 +728,9 @@ def _num_instance(
 def _has_microsecond_datetime(*, data: Value) -> bool:
     """Return whether *data* contains any datetime with microseconds."""
     match data:
-        case datetime.datetime():
+        case dt.datetime():
             return bool(data.microsecond)
-        case datetime.date():
+        case dt.date():
             return False
         case dict():
             return any(
@@ -748,9 +748,9 @@ def _has_nonmicrosecond_datetime(*, data: Value) -> bool:
     microseconds.
     """
     match data:
-        case datetime.datetime():
+        case dt.datetime():
             return data.microsecond == 0
-        case datetime.date():
+        case dt.date():
             return False
         case dict():
             return any(
@@ -852,10 +852,10 @@ def _haskell_extend_for_dates(
     """
     p = cfg.constructor_prefix
     import_items: list[str] = []
-    if cfg.include_hdate and datetime.date in types:
+    if cfg.include_hdate and dt.date in types:
         data_val_parts.append(f"{p}Date Day")
         import_items.extend(["Day", "fromGregorian"])
-    if cfg.include_hdatetime and datetime.datetime in types:
+    if cfg.include_hdatetime and dt.datetime in types:
         data_val_parts.append(f"{p}Datetime UTCTime")
         import_items.extend(
             _datetime_import_items(
@@ -866,7 +866,7 @@ def _haskell_extend_for_dates(
         )
     if (
         cfg.datetime_produces_int
-        and datetime.datetime in types
+        and dt.datetime in types
         and f"{p}Int Integer" not in data_val_parts
     ):
         data_val_parts.append(f"{p}Int Integer")
@@ -882,11 +882,11 @@ def _haskell_needs_str_constructor(
     """Return True if an ``HStr String`` constructor must be present."""
     return (
         bool(types & {str, bytes})
-        or datetime.time in types
-        or (cfg.date_needs_is_string and datetime.date in types)
-        or (cfg.datetime_needs_is_string and datetime.datetime in types)
-        or (cfg.date_needs_str_explicit and datetime.date in types)
-        or (cfg.datetime_needs_str_explicit and datetime.datetime in types)
+        or dt.time in types
+        or (cfg.date_needs_is_string and dt.date in types)
+        or (cfg.datetime_needs_is_string and dt.datetime in types)
+        or (cfg.date_needs_str_explicit and dt.date in types)
+        or (cfg.datetime_needs_str_explicit and dt.datetime in types)
     )
 
 
@@ -903,7 +903,7 @@ def _haskell_num_instances(
     p = cfg.constructor_prefix
     has_float = float in types
     has_int = int in types or (
-        cfg.datetime_produces_int and datetime.datetime in types
+        cfg.datetime_produces_int and dt.datetime in types
     )
     instances: list[str] = []
     if has_float or has_int:
@@ -962,9 +962,9 @@ def _haskell_compute_preamble(
 
     needs_is_string = cfg.emit_is_string and (
         bool(types & {str, bytes})
-        or datetime.time in types
-        or (cfg.date_needs_is_string and datetime.date in types)
-        or (cfg.datetime_needs_is_string and datetime.datetime in types)
+        or dt.time in types
+        or (cfg.date_needs_is_string and dt.date in types)
+        or (cfg.datetime_needs_is_string and dt.datetime in types)
     )
     if (
         _haskell_needs_str_constructor(cfg=cfg, types=types)
@@ -1025,8 +1025,8 @@ def _build_scalar_body_preamble(
     instances are suppressed (used by the ``EXPLICIT`` numeric style).
     """
     cfg = _HaskellPreambleConfig(
-        include_hdate=date_config.type_produced is datetime.date,
-        include_hdatetime=datetime_config.type_produced is datetime.datetime,
+        include_hdate=date_config.type_produced is dt.date,
+        include_hdatetime=datetime_config.type_produced is dt.datetime,
         datetime_produces_int=datetime_config.type_produced is int,
         date_needs_is_string=bool(
             emit_is_string and date_config.preamble_lines
@@ -1833,7 +1833,7 @@ class Haskell(metaclass=LanguageCls):
                 template="HDate (fromGregorian {year} {month} {day})",
             ),
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
@@ -1849,7 +1849,7 @@ class Haskell(metaclass=LanguageCls):
         HASKELL = DatetimeFormatConfig(
             formatter=_format_datetime_haskell,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -2409,22 +2409,22 @@ class Haskell(metaclass=LanguageCls):
             float: "Double",
             str: "String",
             bytes: "String",
-            datetime.time: "String",
+            dt.time: "String",
         }
         scalar_type = scalar_types.get(type(data))
         if scalar_type is not None:
             return scalar_type
-        if isinstance(data, datetime.datetime):
+        if isinstance(data, dt.datetime):
             datetime_types: dict[type, str] = {
                 int: "Integer",
                 str: "String",
-                datetime.datetime: "UTCTime",
+                dt.datetime: "UTCTime",
             }
             return datetime_types[self.datetime_format.value.type_produced]
-        if isinstance(data, datetime.date):
+        if isinstance(data, dt.date):
             date_types: dict[type, str] = {
                 str: "String",
-                datetime.date: "Day",
+                dt.date: "Day",
             }
             return date_types[self.date_format.value.type_produced]
         msg = f"Haskell record mode cannot type {type(data).__name__}"
@@ -2632,10 +2632,10 @@ class Haskell(metaclass=LanguageCls):
         )
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
-            if self.date_format.value.type_produced is datetime.date:
+            if self.date_format.value.type_produced is dt.date:
                 return date_ymd_formatter(
                     template="fromGregorian {year} {month} {day}"
                 )
@@ -2643,10 +2643,10 @@ class Haskell(metaclass=LanguageCls):
         return self._date_fmts.format_date
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
-            if self.datetime_format.value.type_produced is datetime.datetime:
+            if self.datetime_format.value.type_produced is dt.datetime:
                 return _haskell_utc_time_expression
             return self.datetime_format
         if (
@@ -2657,14 +2657,14 @@ class Haskell(metaclass=LanguageCls):
         return self._date_fmts.format_datetime
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
             return format_time_iso
         if self._string_fmts.is_explicit:
             _str_pfx = f"{self.constructor_prefix}Str "
 
-            def _explicit_time(value: datetime.time) -> str:
+            def _explicit_time(value: dt.time) -> str:
                 """Wrap a bare ISO time literal with the HStr
                 constructor.
                 """
@@ -2880,12 +2880,11 @@ class Haskell(metaclass=LanguageCls):
                 """Import the time types needed by concrete fields."""
                 imports: tuple[str, ...] = ()
                 if (
-                    datetime.date in types
-                    and self.date_format.value.type_produced is datetime.date
+                    dt.date in types
+                    and self.date_format.value.type_produced is dt.date
                 ) or (
-                    datetime.datetime in types
-                    and self.datetime_format.value.type_produced
-                    is datetime.datetime
+                    dt.datetime in types
+                    and self.datetime_format.value.type_produced is dt.datetime
                 ):
                     imports = ("import Data.Time",)
                 return imports + self._native_record_strategy.preamble(data)

@@ -1,7 +1,7 @@
 """SystemVerilog language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import re
@@ -168,7 +168,7 @@ def _format_sv_entry(
     match original:
         case bool():
             return formatted
-        case datetime.datetime():
+        case dt.datetime():
             if datetime_as_int:
                 payload = f'_VVAL_INT, i: {formatted}, r: 0.0, s: ""'
             else:
@@ -177,7 +177,7 @@ def _format_sv_entry(
             payload = f'_VVAL_INT, i: {formatted}, r: 0.0, s: ""'
         case float():
             payload = f'_VVAL_REAL, i: 0, r: {formatted}, s: ""'
-        case str() | bytes() | datetime.date():
+        case str() | bytes() | dt.date():
             payload = f"_VVAL_STR, i: 0, r: 0.0, s: {formatted}"
         case list() | dict() | set():
             escaped = _escape_nested(text=formatted)
@@ -1159,12 +1159,12 @@ class SystemVerilog(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Format epoch seconds with the configured integer literal
         width.
         """
@@ -1173,7 +1173,7 @@ class SystemVerilog(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

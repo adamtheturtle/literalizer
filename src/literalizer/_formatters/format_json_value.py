@@ -8,7 +8,7 @@ become hex strings, and sets / :class:`OrderedMap` collapse into list /
 dict so :func:`json.dumps` can serialize them.
 """
 
-import datetime
+import datetime as dt
 import json
 
 from beartype import beartype
@@ -28,14 +28,14 @@ responsibility (see :func:`to_jsonable`).
 
 
 @beartype
-def _temporal_to_iso(data: datetime.date | datetime.time) -> str:
+def _temporal_to_iso(data: dt.date | dt.time) -> str:
     """Return ISO-8601 text for a date / datetime / time value.
 
     Naive datetimes are anchored to UTC so JSON consumers that require an
     offset (Jackson's ``readTree`` and the ``Data.Aeson`` parsers) can
     round-trip the value without raising.
     """
-    if isinstance(data, datetime.datetime):
+    if isinstance(data, dt.datetime):
         iso = data.isoformat()
         if data.tzinfo is None:
             iso += "Z"
@@ -57,7 +57,7 @@ def to_jsonable(data: Value) -> JsonValue:
     a value the same way :func:`format_json_value_text` does.
     """
     match data:
-        case datetime.datetime() | datetime.date() | datetime.time():
+        case dt.datetime() | dt.date() | dt.time():
             return _temporal_to_iso(data=data)
         case bytes():
             return data.hex()

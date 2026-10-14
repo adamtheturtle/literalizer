@@ -1,7 +1,7 @@
 """F# language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -118,22 +118,22 @@ from literalizer.exceptions import (
 
 @beartype
 def _format_fsharp_temporal_entry(
-    original: datetime.date | datetime.datetime | datetime.time,
+    original: dt.date | dt.datetime | dt.time,
     formatted: str,
     prefix: str,
     date_type: type,
     datetime_type: type,
 ) -> str:
     """Wrap a temporal value from its configured output type."""
-    if isinstance(original, datetime.datetime):
+    if isinstance(original, dt.datetime):
         if datetime_type is int:
             return formatted
-        if datetime_type is datetime.datetime:
+        if datetime_type is dt.datetime:
             return f"{prefix}Datetime ({formatted})"
         return f"{prefix}Str {formatted}"
-    if isinstance(original, datetime.time):
+    if isinstance(original, dt.time):
         return f"{prefix}Str (string ({formatted}))"
-    if date_type is datetime.date:
+    if date_type is dt.date:
         return f"{prefix}Date ({formatted})"
     return f"{prefix}Str {formatted}"
 
@@ -184,7 +184,7 @@ def _apply_fsharp_entry(
             )
         case float():
             return _fsharp_float_entry(formatted=formatted, prefix=prefix)
-        case datetime.date() | datetime.time():
+        case dt.date() | dt.time():
             return _format_fsharp_temporal_entry(
                 original=original,
                 formatted=formatted,
@@ -393,12 +393,12 @@ def _build_fsharp_json_declaration_inner(
 @beartype
 def _build_fsharp_datetime_epoch(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Int`` from
     Unix epoch seconds.
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Format epoch seconds with the F# integer constructor."""
         formatted = format_datetime_epoch(value=value)
         return _apply_fsharp_entry(
@@ -791,7 +791,7 @@ class FSharp(metaclass=LanguageCls):
                 template="System.DateOnly({year}, {month}, {day})",
             ),
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -809,7 +809,7 @@ class FSharp(metaclass=LanguageCls):
                 millisecond_template=None,
             ),
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1454,14 +1454,14 @@ class FSharp(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return format_date_iso
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
         Under ``json_type`` the EPOCH branch emits a bare ``int64``
@@ -1471,14 +1471,12 @@ class FSharp(metaclass=LanguageCls):
         entry / top-level formatter is responsible for wrapping the
         literal with ``JsonValue.Create`` so it becomes a ``JsonNode``.
         """
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self._json_type_active:
             if self.datetime_format.value.type_produced is int:
                 format_integer = self.format_integer
 
-                def _format_json_epoch(value: datetime.datetime) -> str:
+                def _format_json_epoch(value: dt.datetime) -> str:
                     """Return an epoch-seconds ``int64`` literal."""
                     formatted = format_datetime_epoch(value=value)
                     return format_integer(int(formatted))
@@ -1498,7 +1496,7 @@ class FSharp(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self._json_type_active:
             return format_time_iso
@@ -1700,13 +1698,13 @@ class FSharp(metaclass=LanguageCls):
         p = self.constructor_prefix
         header = f"type {self.type_name} ="
         f_str = f"    | {p}Str of string"
-        if self.date_format.value.type_produced is datetime.date:
+        if self.date_format.value.type_produced is dt.date:
             effective_header = (header, f"    | {p}Date of System.DateOnly")
         else:
             effective_header = (header, f_str)
         if self.datetime_format.value.type_produced is int:
             effective_header_2 = (header, f"    | {p}Int of int64")
-        elif self.datetime_format.value.type_produced is datetime.datetime:
+        elif self.datetime_format.value.type_produced is dt.datetime:
             effective_header_2 = (
                 header,
                 f"    | {p}Datetime of System.DateTime",
@@ -1730,9 +1728,9 @@ class FSharp(metaclass=LanguageCls):
                 f"    | {p}Map of (string * {self.type_name}) list",
             ),
             set: (header, f"    | {p}Set of {self.type_name} list"),
-            datetime.date: (effective_header),
-            datetime.time: (header, f_str),
-            datetime.datetime: (effective_header_2),
+            dt.date: (effective_header),
+            dt.time: (header, f_str),
+            dt.datetime: (effective_header_2),
         }
 
     @cached_property

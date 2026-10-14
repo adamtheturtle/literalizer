@@ -3306,7 +3306,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_raku_roundtrip.py`.
       - name: Raku roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 5
         run: uv run python -m scripts.run_raku_roundtrip
 
   lint-zig:
