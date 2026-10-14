@@ -682,22 +682,26 @@ def _kotlin_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Kotlin stub declarations for a call name."""
+    # Return the supplied arguments as a placeholder result, using every
+    # parameter without suppressing warnings. Explicit type arguments select
+    # the standard collection function even when the stub is named listOf.
     param_list = ", ".join(f"{p}: Any? = null" for p in params)
+    result = f"listOf<Any?>({', '.join(params)})"
     if len(parts) == 1:
-        return (f"fun {parts[0]}({param_list}): Any? = null",)
+        return (f"fun {parts[0]}({param_list}): Any? = {result}",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     if len(fields) == 0:
         cls = f"_{root.title()}Type"
         return (
-            f"class {cls} {{ fun {method}({param_list}): Any? = null }}",
+            f"class {cls} {{ fun {method}({param_list}): Any? = {result} }}",
             f"val {root} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"_{fields[-1].title()}Type"
     lines.append(
-        f"class {inner_cls} {{ fun {method}({param_list}): Any? = null }}"
+        f"class {inner_cls} {{ fun {method}({param_list}): Any? = {result} }}"
     )
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
@@ -1722,7 +1726,7 @@ class Kotlin(metaclass=LanguageCls):
         hash=False,
     )
     # Keep in sync with the version flags passed to the Kotlin lint host in
-    # `scripts/lint-kotlin.main.kts`.
+    # `scripts/lint-kotlin.kts`.
     language_version: VersionFormats = VersionFormats.V1_9
     indent: str = "    "
     skip_null_dict_values: bool = False
