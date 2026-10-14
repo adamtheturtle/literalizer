@@ -15,6 +15,7 @@ from literalizer._language import (
     CollectionLayout,
     IdentifierCase,
     Language,
+    RenderedCallStub,
     is_reserved_identifier,
 )
 from literalizer._literalize import (
@@ -69,7 +70,7 @@ def literalize_call_with_declarations(
     language: Language,
     declarations: Sequence[LiteralizeResult],
     call: LiteralizeResult,
-    extra_body_preamble: tuple[str, ...] = (),
+    extra_body_preamble: tuple[str | RenderedCallStub, ...] = (),
     extra_class_preamble: tuple[str, ...] = (),
     extra_preamble: tuple[str, ...] = (),
 ) -> LiteralizeResult:

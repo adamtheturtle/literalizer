@@ -20,7 +20,7 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer._language import is_reserved_identifier
+from literalizer._language import RenderedCallStub, is_reserved_identifier
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -858,7 +858,7 @@ def run_call_golden_case(
     decl_results = call_outcome.decl_results
     result = call_outcome.result
     # Build stub declarations for undefined names.
-    body_stubs: list[str] = []
+    body_stubs: list[str | RenderedCallStub] = []
     class_stubs: list[str] = []
     preamble_stubs: list[str] = []
     if config.call_transform is not None or isinstance(

@@ -71,6 +71,7 @@ from literalizer._language import (
     PositionalCallStyle,
     PostfixCallStyle,
     PrefixCallStyle,
+    RenderedCallStub,
     StubReturn,
     decode_file_sections,
     is_reserved_identifier,
@@ -409,7 +410,7 @@ VariableForm = NewVariable | ExistingVariable | BothVariableForms
 def _file_wrapper_context(
     *,
     variable_form: VariableForm | None,
-    body_preamble: tuple[str, ...],
+    body_preamble: tuple[str | RenderedCallStub, ...],
     class_preamble: tuple[str, ...],
     has_literal_declarations: bool,
     generated_body_preamble: tuple[str, ...],
@@ -421,7 +422,16 @@ def _file_wrapper_context(
     return FileWrapperContext(
         variable_name="" if variable_form is None else variable_form.name,
         modifiers=modifiers,
-        body_preamble=body_preamble,
+        body_preamble=tuple(
+            stub.code if isinstance(stub, RenderedCallStub) else stub
+            for stub in body_preamble
+        ),
+        call_stub_names=frozenset(
+            name
+            for stub in body_preamble
+            if isinstance(stub, RenderedCallStub)
+            for name in stub.declared_names
+        ),
         class_preamble=class_preamble,
         has_literal_declarations=has_literal_declarations,
         generated_body_preamble=generated_body_preamble,
@@ -8619,7 +8629,7 @@ def literalize_call_with_declarations(
     language: Language,
     declarations: Sequence[LiteralizeResult],
     call: LiteralizeResult,
-    extra_body_preamble: tuple[str, ...],
+    extra_body_preamble: tuple[str | RenderedCallStub, ...],
     extra_class_preamble: tuple[str, ...],
     extra_preamble: tuple[str, ...],
 ) -> LiteralizeResult:

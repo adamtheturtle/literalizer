@@ -66,6 +66,7 @@ from literalizer._language import (
     ModifierCombination,
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
+    RenderedCallStub,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -665,7 +666,7 @@ def _cobol_call_stub(
     /,
     *,
     indent: str,
-) -> tuple[str, ...]:
+) -> tuple[RenderedCallStub, ...]:
     """Return a nested COBOL program stub for a call target.
 
     The stub is a minimal nested program that accepts any arguments
@@ -682,20 +683,14 @@ def _cobol_call_stub(
             f"END PROGRAM {name}.",
         ]
     )
-    return (stub,)
+    return (RenderedCallStub(code=stub, declared_names=frozenset({name})),)
 
 
 @beartype
-def _cobol_wrapper_program_name(*, body_preamble: tuple[str, ...]) -> str:
+def _cobol_wrapper_program_name(*, program_ids: frozenset[str]) -> str:
     """Choose a wrapper name distinct from its generated nested
     programs.
     """
-    program_ids = {
-        line.removeprefix("PROGRAM-ID. ").removesuffix(".")
-        for stub in body_preamble
-        for line in stub.splitlines()
-        if line.startswith("PROGRAM-ID. ")
-    }
     name = "CHECK"
     while name in program_ids:
         name += "-WRAPPER"
@@ -1695,7 +1690,7 @@ class Cobol(metaclass=LanguageCls):
         indented = textwrap.indent(text=content, prefix=self.indent)
         stubs = "\n".join(body_preamble)
         program_name = _cobol_wrapper_program_name(
-            body_preamble=body_preamble,
+            program_ids=context.call_stub_names,
         )
         program_prefix = Cobol._PROGRAM_PREFIX.replace(
             "PROGRAM-ID. CHECK.", f"PROGRAM-ID. {program_name}."
@@ -1922,7 +1917,7 @@ class Cobol(metaclass=LanguageCls):
         self,
     ) -> Callable[
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
-        tuple[str, ...],
+        tuple[RenderedCallStub, ...],
     ]:
         """Return nested-program stub declarations for a call
         expression.
