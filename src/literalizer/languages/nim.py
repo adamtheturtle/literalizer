@@ -53,6 +53,11 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_hex,
 )
+from literalizer._formatters.preamble_roles import (
+    import_preamble,
+    join_preamble,
+    preamble_imports,
+)
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -990,7 +995,7 @@ def _nim_render_record_declaration(
     lines += [
         f"{indent}{field.identifier}: {field.type_name}" for field in fields
     ]
-    return "\n".join(lines)
+    return join_preamble(entries=lines)
 
 
 @beartype
@@ -1918,7 +1923,7 @@ class Nim(metaclass=LanguageCls):
 
             def _json_preamble(_data: Value, /) -> tuple[str, ...]:
                 """Always import std/json for ``JsonNode`` output."""
-                return ("import json",)
+                return (import_preamble(code="import json"),)
 
             return _json_preamble
         if self._uses_record:
@@ -1940,7 +1945,7 @@ class Nim(metaclass=LanguageCls):
                 """
                 return (
                     "{.warning[UnusedImport]:off.}",
-                    "import tables",
+                    import_preamble(code="import tables"),
                     *variant_preamble(data),
                     *record_preamble(data),
                 )
@@ -1974,7 +1979,7 @@ class Nim(metaclass=LanguageCls):
             )
             if renders_as_at_sequence:
                 return ()
-            return ("import json",)
+            return (import_preamble(code="import json"),)
 
         return _preamble
 
@@ -2215,6 +2220,13 @@ class Nim(metaclass=LanguageCls):
 
     format_call_preamble_stub = default_format_call_stub
 
+    @property
+    def call_preamble_uses_literal_representation(self) -> bool:
+        """Only native records share the literal and call preamble
+        scheme.
+        """
+        return self._uses_record
+
     @cached_property
     def call_data_dependent_preamble(
         self,
@@ -2254,7 +2266,7 @@ class Nim(metaclass=LanguageCls):
                 """
                 return (
                     "{.warning[UnusedImport]:off.}",
-                    "import json",
+                    import_preamble(code="import json"),
                 )
 
             return _json_call_preamble
@@ -2279,7 +2291,7 @@ class Nim(metaclass=LanguageCls):
                 """
                 return (
                     "{.warning[UnusedImport]:off.}",
-                    "import tables",
+                    import_preamble(code="import tables"),
                     *variant_preamble(data),
                     *record_preamble(data),
                 )
@@ -2450,7 +2462,9 @@ class Nim(metaclass=LanguageCls):
             if self._uses_record:
                 effective_preamble_lines = ()
             else:
-                effective_preamble_lines = ("import tables",)
+                effective_preamble_lines = (
+                    import_preamble(code="import tables"),
+                )
             return DictFormatConfig(
                 dict_open=fixed_open(open_str="{"),
                 close="}.toTable",
@@ -2600,7 +2614,7 @@ class Nim(metaclass=LanguageCls):
             return OrderedMapFormatConfig(
                 ordered_map_open=fixed_open(open_str="{"),
                 close="}.toOrderedTable",
-                preamble_lines=("import tables",),
+                preamble_lines=(import_preamble(code="import tables"),),
             )
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="{"),
@@ -2628,7 +2642,7 @@ class Nim(metaclass=LanguageCls):
         entries: Sequence[str], /
     ) -> tuple[str, ...]:
         """Keep imports required by each rendered bound value."""
-        return tuple(entry for entry in entries if entry.startswith("import "))
+        return preamble_imports(entries)
 
     def format_reference_variable_declaration(
         self,
@@ -2758,7 +2772,7 @@ class Nim(metaclass=LanguageCls):
         date_preamble: tuple[str, ...]
         datetime_preamble: tuple[str, ...]
         if self._uses_object_variant:
-            json_import = ("import json",)
+            json_import = (import_preamble(code="import json"),)
             date_preamble = json_import
             if self.date_format.value.type_produced is str:
                 date_preamble = ()

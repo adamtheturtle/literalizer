@@ -51,6 +51,11 @@ from literalizer._formatters.format_json_value import (
 from literalizer._formatters.format_strings import (
     format_string_c,
 )
+from literalizer._formatters.preamble_roles import (
+    import_preamble,
+    join_preamble,
+    preamble_imports,
+)
 from literalizer._formatters.record_strategy import (
     ActiveRecordStrategy,
     RecordDeclarationField,
@@ -776,7 +781,9 @@ def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
 # Static preamble emitted under ``json_type=CJSON``: the cJSON header
 # replaces the default ``CVal`` / ``CKV`` type declarations, since every
 # value is built from cJSON's own ``cJSON *`` node type.
-_CJSON_STATIC_PREAMBLE: tuple[str, ...] = ("#include <cjson/cJSON.h>",)
+_CJSON_STATIC_PREAMBLE: tuple[str, ...] = (
+    import_preamble(code="#include <cjson/cJSON.h>"),
+)
 
 _CJSON_RECORD_REJECTED_MSG = (
     "C json_type renders data as a cJSON_Create*(...) node tree and is "
@@ -1579,7 +1586,9 @@ class C(metaclass=LanguageCls):
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
     static_body_preamble: ClassVar[Sequence[str]] = ()
-    special_float_preamble: ClassVar[tuple[str, ...]] = ("#include <math.h>",)
+    special_float_preamble: ClassVar[tuple[str, ...]] = (
+        import_preamble(code="#include <math.h>"),
+    )
     call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
@@ -2102,9 +2111,7 @@ class C(metaclass=LanguageCls):
         entries: Sequence[str], /
     ) -> tuple[str, ...]:
         """Keep headers required by the rendered bound values."""
-        return tuple(
-            entry for entry in entries if entry.startswith("#include ")
-        )
+        return preamble_imports(entries)
 
     def format_reference_variable_declaration(
         self,
@@ -2164,8 +2171,8 @@ class C(metaclass=LanguageCls):
                     format_integer=format_integer,
                     format_float=format_float,
                 )
-                return "\n".join(
-                    (*build.lines, f"cJSON *{name} = {build.root};"),
+                return join_preamble(
+                    entries=(*build.lines, f"cJSON *{name} = {build.root};")
                 )
 
             return _format_cjson_decl
@@ -2223,7 +2230,9 @@ class C(metaclass=LanguageCls):
                     format_integer=format_integer,
                     format_float=format_float,
                 )
-                return "\n".join((*build.lines, f"{name} = {build.root};"))
+                return join_preamble(
+                    entries=(*build.lines, f"{name} = {build.root};")
+                )
 
             return _format_cjson_assign
         format_entry = self._format_entry
@@ -2277,8 +2286,8 @@ class C(metaclass=LanguageCls):
         if self._json_type_active:
             return _CJSON_STATIC_PREAMBLE
         return (
-            "#include <stdbool.h>",
-            "#include <stddef.h>",
+            import_preamble(code="#include <stdbool.h>"),
+            import_preamble(code="#include <stddef.h>"),
             "typedef struct CVal CVal;",
             "typedef struct CKV CKV;",
             "struct CVal {",
