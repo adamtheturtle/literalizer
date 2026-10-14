@@ -570,6 +570,8 @@ class CallCaseSpec(  # noqa: NOD001
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
+    # Ordinary callbacks omit the template producer's zip-usage metadata.
+    call_transform_reports_zip_usage: bool = True
     # An additional call to the same target, emitted after the primary
     # call so a fixture can use its bound result.
     followup_source: str | None = None

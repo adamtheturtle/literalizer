@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Go", "Python"]
+languages_reason = "Go rejects unused time imports; Python exposes datetime imports across both supported versions."
+target_function = "process"
+parameter_names = ["value"]
+per_element = false
+call_transform_reports_zip_usage = false
+call_transform = "{call}"
