@@ -1456,6 +1456,11 @@ class Zig(metaclass=LanguageCls):
         )
 
     @cached_property
+    def uses_resolved_ref_declaration_data(self) -> bool:
+        """Infer native declaration types from the values behind refs."""
+        return self._record_strategy_active
+
+    @cached_property
     def supports_scalar_before_comments(self) -> bool:
         """Whether a comment can sit above the rendered value.
 
@@ -2106,6 +2111,7 @@ class Zig(metaclass=LanguageCls):
         keyword = self.declaration_style.value.keyword
         format_entry = self._format_entry
         record_mode = self._record_strategy_active
+        list_type = self._zig_list_type
 
         @beartype
         def _format_decl(
@@ -2119,10 +2125,28 @@ class Zig(metaclass=LanguageCls):
             The default ``ZVal`` model declares an explicit ``: ZVal``
             type; under ``RECORD`` the value is a raw Zig literal
             (a ``Record0{ ... }`` struct, slice, tuple or scalar) whose
-            type is inferred, so no annotation is emitted.
+            type is inferred. Compatible mutable nested lists carry their
+            slice type so reassignment avoids inferred pointers to tuples
+            of pointers in the pinned LLVM backend (issue #5469).
             """
             wrapped = format_entry(data, value)
             if record_mode:
+                if keyword == "var" and isinstance(data, list):
+                    nested = [item for item in data if isinstance(item, list)]
+                    if len(nested) > 0 and len(nested) == len(data):
+                        element_types = {
+                            list_type(items=items)
+                            for items in nested
+                            if len(items) > 0
+                        }
+                        if len(element_types) <= 1:
+                            element_type = next(
+                                iter(element_types), "[]const i64"
+                            )
+                            return (
+                                f"{keyword} {name}: []const {element_type} "
+                                f"= {wrapped};"
+                            )
                 return f"{keyword} {name} = {wrapped};"
             return f"{keyword} {name}: ZVal = {wrapped};"
 

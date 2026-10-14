@@ -69,6 +69,7 @@ from .language_specs import (
 from .variant_cases import group_variant_cases_by_language
 
 _CASES_DIR = Path(__file__).parent / "cases"
+GOLDEN_BATCH_VERSION_LIMIT = 64
 
 _COMBINED_VARIABLE_FORM = literalizer.BothVariableForms(
     name="my_data",
@@ -332,21 +333,24 @@ class GoldenScenario:
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class GoldenGroup:
-    """One scenario's renderings for one language.
+    """One bounded batch of a scenario's renderings for one language.
 
-    Grouping by language keeps the pytest axis at roughly the number of
-    languages rather than the number of golden files; each rendering
-    inside runs as its own sub-test.
+    Bounded groups give workers more scheduling opportunities while
+    each rendering remains a sub-test at its original golden path.
     """
 
     scenario_name: str
     lang_cls: literalizer.LanguageCls
     renderings: tuple[GoldenRendering, ...]
+    batch_index: int | None
 
     @property
     def test_id(self) -> str:
         """Return the pytest ID identifying this group."""
-        return f"{self.scenario_name}-{self.lang_cls.__name__}"
+        prefix = f"{self.scenario_name}-{self.lang_cls.__name__}"
+        if self.batch_index is None:
+            return prefix
+        return f"{prefix}-batch{self.batch_index:03d}"
 
 
 @beartype
@@ -773,6 +777,27 @@ GOLDEN_SCENARIOS: tuple[GoldenScenario, ...] = (
 
 
 @beartype
+def batch_renderings(
+    *, renderings: tuple[GoldenRendering, ...], max_versions: int
+) -> tuple[tuple[GoldenRendering, ...], ...]:
+    """Bound scheduling units without splitting a rendering's versions."""
+    batches: list[tuple[GoldenRendering, ...]] = []
+    current: list[GoldenRendering] = []
+    versions = 0
+    for rendering in renderings:
+        cost = len(rendering.versions)
+        if len(current) > 0 and versions + cost > max_versions:
+            batches.append(tuple(current))
+            current = []
+            versions = 0
+        current.append(rendering)
+        versions += cost
+    if len(current) > 0:
+        batches.append(tuple(current))
+    return tuple(batches)
+
+
+@beartype
 def golden_groups() -> tuple[GoldenGroup, ...]:
     """Return every scenario's renderings, grouped by language.
 
@@ -783,12 +808,16 @@ def golden_groups() -> tuple[GoldenGroup, ...]:
     for scenario in GOLDEN_SCENARIOS:
         for lang_cls in sorted_languages():
             renderings = scenario.build(lang_cls=lang_cls)
-            if len(renderings) > 0:
+            batches = batch_renderings(
+                renderings=renderings, max_versions=GOLDEN_BATCH_VERSION_LIMIT
+            )
+            for index, batch in enumerate(iterable=batches, start=1):
                 groups.append(
                     GoldenGroup(
                         scenario_name=scenario.name,
                         lang_cls=lang_cls,
-                        renderings=renderings,
+                        renderings=batch,
+                        batch_index=index if len(batches) > 1 else None,
                     )
                 )
     return tuple(groups)
