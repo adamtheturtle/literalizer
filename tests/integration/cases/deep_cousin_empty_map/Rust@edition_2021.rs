@@ -4,5 +4,5 @@ fn main() {
         HashMap::from([("outer", HashMap::from([("inner", HashMap::from([("x", 1)]))]))]),
         HashMap::from([("outer", HashMap::from([("inner", <HashMap<&str, i32>>::from([]))]))]),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

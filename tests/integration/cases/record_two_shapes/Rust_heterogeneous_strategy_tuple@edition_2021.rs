@@ -1,17 +1,17 @@
 #[derive(Clone)]
-struct Record1 {
-    count: i32,
-    rate: i32,
+pub struct Record1 {
+    pub count: i32,
+    pub rate: i32,
 }
 #[derive(Clone)]
-struct Record2 {
-    retries: i32,
-    timeout: i32,
+pub struct Record2 {
+    pub retries: i32,
+    pub timeout: i32,
 }
 #[derive(Clone)]
-struct Record0 {
-    metrics: Record1,
-    flags: Record2,
+pub struct Record0 {
+    pub metrics: Record1,
+    pub flags: Record2,
 }
 fn main() {
     let my_data = Record0 {
@@ -24,5 +24,5 @@ fn main() {
             timeout: 30,
         },
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 #[derive(Clone)]
-enum Value {
+pub enum Value {
     Str(&'static str),
     Bool(bool),
 }
@@ -9,5 +9,5 @@ fn main() {
         HashMap::from([("type", Value::Str("create")), ("pr_id", Value::Str("pr_1")), ("draft", Value::Bool(true))]),
         HashMap::from([("type", Value::Str("create")), ("pr_id", Value::Str("pr_2"))]),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

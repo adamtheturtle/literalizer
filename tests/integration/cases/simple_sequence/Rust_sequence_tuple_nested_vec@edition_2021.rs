@@ -5,5 +5,5 @@ fn main() {
         true,
         None::<()>,
     );
-    let _ = my_data;
+    let _ = &my_data;
 }

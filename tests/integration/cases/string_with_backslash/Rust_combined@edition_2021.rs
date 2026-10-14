@@ -8,6 +8,7 @@ fn main() {
         "both \"quotes''' here",
         "line1\\nline2\nwith newline",
     ];
+    let _ = &my_data;
     my_data = vec![
         "C:\\path\\to\\file",
         "back\\\\slash",
@@ -17,5 +18,5 @@ fn main() {
         "both \"quotes''' here",
         "line1\\nline2\nwith newline",
     ];
-    let _ = my_data;
+    let _ = &mut my_data;
 }

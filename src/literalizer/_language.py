@@ -57,6 +57,9 @@ class FileWrapperContext:
     variable_name: str
     """The bound name, or an empty string for unbound call output."""
 
+    bound_variable_names: tuple[str, ...]
+    """Reference bindings declared before the main binding."""
+
     modifiers: frozenset[enum.Enum]
     """Declaration modifiers before they are rendered as keywords."""
 
@@ -71,6 +74,11 @@ class FileWrapperContext:
 
     generated_body_preamble: tuple[str, ...]
     """Body blocks produced by the language for the rendered data."""
+
+    root_is_object_literal: bool
+    """Whether an unbound literal uses the object-expression
+    representation.
+    """
 
 
 class NewVariableNameSyntax(enum.Enum):
@@ -324,6 +332,25 @@ _Declaration_co = TypeVar(
 
 @beartype
 @dataclasses.dataclass(frozen=True)
+class RenderedEmptySequence:
+    """An empty literal and its retained element-type decision."""
+
+    code: str
+    uses_fallback_element_type: bool
+
+
+@beartype
+def empty_container_code(literal: str | RenderedEmptySequence, /) -> str:
+    """Return source text without discarding metadata stored by its
+    owner.
+    """
+    if isinstance(literal, RenderedEmptySequence):
+        return literal.code
+    return literal
+
+
+@beartype
+@dataclasses.dataclass(frozen=True)
 class SequenceFormatConfig(Generic[_Declaration_co]):
     """Configuration for a sequence format and its declared type.
 
@@ -343,7 +370,9 @@ class SequenceFormatConfig(Generic[_Declaration_co]):
     uses_typed_literal_for_scalars: bool
     requires_uniform_record_shapes: bool
     declared_type: _Declaration_co
-    narrowed_empty_form: Callable[[Sequence[list[Value]]], str] | None
+    narrowed_empty_form: (
+        Callable[[Sequence[list[Value]]], str | RenderedEmptySequence] | None
+    )
     single_element_template: str | None
     """How a one-element sequence is spelled, if not as the openers.
 
@@ -498,6 +527,11 @@ class CommentConfig:
 class DictFormatConfig:
     """Configuration for dict formatting."""
 
+    is_object_literal: ClassVar[bool] = False
+    """Whether this format emits an ECMAScript object-literal
+    expression.
+    """
+
     dict_open: Callable[[dict[Scalar, Value]], str]
     close: str
     format_entry: Callable[[str, Value, str], str]
@@ -555,6 +589,11 @@ class DictFormatBuilder(Protocol):
 @dataclasses.dataclass(frozen=True)
 class OrderedMapFormatConfig:
     """Configuration for ordered-map formatting."""
+
+    is_object_literal: ClassVar[bool] = False
+    """Whether this format emits an ECMAScript object-literal
+    expression.
+    """
 
     ordered_map_open: Callable[[dict[Scalar, Value]], str]
     close: str
@@ -3868,7 +3907,9 @@ def wrap_in_file_noop(
 
 
 @beartype
-def parenthesize_bare_object(*, content: str, variable_name: str) -> str:
+def parenthesize_bare_object(
+    *, content: str, context: FileWrapperContext
+) -> str:
     """Return *content* readable as an expression at statement scope.
 
     A file that binds no name holds the value on its own, and in the
@@ -3877,7 +3918,7 @@ def parenthesize_bare_object(*, content: str, variable_name: str) -> str:
     expression reading; every other value already is one, and a name to
     bind to makes the question moot (issue #4774).
     """
-    if variable_name != "" or not content.lstrip().startswith("{"):
+    if context.variable_name != "" or not context.root_is_object_literal:
         return content
     return f"({content})"
 

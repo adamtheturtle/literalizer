@@ -6,5 +6,5 @@ fn main() {
         (NaiveDate::from_ymd_opt(2024, 7, 4).unwrap(), "independence_day"),
         (NaiveDate::from_ymd_opt(2024, 12, 25).unwrap(), "christmas"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

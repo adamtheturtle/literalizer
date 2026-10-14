@@ -3,5 +3,5 @@ fn main() {
         "100% done",
         "%(name) is here",
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

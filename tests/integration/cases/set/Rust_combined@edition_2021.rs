@@ -5,10 +5,11 @@ fn main() {
         "banana",
         "cherry",
     ]);
+    let _ = &my_data;
     my_data = HashSet::from([
         "apple",
         "banana",
         "cherry",
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

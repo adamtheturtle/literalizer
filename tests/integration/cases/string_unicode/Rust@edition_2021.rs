@@ -4,5 +4,5 @@ fn main() {
         "中文",
         "😀",
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

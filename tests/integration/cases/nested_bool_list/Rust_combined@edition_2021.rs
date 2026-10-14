@@ -3,9 +3,10 @@ fn main() {
         vec![true, false],
         vec![true, true],
     ];
+    let _ = &my_data;
     my_data = vec![
         vec![true, false],
         vec![true, true],
     ];
-    let _ = my_data;
+    let _ = &mut my_data;
 }

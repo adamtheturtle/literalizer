@@ -3,9 +3,10 @@ fn main() {
         "a",
         // trailing
     ];
+    let _ = &my_data;
     my_data = vec![
         "a",
         // trailing
     ];
-    let _ = my_data;
+    let _ = &mut my_data;
 }

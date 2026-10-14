@@ -3,5 +3,5 @@ fn main() {
         1,
         1099511627776i64,
     ];
-    let _ = my_data;
+    let _ = &mut my_data;
 }

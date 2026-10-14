@@ -3,8 +3,9 @@ fn main() {
     let mut my_data = HashMap::from([
         ("items", vec![HashMap::from([("id", 1)]), HashMap::from([("id", 2), ("count", 10)]), HashMap::from([("id", 3), ("count", 20)])]),
     ]);
+    let _ = &my_data;
     my_data = HashMap::from([
         ("items", vec![HashMap::from([("id", 1)]), HashMap::from([("id", 2), ("count", 10)]), HashMap::from([("id", 3), ("count", 20)])]),
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

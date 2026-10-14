@@ -7,6 +7,7 @@ fn main() {
         ("field_name_that_is_really_quite_long_one", 4),
         ("field_name_that_is_really_quite_long_two", 5),
     ]);
+    let _ = &my_data;
     my_data = HashMap::from([
         ("user_name", 1),
         ("user.name", 2),
@@ -14,5 +15,5 @@ fn main() {
         ("field_name_that_is_really_quite_long_one", 4),
         ("field_name_that_is_really_quite_long_two", 5),
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

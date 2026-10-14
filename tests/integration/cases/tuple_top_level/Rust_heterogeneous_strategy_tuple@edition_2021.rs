@@ -5,5 +5,5 @@ fn main() {
         "a@gmail.com",
         100,
     );
-    let _ = my_data;
+    let _ = &my_data;
 }

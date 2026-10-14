@@ -4,5 +4,5 @@ fn main() {
         HashMap::from([("a", 1)]),
         <HashMap<&str, i32>>::from([]),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

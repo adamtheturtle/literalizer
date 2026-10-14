@@ -4,10 +4,11 @@ fn main() {
         false,
         true,
     ];
+    let _ = &my_data;
     my_data = vec![
         true,
         false,
         true,
     ];
-    let _ = my_data;
+    let _ = &mut my_data;
 }

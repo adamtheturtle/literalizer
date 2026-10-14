@@ -3,5 +3,5 @@ fn main() {
         // # section
         "a",
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

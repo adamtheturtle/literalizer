@@ -1,49 +1,49 @@
 #[derive(Clone)]
-struct Record1 {
-    status: i32,
+pub struct Record1 {
+    pub status: i32,
 }
 #[derive(Clone)]
-struct Record2 {
-    status: &'static str,
+pub struct Record2 {
+    pub status: &'static str,
 }
 #[derive(Clone)]
-struct Record4 {
-    kind: &'static str,
-    urgent: bool,
+pub struct Record4 {
+    pub kind: &'static str,
+    pub urgent: bool,
 }
 #[derive(Clone)]
-struct Record3 {
-    inner: Record4,
+pub struct Record3 {
+    pub inner: Record4,
 }
 #[derive(Clone)]
-struct Record6 {
-    error: &'static str,
+pub struct Record6 {
+    pub error: &'static str,
 }
 #[derive(Clone)]
-struct Record5 {
-    inner: Record6,
+pub struct Record5 {
+    pub inner: Record6,
 }
 #[derive(Clone)]
-struct Record7 {
-    holder: Record1,
+pub struct Record7 {
+    pub holder: Record1,
 }
 #[derive(Clone)]
-struct Record8 {
-    holder: Record2,
+pub struct Record8 {
+    pub holder: Record2,
 }
 #[derive(Clone)]
-struct Record9 {
-    nums: Vec<i64>,
+pub struct Record9 {
+    pub nums: Vec<i64>,
 }
 #[derive(Clone)]
-struct Record0 {
-    plain: Record1,
-    other: Record2,
-    nested_a: Record3,
-    nested_b: Record5,
-    wrap_a: Record7,
-    wrap_b: Record8,
-    wide: Record9,
+pub struct Record0 {
+    pub plain: Record1,
+    pub other: Record2,
+    pub nested_a: Record3,
+    pub nested_b: Record5,
+    pub wrap_a: Record7,
+    pub wrap_b: Record8,
+    pub wide: Record9,
 }
 fn main() {
     let my_data = Record0 {
@@ -81,5 +81,5 @@ fn main() {
             ],
         },
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

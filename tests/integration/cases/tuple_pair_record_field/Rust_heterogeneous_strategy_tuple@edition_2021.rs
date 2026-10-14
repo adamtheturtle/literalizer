@@ -1,7 +1,7 @@
 #[derive(Clone)]
-struct Record0 {
-    call: &'static str,
-    args: (i32, &'static str),
+pub struct Record0 {
+    pub call: &'static str,
+    pub args: (i32, &'static str),
 }
 fn main() {
     let my_data = Record0 {
@@ -11,5 +11,5 @@ fn main() {
             "email",
         ),
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

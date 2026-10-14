@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 #[derive(Clone)]
-enum JsonValue {
+pub enum JsonValue {
     I32(i32),
     Str(&'static str),
 }
@@ -9,5 +9,5 @@ fn main() {
         ("a", JsonValue::I32(1)),
         ("b", JsonValue::Str("x")),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

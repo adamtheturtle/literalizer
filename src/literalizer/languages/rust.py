@@ -124,7 +124,6 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
-    default_wrap_combined_in_file,
     identity_call_arg,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -1509,7 +1508,11 @@ def _rust_value_enum_lines(
         )
     if len(variants) == 0:
         return []
-    lines: list[str] = ["#[derive(Clone)]", f"enum {enum_name} {{"]
+    # Export the carrier so callers can inspect its variant payloads.
+    lines: list[str] = [
+        "#[derive(Clone)]",
+        f"pub enum {enum_name} {{",
+    ]
     for variant in variants:
         if variant.inner_type is None:
             body = variant.name
@@ -2855,7 +2858,7 @@ def _record_preamble_impl(
         for shape in emit_order:
             block: list[str] = [
                 "#[derive(Clone)]",
-                f"struct {record_names[shape]} {{",
+                f"pub struct {record_names[shape]} {{",
             ]
             for key in shape.keys:
                 example = field_values[shape].get(key)
@@ -2882,7 +2885,7 @@ def _record_preamble_impl(
                 if key in shape.optional_keys:
                     field_type = f"Option<{field_type}>"
                 field_name = _rust_record_field_identifier(key)
-                block.append(f"    {field_name}: {field_type},")
+                block.append(f"    pub {field_name}: {field_type},")
             block.append("}")
             struct_blocks.append("\n".join(block))
         enum_lines: Sequence[str]
@@ -3062,7 +3065,7 @@ def _rust_call_stub(
         method_param_list = f"&self, {param_list}"
     fields = parts[1:-1]
     if len(fields) == 0:
-        type_name = f"{root.title()}Type_"
+        type_name = f"{IdentifierCase.PASCAL.convert(name=root)}Type"
         return (
             f"struct {type_name};",
             (
@@ -3073,7 +3076,7 @@ def _rust_call_stub(
             f"let {root} = {type_name};",
         )
     lines: list[str] = []
-    inner_type = f"{fields[-1].title()}Type_"
+    inner_type = f"{IdentifierCase.PASCAL.convert(name=fields[-1])}Type"
     lines.append(f"struct {inner_type};")
     lines.append(
         f"impl {inner_type} {{"
@@ -3082,14 +3085,14 @@ def _rust_call_stub(
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = f"{IdentifierCase.PASCAL.convert(name=fields[i])}Type"
         lines.append(f"struct {curr_type} {{ {fields[i + 1]}: {prev_type} }}")
         prev_type = curr_type
-    root_type = f"{root.title()}Type_"
+    root_type = f"{IdentifierCase.PASCAL.convert(name=root)}Type"
     lines.append(f"struct {root_type} {{ {fields[0]}: {prev_type} }}")
     construction = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = f"{IdentifierCase.PASCAL.convert(name=fields[i])}Type"
         construction = f"{curr_type} {{ {fields[i + 1]}: {construction} }}"
     construction = f"{root_type} {{ {fields[0]}: {construction} }}"
     lines.append(f"let {root} = {construction};")
@@ -3916,8 +3919,9 @@ class Rust(metaclass=LanguageCls):
             build_behavior=_build_tagged_enum_behavior,
             build_preamble=_build_tagged_enum_preamble,
         )
-        """Auto-generate a tagged ``enum`` in the preamble containing
-        only the variants actually present in the data, and wrap each
+        """Generate a public tagged ``enum`` in the preamble.
+
+        Include only the variants actually present in the data, and wrap each
         heterogeneous scalar value with ``{EnumName}::{Variant}(value)``.
 
         Integer variants use narrowest-width names (``I32``, ``I64``,
@@ -3934,7 +3938,8 @@ class Rust(metaclass=LanguageCls):
         generated ``struct`` literals.
 
         Each distinct ordered-key tuple becomes a struct declared in
-        the preamble (``struct Record0 { field: Type, ... }``) and
+        the preamble with public fields
+        (``pub struct Record0 { pub field: Type, ... }``) and
         each matching dict in the data renders as a struct literal
         (``Record0 { field: value, ... }``) rather than a
         ``HashMap::from([...])`` call.  Useful for inputs whose dict
@@ -4032,10 +4037,34 @@ class Rust(metaclass=LanguageCls):
         )
         use_line = ""
         if variable_name != "":
-            use_line = f"\n{self.indent}let _ = {variable_name};"
+            borrow = (
+                "&mut "
+                if self.declaration_style is self.declaration_styles.LET_MUT
+                or _RustModifiers.MUT in context.modifiers
+                else "&"
+            )
+            use_line = f"\n{self.indent}let _ = {borrow}{variable_name};"
+        if self.declaration_style is self.declaration_styles.LET_MUT:
+            for name in context.bound_variable_names:
+                use_line += f"\n{self.indent}let _ = &mut {name};"
         return f"fn main() {{\n{indented}{use_line}\n}}"
 
-    wrap_combined_in_file = default_wrap_combined_in_file
+    def wrap_combined_in_file(
+        self,
+        declaration: str,
+        assignment: str,
+        context: FileWrapperContext,
+    ) -> str:
+        """Read the original binding before exercising its
+        reassignment.
+        """
+        return self.wrap_in_file(
+            content=(
+                f"{declaration}\nlet _ = &{context.variable_name};\n"
+                + assignment
+            ),
+            context=context,
+        )
 
     date_format: DateFormats = DateFormats.RUST
     datetime_format: DatetimeFormats = DatetimeFormats.RUST

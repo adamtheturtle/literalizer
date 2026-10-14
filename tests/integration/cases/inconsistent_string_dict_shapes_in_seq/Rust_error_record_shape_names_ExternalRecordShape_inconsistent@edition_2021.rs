@@ -4,5 +4,5 @@ fn main() {
         HashMap::from([("first", "Alice"), ("last", "Smith")]),
         HashMap::from([("first", "Bob"), ("middle", "Quincy")]),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -3,5 +3,5 @@ fn main() {
         "prefix ${HOME} suffix",
         "${interpolated}",
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

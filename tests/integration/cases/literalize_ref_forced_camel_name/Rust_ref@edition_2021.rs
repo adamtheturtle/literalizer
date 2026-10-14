@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 fn main() {
-    let userObj = HashMap::from([
+    let user_obj = HashMap::from([
         ("_", "_"),
     ]);
-    let my_data = userObj;
-    let _ = my_data;
+    let my_data = user_obj;
+    let _ = &my_data;
 }

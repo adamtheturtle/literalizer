@@ -5,5 +5,5 @@ fn main() {
         ("afternoon", "14:15:00"),
         ("evening", "23:59:59"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

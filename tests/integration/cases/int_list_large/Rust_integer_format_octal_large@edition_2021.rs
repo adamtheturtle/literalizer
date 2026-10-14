@@ -5,5 +5,5 @@ fn main() {
         0o377,
         -0o12,
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

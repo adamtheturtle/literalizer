@@ -3,5 +3,5 @@ fn main() {
         (1, vec![3]),
         (2, Vec::<i32>::new()),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

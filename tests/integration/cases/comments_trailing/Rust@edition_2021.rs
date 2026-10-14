@@ -3,5 +3,5 @@ fn main() {
         "a",
         // trailing
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -3,5 +3,5 @@ fn main() {
         ("set_task", "web", "lint_web"),
         ("merge_pipelines",),
     );
-    let _ = my_data;
+    let _ = &my_data;
 }
