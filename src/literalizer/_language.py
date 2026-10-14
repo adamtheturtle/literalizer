@@ -72,6 +72,11 @@ class FileWrapperContext:
     generated_body_preamble: tuple[str, ...]
     """Body blocks produced by the language for the rendered data."""
 
+    root_is_object_literal: bool
+    """Whether an unbound literal uses the object-expression
+    representation.
+    """
+
 
 class NewVariableNameSyntax(enum.Enum):
     """Conservative lexical grammars for ``NewVariable`` declarations.
@@ -3868,7 +3873,9 @@ def wrap_in_file_noop(
 
 
 @beartype
-def parenthesize_bare_object(*, content: str, variable_name: str) -> str:
+def parenthesize_bare_object(
+    *, content: str, context: FileWrapperContext
+) -> str:
     """Return *content* readable as an expression at statement scope.
 
     A file that binds no name holds the value on its own, and in the
@@ -3877,7 +3884,7 @@ def parenthesize_bare_object(*, content: str, variable_name: str) -> str:
     expression reading; every other value already is one, and a name to
     bind to makes the question moot (issue #4774).
     """
-    if variable_name != "" or not content.lstrip().startswith("{"):
+    if context.variable_name != "" or not context.root_is_object_literal:
         return content
     return f"({content})"
 

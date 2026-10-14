@@ -1217,18 +1217,23 @@ class TypeScript(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
+    def is_object_literal(self, value: Value, /) -> bool:
+        """Identify a mapping rendered with the object-literal format."""
+        return isinstance(value, OrderedMap) or (
+            isinstance(value, dict) and self.dict_format.name == "OBJECT"
+        )
+
     @staticmethod
     def wrap_in_file(
         content: str,
         context: FileWrapperContext,
     ) -> str:
         """Wrap a TypeScript declaration as a module."""
-        variable_name = context.variable_name
         body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=parenthesize_bare_object(
                 content=content,
-                variable_name=variable_name,
+                context=context,
             ),
             body_preamble=body_preamble,
         )

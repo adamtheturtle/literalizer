@@ -109,7 +109,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 
 # An object literal reads a ``__proto__`` property key -- quoted or
 # not -- as setting the prototype rather than defining an own
@@ -779,17 +779,22 @@ class JavaScript(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
+    def is_object_literal(self, value: Value, /) -> bool:
+        """Identify a mapping rendered with the object-literal format."""
+        return isinstance(value, OrderedMap) or (
+            isinstance(value, dict) and self.dict_format.name == "OBJECT"
+        )
+
     @staticmethod
     def wrap_in_file(
         content: str,
         context: FileWrapperContext,
     ) -> str:
         """Wrap code in a valid file, as an expression if unbound."""
-        variable_name = context.variable_name
         return wrap_in_file_noop(
             content=parenthesize_bare_object(
                 content=content,
-                variable_name=variable_name,
+                context=context,
             ),
             context=context,
         )

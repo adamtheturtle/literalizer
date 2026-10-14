@@ -413,6 +413,7 @@ def _file_wrapper_context(
     class_preamble: tuple[str, ...],
     has_literal_declarations: bool,
     generated_body_preamble: tuple[str, ...],
+    root_is_object_literal: bool,
 ) -> FileWrapperContext:
     """Keep declaration metadata available after rendering the binding."""
     modifiers = frozenset[enum.Enum]()
@@ -425,6 +426,7 @@ def _file_wrapper_context(
         class_preamble=class_preamble,
         has_literal_declarations=has_literal_declarations,
         generated_body_preamble=generated_body_preamble,
+        root_is_object_literal=root_is_object_literal,
     )
 
 
@@ -4423,6 +4425,36 @@ class _PreFormState:
     """The ref key the render actually used, or the disabled sentinel."""
     ref_case: IdentifierCase | None
     """The case a ref identifier was converted to, if any."""
+    root_is_object_literal: bool
+    """The literal producer's expression kind, before comments or
+    binding.
+    """
+
+
+@runtime_checkable
+class _ObjectLiteralLanguage(Protocol):
+    """A language whose mapping representation can be an object
+    literal.
+    """
+
+    def is_object_literal(self, value: Value, /) -> bool:
+        """Identify the selected representation of a non-reference
+        value.
+        """
+        ...
+
+
+@beartype
+def _root_is_object_literal(
+    *, data: Value, language: Language, ref_key: str, include_delimiters: bool
+) -> bool:
+    """Retain the chosen root expression kind before text assembly."""
+    return (
+        include_delimiters
+        and isinstance(language, _ObjectLiteralLanguage)
+        and _extract_call_arg_ref_name(value=data, ref_key=ref_key) is None
+        and language.is_object_literal(data)
+    )
 
 
 @runtime_checkable
@@ -4594,6 +4626,12 @@ def _literalize_pre_form_impl(
         line_prefix=line_prefix,
         active_ref_key=active_ref_key,
         ref_case=ref_case,
+        root_is_object_literal=_root_is_object_literal(
+            data=data,
+            language=language,
+            ref_key=active_ref_key,
+            include_delimiters=include_delimiters,
+        ),
     )
 
 
@@ -4961,6 +4999,7 @@ def literalize_apply_form(
                     isinstance(variable_form, NewVariable) or len(pre_decl) > 0
                 ),
                 generated_body_preamble=computed.body,
+                root_is_object_literal=pre_form.root_is_object_literal,
             ),
         )
         if len(scoped.file_scope) > 0:
@@ -5072,6 +5111,7 @@ def literalize_both_forms(
             class_preamble=(),
             has_literal_declarations=True,
             generated_body_preamble=declaration.body_preamble,
+            root_is_object_literal=False,
         ),
     )
     if len(scoped.file_scope) > 0:
@@ -5582,6 +5622,7 @@ def _compose_bound_refs(
             )
         ),
         generated_body_preamble=unified_body_preamble,
+        root_is_object_literal=False,
     )
     if composition.assignment_result is None:
         wrapped = language.wrap_in_file(
@@ -7757,6 +7798,7 @@ def _wrap_call_in_file(
             class_preamble=class_stubs,
             has_literal_declarations=False,
             generated_body_preamble=computed_body,
+            root_is_object_literal=False,
         ),
     )
     call_binding_pragmas: tuple[str, ...] = ()
@@ -8800,6 +8842,7 @@ def literalize_call_with_declarations(
             class_preamble=extra_class_preamble,
             has_literal_declarations=len(declarations) > 0,
             generated_body_preamble=unified_body_preamble,
+            root_is_object_literal=False,
         ),
     )
     if len(scoped.file_scope) > 0:
