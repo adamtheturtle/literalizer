@@ -1988,6 +1988,7 @@ class C(metaclass=LanguageCls):
             base = make_negative_nondecimal_i64_formatter(
                 base=base,
                 suffix="LL",
+                base_suffix="L" if suffix_is_auto else "",
             )
         return make_overflow_fallback_formatter(
             base=make_i64_min_safe_formatter(base=base),
