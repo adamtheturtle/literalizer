@@ -1698,6 +1698,7 @@ class D(metaclass=LanguageCls):
             base = make_negative_nondecimal_i64_formatter(
                 base=base,
                 suffix="L",
+                base_suffix="",
             )
 
         @beartype

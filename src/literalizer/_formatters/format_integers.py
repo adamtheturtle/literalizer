@@ -33,7 +33,7 @@ def make_i64_min_safe_formatter(
 
 @beartype
 def make_negative_nondecimal_i64_formatter(
-    *, base: Callable[[int], str], suffix: str
+    *, base: Callable[[int], str], suffix: str, base_suffix: str
 ) -> Callable[[int], str]:
     """Give wide negative non-decimal operands a signed 64-bit type.
 
@@ -42,7 +42,9 @@ def make_negative_nondecimal_i64_formatter(
     signed 32-bit type. Negating that operand therefore wraps before it
     reaches the surrounding 64-bit value. Append the language's signed
     64-bit suffix from that boundary downwards so negation stays signed.
+    *base_suffix* records the suffix already owned by *base*.
     """
+    additional_suffix = suffix.removeprefix(base_suffix)
 
     @beartype
     def _format(value: int) -> str:
@@ -50,11 +52,7 @@ def make_negative_nondecimal_i64_formatter(
         rendered = base(value)
         if value > _I32_MIN:
             return rendered
-        if rendered.endswith(suffix):
-            return rendered
-        if suffix == "LL" and rendered.endswith("L"):
-            return f"{rendered}L"
-        return f"{rendered}{suffix}"
+        return f"{rendered}{additional_suffix}"
 
     return _format
 

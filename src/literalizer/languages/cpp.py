@@ -4453,6 +4453,12 @@ class Cpp(metaclass=LanguageCls):
             base_int_formatter = make_negative_nondecimal_i64_formatter(
                 base=base_int_formatter,
                 suffix="LL",
+                base_suffix=(
+                    "L"
+                    if self.numeric_literal_suffix
+                    is self.numeric_literal_suffixes.AUTO
+                    else ""
+                ),
             )
         if self.numeric_literal_suffix is self.numeric_literal_suffixes.NONE:
             base_int_formatter = _make_cpp_i32_min_safe_formatter(
