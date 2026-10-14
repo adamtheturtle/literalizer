@@ -938,9 +938,12 @@ jobs:
           persist-credentials: false
       - name: Install Go-sourced linters
         timeout-minutes: 10
+        env:
+          RETRY_ATTEMPTS: '2'
+          RETRY_ATTEMPT_SECONDS: '130'
         run: |-
-          go install github.com/google/go-jsonnet/cmd/jsonnet@v0.22.0
-          go install github.com/tmccombs/hcl2json@v0.6.9
+          scripts/retry.sh go install github.com/google/go-jsonnet/cmd/jsonnet@v0.22.0
+          scripts/retry.sh go install github.com/tmccombs/hcl2json@v0.6.9
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Install uv
         timeout-minutes: 10
