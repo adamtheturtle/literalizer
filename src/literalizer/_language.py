@@ -324,6 +324,25 @@ _Declaration_co = TypeVar(
 
 @beartype
 @dataclasses.dataclass(frozen=True)
+class RenderedEmptySequence:
+    """An empty literal and its retained element-type decision."""
+
+    code: str
+    uses_fallback_element_type: bool
+
+
+@beartype
+def empty_container_code(literal: str | RenderedEmptySequence, /) -> str:
+    """Return source text without discarding metadata stored by its
+    owner.
+    """
+    if isinstance(literal, RenderedEmptySequence):
+        return literal.code
+    return literal
+
+
+@beartype
+@dataclasses.dataclass(frozen=True)
 class SequenceFormatConfig(Generic[_Declaration_co]):
     """Configuration for a sequence format and its declared type.
 
@@ -343,7 +362,9 @@ class SequenceFormatConfig(Generic[_Declaration_co]):
     uses_typed_literal_for_scalars: bool
     requires_uniform_record_shapes: bool
     declared_type: _Declaration_co
-    narrowed_empty_form: Callable[[Sequence[list[Value]]], str] | None
+    narrowed_empty_form: (
+        Callable[[Sequence[list[Value]]], str | RenderedEmptySequence] | None
+    )
     single_element_template: str | None
     """How a one-element sequence is spelled, if not as the openers.
 
