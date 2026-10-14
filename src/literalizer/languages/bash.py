@@ -28,6 +28,7 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
+    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -177,14 +178,14 @@ def _escape_bash_nested_expression(value: str, /) -> str:
 
 
 @beartype
-def _to_bash_value(item: str) -> str:
+def _to_bash_value(item: str, /, *, is_collection_literal: bool) -> str:
     """Quote an item if it is a nested array or dict expression.
 
     Bash does not support nested array literals, so any value that is
-    itself an array or associative-array expression (starting with
-    ``(``) is double-quoted with special characters escaped.
+    itself a freshly rendered array or associative-array literal is
+    double-quoted with special characters escaped.
     """
-    if item.startswith("("):
+    if is_collection_literal:
         escaped = _escape_bash_nested_expression(item)
         return f'"{escaped}"'
     return item
@@ -206,7 +207,7 @@ def _format_bash_dict_entry(
     formatted_value: str,
 ) -> str:
     """Format a Bash associative-array entry as ``[key]=value``."""
-    return f"[{key}]={_to_bash_value(item=formatted_value)}"
+    return f"[{key}]={formatted_value}"
 
 
 _DELETE_CHARACTER = "\x7f"
@@ -309,11 +310,7 @@ def _format_variable_declaration(
     _modifiers: frozenset[enum.Enum],
 ) -> str:
     """Format a Bash ``declare`` variable declaration."""
-    is_associative_initializer = (
-        isinstance(data, dict)
-        and bool(data)
-        and value.lstrip().startswith("(")
-    )
+    is_associative_initializer = isinstance(data, dict) and bool(data)
     flag = ""
     if is_associative_initializer:
         flag = " -A"
@@ -944,6 +941,63 @@ class Bash(metaclass=LanguageCls):
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return _format_bash_dict_entry
+
+    def format_sequence_entry_from_source(
+        self, original: Value, formatted: str, /, *, is_reference: bool
+    ) -> str:
+        """Preserve identifier words and quote nested collection
+        literals.
+        """
+        if is_reference:
+            return _format_string_double(value=formatted)
+        return self.format_sequence_entry(original, formatted)
+
+    def format_mapping_entry_from_source(
+        self,
+        key: str,
+        original: Value,
+        formatted: str,
+        /,
+        *,
+        is_reference: bool,
+    ) -> str:
+        """Choose associative-entry escaping from its expression role."""
+        value = _to_bash_value(
+            formatted,
+            is_collection_literal=(
+                not is_reference and isinstance(original, (list, dict, set))
+            ),
+        )
+        return self.format_ordered_map_entry(key, original, value)
+
+    @staticmethod
+    def reference_binding_data_dependent_preamble(
+        data: Value, /
+    ) -> tuple[str, ...]:
+        """Bash reference bindings require no additional preamble."""
+        del data
+        return ()
+
+    @staticmethod
+    def reference_declaration_imports(
+        entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Bash binding declarations require no imports."""
+        del entries
+        return ()
+
+    format_reference_variable_assignment: ClassVar[
+        "staticmethod[[str, str, Value], str]"
+    ] = staticmethod(variable_formatter(template="{name}={value}"))
+
+    @cached_property
+    def format_reference_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Declare a reference expression as a scalar binding."""
+        return variable_declaration_formatter(
+            template="declare {name}={value}"
+        )
 
     @cached_property
     def format_variable_declaration(
