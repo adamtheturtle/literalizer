@@ -9,8 +9,8 @@ cases without depending on individual language classes.
 from __future__ import annotations
 
 import dataclasses
-import enum
 from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -20,6 +20,9 @@ from tests.enum_members import enum_member_by_name
 from .case_manifests import RenderContext
 from .language_specs import make_spec, sorted_languages
 from .variant_types import Variant, VariantCase, compact_variant
+
+if TYPE_CHECKING:
+    import enum
 
 _enum_member_by_name = enum_member_by_name
 

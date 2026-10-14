@@ -1,7 +1,7 @@
 """PHP language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Sequence
@@ -111,13 +111,13 @@ from literalizer.exceptions import UnrepresentableInputError
 
 
 @beartype
-def _format_date_php(value: datetime.date) -> str:
+def _format_date_php(value: dt.date) -> str:
     """Format a date at a deterministic UTC midnight."""
     return f'new DateTime("{value.isoformat()}", new DateTimeZone("UTC"))'
 
 
 @beartype
-def _format_datetime_php(value: datetime.datetime) -> str:
+def _format_datetime_php(value: dt.datetime) -> str:
     """Format a datetime without consulting PHP's default time zone."""
     iso = value.isoformat()
     if value.utcoffset() is None:
@@ -1099,7 +1099,7 @@ class Php(metaclass=LanguageCls):
         PHP = DateFormatConfig(
             formatter=_format_date_php,
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -1113,7 +1113,7 @@ class Php(metaclass=LanguageCls):
         PHP = DatetimeFormatConfig(
             formatter=_format_datetime_php,
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1575,17 +1575,17 @@ class Php(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

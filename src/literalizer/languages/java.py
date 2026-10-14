@@ -1,7 +1,7 @@
 """Java language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import re
@@ -320,7 +320,7 @@ def _java_biginteger_preamble(data: Value, /) -> tuple[str, ...]:
     return ()
 
 
-_JAVA_MAX_ZONE_OFFSET = datetime.timedelta(hours=18)
+_JAVA_MAX_ZONE_OFFSET = dt.timedelta(hours=18)
 """The widest offset ``java.time.ZoneOffset`` accepts.
 
 TOML permits an offset up to +-23:59, and Java rejects one past
@@ -330,7 +330,7 @@ UTC instant rather than as code that throws (issue #4517).
 
 
 @beartype
-def _within_java_zone_offset(value: datetime.datetime) -> datetime.datetime:
+def _within_java_zone_offset(value: dt.datetime) -> dt.datetime:
     """Return *value* in a form Java's ``ZoneOffset`` can hold."""
     offset = value.utcoffset()
     if offset is None or abs(offset) <= _JAVA_MAX_ZONE_OFFSET:
@@ -339,7 +339,7 @@ def _within_java_zone_offset(value: datetime.datetime) -> datetime.datetime:
 
 
 @beartype
-def _format_datetime_java_zoned(value: datetime.datetime) -> str:
+def _format_datetime_java_zoned(value: dt.datetime) -> str:
     """Format a datetime as a Java ``ZonedDateTime.of(...)`` call."""
     value = _within_java_zone_offset(value=value)
     raw_timezone_name = value.tzname()
@@ -355,7 +355,7 @@ def _format_datetime_java_zoned(value: datetime.datetime) -> str:
 
 
 @beartype
-def _format_datetime_java_instant(value: datetime.datetime) -> str:
+def _format_datetime_java_instant(value: dt.datetime) -> str:
     """Format a datetime as a Java ``Instant.parse(...)`` call.
 
     ``Instant.parse`` rejects strings without a timezone offset, so a
@@ -546,11 +546,11 @@ def _java_scalar_hint(
             hint = "double"
         case str() | bytes():
             hint = "String"
-        case datetime.datetime():
+        case dt.datetime():
             hint = datetime_hint
-        case datetime.date():
+        case dt.date():
             hint = date_hint
-        case datetime.time():
+        case dt.time():
             hint = "LocalTime"
         case None:
             hint = "Object"
@@ -1252,7 +1252,7 @@ class Java(metaclass=LanguageCls):
                 template="LocalDate.of({year}, {month}, {day})",
             ),
             preamble_lines=("import java.time.LocalDate;",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -1266,7 +1266,7 @@ class Java(metaclass=LanguageCls):
         INSTANT = DatetimeFormatConfig(
             formatter=_format_datetime_java_instant,
             preamble_lines=("import java.time.Instant;",),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ZONED = DatetimeFormatConfig(
             formatter=_format_datetime_java_zoned,
@@ -1274,7 +1274,7 @@ class Java(metaclass=LanguageCls):
                 "import java.time.ZoneId;",
                 "import java.time.ZonedDateTime;",
             ),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -2119,7 +2119,7 @@ class Java(metaclass=LanguageCls):
             return "long"
         return "int"
 
-    def _java_record_datetime_type(self, value: datetime.datetime, /) -> str:
+    def _java_record_datetime_type(self, value: dt.datetime, /) -> str:
         """Java type for a :class:`datetime.datetime` record component.
 
         Unlike a top-level variable annotation, a record component must
@@ -2230,7 +2230,7 @@ class Java(metaclass=LanguageCls):
                 if int_type == "int" and (not in_i32):
                     resolved_result_1 = "long"
                 return resolved_result_1
-            case datetime.datetime():
+            case dt.datetime():
                 return self._java_record_datetime_type(value)
             case _:
                 scalar_type = self._java_record_scalar_resolver(type(value))
@@ -2449,12 +2449,12 @@ class Java(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
         ``EPOCH`` seconds are routed through :attr:`format_integer` so
@@ -2465,15 +2465,13 @@ class Java(metaclass=LanguageCls):
         plain integer, so every checked-in golden file stays
         byte-identical.
         """
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return datetime_epoch_formatter(format_integer=self.format_integer)
         return base_formatter
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_local_time_of
 
@@ -2659,7 +2657,7 @@ class Java(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            extra={datetime.time: ("import java.time.LocalTime;",)},
+            extra={dt.time: ("import java.time.LocalTime;",)},
         )
 
     @cached_property

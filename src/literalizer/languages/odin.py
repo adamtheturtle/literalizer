@@ -1,7 +1,7 @@
 """Odin language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import json
@@ -1294,13 +1294,13 @@ class Odin(metaclass=LanguageCls):
                 field_type = _odin_int_field_type(value)
             case float():
                 field_type = "f64"
-            case datetime.datetime() if (
+            case dt.datetime() if (
                 self.datetime_format.value.type_produced is int
             ):
                 field_type = _odin_int_field_type(
                     datetime_epoch_seconds(value=value),
                 )
-            case str() | bytes() | datetime.date() | datetime.time():
+            case str() | bytes() | dt.date() | dt.time():
                 field_type = "string"
             case list():
                 field_type = "[dynamic]any"
@@ -1557,17 +1557,17 @@ class Odin(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

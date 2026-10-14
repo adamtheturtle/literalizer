@@ -1,7 +1,7 @@
 """Racket language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Sequence
@@ -97,7 +97,7 @@ from literalizer.exceptions import CallArgNotSupportedError
 
 
 @beartype
-def _format_date_racket(value: datetime.date) -> str:
+def _format_date_racket(value: dt.date) -> str:
     """Format *value* as a deterministic Racket ``date`` structure."""
     week_day = (value.weekday() + 1) % 7
     year_day = value.timetuple().tm_yday - 1
@@ -312,7 +312,7 @@ class Racket(metaclass=LanguageCls):
         )
         RACKET = DateFormatConfig(
             formatter=_format_date_racket,
-            type_produced=datetime.date,
+            type_produced=dt.date,
             preamble_lines=("(require racket/date)",),
         )
 
@@ -745,17 +745,17 @@ class Racket(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

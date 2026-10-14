@@ -1,7 +1,7 @@
 """PowerShell language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import math
 import re
@@ -405,7 +405,7 @@ class PowerShell(metaclass=LanguageCls):
             formatter=date_ymd_formatter(
                 template="[datetime]::new({year}, {month}, {day})",
             ),
-            type_produced=datetime.date,
+            type_produced=dt.date,
             preamble_lines=(),
         )
 
@@ -841,17 +841,17 @@ class PowerShell(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

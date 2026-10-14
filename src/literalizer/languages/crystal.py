@@ -1,7 +1,7 @@
 """Crystal language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import re
@@ -319,9 +319,9 @@ _CRYSTAL_SCALAR_FIELD_TYPE: Mapping[type, str] = MappingProxyType(
         float: "Float64",
         str: "String",
         bytes: "String",
-        datetime.date: "String",
-        datetime.datetime: "String",
-        datetime.time: "String",
+        dt.date: "String",
+        dt.datetime: "String",
+        dt.time: "String",
     },
 )
 
@@ -764,7 +764,7 @@ class Crystal(metaclass=LanguageCls):
             formatter=date_ymd_formatter(
                 template="Time.utc({year}, {month}, {day})",
             ),
-            type_produced=datetime.date,
+            type_produced=dt.date,
             preamble_lines=(),
         )
 
@@ -1397,9 +1397,9 @@ class Crystal(metaclass=LanguageCls):
         """
         scalar_type = _CRYSTAL_SCALAR_FIELD_TYPE.get(type(value))
         if (
-            isinstance(value, datetime.date)
-            and not isinstance(value, datetime.datetime)
-            and self.date_format.value.type_produced is datetime.date
+            isinstance(value, dt.date)
+            and not isinstance(value, dt.datetime)
+            and self.date_format.value.type_produced is dt.date
         ):
             return "Time"
         return nonempty_or_default(value=scalar_type, default="Nil")
@@ -1424,7 +1424,7 @@ class Crystal(metaclass=LanguageCls):
         inferred literal.
         """
         if (
-            isinstance(value, datetime.datetime)
+            isinstance(value, dt.datetime)
             and self.datetime_format.value.type_produced is int
         ):
             value = datetime_epoch_seconds(value=value)
@@ -1684,7 +1684,7 @@ class Crystal(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal.
 
         ``json_type`` always emits ISO 8601 dates so the result is a
@@ -1695,7 +1695,7 @@ class Crystal(metaclass=LanguageCls):
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
         ``json_type`` always emits ISO 8601 datetimes (JSON strings)
@@ -1710,7 +1710,7 @@ class Crystal(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

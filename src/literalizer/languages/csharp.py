@@ -1,7 +1,7 @@
 """C# language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Mapping, Sequence
@@ -308,11 +308,11 @@ def _csharp_scalar_type(
 ) -> str:
     """Return the C# type name for a scalar value."""
     match value:
-        case datetime.datetime():
+        case dt.datetime():
             return datetime_hint
-        case datetime.date():
+        case dt.date():
             return date_hint
-        case datetime.time():
+        case dt.time():
             return "TimeOnly"
         case bool():
             result = "bool"
@@ -440,7 +440,7 @@ def _format_csharp_declaration(
     """
     if _CSharpModifiers.CONST in modifiers and isinstance(
         data,
-        (list, dict, set, datetime.date, datetime.datetime),
+        (list, dict, set, dt.date, dt.datetime),
     ):
         msg = (
             "C# 'const' requires a compile-time constant initializer, "
@@ -609,7 +609,7 @@ _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 def _csharp_epoch_array_item(value: Value, /) -> Value:
     """Size epoch arrays from rendered values, preserving records."""
     match value:
-        case datetime.datetime():
+        case dt.datetime():
             return datetime_epoch_seconds(value=value)
         case list():
             return [_csharp_epoch_array_item(item) for item in value]
@@ -998,7 +998,7 @@ class CSharp(metaclass=LanguageCls):
                 template="new DateOnly({year}, {month}, {day})",
             ),
             preamble_lines=("using System;",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -1016,7 +1016,7 @@ class CSharp(metaclass=LanguageCls):
                 millisecond_template=None,
             ),
             preamble_lines=("using System;",),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1320,7 +1320,7 @@ class CSharp(metaclass=LanguageCls):
             self._validate_json_value_keys(data)
         if (
             not self._json_type_active
-            and self.datetime_format.value.type_produced is datetime.datetime
+            and self.datetime_format.value.type_produced is dt.datetime
         ):
             reject_aware_datetimes(
                 data=data, language_name="C#", allow_utc_offset=False
@@ -1790,7 +1790,7 @@ class CSharp(metaclass=LanguageCls):
         # the field exactly like that integer; other datetime formats
         # stay datetime-typed via the scalar resolver below.
         if (
-            isinstance(value, datetime.datetime)
+            isinstance(value, dt.datetime)
             and self.datetime_format.value.type_produced is int
         ):
             value = datetime_epoch_seconds(value=value)
@@ -2262,7 +2262,7 @@ class CSharp(metaclass=LanguageCls):
             normalized = {
                 key: (
                     datetime_epoch_seconds(value=value)
-                    if isinstance(value, datetime.datetime)
+                    if isinstance(value, dt.datetime)
                     else value
                 )
                 for key, value in data.items()
@@ -2294,7 +2294,7 @@ class CSharp(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal.
 
         ``json_type`` overrides the configured ``date_format`` with the
@@ -2306,7 +2306,7 @@ class CSharp(metaclass=LanguageCls):
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
         ``json_type`` overrides the configured ``datetime_format`` with
@@ -2321,7 +2321,7 @@ class CSharp(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal.
 
         ``json_type`` overrides the native ``TimeOnly`` literal with the
@@ -2511,7 +2511,7 @@ class CSharp(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            extra={datetime.time: ("using System;",)},
+            extra={dt.time: ("using System;",)},
         )
 
     @cached_property

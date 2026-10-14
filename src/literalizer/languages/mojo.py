@@ -1,7 +1,7 @@
 """Mojo language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -701,15 +701,9 @@ def _mojo_variant_for_scalar(
                 type_name="Float64",
                 payload_template="Float64({value})",
             )
-        case datetime.datetime() if datetime_type_produced is int:
+        case dt.datetime() if datetime_type_produced is int:
             return _INT_VARIANT_SIGNATURE
-        case (
-            str()
-            | bytes()
-            | datetime.datetime()
-            | datetime.date()
-            | datetime.time()
-        ):
+        case str() | bytes() | dt.datetime() | dt.date() | dt.time():
             return _STRING_VARIANT_SIGNATURE
         case None:
             return _VariantSignature(
@@ -1016,9 +1010,9 @@ def _mojo_element_renders_as_string(
     match item:
         case str() | bytes():
             return True
-        case datetime.datetime():
+        case dt.datetime():
             return datetime_renders_as_string
-        case datetime.date():
+        case dt.date():
             return date_renders_as_string
         case _:
             return False
@@ -1927,17 +1921,17 @@ class Mojo(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

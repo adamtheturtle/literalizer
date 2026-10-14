@@ -1,7 +1,7 @@
 """Parse JSON, JSONC, JSON5, YAML, and TOML input into ``Value`` data."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import decimal
 import enum
 import json
@@ -357,8 +357,8 @@ def unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
             return value.real
         case str():
             return str(object=value)
-        case datetime.datetime():
-            return datetime.datetime(
+        case dt.datetime():
+            return dt.datetime(
                 year=value.year,
                 month=value.month,
                 day=value.day,
@@ -368,7 +368,7 @@ def unwrap_yaml_scalar(*, value: Scalar | TaggedScalar) -> Scalar:
                 microsecond=value.microsecond,
                 tzinfo=value.tzinfo,
             )
-        case datetime.date() | datetime.time() | bytes() | None:
+        case dt.date() | dt.time() | bytes() | None:
             return value
         case _ as unreachable:
             assert_never(unreachable)
@@ -436,9 +436,9 @@ def _is_yaml_scalar(value: object, /) -> TypeIs[Scalar | TaggedScalar]:
             int,
             float,
             bool,
-            datetime.date,
-            datetime.datetime,
-            datetime.time,
+            dt.date,
+            dt.datetime,
+            dt.time,
             bytes,
             TaggedScalar,
             type(None),
@@ -505,9 +505,9 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
             int,
             float,
             str,
-            datetime.datetime,
-            datetime.date,
-            datetime.time,
+            dt.datetime,
+            dt.date,
+            dt.time,
             bytes,
             type(None),
         ),

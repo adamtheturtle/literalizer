@@ -1,7 +1,7 @@
 """C++ language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import itertools
@@ -498,7 +498,7 @@ def _collect_direct_ints(items: list[Value]) -> list[int]:
 
 
 @beartype
-def _format_date_cpp(value: datetime.date) -> str:
+def _format_date_cpp(value: dt.date) -> str:
     """Format a date as a C++ chrono year_month_day literal."""
     return (
         f"std::chrono::year_month_day{{"
@@ -509,7 +509,7 @@ def _format_date_cpp(value: datetime.date) -> str:
 
 
 @beartype
-def _format_datetime_cpp(value: datetime.datetime) -> str:
+def _format_datetime_cpp(value: dt.datetime) -> str:
     """Format a datetime as a C++ chrono time_point construction."""
     ymd = _format_date_cpp(value=value)
     parts = [f"std::chrono::sys_days{{{ymd}}}"]
@@ -574,7 +574,7 @@ def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
     """
     if isinstance(value, (list, dict, set)):
         return False
-    return isinstance(value, (bool, int, float, datetime.date))
+    return isinstance(value, (bool, int, float, dt.date))
 
 
 @beartype
@@ -1593,8 +1593,8 @@ def _cpp14_explicit_variant_behavior(
                         float,
                         str,
                         bytes,
-                        datetime.date,
-                        datetime.time,
+                        dt.date,
+                        dt.time,
                     ),
                 )
                 or value is None
@@ -2360,11 +2360,11 @@ def _renders_as_string_literal(
             value=data
         ):
             return False
-        case bytes() | str() | datetime.time():
+        case bytes() | str() | dt.time():
             return True
-        case datetime.datetime():
+        case dt.datetime():
             return datetime_type is str
-        case datetime.date():
+        case dt.date():
             return date_type is str
         case _:
             return False
@@ -2941,7 +2941,7 @@ class Cpp(metaclass=LanguageCls):
         CPP = DateFormatConfig(
             formatter=_format_date_cpp,
             preamble_lines=("#include <chrono>",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
@@ -2966,7 +2966,7 @@ class Cpp(metaclass=LanguageCls):
         CPP = DatetimeFormatConfig(
             formatter=_format_datetime_cpp,
             preamble_lines=("#include <chrono>",),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -3890,11 +3890,11 @@ class Cpp(metaclass=LanguageCls):
                 and self._cpp_record_field_is_trivial(item)
                 for item in value
             )
-        if isinstance(value, datetime.datetime):
+        if isinstance(value, dt.datetime):
             return (
                 self._resolved_datetime_format.value.type_produced is not str
             )
-        if isinstance(value, datetime.date):
+        if isinstance(value, dt.date):
             return self._resolved_date_format.value.type_produced is not str
         return value is None or isinstance(value, (bool, int, float))
 
@@ -4394,14 +4394,14 @@ class Cpp(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return format_date_iso
         return self._resolved_date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if (
             self._json_type_active
@@ -4411,7 +4411,7 @@ class Cpp(metaclass=LanguageCls):
         return self._resolved_datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
