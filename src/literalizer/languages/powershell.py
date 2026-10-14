@@ -3,6 +3,7 @@
 import dataclasses
 import datetime
 import enum
+import math
 import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -87,12 +88,14 @@ from literalizer._language import (
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop_static,
 )
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import InvalidDictKeyError
 
 
 @beartype
-def _powershell_call_arg(_value: Value, formatted: str, /) -> str:
+def _powershell_call_arg(
+    value: Value, formatted: str, /, *, date_type: type
+) -> str:
     """Return a call argument the command parser reads as one value.
 
     A command argument that opens with a type literal -- the
@@ -100,7 +103,18 @@ def _powershell_call_arg(_value: Value, formatted: str, /) -> str:
     of what follows rather than as the argument, which the parser
     then refuses.  Parentheses make it one value again (issue #4735).
     """
-    if formatted.startswith("["):
+    match value:
+        case OrderedMap():
+            is_type_literal = True
+        case float():
+            is_type_literal = not math.isfinite(value)
+        case datetime.datetime():
+            is_type_literal = False
+        case datetime.date():
+            is_type_literal = date_type is datetime.date
+        case _:
+            is_type_literal = False
+    if is_type_literal:
         return f"({formatted})"
     return formatted
 
@@ -371,7 +385,13 @@ class PowerShell(metaclass=LanguageCls):
     @cached_property
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Return the rewriting a formatted call argument goes through."""
-        return _powershell_call_arg
+        date_type = self.date_format.value.type_produced
+
+        def _format(value: Value, formatted: str) -> str:
+            """Parenthesize arguments emitted with a type literal."""
+            return _powershell_call_arg(value, formatted, date_type=date_type)
+
+        return _format
 
     class DateFormats(DateFormatEnum):
         """Date format options for PowerShell."""
