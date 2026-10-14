@@ -9,7 +9,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, ClassVar, Final, assert_never
+from typing import TYPE_CHECKING, ClassVar, Final
 
 from beartype import beartype
 
@@ -19,11 +19,11 @@ from literalizer._checks import (
 )
 from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
+    CollectionType,
     TypedOpenerConfig,
     fixed_open,
-    make_type_to_opener,
+    infer_collection_type,
     typed_collection_open,
-    typed_dict_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -63,6 +63,7 @@ from literalizer._formatters.format_json_value import JsonValue
 from literalizer._formatters.format_strings import (
     make_backslash_string_formatter,
 )
+from literalizer._formatters.initializer_types import TypedCollectionOpen
 from literalizer._formatters.record_strategy import (
     RecordDeclarationField,
     RecordFieldType,
@@ -242,91 +243,39 @@ def _kotlin_biginteger_preamble(data: Value, /) -> tuple[str, ...]:
 
 
 @beartype
-def _kotlin_tuple_open(items: list[Value]) -> str:
-    """Return the Kotlin tuple opener based on element count."""
-    openers: dict[int, str] = {
-        2: "Pair(",
-        3: "Triple(",
-    }
-    return openers.get(len(items), "listOf<Any?>(")
-
-
-@beartype
-def _kotlin_list_sequence_open(
-    *,
-    dict_resolver: Callable[[type | ListType | DictType], str | None],
-) -> Callable[[list[Value]], str]:
-    """Build a typed sequence opener for the Kotlin List format.
-
-    Delegates to ``_kotlin_type_to_opener`` for scalars and lists
-    (preserving specialized openers like ``intArrayOf``), and falls
-    through to the renderer-matched resolver for ``DictType``.
-    """
-
-    def _combined_opener(
-        element_type: type | ListType | DictType,
-    ) -> str | None:
-        """Delegate to module-level implementation."""
-        return _apply_kotlin_combined_opener(
-            element_type=element_type, dict_resolver=dict_resolver
-        )
-
-    typed_open = typed_collection_open(
-        type_to_opener=_combined_opener,
-        fallback="listOf<Any?>(",
-    )
-
-    def _open(items: list[Value], /) -> str:
-        """Keep empty LIST values in Kotlin's array container family."""
-        if len(items) == 0:
-            return "arrayOf<Any?>("
-        return typed_open(items)
-
-    return _open
-
-
-@beartype
-def _apply_kotlin_combined_opener(
+def _kotlin_sequence_constructor(
     element_type: type | ListType | DictType,
-    dict_resolver: Callable[[type | ListType | DictType], str | None],
 ) -> str | None:
-    """Resolve element type, preferring specialized Kotlin openers."""
-    if isinstance(element_type, DictType):
-        return f"listOf<{dict_resolver(element_type)}>("
-    return _kotlin_type_to_opener(element_type=element_type)
+    """Select the LIST constructor from the inferred element kind."""
+    scalar_constructors: dict[type, str] = {
+        str: "arrayOf",
+        bool: "booleanArrayOf",
+        int: "intArrayOf",
+        float: "doubleArrayOf",
+        bytes: "arrayOf",
+        dt.date: "arrayOf",
+        dt.datetime: "arrayOf",
+        dt.time: "arrayOf",
+    }
+    match element_type:
+        case DictType():
+            return None
+        case ListType():
+            inner = _kotlin_sequence_constructor(
+                element_type=element_type.inner
+            )
+            return "arrayOf" if inner is not None else None
+        case _:
+            return scalar_constructors.get(element_type)
 
 
 @beartype
 def _kotlin_type_to_opener(
     element_type: type | ListType | DictType,
 ) -> str | None:
-    """Map a Python element type to a Kotlin collection opener.
-
-    Used as the scalar/list fallback for the LIST format (via
-    :func:`_kotlin_list_sequence_open`).  Returns ``None`` for
-    ``DictType`` — the LIST format handles dicts via the config
-    resolver before calling this function.
-    """
-    scalar_openers: dict[type, str] = {
-        str: "arrayOf(",
-        bool: "booleanArrayOf(",
-        int: "intArrayOf(",
-        float: "doubleArrayOf(",
-        bytes: "arrayOf(",
-        dt.date: "arrayOf(",
-        dt.datetime: "arrayOf(",
-        dt.time: "arrayOf(",
-    }
-    match element_type:
-        case DictType():
-            return None
-        case ListType():
-            inner = _kotlin_type_to_opener(element_type=element_type.inner)
-            if inner is not None:
-                return "arrayOf("
-            return None
-        case _:
-            return scalar_openers.get(element_type)
+    """Spell the selected constructor for value-less type resolution."""
+    constructor = _kotlin_sequence_constructor(element_type=element_type)
+    return f"{constructor}(" if constructor is not None else None
 
 
 _KOTLIN_PRIMITIVE_ARRAY_TYPES: dict[type, str] = {
@@ -436,200 +385,6 @@ _KOTLIN_I32_MAX = 2**31 - 1
 
 
 @beartype
-def _kotlin_integer_hint(*, data: int) -> str:
-    """Choose the Kotlin integer type covering the value."""
-    hint = "Int"
-    if not _KOTLIN_I32_MIN <= data <= _KOTLIN_I32_MAX:
-        hint = "Long"
-    return hint
-
-
-@beartype
-def _kotlin_scalar_hint(
-    *,
-    data: Scalar,
-    date_hint: str,
-    datetime_hint: str,
-) -> str:
-    """Derive the Kotlin annotation for a scalar value."""
-    match data:
-        case bool():
-            hint = "Boolean"
-        case int():
-            hint = _kotlin_integer_hint(data=data)
-        case float():
-            hint = "Double"
-        case str() | bytes():
-            hint = "String"
-        case dt.datetime():
-            hint = datetime_hint
-        case dt.date():
-            hint = date_hint
-        case dt.time():
-            hint = "LocalTime"
-        case None:
-            hint = "Nothing?"
-        case _ as unreachable:
-            assert_never(unreachable)
-    return hint
-
-
-@beartype
-def _kotlin_dict_hint(
-    *,
-    is_empty: bool,
-    is_ordered: bool,
-    val_types: list[str],
-    default_dict_key_type: str,
-    default_dict_value_type: str,
-    dict_outer: str,
-) -> str:
-    """Derive a Kotlin map type annotation."""
-    outer = dict_outer
-    if is_ordered:
-        outer = "LinkedHashMap"
-    if is_empty:
-        return f"{outer}<{default_dict_key_type}, {default_dict_value_type}>"
-    unique = list(dict.fromkeys(val_types))
-    val_type = "Any?"
-    if len(unique) == 1:
-        val_type = unique[0]
-    return f"{outer}<{default_dict_key_type}, {val_type}>"
-
-
-@beartype
-def _kotlin_set_hint(
-    *,
-    elem_types_sorted: list[str],
-    is_empty: bool,
-    default_set_element_type: str,
-    set_outer: str,
-) -> str:
-    """Derive a Kotlin set type annotation."""
-    if is_empty:
-        return f"{set_outer}<{default_set_element_type}>"
-    unique = set(elem_types_sorted)
-    match unique:
-        case _ if unique == {"Int", "Long"}:
-            elem_type = "Long"
-        case _ if len(unique) == 1:
-            elem_type = elem_types_sorted[0]
-        case _:
-            elem_type = "Any?"
-    return f"{set_outer}<{elem_type}>"
-
-
-@beartype
-def _kotlin_tuple_hint(*, elem_types: list[str]) -> str:
-    """Derive a Kotlin tuple-shaped annotation."""
-    match elem_types:
-        case [_, _]:
-            return f"Pair<{', '.join(elem_types)}>"
-        case [_, _, _]:
-            return f"Triple<{', '.join(elem_types)}>"
-        case _:
-            return "List<Any?>"
-
-
-@beartype
-def _kotlin_array_or_list_hint(*, elem_types: list[str]) -> str:
-    """Derive a Kotlin array/list annotation for the ``LIST`` format."""
-    unique = list(dict.fromkeys(elem_types))
-    if len(unique) != 1:
-        return "List<Any?>"
-    elem_type = unique[0]
-    kotlin_prim = {
-        "Boolean": "BooleanArray",
-        "Int": "IntArray",
-        "Double": "DoubleArray",
-    }
-    if elem_type in kotlin_prim:
-        return kotlin_prim[elem_type]
-    # Generic element types (e.g. Map<…>) use listOf, not arrayOf, so
-    # the container type is List, not Array.
-    if "<" in elem_type:
-        return f"List<{elem_type}>"
-    return f"Array<{elem_type}>"
-
-
-@beartype
-def _kotlin_list_hint(
-    *,
-    data: list[Value],
-    recurse: Callable[..., str],
-    sequence_format_name: str,
-) -> str:
-    """Derive a Kotlin sequence type annotation."""
-    if len(data) == 0:
-        if sequence_format_name == "ARRAY":
-            return "Array<Any?>"
-        return "List<Any?>"
-    if sequence_format_name == "ARRAY":
-        return "Array<Any?>"
-    elem_types = [recurse(data=e) for e in data]
-    if sequence_format_name == "TUPLE":
-        return _kotlin_tuple_hint(elem_types=elem_types)
-    return _kotlin_array_or_list_hint(elem_types=elem_types)
-
-
-@beartype
-def _kotlin_type_hint(
-    *,
-    data: Value,
-    date_hint: str,
-    datetime_hint: str,
-    default_set_element_type: str,
-    default_dict_key_type: str,
-    default_dict_value_type: str,
-    dict_outer: str,
-    set_outer: str,
-    sequence_format_name: str,
-) -> str:
-    """Derive a Kotlin type annotation from *data*."""
-    recurse = functools.partial(
-        _kotlin_type_hint,
-        date_hint=date_hint,
-        datetime_hint=datetime_hint,
-        default_set_element_type=default_set_element_type,
-        default_dict_key_type=default_dict_key_type,
-        default_dict_value_type=default_dict_value_type,
-        dict_outer=dict_outer,
-        set_outer=set_outer,
-        sequence_format_name=sequence_format_name,
-    )
-    match data:
-        case dict():
-            hint = _kotlin_dict_hint(
-                is_empty=len(data) == 0,
-                is_ordered=isinstance(data, OrderedMap),
-                val_types=[recurse(data=v) for v in data.values()],
-                default_dict_key_type=default_dict_key_type,
-                default_dict_value_type=default_dict_value_type,
-                dict_outer=dict_outer,
-            )
-        case set():
-            hint = _kotlin_set_hint(
-                elem_types_sorted=sorted({recurse(data=e) for e in data}),
-                is_empty=len(data) == 0,
-                default_set_element_type=default_set_element_type,
-                set_outer=set_outer,
-            )
-        case list():
-            hint = _kotlin_list_hint(
-                data=data,
-                recurse=recurse,
-                sequence_format_name=sequence_format_name,
-            )
-        case _:
-            hint = _kotlin_scalar_hint(
-                data=data,
-                date_hint=date_hint,
-                datetime_hint=datetime_hint,
-            )
-    return hint
-
-
-@beartype
 def _format_kotlin_typed_declaration(
     *,
     name: str,
@@ -637,32 +392,12 @@ def _format_kotlin_typed_declaration(
     data: Value,
     _modifiers: frozenset[enum.Enum],
     keyword: str,
-    date_hint: str,
-    datetime_hint: str,
-    default_set_element_type: str,
-    default_dict_key_type: str,
-    default_dict_value_type: str,
-    dict_outer: str,
-    set_outer: str,
-    sequence_format_name: str,
+    type_hint: Callable[[Value], str],
 ) -> str:
-    """Format a Kotlin variable declaration with an explicit type."""
-    inferred_hint = _kotlin_type_hint(
-        data=data,
-        date_hint=date_hint,
-        datetime_hint=datetime_hint,
-        default_set_element_type=default_set_element_type,
-        default_dict_key_type=default_dict_key_type,
-        default_dict_value_type=default_dict_value_type,
-        dict_outer=dict_outer,
-        set_outer=set_outer,
-        sequence_format_name=sequence_format_name,
-    )
-    explicit_hint = _kotlin_explicit_initializer_type(value)
-    hint = inferred_hint
-    if explicit_hint is not None and explicit_hint != "":
-        hint = explicit_hint
-    return f"{keyword} {name}: {hint} = {value}"
+    """Format a declaration using the language's retained type
+    decisions.
+    """
+    return f"{keyword} {name}: {type_hint(data)} = {value}"
 
 
 @beartype
@@ -671,6 +406,7 @@ class _KotlinDictSpec:
     """Per-format dict config pieces resolved at init time."""
 
     opener_template: str
+    declared_type_template: str
 
 
 @beartype
@@ -714,50 +450,6 @@ def _kotlin_call_stub(
     return tuple(lines)
 
 
-# Kotlin collection-constructor call names mapped to the declared type
-# they produce, used to derive a ``RECORD`` field's type from the
-# generic collection opener the value formatter emits (e.g.
-# ``linkedMapOf<String, Any?>(`` -> ``LinkedHashMap<String, Any?>``).
-_KOTLIN_COLLECTION_TYPE: dict[str, str] = {
-    "arrayOf": "Array",
-    "listOf": "List",
-    "mapOf": "Map",
-    "hashMapOf": "HashMap",
-    "linkedMapOf": "LinkedHashMap",
-    "setOf": "Set",
-}
-
-
-@beartype
-def _kotlin_opener_to_type(opener: str, /) -> str:
-    """Map a Kotlin collection opener to its declared field type.
-
-    A generic constructor call's ``<...>`` segment carries the
-    declared type (``listOf<Any?>(`` -> ``List<Any?>``,
-    ``linkedMapOf<String, Any?>(`` -> ``LinkedHashMap<String, Any?>``).
-    ``arrayOf(`` carries no element type in the opener and is handled
-    by the caller.  Callers pass openers emitted by the configured
-    Kotlin formatters, so their generic delimiters are balanced.
-    """
-    generic_start = opener.index("<")
-    name = opener[:generic_start]
-    generic_end = opener.index(">(", generic_start)
-    generics = opener[generic_start : generic_end + 1]
-    return f"{_KOTLIN_COLLECTION_TYPE[name]}{generics}"
-
-
-@beartype
-def _kotlin_explicit_initializer_type(value: str, /) -> str | None:
-    """Return the type argument explicitly carried by an initializer."""
-    opener = value.lstrip().splitlines()[0]
-    if "<" not in opener or ">" not in opener:
-        return None
-    name = opener[: opener.index("<")]
-    if name not in _KOTLIN_COLLECTION_TYPE:
-        return None
-    return _kotlin_opener_to_type(opener)
-
-
 @beartype
 def _kotlin_record_field_identifier(
     key: str, /, *, reserved_identifiers: frozenset[str]
@@ -796,7 +488,7 @@ def _kotlin_record_literal(
     structured pieces for the shared compact/multiline layout code.
     """
     return RenderedRecordLiteral(
-        head=f"{name}(",
+        head=TypedCollectionOpen.create(f"{name}(", declared_type=name),
         entries=tuple(
             f"{field.identifier} = {field.formatted}" for field in fields
         ),
@@ -828,6 +520,8 @@ def _kotlin_tuple_literal(
     value: list[Value],
     elements: Sequence[str],
     /,
+    *,
+    declared_type: Callable[[list[Value]], str],
 ) -> RenderedTupleLiteral:
     """Render a heterogeneous scalar array as a Kotlin two-element
     ``Pair(...)`` or three-element ``Triple(...)`` literal as
@@ -841,7 +535,9 @@ def _kotlin_tuple_literal(
     """
     head = {2: "Pair(", 3: "Triple("}[len(value)]
     return RenderedTupleLiteral(
-        head=head,
+        head=TypedCollectionOpen.create(
+            head, declared_type=declared_type(value)
+        ),
         entries=tuple(elements),
         closer=")",
         compact_pad="",
@@ -1343,7 +1039,7 @@ class Kotlin(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
-            sequence_open=_kotlin_tuple_open,
+            sequence_open=fixed_open(open_str="listOf<Any?>("),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
@@ -1429,9 +1125,11 @@ class Kotlin(metaclass=LanguageCls):
 
         MAP = _KotlinDictSpec(
             opener_template="mapOf<{key_type}, {type_name}>(",
+            declared_type_template="Map<{key_type}, {type_name}>",
         )
         HASH_MAP = _KotlinDictSpec(
             opener_template="hashMapOf<{key_type}, {type_name}>(",
+            declared_type_template="HashMap<{key_type}, {type_name}>",
         )
 
     class EmptyDictKey(enum.Enum):
@@ -1539,14 +1237,7 @@ class Kotlin(metaclass=LanguageCls):
                 [str, str, Value, frozenset[enum.Enum]], str
             ],
             keyword: str,
-            date_hint: str,
-            datetime_hint: str,
-            default_set_element_type: str,
-            default_dict_key_type: str,
-            default_dict_value_type: str,
-            dict_outer: str,
-            set_outer: str,
-            sequence_format_name: str,
+            type_hint: Callable[[Value], str],
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
             if self in {type(self).NEVER, type(self).SAFE}:
@@ -1567,14 +1258,7 @@ class Kotlin(metaclass=LanguageCls):
                     data=data,
                     _modifiers=modifiers,
                     keyword=keyword,
-                    date_hint=date_hint,
-                    datetime_hint=datetime_hint,
-                    default_set_element_type=default_set_element_type,
-                    default_dict_key_type=default_dict_key_type,
-                    default_dict_value_type=default_dict_value_type,
-                    dict_outer=dict_outer,
-                    set_outer=set_outer,
-                    sequence_format_name=sequence_format_name,
+                    type_hint=type_hint,
                 )
 
             return _typed_formatter
@@ -1996,31 +1680,8 @@ class Kotlin(metaclass=LanguageCls):
 
     @beartype
     def _kotlin_list_field_type(self, *, value: list[Value]) -> str:
-        """Resolve primitive arrays structurally, then generic fields."""
-        if self.sequence_format is type(self.sequence_format).LIST:
-            element_type = infer_element_type(items=value)
-            if isinstance(element_type, type):
-                primitive = _KOTLIN_PRIMITIVE_ARRAY_TYPES.get(element_type)
-                if primitive is not None:
-                    return primitive
-        opener = self.sequence_open(value)
-        if opener in {"Pair(", "Triple("}:
-            field_type = self._kotlin_tuple_field_type(value)
-        elif opener == "arrayOf(":
-            children = [
-                child
-                for item in value
-                if isinstance(item, list)
-                for child in item
-            ]
-            if all(isinstance(item, list) for item in value):
-                element = self._kotlin_list_field_type(value=children)
-            else:
-                element = self._kotlin_value_field_type(value[0])
-            field_type = f"Array<{element}>"
-        else:
-            field_type = _kotlin_opener_to_type(opener)
-        return field_type
+        """Read the type selected by the sequence producer."""
+        return self._kotlin_sequence_type(value).declared_type
 
     def _kotlin_value_field_type(
         self,
@@ -2043,8 +1704,9 @@ class Kotlin(metaclass=LanguageCls):
             case dt.datetime():
                 field_type = self._kotlin_record_datetime_type(value)
             case OrderedMap():
-                field_type = _kotlin_opener_to_type(
-                    self.ordered_map_format_config.ordered_map_open(value),
+                field_type = (
+                    f"LinkedHashMap<{self.default_dict_key_type}, "
+                    f"{self.default_dict_value_type}>"
                 )
             case dict() if record_shape_for_dict(value=value) is not None:
                 field_type = self._kotlin_derecordized_map_field_type()
@@ -2094,7 +1756,10 @@ class Kotlin(metaclass=LanguageCls):
     def _tuple_renderer(self) -> TupleRenderer:
         """Kotlin syntax hooks for the ``TUPLE`` strategy."""
         return TupleRenderer(
-            render_literal=_kotlin_tuple_literal,
+            render_literal=functools.partial(
+                _kotlin_tuple_literal,
+                declared_type=self._kotlin_tuple_field_type,
+            ),
             field_type=self._kotlin_tuple_field_type,
             representable_arity=_kotlin_tuple_arity_representable,
         )
@@ -2177,8 +1842,13 @@ class Kotlin(metaclass=LanguageCls):
                 pass.
                 """
                 if narrowing.value_type is not None:
-                    return f"mapOf<String, {narrowing.value_type}>("
-                return "mapOf<String, Any?>("
+                    return TypedCollectionOpen.create(
+                        f"mapOf<String, {narrowing.value_type}>(",
+                        declared_type=f"Map<String, {narrowing.value_type}>",
+                    )
+                return TypedCollectionOpen.create(
+                    "mapOf<String, Any?>(", declared_type="Map<String, Any?>"
+                )
 
             return dataclasses.replace(
                 strategy,
@@ -2294,55 +1964,121 @@ class Kotlin(metaclass=LanguageCls):
             return _JSON_NODE_SEQUENCE_CONFIG
         return self.sequence_format.value
 
+    def _kotlin_record_sequence_type(
+        self, items: list[Value], /
+    ) -> CollectionType | None:
+        """Select a record-aware sequence before ordinary collection
+        inference.
+        """
+        lookup = self._record_strategy.record_name_for_value
+        if lookup is None:
+            return None
+        names = {lookup(item) for item in items}
+        if len(names) == 1:
+            (name,) = names
+            if name is not None:
+                return CollectionType(
+                    opener=f"listOf<{name}>(", declared_type=f"List<{name}>"
+                )
+        if any(
+            isinstance(item, dict) and not isinstance(item, OrderedMap)
+            for item in items
+        ):
+            return CollectionType(
+                opener="listOf<Any?>(", declared_type="List<Any?>"
+            )
+        return None
+
+    def _kotlin_array_element_type(self, items: list[Value], /) -> str:
+        """Resolve the element type of a structurally selected generic
+        array.
+        """
+        if all(isinstance(item, list) for item in items):
+            children = [
+                child
+                for item in items
+                if isinstance(item, list)
+                for child in item
+            ]
+            return self._kotlin_list_field_type(value=children)
+        return self._kotlin_value_field_type(items[0])
+
+    def _kotlin_list_sequence_type(
+        self, items: list[Value], /
+    ) -> CollectionType:
+        """Select a LIST constructor and its corresponding declaration
+        type.
+        """
+        if len(items) == 0:
+            return CollectionType(
+                opener="arrayOf<Any?>(", declared_type="Array<Any?>"
+            )
+        element_type = infer_element_type(items=items)
+        if isinstance(element_type, DictType):
+            element = self._kotlin_dict_value_type(element_type)
+            return CollectionType(
+                opener=f"listOf<{element}>(", declared_type=f"List<{element}>"
+            )
+        constructor = None
+        if element_type is not None:
+            constructor = _kotlin_sequence_constructor(
+                element_type=element_type
+            )
+        if constructor is None:
+            return CollectionType(
+                opener="listOf<Any?>(", declared_type="List<Any?>"
+            )
+        primitive_type = {
+            "booleanArrayOf": "BooleanArray",
+            "intArrayOf": "IntArray",
+            "doubleArrayOf": "DoubleArray",
+        }.get(constructor)
+        if primitive_type is not None:
+            return CollectionType(
+                opener=f"{constructor}(", declared_type=primitive_type
+            )
+        return CollectionType(
+            opener="arrayOf(",
+            declared_type=f"Array<{self._kotlin_array_element_type(items)}>",
+        )
+
+    def _kotlin_sequence_type(self, items: list[Value], /) -> CollectionType:
+        """Select a constructor and declared type before spelling
+        either.
+        """
+        record_type = self._kotlin_record_sequence_type(items)
+        if record_type is not None:
+            return record_type
+        if self.sequence_format is self.sequence_formats.ARRAY:
+            return CollectionType(
+                opener="arrayOf<Any?>(", declared_type="Array<Any?>"
+            )
+        if self.sequence_format is self.sequence_formats.TUPLE:
+            if len(items) in {2, 3}:
+                constructor = {2: "Pair", 3: "Triple"}[len(items)]
+                return CollectionType(
+                    opener=f"{constructor}(",
+                    declared_type=self._kotlin_tuple_field_type(items),
+                )
+            return CollectionType(
+                opener="listOf<Any?>(", declared_type="List<Any?>"
+            )
+        return self._kotlin_list_sequence_type(items)
+
     @cached_property
     def sequence_open(self) -> Callable[[list[Value]], str]:
-        """Callable that returns the opening delimiter for a sequence.
-
-        Under any record-rendering strategy (``RECORD``, or ``TUPLE``
-        which composes it) a list whose every element is rendered as
-        one shared record type opens as ``listOf<RecordN>(`` -- the
-        record literals all share that element type, so the list spells
-        it instead of widening.  A list that merely contains
-        record-shaped dicts (mixed with other values, or left as maps)
-        still opens as ``listOf<Any?>(`` (the elements format as
-        ``RecordN(...)`` literals, not the ``Map<...>`` the typed
-        opener would otherwise infer).
-        """
+        """Emit the constructor selected alongside the sequence's type."""
         if self._json_type_active:
             return _JSON_NODE_SEQUENCE_CONFIG.sequence_open
-        fmt = self.sequence_format.value
-        if fmt.typed_opener_fallback is None:
-            base = fmt.sequence_open
-        else:
-            base = _kotlin_list_sequence_open(
-                dict_resolver=self._kotlin_dict_value_type,
-            )
-        # ``RECORD`` and ``TUPLE`` (which composes ``RECORD``) both set
-        # this hook; ``ERROR`` does not.  Keying off the behavior rather
-        # than the enum member keeps the two record-rendering strategies
-        # in step.
-        match self._record_strategy.record_name_for_value:
-            case None:
-                return base
-            case record_name_for_value:
-                pass
 
         def _open(items: list[Value], /) -> str:
-            """Use the shared record element type when every item is
-            rendered as one record, else ``listOf<Any?>(`` for lists
-            holding record-shaped dicts.
+            """Retain the selected sequence type through literal
+            assembly.
             """
-            names = {record_name_for_value(item) for item in items}
-            if len(names) == 1:
-                (name,) = names
-                if name is not None:
-                    return f"listOf<{name}>("
-            if any(
-                isinstance(item, dict) and not isinstance(item, OrderedMap)
-                for item in items
-            ):
-                return "listOf<Any?>("
-            return base(items)
+            selected = self._kotlin_sequence_type(items)
+            return TypedCollectionOpen.create(
+                selected.opener, declared_type=selected.declared_type
+            )
 
         return _open
 
@@ -2352,21 +2088,41 @@ class Kotlin(metaclass=LanguageCls):
         if self._json_type_active:
             return _JSON_NODE_SET_CONFIG
         base = self.set_format(default_type=self.default_set_element_type)
-        effective_set_opener_template = None
-        if base.set_opener_template != "":
-            effective_set_opener_template = base.set_opener_template
-        openers = self._opener_config.build(
+        opener_template = "setOf<{type_name}>("
+        set_outer = "Set"
+        if self.set_format is self.set_formats.SORTED_SET:
+            opener_template = base.set_opener_template
+            set_outer = "MutableSet"
+        fallback = CollectionType(
+            opener=base.set_open([]),
+            declared_type=f"{set_outer}<{self.default_set_element_type}>",
+        )
+        resolver = self._opener_config.element_to_type(
+            dict_value_to_type=None,
+            list_template=None,
+            enable_list_type=True,
             date_type=self._date_type_name,
             datetime_type=self._dt_type_name,
-            set_opener_template=(effective_set_opener_template),
-            narrow_dict_values=False,
-            narrow_list_values=True,
+            enable_dict_type=False,
             dict_key_type=self.default_dict_key_type,
         )
-        return base.with_typed_opener(
-            type_to_opener=openers.set,
-            fallback=base.set_open([]),
-        )
+
+        def _open(items: list[Value], /) -> str:
+            """Carry the selected set type rather than inspect its
+            constructor.
+            """
+            selected = infer_collection_type(
+                items=items,
+                element_to_type=resolver,
+                opener_template=opener_template,
+                declared_type_template=f"{set_outer}<{{type_name}}>",
+                fallback=fallback,
+            )
+            return TypedCollectionOpen.create(
+                selected.opener, declared_type=selected.declared_type
+            )
+
+        return dataclasses.replace(base, set_open=_open)
 
     @cached_property
     def _kotlin_dict_value_type(
@@ -2439,27 +2195,37 @@ class Kotlin(metaclass=LanguageCls):
         """Configuration for dict formatting."""
         if self._json_type_active:
             return _JSON_NODE_DICT_CONFIG
-        resolved_dict_opener = self.dict_format.value.opener_template.replace(
-            "{key_type}",
-            self.default_dict_key_type,
+        config = self.dict_format.value
+        opener_template = config.opener_template.replace(
+            "{key_type}", self.default_dict_key_type
         )
-        return DictFormatConfig(
-            dict_open=typed_dict_open(
-                type_to_opener=make_type_to_opener(
-                    # A dict value that is itself a map keeps its
-                    # ``Map<String, ...>`` type instead of collapsing to
-                    # the ``Any?`` fallback, so a map used where a nested
-                    # map type is declared (e.g. a sequence element)
-                    # matches that type (#2890); other value types keep
-                    # their prior typing.  See
-                    # :meth:`_kotlin_dict_value_type`.
-                    element_to_type=self._kotlin_dict_value_type,
-                    opener_template=resolved_dict_opener,
-                ),
-                fallback=resolved_dict_opener.format(
-                    type_name=self.default_dict_value_type,
-                ),
+        type_template = config.declared_type_template.replace(
+            "{key_type}", self.default_dict_key_type
+        )
+        fallback = CollectionType(
+            opener=opener_template.format(
+                type_name=self.default_dict_value_type
             ),
+            declared_type=type_template.format(
+                type_name=self.default_dict_value_type
+            ),
+        )
+
+        def _open(items: dict[Scalar, Value], /) -> str:
+            """Retain the selected mapping type before emitting its opener."""
+            selected = infer_collection_type(
+                items=list(items.values()),
+                element_to_type=self._kotlin_dict_value_type,
+                opener_template=opener_template,
+                declared_type_template=type_template,
+                fallback=fallback,
+            )
+            return TypedCollectionOpen.create(
+                selected.opener, declared_type=selected.declared_type
+            )
+
+        return DictFormatConfig(
+            dict_open=_open,
             narrowed_open=None,
             supports_trailing_comma=True,
             close=")",
@@ -2566,9 +2332,15 @@ class Kotlin(metaclass=LanguageCls):
             return _JSON_NODE_ORDERED_MAP_CONFIG
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(
-                open_str=(
-                    f"linkedMapOf<{self.default_dict_key_type}"
-                    f", {self.default_dict_value_type}>("
+                open_str=TypedCollectionOpen.create(
+                    (
+                        f"linkedMapOf<{self.default_dict_key_type}, "
+                        f"{self.default_dict_value_type}>("
+                    ),
+                    declared_type=(
+                        f"LinkedHashMap<{self.default_dict_key_type}, "
+                        f"{self.default_dict_value_type}>"
+                    ),
                 )
             ),
             close=")",
@@ -2590,6 +2362,48 @@ class Kotlin(metaclass=LanguageCls):
         """Infer a call's result type independently of its arguments."""
         return self.declaration_style.value.formatter
 
+    def format_contextual_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+        *,
+        inferred_empty_sequence: bool,
+        is_reference_binding: bool,
+        initializer_type: str | None,
+    ) -> str:
+        """Use the retained type of the emitted initializer for explicit
+        hints.
+        """
+        del inferred_empty_sequence, is_reference_binding
+        if (
+            not self._json_type_active
+            and self.variable_type_hints
+            is self.variable_type_hints_formats.ALWAYS
+            and initializer_type is not None
+        ):
+            check_empty_sibling_sequence_type_hint_data(
+                data=data,
+                language_name=type(self).__name__,
+                supports_empty_sibling_sequence_type_hints=self.supports_empty_sibling_sequence_type_hints,
+            )
+            keyword = self.declaration_style.name.lower()
+            return f"{keyword} {name}: {initializer_type} = {value}"
+        return self.format_variable_declaration(name, value, data, modifiers)
+
+    def _kotlin_declaration_type(self, data: Value, /) -> str:
+        """Reuse field inference for initializers without retained type
+        metadata.
+        """
+        if isinstance(data, dt.date) and not isinstance(data, dt.datetime):
+            date_type = "LocalDate"
+            if self.date_format.value.type_produced is str:
+                date_type = "String"
+            return date_type
+        return self._kotlin_value_field_type(data)
+
     @cached_property
     def format_variable_declaration(
         self,
@@ -2599,32 +2413,10 @@ class Kotlin(metaclass=LanguageCls):
             return _make_format_kotlin_json_declaration(
                 keyword=self.declaration_style.name.lower(),
             )
-        effective_date_hint = "LocalDate"
-        if self.date_format.value.type_produced is str:
-            effective_date_hint = "String"
-        if self.datetime_format.value.type_produced is int:
-            effective_datetime_hint = "Long"
-        else:
-            effective_datetime_hint = "LocalDateTime"
-            if self.datetime_format.value.type_produced is str:
-                effective_datetime_hint = "String"
-        effective_dict_outer = "Map"
-        if self.dict_format is type(self.dict_format).HASH_MAP:
-            effective_dict_outer = "HashMap"
-        effective_set_outer = "Set"
-        if self.set_format is type(self.set_format).SORTED_SET:
-            effective_set_outer = "MutableSet"
         formatter = self.variable_type_hints.formatter(
             auto_formatter=self.declaration_style.value.formatter,
             keyword=self.declaration_style.name.lower(),
-            date_hint=(effective_date_hint),
-            datetime_hint=(effective_datetime_hint),
-            default_set_element_type=self.default_set_element_type,
-            default_dict_key_type=self.default_dict_key_type,
-            default_dict_value_type=self.default_dict_value_type,
-            dict_outer=(effective_dict_outer),
-            set_outer=(effective_set_outer),
-            sequence_format_name=self.sequence_format.name,
+            type_hint=self._kotlin_declaration_type,
         )
         if (
             self.supports_empty_sibling_sequence_type_hints
