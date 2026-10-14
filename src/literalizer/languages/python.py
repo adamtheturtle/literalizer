@@ -8,7 +8,7 @@ import re
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, ClassVar, assert_never
+from typing import TYPE_CHECKING, ClassVar, Self, assert_never
 
 from beartype import beartype
 
@@ -406,6 +406,26 @@ def _format_inline_type_hint_declaration(
         record_name_for_value=record_name_for_value,
     )
     return f"{name}: {hint} = {value}"
+
+
+class _PythonTypeDependencies(str):
+    """Source whose type producer retained its typing dependency."""
+
+    __slots__ = ("_requires_union",)
+
+    _requires_union: bool
+
+    @classmethod
+    def create(cls, code: str, /, *, requires_union: bool) -> Self:
+        """Keep the union import decision alongside the emitted type."""
+        result = cls(object=code)
+        result._requires_union = requires_union
+        return result
+
+    @property
+    def requires_union(self) -> bool:
+        """Whether this producer selected a typing.Union annotation."""
+        return self._requires_union
 
 
 @beartype
@@ -1760,7 +1780,52 @@ class Python(metaclass=LanguageCls):
             f"{self.indent}{field.identifier}: {field.type_name}"
             for field in fields
         ]
-        return "\n".join(lines)
+        return _PythonTypeDependencies.create(
+            "\n".join(lines),
+            requires_union=any(
+                isinstance(field.type_name, _PythonTypeDependencies)
+                and field.type_name.requires_union
+                for field in fields
+            ),
+        )
+
+    def _type_hint_with_dependencies(
+        self, data: Value, /
+    ) -> _PythonTypeDependencies:
+        """Retain imports when the annotation producer chooses its
+        syntax.
+        """
+        requires_union = False
+        union_formatter = self._join_union
+
+        def _join_types(types: list[str], /) -> str:
+            """Record the selected union syntax before spelling the
+            annotation.
+            """
+            nonlocal requires_union
+            requires_union = self._uses_typing_union
+            return union_formatter(types)
+
+        sequence_hint, set_hint, dict_hint = self._collection_type_hint_names
+        code = _python_type_hint(
+            data=data,
+            bytes_hint=self.bytes_format.type_hint,
+            date_hint=self.date_format.type_hint,
+            datetime_hint=self.datetime_format.type_hint,
+            time_hint="datetime.time",
+            sequence_hint=sequence_hint,
+            set_hint=set_hint,
+            dict_hint=dict_hint,
+            default_set_element_type=self.default_set_element_type,
+            default_sequence_element_type=self.default_sequence_element_type,
+            default_dict_value_type=self.default_dict_value_type,
+            default_dict_key_type=self.default_dict_key_type,
+            join_union=_join_types,
+            record_name_for_value=self._record_strategy.record_name_for_value,
+        )
+        return _PythonTypeDependencies.create(
+            code, requires_union=requires_union
+        )
 
     @cached_property
     def _record_field_type(self) -> Callable[[RecordFieldType], str]:
@@ -1780,8 +1845,7 @@ class Python(metaclass=LanguageCls):
         sequence/set/dict/date/datetime formats and the targeted
         Python version.
         """
-        sequence_hint, set_hint, dict_hint = self._collection_type_hint_names
-        join_union = self._join_union
+        sequence_hint, _, _ = self._collection_type_hint_names
 
         def _field_type(request: RecordFieldType, /) -> str:
             """Type a record field from its nested-record name or its
@@ -1795,26 +1859,7 @@ class Python(metaclass=LanguageCls):
                         f"{sequence_hint}[{request.element_record_name}, ...]"
                     )
                 return f"{sequence_hint}[{request.element_record_name}]"
-            return _python_type_hint(
-                data=request.value,
-                bytes_hint=self.bytes_format.type_hint,
-                date_hint=self.date_format.type_hint,
-                datetime_hint=self.datetime_format.type_hint,
-                time_hint="datetime.time",
-                sequence_hint=sequence_hint,
-                set_hint=set_hint,
-                dict_hint=dict_hint,
-                default_set_element_type=self.default_set_element_type,
-                default_sequence_element_type=(
-                    self.default_sequence_element_type
-                ),
-                default_dict_value_type=self.default_dict_value_type,
-                default_dict_key_type=self.default_dict_key_type,
-                join_union=join_union,
-                record_name_for_value=(
-                    self._record_strategy.record_name_for_value
-                ),
-            )
+            return self._type_hint_with_dependencies(request.value)
 
         return _field_type
 
@@ -1874,18 +1919,22 @@ class Python(metaclass=LanguageCls):
             blocks = record_preamble(data)
             if len(blocks) == 0:
                 return ()
-            typing_import: tuple[str, ...]
-            # Root annotations can contain nominal unions even when the
-            # dataclass fields and structural scalar types are uniform.
-            root_declaration = self.format_variable_declaration(
-                "_", "", data, frozenset()
+            requires_union = any(
+                isinstance(block, _PythonTypeDependencies)
+                and block.requires_union
+                for block in blocks
             )
-            if any("Union[" in block for block in blocks) or (
-                "Union[" in root_declaration
+            if (
+                self.variable_type_hints
+                is self.variable_type_hints_formats.ALWAYS
             ):
+                requires_union = (
+                    requires_union
+                    or self._type_hint_with_dependencies(data).requires_union
+                )
+            typing_import: tuple[str, ...] = ()
+            if requires_union:
                 typing_import = ("from typing import Union",)
-            else:
-                typing_import = ()
             return ("import dataclasses", *typing_import, *blocks)
 
         return _preamble
