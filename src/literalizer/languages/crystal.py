@@ -143,12 +143,10 @@ _format_string = make_backslash_string_formatter(
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 
 
-@beartype
-def _format_crystal_tuple_entry(_original: Value, formatted: str) -> str:
-    """Separate adjacent tuple openers from Crystal macro syntax."""
-    if formatted.startswith("{"):
-        return f" {formatted}"
-    return formatted
+class _CrystalPercentString(str):
+    """A percent-string literal selected by the string formatter."""
+
+    __slots__ = ()
 
 
 @beartype
@@ -159,7 +157,7 @@ def _format_crystal_percent_dict_entry(
     entry = dict_entry_with_separator(
         separator=" => ", format_value=passthrough_sequence_entry
     )(key, value, formatted_value)
-    if key.startswith("%"):
+    if isinstance(key, _CrystalPercentString):
         return f" {entry}"
     return entry
 
@@ -174,7 +172,7 @@ def _format_string_multiline(value: str) -> str:
         or bool(_TRAILING_LINE_WHITESPACE.search(string=value))
     ):
         return _format_string(value=value)
-    return f"%q|{value}|"
+    return _CrystalPercentString(object=f"%q|{value}|")
 
 
 @beartype
@@ -825,7 +823,7 @@ class Crystal(metaclass=LanguageCls):
             supports_trailing_comma=True,
             empty_sequence="Tuple.new",
             preamble_lines=(),
-            format_entry=_format_crystal_tuple_entry,
+            format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
@@ -1308,6 +1306,35 @@ class Crystal(metaclass=LanguageCls):
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return self.sequence_format_config.format_entry
+
+    def format_sequence_entry_from_source(
+        self, original: Value, formatted: str, /, *, is_reference: bool
+    ) -> str:
+        """Separate native brace literals from the outer tuple macro
+        opener.
+        """
+        if (
+            self._uses_json_any
+            or self.sequence_format is not self.sequence_formats.TUPLE
+            or is_reference
+        ):
+            return formatted
+        is_brace_literal = isinstance(original, dict)
+        if (
+            isinstance(original, dict)
+            and self.heterogeneous_strategy
+            is self.heterogeneous_strategies.RECORD
+            and not isinstance(original, OrderedMap)
+            and record_shape_for_dict(value=original) is not None
+        ):
+            is_brace_literal = False
+        if isinstance(original, list):
+            # Empty tuples use Tuple.new (or the sibling's typed array
+            # empty form), so neither can open a macro expression.
+            is_brace_literal = bool(original)
+        if is_brace_literal:
+            return f" {formatted}"
+        return formatted
 
     @cached_property
     def format_set_entry(self) -> Callable[[Value, str], str]:
