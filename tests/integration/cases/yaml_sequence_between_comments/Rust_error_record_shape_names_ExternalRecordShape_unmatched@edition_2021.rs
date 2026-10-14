@@ -5,5 +5,5 @@ fn main() {
         // This comment describes the next item.
         HashMap::from([("item", "next")]),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

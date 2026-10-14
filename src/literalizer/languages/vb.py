@@ -1,7 +1,7 @@
 """Visual Basic (.NET) language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -596,7 +596,7 @@ class VisualBasic(metaclass=LanguageCls):
             formatter=date_ymd_formatter(
                 template="New DateOnly({year}, {month}, {day})",
             ),
-            type_produced=datetime.date,
+            type_produced=dt.date,
             preamble_lines=("Imports System",),
         )
 
@@ -1092,7 +1092,7 @@ class VisualBasic(metaclass=LanguageCls):
         if self.datetime_format.value.type_produced is int:
             datetime_type = "Integer"
         date_type = "String"
-        if self.date_format.value.type_produced is datetime.date:
+        if self.date_format.value.type_produced is dt.date:
             date_type = "DateOnly"
         return make_element_to_type(
             dict_value_to_type=None,
@@ -1176,17 +1176,17 @@ class VisualBasic(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_vb
 
@@ -1227,7 +1227,7 @@ class VisualBasic(metaclass=LanguageCls):
     @cached_property
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble."""
-        return {datetime.time: ("Imports System",)}
+        return {dt.time: ("Imports System",)}
 
     @cached_property
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:

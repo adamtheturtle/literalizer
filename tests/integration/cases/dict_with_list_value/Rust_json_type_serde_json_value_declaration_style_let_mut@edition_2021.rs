@@ -5,5 +5,5 @@ fn main() {
         "name": "Alice",
         "scores": serde_json::json!([10, 20, 30]),
     });
-    let _ = my_data;
+    let _ = &mut my_data;
 }

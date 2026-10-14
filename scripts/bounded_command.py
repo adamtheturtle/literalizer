@@ -1,0 +1,26 @@
+"""Build invocations of the shared GNU timeout command wrapper."""
+
+from collections.abc import Sequence
+from pathlib import Path
+
+_WRAPPER = Path(__file__).resolve().with_name(name="run-bounded.sh")
+
+
+def bounded_command(
+    *, args: Sequence[str | Path], fixture: str, timeout_seconds: float
+) -> list[str]:
+    """Give a compiler or executable its own deadline and fixture label.
+
+    The absolute wrapper path also works when subprocesses run in temporary
+    directories. GNU timeout owns deadlines and process termination; the
+    wrapper only discovers it and adds diagnostics. Standard output remains
+    unchanged. Keep this adapter free of third-party imports so standalone
+    syntax checks can also use it without installing the project.
+    """
+    return [
+        str(object=_WRAPPER),
+        fixture,
+        "--signal=KILL",
+        f"{timeout_seconds:g}s",
+        *(str(object=arg) for arg in args),
+    ]

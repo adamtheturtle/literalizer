@@ -1,5 +1,5 @@
 #[derive(Clone)]
-enum JsonValue {
+pub enum JsonValue {
     Str(&'static str),
     I32(i32),
 }
@@ -8,5 +8,5 @@ fn main() {
         JsonValue::Str("hello"),
         JsonValue::I32(42),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

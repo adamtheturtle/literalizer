@@ -1,5 +1,5 @@
 class Check {
-static object process(object value = null, object count = null) => null;
+static object? process(object? value = null, object? count = null) => null;
     public static void Main() {
 var my_int = 1;
 var my_bool = true;

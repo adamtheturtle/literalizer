@@ -5,9 +5,10 @@ fn main() {
         NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
         NaiveDate::from_ymd_opt(2024, 6, 1).unwrap(),
     ]);
+    let _ = &my_data;
     my_data = HashSet::from([
         NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(),
         NaiveDate::from_ymd_opt(2024, 6, 1).unwrap(),
     ]);
-    let _ = my_data;
+    let _ = &mut my_data;
 }

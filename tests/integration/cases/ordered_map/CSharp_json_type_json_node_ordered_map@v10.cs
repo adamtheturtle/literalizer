@@ -4,3 +4,4 @@ JsonNode? my_data = new JsonObject {
     ["age"] = 30,
     ["active"] = true
 };
+    _ = my_data;

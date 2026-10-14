@@ -1,4 +1,4 @@
 fn main() {
-    const my_data: i32 = 42;
-    let _ = my_data;
+    const MY_DATA: i32 = 42;
+    let _ = &MY_DATA;
 }

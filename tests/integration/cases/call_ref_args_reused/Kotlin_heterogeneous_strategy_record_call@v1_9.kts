@@ -1,4 +1,4 @@
-fun process(data: Any? = null, count: Any? = null): Any? = null
+fun process(data: Any? = null, count: Any? = null): Any? = listOf<Any?>(data, count)
 val single_var = intArrayOf(
     4,
     5,

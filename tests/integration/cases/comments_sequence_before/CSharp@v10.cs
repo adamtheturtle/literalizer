@@ -5,3 +5,4 @@ var my_data = (
     // second
     "b"
 );
+    _ = my_data;

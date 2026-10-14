@@ -7,6 +7,7 @@ fn main() {
             "5",  // removes "world"
         ],
     ];
+    let _ = &my_data;
     my_data = vec![
         vec!["ADD", "alice", "hello"],
         vec![
@@ -15,5 +16,5 @@ fn main() {
             "5",  // removes "world"
         ],
     ];
-    let _ = my_data;
+    let _ = &mut my_data;
 }

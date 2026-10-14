@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
 class Check {
 public static readonly JsonNode? my_data = (JsonNode?)(42);
-    public static void Main() {}
+    public static void Main() { _ = my_data; }
 }

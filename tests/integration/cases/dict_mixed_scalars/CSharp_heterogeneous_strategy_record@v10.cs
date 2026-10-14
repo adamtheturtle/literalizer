@@ -5,5 +5,6 @@ var my_data = new Record0(
     1,
     "x"
 );
+    _ = my_data;
     }
 }

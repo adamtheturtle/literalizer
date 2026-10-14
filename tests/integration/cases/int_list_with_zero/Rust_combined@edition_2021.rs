@@ -4,10 +4,11 @@ fn main() {
         1,
         -1,
     ];
+    let _ = &my_data;
     my_data = vec![
         0,
         1,
         -1,
     ];
-    let _ = my_data;
+    let _ = &mut my_data;
 }

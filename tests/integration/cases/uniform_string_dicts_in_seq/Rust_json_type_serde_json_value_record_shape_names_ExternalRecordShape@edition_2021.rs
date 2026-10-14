@@ -5,5 +5,5 @@ fn main() {
         serde_json::json!({"first": "Alice", "last": "Smith"}),
         serde_json::json!({"first": "Bob", "last": "Jones"}),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

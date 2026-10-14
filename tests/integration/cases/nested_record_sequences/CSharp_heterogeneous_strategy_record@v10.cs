@@ -5,5 +5,6 @@ var my_data = new[] {
     new[] {new Record0(1)},
     new[] {new Record0(2)}
 };
+    _ = my_data;
     }
 }

@@ -4,3 +4,4 @@ var my_data = (
     2,
     3
 );
+    _ = my_data;

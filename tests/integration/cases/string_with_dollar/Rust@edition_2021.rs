@@ -3,5 +3,5 @@ fn main() {
         "price $10",
         "$HOME",
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

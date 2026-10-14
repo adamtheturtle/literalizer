@@ -3,5 +3,5 @@ fn main() {
         "issue #{42}",
         "color #red",
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

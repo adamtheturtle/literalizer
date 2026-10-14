@@ -1,7 +1,7 @@
 """COBOL language specification (GnuCOBOL free-format)."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -343,11 +343,11 @@ def _pic_from_value(
     """Return a COBOL PIC (or storage) clause for a source value."""
     if original is None:
         return "PIC X(1)"
-    if isinstance(original, datetime.datetime) and datetime_as_int:
+    if isinstance(original, dt.datetime) and datetime_as_int:
         return "PIC S9(18) COMP-5"
     if isinstance(
         original,
-        (str, bytes, datetime.date, datetime.time),
+        (str, bytes, dt.date, dt.time),
     ):
         inner = formatted[1:-1].replace('""', '"')
         return f"PIC X({max(1, len(inner.encode(encoding='utf-8')))})"
@@ -2046,17 +2046,17 @@ class Cobol(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

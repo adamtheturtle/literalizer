@@ -4,5 +4,5 @@ fn main() {
         (true, "yes"),
         (false, "no"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

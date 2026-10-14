@@ -3,7 +3,7 @@ use chrono::NaiveDateTime;
 use chrono::NaiveTime;
 use std::collections::HashMap;
 #[derive(Clone)]
-enum JsonValue {
+pub enum JsonValue {
     Str(&'static str),
     I32(i32),
     F64(f64),
@@ -24,5 +24,5 @@ fn main() {
         ("dt", JsonValue::DateTime(NaiveDateTime::new(NaiveDate::from_ymd_opt(2024, 1, 15).unwrap(), NaiveTime::from_hms_opt(12, 0, 0).unwrap()))),
         ("by", JsonValue::Bytes("48656c6c6f")),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

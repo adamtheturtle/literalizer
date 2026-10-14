@@ -1,7 +1,7 @@
 """Kotlin language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import json
@@ -313,9 +313,9 @@ def _kotlin_type_to_opener(
         int: "intArrayOf(",
         float: "doubleArrayOf(",
         bytes: "arrayOf(",
-        datetime.date: "arrayOf(",
-        datetime.datetime: "arrayOf(",
-        datetime.time: "arrayOf(",
+        dt.date: "arrayOf(",
+        dt.datetime: "arrayOf(",
+        dt.time: "arrayOf(",
     }
     match element_type:
         case DictType():
@@ -388,7 +388,7 @@ def _kotlin_list_value_type_name(
 
 
 @beartype
-def _format_kotlin_datetime_epoch(value: datetime.datetime, /) -> str:
+def _format_kotlin_datetime_epoch(value: dt.datetime, /) -> str:
     """Format epoch seconds as a Kotlin ``Long`` literal."""
     return f"{format_datetime_epoch(value=value)}L"
 
@@ -461,11 +461,11 @@ def _kotlin_scalar_hint(
             hint = "Double"
         case str() | bytes():
             hint = "String"
-        case datetime.datetime():
+        case dt.datetime():
             hint = datetime_hint
-        case datetime.date():
+        case dt.date():
             hint = date_hint
-        case datetime.time():
+        case dt.time():
             hint = "LocalTime"
         case None:
             hint = "Nothing?"
@@ -682,22 +682,26 @@ def _kotlin_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Kotlin stub declarations for a call name."""
+    # Return the supplied arguments as a placeholder result, using every
+    # parameter without suppressing warnings. Explicit type arguments select
+    # the standard collection function even when the stub is named listOf.
     param_list = ", ".join(f"{p}: Any? = null" for p in params)
+    result = f"listOf<Any?>({', '.join(params)})"
     if len(parts) == 1:
-        return (f"fun {parts[0]}({param_list}): Any? = null",)
+        return (f"fun {parts[0]}({param_list}): Any? = {result}",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     if len(fields) == 0:
         cls = f"_{root.title()}Type"
         return (
-            f"class {cls} {{ fun {method}({param_list}): Any? = null }}",
+            f"class {cls} {{ fun {method}({param_list}): Any? = {result} }}",
             f"val {root} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"_{fields[-1].title()}Type"
     lines.append(
-        f"class {inner_cls} {{ fun {method}({param_list}): Any? = null }}"
+        f"class {inner_cls} {{ fun {method}({param_list}): Any? = {result} }}"
     )
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
@@ -922,7 +926,7 @@ _JSON_NODE_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 
 @beartype
-def _kotlin_temporal_to_iso(data: datetime.date | datetime.time) -> str:
+def _kotlin_temporal_to_iso(data: dt.date | dt.time) -> str:
     """Return ISO-8601 text for a date / datetime / time value."""
     return data.isoformat()
 
@@ -937,7 +941,7 @@ def _kotlin_to_jsonable(data: Value) -> JsonValue:
     string dict keys are not handled here; the caller validates first.
     """
     match data:
-        case datetime.datetime() | datetime.date() | datetime.time():
+        case dt.datetime() | dt.date() | dt.time():
             return _kotlin_temporal_to_iso(data=data)
         case bytes():
             return data.hex()
@@ -1256,7 +1260,7 @@ class Kotlin(metaclass=LanguageCls):
                 template="LocalDate.of({year}, {month}, {day})",
             ),
             preamble_lines=("import java.time.LocalDate",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -1274,7 +1278,7 @@ class Kotlin(metaclass=LanguageCls):
                 millisecond_template=None,
             ),
             preamble_lines=("import java.time.LocalDateTime",),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1722,7 +1726,7 @@ class Kotlin(metaclass=LanguageCls):
         hash=False,
     )
     # Keep in sync with the version flags passed to the Kotlin lint host in
-    # `scripts/lint-kotlin.main.kts`.
+    # `scripts/lint-kotlin.kts`.
     language_version: VersionFormats = VersionFormats.V1_9
     indent: str = "    "
     skip_null_dict_values: bool = False
@@ -1839,7 +1843,7 @@ class Kotlin(metaclass=LanguageCls):
             self._validate_json_value_keys(data)
         if (
             not self._json_type_active
-            and self.datetime_format.value.type_produced is datetime.datetime
+            and self.datetime_format.value.type_produced is dt.datetime
         ):
             reject_aware_datetimes(
                 data=data, language_name="Kotlin", allow_utc_offset=False
@@ -1935,7 +1939,7 @@ class Kotlin(metaclass=LanguageCls):
 
     def _kotlin_record_datetime_type(
         self,
-        value: datetime.datetime,
+        value: dt.datetime,
         /,
     ) -> str:
         """Kotlin type for a :class:`datetime.datetime` record field.
@@ -2036,7 +2040,7 @@ class Kotlin(metaclass=LanguageCls):
                 field_type = "Long"
                 if in_i32:
                     field_type = "Int"
-            case datetime.datetime():
+            case dt.datetime():
                 field_type = self._kotlin_record_datetime_type(value)
             case OrderedMap():
                 field_type = _kotlin_opener_to_type(
@@ -2479,17 +2483,17 @@ class Kotlin(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_local_time_of
 
@@ -2663,7 +2667,7 @@ class Kotlin(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            extra={datetime.time: ("import java.time.LocalTime",)},
+            extra={dt.time: ("import java.time.LocalTime",)},
         )
 
     @cached_property

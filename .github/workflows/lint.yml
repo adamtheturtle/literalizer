@@ -1151,7 +1151,8 @@ jobs:
         run: |-
           find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
           while IFS= read -r -d '' f; do
-            elm-format --stdin < "$f" > /dev/null || exit 1
+            label="Elm formatting: $f"
+            scripts/run-bounded.sh "$label" --kill-after=5s 60s elm-format --stdin < "$f" > /dev/null || exit "$?"
           done < /tmp/files-elm
           xargs -0 uv run python -m scripts.check_elm_syntax < /tmp/files-elm
 
@@ -1404,7 +1405,7 @@ jobs:
             printf '#load "%s"\n' "$(realpath "$f")"
           done < /tmp/files-fs > "$driver"
           DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1 \
-            dotnet fsi --nologo --langversion:8.0 --exec "$driver"
+            dotnet fsi --nologo --warnaserror+ --langversion:8.0 --exec "$driver"
 
       # Basic JSON -> F# -> JSON round-trip (issue 2653). Runs here
       # because this is the job with the .NET toolchain; `uv run`
@@ -2198,15 +2199,11 @@ jobs:
   lint-kotlin:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # 2.3.10's kotlin-scripting-jvm references a legacy
-    # ``ScriptExpectedLocation`` class that is no longer shipped, so
-    # ``K2JVMCompiler.exec("-script", ...)`` from inside a
-    # ``.main.kts`` host blows up with NoClassDefFoundError.  2.3.20
-    # drops the stale reference.  Every Kotlin fixture on disk carries
-    # the tag from ``Kotlin.VersionFormats`` (e.g. `Kotlin@v1_9.kts`);
-    # the compiler pin and that enum member name are reviewed together.
+    # The host uses the compiler bundled with this distribution.
+    # 2.1.21 supports the v1_9 fixtures without deprecation warnings;
+    # later compilers deprecate or remove that language mode.
     env:
-      KOTLIN_VERSION: 2.3.20
+      KOTLIN_VERSION: 2.1.21
       KOTLINX_SERIALIZATION_VERSION: 1.7.3
       KOTLIN_FIXTURE_TAG: v1_9
     steps:
@@ -2227,7 +2224,7 @@ jobs:
       # K2JVMCompiler script host. Pinned to a recent 1.x release;
       # bump together. The classpath is exported through
       # `LITERALIZER_LINT_CLASSPATH`, which
-      # `scripts/lint-kotlin.main.kts` forwards via `-classpath`
+      # `scripts/lint-kotlin.kts` forwards via `-classpath`
       # to every per-fixture compile. Keep this enum value paired with
       # the literal in `Kotlin.JsonTypes.KOTLINX_JSON_ELEMENT` in
       # `src/literalizer/languages/kotlin.py`.
@@ -2252,14 +2249,18 @@ jobs:
           ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-core-jvm-${{
             env.KOTLINX_SERIALIZATION_VERSION }}.jar
         with: *download
-      # Invoke K2JVMCompiler from a single `.main.kts` JVM instead of
+      # Invoke K2JVMCompiler from a single `.kts` JVM instead of
       # spawning one `kotlinc -script` per fixture. The JVM + compiler
       # classes load once and each fixture is compiled against the warm
       # compiler, cutting ~355 cold JVM starts to one.
       - name: Check Kotlin syntax
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
-        run: kotlin scripts/lint-kotlin.main.kts < /tmp/files-to-lint
+        # Use the distribution's compiler in a plain script. A `.main.kts`
+        # host loads duplicate scripting classes in an isolated class loader
+        # that cannot see the legacy ScriptExpectedLocation runtime API.
+        run: kotlin -classpath "$KOTLIN_HOME/lib/kotlin-compiler.jar" scripts/lint-kotlin.kts
+          < /tmp/files-to-lint
       # `uv` is needed by the `Kotlin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
@@ -2309,14 +2310,14 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           cp "$1" "$tmpdir/check.swift"
-          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
-            swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit 1
+          scripts/run-bounded.sh "$1" --signal=KILL 60s \
+            swiftc -swift-version 5 -typecheck -warnings-as-errors "$tmpdir/check.swift" || exit "$?"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/check-swift.sh < /tmp/files-to-lint
       - name: Run Swift files
         run: |-
           cat > /tmp/run-swift.sh <<'SCRIPT'
-          python3 scripts/run_bounded_compiler.py --fixture "$1" -- \
+          scripts/run-bounded.sh "$1" --signal=KILL 60s \
             swift -swift-version 5 -warnings-as-errors "$1"
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-swift.sh < /tmp/files-to-lint
@@ -2776,7 +2777,7 @@ jobs:
           while IFS= read -r -d '' f; do
             stem=$(basename "$f" .rs)
             crate_name=${stem//@/_}
-            rustc --edition 2021 \
+            rustc --edition 2021 -D warnings \
               --crate-name "$crate_name" \
               -L "dependency=$RUST_DEPS" \
               --extern "chrono=$RUST_CHRONO_RLIB" \
@@ -3306,7 +3307,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_raku_roundtrip.py`.
       - name: Raku roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 5
         run: uv run python -m scripts.run_raku_roundtrip
 
   lint-zig:
@@ -3509,6 +3510,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install GNU timeout
+        run: brew install --quiet coreutils
       - name: Find files to lint
         shell: bash
         run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint

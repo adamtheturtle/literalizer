@@ -7,5 +7,5 @@ fn main() {
     let my_data = vec![
         HashMap::from([("left", shared.clone()), ("right", shared.clone())]),
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

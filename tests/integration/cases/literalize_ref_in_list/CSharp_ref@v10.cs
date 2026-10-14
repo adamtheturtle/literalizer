@@ -10,3 +10,4 @@ var my_data = (
     ValX,
     ValY
 );
+    _ = my_data;

@@ -1,7 +1,7 @@
 """Python language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import re
@@ -213,7 +213,7 @@ def _format_string_multiline(value: str) -> str:
 
 @beartype
 def _format_datetime_python(
-    value: datetime.datetime,
+    value: dt.datetime,
     /,
     *,
     utc_tzinfo_expr: str,
@@ -232,7 +232,7 @@ def _format_datetime_python(
     if value.microsecond != 0:
         parts.append(f"microsecond={value.microsecond}")
     if value.tzinfo is not None and (offset := value.utcoffset()) is not None:
-        if offset == datetime.timedelta():
+        if offset == dt.timedelta():
             parts.append(f"tzinfo={utc_tzinfo_expr}")
         else:
             total_seconds = int(offset.total_seconds())
@@ -254,7 +254,7 @@ def _format_datetime_python(
 
 
 @beartype
-def _format_time_python(value: datetime.time) -> str:
+def _format_time_python(value: dt.time) -> str:
     """Format a time as a Python ``datetime.time(...)`` constructor
     call.
     """
@@ -511,18 +511,18 @@ def _merge_dict_elements(*, elements: list[Value]) -> list[Value]:
 @beartype
 def _python_temporal_hint(
     *,
-    data: datetime.date | datetime.time,
+    data: dt.date | dt.time,
     date_hint: str,
     datetime_hint: str,
     time_hint: str,
 ) -> str:
     """Derive a Python type hint for a temporal scalar value."""
     match data:
-        case datetime.datetime():
+        case dt.datetime():
             hint = datetime_hint
-        case datetime.date():
+        case dt.date():
             hint = date_hint
-        case datetime.time():
+        case dt.time():
             hint = time_hint
         case _ as unreachable:
             assert_never(unreachable)
@@ -552,7 +552,7 @@ def _python_scalar_hint(
             hint = "str"
         case bytes():
             hint = bytes_hint
-        case datetime.datetime() | datetime.date() | datetime.time():
+        case dt.datetime() | dt.date() | dt.time():
             hint = _python_temporal_hint(
                 data=data,
                 date_hint=date_hint,
@@ -1155,7 +1155,7 @@ class Python(metaclass=LanguageCls):
                 "year={year}, month={month}, day={day})",
             ),
             preamble_lines=("import datetime",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -1179,7 +1179,7 @@ class Python(metaclass=LanguageCls):
                 utc_tzinfo_expr="datetime.UTC",
             ),
             preamble_lines=("import datetime",),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         EPOCH = DatetimeFormatConfig(
             formatter=format_datetime_epoch,
@@ -1966,12 +1966,12 @@ class Python(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if (
             self.datetime_format is self.datetime_formats.PYTHON
@@ -1984,7 +1984,7 @@ class Python(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return _format_time_python
 
@@ -2191,7 +2191,7 @@ class Python(metaclass=LanguageCls):
         return date_scalar_preamble(
             date_format=self.date_format,
             datetime_format=self.datetime_format,
-            extra={datetime.time: ("import datetime",)},
+            extra={dt.time: ("import datetime",)},
         )
 
     @cached_property

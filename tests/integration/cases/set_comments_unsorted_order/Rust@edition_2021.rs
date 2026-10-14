@@ -6,5 +6,5 @@ fn main() {
         "banana",  // banana inline
         // trailing
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

@@ -1,6 +1,7 @@
-var my_data = new object[] {
+var my_data = new object?[] {
     1,
     "hello",
     true,
     (object?)null
 };
+    _ = my_data;

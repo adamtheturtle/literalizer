@@ -1,7 +1,7 @@
 """Roc language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import math
 import re
@@ -140,7 +140,7 @@ def _format_roc_string_literal(value: str) -> str:
 
 
 @beartype
-def _apply_roc_str_wrapped_date(value: datetime.date, prefix: str) -> str:
+def _apply_roc_str_wrapped_date(value: dt.date, prefix: str) -> str:
     """Format a date as a Roc string via ISO 8601."""
     return f"{prefix}Str {format_date_iso(value=value)}"
 
@@ -148,12 +148,12 @@ def _apply_roc_str_wrapped_date(value: datetime.date, prefix: str) -> str:
 @beartype
 def _build_roc_date_iso(
     prefix: str,
-) -> Callable[[datetime.date], str]:
+) -> Callable[[dt.date], str]:
     """Build a date formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.date) -> str:
+    def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_date(value=value, prefix=prefix)
 
@@ -161,7 +161,7 @@ def _build_roc_date_iso(
 
 
 @beartype
-def _apply_roc_str_wrapped_time(value: datetime.time, prefix: str) -> str:
+def _apply_roc_str_wrapped_time(value: dt.time, prefix: str) -> str:
     """Format a time as a Roc string via ISO 8601."""
     return f"{prefix}Str {format_time_iso(value=value)}"
 
@@ -169,12 +169,12 @@ def _apply_roc_str_wrapped_time(value: datetime.time, prefix: str) -> str:
 @beartype
 def _build_roc_time_iso(
     prefix: str,
-) -> Callable[[datetime.time], str]:
+) -> Callable[[dt.time], str]:
     """Build a time formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.time) -> str:
+    def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_time(value=value, prefix=prefix)
 
@@ -182,9 +182,7 @@ def _build_roc_time_iso(
 
 
 @beartype
-def _apply_roc_str_wrapped_datetime(
-    value: datetime.datetime, prefix: str
-) -> str:
+def _apply_roc_str_wrapped_datetime(value: dt.datetime, prefix: str) -> str:
     """Format a datetime as a Roc string via ISO 8601."""
     return f"{prefix}Str {format_datetime_iso(value=value)}"
 
@@ -192,12 +190,12 @@ def _apply_roc_str_wrapped_datetime(
 @beartype
 def _build_roc_datetime_iso(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Str``
     constructors.
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_datetime(value=value, prefix=prefix)
 
@@ -207,7 +205,7 @@ def _build_roc_datetime_iso(
 @beartype
 def _build_roc_datetime_epoch(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Int`` from
     Unix epoch seconds.
     """
@@ -442,11 +440,11 @@ def _build_roc_body_preamble(
         del data  # unused
         p = constructor_prefix
         int_types: set[type] = {int}
-        str_types: set[type] = {str, bytes, datetime.date}
+        str_types: set[type] = {str, bytes, dt.date}
         if datetime_type_produced is int:
-            int_types.add(datetime.datetime)
+            int_types.add(dt.datetime)
         else:
-            str_types.add(datetime.datetime)
+            str_types.add(dt.datetime)
         constructors = [
             constructor
             for type_set, constructor in (
@@ -539,7 +537,7 @@ def _roc_native_type_shape(data: Value) -> str:
         result = "int"
     elif isinstance(data, float):
         result = "float"
-    elif isinstance(data, (str, bytes, datetime.date, datetime.time)):
+    elif isinstance(data, (str, bytes, dt.date, dt.time)):
         result = "str"
     elif data is None:
         result = "null"
@@ -1446,7 +1444,7 @@ class Roc(metaclass=LanguageCls):
         )
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
             formatter = _build_roc_date_iso(prefix=self.constructor_prefix)
@@ -1457,7 +1455,7 @@ class Roc(metaclass=LanguageCls):
         return _build_roc_date_iso(prefix=self.constructor_prefix)
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
             if self.datetime_format is type(self.datetime_format).EPOCH:
@@ -1471,9 +1469,7 @@ class Roc(metaclass=LanguageCls):
                 )
                 tag = f"{self.constructor_prefix}Str "
             return lambda value: formatter(value).removeprefix(tag)
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_roc_datetime_epoch(prefix=self.constructor_prefix)
         if self.constructor_prefix == "R":
@@ -1481,7 +1477,7 @@ class Roc(metaclass=LanguageCls):
         return _build_roc_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         formatter = _build_roc_time_iso(prefix=self.constructor_prefix)
         if self.dict_format is type(self.dict_format).RECORD:

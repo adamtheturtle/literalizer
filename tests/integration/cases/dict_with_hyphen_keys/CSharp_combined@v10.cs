@@ -9,3 +9,4 @@ my_data = new Dictionary<string, string> {
     ["another-key"] = "value2",
     ["normal_key"] = "value3"
 };
+    _ = my_data;

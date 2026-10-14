@@ -1,8 +1,9 @@
 """Standard ML language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
+import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
@@ -17,6 +18,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
+    datetime_epoch_seconds,
     datetime_ymdhms_formatter,
     format_date_iso,
     format_datetime_epoch,
@@ -182,9 +184,9 @@ def _sml_scientific(value: float) -> str:
 
 
 @beartype
-def _sml_int_entry(*, formatted: str, prefix: str) -> str:
+def _sml_int_entry(*, original: int, formatted: str, prefix: str) -> str:
     """Wrap a formatted integer in the SML value constructor."""
-    negative = formatted.startswith("~")
+    negative = original < 0
     if negative:
         result = f"{prefix}Int ({formatted})"
     else:
@@ -193,10 +195,12 @@ def _sml_int_entry(*, formatted: str, prefix: str) -> str:
 
 
 @beartype
-def _sml_float_entry(*, formatted: str, prefix: str) -> str:
+def _sml_float_entry(*, original: float, formatted: str, prefix: str) -> str:
     """Wrap a formatted real in the SML value constructor."""
-    negative = formatted.startswith(("~", "("))
-    if negative:
+    needs_parentheses = math.copysign(1, original) < 0 or not math.isfinite(
+        original
+    )
+    if needs_parentheses:
         result = f"{prefix}Real ({formatted})"
     else:
         result = f"{prefix}Real {formatted}"
@@ -204,9 +208,11 @@ def _sml_float_entry(*, formatted: str, prefix: str) -> str:
 
 
 @beartype
-def _sml_epoch_entry(*, formatted: str, prefix: str) -> str:
+def _sml_epoch_entry(
+    *, original: dt.datetime, formatted: str, prefix: str
+) -> str:
     """Convert an epoch integer to SML signed literal syntax."""
-    negative = formatted.startswith("-")
+    negative = datetime_epoch_seconds(value=original) < 0
     literal = formatted
     if negative:
         literal = f"~{formatted[1:]}"
@@ -248,28 +254,34 @@ def _apply_sml_entry_formatter(
         case bool():
             result = formatted
         case int():
-            result = _sml_int_entry(formatted=formatted, prefix=prefix)
+            result = _sml_int_entry(
+                original=original, formatted=formatted, prefix=prefix
+            )
         case float():
-            result = _sml_float_entry(formatted=formatted, prefix=prefix)
+            result = _sml_float_entry(
+                original=original, formatted=formatted, prefix=prefix
+            )
         case str() | bytes():
             result = f"{prefix}Str {formatted}"
-        case datetime.datetime() if datetime_type is int:
-            result = _sml_epoch_entry(formatted=formatted, prefix=prefix)
-        case datetime.datetime():
+        case dt.datetime() if datetime_type is int:
+            result = _sml_epoch_entry(
+                original=original, formatted=formatted, prefix=prefix
+            )
+        case dt.datetime():
             result = _sml_temporal_entry(
                 formatted=formatted,
                 prefix=prefix,
                 produced_type=datetime_type,
-                native_type=datetime.datetime,
+                native_type=dt.datetime,
             )
-        case datetime.time():
+        case dt.time():
             result = f"{prefix}Str {formatted}"
-        case datetime.date():
+        case dt.date():
             result = _sml_temporal_entry(
                 formatted=formatted,
                 prefix=prefix,
                 produced_type=date_type,
-                native_type=datetime.date,
+                native_type=dt.date,
             )
         case _:
             result = formatted
@@ -465,7 +477,7 @@ def _sml_native_shape(data: Value) -> str:
 
 
 @beartype
-def _sml_native_epoch(value: datetime.datetime) -> str:
+def _sml_native_epoch(value: dt.datetime) -> str:
     """Use SML's negation syntax for an epoch timestamp."""
     formatted = format_datetime_epoch(value=value)
     if formatted.startswith("-"):
@@ -486,7 +498,7 @@ def _validate_sml_native_scalar(data: Value, *, epoch_datetimes: bool) -> None:
     ):
         msg = "SML record mode requires 32-bit native integers"
         raise UnrepresentableInputError(msg)
-    if isinstance(data, datetime.datetime) and epoch_datetimes:
+    if isinstance(data, dt.datetime) and epoch_datetimes:
         timestamp = int(format_datetime_epoch(value=data))
         if not _SML_NATIVE_INT_MIN <= timestamp <= _SML_NATIVE_INT_MAX:
             msg = "SML record mode requires 32-bit epoch integers"
@@ -736,7 +748,7 @@ class Sml(metaclass=LanguageCls):
                 template="SDate ({year}, {month}, {day})",
             ),
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -754,7 +766,7 @@ class Sml(metaclass=LanguageCls):
                 millisecond_template=None,
             ),
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1292,9 +1304,9 @@ class Sml(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
-        base_formatter: Callable[[datetime.date], str] = self.date_format
+        base_formatter: Callable[[dt.date], str] = self.date_format
         if self.date_format is type(self.date_format).SML:
             if self.dict_format is type(self.dict_format).RECORD:
                 return date_ymd_formatter(template="({year}, {month}, {day})")
@@ -1307,11 +1319,9 @@ class Sml(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self.datetime_format is type(self.datetime_format).SML:
             if self.dict_format is type(self.dict_format).RECORD:
                 return datetime_ymdhms_formatter(
@@ -1335,7 +1345,7 @@ class Sml(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
@@ -1459,9 +1469,9 @@ class Sml(metaclass=LanguageCls):
             float: (_h, f"{p}Real of real"),
             str: (_h, f"{p}Str of string"),
             bytes: (_h, f"{p}Str of string"),
-            datetime.time: (_h, f"{p}Str of string"),
-            datetime.date: (_h, _date_constructor),
-            datetime.datetime: (_h, _datetime_constructor),
+            dt.time: (_h, f"{p}Str of string"),
+            dt.date: (_h, _date_constructor),
+            dt.datetime: (_h, _datetime_constructor),
             list: (_h, f"{p}List of {self.type_name} list"),
             dict: (_h, f"{p}Map of (string * {self.type_name}) list"),
             OrderedMap: (

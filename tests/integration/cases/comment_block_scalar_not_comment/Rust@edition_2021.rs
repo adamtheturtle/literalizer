@@ -4,5 +4,5 @@ fn main() {
         ("description", "# not a comment\n"),
         ("name", "foo"),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

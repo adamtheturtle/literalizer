@@ -227,12 +227,13 @@ def test_declaration_style_overrides_name_real_formats() -> None:
     for lang_cls in sorted_languages():
         metadata = language_metadata(language_id=lang_cls.language_id)
         overrides = metadata.declaration_style_sequence_format_overrides
-        if len(overrides) == 0:
+        variable_names = metadata.variants.declaration_style_variable_names
+        if len(overrides) == 0 and len(variable_names) == 0:
             continue
         spec = make_spec(lang_cls=lang_cls)
         style_names = {style.name for style in spec.declaration_styles}
         format_names = {fmt.name for fmt in spec.sequence_formats}
-        unknown_styles = set(overrides) - style_names
+        unknown_styles = (set(overrides) | set(variable_names)) - style_names
         unknown_formats = set(overrides.values()) - format_names
         assert len(unknown_styles) == 0, (
             f"{metadata.path}: unknown declaration styles "

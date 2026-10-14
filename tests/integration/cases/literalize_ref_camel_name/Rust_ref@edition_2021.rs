@@ -4,5 +4,5 @@ fn main() {
         ("_", "_"),
     ]);
     let my_data = my_var;
-    let _ = my_data;
+    let _ = &my_data;
 }

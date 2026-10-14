@@ -1,7 +1,7 @@
 """Compute preamble lines for the types present in literalized data."""
 
 import dataclasses
-import datetime
+import datetime as dt
 from typing import Final, assert_never, get_args
 
 from beartype import beartype
@@ -326,10 +326,10 @@ def _preamble_scalar_type(*, value: Scalar) -> type:
     preamble lines).
     """
     match value:
-        case datetime.datetime():
-            return datetime.datetime
-        case datetime.date():
-            return datetime.date
+        case dt.datetime():
+            return dt.datetime
+        case dt.date():
+            return dt.date
         case _:
             return scalar_type_bucket(value=value)
 

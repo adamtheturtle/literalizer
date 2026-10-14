@@ -123,5 +123,5 @@ fn main() {
         118,
         119,
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

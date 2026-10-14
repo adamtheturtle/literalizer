@@ -11,3 +11,4 @@ my_data = new HashSet<string> {
     "banana"  // banana inline
     // trailing
 };
+    _ = my_data;

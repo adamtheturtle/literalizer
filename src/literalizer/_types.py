@@ -1,21 +1,13 @@
 """Type aliases used across the literalizer package."""
 
-import datetime
+import datetime as dt
 from collections.abc import Iterable, Sequence
 from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
 type Scalar = (
-    str
-    | int
-    | float
-    | bool
-    | datetime.date
-    | datetime.datetime
-    | datetime.time
-    | bytes
-    | None
+    str | int | float | bool | dt.date | dt.datetime | dt.time | bytes | None
 )
 type Value = Scalar | list[Value] | dict[Scalar, Value] | set[Scalar]
 type CollectionValue = list[Value] | dict[Scalar, Value] | set[Scalar]

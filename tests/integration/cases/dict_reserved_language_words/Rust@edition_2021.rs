@@ -21,5 +21,5 @@ fn main() {
         ("true", 1),
         ("ordinary", 1),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

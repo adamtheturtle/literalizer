@@ -4,3 +4,4 @@ var my_data = (
     ValueTuple.Create(),
     ("a", "b")
 );
+    _ = my_data;

@@ -1,8 +1,8 @@
 #[derive(Clone)]
-struct Record0 {
-    a: i32,
-    b: i64,
-    c: &'static str,
+pub struct Record0 {
+    pub a: i32,
+    pub b: i64,
+    pub c: &'static str,
 }
 fn main() {
     let my_data = Record0 {
@@ -10,5 +10,5 @@ fn main() {
         b: 3000000000i64,
         c: "x",
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

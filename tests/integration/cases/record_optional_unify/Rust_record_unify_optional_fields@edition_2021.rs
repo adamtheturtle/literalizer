@@ -1,11 +1,11 @@
 #[derive(Clone)]
-struct Record1 {
-    id: i32,
-    count: Option<i32>,
+pub struct Record1 {
+    pub id: i32,
+    pub count: Option<i32>,
 }
 #[derive(Clone)]
-struct Record0 {
-    items: Vec<Record1>,
+pub struct Record0 {
+    pub items: Vec<Record1>,
 }
 fn main() {
     let my_data = Record0 {
@@ -24,5 +24,5 @@ fn main() {
             },
         ],
     };
-    let _ = my_data;
+    let _ = &my_data;
 }

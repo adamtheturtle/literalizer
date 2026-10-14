@@ -3,5 +3,5 @@ fn main() {
         vec![true, false],
         vec![true, true],
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

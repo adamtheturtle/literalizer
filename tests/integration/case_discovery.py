@@ -6,7 +6,7 @@ imports from this module to enumerate every expected golden filename.
 """
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import json
@@ -117,15 +117,7 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
 # spelled out so strict pyright keeps it fully known (the ruamel
 # library ships no type stubs).
 type _CaseScalar = (
-    str
-    | int
-    | float
-    | bool
-    | datetime.date
-    | datetime.datetime
-    | datetime.time
-    | bytes
-    | None
+    str | int | float | bool | dt.date | dt.datetime | dt.time | bytes | None
 )
 # Parsed case data.  ``load_case_data`` parses YAML with the ``safe``
 # loader (and JSON/JSON5/TOML natively), so containers are plain

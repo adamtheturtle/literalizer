@@ -1,8 +1,8 @@
 fn main() {
-    static my_data: [i32; 3] = [
+    static MY_DATA: [i32; 3] = [
         1,
         2,
         3,
     ];
-    let _ = my_data;
+    let _ = &MY_DATA;
 }

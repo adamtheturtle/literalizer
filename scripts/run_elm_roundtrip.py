@@ -39,6 +39,7 @@ from pathlib import Path
 
 from literalizer.languages import Elm
 from scripts import roundtrip_common
+from scripts.bounded_command import bounded_command
 from scripts.elm_common import ELM_JSON, NOINDEX_SUFFIX, run_elm_make
 
 _VAR_NAME = "myData"
@@ -131,6 +132,8 @@ def main() -> None:
             args=[elm, "make", "src/Main.elm", "--output=main.js"],
             cwd=tmpdir,
             env=os.environ,
+            fixture="Elm round-trip Main.elm",
+            timeout_seconds=60,
         )
         if compile_result.returncode != 0:
             _ = sys.stderr.write(
@@ -140,7 +143,11 @@ def main() -> None:
             )
             sys.exit(1)
         run_result = subprocess.run(
-            args=[node, "run.js"],
+            args=bounded_command(
+                args=[node, "run.js"],
+                fixture="Elm round-trip main.js",
+                timeout_seconds=60,
+            ),
             capture_output=True,
             text=True,
             check=False,

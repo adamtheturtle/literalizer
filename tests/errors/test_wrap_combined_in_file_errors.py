@@ -36,6 +36,7 @@ def test_wrap_combined_in_file_unsupported_raises(
             declaration="x = 1",
             assignment="x = 2",
             context=FileWrapperContext(
+                bound_variable_names=(),
                 variable_name="x",
                 modifiers=frozenset(),
                 body_preamble=(),
@@ -43,5 +44,6 @@ def test_wrap_combined_in_file_unsupported_raises(
                 has_literal_declarations=True,
                 generated_body_preamble=(),
                 call_stub_names=frozenset(),
+                root_is_object_literal=False,
             ),
         )

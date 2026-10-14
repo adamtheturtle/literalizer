@@ -12,6 +12,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from scripts.bounded_command import bounded_command
+
 _REPO_ROOT = Path(__file__).resolve().parent
 _STUB_SOURCES = ("a_stub.ads", "a_stub.adb")
 
@@ -35,13 +37,17 @@ def main() -> None:
         # `-gnat2022` matches `Ada.language_version` in
         # `src/literalizer/languages/ada.py`; keep them in sync.
         compile_result = subprocess.run(
-            args=[
-                gnatmake_path,
-                "-gnat2022",
-                "-gnatwe",
-                "-Werror",
-                "main.adb",
-            ],
+            args=bounded_command(
+                args=[
+                    gnatmake_path,
+                    "-gnat2022",
+                    "-gnatwe",
+                    "-Werror",
+                    "main.adb",
+                ],
+                fixture=filename,
+                timeout_seconds=60,
+            ),
             capture_output=True,
             text=True,
             check=False,
@@ -54,7 +60,9 @@ def main() -> None:
             )
             sys.exit(1)
         run_result = subprocess.run(
-            args=[tmpdir / "main"],
+            args=bounded_command(
+                args=[tmpdir / "main"], fixture=filename, timeout_seconds=60
+            ),
             capture_output=True,
             text=True,
             check=False,

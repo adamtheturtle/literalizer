@@ -17,3 +17,4 @@ my_data = (
     "both \"quotes''' here",
     "line1\\nline2\nwith newline"
 );
+    _ = my_data;

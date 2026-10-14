@@ -5,5 +5,5 @@ fn main() {
         ("test", (5, vec!["compile"])),
         ("package", (7, vec!["link", "test"])),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

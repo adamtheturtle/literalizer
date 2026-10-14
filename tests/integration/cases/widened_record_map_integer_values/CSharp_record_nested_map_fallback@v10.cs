@@ -6,5 +6,6 @@ var my_data = new[] {
     new Record0(new Dictionary<string, int> {["a"] = 1}),
     new Record0(new Dictionary<string, int> {["b"] = 2})
 };
+    _ = my_data;
     }
 }

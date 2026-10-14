@@ -47,6 +47,7 @@ from literalizer import (
     RoundTripCapability,
     literalize,
 )
+from scripts.bounded_command import bounded_command
 
 INPUT_PATH = Path(__file__).resolve().parent / "roundtrip_input.json"
 CAPABILITY_INPUT_PATH = (
@@ -215,6 +216,8 @@ def execute(
     Writes *program* to ``<tmpdir>/<source_filename>`` (parent dirs
     created on demand) and each ``extra_files`` entry under the same
     tmpdir, then runs each :class:`Step` with cwd set to that tmpdir.
+    Multi-command checks give each subprocess a separate deadline.
+    Single-command checks run directly.
     The first non-zero exit aborts with a diagnostic that includes the
     failing step's stdout/stderr and a dump of *program*.
 
@@ -238,8 +241,15 @@ def execute(
             extra_path.parent.mkdir(parents=True, exist_ok=True)
             _ = extra_path.write_text(data=content, encoding="utf-8")
         for step in steps:
+            args = list(step.args)
+            if len(steps) > 1:
+                args = bounded_command(
+                    args=args,
+                    fixture=str(object=source_path),
+                    timeout_seconds=60,
+                )
             result = subprocess.run(
-                args=list(step.args),
+                args=args,
                 capture_output=True,
                 text=True,
                 check=False,

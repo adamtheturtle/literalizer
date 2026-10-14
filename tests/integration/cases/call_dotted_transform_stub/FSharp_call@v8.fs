@@ -5,10 +5,10 @@ type Val =
     | FInt of int64
     | FStr of string
     | FList of Val list
-let process (_value: obj) : obj = null
+let ``process`` (_value: obj) : obj = null
 type TracerType_() =
     member _.emit(__arg: obj) : obj = null
 let tracer = TracerType_()
-tracer.emit(process(FStr "hello"))
-tracer.emit(process(FInt 42L))
-tracer.emit(process(FBool true))
+tracer.emit(``process``(FStr "hello")) |> ignore
+tracer.emit(``process``(FInt 42L)) |> ignore
+tracer.emit(``process``(FBool true)) |> ignore

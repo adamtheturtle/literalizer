@@ -1,7 +1,7 @@
 """Swift language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import functools
 import re
@@ -139,13 +139,13 @@ def _reject_date_midnight_collisions(data: Value) -> None:
             dates = {
                 (scalar.year, scalar.month, scalar.day): scalar
                 for scalar in values
-                if isinstance(scalar, datetime.date)
-                and not isinstance(scalar, datetime.datetime)
+                if isinstance(scalar, dt.date)
+                and not isinstance(scalar, dt.datetime)
             }
             for scalar in values:
                 if (
-                    isinstance(scalar, datetime.datetime)
-                    and scalar.time().replace(tzinfo=None) == datetime.time()
+                    isinstance(scalar, dt.datetime)
+                    and scalar.time().replace(tzinfo=None) == dt.time()
                     and (scalar.year, scalar.month, scalar.day) in dates
                 ):
                     raise TargetScalarCollisionError(
@@ -204,7 +204,7 @@ def _format_string_multiline(value: str) -> str:
 
 
 @beartype
-def _format_date_swift(value: datetime.date) -> str:
+def _format_date_swift(value: dt.date) -> str:
     """Format a date as a Swift ``DateComponents`` expression."""
     return (
         "DateComponents("
@@ -216,11 +216,11 @@ def _format_date_swift(value: datetime.date) -> str:
 
 
 @beartype
-def _format_datetime_swift(value: datetime.datetime) -> str:
+def _format_datetime_swift(value: dt.datetime) -> str:
     """Format a datetime as a Swift ``DateComponents`` expression."""
     offset = value.utcoffset()
-    if offset is None or offset == datetime.timedelta():
-        offset = datetime.timedelta()
+    if offset is None or offset == dt.timedelta():
+        offset = dt.timedelta()
     offset_seconds = int(offset.total_seconds())
     parts = (
         "DateComponents("
@@ -345,11 +345,11 @@ def _swift_scalar_hint(
             hint = "Double"
         case str() | bytes():
             hint = "String"
-        case datetime.datetime():
+        case dt.datetime():
             hint = datetime_hint
-        case datetime.date():
+        case dt.date():
             hint = date_hint
-        case datetime.time():
+        case dt.time():
             hint = "String"
         case None:
             hint = "Any?"
@@ -826,7 +826,7 @@ class Swift(metaclass=LanguageCls):
         SWIFT = DateFormatConfig(
             formatter=_format_date_swift,
             preamble_lines=("import Foundation",),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -840,7 +840,7 @@ class Swift(metaclass=LanguageCls):
         SWIFT = DatetimeFormatConfig(
             formatter=_format_datetime_swift,
             preamble_lines=("import Foundation",),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1549,17 +1549,17 @@ class Swift(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 

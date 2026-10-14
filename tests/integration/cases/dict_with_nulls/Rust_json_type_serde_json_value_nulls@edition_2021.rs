@@ -6,5 +6,5 @@ fn main() {
         "score": null,
         "age": 30,
     });
-    let _ = my_data;
+    let _ = &my_data;
 }

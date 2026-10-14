@@ -1,7 +1,7 @@
 """F# language specification."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import enum
 import re
 import textwrap
@@ -93,9 +93,7 @@ from literalizer._language import (
     default_format_call_arg_ref_identifier,
     default_format_call_arg_ref_identifier_consumable,
     default_format_call_ref_identifier,
-    default_format_call_statement,
     default_format_call_stub,
-    default_format_call_target,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
@@ -117,23 +115,43 @@ from literalizer.exceptions import (
 
 
 @beartype
+def _fsharp_discard_call(call: str, /) -> str:
+    """Evaluate a call without leaving its result implicitly ignored."""
+    return f"{call} |> ignore"
+
+
+@beartype
+def _fsharp_call_identifier(*, name: str) -> str:
+    """Quote the future reserved word used by the synthetic call
+    fixtures.
+    """
+    return f"``{name}``" if name == "process" else name
+
+
+@beartype
+def _fsharp_call_target(parts: Sequence[str], /) -> str:
+    """Preserve a call target while escaping future reserved words."""
+    return ".".join(_fsharp_call_identifier(name=part) for part in parts)
+
+
+@beartype
 def _format_fsharp_temporal_entry(
-    original: datetime.date | datetime.datetime | datetime.time,
+    original: dt.date | dt.datetime | dt.time,
     formatted: str,
     prefix: str,
     date_type: type,
     datetime_type: type,
 ) -> str:
     """Wrap a temporal value from its configured output type."""
-    if isinstance(original, datetime.datetime):
+    if isinstance(original, dt.datetime):
         if datetime_type is int:
             return formatted
-        if datetime_type is datetime.datetime:
+        if datetime_type is dt.datetime:
             return f"{prefix}Datetime ({formatted})"
         return f"{prefix}Str {formatted}"
-    if isinstance(original, datetime.time):
+    if isinstance(original, dt.time):
         return f"{prefix}Str (string ({formatted}))"
-    if date_type is datetime.date:
+    if date_type is dt.date:
         return f"{prefix}Date ({formatted})"
     return f"{prefix}Str {formatted}"
 
@@ -150,9 +168,10 @@ def _fsharp_integer_entry(
     literal = formatted
     if I64_MIN <= original <= I64_MAX:
         literal = f"{formatted}L"
+    variant = "Int" if I64_MIN <= original <= I64_MAX else "BigInt"
     if negative:
-        return f"{prefix}Int({literal})"
-    return f"{prefix}Int {literal}"
+        return f"{prefix}{variant}({literal})"
+    return f"{prefix}{variant} {literal}"
 
 
 @beartype
@@ -184,7 +203,7 @@ def _apply_fsharp_entry(
             )
         case float():
             return _fsharp_float_entry(formatted=formatted, prefix=prefix)
-        case datetime.date() | datetime.time():
+        case dt.date() | dt.time():
             return _format_fsharp_temporal_entry(
                 original=original,
                 formatted=formatted,
@@ -393,12 +412,12 @@ def _build_fsharp_json_declaration_inner(
 @beartype
 def _build_fsharp_datetime_epoch(
     prefix: str,
-) -> Callable[[datetime.datetime], str]:
+) -> Callable[[dt.datetime], str]:
     """Build a datetime formatter that produces ``{prefix}Int`` from
     Unix epoch seconds.
     """
 
-    def _format(value: datetime.datetime) -> str:
+    def _format(value: dt.datetime) -> str:
         """Format epoch seconds with the F# integer constructor."""
         formatted = format_datetime_epoch(value=value)
         return _apply_fsharp_entry(
@@ -479,16 +498,17 @@ def _build_fsharp_call_stub_lines(
     if not curried:
         let_param_list = f" {param_list}"
     if len(parts) == 1:
-        return (f"let {parts[0]}{let_param_list} : obj = null",)
+        name = _fsharp_call_identifier(name=parts[0])
+        return (f"let {name}{let_param_list} : obj = null",)
     root = parts[0]
-    method = parts[-1]
+    method = _fsharp_call_identifier(name=parts[-1])
     fields = parts[1:-1]
     if len(fields) == 0:
         cls = f"{root.title()}Type_"
         return (
             f"type {cls}() =",
             f"    member _.{method}{param_list} : obj = null",
-            f"let {root} = {cls}()",
+            f"let {_fsharp_call_identifier(name=root)} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"{fields[-1].title()}Type_"
@@ -498,12 +518,14 @@ def _build_fsharp_call_stub_lines(
     for i in range(len(fields) - 2, -1, -1):
         cls = f"{fields[i].title()}Type_"
         lines.append(f"type {cls}() =")
-        lines.append(f"    member _.{fields[i + 1]} = {prev_cls}()")
+        field = _fsharp_call_identifier(name=fields[i + 1])
+        lines.append(f"    member _.{field} = {prev_cls}()")
         prev_cls = cls
     root_cls = f"{root.title()}Type_"
     lines.append(f"type {root_cls}() =")
-    lines.append(f"    member _.{fields[0]} = {prev_cls}()")
-    lines.append(f"let {root} = {root_cls}()")
+    field = _fsharp_call_identifier(name=fields[0])
+    lines.append(f"    member _.{field} = {prev_cls}()")
+    lines.append(f"let {_fsharp_call_identifier(name=root)} = {root_cls}()")
     return tuple(lines)
 
 
@@ -791,7 +813,7 @@ class FSharp(metaclass=LanguageCls):
                 template="System.DateOnly({year}, {month}, {day})",
             ),
             preamble_lines=(),
-            type_produced=datetime.date,
+            type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
@@ -809,7 +831,7 @@ class FSharp(metaclass=LanguageCls):
                 millisecond_template=None,
             ),
             preamble_lines=(),
-            type_produced=datetime.datetime,
+            type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1111,7 +1133,10 @@ class FSharp(metaclass=LanguageCls):
 
     validate_call_arg = default_validate_call_arg
 
-    format_call_statement = default_format_call_statement
+    @cached_property
+    def format_call_statement(self) -> Callable[[str], str]:
+        """Explicitly discard the result of an unbound call."""
+        return _fsharp_discard_call
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -1278,7 +1303,10 @@ class FSharp(metaclass=LanguageCls):
 
     format_call_preamble_stub = default_format_call_stub
 
-    format_call_target = default_format_call_target
+    @cached_property
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
+        """Quote future reserved words in each call-target component."""
+        return _fsharp_call_target
 
     format_call_ref_identifier = default_format_call_ref_identifier
 
@@ -1454,14 +1482,14 @@ class FSharp(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
-    def format_date(self) -> Callable[[datetime.date], str]:
+    def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
             return format_date_iso
         return self.date_format
 
     @cached_property
-    def format_datetime(self) -> Callable[[datetime.datetime], str]:
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
         Under ``json_type`` the EPOCH branch emits a bare ``int64``
@@ -1471,14 +1499,12 @@ class FSharp(metaclass=LanguageCls):
         entry / top-level formatter is responsible for wrapping the
         literal with ``JsonValue.Create`` so it becomes a ``JsonNode``.
         """
-        base_formatter: Callable[[datetime.datetime], str] = (
-            self.datetime_format
-        )
+        base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self._json_type_active:
             if self.datetime_format.value.type_produced is int:
                 format_integer = self.format_integer
 
-                def _format_json_epoch(value: datetime.datetime) -> str:
+                def _format_json_epoch(value: dt.datetime) -> str:
                     """Return an epoch-seconds ``int64`` literal."""
                     formatted = format_datetime_epoch(value=value)
                     return format_integer(int(formatted))
@@ -1498,7 +1524,7 @@ class FSharp(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
-    def format_time(self) -> Callable[[datetime.time], str]:
+    def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self._json_type_active:
             return format_time_iso
@@ -1700,13 +1726,13 @@ class FSharp(metaclass=LanguageCls):
         p = self.constructor_prefix
         header = f"type {self.type_name} ="
         f_str = f"    | {p}Str of string"
-        if self.date_format.value.type_produced is datetime.date:
+        if self.date_format.value.type_produced is dt.date:
             effective_header = (header, f"    | {p}Date of System.DateOnly")
         else:
             effective_header = (header, f_str)
         if self.datetime_format.value.type_produced is int:
             effective_header_2 = (header, f"    | {p}Int of int64")
-        elif self.datetime_format.value.type_produced is datetime.datetime:
+        elif self.datetime_format.value.type_produced is dt.datetime:
             effective_header_2 = (
                 header,
                 f"    | {p}Datetime of System.DateTime",
@@ -1730,9 +1756,9 @@ class FSharp(metaclass=LanguageCls):
                 f"    | {p}Map of (string * {self.type_name}) list",
             ),
             set: (header, f"    | {p}Set of {self.type_name} list"),
-            datetime.date: (effective_header),
-            datetime.time: (header, f_str),
-            datetime.datetime: (effective_header_2),
+            dt.date: (effective_header),
+            dt.time: (header, f_str),
+            dt.datetime: (effective_header_2),
         }
 
     @cached_property
@@ -1748,7 +1774,7 @@ class FSharp(metaclass=LanguageCls):
         non-blank line, which rules out the file-level preamble that
         other languages use for an equivalent import.
 
-        Swaps ``int64`` to ``bigint`` in the ``FInt`` variant when the
+        Adds a separate ``FBigInt`` variant when the
         data contains an integer outside signed 64-bit range.
         """
         if self._json_type_active:
@@ -1773,7 +1799,11 @@ class FSharp(metaclass=LanguageCls):
         header = f"type {self.type_name} ="
         bigint_override = {
             **self.scalar_body_preamble,
-            int: (header, f"    | {p}Int of bigint"),
+            int: (
+                header,
+                f"    | {p}Int of int64",
+                f"    | {p}BigInt of bigint",
+            ),
         }
         bigint_compute = body_preamble_from_scalars(
             scalar_body_preamble=bigint_override,

@@ -4,5 +4,5 @@ fn main() {
         ("test", (5, ("compile", "test"))),
         ("package", (7, ("link", "test"))),
     ]);
-    let _ = my_data;
+    let _ = &my_data;
 }

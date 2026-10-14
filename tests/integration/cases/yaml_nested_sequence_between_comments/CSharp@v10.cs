@@ -10,3 +10,4 @@ var my_data = (
     // This comment describes the last pair.
     (new Dictionary<string, string> {["item"] = "last"}, "kept too")
 );
+    _ = my_data;

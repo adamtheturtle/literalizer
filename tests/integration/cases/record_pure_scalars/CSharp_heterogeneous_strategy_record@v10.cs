@@ -7,5 +7,6 @@ var my_data = new Record0(
     true,
     4.5
 );
+    _ = my_data;
     }
 }

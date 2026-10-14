@@ -5,5 +5,5 @@ root first line
 
 root last line
 "#;
-    let _ = my_data;
+    let _ = &my_data;
 }

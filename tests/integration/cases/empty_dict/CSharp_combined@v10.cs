@@ -1,3 +1,4 @@
 using System.Collections.Generic;
-var my_data = new Dictionary<string, object> {};
-my_data = new Dictionary<string, object> {};
+var my_data = new Dictionary<string, object?> {};
+my_data = new Dictionary<string, object?> {};
+    _ = my_data;

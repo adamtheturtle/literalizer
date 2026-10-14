@@ -4,5 +4,5 @@ fn main() {
         // line 2
         "a",
     ];
-    let _ = my_data;
+    let _ = &my_data;
 }

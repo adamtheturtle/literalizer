@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 from beartype import beartype
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 LANGUAGES_DIR = Path(__file__).parent / "languages"
 
@@ -168,6 +168,12 @@ class VariantPolicy(  # noqa: NOD001
     file names a value to exercise it with.
     """
 
+    declaration_style_variable_names: dict[
+        Annotated[str, Field(min_length=1)],
+        Annotated[str, Field(min_length=1)],
+    ] = Field(default_factory=_empty_string_mapping)
+    """Variable names the declaration-style goldens select."""
+
     declaration_style_sequence_format_overrides: dict[
         Annotated[str, Field(min_length=1)],
         Annotated[str, Field(min_length=1)],
@@ -258,7 +264,7 @@ def load_language_metadata(
         raise _fail(path=path, message=f"invalid TOML: {exc}") from exc
     try:
         data = _LanguageMetadataData.model_validate(obj=raw)
-    except (ValidationError, ValueError) as exc:
+    except ValueError as exc:
         raise _fail(path=path, message=str(object=exc)) from exc
 
     return LanguageMetadata(

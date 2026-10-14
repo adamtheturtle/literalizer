@@ -3,5 +3,6 @@ class Check {
     public Check() {
     my_data = 1;
     }
-    public static void Main() {}
+    public static void Main() { }
+    public void _Read_my_data() { _ = my_data; }
 }
