@@ -60,6 +60,10 @@ from literalizer._formatters.format_strings import (
     format_string_c_utf8_characters,
     has_bidi_formatting_character,
 )
+from literalizer._formatters.preamble_roles import (
+    import_preamble,
+    preamble_imports,
+)
 from literalizer._formatters.record_strategy import (
     ActiveRecordStrategy,
     RecordDeclarationField,
@@ -722,7 +726,7 @@ def _make_initializer_list_config(
         single_element_template=None,
         supports_trailing_comma=True,
         empty_sequence=None,
-        preamble_lines=("#include <vector>",),
+        preamble_lines=(import_preamble(code="#include <vector>"),),
         format_entry=passthrough_sequence_entry,
         typed_opener_fallback=None,
         uses_typed_literal_for_scalars=False,
@@ -748,7 +752,7 @@ def _make_array_config(
         single_element_template=None,
         supports_trailing_comma=True,
         empty_sequence=None,
-        preamble_lines=("#include <array>",),
+        preamble_lines=(import_preamble(code="#include <array>"),),
         format_entry=passthrough_sequence_entry,
         typed_opener_fallback=None,
         uses_typed_literal_for_scalars=False,
@@ -1158,7 +1162,7 @@ def _build_variant_preamble(
         """Return headers required by variant/nullptr_t usage."""
         lines: list[str] = []
         if _has_empty_collection(data=data):
-            lines.append("#include <cstddef>")
+            lines.append(import_preamble(code="#include <cstddef>"))
         if force_variant or _needs_variant_type(
             data=data,
             element_to_type=element_to_type,
@@ -1167,15 +1171,15 @@ def _build_variant_preamble(
             record_dict_ids=record_dict_ids,
         ):
             if type_ctx.variant_type_name == "std::variant":
-                lines.append("#include <variant>")
+                lines.append(import_preamble(code="#include <variant>"))
             else:
                 name = type_ctx.variant_type_name
                 lines.extend(
                     (
-                        "#include <cstddef>",
-                        "#include <memory>",
-                        "#include <string>",
-                        "#include <utility>",
+                        import_preamble(code="#include <cstddef>"),
+                        import_preamble(code="#include <memory>"),
+                        import_preamble(code="#include <string>"),
+                        import_preamble(code="#include <utility>"),
                         f"struct {name} {{",
                         " private:",
                         "  struct Holder {",
@@ -1284,7 +1288,7 @@ def _build_tuple_preamble(
         )
         lines = list(variant_preamble(data))
         if len(tuple_list_ids) > 0:
-            lines.append("#include <tuple>")
+            lines.append(import_preamble(code="#include <tuple>"))
         return tuple(lines)
 
     return _tuple_preamble
@@ -2019,17 +2023,20 @@ def _cpp_record_field_headers(
 ) -> tuple[str, ...]:
     """Include dependencies named by the emitted native field types."""
     type_headers = (
-        ("std::string", "#include <string>"),
-        ("std::vector", "#include <vector>"),
-        ("std::array", "#include <array>"),
-        ("std::map", "#include <map>"),
-        ("std::unordered_map", "#include <unordered_map>"),
-        ("std::set", "#include <set>"),
-        ("std::tuple", "#include <tuple>"),
-        ("std::pair", "#include <utility>"),
-        ("std::chrono::", "#include <chrono>"),
-        ("std::nullptr_t", "#include <cstddef>"),
-        ("std::variant", "#include <variant>"),
+        ("std::string", import_preamble(code="#include <string>")),
+        ("std::vector", import_preamble(code="#include <vector>")),
+        ("std::array", import_preamble(code="#include <array>")),
+        ("std::map", import_preamble(code="#include <map>")),
+        (
+            "std::unordered_map",
+            import_preamble(code="#include <unordered_map>"),
+        ),
+        ("std::set", import_preamble(code="#include <set>")),
+        ("std::tuple", import_preamble(code="#include <tuple>")),
+        ("std::pair", import_preamble(code="#include <utility>")),
+        ("std::chrono::", import_preamble(code="#include <chrono>")),
+        ("std::nullptr_t", import_preamble(code="#include <cstddef>")),
+        ("std::variant", import_preamble(code="#include <variant>")),
     )
     return tuple(
         header
@@ -2126,7 +2133,7 @@ def _build_cpp_record_preamble(
         else:
             headers = list(variant_preamble(data))
         if include_tuple_header and bool(tuple_list_ids):
-            headers.append("#include <tuple>")
+            headers.append(import_preamble(code="#include <tuple>"))
         if requires_map_carrier:
             # C++14's explicit fallback carrier wraps every widened
             # scalar in the carrier type, so the alias must name the
@@ -2270,8 +2277,8 @@ def _build_ordered_map_config(
         ordered_map_open=_build_variant_ordered_map_open(type_ctx=type_ctx),
         close="}",
         preamble_lines=(
-            "#include <utility>",
-            "#include <vector>",
+            import_preamble(code="#include <utility>"),
+            import_preamble(code="#include <vector>"),
         ),
     )
 
@@ -2442,7 +2449,7 @@ def _cpp_call_stub(
 
 
 _NLOHMANN_JSON_STATIC_PREAMBLE: tuple[str, ...] = (
-    "#include <nlohmann/json.hpp>",
+    import_preamble(code="#include <nlohmann/json.hpp>"),
 )
 
 _NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
@@ -2940,12 +2947,12 @@ class Cpp(metaclass=LanguageCls):
 
         CPP = DateFormatConfig(
             formatter=_format_date_cpp,
-            preamble_lines=("#include <chrono>",),
+            preamble_lines=(import_preamble(code="#include <chrono>"),),
             type_produced=dt.date,
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso,
-            preamble_lines=("#include <string>",),
+            preamble_lines=(import_preamble(code="#include <string>"),),
             type_produced=str,
         )
 
@@ -2965,12 +2972,12 @@ class Cpp(metaclass=LanguageCls):
 
         CPP = DatetimeFormatConfig(
             formatter=_format_datetime_cpp,
-            preamble_lines=("#include <chrono>",),
+            preamble_lines=(import_preamble(code="#include <chrono>"),),
             type_produced=dt.datetime,
         )
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
-            preamble_lines=("#include <string>",),
+            preamble_lines=(import_preamble(code="#include <string>"),),
             type_produced=str,
         )
 
@@ -3025,7 +3032,7 @@ class Cpp(metaclass=LanguageCls):
             set_open=sequence_surrogate_set_open(open_str="{"),
             close="}",
             empty_set=None,
-            preamble_lines=("#include <vector>",),
+            preamble_lines=(import_preamble(code="#include <vector>"),),
             set_opener_template="",
             supports_heterogeneity=True,
             supports_trailing_comma=True,
@@ -3064,7 +3071,7 @@ class Cpp(metaclass=LanguageCls):
                     format_value=passthrough_sequence_entry
                 ),
                 empty_dict=None,
-                preamble_lines=("#include <map>",),
+                preamble_lines=(import_preamble(code="#include <map>"),),
                 narrowed_open=None,
                 supports_trailing_comma=True,
                 narrowed_empty_form=None,
@@ -3079,7 +3086,9 @@ class Cpp(metaclass=LanguageCls):
                     format_value=passthrough_sequence_entry
                 ),
                 empty_dict=None,
-                preamble_lines=("#include <unordered_map>",),
+                preamble_lines=(
+                    import_preamble(code="#include <unordered_map>"),
+                ),
                 narrowed_open=None,
                 supports_trailing_comma=True,
                 narrowed_empty_form=None,
@@ -3709,10 +3718,12 @@ class Cpp(metaclass=LanguageCls):
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
     _default_static_preamble: ClassVar[Sequence[str]] = (
-        "#include <initializer_list>",
+        import_preamble(code="#include <initializer_list>"),
     )
     static_body_preamble: ClassVar[Sequence[str]] = ()
-    special_float_preamble: ClassVar[tuple[str, ...]] = ("#include <cmath>",)
+    special_float_preamble: ClassVar[tuple[str, ...]] = (
+        import_preamble(code="#include <cmath>"),
+    )
 
     @cached_property
     def _json_type_active(self) -> bool:
@@ -4644,16 +4655,14 @@ class Cpp(metaclass=LanguageCls):
         """Only a non-scalar reference's ``std::move`` needs a header."""
         if isinstance(data, (bool, int, float)):
             return ()
-        return ("#include <utility>",)
+        return (import_preamble(code="#include <utility>"),)
 
     @staticmethod
     def reference_declaration_imports(
         entries: Sequence[str], /
     ) -> tuple[str, ...]:
         """Keep headers used by each rendered bound value."""
-        return tuple(
-            entry for entry in entries if entry.startswith("#include ")
-        )
+        return preamble_imports(entries)
 
     @staticmethod
     def format_call_variable_declaration(
@@ -4773,9 +4782,9 @@ class Cpp(metaclass=LanguageCls):
             date_format=self._resolved_date_format,
             datetime_format=self._resolved_datetime_format,
             extra={
-                str: ("#include <string>",),
-                bytes: ("#include <string>",),
-                type(None): ("#include <cstddef>",),
+                str: (import_preamble(code="#include <string>"),),
+                bytes: (import_preamble(code="#include <string>"),),
+                type(None): (import_preamble(code="#include <cstddef>"),),
             },
         )
 
