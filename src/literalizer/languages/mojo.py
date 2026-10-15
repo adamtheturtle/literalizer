@@ -208,24 +208,29 @@ def _mojo_collection_type(
 # heterogeneous strategy lets a mixed-value dict reach the typed-stub
 # helper) returns ``None`` instead of silently lying with
 # ``Dict[String, String]``.
-_mojo_call_arg_element_to_type = make_element_to_type(
-    dict_value_to_type=None,
-    str_type="String",
-    bool_type="Bool",
-    int_type="Int",
-    float_type="Float64",
-    mixed_numeric_type="String",
-    bytes_type="String",
-    date_type="String",
-    datetime_type="String",
-    time_type="String",
-    list_template="List[{inner}]",
-    enable_list_type=True,
-    dict_type_template="Dict[String, {inner}]",
-    fallback_value_type=None,
-    wide_int_type=None,
-    beyond_i64_type=None,
-)
+@beartype
+def _mojo_call_arg_type_resolver(
+    *, datetime_type: str
+) -> Callable[[type | ListType | DictType], str | None]:
+    """Resolve call types with the configured datetime representation."""
+    return make_element_to_type(
+        dict_value_to_type=None,
+        str_type="String",
+        bool_type="Bool",
+        int_type="Int",
+        float_type="Float64",
+        mixed_numeric_type="String",
+        bytes_type="String",
+        date_type="String",
+        datetime_type=datetime_type,
+        time_type="String",
+        list_template="List[{inner}]",
+        enable_list_type=True,
+        dict_type_template="Dict[String, {inner}]",
+        fallback_value_type=None,
+        wide_int_type=None,
+        beyond_i64_type=None,
+    )
 
 
 @beartype
@@ -235,6 +240,7 @@ def _value_to_mojo_type(
     *,
     heterogeneous_value_type: str | None,
     wrap_ids: frozenset[int],
+    datetime_type: str,
 ) -> str | None:
     """Map one call-argument value to its Mojo type string.
 
@@ -256,6 +262,7 @@ def _value_to_mojo_type(
     mappings are typed and any other shape (ordered maps, etc.) falls
     back to the same generic form.
     """
+    element_to_type = _mojo_call_arg_type_resolver(datetime_type=datetime_type)
     effective_element_type: type | ListType | DictType
     match value:
         case list():
@@ -263,7 +270,7 @@ def _value_to_mojo_type(
             effective_element_type = list
             if element_type is not None:
                 effective_element_type = element_type
-            return _mojo_call_arg_element_to_type(
+            return element_to_type(
                 effective_element_type,
             )
         case OrderedMap():
@@ -274,11 +281,11 @@ def _value_to_mojo_type(
         case dict():
             if heterogeneous_value_type is not None and id(value) in wrap_ids:
                 return f"Dict[String, {heterogeneous_value_type}]"
-            return _mojo_call_arg_element_to_type(
+            return element_to_type(
                 infer_dict_type(values=list(value.values())),
             )
         case _:
-            return _mojo_call_arg_element_to_type(type(value))
+            return element_to_type(type(value))
 
 
 @beartype
@@ -347,6 +354,7 @@ def _mojo_compute_slot_signatures(
     params: Sequence[str],
     arg_values: Sequence[Value],
     heterogeneous_value_type: str | None,
+    datetime_type: str,
 ) -> _MojoSlotInfo:
     """Compute Mojo slot signatures and the typed-param list.
 
@@ -394,6 +402,7 @@ def _mojo_compute_slot_signatures(
         slot_types = [
             _value_to_mojo_type(
                 v,
+                datetime_type=datetime_type,
                 heterogeneous_value_type=heterogeneous_value_type,
                 wrap_ids=wrap_ids,
             )
@@ -439,6 +448,7 @@ def _mojo_typed_param_list(
     params: Sequence[str],
     arg_values: Sequence[Value],
     heterogeneous_value_type: str | None,
+    datetime_type: str,
 ) -> tuple[str, ...] | None:
     """Return ``("name: Type", ...)`` for a typed Mojo signature.
 
@@ -448,6 +458,7 @@ def _mojo_typed_param_list(
     under each heterogeneous strategy, zero-parameter behavior).
     """
     info = _mojo_compute_slot_signatures(
+        datetime_type=datetime_type,
         params=params,
         arg_values=arg_values,
         heterogeneous_value_type=heterogeneous_value_type,
@@ -458,6 +469,8 @@ def _mojo_typed_param_list(
 @beartype
 def _mojo_cross_call_scalar_wrap_ids(
     slot_values: Sequence[Value],
+    *,
+    datetime_type: str,
 ) -> frozenset[int]:
     """Return ids of scalars in a cross-call divergent VARIANT slot.
 
@@ -478,6 +491,7 @@ def _mojo_cross_call_scalar_wrap_ids(
     slot_types = {
         _value_to_mojo_type(
             value,
+            datetime_type=datetime_type,
             heterogeneous_value_type=None,
             wrap_ids=frozenset[int](),
         )
@@ -543,6 +557,7 @@ def _mojo_call_preamble_stub(
     *,
     indent: str,
     heterogeneous_value_type: str | None,
+    datetime_type: str,
 ) -> tuple[str, ...]:
     """Return Mojo file-scope stubs for a call name.
 
@@ -565,6 +580,7 @@ def _mojo_call_preamble_stub(
     because the bare call has no value to leak.
     """
     typed_params = _mojo_typed_param_list(
+        datetime_type=datetime_type,
         params=params,
         arg_values=args,
         heterogeneous_value_type=heterogeneous_value_type,
@@ -815,7 +831,10 @@ def _build_variant_behavior(
         wrap_non_scalar=None,
         wrap_empty_container=None,
         empty_container_literal_overrides=no_empty_container_literal_overrides,
-        compute_call_slot_wrap_ids=_mojo_cross_call_scalar_wrap_ids,
+        compute_call_slot_wrap_ids=partial(
+            _mojo_cross_call_scalar_wrap_ids,
+            datetime_type="Int" if datetime_type_produced is int else "String",
+        ),
         dict_open_for_wrap_ids=None,
         widens_nested_maps_by_wrapping_scalars=True,
         widens_unrecordizable_nested_sibling_maps=False,
@@ -861,6 +880,7 @@ def _collect_variant_alternatives_from_slots(
     /,
     *,
     heterogeneous_value_type: str,
+    datetime_type: str,
 ) -> tuple[str, ...]:
     """Return Mojo ``Variant`` alternatives from cross-call divergent
     slots.
@@ -888,6 +908,7 @@ def _collect_variant_alternatives_from_slots(
         for value in slot_values:
             mojo_type = _value_to_mojo_type(
                 value,
+                datetime_type=datetime_type,
                 heterogeneous_value_type=heterogeneous_value_type,
                 wrap_ids=frozenset[int](),
             )
@@ -944,6 +965,7 @@ def _build_variant_preamble(
         slot_alternatives = _collect_variant_alternatives_from_slots(
             data,
             heterogeneous_value_type=variant_name,
+            datetime_type="Int" if datetime_type_produced is int else "String",
         )
         seen: set[str] = set()
         merged: list[str] = []
@@ -1705,6 +1727,7 @@ class Mojo(metaclass=LanguageCls):
             _mojo_call_preamble_stub,
             indent=self.indent,
             heterogeneous_value_type=heterogeneous_value_type,
+            datetime_type=self._datetime_type,
         )
 
     format_call_target = default_format_call_target
@@ -1847,6 +1870,15 @@ class Mojo(metaclass=LanguageCls):
         )
 
     @cached_property
+    def _datetime_type(self) -> str:
+        """Mojo type emitted by the selected datetime formatter."""
+        return (
+            "Int"
+            if self.datetime_format.value.type_produced is int
+            else "String"
+        )
+
+    @cached_property
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         base = self.set_format(default_type=self.default_set_element_type)
@@ -1861,7 +1893,7 @@ class Mojo(metaclass=LanguageCls):
                     mixed_numeric_type="String",
                     bytes_type=None,
                     date_type=None,
-                    datetime_type=None,
+                    datetime_type=self._datetime_type,
                     time_type=None,
                     list_template="List[{inner}]",
                     enable_list_type=True,
@@ -1899,11 +1931,8 @@ class Mojo(metaclass=LanguageCls):
         """Match empty lists and maps to the actual populated sibling
         types.
         """
-        datetime_type = "String"
-        if self.datetime_format.value.type_produced is int:
-            datetime_type = "Int"
         element_to_type = _mojo_element_type_resolver(
-            datetime_type=datetime_type,
+            datetime_type=self._datetime_type,
         )
 
         def _narrowed_empty(siblings: Sequence[Value]) -> str:

@@ -1,7 +1,7 @@
 schema_version = 1
 suites = ["base"]
-languages = ["CSharp", "PureScript", "Rust"]
-languages_reason = "PureScript negative epoch set members require numeric negation; C# and Rust set carriers must represent the epoch integers."
+languages = ["CSharp", "PureScript", "Rust", "Mojo"]
+languages_reason = "Mojo set and call types follow the configured datetime format. PureScript negative epoch set members require numeric negation; C# and Rust set carriers must represent the epoch integers."
 
 [[variants]]
 axis = "datetime"

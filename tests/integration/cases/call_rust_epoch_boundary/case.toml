@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Rust"]
-languages_reason = "Rust typed call parameters constrain epoch expressions to i64."
+languages = ["Rust", "Mojo"]
+languages_reason = "Mojo set and call types follow the configured datetime format. Rust typed call parameters constrain epoch expressions to i64."
 target_function = "consume"
 parameter_names = ["value"]
 per_element = true
