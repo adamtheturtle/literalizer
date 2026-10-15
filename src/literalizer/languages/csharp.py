@@ -75,7 +75,6 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
-    nested_record_sequence_type,
 )
 from literalizer._formatters.type_inference import (
     record_shape_for_dict,
@@ -141,7 +140,7 @@ from literalizer._language import (
     wrap_in_file_noop,
 )
 from literalizer._statements import split_trailing_line_comments
-from literalizer._types import OrderedMap, Scalar, Value
+from literalizer._types import OrderedMap, Scalar, Value, ValueInput
 from literalizer.exceptions import (
     ConflictingVariableModifiersError,
     IncompatibleFormatsError,
@@ -620,6 +619,34 @@ def _csharp_epoch_array_item(value: Value, /) -> Value:
             return [_csharp_epoch_array_item(item) for item in value]
         case _:
             return value
+
+
+@beartype
+def _csharp_record_sequence_type(
+    *,
+    value: Value,
+    record_name_for_value: Callable[[ValueInput], str | None],
+) -> tuple[int, str] | None:
+    """Infer a uniform record array, letting empty siblings adopt its type."""
+    record_name = record_name_for_value(value)
+    if record_name is not None:
+        return (0, record_name)
+    if not isinstance(value, list):
+        return None
+    child_types = {
+        _csharp_record_sequence_type(
+            value=item, record_name_for_value=record_name_for_value
+        )
+        for item in value
+        if not isinstance(item, list) or len(item) > 0
+    }
+    if len(child_types) != 1:
+        return None
+    (child_type,) = child_types
+    if child_type is None:
+        return None
+    depth, name = child_type
+    return (depth + 1, name)
 
 
 @beartype
@@ -2168,7 +2195,8 @@ class CSharp(metaclass=LanguageCls):
             """Return an empty literal matching its sibling array type."""
             if self.sequence_format is self.sequence_formats.ARRAY:
                 items = [item for sibling in siblings for item in sibling]
-                return self.sequence_open(items) + base.close
+                array_type = self._array_type(items)
+                return f"new {array_type.declared_type} {{}}"
             return empty
 
         return dataclasses.replace(
@@ -2238,7 +2266,7 @@ class CSharp(metaclass=LanguageCls):
             fallback.
             """
             if lookup is not None:
-                record_type = nested_record_sequence_type(
+                record_type = _csharp_record_sequence_type(
                     value=items, record_name_for_value=lookup
                 )
                 if record_type is not None:
