@@ -1177,24 +1177,43 @@ def _cpp_nested_record_sequence_type(
 
 
 @beartype
-def _infer_cpp_collection_element(
+def _infer_cpp_collection_type(
     *, items: list[Value], type_ctx: _CppTypeCtx
-) -> type | ListType | DictType | None:
-    """Infer a homogeneous type unless tuple rendering needs per-item
-    types.
-    """
-    nested_record_type = _cpp_nested_record_sequence_type(
+) -> str | None:
+    """Resolve a common rendered type before considering variant arms."""
+    record_type = _cpp_nested_record_sequence_type(
         value=items, record_name_for_value=type_ctx.record_name_for_value
     )
-    has_record_item = nested_record_type is not None
+    if not type_ctx.sequence_is_array and record_type is not None:
+        depth, inner = record_type
+        for _ in range(depth - 1):
+            inner = type_ctx.sequence_type(inner=inner, length=0)
+        return inner
     has_tuple_item = type_ctx.tuple_strategy and any(
         isinstance(item, list) and is_tuple_eligible(value=item)
         for item in items
     )
-    element_type = None
-    if not has_tuple_item and not has_record_item:
-        element_type = infer_element_type(items=items)
-    return element_type
+    if has_tuple_item or record_type is not None:
+        return None
+    element_type = infer_element_type(items=items)
+    match element_type:
+        case None:
+            return None
+        case DictType(value_type=None, values=dict_values):
+            value_type = _compute_element_type_for_items(
+                items=list(dict_values),
+                type_ctx=type_ctx,
+                in_mapping_value=True,
+            )
+            return type_ctx.dict_type(value_type)
+        case _:
+            int_leaves = _collect_int_leaves(
+                items=items, element_type=element_type
+            )
+            element_to_type = type_ctx.element_to_type(
+                int_type=type_ctx.int_resolver(int_leaves),
+            )
+            return element_to_type(element_type)
 
 
 @beartype
@@ -1219,38 +1238,9 @@ def _compute_element_type_for_items(
     """
     if len(items) == 0:
         return _cpp_owned_atomic_type("std::nullptr_t")
-    record_type = _cpp_nested_record_sequence_type(
-        value=items, record_name_for_value=type_ctx.record_name_for_value
-    )
-    if not type_ctx.sequence_is_array and record_type is not None:
-        depth, inner = record_type
-        for _ in range(depth - 1):
-            inner = type_ctx.sequence_type(inner=inner, length=0)
-        return inner
-    element_type = _infer_cpp_collection_element(
-        items=items, type_ctx=type_ctx
-    )
-    if element_type is not None:
-        match element_type:
-            case DictType(value_type=None, values=dict_values):
-                value_type = _compute_element_type_for_items(
-                    items=list(dict_values),
-                    type_ctx=type_ctx,
-                    in_mapping_value=True,
-                )
-                return type_ctx.dict_type(value_type)
-            case _:
-                int_leaves = _collect_int_leaves(
-                    items=items,
-                    element_type=element_type,
-                )
-                homogeneous_int_type = type_ctx.int_resolver(int_leaves)
-                element_to_type = type_ctx.element_to_type(
-                    int_type=homogeneous_int_type,
-                )
-                cpp_type = element_to_type(element_type)
-                if cpp_type is not None:
-                    return cpp_type
+    common_type = _infer_cpp_collection_type(items=items, type_ctx=type_ctx)
+    if common_type is not None:
+        return common_type
     sibling_lists = [item for item in items if isinstance(item, list)]
     if not type_ctx.tuple_strategy and len(sibling_lists) == len(items):
         normalized_lists = replace_positional_empty_lists(lists=sibling_lists)
