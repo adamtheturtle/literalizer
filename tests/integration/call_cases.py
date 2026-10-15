@@ -751,14 +751,6 @@ def _run_call_with_declarations(
                 ref_key=config.ref_key,
                 ref_values=effective_ref_values,
             )
-        if (
-            followup_result is not None
-            and isinstance(config.variable_form, literalizer.ExistingVariable)
-            and config.variable_form.name in declaration_names.values()
-        ):
-            # Consume the synthetic seed before the existing-variable
-            # assignment overwrites it, then consume the replacement too.
-            decl_results.append(followup_result)
         result = _literalize_call_case(
             config=config,
             spec=spec,
@@ -770,6 +762,20 @@ def _run_call_with_declarations(
             ref_values=(effective_ref_values),
             bound_refs=None,
         )
+        if (
+            followup_result is not None
+            and isinstance(config.variable_form, literalizer.ExistingVariable)
+            and config.variable_form.name in declaration_names.values()
+        ):
+            # Keep the seed use in the executable assignment fragment,
+            # retaining its binding role for declarative-section wrappers.
+            result = dataclasses.replace(
+                result,
+                declaration_code=(
+                    f"{followup_result.bare_code}\n{result.bare_code}"
+                ),
+                pre_declaration_comments=(),
+            )
         if followup_result is not None:
             decl_results.append(result)
             result = followup_result
