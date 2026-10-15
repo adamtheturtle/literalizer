@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+languages = ["Nim"]
+languages_reason = "Nim empty seq declarations must retain the generated record element type inferred from their use."
+
+[ref]
+languages = ["Nim"]
+languages_reason = "Nim empty seq declarations must retain the generated record element type inferred from their use."
+heterogeneous_strategy = "RECORD"
+
+[ref.value_sources]
+empty_items = "[]"
+populated_items = '[{"x": 1}]'

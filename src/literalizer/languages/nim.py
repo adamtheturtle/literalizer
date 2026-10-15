@@ -59,12 +59,13 @@ from literalizer._formatters.preamble_roles import (
     preamble_imports,
 )
 from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
     RecordDeclarationField,
     RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
-    RecordStrategy,
     build_record_strategy,
+    nested_record_sequence_type,
 )
 from literalizer._formatters.type_inference import (
     WideInt,
@@ -2182,7 +2183,7 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def _record_strategy(self) -> RecordStrategy:
+    def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``type``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
@@ -2392,7 +2393,28 @@ class Nim(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             preamble_lines=(),
             empty_sequence="newSeq[string]()",
+            narrowed_empty_form=(
+                self._nim_empty_sequence_form if self._uses_record else None
+            ),
         )
+
+    def _nim_empty_sequence_form(
+        self, siblings: Sequence[list[Value]], /
+    ) -> str:
+        """Retain a sibling-inferred type on separately bound empty
+        lists.
+        """
+        elements = [item for sibling in siblings for item in sibling]
+        record_name_for_value = self._record_strategy.record_name_for_value
+        record_sequence = nested_record_sequence_type(
+            value=elements, record_name_for_value=record_name_for_value
+        )
+        if record_sequence is not None:
+            depth, record_name = record_sequence
+            sequence_type = "seq[" * depth + record_name + "]" * depth
+        else:
+            sequence_type = self._nim_list_field_type(value=elements)
+        return f"{sequence_type}(@[])"
 
     @cached_property
     @beartype
