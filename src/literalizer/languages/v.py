@@ -116,6 +116,7 @@ from literalizer._language import (
     identity_call_arg,
     identity_call_ref_identifier,
     identity_constructor_target,
+    identity_known_null_ref_identifier,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_compute_call_slot_wrap_ids,
@@ -1720,7 +1721,7 @@ class V(metaclass=LanguageCls):
         """Copy a known null pointer without invoking collection
         methods.
         """
-        return lambda name: name
+        return identity_known_null_ref_identifier
 
     @cached_property
     @beartype

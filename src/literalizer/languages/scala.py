@@ -134,6 +134,7 @@ from literalizer._language import (
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
     default_wrap_combined_in_file,
+    empty_record_shape_names,
     identity_call_arg,
     new_constructor_target,
     no_call_binding_body_preamble,
@@ -316,10 +317,12 @@ def _resolve_sequence_open(
                 raise NullInCollectionError(msg)
             return _typed_open(items)
 
-        return signature_open(
-            render=_null_guarded,
-            infer=lambda items: collection_signature(_typed_open, items),
-        )
+        @beartype
+        def _signature(items: list[Value], /) -> CollectionSignature:
+            """Retain the typed opener's collection signature."""
+            return collection_signature(_typed_open, items)
+
+        return signature_open(render=_null_guarded, infer=_signature)
     return fmt.sequence_open
 
 
@@ -1307,9 +1310,7 @@ class Scala(metaclass=LanguageCls):
     )
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
-        default_factory=lambda: MappingProxyType[frozenset[str], str](
-            mapping={}
-        ),
+        default_factory=empty_record_shape_names,
         hash=False,
     )
     # Keep in sync with the `-S` flag passed to `scala-cli run` in
@@ -2012,7 +2013,7 @@ class Scala(metaclass=LanguageCls):
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         if self._json_type_active:
-            return lambda value: format_bytes_hex(value=value)
+            return format_bytes_hex
         return self.bytes_format
 
     @cached_property

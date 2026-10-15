@@ -1,1 +1,2 @@
-Parse JSONC with `jsonc-document`, preserving comments, syntax metadata, and original error coordinates.
+Use `jsonc-document` to parse JSONC input.
+JSONC parser diagnostic messages and coordinates now come from the new parser.

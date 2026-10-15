@@ -469,6 +469,18 @@ else:
 
 
 @beartype
+def _ocaml_call_statement(statement: str, /) -> str:
+    """Bind a call result to the wildcard identifier."""
+    return f"let _ = {statement}"
+
+
+@beartype
+def _ocaml_record_declaration(name: str, value: str, _data: Value, /) -> str:
+    """Declare an inferred native record."""
+    return f"let {name} = {value}"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class OCaml(metaclass=LanguageCls):
     """OCaml language specification.
@@ -1213,7 +1225,7 @@ class OCaml(metaclass=LanguageCls):
     @beartype
     def format_call_statement(self) -> Callable[[str], str]:
         """Wrap a call expression as a let binding."""
-        return lambda statement: f"let _ = {statement}"
+        return _ocaml_call_statement
 
     @cached_property
     @beartype
@@ -1502,7 +1514,7 @@ class OCaml(metaclass=LanguageCls):
     def _ocaml_declaration(self) -> Callable[[str, str, Value], str]:
         """Declaration formatter built from the configured type name."""
         if self.dict_format is type(self.dict_format).RECORD:
-            return lambda name, value, _data: f"let {name} = {value}"
+            return _ocaml_record_declaration
         if self._json_type_active:
             return _build_ocaml_declaration(
                 sequence_declared_type=_YOJSON_SAFE_T,

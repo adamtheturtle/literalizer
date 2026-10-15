@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSONCParseError]
+"Python['{\"outer\": [{\"value\": \"\\\\ud800\"}]}']" = "Invalid JSONC: input contains unpaired UTF-16 surrogate U+D800"
+"Python['{\"outer\": [{\"value\": \"\\\\udc00\"}]}']" = "Invalid JSONC: input contains unpaired UTF-16 surrogate U+DC00"
+"Python['{\"outer\": [{\"\\\\ud800\": \"value\"}]}']" = "Invalid JSONC: input contains unpaired UTF-16 surrogate U+D800"
+"Python['{\"outer\": [{\"\\\\udc00\": \"value\"}]}']" = "Invalid JSONC: input contains unpaired UTF-16 surrogate U+DC00"

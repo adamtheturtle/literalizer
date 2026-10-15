@@ -140,9 +140,11 @@ from literalizer._language import (
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
+    empty_record_shape_names,
     identity_call_arg,
     identity_call_ref_identifier,
     identity_constructor_target,
+    identity_known_null_ref_identifier,
     line_comment_call_variable_assignment,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -921,6 +923,14 @@ def _make_initializer_list_config(
     type_ctx: _CppTypeCtx,
 ) -> SequenceFormatConfig:
     """Build an INITIALIZER_LIST sequence config."""
+
+    @beartype
+    def _narrowed_empty(siblings: Sequence[list[Value]], /) -> str:
+        """Render an empty sequence using its siblings' selected type."""
+        return _cpp_narrowed_empty_sequence(
+            siblings=siblings, type_ctx=type_ctx
+        )
+
     return SequenceFormatConfig(
         sequence_open=_build_variant_sequence_open(type_ctx=type_ctx),
         close="}",
@@ -935,9 +945,7 @@ def _make_initializer_list_config(
         uses_typed_literal_for_scalars=False,
         requires_uniform_record_shapes=False,
         declared_type=None,
-        narrowed_empty_form=lambda siblings: _cpp_narrowed_empty_sequence(
-            siblings=siblings, type_ctx=type_ctx
-        ),
+        narrowed_empty_form=_narrowed_empty,
     )
 
 
@@ -2948,6 +2956,12 @@ else:
 
 
 @beartype
+def _cpp_discard_call_result(call: str, /) -> str:
+    """Explicitly discard a transformed call result."""
+    return f"static_cast<void>({call})"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Cpp(metaclass=LanguageCls):
     """C++ language specification.
@@ -3832,7 +3846,7 @@ class Cpp(metaclass=LanguageCls):
         self,
     ) -> Callable[[str], str]:
         """Explicitly discard an unchanged transformed call's return value."""
-        return lambda call: f"static_cast<void>({call})"
+        return _cpp_discard_call_result
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -3974,9 +3988,7 @@ class Cpp(metaclass=LanguageCls):
     json_rendering: JsonRenderings | None = None
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
-        default_factory=lambda: MappingProxyType[frozenset[str], str](
-            mapping={}
-        ),
+        default_factory=empty_record_shape_names,
         hash=False,
     )
     record_map_value_typing: RecordMapValueTypings = (
@@ -4284,8 +4296,14 @@ class Cpp(metaclass=LanguageCls):
     def format_known_null_ref_identifier(self) -> Callable[[str], str]:
         """Keep native null references bare and owning JSON values movable."""
         if self._json_type_active:
-            return lambda name: self.format_call_ref_identifier(name, None)
-        return lambda name: name
+
+            @beartype
+            def _format(name: str, /) -> str:
+                """Format a reference known to contain null."""
+                return self.format_call_ref_identifier(name, None)
+
+            return _format
+        return identity_known_null_ref_identifier
 
     @cached_property
     @beartype
