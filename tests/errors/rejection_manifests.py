@@ -420,7 +420,7 @@ class CallSpec(  # noqa: NOD001
         if has_comment_source and has_comment_source_bare:
             msg = "declare comment_source or comment_source_bare, not both"
             raise ValueError(msg)
-        if self.modifiers and not (
+        if len(self.modifiers) > 0 and not (
             self.api != "constructor"
             and (
                 self.variable_form in {"new", "both"}
