@@ -576,6 +576,7 @@ class Jsonc(metaclass=LanguageCls):
         references, so refs are not supported.
         """
 
+        @beartype
         def _raise_for_jsonc_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(
@@ -656,6 +657,7 @@ class Jsonc(metaclass=LanguageCls):
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
 
+        @beartype
         def _format(value: str) -> str:
             """Format a string as a JSONC quoted literal."""
             return (

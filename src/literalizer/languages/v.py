@@ -298,6 +298,7 @@ def _make_v_i64_formatter(
     octal, binary, etc.) rather than forcing decimal.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Format *value* as ``i64(<base(value)>)``."""
         return f"i64({base(value)})"
@@ -329,6 +330,7 @@ def _v_collect_ids_needing_wrap(
     ) | collect_sibling_map_wrap_ids(data=data)
     wrap_ids: set[int] = set(base_ids)
 
+    @beartype
     def _visit(item: Value) -> None:
         """Recursively mark *item* and its containers if wrapping
         needed.
@@ -366,18 +368,21 @@ def _v_collect_ids_needing_wrap(
 def _build_v_interface_behavior() -> HeterogeneousBehavior:
     """INTERFACE strategy: wrap scalars in ``IVal(...)``."""
 
+    @beartype
     def _compute(data: Value) -> frozenset[int]:
         """Return container ids whose scalar children should be
         wrapped.
         """
         return _v_collect_ids_needing_wrap(data=data)
 
+    @beartype
     def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``IVal(formatted)`` or the null sentinel."""
         if raw_value is None:
             return _V_NULL_WRAPPED
         return f"{_V_IFACE_NAME}({formatted})"
 
+    @beartype
     def _wrap_non_scalar(_raw_value: Value, formatted: str) -> str:
         """Wrap a ref marker or container's formatted form as
         ``IVal(formatted)``.
@@ -415,6 +420,7 @@ def _build_v_interface_preamble(
     shared nested-map fallback.
     """
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Emit ``interface IVal {}`` when any container needs
         wrapping.
@@ -433,6 +439,7 @@ def _build_v_empty_container_preamble() -> Callable[[Value], tuple[str, ...]]:
     will render as ``[]IVal{}`` / ``map[string]IVal{}``.
     """
 
+    @beartype
     def _has_empty_container(item: Value) -> bool:
         """Return True if *item* or any descendant is an empty list,
         dict, or set.
@@ -449,6 +456,7 @@ def _build_v_empty_container_preamble() -> Callable[[Value], tuple[str, ...]]:
             case _:
                 return False
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Emit ``interface IVal {}`` when an empty collection literal
         will reference it.
@@ -510,6 +518,7 @@ def _v_call_preamble_stub(
             f"fn {parts[0]}(args ...ICallArg_) ICallArg_ {{ return 0 }}",
         )
 
+    @beartype
     def _cap_type(name: str, /) -> str:
         """Return *name* with an upper-case first letter and ``Type_``
         suffix.
@@ -765,6 +774,7 @@ def _build_v_record_preamble(
     """
     empty_container_preamble = _build_v_empty_container_preamble()
 
+    @beartype
     def _record_pre(data: Value, /) -> tuple[str, ...]:
         """Return the ``interface IVal {}`` line (when needed) plus the
         ``struct`` declarations.
@@ -1676,6 +1686,7 @@ class V(metaclass=LanguageCls):
         original use case (map/array refs).
         """
 
+        @beartype
         def _clone(name: str, value: Value | None, /) -> str:
             """Return *name* with ``.clone()`` appended unless *value*
             is a scalar or native record that V auto-copies.
@@ -1742,6 +1753,7 @@ class V(metaclass=LanguageCls):
         containers.
         """
 
+        @beartype
         def _narrow(siblings: Sequence[dict[Scalar, Value]], /) -> str:
             """Pool map entries before resolving their rendered types."""
             values = [

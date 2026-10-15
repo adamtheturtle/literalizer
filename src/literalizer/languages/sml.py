@@ -133,6 +133,7 @@ def _sml_negate_int(
 ) -> Callable[[int], str]:
     """Wrap an integer formatter to use SML's ``~`` for negation."""
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_sml_negate_int(value=value, formatter=formatter)
@@ -164,6 +165,7 @@ def _sml_negate_float(
 ) -> Callable[[float], str]:
     """Wrap a float formatter to use SML's ``~`` for negation."""
 
+    @beartype
     def _format(value: float) -> str:
         """Delegate to module-level implementation."""
         return _apply_sml_negate_float(value=value, formatter=formatter)
@@ -297,6 +299,7 @@ def _build_sml_entry_formatter(
     constructors using the given *prefix*.
     """
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_sml_entry_formatter(
@@ -337,6 +340,7 @@ def _build_sml_declaration(
 ) -> Callable[[str, str, Value], str]:
     """Build an SML variable declaration formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_sml_declaration(
@@ -1102,6 +1106,7 @@ class Sml(metaclass=LanguageCls):
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
 
+        @beartype
         def _format(value: str) -> str:
             """Format a string as an SML quoted literal."""
             formatted = format_string_backslash_control(
@@ -1176,6 +1181,7 @@ class Sml(metaclass=LanguageCls):
             return passthrough_sequence_entry
         if isinstance(self.call_style.value, CommandCallStyle):
 
+            @beartype
             def _curried_arg(original: Value, formatted: str) -> str:
                 """Tag the value and parenthesize the curried argument."""
                 tagged = entry_formatter(original, formatted)

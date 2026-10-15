@@ -521,6 +521,7 @@ def _csharp_json_declaration_formatter(
     not C# compile-time constant expressions.
     """
 
+    @beartype
     def _formatter(
         name: str,
         value: str,
@@ -1869,6 +1870,7 @@ class CSharp(metaclass=LanguageCls):
         narrowing = self._derecordized_map_narrowing
         base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
 
+        @beartype
         def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
             """Refresh the widened-map value type for this render pass."""
             wrap_ids = base_compute_wrap_ids(data)
@@ -1878,6 +1880,7 @@ class CSharp(metaclass=LanguageCls):
             )
             return wrap_ids
 
+        @beartype
         def _widened_map_open() -> str:
             """Return the fallback-map opener for the current pass."""
             value_type = narrowing.value_type
@@ -1909,6 +1912,7 @@ class CSharp(metaclass=LanguageCls):
     ) -> str | None:
         """Return the one concrete type shared by widened-map scalars."""
 
+        @beartype
         def contains_wrapped_non_scalar(value: Value) -> bool:
             """Return whether a widened map contains a collection
             value.
@@ -1969,6 +1973,7 @@ class CSharp(metaclass=LanguageCls):
         """
         if self._json_type_active:
 
+            @beartype
             def _json_preamble(_data: Value, /) -> tuple[str, ...]:
                 """Always contribute the JsonNode ``using`` directive."""
                 return (_CSHARP_JSON_USING,)
@@ -2134,6 +2139,7 @@ class CSharp(metaclass=LanguageCls):
         if self.sequence_format is type(self.sequence_format).ARRAY:
             empty = f"new {element_type}[] {{}}"
 
+        @beartype
         def _narrowed_empty_form(
             siblings: Sequence[list[Value]],
         ) -> str:
@@ -2201,6 +2207,7 @@ class CSharp(metaclass=LanguageCls):
         """Keep array literals and record-component types together."""
         lookup = self._record_strategy.record_name_for_value
 
+        @beartype
         def _infer(items: list[Value]) -> CollectionType:
             """Resolve nested records or the shared typed array
             fallback.
@@ -2288,6 +2295,7 @@ class CSharp(metaclass=LanguageCls):
             ),
         )
 
+        @beartype
         def _normalized(data: dict[Scalar, Value]) -> dict[Scalar, Value]:
             """Infer epoch values from their rendered integer widths."""
             if self._dt_tp is not int:
@@ -2301,10 +2309,12 @@ class CSharp(metaclass=LanguageCls):
                 for key, value in data.items()
             }
 
+        @beartype
         def _open(data: dict[Scalar, Value], /) -> str:
             """Spell the map after normalizing epoch values."""
             return base_open(_normalized(data=data))
 
+        @beartype
         def _signature(data: dict[Scalar, Value], /) -> CollectionSignature:
             """Infer from the same normalized values as the map
             renderer.
@@ -2447,6 +2457,7 @@ class CSharp(metaclass=LanguageCls):
             default_key_type=self.default_dict_key_type,
         )
 
+        @beartype
         def _open(value: dict[Scalar, Value]) -> str:
             """Render the ordered-map opener from its semantic type."""
             return self._ordered_map_type(value).opener
@@ -2484,6 +2495,7 @@ class CSharp(metaclass=LanguageCls):
         dict_value_type = self.default_dict_value_type
         tuple_sequences = self.sequence_format is self.sequence_formats.TUPLE
 
+        @beartype
         def _formatter(
             name: str,
             value: str,

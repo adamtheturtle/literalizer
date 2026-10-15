@@ -447,6 +447,7 @@ def _narrowest_cpp_int_type(values: list[int]) -> str:
 def _static_int_resolver(int_type: str) -> _IntTypeResolver:
     """Return a resolver that always yields *int_type*."""
 
+    @beartype
     def _resolve(_values: list[int]) -> str:
         """Return the fixed int type, ignoring values."""
         return int_type
@@ -578,6 +579,7 @@ def _make_cpp_element_to_type(
         beyond_i64_type=None,
     )
 
+    @beartype
     def _dependencies(
         element_type: type | ListType | DictType | None, /
     ) -> frozenset[str]:
@@ -596,6 +598,7 @@ def _make_cpp_element_to_type(
             return frozenset[str]()
         return _cpp_native_atomic_headers(resolve(element_type))
 
+    @beartype
     def _resolve(element_type: type | ListType | DictType, /) -> str | None:
         """Retain the selected type's dependencies and scalar policy."""
         headers = _dependencies(element_type)
@@ -627,6 +630,7 @@ def _cpp_value_inhibits_consuming_form(value: Value, /) -> bool:
     return isinstance(value, (bool, int, float, dt.date))
 
 
+@beartype
 class _CppTypeDependencies(str):
     """A type or declaration with dependencies retained by its
     producer.
@@ -685,6 +689,7 @@ class _CppNarrowedMapScalar(str):
     __slots__ = ()
 
 
+@beartype
 class _CppArrayType(_CppTypeDependencies):
     """An owned fixed array with its scalar-leaf initialization policy."""
 
@@ -882,6 +887,7 @@ def _build_cpp_array_open(
     type narrowed to the narrowest that holds every int value.
     """
 
+    @beartype
     def _open(items: list[Value]) -> str:
         """Return the typed ``std::array`` opener, or ``{`` on
         fallback.
@@ -893,6 +899,7 @@ def _build_cpp_array_open(
             f"{type_name}{{", declared_type=type_name
         )
 
+    @beartype
     def _signature(items: list[Value], /) -> CollectionSignature:
         """Retain target identity and the selected arity policy."""
         type_name = _cpp_array_type(items=items, type_ctx=type_ctx)
@@ -1360,6 +1367,7 @@ def _build_variant_preamble(
     """Build a data preamble for the active variant implementation."""
     element_to_type = type_ctx.element_to_type(int_type="long long")
 
+    @beartype
     def _variant_preamble(data: Value, /) -> tuple[str, ...]:
         """Return headers required by variant/nullptr_t usage."""
         lines: list[str] = []
@@ -1477,6 +1485,7 @@ def _build_tuple_preamble(
     this path.
     """
 
+    @beartype
     def _tuple_preamble(data: Value, /) -> tuple[str, ...]:
         """Return the variant headers plus ``<tuple>`` when needed."""
         tuple_list_ids = _cpp_tuple_list_ids(data=data)
@@ -1612,6 +1621,7 @@ def _cpp_tuple_list_ids(data: Value) -> frozenset[int]:
     """
     ids: set[int] = set()
 
+    @beartype
     def _collect(value: Value) -> None:
         """Collect tuple-eligible lists reachable from *value*."""
         match value:
@@ -1682,6 +1692,7 @@ def _cpp14_variant_parent_ids(
     """
     ids: set[int] = set()
 
+    @beartype
     def _collect(value: Value) -> None:
         """Collect carrier-typed parents recursively."""
         children: list[Value] = []
@@ -1753,6 +1764,7 @@ def _cpp14_explicit_variant_behavior(
 ) -> HeterogeneousBehavior:
     """Add explicit fallback-variant construction to *base* behavior."""
 
+    @beartype
     def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
         """Combine strategy-specific and fallback-variant parent ids."""
         compute_record_shapes = base.compute_record_shapes
@@ -1771,10 +1783,12 @@ def _cpp14_explicit_variant_behavior(
             excluded_ids=record_ids | tuple_ids,
         )
 
+    @beartype
     def _wrap(_raw_value: Value, formatted: str, /) -> str:
         """Direct-list-initialize the fallback carrier."""
         return f"{type_ctx.variant_type_name}{{{formatted}}}"
 
+    @beartype
     def _compute_call_slot_wrap_ids(
         values: Sequence[Value],
         /,
@@ -1807,6 +1821,7 @@ def _cpp14_explicit_variant_behavior(
             )
         return base_ids
 
+    @beartype
     def _wrap_scalar(value: Scalar, formatted: str) -> str:
         """Retain a homogeneous fallback map's concrete scalar type."""
         if base.wrap_scalar is not None:
@@ -2308,6 +2323,7 @@ def _build_cpp_record_preamble(
     binding's type-driven preamble.
     """
 
+    @beartype
     def _record_pre(data: Value, /) -> tuple[str, ...]:
         """Return the ``std::variant`` / ``std::nullptr_t`` headers plus
         the ``struct`` declarations.
@@ -2459,10 +2475,12 @@ def _build_variant_sequence_open(
     heterogeneous lists.
     """
 
+    @beartype
     def _open(items: list[Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_sequence_open(items=items, type_ctx=type_ctx)
 
+    @beartype
     def _signature(items: list[Value], /) -> CollectionSignature:
         """Retain target identity and the selected arity policy."""
         inner = _compute_element_type_for_items(
@@ -2489,6 +2507,7 @@ def _build_variant_dict_open(
     heterogeneous dict values.
     """
 
+    @beartype
     def _open(items: dict[Scalar, Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_dict_open(
@@ -2496,6 +2515,7 @@ def _build_variant_dict_open(
             type_ctx=type_ctx,
         )
 
+    @beartype
     def _signature(items: dict[Scalar, Value], /) -> CollectionSignature:
         """Retain target identity and the selected arity policy."""
         inner = _compute_element_type_for_items(
@@ -2524,6 +2544,7 @@ def _build_variant_ordered_map_open(
     ``std::vector<std::pair<...>>``.
     """
 
+    @beartype
     def _open(data: dict[Scalar, Value]) -> str:
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_ordered_map_open(
@@ -4044,6 +4065,7 @@ class Cpp(metaclass=LanguageCls):
             if self.multiline_raw_string_delimiter_base == "x":
                 return _format_string_multiline
 
+            @beartype
             def _formatter(value: str) -> str:
                 """Render with this C++ spec's delimiter base."""
                 return _format_string_multiline_with_delimiter_base(
@@ -4053,6 +4075,7 @@ class Cpp(metaclass=LanguageCls):
 
             return _formatter
 
+        @beartype
         def _non_multiline_formatter(value: str) -> str:
             """Render with the selected non-multiline string format."""
             return self.string_format(value)
@@ -4078,6 +4101,7 @@ class Cpp(metaclass=LanguageCls):
         """Format an assignment to an existing variable."""
         if self._json_type_active:
 
+            @beartype
             def _formatter(name: str, value: str, data: Value) -> str:
                 """Assign a ``nlohmann::json`` value to an existing
                 binding.
@@ -4117,6 +4141,7 @@ class Cpp(metaclass=LanguageCls):
     ]:
         """Return file-scope stubs for a call expression."""
 
+        @beartype
         def _formatter(
             parts: Sequence[str],
             params: Sequence[str],
@@ -4192,6 +4217,7 @@ class Cpp(metaclass=LanguageCls):
         historical ``std::move`` form.
         """
 
+        @beartype
         def _format_cpp_ref_identifier(
             name: str, value: Value | None, /
         ) -> str:
@@ -4257,6 +4283,7 @@ class Cpp(metaclass=LanguageCls):
         one call argument, so the move cannot strand a later use.
         """
 
+        @beartype
         def _format_cpp_ref_identifier_consumable(
             name: str, _value: Value | None, /
         ) -> str:
@@ -4280,6 +4307,7 @@ class Cpp(metaclass=LanguageCls):
         cleanly under ``--warnings-as-errors``.
         """
 
+        @beartype
         def _inhibits(value: Value, /) -> bool:
             """Suppress moves for native nulls and other trivial
             values.
@@ -4456,6 +4484,7 @@ class Cpp(metaclass=LanguageCls):
         type_ctx = self._type_ctx
         base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
 
+        @beartype
         def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
             """Refresh the narrow-type cache alongside the wrap ids."""
             wrap_ids = base_compute_wrap_ids(data)
@@ -4467,6 +4496,7 @@ class Cpp(metaclass=LanguageCls):
             )
             return wrap_ids
 
+        @beartype
         def _wrap_scalar(_raw_value: Scalar, formatted: str) -> str:
             """Construct the shared value carrier for a widened map.
 
@@ -4478,6 +4508,7 @@ class Cpp(metaclass=LanguageCls):
                 return _CppNarrowedMapScalar(object=formatted)
             return f"{_CPP_RECORD_MAP_VALUE}{{{formatted}}}"
 
+        @beartype
         def _widened_map_open() -> str:
             """Return the widened-map opener for the current pass."""
             if narrowing.value_type is not None:
@@ -4510,6 +4541,7 @@ class Cpp(metaclass=LanguageCls):
         ``LiteralizerVariant`` carrier for otherwise fixed-shape data.
         """
 
+        @beartype
         def _field_type(request: RecordFieldType) -> str:
             """Resolve a tuple-eligible record field positionally."""
             value = request.value
@@ -4633,6 +4665,7 @@ class Cpp(metaclass=LanguageCls):
         )
         record_name_for_value = record_strategy.record_name_for_value
 
+        @beartype
         def _open(items: list[Value]) -> str:
             """Return the typed C++14 record-list opener when needed,
             else the record or base inferred opener.
@@ -4664,6 +4697,7 @@ class Cpp(metaclass=LanguageCls):
                 return "std::vector{"
             return base_open(base_items)
 
+        @beartype
         def _signature(items: list[Value], /) -> CollectionSignature:
             """Delegate to record-aware target inference."""
             return self._record_sequence_signature(
@@ -4788,6 +4822,7 @@ class Cpp(metaclass=LanguageCls):
         )
         if self._json_inline_document_active:
 
+            @beartype
             def format_json_integer(value: int) -> str:
                 """Format and validate an integer for the JSON
                 document.
@@ -4871,6 +4906,7 @@ class Cpp(metaclass=LanguageCls):
                 self._tuple_record_strategy.record_name_for_value
             )
 
+        @beartype
         def _record_aware_open(data: dict[Scalar, Value]) -> str:
             """Type ordered-map values from rendered record lists."""
             values = list(data.values())
@@ -5070,6 +5106,7 @@ class Cpp(metaclass=LanguageCls):
         """
         if self._json_type_active:
 
+            @beartype
             def _json_formatter(
                 name: str,
                 value: str,
@@ -5096,6 +5133,7 @@ class Cpp(metaclass=LanguageCls):
         date_type = self._resolved_date_format.value.type_produced
         datetime_type = self._resolved_datetime_format.value.type_produced
 
+        @beartype
         def _formatter(
             name: str,
             value: str,

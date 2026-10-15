@@ -653,6 +653,7 @@ class Yaml(metaclass=LanguageCls):
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
 
+        @beartype
         def _format(value: str) -> str:
             """Format a string as a YAML quoted literal."""
             if "\ufffe" in value or "\uffff" in value:

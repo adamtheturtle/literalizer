@@ -1410,6 +1410,7 @@ class D(metaclass=LanguageCls):
             derecordized_map_open="JSONValue([",
         )
 
+        @beartype
         def _wrap_non_scalar(raw_value: Value, formatted: str) -> str:
             """Convert a fallback-map array value to its JSON carrier."""
             if isinstance(raw_value, list) and len(raw_value) == 0:
@@ -1489,6 +1490,7 @@ class D(metaclass=LanguageCls):
             record_preamble = self._record_strategy.preamble
             compute_wrap_ids = self._record_strategy.behavior.compute_wrap_ids
 
+            @beartype
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Import ``std.json`` when a widened map uses its carrier."""
                 imports: tuple[str, ...]

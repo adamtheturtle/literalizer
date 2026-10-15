@@ -182,6 +182,7 @@ def _build_ada_entry_formatter(
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter from datetime output metadata."""
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Wrap one Ada value."""
         return _format_ada_entry(
@@ -199,6 +200,7 @@ def _build_ada_variable_declaration(
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Build an Ada object declaration formatter."""
 
+    @beartype
     def _format(
         name: str,
         value: str,
@@ -218,6 +220,7 @@ def _build_ada_variable_assignment(
 ) -> Callable[[str, str, Value], str]:
     """Build an Ada assignment formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Wrap and assign one Ada value."""
         wrapped = format_entry(data, value)
@@ -1129,6 +1132,7 @@ class Ada(metaclass=LanguageCls):
             escape_delete_and_c1=True,
         )
 
+        @beartype
         def _format(value: str) -> str:
             """Widen a bare ``Character'Val(N)`` result to ``String``."""
             formatted = inner(value)
@@ -1203,6 +1207,7 @@ class Ada(metaclass=LanguageCls):
         propagates instead of raising ``Constraint_Error`` at runtime.
         """
 
+        @beartype
         def _compute(
             types: frozenset[type],
             data: Value,

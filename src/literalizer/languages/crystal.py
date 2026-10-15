@@ -1383,6 +1383,7 @@ class Crystal(metaclass=LanguageCls):
         """
         if self._uses_json_any:
 
+            @beartype
             def _json_preamble(_data: Value, /) -> tuple[str, ...]:
                 """Always require the standard-library ``json`` module."""
                 return ('require "json"',)
@@ -1864,6 +1865,7 @@ class Crystal(metaclass=LanguageCls):
             return scalar_body
         record_preamble = self._record_strategy.preamble
 
+        @beartype
         def _compute(
             types: frozenset[type],
             data: Value,

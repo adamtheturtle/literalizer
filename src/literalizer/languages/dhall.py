@@ -556,12 +556,14 @@ def _build_union_type_behavior(
 ) -> HeterogeneousBehavior:
     """UNION_TYPE strategy: wrap scalars and skip scalar checks."""
 
+    @beartype
     def _compute(data: Value) -> frozenset[int]:
         """Return container ids whose scalar children should wrap."""
         return collect_heterogeneous_container_ids(
             data=data
         ) | collect_sibling_map_wrap_ids(data=data)
 
+    @beartype
     def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{union_name}.{Variant} payload``."""
         signature = _dhall_variant_for_scalar(
@@ -601,6 +603,7 @@ def _build_union_type_preamble(
     the union type used to wrap heterogeneous scalars.
     """
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the union-type declaration for *data*."""
         wrap_ids = collect_heterogeneous_container_ids(
@@ -1244,6 +1247,7 @@ class Dhall(metaclass=LanguageCls):
         required whitespace, or more than one positional argument.
         """
 
+        @beartype
         def _wrap(stmt: str) -> str:
             """Validate *call_expr* then wrap it as a ``let _ =``
             binding.

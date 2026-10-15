@@ -194,6 +194,7 @@ def _build_sv_entry_formatter(
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter from datetime output metadata."""
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Wrap one SystemVerilog value."""
         return _format_sv_entry(
@@ -211,6 +212,7 @@ def _build_sv_variable_declaration(
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Build a SystemVerilog variable declaration formatter."""
 
+    @beartype
     def _format(
         name: str,
         value: str,
@@ -236,6 +238,7 @@ def _build_sv_variable_assignment(
 ) -> Callable[[str, str, Value], str]:
     """Build a SystemVerilog variable assignment formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Assign one SystemVerilog value."""
         if isinstance(data, (list, set, dict)):
@@ -1072,6 +1075,7 @@ class SystemVerilog(metaclass=LanguageCls):
         assignment compatible".
         """
 
+        @beartype
         def _sv_format_ref_identifier(
             name: str, value: Value | None, /
         ) -> str:

@@ -452,6 +452,7 @@ def _nil_safe_declaration(
     Emit ``var {name} any = nil`` when the value is ``None``.
     """
 
+    @beartype
     def _format(
         name: str,
         value: str,
@@ -1351,6 +1352,7 @@ class Go(metaclass=LanguageCls):
         narrowing = self._derecordized_map_narrowing
         base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
 
+        @beartype
         def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
             """Refresh the narrow-type cache alongside the wrap ids."""
             wrap_ids = base_compute_wrap_ids(data)
@@ -1360,6 +1362,7 @@ class Go(metaclass=LanguageCls):
             )
             return wrap_ids
 
+        @beartype
         def _widened_map_open() -> str:
             """Return the widened-map opener for the current pass."""
             if narrowing.value_type is not None:
@@ -1385,6 +1388,7 @@ class Go(metaclass=LanguageCls):
         """
         record_preamble = self._record_strategy.preamble
 
+        @beartype
         def _preamble(data: Value) -> tuple[str, ...]:
             """Add ``math`` only when negative zero needs it."""
             math_preamble: tuple[str, ...]
@@ -1541,12 +1545,14 @@ class Go(metaclass=LanguageCls):
         )
         unnormalized_base = base
 
+        @beartype
         def _epoch_open(items: list[Value], /) -> str:
             """Open the slice with the types its formatted values have."""
             return unnormalized_base(
                 [self._epoch_normalized(item) for item in items]
             )
 
+        @beartype
         def _epoch_signature(items: list[Value], /) -> CollectionSignature:
             """Retain rendered-value inference for sibling widening."""
             return collection_signature(
@@ -1559,6 +1565,7 @@ class Go(metaclass=LanguageCls):
         if record_name_for_value is None:
             return base
 
+        @beartype
         def _open(items: list[Value], /) -> str:
             """Use the shared record element type when every item is
             rendered as one record, else ``[]any{`` for lists holding
@@ -1578,6 +1585,7 @@ class Go(metaclass=LanguageCls):
                 return f"[]{self.default_sequence_element_type}{{"
             return base(items)
 
+        @beartype
         def _signature(items: list[Value], /) -> CollectionSignature:
             """Retain the chosen record element type or shared
             fallback.
@@ -1615,6 +1623,7 @@ class Go(metaclass=LanguageCls):
             fallback=f"map[{self.default_dict_key_type}]{self.default_dict_value_type}{{",
         )
 
+        @beartype
         def _normalized(items: dict[Scalar, Value], /) -> dict[Scalar, Value]:
             """Keep keys while inferring the types of rendered map
             values.
@@ -1624,10 +1633,12 @@ class Go(metaclass=LanguageCls):
                 for key, item in items.items()
             }
 
+        @beartype
         def _open(items: dict[Scalar, Value], /) -> str:
             """Open the map with the types its formatted values have."""
             return base(_normalized(items))
 
+        @beartype
         def _signature(items: dict[Scalar, Value], /) -> CollectionSignature:
             """Retain rendered-value inference for sibling widening."""
             return collection_signature(base, _normalized(items))

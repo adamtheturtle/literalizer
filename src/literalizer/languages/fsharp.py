@@ -224,6 +224,7 @@ def _build_fsharp_entry_formatter(
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter that wraps values in F# constructors."""
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_fsharp_entry(
@@ -402,6 +403,7 @@ def _build_fsharp_json_declaration_inner(
 ) -> Callable[[str, str, Value], str]:
     """Build a new F# ``JsonNode`` declaration formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Format a JSON-backed declaration."""
         rhs = _fsharp_json_top_level(original=data, formatted=value)
@@ -418,6 +420,7 @@ def _build_fsharp_datetime_epoch(
     Unix epoch seconds.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Format epoch seconds with the F# integer constructor."""
         formatted = format_datetime_epoch(value=value)
@@ -468,6 +471,7 @@ def _build_fsharp_declaration(
 ) -> Callable[[str, str, Value], str]:
     """Build an F# variable declaration/assignment formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_fsharp_declaration(
@@ -1294,6 +1298,7 @@ class FSharp(metaclass=LanguageCls):
         entry_formatter = self._entry_formatter
         if isinstance(self.call_style.value, CommandCallStyle):
 
+            @beartype
             def _curried_arg(original: Value, formatted: str) -> str:
                 """Tag the value and parenthesize the curried argument."""
                 tagged = entry_formatter(original, formatted)
@@ -1505,6 +1510,7 @@ class FSharp(metaclass=LanguageCls):
             if self.datetime_format.value.type_produced is int:
                 format_integer = self.format_integer
 
+                @beartype
                 def _format_json_epoch(value: dt.datetime) -> str:
                     """Return an epoch-seconds ``int64`` literal."""
                     formatted = format_datetime_epoch(value=value)
@@ -1552,6 +1558,7 @@ class FSharp(metaclass=LanguageCls):
         if self._json_type_active:
             base = self.integer_format
 
+            @beartype
             def _format(value: int) -> str:
                 """Return a json-mode integer literal."""
                 rendered = base(value)
@@ -1570,6 +1577,7 @@ class FSharp(metaclass=LanguageCls):
         if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
             base = self.integer_format
 
+            @beartype
             def _native_integer(value: int) -> str:
                 """Give native integers an explicit 64-bit type."""
                 rendered = base(value)

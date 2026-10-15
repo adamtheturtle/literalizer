@@ -153,6 +153,7 @@ def _build_roc_date_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_date(value=value, prefix=prefix)
@@ -174,6 +175,7 @@ def _build_roc_time_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_time(value=value, prefix=prefix)
@@ -195,6 +197,7 @@ def _build_roc_datetime_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_datetime(value=value, prefix=prefix)
@@ -228,6 +231,7 @@ def _build_roc_bytes_hex(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_bytes_hex(value=value, prefix=prefix)
@@ -249,6 +253,7 @@ def _build_roc_bytes_base64(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_bytes_base64(value=value, prefix=prefix)
@@ -270,6 +275,7 @@ def _build_roc_str_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_string(value=value, prefix=prefix)
@@ -311,6 +317,7 @@ def _build_roc_integer_formatter(
     out-of-range (issue #4508).
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_integer(value=value, prefix=prefix, base=base)
@@ -345,6 +352,7 @@ def _build_roc_float_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: float) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_float(value=value, prefix=prefix, inner=inner)
@@ -435,6 +443,7 @@ def _build_roc_body_preamble(
     are actually needed.
     """
 
+    @beartype
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return the tag-union type alias for *types*."""
         del data  # unused
@@ -1526,6 +1535,7 @@ class Roc(metaclass=LanguageCls):
             )
             tag = f"{self.constructor_prefix}Float "
 
+            @beartype
             def _bare_float(value: float) -> str:
                 """Render a float without a tag, including infinities."""
                 if math.isinf(value):

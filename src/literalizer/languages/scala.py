@@ -302,6 +302,7 @@ def _resolve_sequence_open(
             fallback=fmt.typed_opener_fallback,
         )
 
+        @beartype
         def _null_guarded(items: list[Value]) -> str:
             """Raise if any item is null, else delegate to the typed
             opener.
@@ -1005,6 +1006,7 @@ class Scala(metaclass=LanguageCls):
                 cls.VAR: "var",
             }[self]
 
+            @beartype
             def _formatter(
                 name: str,
                 value: str,
@@ -1661,6 +1663,7 @@ class Scala(metaclass=LanguageCls):
             narrowing = self._derecordized_map_narrowing
             base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
 
+            @beartype
             def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
                 """Refresh the narrow-type cache alongside the wrap
                 ids.
@@ -1674,6 +1677,7 @@ class Scala(metaclass=LanguageCls):
                 )
                 return wrap_ids
 
+            @beartype
             def _widened_map_open() -> str:
                 """Return the widened-map opener for the current
                 pass.
@@ -1888,6 +1892,7 @@ class Scala(metaclass=LanguageCls):
         if record_name_for_value is None:
             return base
 
+        @beartype
         def _open(items: list[Value], /) -> str:
             """Use the plain opener for lists of record-shaped dicts.
 
@@ -1908,6 +1913,7 @@ class Scala(metaclass=LanguageCls):
                 return plain_open(items)
             return base(items)
 
+        @beartype
         def _signature(items: list[Value], /) -> CollectionSignature:
             """Retain the record or ordinary producer's selected type."""
             if (

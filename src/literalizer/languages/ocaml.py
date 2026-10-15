@@ -274,6 +274,7 @@ def _build_ocaml_entry_formatter(
     constructors using the given *prefix*.
     """
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_ocaml_entry(
@@ -445,6 +446,7 @@ def _build_ocaml_declaration(
 ) -> Callable[[str, str, Value], str]:
     """Build an OCaml variable declaration formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_ocaml_declaration(
@@ -1188,6 +1190,7 @@ class OCaml(metaclass=LanguageCls):
         entry_formatter = self._entry_formatter
         if isinstance(self.call_style.value, CommandCallStyle):
 
+            @beartype
             def _curried_arg(original: Value, formatted: str) -> str:
                 """Tag the value and parenthesize the curried argument."""
                 tagged = entry_formatter(original, formatted)
@@ -1276,6 +1279,7 @@ class OCaml(metaclass=LanguageCls):
             return base
         prefix = self.constructor_prefix
 
+        @beartype
         def _format(original: Value, formatted: str) -> str:
             """Tag array entries while leaving root arrays unwrapped."""
             if isinstance(original, list):
@@ -1591,6 +1595,7 @@ class OCaml(metaclass=LanguageCls):
         """Compute body-preamble lines from the scalar map."""
         if self.dict_format is type(self.dict_format).RECORD:
 
+            @beartype
             def _native_body_preamble(
                 _types: frozenset[type], data: Value, /
             ) -> tuple[str, ...]:

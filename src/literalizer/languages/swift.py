@@ -1154,6 +1154,7 @@ class Swift(metaclass=LanguageCls):
             """Return the variable declaration formatter."""
             if self in {type(self).NEVER, type(self).SAFE}:
 
+                @beartype
                 def _inferred_formatter(
                     name: str,
                     value: str,
@@ -1212,6 +1213,7 @@ class Swift(metaclass=LanguageCls):
 
                 return _inferred_formatter
 
+            @beartype
             def _typed_formatter(
                 name: str,
                 value: str,
@@ -1719,6 +1721,7 @@ class Swift(metaclass=LanguageCls):
         if lookup is None:
             return formatter
 
+        @beartype
         def _record_formatter(
             name: str,
             value: str,

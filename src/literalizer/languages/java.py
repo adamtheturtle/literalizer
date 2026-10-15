@@ -784,6 +784,7 @@ def _object_nil_declaration(
     ``var``.
     """
 
+    @beartype
     def _format(
         name: str,
         value: str,
@@ -1845,6 +1846,7 @@ class Java(metaclass=LanguageCls):
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
 
+            @beartype
             def typed(
                 name: str,
                 value: str,
@@ -1879,6 +1881,7 @@ class Java(metaclass=LanguageCls):
                     typed_formatter=typed,
                 )
 
+                @beartype
                 def _safe_formatter(
                     name: str,
                     value: str,
@@ -2415,6 +2418,7 @@ class Java(metaclass=LanguageCls):
         )
         lookup = self._record_strategy.record_name_for_value
 
+        @beartype
         def _infer(items: list[Value]) -> CollectionType:
             """Resolve records or the shared scalar/collection element
             type.
@@ -2631,6 +2635,7 @@ class Java(metaclass=LanguageCls):
         if record_name_for_value is None:
             return base
 
+        @beartype
         def _formatter(
             name: str,
             value: str,

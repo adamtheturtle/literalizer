@@ -134,6 +134,7 @@ def _julia_signed_base(
 ) -> Callable[[int], str]:
     """Wrap an unsigned Julia base literal in ``Int``."""
 
+    @beartype
     def _format(value: int) -> str:
         """Format *value* using the selected base."""
         return _format_julia_signed_base(value=value, base=base)
@@ -804,6 +805,7 @@ class Julia(metaclass=LanguageCls):
         injected.
         """
 
+        @beartype
         def _raise_for_julia_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(

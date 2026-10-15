@@ -694,6 +694,7 @@ class Nix(metaclass=LanguageCls):
         ``2**64`` (issue #4503).
         """
 
+        @beartype
         def format_i64(value: int) -> str:
             """Render the signed minimum without C-family suffixes."""
             if value == I64_MIN:

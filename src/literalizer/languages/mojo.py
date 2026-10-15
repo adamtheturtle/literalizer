@@ -805,12 +805,14 @@ def _build_variant_behavior(
 ) -> HeterogeneousBehavior:
     """VARIANT strategy: wrap scalars and skip scalar checks."""
 
+    @beartype
     def _compute(data: Value) -> frozenset[int]:
         """Return container ids whose scalar children should wrap."""
         return collect_heterogeneous_container_ids(
             data=data
         ) | collect_sibling_map_wrap_ids(data=data)
 
+    @beartype
     def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{variant_name}({payload})`` where the
         payload comes from the signature's ``payload_template`` (with
@@ -953,6 +955,7 @@ def _build_variant_preamble(
 ) -> Callable[[Value], tuple[str, ...]]:
     """VARIANT strategy: emit the ``Variant`` declaration preamble."""
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the ``Variant`` import + ``comptime`` declaration for
         *data*.  Unions data-driven scalar alternatives with cross-call
@@ -1750,6 +1753,7 @@ class Mojo(metaclass=LanguageCls):
         """
         datetime_type_produced = self.datetime_format.value.type_produced
 
+        @beartype
         def _format_mojo_ref_identifier(
             name: str, value: Value | None, /
         ) -> str:
@@ -1775,6 +1779,7 @@ class Mojo(metaclass=LanguageCls):
         """
         consume = self._format_consumable_ref_identifier
 
+        @beartype
         def _format(name: str, value: Value | None, /) -> str:
             """Copy containers and preserve scalar reference
             formatting.
@@ -1805,6 +1810,7 @@ class Mojo(metaclass=LanguageCls):
         instead and appends ``^``.
         """
 
+        @beartype
         def _format(name: str, value: Value | None, /) -> str:
             """Explicitly copy owned containers before passing them on."""
             if isinstance(value, (list, dict, set)):
@@ -1845,6 +1851,7 @@ class Mojo(metaclass=LanguageCls):
         """
         datetime_type_produced = self.datetime_format.value.type_produced
 
+        @beartype
         def _inhibits(value: Value, /) -> bool:
             """Closure binding the configured datetime type."""
             return _mojo_value_inhibits_consuming_form(
@@ -1936,6 +1943,7 @@ class Mojo(metaclass=LanguageCls):
             datetime_type=self._datetime_type,
         )
 
+        @beartype
         def _narrowed_empty(siblings: Sequence[Value]) -> str:
             """Resolve the engine's populated same-kind sibling pool."""
             values = list(siblings)
@@ -2019,6 +2027,7 @@ class Mojo(metaclass=LanguageCls):
             self.datetime_format.value.type_produced is str
         )
 
+        @beartype
         def _format(
             name: str,
             value: str,

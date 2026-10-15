@@ -1715,6 +1715,7 @@ class CommonLisp(metaclass=LanguageCls):
         ``DEFPARAMETER`` that cannot be injected.
         """
 
+        @beartype
         def _raise_for_common_lisp_ref(
             name: str, _value: Value | None, /
         ) -> str:

@@ -254,6 +254,7 @@ def _nim_json_declaration_formatter(
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Return a declaration formatter for ``JsonNode`` output."""
 
+    @beartype
     def _formatter(
         name: str,
         value: str,
@@ -313,6 +314,7 @@ def _make_variable_declaration(
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Create a Nim variable declaration formatter."""
 
+    @beartype
     def _format(
         name: str,
         value: str,
@@ -367,6 +369,7 @@ def _make_variable_assignment(
 ) -> Callable[[str, str, Value], str]:
     """Create a Nim variable assignment formatter."""
 
+    @beartype
     def _format(name: str, value: str, _data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_nim_variable_assignment(
@@ -711,6 +714,7 @@ def _nim_wrapped_container_kinds(
     has_list = False
     has_table = False
 
+    @beartype
     def _visit(item: Value) -> None:
         """Find container branches used by wrapped children."""
         nonlocal has_list, has_table
@@ -768,10 +772,12 @@ def _build_object_variant_behavior(
 ) -> HeterogeneousBehavior:
     """OBJECT_VARIANT strategy: wrap scalars and skip scalar checks."""
 
+    @beartype
     def _compute(data: Value) -> frozenset[int]:
         """Return container ids whose children should use ``Value``."""
         return _nim_object_variant_wrap_ids(data=data)
 
+    @beartype
     def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``{variant_name}(kind: ..., ...Val: ...)``."""
         signature = _nim_variant_for_scalar(
@@ -828,6 +834,7 @@ def _build_object_variant_preamble(
     narrower collector.
     """
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the object-variant type declaration for *data*."""
         wrap_ids = compute_wrap_ids(data)
@@ -900,6 +907,7 @@ def _build_default_object_variant_preamble(
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build the broad ``OBJECT_VARIANT`` preamble."""
 
+    @beartype
     def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
         """Collect every heterogeneous container requiring a variant."""
         return _nim_object_variant_wrap_ids(data=data)
@@ -1922,6 +1930,7 @@ class Nim(metaclass=LanguageCls):
         """
         if self._uses_json_node:
 
+            @beartype
             def _json_preamble(_data: Value, /) -> tuple[str, ...]:
                 """Always import std/json for ``JsonNode`` output."""
                 return (import_preamble(code="import json"),)
@@ -1939,6 +1948,7 @@ class Nim(metaclass=LanguageCls):
                 ),
             )
 
+            @beartype
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Emit value-variant and record ``object`` type blocks,
                 preceded by the ``UnusedImport`` opt-out and ``import
@@ -1965,6 +1975,7 @@ class Nim(metaclass=LanguageCls):
             self.sequence_format.value.uses_typed_literal_for_scalars
         )
 
+        @beartype
         def _preamble(data: Value, /) -> tuple[str, ...]:
             """Decide whether ``import json`` is required for *data*."""
             if is_const:
@@ -2183,6 +2194,7 @@ class Nim(metaclass=LanguageCls):
         )
         base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
 
+        @beartype
         def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
             """Keep nested fallback-map payloads in the recursive
             carrier.
@@ -2256,6 +2268,7 @@ class Nim(metaclass=LanguageCls):
         """
         if self._uses_json_node:
 
+            @beartype
             def _json_call_preamble(_data: Value, /) -> tuple[str, ...]:
                 """Always import std/json for ``JsonNode`` call
                 arguments.
@@ -2283,6 +2296,7 @@ class Nim(metaclass=LanguageCls):
                 ),
             )
 
+            @beartype
             def _record_call_preamble(data: Value, /) -> tuple[str, ...]:
                 """Suppress UnusedImport for ``tables`` and emit it plus
                 the generated ``object`` type blocks (identical to the
@@ -2308,6 +2322,7 @@ class Nim(metaclass=LanguageCls):
                 )
             )
 
+            @beartype
             def _preamble(data: Value, /) -> tuple[str, ...]:
                 """Suppress UnusedImport for ``tables`` and emit the
                 object-variant type block.
@@ -2550,6 +2565,7 @@ class Nim(metaclass=LanguageCls):
         )
         is_decimal = self.integer_format is type(self.integer_format).DECIMAL
 
+        @beartype
         def _format(value: int, /) -> str:
             """Keep non-decimal ``int64.low`` within the Nim parser
             range.
@@ -2580,6 +2596,7 @@ class Nim(metaclass=LanguageCls):
         )
         is_decimal = self.integer_format is type(self.integer_format).DECIMAL
 
+        @beartype
         def _format(value: int, /) -> str:
             """Format one integer as an ``int64`` literal."""
             if value == I64_MIN and not is_decimal:

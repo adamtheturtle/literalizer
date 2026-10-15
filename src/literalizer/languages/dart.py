@@ -983,6 +983,7 @@ class Dart(metaclass=LanguageCls):
             if self in {type(self).NEVER, type(self).SAFE}:
                 return auto_formatter
 
+            @beartype
             def _typed_formatter(
                 name: str,
                 value: str,
@@ -1175,6 +1176,7 @@ class Dart(metaclass=LanguageCls):
         """Return call-argument validation for this language."""
         sequence_is_tuple = self.sequence_format.name == "TUPLE"
 
+        @beartype
         def validate(data: Value) -> None:
             """Validate one direct call argument."""
             _validate_dart_mixed_numeric_data(

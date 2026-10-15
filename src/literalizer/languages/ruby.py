@@ -856,6 +856,7 @@ class Ruby(metaclass=LanguageCls):
         injected via the call framework.
         """
 
+        @beartype
         def _raise_for_ruby_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(

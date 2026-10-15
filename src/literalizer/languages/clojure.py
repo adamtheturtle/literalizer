@@ -769,6 +769,7 @@ class Clojure(metaclass=LanguageCls):
         injected.
         """
 
+        @beartype
         def _raise_for_clojure_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(
