@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Cpp"]
-languages_reason = "C++ consuming references must avoid moves of trivial RECORD structs."
+languages = ["Cpp", "C"]
+languages_reason = "Native record references retain their generated struct type at call sites."
 target_function = "consume"
 parameter_names = ["value"]
 per_element = true
