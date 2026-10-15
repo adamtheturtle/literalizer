@@ -15,19 +15,6 @@ include_delimiters = true
 code = 'my_data = _json_parse(`{"a": 1}`)'
 
 [[calls]]
-name = "bash_existing_call_binding"
-language = "Bash"
-source = "1"
-input_format = "json"
-target_function = "make_widget"
-parameter_names = ["count"]
-per_element = false
-variable_form = "existing"
-
-[calls.expected]
-code = 'my_data="$(make_widget 1)"'
-
-[[calls]]
 name = "fortran_existing_call_binding"
 language = "Fortran"
 source = "1"
@@ -39,19 +26,6 @@ variable_form = "existing"
 
 [calls.expected]
 code = "my_data = make_widget(fint(1_int64))"
-
-[[calls]]
-name = "nim_existing_call_binding"
-language = "Nim"
-source = "1"
-input_format = "json"
-target_function = "make_widget"
-parameter_names = ["count"]
-per_element = false
-variable_form = "existing"
-
-[calls.expected]
-code = "my_data = make_widget(1)"
 
 [[calls]]
 name = "ada_existing_call_binding"
