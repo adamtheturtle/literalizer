@@ -51,6 +51,11 @@ from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
+from literalizer._formatters.preamble_roles import (
+    import_preamble,
+    imports_first,
+    join_preamble,
+)
 from literalizer._formatters.record_strategy import (
     ActiveRecordStrategy,
     RecordDeclarationField,
@@ -164,7 +169,7 @@ def _haskell_arg_type_str(
     return "(" + ", ".join(type_name for _ in params) + ")"
 
 
-_HASKELL_IMPORT_PREFIX = "import "
+_HASKELL_IMPORT_PREFIX = import_preamble(code="import ")
 
 
 @beartype
@@ -177,13 +182,7 @@ def _haskell_imports_first(*, lines: Sequence[str]) -> tuple[str, ...]:
     ``import Data.Time`` below the stub (issue #4531).  The relative
     order within each group is kept.
     """
-    imports = tuple(
-        line for line in lines if line.startswith(_HASKELL_IMPORT_PREFIX)
-    )
-    rest = tuple(
-        line for line in lines if not line.startswith(_HASKELL_IMPORT_PREFIX)
-    )
-    return imports + rest
+    return imports_first(entries=lines, deduplicate_imports=False)
 
 
 @beartype
@@ -711,8 +710,8 @@ def _num_instance(
         )
     if needs_catchall:
         negate_parts.append(f'{indent}negate _ = error "not implemented"')
-    return "\n".join(
-        [
+    return join_preamble(
+        entries=[
             f"instance Num {type_name} where",
             from_integer,
             f'{indent}_ + _ = error "not implemented"',
@@ -975,7 +974,11 @@ def _haskell_compute_preamble(
     # Emit imports first, then data declaration, then instances.
     imports: list[str] = []
     if len(import_items) > 0:
-        imports.append("import Data.Time (" + ", ".join(import_items) + ")")
+        imports.append(
+            import_preamble(
+                code="import Data.Time (" + ", ".join(import_items) + ")"
+            )
+        )
     if needs_is_string:
         imports.append(cfg.is_string_import)
 
@@ -1184,7 +1187,9 @@ def _build_preamble_setup(
         compute_body_preamble=_build_scalar_body_preamble(
             date_config=date_config,
             datetime_config=datetime_config,
-            is_string_import="import Data.String (IsString(fromString))",
+            is_string_import=import_preamble(
+                code="import Data.String (IsString(fromString))"
+            ),
             is_string_instance=(
                 f"instance IsString {type_name} where\n"
                 f"{indent}fromString = {constructor_prefix}Str"
@@ -1227,8 +1232,8 @@ _AESON_VALUE_STATIC_PREAMBLE: tuple[str, ...] = (
 )
 
 _AESON_VALUE_BODY_PREAMBLE: tuple[str, ...] = (
-    "import Data.Aeson (Value)",
-    "import Data.Aeson.QQ (aesonQQ)",
+    import_preamble(code="import Data.Aeson (Value)"),
+    import_preamble(code="import Data.Aeson.QQ (aesonQQ)"),
 )
 
 # Closing bracket sequence of the ``aesonQQ`` quasi-quote bracket; if the
@@ -2219,7 +2224,9 @@ class Haskell(metaclass=LanguageCls):
         """Wrap a Haskell variable binding in a module."""
         variable_name = context.variable_name
         body_preamble = context.body_preamble
-        preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
+        preamble = join_preamble(
+            entries=_haskell_imports_first(lines=body_preamble)
+        )
         if variable_name == "":
             # Call mode: bare expressions are not valid at module
             # top level in Haskell, so wrap them in ``main``. Each call
@@ -2231,14 +2238,16 @@ class Haskell(metaclass=LanguageCls):
             # lines: a multiline collection argument spans several, and
             # the rest are continuations that need only the same margin
             # (issue #4527).
-            indented = "\n".join(
-                f"{self.indent}_ <- {statement}".replace(
-                    "\n", f"\n{self.indent}"
-                )
-                for statement in split_statements(
-                    content=content,
-                    quotes='"',
-                    line_comment_prefixes=("--",),
+            indented = join_preamble(
+                entries=tuple(
+                    f"{self.indent}_ <- {statement}".replace(
+                        "\n", f"\n{self.indent}"
+                    )
+                    for statement in split_statements(
+                        content=content,
+                        quotes='"',
+                        line_comment_prefixes=("--",),
+                    )
                 )
             )
             return (
@@ -2274,16 +2283,22 @@ class Haskell(metaclass=LanguageCls):
         where they would need ``let`` injection.
         """
         body_preamble = context.body_preamble
-        preamble = "\n".join(_haskell_imports_first(lines=body_preamble))
-        indented_calls = "\n".join(
-            f"{self.indent}_ <- {statement}".replace("\n", f"\n{self.indent}")
-            for statement in split_statements(
-                content=calls,
-                quotes='"',
-                line_comment_prefixes=("--",),
+        preamble = join_preamble(
+            entries=_haskell_imports_first(lines=body_preamble)
+        )
+        indented_calls = join_preamble(
+            entries=tuple(
+                f"{self.indent}_ <- {statement}".replace(
+                    "\n", f"\n{self.indent}"
+                )
+                for statement in split_statements(
+                    content=calls,
+                    quotes='"',
+                    line_comment_prefixes=("--",),
+                )
             )
         )
-        declaration_block = "\n".join(declarations)
+        declaration_block = join_preamble(entries=declarations)
         effective_declaration_block = ""
         if declaration_block != "":
             effective_declaration_block = declaration_block + "\n"
@@ -2886,7 +2901,7 @@ class Haskell(metaclass=LanguageCls):
                     dt.datetime in types
                     and self.datetime_format.value.type_produced is dt.datetime
                 ):
-                    imports = ("import Data.Time",)
+                    imports = (import_preamble(code="import Data.Time"),)
                 return imports + self._native_record_strategy.preamble(data)
 
             return _native_body_preamble

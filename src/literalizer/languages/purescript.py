@@ -46,6 +46,12 @@ from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import (
     format_string_backslash_control,
 )
+from literalizer._formatters.preamble_roles import (
+    import_preamble,
+    imports_first,
+    join_preamble,
+    preamble_imports,
+)
 from literalizer._formatters.type_inference import (
     RecordShape,
     collect_record_shapes,
@@ -590,12 +596,12 @@ def _build_purescript_body_preamble(
         lines: list[str]
         lines = []
         if needs_prelude:
-            lines = ["import Prelude"]
+            lines = [import_preamble(code="import Prelude")]
         if needs_tuple:
             lines.append("data Tuple a b = Tuple a b")
         first_line = f"data {type_name}\n    = {constructors[0]}"
         rest_lines = [f"    | {c}" for c in constructors[1:]]
-        lines.append("\n".join([first_line, *rest_lines]))
+        lines.append(join_preamble(entries=[first_line, *rest_lines]))
         return tuple(lines)
 
     return _compute
@@ -825,7 +831,7 @@ def _purescript_native_body_preamble(
     _types: frozenset[type], _data: Value, /
 ) -> tuple[str, ...]:
     """Import Prelude for native numeric expressions."""
-    return ("import Prelude",)
+    return (import_preamble(code="import Prelude"),)
 
 
 @beartype
@@ -838,12 +844,16 @@ def _indent_purescript_let_calls(calls: str, indent: str) -> str:
     continuations that need only the same margin (issue #4527).
     """
     binding_indent = indent * 2
-    return "\n".join(
-        f"{binding_indent}_ = {statement}".replace("\n", f"\n{binding_indent}")
-        for statement in split_statements(
-            content=calls,
-            quotes='"',
-            line_comment_prefixes=("--",),
+    return join_preamble(
+        entries=tuple(
+            f"{binding_indent}_ = {statement}".replace(
+                "\n", f"\n{binding_indent}"
+            )
+            for statement in split_statements(
+                content=calls,
+                quotes='"',
+                line_comment_prefixes=("--",),
+            )
         )
     )
 
@@ -860,18 +870,9 @@ def _hoist_purescript_imports(preamble: str) -> str:
     helper restores a single block of imports at the top while
     preserving the relative order of non-import lines.
     """
-    lines = preamble.split(sep="\n")
-    # ``dict.fromkeys`` drops repeats while preserving first-seen order;
-    # using ``list(dict.fromkeys(...))`` keeps the helper branch-free so
-    # coverage does not depend on a fixture that happens to assemble two
-    # of the same import line.
-    imports = list(
-        dict.fromkeys(line for line in lines if line.startswith("import ")),
+    return join_preamble(
+        entries=imports_first(entries=(preamble,), deduplicate_imports=True)
     )
-    if len(imports) == 0:
-        return preamble
-    other = [line for line in lines if not line.startswith("import ")]
-    return "\n".join([*imports, *other])
 
 
 @beartype
@@ -889,9 +890,15 @@ def _build_purescript_call_output(
     block.  *decl_part* is an optional newline-prefixed block of
     module-scope declarations to insert before ``main``.
     """
-    if "import Prelude" not in preamble:
-        preamble = "\n".join(
-            part for part in ("import Prelude", preamble) if part != ""
+    if import_preamble(code="import Prelude") not in preamble_imports(
+        (preamble,)
+    ):
+        preamble = join_preamble(
+            entries=tuple(
+                part
+                for part in (import_preamble(code="import Prelude"), preamble)
+                if part != ""
+            )
         )
     preamble = _hoist_purescript_imports(preamble=preamble)
     return (
@@ -935,9 +942,9 @@ _BYTES_FORMATTERS: dict[
 # needs Argonaut's ``Json`` type, the parser entry point, and
 # ``Data.Either.fromRight`` for the (statically unreachable) failure arm.
 _ARGONAUT_JSON_BODY_PREAMBLE: tuple[str, ...] = (
-    "import Data.Argonaut.Core (Json, jsonNull)",
-    "import Data.Argonaut.Parser (jsonParser)",
-    "import Data.Either (fromRight)",
+    import_preamble(code="import Data.Argonaut.Core (Json, jsonNull)"),
+    import_preamble(code="import Data.Argonaut.Parser (jsonParser)"),
+    import_preamble(code="import Data.Either (fromRight)"),
 )
 
 
@@ -1606,8 +1613,8 @@ class PureScript(metaclass=LanguageCls):
         bare expressions are not required at the top level.
         """
         body_preamble = context.body_preamble
-        preamble = "\n".join(body_preamble)
-        declaration_block = "\n".join(declarations)
+        preamble = join_preamble(entries=body_preamble)
+        declaration_block = join_preamble(entries=declarations)
         decl_part = ""
         if declaration_block != "":
             decl_part = "\n" + declaration_block
@@ -1631,7 +1638,7 @@ class PureScript(metaclass=LanguageCls):
         """Wrap a PureScript value declaration in a module."""
         variable_name = context.variable_name
         body_preamble = context.body_preamble
-        preamble = "\n".join(body_preamble)
+        preamble = join_preamble(entries=body_preamble)
         if variable_name == "":
             return _build_purescript_call_output(
                 preamble=preamble,
@@ -2097,7 +2104,7 @@ class PureScript(metaclass=LanguageCls):
         The literal binding for the same data needs no such import, so
         this is emitted only on the call-binding path.
         """
-        return ("import Prelude",)
+        return (import_preamble(code="import Prelude"),)
 
     @cached_property
     def compute_body_preamble(

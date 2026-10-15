@@ -4524,6 +4524,13 @@ def _literalize(
 
 
 @runtime_checkable
+class _CallPreambleRepresentationLanguage(Protocol):
+    """A producer whose call preamble uses a separate representation."""
+
+    call_preamble_uses_literal_representation: bool
+
+
+@runtime_checkable
 class _ReferenceBindingLanguage(Protocol):
     """A language with binding syntax for an already rendered
     reference.
@@ -9088,9 +9095,11 @@ def literalize_call_with_declarations(
     #   also keeps a *multi-line* declaration-only block, which the
     #   previous "drop any entry containing a newline" heuristic
     #   silently lost.
-    call_form_matches_declaration_form = language.data_dependent_preamble(
-        combined_source_data
-    ) == language.call_data_dependent_preamble(combined_source_data)
+    call_form_matches_declaration_form = True
+    if isinstance(language, _CallPreambleRepresentationLanguage):
+        call_form_matches_declaration_form = (
+            language.call_preamble_uses_literal_representation
+        )
     dropped_declaration_blocks: set[str] = set()
     call_preamble = call.preamble
     unified_data_dependent_preamble: tuple[str, ...] = ()

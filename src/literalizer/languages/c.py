@@ -8,7 +8,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import TYPE_CHECKING, ClassVar, TypeGuard
+from typing import TYPE_CHECKING, ClassVar, Self, TypeGuard
 
 from beartype import beartype
 
@@ -50,6 +50,11 @@ from literalizer._formatters.format_json_value import (
 )
 from literalizer._formatters.format_strings import (
     format_string_c,
+)
+from literalizer._formatters.preamble_roles import (
+    import_preamble,
+    join_preamble,
+    preamble_imports,
 )
 from literalizer._formatters.record_strategy import (
     ActiveRecordStrategy,
@@ -501,6 +506,45 @@ def _check_c_record_field(
         )
 
 
+class _CPointerType(str):
+    """A pointer type selected by a C type producer."""
+
+    __slots__ = ()
+
+
+@beartype
+def _c_pointer_type(*, base: str) -> str:
+    """Select a pointer while retaining its identifier placement rule."""
+    return _CPointerType(object=f"{base} *")
+
+
+class _CArrayType(str):
+    """An array declaration type with an explicit base and dimension."""
+
+    __slots__ = ("_base", "_dimension")
+
+    _base: str
+    _dimension: int | None
+
+    @classmethod
+    def create(cls, code: str, /, *, base: str, dimension: int | None) -> Self:
+        """Retain identifier placement before spelling the declaration."""
+        result = cls(object=code)
+        result._base = base
+        result._dimension = dimension
+        return result
+
+    @property
+    def base(self) -> str:
+        """The array's element type, without its dimensions."""
+        return self._base
+
+    @property
+    def dimension(self) -> int | None:
+        """The fixed field length, or no length for a root array."""
+        return self._dimension
+
+
 @beartype
 def _c_render_record_declaration(
     name: str,
@@ -517,10 +561,11 @@ def _c_render_record_declaration(
     members: list[str] = []
     for field in fields:
         type_name = field.type_name
-        if type_name.endswith("]"):
-            base, _, dimension = type_name.partition(" [")
-            members.append(f"{base} {field.identifier}[{dimension};")
-        elif type_name.endswith("*"):
+        if isinstance(type_name, _CArrayType):
+            members.append(
+                f"{type_name.base} {field.identifier}[{type_name.dimension}];"
+            )
+        elif isinstance(type_name, _CPointerType):
             members.append(f"{type_name}{field.identifier};")
         else:
             members.append(f"{type_name} {field.identifier};")
@@ -561,7 +606,7 @@ def _c_stub_param(value_type: str, ident: str, /) -> str:
     identifier; a pointer type already ends in ``*`` and abuts the
     identifier directly.
     """
-    if value_type.endswith("*"):
+    if isinstance(value_type, _CPointerType):
         return f"{value_type}{ident}"
     return f"{value_type} {ident}"
 
@@ -736,7 +781,9 @@ def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
 # Static preamble emitted under ``json_type=CJSON``: the cJSON header
 # replaces the default ``CVal`` / ``CKV`` type declarations, since every
 # value is built from cJSON's own ``cJSON *`` node type.
-_CJSON_STATIC_PREAMBLE: tuple[str, ...] = ("#include <cjson/cJSON.h>",)
+_CJSON_STATIC_PREAMBLE: tuple[str, ...] = (
+    import_preamble(code="#include <cjson/cJSON.h>"),
+)
 
 _CJSON_RECORD_REJECTED_MSG = (
     "C json_type renders data as a cJSON_Create*(...) node tree and is "
@@ -921,7 +968,7 @@ def _c_temporal_field_type(
     *, value: str | bytes | dt.date | dt.time, epoch: bool
 ) -> str:
     """Choose the C field type for string and temporal values."""
-    field_type = "const char *"
+    field_type: str = _c_pointer_type(base="const char")
     if epoch and isinstance(value, dt.datetime):
         field_type = "long long"
     return field_type
@@ -1539,7 +1586,9 @@ class C(metaclass=LanguageCls):
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
     static_body_preamble: ClassVar[Sequence[str]] = ()
-    special_float_preamble: ClassVar[tuple[str, ...]] = ("#include <math.h>",)
+    special_float_preamble: ClassVar[tuple[str, ...]] = (
+        import_preamble(code="#include <math.h>"),
+    )
     call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
@@ -1591,8 +1640,13 @@ class C(metaclass=LanguageCls):
             value,
             list,
         ):
-            return f"struct {request.element_record_name} [{len(value)}]"
+            return _CArrayType.create(
+                f"struct {request.element_record_name} [{len(value)}]",
+                base=f"struct {request.element_record_name}",
+                dimension=len(value),
+            )
         epoch = self.datetime_format.value.type_produced is int
+        field_type: str
         match value:
             case bool():
                 field_type = "bool"
@@ -1601,11 +1655,11 @@ class C(metaclass=LanguageCls):
             case float():
                 field_type = "double"
             case None:
-                field_type = "const void *"
+                return _c_pointer_type(base="const void")
             case str() | bytes() | dt.date() | dt.time():
-                field_type = _c_temporal_field_type(value=value, epoch=epoch)
+                return _c_temporal_field_type(value=value, epoch=epoch)
             case list():
-                field_type = "const CVal *"
+                return _c_pointer_type(base="const CVal")
             case _:
                 field_type = "CVal"
         return field_type
@@ -1685,7 +1739,7 @@ class C(metaclass=LanguageCls):
         if self._json_type_active:
             return partial(
                 _c_call_stub,
-                value_type="cJSON *",
+                value_type=_c_pointer_type(base="cJSON"),
                 value_zero="NULL",
             )
         return partial(
@@ -2042,7 +2096,7 @@ class C(metaclass=LanguageCls):
         if record_name is not None:
             return f"struct {record_name}"
         if isinstance(data, list) and _all_record_shaped(data):
-            return f"{root}[]"
+            return _CArrayType.create(f"{root}[]", base=root, dimension=None)
         return None
 
     @staticmethod
@@ -2057,9 +2111,7 @@ class C(metaclass=LanguageCls):
         entries: Sequence[str], /
     ) -> tuple[str, ...]:
         """Keep headers required by the rendered bound values."""
-        return tuple(
-            entry for entry in entries if entry.startswith("#include ")
-        )
+        return preamble_imports(entries)
 
     def format_reference_variable_declaration(
         self,
@@ -2071,8 +2123,8 @@ class C(metaclass=LanguageCls):
     ) -> str:
         """Copy a reference using its resolved representation's type."""
         lhs = self._record_binding_lhs(data)
-        if lhs is not None and lhs.endswith("[]"):
-            lhs = f"const {lhs[:-2]} *"
+        if isinstance(lhs, _CArrayType):
+            return f"const {lhs.base} * {name} = {value};"
         if lhs is None:
             lhs = "cJSON *" if self._json_type_active else "CVal"
         return f"{lhs} {name} = {value};"
@@ -2119,8 +2171,8 @@ class C(metaclass=LanguageCls):
                     format_integer=format_integer,
                     format_float=format_float,
                 )
-                return "\n".join(
-                    (*build.lines, f"cJSON *{name} = {build.root};"),
+                return join_preamble(
+                    entries=(*build.lines, f"cJSON *{name} = {build.root};")
                 )
 
             return _format_cjson_decl
@@ -2135,8 +2187,8 @@ class C(metaclass=LanguageCls):
         ) -> str:
             """Format a C variable declaration."""
             lhs = self._record_binding_lhs(data)
-            if lhs is not None and lhs.endswith("[]"):
-                return f"{lhs[:-2]} {name}[] = {value};"
+            if isinstance(lhs, _CArrayType):
+                return f"{lhs.base} {name}[] = {value};"
             if lhs is not None:
                 return f"{lhs} {name} = {value};"
             wrapped = format_entry(data, value)
@@ -2178,7 +2230,9 @@ class C(metaclass=LanguageCls):
                     format_integer=format_integer,
                     format_float=format_float,
                 )
-                return "\n".join((*build.lines, f"{name} = {build.root};"))
+                return join_preamble(
+                    entries=(*build.lines, f"{name} = {build.root};")
+                )
 
             return _format_cjson_assign
         format_entry = self._format_entry
@@ -2187,7 +2241,7 @@ class C(metaclass=LanguageCls):
         def _format_assign(name: str, value: str, data: Value) -> str:
             """Format a C variable assignment."""
             lhs = self._record_binding_lhs(data)
-            if lhs is not None and not lhs.endswith("[]"):
+            if lhs is not None and not isinstance(lhs, _CArrayType):
                 return f"{name} = {value};"
             wrapped = format_entry(data, value)
             return f"{name} = {wrapped};"
@@ -2232,8 +2286,8 @@ class C(metaclass=LanguageCls):
         if self._json_type_active:
             return _CJSON_STATIC_PREAMBLE
         return (
-            "#include <stdbool.h>",
-            "#include <stddef.h>",
+            import_preamble(code="#include <stdbool.h>"),
+            import_preamble(code="#include <stddef.h>"),
             "typedef struct CVal CVal;",
             "typedef struct CKV CKV;",
             "struct CVal {",
