@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Cpp"]
+languages_reason = "C++ consumes externally declared owning references with std::move, while a known nullptr reference stays bare."
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+ref_declarations = {item = "[1, 2]"}
+consumable_refs = ["item"]
+unknown_ref_names = ["item"]
+explicit_ref_value_sources = {}
