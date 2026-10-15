@@ -24,6 +24,7 @@ from literalizer._formatters.collection_openers import (
     typed_dict_open,
 )
 from literalizer._formatters.format_dates import (
+    datetime_epoch_seconds,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -129,7 +130,7 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     InvalidRecordNameError,
     UnrepresentableInputError,
@@ -1472,6 +1473,32 @@ class Go(metaclass=LanguageCls):
             beyond_i64_type="uint64",
         )
 
+    def _epoch_normalized(self, value: Value, /) -> Value:
+        """Infer collection types from the integer literals EPOCH
+        emits.
+        """
+        match value:
+            case dt.datetime() if (
+                self.datetime_format.value.type_produced is int
+            ):
+                return datetime_epoch_seconds(value=value)
+            case list():
+                return [self._epoch_normalized(item) for item in value]
+            case OrderedMap():
+                return OrderedMap(
+                    {
+                        key: self._epoch_normalized(item)
+                        for key, item in value.items()
+                    }
+                )
+            case dict():
+                return {
+                    key: self._epoch_normalized(item)
+                    for key, item in value.items()
+                }
+            case _:
+                return value
+
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
@@ -1511,6 +1538,22 @@ class Go(metaclass=LanguageCls):
             ),
             fallback=f"[]{self.default_sequence_element_type}{{",
         )
+        unnormalized_base = base
+
+        def _epoch_open(items: list[Value], /) -> str:
+            """Open the slice with the types its formatted values have."""
+            return unnormalized_base(
+                [self._epoch_normalized(item) for item in items]
+            )
+
+        def _epoch_signature(items: list[Value], /) -> CollectionSignature:
+            """Retain rendered-value inference for sibling widening."""
+            return collection_signature(
+                unnormalized_base,
+                [self._epoch_normalized(item) for item in items],
+            )
+
+        base = signature_open(render=_epoch_open, infer=_epoch_signature)
         record_name_for_value = self._record_strategy.record_name_for_value
         if record_name_for_value is None:
             return base
@@ -1563,14 +1606,33 @@ class Go(metaclass=LanguageCls):
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
-            dict_open=typed_dict_open(
-                type_to_opener=make_type_to_opener(
-                    element_to_type=self._init_element_to_type,
-                    opener_template=f"map[{self.default_dict_key_type}]{{type_name}}{{{{",
-                ),
-                fallback=f"map[{self.default_dict_key_type}]{self.default_dict_value_type}{{",
+        base = typed_dict_open(
+            type_to_opener=make_type_to_opener(
+                element_to_type=self._init_element_to_type,
+                opener_template=f"map[{self.default_dict_key_type}]{{type_name}}{{{{",
             ),
+            fallback=f"map[{self.default_dict_key_type}]{self.default_dict_value_type}{{",
+        )
+
+        def _normalized(items: dict[Scalar, Value], /) -> dict[Scalar, Value]:
+            """Keep keys while inferring the types of rendered map
+            values.
+            """
+            return {
+                key: self._epoch_normalized(item)
+                for key, item in items.items()
+            }
+
+        def _open(items: dict[Scalar, Value], /) -> str:
+            """Open the map with the types its formatted values have."""
+            return base(_normalized(items))
+
+        def _signature(items: dict[Scalar, Value], /) -> CollectionSignature:
+            """Retain rendered-value inference for sibling widening."""
+            return collection_signature(base, _normalized(items))
+
+        return DictFormatConfig(
+            dict_open=signature_open(render=_open, infer=_signature),
             close="}",
             format_entry=dict_entry_with_separator(
                 separator=": ",

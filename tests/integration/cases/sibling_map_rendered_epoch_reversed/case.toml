@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Go"]
+languages_reason = "Go nested maps must share their rendered epoch integer value type in either sibling order."
+
+[[variants]]
+axis = "datetime"
