@@ -34,6 +34,9 @@ env:
 jobs:
   pre-commit:
     strategy:
+      # Keep independent validation running when a link-check service fails.
+      # The completion job still requires every matrix cell to pass.
+      fail-fast: false
       matrix:
         python-version: ['3.12', '3.13', '3.14']
         # We select hooks by prek group (defined via ``groups:`` in

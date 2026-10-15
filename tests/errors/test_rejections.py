@@ -46,17 +46,31 @@ _BOUND_VALUE = TypeAdapter[literalizer.ValueInput](
 
 
 @beartype
+def _yaml_reference_values(
+    *, sources: tuple[tuple[str, str], ...], value: str | None
+) -> dict[str, literalizer.ValueInput] | None:
+    """Resolve manifest-owned native YAML bindings or inference hints."""
+    values: dict[str, literalizer.ValueInput] = {}
+    for name, source in sources:
+        parser = as_yaml_parser(parser=YAML(typ="safe"))
+        values[name] = _BOUND_VALUE.validate_python(
+            parser.load(stream=substituted(template=source, value=value)),
+            strict=True,
+        )
+    return values if len(values) > 0 else None
+
+
+@beartype
 def _bound_refs(
     *, call: CallSpec, value: str | None
 ) -> dict[str, literalizer.ValueInput] | None:
     """Resolve scalar bindings and manifest-owned native YAML values."""
     bindings: dict[str, literalizer.ValueInput] = dict(call.bound_refs)
-    for name, source in call.bound_ref_yaml:
-        parser = as_yaml_parser(parser=YAML(typ="safe"))
-        bindings[name] = _BOUND_VALUE.validate_python(
-            parser.load(stream=substituted(template=source, value=value)),
-            strict=True,
-        )
+    yaml_bindings = _yaml_reference_values(
+        sources=call.bound_ref_yaml, value=value
+    )
+    if yaml_bindings is not None:
+        bindings.update(yaml_bindings)
     return bindings if len(bindings) > 0 else None
 
 
@@ -157,6 +171,9 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
             ref_key=call.ref_key,
             ref_case=ref_case,
             bound_refs=_bound_refs(call=call, value=case.value),
+            ref_values=_yaml_reference_values(
+                sources=call.ref_value_yaml, value=case.value
+            ),
         )
         return
     assert case.source is not None
@@ -193,6 +210,9 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         ref_key=call.ref_key,
         ref_case=ref_case,
         bound_refs=_bound_refs(call=call, value=case.value),
+        ref_values=_yaml_reference_values(
+            sources=call.ref_value_yaml, value=case.value
+        ),
         comment_source=comment_source,
         variable_form=(effective_variable_form),
         call_transform=_call_transform(template=call.call_transform),

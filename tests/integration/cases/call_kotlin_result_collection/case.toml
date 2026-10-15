@@ -7,8 +7,8 @@ parameter_names = ["items"]
 per_element = false
 wrap_in_file = true
 variable_form = "new"
-languages = ["Kotlin"]
-languages_reason = "Kotlin must infer a call result independently of its collection argument."
+languages = ["Kotlin", "Nim"]
+languages_reason = "Call results are inferred independently of ragged collection arguments; unsupported fixed arrays are rejected."
 
 [[call.variants]]
 axis = "type_hints"

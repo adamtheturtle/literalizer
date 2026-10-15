@@ -688,6 +688,7 @@ class Swift(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1154,6 +1155,7 @@ class Swift(metaclass=LanguageCls):
             """Return the variable declaration formatter."""
             if self in {type(self).NEVER, type(self).SAFE}:
 
+                @beartype
                 def _inferred_formatter(
                     name: str,
                     value: str,
@@ -1212,6 +1214,7 @@ class Swift(metaclass=LanguageCls):
 
                 return _inferred_formatter
 
+            @beartype
             def _typed_formatter(
                 name: str,
                 value: str,
@@ -1403,11 +1406,13 @@ class Swift(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return self.string_format
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
@@ -1417,11 +1422,13 @@ class Swift(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    @beartype
     def _swift_date_hint(self) -> str:
         """Swift type name for the chosen :class:`datetime.date`
         format.
@@ -1431,6 +1438,7 @@ class Swift(metaclass=LanguageCls):
         return "Date"
 
     @cached_property
+    @beartype
     def _swift_datetime_hint(self) -> str:
         """Swift type name for the chosen :class:`datetime.datetime`
         format.
@@ -1486,6 +1494,7 @@ class Swift(metaclass=LanguageCls):
         ).code
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """Swift syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
@@ -1504,6 +1513,7 @@ class Swift(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> RecordStrategy:
         """Resolve the active strategy to its behavior + preamble."""
         cls = type(self.heterogeneous_strategy)
@@ -1520,6 +1530,7 @@ class Swift(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -1530,6 +1541,7 @@ class Swift(metaclass=LanguageCls):
         return self._record_strategy.preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
         return self._record_strategy.behavior
@@ -1541,6 +1553,7 @@ class Swift(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1569,6 +1582,7 @@ class Swift(metaclass=LanguageCls):
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         return self.sequence_format(
@@ -1576,16 +1590,19 @@ class Swift(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         return self.set_format(default_type=self.default_set_element_type)
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format_config.sequence_open
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return self.dict_format(
@@ -1594,36 +1611,43 @@ class Swift(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         return make_overflow_fallback_formatter(
@@ -1636,16 +1660,19 @@ class Swift(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
         return self.sequence_format_config.format_entry
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
@@ -1655,6 +1682,7 @@ class Swift(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return dict_entry_with_separator(
@@ -1663,6 +1691,7 @@ class Swift(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1719,6 +1748,7 @@ class Swift(metaclass=LanguageCls):
         if lookup is None:
             return formatter
 
+        @beartype
         def _record_formatter(
             name: str,
             value: str,
@@ -1759,6 +1789,7 @@ class Swift(metaclass=LanguageCls):
         return _record_formatter
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
         return date_scalar_preamble(
@@ -1768,6 +1799,7 @@ class Swift(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -1778,6 +1810,7 @@ class Swift(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value

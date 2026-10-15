@@ -134,6 +134,7 @@ def _build_purescript_date_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_date_iso(value=value, prefix=prefix)
@@ -155,6 +156,7 @@ def _build_purescript_time_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_time_iso(value=value, prefix=prefix)
@@ -176,6 +178,7 @@ def _build_purescript_datetime_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_datetime_iso(value=value, prefix=prefix)
@@ -212,6 +215,7 @@ def _build_purescript_bytes_hex(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_bytes_hex(value=value, prefix=prefix)
@@ -233,6 +237,7 @@ def _build_purescript_bytes_base64(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_bytes_base64(value=value, prefix=prefix)
@@ -335,6 +340,7 @@ def _build_purescript_integer_formatter(
     *value* overflows PureScript's 32-bit ``Int``.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_integer_formatter(
@@ -364,6 +370,7 @@ def _build_purescript_float_wrapper(
     constructors.
     """
 
+    @beartype
     def _format(value: float) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_float_wrapper(
@@ -418,6 +425,7 @@ def _build_purescript_str_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_string(value=value, prefix=prefix)
@@ -549,6 +557,7 @@ def _build_purescript_body_preamble(
     needed, plus any necessary imports.
     """
 
+    @beartype
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
         p = constructor_prefix
@@ -1568,6 +1577,7 @@ class PureScript(metaclass=LanguageCls):
                 return
 
     @cached_property
+    @beartype
     def supports_collection_comments(self) -> bool:
         """Whether a comment can sit inside the rendered value.
 
@@ -1579,6 +1589,7 @@ class PureScript(metaclass=LanguageCls):
         return not self._json_type_active
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether PureScript should render via
         ``Data.Argonaut.Core.Json``.
@@ -1586,6 +1597,7 @@ class PureScript(metaclass=LanguageCls):
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language.
 
@@ -1708,16 +1720,19 @@ class PureScript(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
@@ -1739,6 +1754,7 @@ class PureScript(metaclass=LanguageCls):
         return not self._json_type_active
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         if self._json_type_active:
@@ -1746,11 +1762,13 @@ class PureScript(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
@@ -1778,6 +1796,7 @@ class PureScript(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1799,6 +1818,7 @@ class PureScript(metaclass=LanguageCls):
         return _build_purescript_call_stub(type_name=stub_type_name)
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each formatted call argument in parentheses.
 
@@ -1830,11 +1850,13 @@ class PureScript(metaclass=LanguageCls):
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Null literal using the configured constructor prefix."""
         return f"{self.constructor_prefix}Null"
 
     @cached_property
+    @beartype
     def true_literal(self) -> str:
         """True literal using the configured constructor prefix."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1842,6 +1864,7 @@ class PureScript(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool true"
 
     @cached_property
+    @beartype
     def false_literal(self) -> str:
         """False literal using the configured constructor prefix."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1849,6 +1872,7 @@ class PureScript(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool false"
 
     @cached_property
+    @beartype
     def _seq_open(self) -> Callable[[list[Value]], str]:
         """Sequence opener built from the configured constructor
         prefix.
@@ -1860,6 +1884,7 @@ class PureScript(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
@@ -1873,6 +1898,7 @@ class PureScript(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         if self._json_type_active:
@@ -1880,6 +1906,7 @@ class PureScript(metaclass=LanguageCls):
         return self._seq_open
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         if self._json_type_active:
@@ -1892,11 +1919,13 @@ class PureScript(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter using the configured prefix."""
         return _purescript_dict_entry
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         if self._json_type_active:
@@ -1929,11 +1958,13 @@ class PureScript(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1948,6 +1979,7 @@ class PureScript(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1957,6 +1989,7 @@ class PureScript(metaclass=LanguageCls):
         return _build_purescript_date_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         base_formatter: Callable[[dt.datetime], str] = self.datetime_format
@@ -1975,6 +2008,7 @@ class PureScript(metaclass=LanguageCls):
         return _build_purescript_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1982,11 +2016,13 @@ class PureScript(metaclass=LanguageCls):
         return _build_purescript_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_dict_key(self) -> Callable[[str], str]:
         """Render a string key without a value constructor."""
         return _purescript_native_string
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1998,6 +2034,7 @@ class PureScript(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -2017,6 +2054,7 @@ class PureScript(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -2048,11 +2086,13 @@ class PureScript(metaclass=LanguageCls):
         return _format_float_with_specials
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         if self._json_type_active:
@@ -2066,11 +2106,13 @@ class PureScript(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return self._dict_entry
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2096,6 +2138,7 @@ class PureScript(metaclass=LanguageCls):
         return _purescript_declaration
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2123,6 +2166,7 @@ class PureScript(metaclass=LanguageCls):
         return (import_preamble(code="import Prelude"),)
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:

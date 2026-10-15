@@ -298,6 +298,7 @@ def _make_v_i64_formatter(
     octal, binary, etc.) rather than forcing decimal.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Format *value* as ``i64(<base(value)>)``."""
         return f"i64({base(value)})"
@@ -329,6 +330,7 @@ def _v_collect_ids_needing_wrap(
     ) | collect_sibling_map_wrap_ids(data=data)
     wrap_ids: set[int] = set(base_ids)
 
+    @beartype
     def _visit(item: Value) -> None:
         """Recursively mark *item* and its containers if wrapping
         needed.
@@ -366,18 +368,21 @@ def _v_collect_ids_needing_wrap(
 def _build_v_interface_behavior() -> HeterogeneousBehavior:
     """INTERFACE strategy: wrap scalars in ``IVal(...)``."""
 
+    @beartype
     def _compute(data: Value) -> frozenset[int]:
         """Return container ids whose scalar children should be
         wrapped.
         """
         return _v_collect_ids_needing_wrap(data=data)
 
+    @beartype
     def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar as ``IVal(formatted)`` or the null sentinel."""
         if raw_value is None:
             return _V_NULL_WRAPPED
         return f"{_V_IFACE_NAME}({formatted})"
 
+    @beartype
     def _wrap_non_scalar(_raw_value: Value, formatted: str) -> str:
         """Wrap a ref marker or container's formatted form as
         ``IVal(formatted)``.
@@ -415,6 +420,7 @@ def _build_v_interface_preamble(
     shared nested-map fallback.
     """
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Emit ``interface IVal {}`` when any container needs
         wrapping.
@@ -433,6 +439,7 @@ def _build_v_empty_container_preamble() -> Callable[[Value], tuple[str, ...]]:
     will render as ``[]IVal{}`` / ``map[string]IVal{}``.
     """
 
+    @beartype
     def _has_empty_container(item: Value) -> bool:
         """Return True if *item* or any descendant is an empty list,
         dict, or set.
@@ -449,6 +456,7 @@ def _build_v_empty_container_preamble() -> Callable[[Value], tuple[str, ...]]:
             case _:
                 return False
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Emit ``interface IVal {}`` when an empty collection literal
         will reference it.
@@ -510,6 +518,7 @@ def _v_call_preamble_stub(
             f"fn {parts[0]}(args ...ICallArg_) ICallArg_ {{ return 0 }}",
         )
 
+    @beartype
     def _cap_type(name: str, /) -> str:
         """Return *name* with an upper-case first letter and ``Type_``
         suffix.
@@ -765,6 +774,7 @@ def _build_v_record_preamble(
     """
     empty_container_preamble = _build_v_empty_container_preamble()
 
+    @beartype
     def _record_pre(data: Value, /) -> tuple[str, ...]:
         """Return the ``interface IVal {}`` line (when needed) plus the
         ``struct`` declarations.
@@ -1378,16 +1388,19 @@ class V(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ("import math",)
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Return the active call-style configuration."""
         return self.call_style.value
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return _format_string
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Return the ordinary sequence-entry formatter."""
         return passthrough_sequence_entry
@@ -1412,6 +1425,7 @@ class V(metaclass=LanguageCls):
         return self.format_sequence_entry(original, formatted)
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_sequence_entry
@@ -1421,6 +1435,7 @@ class V(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
@@ -1551,6 +1566,7 @@ class V(metaclass=LanguageCls):
         return "\n".join(lines)
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """V syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
@@ -1566,6 +1582,7 @@ class V(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
@@ -1585,6 +1602,7 @@ class V(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines for the chosen strategy.
 
@@ -1612,6 +1630,7 @@ class V(metaclass=LanguageCls):
                 return _build_v_empty_container_preamble()
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config for the chosen
         strategy.
@@ -1636,6 +1655,7 @@ class V(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1646,6 +1666,7 @@ class V(metaclass=LanguageCls):
         return _v_call_stub
 
     @cached_property
+    @beartype
     def format_call_preamble_stub(
         self,
     ) -> Callable[
@@ -1658,6 +1679,7 @@ class V(metaclass=LanguageCls):
     format_call_target = default_format_call_target
 
     @cached_property
+    @beartype
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -1676,6 +1698,7 @@ class V(metaclass=LanguageCls):
         original use case (map/array refs).
         """
 
+        @beartype
         def _clone(name: str, value: Value | None, /) -> str:
             """Return *name* with ``.clone()`` appended unless *value*
             is a scalar or native record that V auto-copies.
@@ -1692,6 +1715,7 @@ class V(metaclass=LanguageCls):
         return _clone
 
     @cached_property
+    @beartype
     def format_known_null_ref_identifier(self) -> Callable[[str], str]:
         """Copy a known null pointer without invoking collection
         methods.
@@ -1699,6 +1723,7 @@ class V(metaclass=LanguageCls):
         return lambda name: name
 
     @cached_property
+    @beartype
     def format_call_arg_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -1720,21 +1745,25 @@ class V(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         return self.sequence_format.value
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         return self.set_format.value
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format.value.sequence_open
 
     @cached_property
+    @beartype
     def _narrowed_empty_dict_form(
         self,
     ) -> Callable[[Sequence[dict[Scalar, Value]]], str]:
@@ -1742,6 +1771,7 @@ class V(metaclass=LanguageCls):
         containers.
         """
 
+        @beartype
         def _narrow(siblings: Sequence[dict[Scalar, Value]], /) -> str:
             """Pool map entries before resolving their rendered types."""
             values = [
@@ -1757,6 +1787,7 @@ class V(metaclass=LanguageCls):
         return _narrow
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
@@ -1774,21 +1805,25 @@ class V(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
@@ -1808,16 +1843,19 @@ class V(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal.
 
@@ -1846,6 +1884,7 @@ class V(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_integer_widened(self) -> Callable[[int], str]:
         """Always-``i64(...)``-cast integer formatter for widened
         collections (mixed-magnitude int sets/lists).
@@ -1864,6 +1903,7 @@ class V(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_integer_beyond_i64(self) -> Callable[[int], str]:
         """Always-``u64(...)``-cast formatter for collections that
         exceed signed 64-bit range.
@@ -1874,11 +1914,13 @@ class V(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
@@ -1888,6 +1930,7 @@ class V(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return dict_entry_with_separator(
@@ -1896,6 +1939,7 @@ class V(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1903,16 +1947,19 @@ class V(metaclass=LanguageCls):
         return self.declaration_style.value.formatter
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble (V needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (V needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:

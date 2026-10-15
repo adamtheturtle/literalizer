@@ -43,10 +43,12 @@ def escape_json5_line_separators(*, source: str) -> str:
     ):
         return source
 
+    @beartype
     def _escape_separator(match: re.Match[str]) -> str:
         """Return the escape for a bare separator, or the text as-is."""
         return _JSON5_RAW_LINE_SEPARATORS.get(match.group(), match.group())
 
+    @beartype
     def _escape_token(match: re.Match[str]) -> str:
         """Return the matched token with any enclosed separator
         escaped.

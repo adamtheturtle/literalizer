@@ -521,6 +521,7 @@ def _csharp_json_declaration_formatter(
     not C# compile-time constant expressions.
     """
 
+    @beartype
     def _formatter(
         name: str,
         value: str,
@@ -1668,11 +1669,13 @@ class CSharp(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether C# should render through ``JsonNode``."""
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Null literal for the active C# representation.
 
@@ -1687,6 +1690,7 @@ class CSharp(metaclass=LanguageCls):
         return self._default_null_literal
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument.
 
@@ -1699,11 +1703,13 @@ class CSharp(metaclass=LanguageCls):
         return identity_call_arg
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
@@ -1713,6 +1719,7 @@ class CSharp(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable.
 
@@ -1726,6 +1733,7 @@ class CSharp(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value};")
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Format one ordered-map entry.
 
@@ -1740,6 +1748,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
         return (
@@ -1748,6 +1757,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _csharp_record_scalar_resolver(
         self,
     ) -> Callable[[type], str | None]:
@@ -1838,6 +1848,7 @@ class CSharp(metaclass=LanguageCls):
         return field_type
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """C# syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
@@ -1853,6 +1864,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``record``-declaration preamble for ``RECORD``."""
         if not self._record_strategy_active:
@@ -1869,6 +1881,7 @@ class CSharp(metaclass=LanguageCls):
         narrowing = self._derecordized_map_narrowing
         base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
 
+        @beartype
         def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
             """Refresh the widened-map value type for this render pass."""
             wrap_ids = base_compute_wrap_ids(data)
@@ -1878,6 +1891,7 @@ class CSharp(metaclass=LanguageCls):
             )
             return wrap_ids
 
+        @beartype
         def _widened_map_open() -> str:
             """Return the fallback-map opener for the current pass."""
             value_type = narrowing.value_type
@@ -1909,6 +1923,7 @@ class CSharp(metaclass=LanguageCls):
     ) -> str | None:
         """Return the one concrete type shared by widened-map scalars."""
 
+        @beartype
         def contains_wrapped_non_scalar(value: Value) -> bool:
             """Return whether a widened map contains a collection
             value.
@@ -1949,11 +1964,13 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _derecordized_map_narrowing(self) -> _CSharpWidenedMapNarrowing:
         """Cache the fallback-map value type within one render pass."""
         return _CSharpWidenedMapNarrowing(value_type=None)
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -1969,6 +1986,7 @@ class CSharp(metaclass=LanguageCls):
         """
         if self._json_type_active:
 
+            @beartype
             def _json_preamble(_data: Value, /) -> tuple[str, ...]:
                 """Always contribute the JsonNode ``using`` directive."""
                 return (_CSHARP_JSON_USING,)
@@ -1979,6 +1997,7 @@ class CSharp(metaclass=LanguageCls):
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
@@ -2007,6 +2026,7 @@ class CSharp(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_class_scope_stub(
         self,
     ) -> Callable[
@@ -2023,6 +2043,7 @@ class CSharp(metaclass=LanguageCls):
     format_call_target = default_format_call_target
 
     @cached_property
+    @beartype
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -2048,16 +2069,19 @@ class CSharp(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def _date_tp(self) -> type:
         """Python type produced by the chosen date format."""
         return self.date_format.value.type_produced
 
     @cached_property
+    @beartype
     def _dt_tp(self) -> type:
         """Python type produced by the chosen datetime format."""
         return self.datetime_format.value.type_produced
 
     @cached_property
+    @beartype
     def _base_set_format_config(self) -> SetFormatConfig:
         """Base set format config before typed-opener application."""
         return self.set_format(
@@ -2065,6 +2089,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _openers(self) -> TypeOpeners:
         """Typed openers built from the opener config."""
         cfg = self._opener_config
@@ -2083,6 +2108,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _resolved_dict_opener(self) -> str:
         """Opener template with the key type resolved."""
         return self.dict_format.value.opener_template.replace(
@@ -2091,6 +2117,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format.
 
@@ -2134,6 +2161,7 @@ class CSharp(metaclass=LanguageCls):
         if self.sequence_format is type(self.sequence_format).ARRAY:
             empty = f"new {element_type}[] {{}}"
 
+        @beartype
         def _narrowed_empty_form(
             siblings: Sequence[list[Value]],
         ) -> str:
@@ -2149,6 +2177,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format (with typed opener).
 
@@ -2184,6 +2213,7 @@ class CSharp(metaclass=LanguageCls):
         return dataclasses.replace(typed, set_open=_epoch_set_open)
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Render the opener chosen with the semantic array type."""
         if (
@@ -2197,10 +2227,12 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _array_type(self) -> Callable[[list[Value]], CollectionType]:
         """Keep array literals and record-component types together."""
         lookup = self._record_strategy.record_name_for_value
 
+        @beartype
         def _infer(items: list[Value]) -> CollectionType:
             """Resolve nested records or the shared typed array
             fallback.
@@ -2241,6 +2273,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting.
 
@@ -2288,6 +2321,7 @@ class CSharp(metaclass=LanguageCls):
             ),
         )
 
+        @beartype
         def _normalized(data: dict[Scalar, Value]) -> dict[Scalar, Value]:
             """Infer epoch values from their rendered integer widths."""
             if self._dt_tp is not int:
@@ -2301,10 +2335,12 @@ class CSharp(metaclass=LanguageCls):
                 for key, value in data.items()
             }
 
+        @beartype
         def _open(data: dict[Scalar, Value], /) -> str:
             """Spell the map after normalizing epoch values."""
             return base_open(_normalized(data=data))
 
+        @beartype
         def _signature(data: dict[Scalar, Value], /) -> CollectionSignature:
             """Infer from the same normalized values as the map
             renderer.
@@ -2326,16 +2362,19 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal.
 
@@ -2348,6 +2387,7 @@ class CSharp(metaclass=LanguageCls):
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
@@ -2363,6 +2403,7 @@ class CSharp(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal.
 
@@ -2376,16 +2417,19 @@ class CSharp(metaclass=LanguageCls):
         return format_time_csharp
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         return self.string_format
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal.
 
@@ -2407,6 +2451,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_integer_beyond_i64(self) -> Callable[[int], str]:
         """Always-``UL``-suffixed formatter for collections that exceed
         signed 64-bit range.
@@ -2417,11 +2462,13 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting.
 
@@ -2447,6 +2494,7 @@ class CSharp(metaclass=LanguageCls):
             default_key_type=self.default_dict_key_type,
         )
 
+        @beartype
         def _open(value: dict[Scalar, Value]) -> str:
             """Render the ordered-map opener from its semantic type."""
             return self._ordered_map_type(value).opener
@@ -2454,6 +2502,7 @@ class CSharp(metaclass=LanguageCls):
         return dataclasses.replace(base, ordered_map_open=_open)
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2484,6 +2533,7 @@ class CSharp(metaclass=LanguageCls):
         dict_value_type = self.default_dict_value_type
         tuple_sequences = self.sequence_format is self.sequence_formats.TUPLE
 
+        @beartype
         def _formatter(
             name: str,
             value: str,
@@ -2538,6 +2588,7 @@ class CSharp(metaclass=LanguageCls):
             raise UnrepresentableInputError(msg)
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format.
 
@@ -2557,11 +2608,13 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (C# needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -2572,6 +2625,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value

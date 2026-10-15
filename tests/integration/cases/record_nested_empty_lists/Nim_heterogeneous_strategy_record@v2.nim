@@ -14,7 +14,7 @@ var my_data = Record0(
         ]
     ],
     b: @[
-        @[],
+        seq[int](@[]),
         @[
             1
         ]

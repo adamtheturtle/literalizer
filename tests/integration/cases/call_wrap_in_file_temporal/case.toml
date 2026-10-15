@@ -10,3 +10,6 @@ per_element = true
 wrap_in_file = true
 languages = ["Cobol", "Haskell"]
 languages_reason = "Haskell requires temporal imports before declarations; COBOL must keep its wrapper program distinct from the requested CHECK target."
+
+[[call.variants]]
+axis = "sequence"

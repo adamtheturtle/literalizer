@@ -104,10 +104,12 @@ def _opaque_collection_signature(
     code = opener(items)
     if isinstance(items, dict):
 
+        @beartype
         def _narrows() -> bool:
             """Infer narrowing only when map widening asks for it."""
             return opener({"_probe": "s"}) != opener({"_probe": 1})
 
+        @beartype
         def _stable() -> bool:
             """Infer map fallback policy only after narrowing is known."""
             return opener({"_a": 1, "_b": "s"}) == opener(
@@ -123,18 +125,21 @@ def _opaque_collection_signature(
             uses_fallback_decision=False,
         )
 
+    @beartype
     def _length_bearing() -> bool:
         """Probe length only where a sibling's literal might be
         borrowed.
         """
         return code != opener([*items, items[0]])
 
+    @beartype
     def _fallback() -> bool:
         """Infer the custom sequence's fallback only when widening needs
         it.
         """
         return opener([]) == opener([1, "probe"])
 
+    @beartype
     def _uses_fallback() -> bool:
         """Check anonymous-element elision against the custom empty opener."""
         return code == opener([])
@@ -180,6 +185,7 @@ def signature_open[Items: list[Value] | dict[Scalar, Value]](
     return SignatureOpen(render=render, infer=infer)
 
 
+@beartype
 class CollectionOverride(str):
     """A selected opener whose inference facts survive sibling
     inference.
@@ -372,6 +378,7 @@ def make_element_to_type(
     collected_scalar_types = collected_collected_scalar_types
     scalar_types: dict[type, str] = collected_scalar_types
 
+    @beartype
     def element_to_type(
         element_type: type | ListType | DictType,
     ) -> str | None:
@@ -414,6 +421,7 @@ def make_narrowed_empty_form(
         )
     """
 
+    @beartype
     def _narrowed_empty_form(siblings: Sequence[list[Value]]) -> str:
         """Compute the typed empty literal for the parent's siblings."""
         return template.format(
@@ -648,12 +656,14 @@ def typed_collection_open(
         )
     """
 
+    @beartype
     def _open(items: list[Value]) -> str:
         """Delegate to module-level implementation."""
         return _typed_collection_open_impl(
             items=items, type_to_opener=type_to_opener, fallback=fallback
         )
 
+    @beartype
     def _signature(items: list[Value], /) -> CollectionSignature:
         """Infer the collection signature before rendering its opener."""
         return _typed_signature(
@@ -704,12 +714,14 @@ def typed_dict_open(
         )
     """
 
+    @beartype
     def _open(items: dict[Scalar, Value]) -> str:
         """Delegate to module-level implementation."""
         return _typed_dict_open_impl(
             items=items, type_to_opener=type_to_opener, fallback=fallback
         )
 
+    @beartype
     def _signature(items: dict[Scalar, Value], /) -> CollectionSignature:
         """Infer the mapping signature before rendering its opener."""
         return _typed_signature(
@@ -758,10 +770,12 @@ def collection_type_open[Items: list[Value] | dict[Scalar, Value]](
 ) -> SignatureOpen[Items]:
     """Keep an explicit target type as the collection's inference key."""
 
+    @beartype
     def _render(items: Items, /) -> str:
         """Spell the opener selected with the target type."""
         return infer(items).opener
 
+    @beartype
     def _signature(items: Items, /) -> CollectionSignature:
         """Keep target identity rather than comparing literal
         delimiters.

@@ -418,6 +418,7 @@ def _shapes_with_sibling_list_instances(
     """
     result: set[RecordShape] = set()
 
+    @beartype
     def walk(node: Value) -> None:
         """Record shapes with two or more instances in one list."""
         match node:
@@ -550,6 +551,7 @@ def _ordered_unique_shapes(
     ordered: list[RecordShape] = []
     seen: set[RecordShape] = set()
 
+    @beartype
     def walk(node: Value) -> None:
         """Walk *node* and append each newly-seen raw shape."""
         match node:
@@ -601,6 +603,7 @@ def _partition_shapes_by_shared_keys(
     """
     parent = list(range(len(raw_shapes)))
 
+    @beartype
     def find(index: int) -> int:
         """Return the root index for *index* in the union-find."""
         while parent[index] != index:
@@ -609,6 +612,7 @@ def _partition_shapes_by_shared_keys(
             index = grandparent
         return index
 
+    @beartype
     def union(left: int, right: int) -> None:
         """Merge the groups containing *left* and *right*."""
         root_left = find(index=left)

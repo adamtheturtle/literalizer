@@ -269,6 +269,7 @@ def _build_haskell_call_stub(
     *,
     type_name: str,
     curried: bool,
+    validate_arg: Callable[[Value], None],
 ) -> Callable[
     [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
     tuple[str, ...],
@@ -277,6 +278,7 @@ def _build_haskell_call_stub(
     types.
     """
 
+    @beartype
     def _haskell_call_stub(
         parts: Sequence[str],
         params: Sequence[str],
@@ -284,7 +286,11 @@ def _build_haskell_call_stub(
         args: Sequence[Value],
         /,
     ) -> tuple[str, ...]:
-        """Delegate to module-level implementation."""
+        """Validate resolved arguments before declaring Val parameters."""
+        for row in args:
+            row_args = row if isinstance(row, list) else [row]
+            for value in row_args:
+                validate_arg(value)
         return _build_haskell_call_stub_lines(
             parts=parts,
             params=params,
@@ -345,6 +351,7 @@ def _build_haskell_datetime_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _format_haskell_datetime(value=value, prefix=prefix)
@@ -472,6 +479,7 @@ def _build_date_formatters(
         case _ if is_explicit:
             _str_pfx = f"{constructor_prefix}Str "
 
+            @beartype
             def _explicit_date(value: dt.date) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_with_str_constructor_date(
@@ -492,6 +500,7 @@ def _build_date_formatters(
         case _ if is_explicit:
             _str_pfx_dt = f"{constructor_prefix}Str "
 
+            @beartype
             def _explicit_datetime(value: dt.datetime) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_with_str_constructor_datetime(
@@ -605,6 +614,7 @@ def _build_string_formatters(
     entries use tuple formatting.
     """
 
+    @beartype
     def base_format_string(value: str) -> str:
         r"""Format a Haskell string with ``\x..`` control-char escapes."""
         has_greedy_hex_boundary = any(
@@ -646,6 +656,7 @@ def _build_string_formatters(
 
     string_constructor = f"{constructor_prefix}Str "
 
+    @beartype
     def _format_string(value: str) -> str:
         """Delegate to module-level implementation."""
         return _wrap_str_with_constructor(
@@ -654,6 +665,7 @@ def _build_string_formatters(
             base_format_string=base_format_string,
         )
 
+    @beartype
     def _format_bytes(data: bytes) -> str:
         """Delegate to module-level implementation."""
         return _wrap_bytes_with_constructor(
@@ -1054,6 +1066,7 @@ def _build_scalar_body_preamble(
         indent=indent,
     )
 
+    @beartype
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
         return _haskell_compute_preamble(cfg=cfg, types=types, data=data)
@@ -1119,6 +1132,7 @@ def _build_declaration_formatters(
     if raw_declared is not None:
         sequence_declared_type = raw_declared.replace("Val", type_name)
 
+    @beartype
     def _haskell_declaration(
         name: str,
         value: str,
@@ -1578,6 +1592,19 @@ _HASKELL_PRELUDE_BINDINGS: frozenset[str] = frozenset(
 def _reject_negative_zero_call_arg(value: Value, /) -> None:
     """Reject a call argument whose signed zero would not survive."""
     reject_negative_zero(data=value, language_name="Haskell")
+
+
+@beartype
+def _reject_tuple_call_arg(value: Value, /) -> None:
+    """Call stubs take Val, which cannot contain a tuple."""
+    if value_contains(
+        data=value, predicate=lambda child: isinstance(child, list)
+    ):
+        msg = (
+            "Haskell sequence_format=TUPLE cannot represent "
+            "tuple-valued call arguments as Val"
+        )
+        raise IncompatibleFormatsError(msg)
 
 
 @beartype
@@ -2200,6 +2227,7 @@ class Haskell(metaclass=LanguageCls):
             raise IncompatibleFormatsError(msg)
 
     @cached_property
+    @beartype
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language.
 
@@ -2212,6 +2240,8 @@ class Haskell(metaclass=LanguageCls):
             return _reject_negative_zero_call_arg
         if self.dict_format is type(self.dict_format).RECORD:
             return _reject_native_record_call_arg
+        if self.sequence_format is type(self.sequence_format).TUPLE:
+            return _reject_tuple_call_arg
         return no_validate_call_arg
 
     format_call_statement = default_format_call_statement
@@ -2364,6 +2394,7 @@ class Haskell(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def supports_collection_comments(self) -> bool:
         """Whether a comment can sit inside the rendered value.
 
@@ -2375,6 +2406,7 @@ class Haskell(metaclass=LanguageCls):
         return not self._json_type_active
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether Haskell should render via
         ``Data.Aeson.Value``.
@@ -2382,6 +2414,7 @@ class Haskell(metaclass=LanguageCls):
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def static_preamble(self) -> Sequence[str]:
         """Static preamble lines emitted once per file.
 
@@ -2397,6 +2430,7 @@ class Haskell(metaclass=LanguageCls):
         return ()
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
@@ -2459,6 +2493,7 @@ class Haskell(metaclass=LanguageCls):
         return self._native_value_type(data=data)
 
     @cached_property
+    @beartype
     def _native_record_strategy(self) -> ActiveRecordStrategy:
         """Build shared record naming, rendering, and declarations."""
         return build_record_strategy(
@@ -2478,16 +2513,19 @@ class Haskell(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         if self._json_type_active:
@@ -2506,11 +2544,13 @@ class Haskell(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Literal representing ``None``."""
         return f"{self.constructor_prefix}Null"
 
     @cached_property
+    @beartype
     def true_literal(self) -> str:
         """Literal representing ``True``."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -2518,6 +2558,7 @@ class Haskell(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool True"
 
     @cached_property
+    @beartype
     def false_literal(self) -> str:
         """Literal representing ``False``."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -2525,6 +2566,7 @@ class Haskell(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool False"
 
     @cached_property
+    @beartype
     def _seq_setup(self) -> _SequenceSetup:
         """Shared sequence format setup."""
         return self.sequence_format.build_setup(
@@ -2532,6 +2574,7 @@ class Haskell(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
@@ -2547,6 +2590,7 @@ class Haskell(metaclass=LanguageCls):
         return self._seq_setup.format_config
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         if self._json_type_active:
@@ -2556,6 +2600,7 @@ class Haskell(metaclass=LanguageCls):
         return self._seq_setup.sequence_open
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         if self._json_type_active:
@@ -2568,6 +2613,7 @@ class Haskell(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _string_fmts(self) -> _StringFormatters:
         """Shared string/bytes/dict-entry formatters."""
         return _build_string_formatters(
@@ -2581,21 +2627,25 @@ class Haskell(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_dict_key(self) -> Callable[[str], str]:
         """Render keys with the shared unwrapped string formatter."""
         return self._string_fmts.format_dict_key
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         return self._string_fmts.format_string
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self._string_fmts.format_bytes
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         if self._json_type_active:
@@ -2613,6 +2663,7 @@ class Haskell(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         if self._json_type_active:
@@ -2625,16 +2676,19 @@ class Haskell(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return self._string_fmts.format_dict_entry
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def _date_fmts(self) -> _DateTimeFormatters:
         """Shared date/datetime formatter bundle."""
         return _build_date_formatters(
@@ -2647,6 +2701,7 @@ class Haskell(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -2658,6 +2713,7 @@ class Haskell(metaclass=LanguageCls):
         return self._date_fmts.format_date
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -2672,6 +2728,7 @@ class Haskell(metaclass=LanguageCls):
         return self._date_fmts.format_datetime
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -2679,6 +2736,7 @@ class Haskell(metaclass=LanguageCls):
         if self._string_fmts.is_explicit:
             _str_pfx = f"{self.constructor_prefix}Str "
 
+            @beartype
             def _explicit_time(value: dt.time) -> str:
                 """Wrap a bare ISO time literal with the HStr
                 constructor.
@@ -2689,6 +2747,7 @@ class Haskell(metaclass=LanguageCls):
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -2697,6 +2756,7 @@ class Haskell(metaclass=LanguageCls):
             _float_prefix = f"{self.constructor_prefix}Float "
             _base_format_float: Callable[[float], str] = self.float_format
 
+            @beartype
             def _wrap_float(value: float) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_float_with_constructor(
@@ -2709,6 +2769,7 @@ class Haskell(metaclass=LanguageCls):
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -2717,6 +2778,7 @@ class Haskell(metaclass=LanguageCls):
             _int_prefix = f"{self.constructor_prefix}Int "
             _base_format_integer: Callable[[int], str] = self.integer_format
 
+            @beartype
             def _wrap_integer(value: int) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_integer_with_constructor(
@@ -2729,11 +2791,13 @@ class Haskell(metaclass=LanguageCls):
         return self.integer_format
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def _decl_fmts(self) -> _DeclarationFormatters:
         """Shared declaration/assignment formatter bundle."""
         declaration_config: DeclarationStyleConfig = (
@@ -2747,6 +2811,7 @@ class Haskell(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2756,6 +2821,7 @@ class Haskell(metaclass=LanguageCls):
         if self.dict_format is type(self.dict_format).RECORD:
             base = self.declaration_style.value.formatter
 
+            @beartype
             def _native_declaration(
                 name: str,
                 value: str,
@@ -2804,6 +2870,7 @@ class Haskell(metaclass=LanguageCls):
         return not self._json_type_active
 
     @cached_property
+    @beartype
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -2813,6 +2880,7 @@ class Haskell(metaclass=LanguageCls):
         return self._decl_fmts.format_variable_assignment
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2840,6 +2908,7 @@ class Haskell(metaclass=LanguageCls):
         return ("{-# OPTIONS_GHC -Wno-missing-signatures #-}",)
 
     @cached_property
+    @beartype
     def _preamble(self) -> _PreambleSetup:
         """Shared preamble setup bundle."""
         date_config: DateFormatConfig = self.date_format.value
@@ -2877,6 +2946,7 @@ class Haskell(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble for Haskell imports.
 
@@ -2893,11 +2963,13 @@ class Haskell(metaclass=LanguageCls):
         return self._preamble.scalar_preamble
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Haskell needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -2912,6 +2984,7 @@ class Haskell(metaclass=LanguageCls):
             return _aeson_value_body_preamble
         if self.dict_format is type(self.dict_format).RECORD:
 
+            @beartype
             def _native_body_preamble(
                 types: frozenset[type], data: Value, /
             ) -> tuple[str, ...]:
@@ -2931,12 +3004,14 @@ class Haskell(metaclass=LanguageCls):
         return self._preamble.compute_body_preamble
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value
         return config
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -2950,9 +3025,11 @@ class Haskell(metaclass=LanguageCls):
         return _build_haskell_call_stub(
             type_name=stub_type_name,
             curried=isinstance(self.call_style.value, CommandCallStyle),
+            validate_arg=self.validate_call_arg,
         )
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument.
 
@@ -2967,6 +3044,7 @@ class Haskell(metaclass=LanguageCls):
         return identity_call_arg
 
     @cached_property
+    @beartype
     def format_call_preamble_stub(
         self,
     ) -> Callable[

@@ -104,6 +104,7 @@ def _inference_is_inert(*, language: Language) -> bool:
     )
 
 
+@beartype
 def _configuration_requires_shared_renderer(
     *,
     language: Language,

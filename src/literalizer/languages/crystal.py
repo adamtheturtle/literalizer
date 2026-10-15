@@ -1179,6 +1179,7 @@ class Crystal(metaclass=LanguageCls):
             raise UnrepresentableInputError(msg)
 
     @cached_property
+    @beartype
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
         if self._uses_json_any:
@@ -1258,6 +1259,7 @@ class Crystal(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def supports_scalar_before_comments(self) -> bool:
         """Whether a comment can sit above the rendered value.
 
@@ -1269,6 +1271,7 @@ class Crystal(metaclass=LanguageCls):
         return not self._uses_json_any
 
     @cached_property
+    @beartype
     def supports_collection_comments(self) -> bool:
         """Whether a comment can sit inside the rendered collection.
 
@@ -1280,11 +1283,13 @@ class Crystal(metaclass=LanguageCls):
         return not self._uses_json_any
 
     @cached_property
+    @beartype
     def _uses_json_any(self) -> bool:
         """Return whether Crystal should render via ``JSON::Any``."""
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Null literal for the active Crystal representation.
 
@@ -1297,6 +1302,7 @@ class Crystal(metaclass=LanguageCls):
         return self._default_null_literal
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         if self._uses_json_any:
@@ -1304,6 +1310,7 @@ class Crystal(metaclass=LanguageCls):
         return self.string_format
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return self.sequence_format_config.format_entry
@@ -1338,6 +1345,7 @@ class Crystal(metaclass=LanguageCls):
         return formatted
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
@@ -1347,6 +1355,7 @@ class Crystal(metaclass=LanguageCls):
     call_assignment_declares_binding = True
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         if self._uses_json_any:
@@ -1354,6 +1363,7 @@ class Crystal(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument.
 
@@ -1367,6 +1377,7 @@ class Crystal(metaclass=LanguageCls):
         return identity_call_arg
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -1383,6 +1394,7 @@ class Crystal(metaclass=LanguageCls):
         """
         if self._uses_json_any:
 
+            @beartype
             def _json_preamble(_data: Value, /) -> tuple[str, ...]:
                 """Always require the standard-library ``json`` module."""
                 return ('require "json"',)
@@ -1391,6 +1403,7 @@ class Crystal(metaclass=LanguageCls):
         return no_data_preamble
 
     @cached_property
+    @beartype
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
         return (
@@ -1527,6 +1540,7 @@ class Crystal(metaclass=LanguageCls):
         return self._crystal_type_for_value(request.value)
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """Crystal syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
@@ -1545,6 +1559,7 @@ class Crystal(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``record``-declaration preamble for ``RECORD``."""
         return build_record_strategy(
@@ -1554,6 +1569,7 @@ class Crystal(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
@@ -1580,6 +1596,7 @@ class Crystal(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1608,6 +1625,7 @@ class Crystal(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format.
 
@@ -1639,6 +1657,7 @@ class Crystal(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format.
 
@@ -1661,11 +1680,13 @@ class Crystal(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format.value.sequence_open
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting.
 
@@ -1698,6 +1719,7 @@ class Crystal(metaclass=LanguageCls):
         return config
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior.
 
@@ -1711,11 +1733,13 @@ class Crystal(metaclass=LanguageCls):
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal.
 
@@ -1727,6 +1751,7 @@ class Crystal(metaclass=LanguageCls):
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
@@ -1742,16 +1767,19 @@ class Crystal(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal.
 
@@ -1773,11 +1801,13 @@ class Crystal(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting.
 
@@ -1797,6 +1827,7 @@ class Crystal(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry.
 
@@ -1817,6 +1848,7 @@ class Crystal(metaclass=LanguageCls):
         }.get(self.string_format.name, native_formatter)
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1831,16 +1863,19 @@ class Crystal(metaclass=LanguageCls):
         return self.declaration_style.value.formatter
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble (Crystal needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Crystal needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -1864,6 +1899,7 @@ class Crystal(metaclass=LanguageCls):
             return scalar_body
         record_preamble = self._record_strategy.preamble
 
+        @beartype
         def _compute(
             types: frozenset[type],
             data: Value,
@@ -1893,6 +1929,7 @@ class Crystal(metaclass=LanguageCls):
         return _compute
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value

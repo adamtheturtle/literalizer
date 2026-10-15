@@ -133,6 +133,7 @@ def _sml_negate_int(
 ) -> Callable[[int], str]:
     """Wrap an integer formatter to use SML's ``~`` for negation."""
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_sml_negate_int(value=value, formatter=formatter)
@@ -164,6 +165,7 @@ def _sml_negate_float(
 ) -> Callable[[float], str]:
     """Wrap a float formatter to use SML's ``~`` for negation."""
 
+    @beartype
     def _format(value: float) -> str:
         """Delegate to module-level implementation."""
         return _apply_sml_negate_float(value=value, formatter=formatter)
@@ -297,6 +299,7 @@ def _build_sml_entry_formatter(
     constructors using the given *prefix*.
     """
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_sml_entry_formatter(
@@ -337,6 +340,7 @@ def _build_sml_declaration(
 ) -> Callable[[str, str, Value], str]:
     """Build an SML variable declaration formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_sml_declaration(
@@ -1099,9 +1103,11 @@ class Sml(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
 
+        @beartype
         def _format(value: str) -> str:
             """Format a string as an SML quoted literal."""
             formatted = format_string_backslash_control(
@@ -1122,11 +1128,13 @@ class Sml(metaclass=LanguageCls):
         return _format
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1144,12 +1152,14 @@ class Sml(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value
         return config
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1162,6 +1172,7 @@ class Sml(metaclass=LanguageCls):
         return _sml_call_stub
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument.
 
@@ -1176,6 +1187,7 @@ class Sml(metaclass=LanguageCls):
             return passthrough_sequence_entry
         if isinstance(self.call_style.value, CommandCallStyle):
 
+            @beartype
             def _curried_arg(original: Value, formatted: str) -> str:
                 """Tag the value and parenthesize the curried argument."""
                 tagged = entry_formatter(original, formatted)
@@ -1189,6 +1201,7 @@ class Sml(metaclass=LanguageCls):
     format_call_preamble_stub = default_format_call_stub
 
     @cached_property
+    @beartype
     def format_call_statement(self) -> Callable[[str], str]:
         """Wrap a call expression as a val binding so it is a valid SML
         declaration inside a structure block.
@@ -1212,11 +1225,13 @@ class Sml(metaclass=LanguageCls):
     scalar_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Literal for the null value."""
         return f"{self.constructor_prefix}Null"
 
     @cached_property
+    @beartype
     def true_literal(self) -> str:
         """Literal for the true value."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1224,6 +1239,7 @@ class Sml(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool true"
 
     @cached_property
+    @beartype
     def false_literal(self) -> str:
         """Literal for the false value."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1231,6 +1247,7 @@ class Sml(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool false"
 
     @cached_property
+    @beartype
     def _entry_formatter(self) -> Callable[[Value, str], str]:
         """Shared entry formatter parameterized by constructor prefix."""
         return _build_sml_entry_formatter(
@@ -1240,6 +1257,7 @@ class Sml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         fmt: SequenceFormatConfig = self.sequence_format.value
@@ -1258,6 +1276,7 @@ class Sml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1267,6 +1286,7 @@ class Sml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         return dataclasses.replace(
@@ -1277,6 +1297,7 @@ class Sml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
@@ -1295,16 +1316,19 @@ class Sml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         base_formatter: Callable[[dt.date], str] = self.date_format
@@ -1320,6 +1344,7 @@ class Sml(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         base_formatter: Callable[[dt.datetime], str] = self.datetime_format
@@ -1346,16 +1371,19 @@ class Sml(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         return make_overflow_fallback_formatter(
@@ -1368,11 +1396,13 @@ class Sml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a set entry."""
         return self._entry_formatter
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1380,11 +1410,13 @@ class Sml(metaclass=LanguageCls):
         return self._entry_formatter
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
@@ -1396,11 +1428,13 @@ class Sml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return tuple_dict_entry(format_value=self._entry_formatter)
 
     @cached_property
+    @beartype
     def _sml_decl(self) -> Callable[[str, str, Value], str]:
         """Shared SML variable declaration formatter."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1417,6 +1451,7 @@ class Sml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1436,6 +1471,7 @@ class Sml(metaclass=LanguageCls):
         return self.dict_format is type(self.dict_format).RECORD
 
     @cached_property
+    @beartype
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1443,6 +1479,7 @@ class Sml(metaclass=LanguageCls):
         return self._sml_decl
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1457,6 +1494,7 @@ class Sml(metaclass=LanguageCls):
         return self.declaration_style.value.formatter
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble for SML datatype declarations."""
         p = self.constructor_prefix
@@ -1493,6 +1531,7 @@ class Sml(metaclass=LanguageCls):
         }
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:

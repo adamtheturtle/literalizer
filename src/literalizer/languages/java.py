@@ -784,6 +784,7 @@ def _object_nil_declaration(
     ``var``.
     """
 
+    @beartype
     def _format(
         name: str,
         value: str,
@@ -1798,6 +1799,7 @@ class Java(metaclass=LanguageCls):
         _walk(value=data)
 
     @cached_property
+    @beartype
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
         if self._json_type_active:
@@ -1845,6 +1847,7 @@ class Java(metaclass=LanguageCls):
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
 
+            @beartype
             def typed(
                 name: str,
                 value: str,
@@ -1879,6 +1882,7 @@ class Java(metaclass=LanguageCls):
                     typed_formatter=typed,
                 )
 
+                @beartype
                 def _safe_formatter(
                     name: str,
                     value: str,
@@ -2059,6 +2063,7 @@ class Java(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def supports_collection_comments(self) -> bool:
         """Whether a comment can sit inside the rendered value.
 
@@ -2070,11 +2075,13 @@ class Java(metaclass=LanguageCls):
         return not self._json_type_active
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether Java should render via Jackson JsonNode."""
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def static_preamble(self) -> Sequence[str]:
         """Static preamble lines emitted once per file.
 
@@ -2087,6 +2094,7 @@ class Java(metaclass=LanguageCls):
         return ()
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument."""
         if self._json_type_active:
@@ -2094,16 +2102,19 @@ class Java(metaclass=LanguageCls):
         return identity_call_arg
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return self.string_format
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
@@ -2113,6 +2124,7 @@ class Java(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         if self._json_type_active:
@@ -2120,6 +2132,7 @@ class Java(metaclass=LanguageCls):
         return _format_java_assignment
 
     @cached_property
+    @beartype
     def _java_record_int_type(self) -> str:
         """Java integer type for a record-component scalar."""
         if self._suffix_is_auto:
@@ -2156,6 +2169,7 @@ class Java(metaclass=LanguageCls):
         return "Instant"
 
     @cached_property
+    @beartype
     def _java_record_scalar_resolver(
         self,
     ) -> Callable[[type | ListType | DictType], str | None]:
@@ -2247,6 +2261,7 @@ class Java(metaclass=LanguageCls):
                 return resolved_result_2
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """Java syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
@@ -2265,6 +2280,7 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> RecordStrategy:
         """Resolve the active strategy to its behavior + preamble."""
         cls = type(self.heterogeneous_strategy)
@@ -2281,6 +2297,7 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -2305,6 +2322,7 @@ class Java(metaclass=LanguageCls):
         return _preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
         if self._json_type_active:
@@ -2321,6 +2339,7 @@ class Java(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_class_scope_stub(
         self,
     ) -> Callable[
@@ -2349,6 +2368,7 @@ class Java(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def _suffix_is_auto(self) -> bool:
         """Whether the numeric-literal suffix is AUTO (long suffix)."""
         return (
@@ -2357,6 +2377,7 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _java_dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
         return dict_entry_with_template(
@@ -2365,6 +2386,7 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
@@ -2372,6 +2394,7 @@ class Java(metaclass=LanguageCls):
         return self.sequence_format.value
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         if self._json_type_active:
@@ -2379,6 +2402,7 @@ class Java(metaclass=LanguageCls):
         return self.set_format.value
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Render the opener chosen with the semantic array type."""
         if self._json_type_active:
@@ -2391,6 +2415,7 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _array_type(self) -> Callable[[list[Value]], CollectionType]:
         """Keep array literal and record-component type decisions together."""
         if self._suffix_is_auto:
@@ -2415,6 +2440,7 @@ class Java(metaclass=LanguageCls):
         )
         lookup = self._record_strategy.record_name_for_value
 
+        @beartype
         def _infer(items: list[Value]) -> CollectionType:
             """Resolve records or the shared scalar/collection element
             type.
@@ -2441,6 +2467,7 @@ class Java(metaclass=LanguageCls):
         return _infer
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         if self._json_type_active:
@@ -2448,21 +2475,25 @@ class Java(metaclass=LanguageCls):
         return self.dict_format.value
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
@@ -2480,16 +2511,19 @@ class Java(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_local_time_of
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer_widened(self) -> Callable[[int], str]:
         """Always-``L``-suffixed integer formatter for widened
         collections (mixed-magnitude int sets/lists).
@@ -2505,6 +2539,7 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_integer_beyond_i64(self) -> Callable[[int], str]:
         """Always-``BigInteger`` integer formatter for collections that
         exceed signed 64-bit range.
@@ -2512,6 +2547,7 @@ class Java(metaclass=LanguageCls):
         return _format_java_biginteger_literal
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         base_int_formatter = self.integer_format.get_formatter(
@@ -2535,11 +2571,13 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         if self._json_type_active:
@@ -2555,6 +2593,7 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return self._java_dict_entry
@@ -2579,6 +2618,7 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2631,6 +2671,7 @@ class Java(metaclass=LanguageCls):
         if record_name_for_value is None:
             return base
 
+        @beartype
         def _formatter(
             name: str,
             value: str,
@@ -2653,6 +2694,7 @@ class Java(metaclass=LanguageCls):
         return _formatter
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format.
 
@@ -2670,11 +2712,13 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Java needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -2685,6 +2729,7 @@ class Java(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value

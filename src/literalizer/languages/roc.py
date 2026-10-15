@@ -153,6 +153,7 @@ def _build_roc_date_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_date(value=value, prefix=prefix)
@@ -174,6 +175,7 @@ def _build_roc_time_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_time(value=value, prefix=prefix)
@@ -195,6 +197,7 @@ def _build_roc_datetime_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_str_wrapped_datetime(value=value, prefix=prefix)
@@ -228,6 +231,7 @@ def _build_roc_bytes_hex(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_bytes_hex(value=value, prefix=prefix)
@@ -249,6 +253,7 @@ def _build_roc_bytes_base64(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_bytes_base64(value=value, prefix=prefix)
@@ -270,6 +275,7 @@ def _build_roc_str_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_string(value=value, prefix=prefix)
@@ -311,6 +317,7 @@ def _build_roc_integer_formatter(
     out-of-range (issue #4508).
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_integer(value=value, prefix=prefix, base=base)
@@ -345,6 +352,7 @@ def _build_roc_float_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: float) -> str:
         """Delegate to module-level implementation."""
         return _apply_roc_float(value=value, prefix=prefix, inner=inner)
@@ -435,6 +443,7 @@ def _build_roc_body_preamble(
     are actually needed.
     """
 
+    @beartype
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return the tag-union type alias for *types*."""
         del data  # unused
@@ -1254,21 +1263,25 @@ class Roc(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the Roc call style."""
         return self.call_style.value
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines (none for Roc — the type
         alias is emitted via :meth:`compute_body_preamble` so it sits
@@ -1277,6 +1290,7 @@ class Roc(metaclass=LanguageCls):
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1294,6 +1308,7 @@ class Roc(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1308,6 +1323,7 @@ class Roc(metaclass=LanguageCls):
     format_call_preamble_stub = default_format_call_stub
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each call argument in parentheses for the Roc
         space-separated call syntax.
@@ -1315,6 +1331,7 @@ class Roc(metaclass=LanguageCls):
         return _roc_format_call_arg
 
     @cached_property
+    @beartype
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into a Roc identifier."""
         return _roc_format_call_target
@@ -1332,11 +1349,13 @@ class Roc(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Literal representing ``None``."""
         return f"{self.constructor_prefix}Null"
 
     @cached_property
+    @beartype
     def true_literal(self) -> str:
         """Literal representing ``True``."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1344,6 +1363,7 @@ class Roc(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool Bool.true"
 
     @cached_property
+    @beartype
     def false_literal(self) -> str:
         """Literal representing ``False``."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1351,6 +1371,7 @@ class Roc(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool Bool.false"
 
     @cached_property
+    @beartype
     def _seq_open(self) -> Callable[[list[Value]], str]:
         """Shared sequence opener with configured constructor prefix."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1360,11 +1381,13 @@ class Roc(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
         return _roc_dict_entry
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         return dataclasses.replace(
@@ -1379,11 +1402,13 @@ class Roc(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self._seq_open
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         return dataclasses.replace(
@@ -1394,6 +1419,7 @@ class Roc(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1424,11 +1450,13 @@ class Roc(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1444,6 +1472,7 @@ class Roc(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1455,6 +1484,7 @@ class Roc(metaclass=LanguageCls):
         return _build_roc_date_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1477,6 +1507,7 @@ class Roc(metaclass=LanguageCls):
         return _build_roc_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         formatter = _build_roc_time_iso(prefix=self.constructor_prefix)
@@ -1486,11 +1517,13 @@ class Roc(metaclass=LanguageCls):
         return formatter
 
     @cached_property
+    @beartype
     def format_dict_key(self) -> Callable[[str], str]:
         """Render a string key without a value constructor."""
         return _format_roc_string_literal
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1500,6 +1533,7 @@ class Roc(metaclass=LanguageCls):
         return _build_roc_str_formatter(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1517,6 +1551,7 @@ class Roc(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1526,6 +1561,7 @@ class Roc(metaclass=LanguageCls):
             )
             tag = f"{self.constructor_prefix}Float "
 
+            @beartype
             def _bare_float(value: float) -> str:
                 """Render a float without a tag, including infinities."""
                 if math.isinf(value):
@@ -1563,11 +1599,13 @@ class Roc(metaclass=LanguageCls):
         return _format_float_with_specials
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
@@ -1579,11 +1617,13 @@ class Roc(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return self._dict_entry
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1607,6 +1647,7 @@ class Roc(metaclass=LanguageCls):
         return _roc_declaration
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1629,6 +1670,7 @@ class Roc(metaclass=LanguageCls):
     call_assignment_declares_binding = True
 
     @cached_property
+    @beartype
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1636,16 +1678,19 @@ class Roc(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble (Roc needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Roc needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:

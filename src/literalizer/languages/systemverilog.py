@@ -194,6 +194,7 @@ def _build_sv_entry_formatter(
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter from datetime output metadata."""
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Wrap one SystemVerilog value."""
         return _format_sv_entry(
@@ -211,6 +212,7 @@ def _build_sv_variable_declaration(
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Build a SystemVerilog variable declaration formatter."""
 
+    @beartype
     def _format(
         name: str,
         value: str,
@@ -236,6 +238,7 @@ def _build_sv_variable_assignment(
 ) -> Callable[[str, str, Value], str]:
     """Build a SystemVerilog variable assignment formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Assign one SystemVerilog value."""
         if isinstance(data, (list, set, dict)):
@@ -846,6 +849,7 @@ class SystemVerilog(metaclass=LanguageCls):
     validate_call_arg = default_validate_call_arg
 
     @cached_property
+    @beartype
     def format_call_statement(self) -> Callable[[str], str]:
         """Explicitly discard task and function call results."""
         return _sv_format_call_statement
@@ -981,16 +985,19 @@ class SystemVerilog(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return format_string_backslash_nul_octal
 
     @cached_property
+    @beartype
     def _entry_formatter(self) -> Callable[[Value, str], str]:
         """Entry formatter built from datetime output metadata."""
         return _build_sv_entry_formatter(
@@ -998,11 +1005,13 @@ class SystemVerilog(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return self._entry_formatter
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return self._entry_formatter
@@ -1012,6 +1021,7 @@ class SystemVerilog(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         return _build_sv_variable_assignment(
@@ -1019,11 +1029,13 @@ class SystemVerilog(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         return self.heterogeneous_strategy.value
@@ -1035,6 +1047,7 @@ class SystemVerilog(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1046,6 +1059,7 @@ class SystemVerilog(metaclass=LanguageCls):
         return functools.partial(_sv_call_stub, indent=indent)
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each call argument in the ``_VVal`` struct literal."""
         return self._entry_formatter
@@ -1057,6 +1071,7 @@ class SystemVerilog(metaclass=LanguageCls):
     format_call_target = default_format_call_target
 
     @cached_property
+    @beartype
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -1072,6 +1087,7 @@ class SystemVerilog(metaclass=LanguageCls):
         assignment compatible".
         """
 
+        @beartype
         def _sv_format_ref_identifier(
             name: str, value: Value | None, /
         ) -> str:
@@ -1091,6 +1107,7 @@ class SystemVerilog(metaclass=LanguageCls):
         return _sv_format_ref_identifier
 
     @cached_property
+    @beartype
     def format_call_arg_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -1115,21 +1132,25 @@ class SystemVerilog(metaclass=LanguageCls):
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         return self.sequence_format.value
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         return self.set_format.value
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format.value.sequence_open
 
     @cached_property
+    @beartype
     def _vkv_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter producing ``_VKV`` struct
         literals.
@@ -1140,6 +1161,7 @@ class SystemVerilog(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
@@ -1154,21 +1176,25 @@ class SystemVerilog(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Format epoch seconds with the configured integer literal
         width.
@@ -1178,16 +1204,19 @@ class SystemVerilog(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         return make_overflow_fallback_formatter(
@@ -1200,11 +1229,13 @@ class SystemVerilog(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
@@ -1214,11 +1245,13 @@ class SystemVerilog(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return self._vkv_entry
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1228,6 +1261,7 @@ class SystemVerilog(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1244,6 +1278,7 @@ class SystemVerilog(metaclass=LanguageCls):
         return _format_systemverilog_call_declaration
 
     @cached_property
+    @beartype
     def format_call_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1256,6 +1291,7 @@ class SystemVerilog(metaclass=LanguageCls):
         return _format_systemverilog_call_assignment
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:

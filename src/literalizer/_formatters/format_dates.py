@@ -224,6 +224,7 @@ def datetime_epoch_formatter(
     integer formatter.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Format using the supplied integer formatter."""
         return format_integer(datetime_epoch_seconds(value=value))
@@ -260,6 +261,7 @@ def date_ymd_formatter(
         fmt(datetime.date(2024, 1, 15))  # => "LocalDate.of(2024, 1, 15)"
     """
 
+    @beartype
     def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _format_date_ymd(value=value, template=template)
@@ -343,6 +345,7 @@ def datetime_ymdhms_formatter(
         )
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _format_datetime_ymdhms(
@@ -378,6 +381,7 @@ def date_iso_formatter(
         fmt(datetime.date(2024, 1, 15))  # => 'DateTime.parse("2024-01-15")'
     """
 
+    @beartype
     def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _format_date_iso_template(value=value, template=template)
@@ -408,6 +412,7 @@ def datetime_iso_formatter(
         )
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _format_datetime_iso_template(value=value, template=template)

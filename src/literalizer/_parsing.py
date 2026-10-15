@@ -176,6 +176,7 @@ def _json_object_without_duplicate_keys(
     return result
 
 
+@beartype
 class InputFormat(enum.Enum):
     """Supported input serialization formats.
 
@@ -816,6 +817,7 @@ def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: _Yaml) -> None:
     constructor = ruamel_yaml.constructor
     original = constructor.yaml_constructors[tag]
 
+    @beartype
     def _construct(constructor_obj: object, node: _YamlScalarNode) -> object:
         """Construct a YAML integer while preserving signed zero.
 

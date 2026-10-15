@@ -31,6 +31,7 @@ def variable_formatter(*, template: str) -> Callable[[str, str, Value], str]:
         assign("x", "42", None)  # => "x = 42;"
     """
 
+    @beartype
     def _format(name: str, value: str, _data: Value) -> str:
         """Delegate to module-level implementation."""
         return _format_variable(
@@ -150,6 +151,7 @@ def tuple_dict_entry(
     -> ``"(k, v)"``.
     """
 
+    @beartype
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Delegate to module-level implementation."""
         return _format_tuple_dict_entry(
@@ -188,6 +190,7 @@ def braced_dict_entry(
     -> ``"{k, v}"``.
     """
 
+    @beartype
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Delegate to module-level implementation."""
         return _format_braced_dict_entry(
@@ -318,6 +321,7 @@ def dict_entry_with_template(
     returns a callable producing ``"Map.entry(k, v)"``.
     """
 
+    @beartype
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Delegate to module-level implementation."""
         return _format_dict_entry_with_template(

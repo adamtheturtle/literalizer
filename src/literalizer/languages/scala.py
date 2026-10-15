@@ -302,6 +302,7 @@ def _resolve_sequence_open(
             fallback=fmt.typed_opener_fallback,
         )
 
+        @beartype
         def _null_guarded(items: list[Value]) -> str:
             """Raise if any item is null, else delegate to the typed
             opener.
@@ -1005,6 +1006,7 @@ class Scala(metaclass=LanguageCls):
                 cls.VAR: "var",
             }[self]
 
+            @beartype
             def _formatter(
                 name: str,
                 value: str,
@@ -1247,6 +1249,7 @@ class Scala(metaclass=LanguageCls):
                 return
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether Scala should render via Circe ``Json``."""
         return self.json_type is not None
@@ -1381,11 +1384,13 @@ class Scala(metaclass=LanguageCls):
             seen_names.add(name)
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return self.string_format
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         if self._json_type_active:
@@ -1393,6 +1398,7 @@ class Scala(metaclass=LanguageCls):
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         if self._json_type_active:
@@ -1404,6 +1410,7 @@ class Scala(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         if self._json_type_active:
@@ -1411,6 +1418,7 @@ class Scala(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument."""
         if self._json_type_active:
@@ -1418,6 +1426,7 @@ class Scala(metaclass=LanguageCls):
         return identity_call_arg
 
     @cached_property
+    @beartype
     def _scalar_field_type_resolver(
         self,
     ) -> Callable[[type | ListType | DictType], str | None]:
@@ -1539,6 +1548,7 @@ class Scala(metaclass=LanguageCls):
         return field_type
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """Scala syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
@@ -1575,6 +1585,7 @@ class Scala(metaclass=LanguageCls):
         return f"({', '.join(elem_types)})"
 
     @cached_property
+    @beartype
     def _scala_tuple_renderer(self) -> TupleRenderer:
         """Scala syntax hooks for the ``TUPLE`` strategy.
 
@@ -1632,11 +1643,13 @@ class Scala(metaclass=LanguageCls):
         return single_concrete_type(types=scalar_types, fallback_type="Any")
 
     @cached_property
+    @beartype
     def _derecordized_map_narrowing(self) -> _ScalaWidenedMapNarrowing:
         """Per-pass narrow-value-type cache for widened fallback maps."""
         return _ScalaWidenedMapNarrowing(value_type=None)
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> RecordStrategy:
         """Resolve the active strategy to its behavior + preamble.
 
@@ -1661,6 +1674,7 @@ class Scala(metaclass=LanguageCls):
             narrowing = self._derecordized_map_narrowing
             base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
 
+            @beartype
             def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
                 """Refresh the narrow-type cache alongside the wrap
                 ids.
@@ -1674,6 +1688,7 @@ class Scala(metaclass=LanguageCls):
                 )
                 return wrap_ids
 
+            @beartype
             def _widened_map_open() -> str:
                 """Return the widened-map opener for the current
                 pass.
@@ -1702,6 +1717,7 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -1720,6 +1736,7 @@ class Scala(metaclass=LanguageCls):
         return self._record_strategy.preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
         if self._json_type_active:
@@ -1736,6 +1753,7 @@ class Scala(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1764,6 +1782,7 @@ class Scala(metaclass=LanguageCls):
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
     @cached_property
+    @beartype
     def _date_type_name(self) -> str | None:
         """Scala type name for the configured date format."""
         return self._opener_config.type_name(
@@ -1771,6 +1790,7 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _datetime_type_name(self) -> str | None:
         """Scala type name for the configured datetime format.
 
@@ -1785,6 +1805,7 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _openers(self) -> TypeOpeners:
         """Pre-built typed openers for sequence/set/dict literals."""
         effective_set_opener_template = None
@@ -1802,6 +1823,7 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
@@ -1843,6 +1865,7 @@ class Scala(metaclass=LanguageCls):
         return base
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         if self._json_type_active:
@@ -1861,6 +1884,7 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence.
 
@@ -1888,6 +1912,7 @@ class Scala(metaclass=LanguageCls):
         if record_name_for_value is None:
             return base
 
+        @beartype
         def _open(items: list[Value], /) -> str:
             """Use the plain opener for lists of record-shaped dicts.
 
@@ -1908,6 +1933,7 @@ class Scala(metaclass=LanguageCls):
                 return plain_open(items)
             return base(items)
 
+        @beartype
         def _signature(items: list[Value], /) -> CollectionSignature:
             """Retain the record or ordinary producer's selected type."""
             if (
@@ -1927,6 +1953,7 @@ class Scala(metaclass=LanguageCls):
         return signature_open(render=_open, infer=_signature)
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         if self._json_type_active:
@@ -1975,11 +2002,13 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         if self._json_type_active:
@@ -1987,6 +2016,7 @@ class Scala(metaclass=LanguageCls):
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
@@ -1994,6 +2024,7 @@ class Scala(metaclass=LanguageCls):
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
@@ -2012,6 +2043,7 @@ class Scala(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self._json_type_active:
@@ -2019,11 +2051,13 @@ class Scala(metaclass=LanguageCls):
         return format_time_local_time_of
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         return make_overflow_fallback_formatter(
@@ -2041,6 +2075,7 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_integer_beyond_i64(self) -> Callable[[int], str]:
         """Formatter for collections that exceed signed 64-bit range.
 
@@ -2058,11 +2093,13 @@ class Scala(metaclass=LanguageCls):
         return _format_scala_bigint_literal
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         if self._json_type_active:
@@ -2080,6 +2117,7 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         if self._json_type_active:
@@ -2093,6 +2131,7 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2104,6 +2143,7 @@ class Scala(metaclass=LanguageCls):
         return self.declaration_style.value.formatter
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
         if self._json_type_active:
@@ -2115,6 +2155,7 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def static_preamble(self) -> Sequence[str]:
         """Static preamble lines emitted once per file.
 
@@ -2127,6 +2168,7 @@ class Scala(metaclass=LanguageCls):
         return ()
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -2137,6 +2179,7 @@ class Scala(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value

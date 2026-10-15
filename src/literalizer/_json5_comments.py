@@ -51,6 +51,7 @@ def _split_comments(
     return " ".join(inline), tuple(trailing)
 
 
+@beartype
 @dataclasses.dataclass
 class _Comments:
     """Consume comments using source spans supplied by the JSON5

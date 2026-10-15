@@ -1378,11 +1378,13 @@ class Zig(metaclass=LanguageCls):
     call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
 
     @cached_property
+    @beartype
     def _format_entry(self) -> Callable[[Value, str], str]:
         """Shared entry formatter closing over date/datetime
         ``type_produced``.
@@ -1420,6 +1422,7 @@ class Zig(metaclass=LanguageCls):
         return _formatter
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         if self._json_type_active:
@@ -1427,6 +1430,7 @@ class Zig(metaclass=LanguageCls):
         return self._format_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         if self._json_type_active:
@@ -1438,6 +1442,7 @@ class Zig(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         if self._json_type_active:
@@ -1455,6 +1460,7 @@ class Zig(metaclass=LanguageCls):
         return _format_assign
 
     @cached_property
+    @beartype
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
         return (
@@ -1463,11 +1469,13 @@ class Zig(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def uses_resolved_ref_declaration_data(self) -> bool:
         """Infer native declaration types from the values behind refs."""
         return self._record_strategy_active
 
     @cached_property
+    @beartype
     def supports_scalar_before_comments(self) -> bool:
         """Whether a comment can sit above the rendered value.
 
@@ -1477,6 +1485,7 @@ class Zig(metaclass=LanguageCls):
         return not self._json_type_active
 
     @cached_property
+    @beartype
     def supports_collection_comments(self) -> bool:
         """Whether a comment can sit inside the rendered value.
 
@@ -1486,6 +1495,7 @@ class Zig(metaclass=LanguageCls):
         return not self._json_type_active
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether Zig should render via ``std.json.Value``."""
         return self.json_type is not None
@@ -1544,6 +1554,7 @@ class Zig(metaclass=LanguageCls):
                 return
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """The literal representing null.
 
@@ -1556,6 +1567,7 @@ class Zig(metaclass=LanguageCls):
         return ".nil"
 
     @cached_property
+    @beartype
     def true_literal(self) -> str:
         """The literal representing true.
 
@@ -1567,6 +1579,7 @@ class Zig(metaclass=LanguageCls):
         return ".{ .bool = true }"
 
     @cached_property
+    @beartype
     def false_literal(self) -> str:
         """The literal representing false.
 
@@ -1697,6 +1710,7 @@ class Zig(metaclass=LanguageCls):
         return self._zig_resolved_value_type(request.value)
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """Zig syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
@@ -1712,6 +1726,7 @@ class Zig(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
@@ -1720,6 +1735,7 @@ class Zig(metaclass=LanguageCls):
             derecordized_map_open=".{ .map = &.{",
         )
 
+        @beartype
         def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
             """Tag a scalar stored in a widened ``ZVal`` map."""
             if raw_value is None:
@@ -1733,6 +1749,7 @@ class Zig(metaclass=LanguageCls):
                 datetime_type=self.datetime_format.value.type_produced,
             )
 
+        @beartype
         def _wrap_non_scalar(raw_value: Value, formatted: str) -> str:
             """Tag a sequence payload stored in a widened ``ZVal`` map."""
             if isinstance(raw_value, list):
@@ -1741,6 +1758,7 @@ class Zig(metaclass=LanguageCls):
 
         base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
 
+        @beartype
         def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
             """Tag every nested value inside a fallback map payload."""
             wrap_ids = set(base_compute_wrap_ids(data))
@@ -1762,6 +1780,7 @@ class Zig(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def static_preamble(self) -> Sequence[str]:
         """File-scope preamble.
 
@@ -1779,6 +1798,7 @@ class Zig(metaclass=LanguageCls):
         return _ZVAL_STATIC_PREAMBLE
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -1794,6 +1814,7 @@ class Zig(metaclass=LanguageCls):
             record_preamble = self._record_strategy.preamble
             compute_wrap_ids = self._record_strategy.behavior.compute_wrap_ids
 
+            @beartype
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Emit ``ZVal`` when a nested map needs that carrier."""
                 value_preamble = _RECORD_ZVAL_STATIC_PREAMBLE
@@ -1805,6 +1826,7 @@ class Zig(metaclass=LanguageCls):
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
@@ -1832,6 +1854,7 @@ class Zig(metaclass=LanguageCls):
     format_call_stub = default_format_call_stub
 
     @cached_property
+    @beartype
     def format_call_preamble_stub(
         self,
     ) -> Callable[
@@ -1850,6 +1873,7 @@ class Zig(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each call argument in the ``ZVal`` union so call sites
         match the parameter shape emitted by
@@ -1877,6 +1901,7 @@ class Zig(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format.
 
@@ -1895,6 +1920,7 @@ class Zig(metaclass=LanguageCls):
         return base
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         if self._json_type_active:
@@ -1902,6 +1928,7 @@ class Zig(metaclass=LanguageCls):
         return self.set_format.value
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence.
 
@@ -1917,6 +1944,7 @@ class Zig(metaclass=LanguageCls):
         if not self._record_strategy_active:
             return self.sequence_format.value.sequence_open
 
+        @beartype
         def _open(items: list[Value]) -> str:
             """Return the slice opener, or the tuple opener for a
             heterogeneous list.
@@ -1925,6 +1953,7 @@ class Zig(metaclass=LanguageCls):
                 return ".{"
             return "&.{"
 
+        @beartype
         def _signature(items: list[Value], /) -> CollectionSignature:
             """Retain the producer's array representation choice."""
             tuple_items = (
@@ -1942,6 +1971,7 @@ class Zig(metaclass=LanguageCls):
         return signature_open(render=_open, infer=_signature)
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting.
 
@@ -1972,34 +2002,41 @@ class Zig(metaclass=LanguageCls):
         return base
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
 
+        @beartype
         def _format(value: str) -> str:
             """Format a string as a Zig quoted literal."""
             return format_string_backslash_control(
@@ -2011,11 +2048,13 @@ class Zig(metaclass=LanguageCls):
         return _format
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a native literal.
 
@@ -2030,11 +2069,13 @@ class Zig(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting.
 
@@ -2060,6 +2101,7 @@ class Zig(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         if self._json_type_active:
@@ -2110,6 +2152,7 @@ class Zig(metaclass=LanguageCls):
         return self.format_variable_assignment(name, value, data)
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2174,6 +2217,7 @@ class Zig(metaclass=LanguageCls):
         return _format_decl
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2218,6 +2262,7 @@ class Zig(metaclass=LanguageCls):
         return _format_call_decl
 
     @cached_property
+    @beartype
     def format_call_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -2231,16 +2276,19 @@ class Zig(metaclass=LanguageCls):
         return _format_zig_call_assignment
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble (Zig needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Zig needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:

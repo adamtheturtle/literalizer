@@ -57,6 +57,7 @@ class JsonComments:
         )
 
 
+@beartype
 @dataclasses.dataclass(frozen=True)
 class _Token:
     """One source token with offsets in the unmodified input."""
@@ -125,6 +126,7 @@ def _tokens(*, source: str) -> Iterator[_Token]:
         yield _Token(text=source[start:index], start=start, end=index)
 
 
+@beartype
 @dataclasses.dataclass
 class _CommentReader:
     """Walk lexical tokens alongside the data tree from the canonical
