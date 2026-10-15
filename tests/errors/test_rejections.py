@@ -18,6 +18,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML
 
 import literalizer
+from literalizer.languages import Python
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import CallTransform
 from tests.integration.golden_checks import check_golden
@@ -85,10 +86,12 @@ def _variable_form(
         for modifier_name in call.modifiers
     )
     match call.variable_form:
+        case "none":
+            return None
         case "new":
             return literalizer.NewVariable(
                 name=name,
-                modifiers=frozenset(),
+                modifiers=modifiers,
             )
         case "existing":
             return literalizer.ExistingVariable(name=name)
@@ -263,3 +266,26 @@ def test_accepting_languages_still_accept(
     """
     for case in accepting_cases(manifest=manifest):
         _run(case=case, call=manifest.call)
+
+
+@pytest.mark.parametrize(
+    argnames=("declaration", "expected"),
+    argvalues=[
+        ({}, literalizer.NewVariable(name="my_data", modifiers=frozenset())),
+        ({"variable_form": "none"}, None),
+    ],
+)
+def test_explicit_absence_preserves_omitted_default(
+    declaration: dict[str, str],
+    expected: literalizer.NewVariable | None,
+) -> None:
+    """An explicit bare value differs from the legacy implicit declaration."""
+    call = CallSpec.model_validate(
+        obj={
+            "api": "literalize",
+            "sources": ["1"],
+            "input_format": "json",
+            **declaration,
+        },
+    )
+    assert _variable_form(call=call, lang_cls=Python, value=None) == expected
