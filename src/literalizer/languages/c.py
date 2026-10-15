@@ -614,15 +614,36 @@ def _c_stub_param(value_type: str, ident: str, /) -> str:
 
 
 @beartype
+def _c_call_parameter_types(
+    *,
+    args: Sequence[Value],
+    parameter_count: int,
+    value_type: str,
+    record_name_for_value: Callable[[Value], str | None] | None,
+) -> list[str]:
+    """Keep native record types in the resolved call argument columns."""
+    parameter_types = [value_type] * parameter_count
+    if record_name_for_value is not None:
+        for row in args:
+            values = row if isinstance(row, list) else [row]
+            for index, value in enumerate(iterable=values):
+                record_name = record_name_for_value(value)
+                if record_name is not None:
+                    parameter_types[index] = f"struct {record_name}"
+    return parameter_types
+
+
+@beartype
 def _c_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
-    _args: Sequence[Value],
+    args: Sequence[Value],
     /,
     *,
     value_type: str,
     value_zero: str,
+    record_name_for_value: Callable[[Value], str | None] | None,
 ) -> tuple[str, ...]:
     """Return C stub declarations for a call name.
 
@@ -638,7 +659,8 @@ def _c_call_stub(
     values through the universal value type; this avoids the K&R
     unspecified-parameter syntax (and the ``-Wdeprecated-non-prototype``
     clang warning it triggers) while still letting the same stub accept
-    any mix of argument types.
+    any mix of argument types. Known native records instead use their
+    assigned ``struct`` type in each parameter position.
 
     Single-name calls emit a ``static`` definition so the fixture links
     under the lint workflow's run step — a bare prototype without a body
@@ -650,11 +672,18 @@ def _c_call_stub(
     if is_value:
         return_keyword = value_type
         return_stmt = f" return {value_zero};"
+    parameter_types = _c_call_parameter_types(
+        args=args,
+        parameter_count=len(params),
+        value_type=value_type,
+        record_name_for_value=record_name_for_value,
+    )
     proto = "void"
     if len(params) > 0:
-        proto = ", ".join([value_type] * len(params))
+        proto = ", ".join(parameter_types)
     stub_params = ", ".join(
-        _c_stub_param(value_type, f"_a{i}") for i in range(len(params))
+        _c_stub_param(parameter_type, f"_a{i}")
+        for i, parameter_type in enumerate(iterable=parameter_types)
     )
     stub_signature = _stub_parameter_signature(parameters=stub_params)
     # Discard the parameters together: the stub treats every argument alike.
@@ -1743,11 +1772,16 @@ class C(metaclass=LanguageCls):
                 _c_call_stub,
                 value_type=_c_pointer_type(base="cJSON"),
                 value_zero="NULL",
+                record_name_for_value=None,
             )
+        record_name_for_value = None
+        if self._record_strategy_active:
+            record_name_for_value = self._record_strategy.record_name_for_value
         return partial(
             _c_call_stub,
             value_type="CVal",
             value_zero="(CVal){0}",
+            record_name_for_value=record_name_for_value,
         )
 
     format_call_target = default_format_call_target
