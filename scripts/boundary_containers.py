@@ -260,7 +260,7 @@ def observe(value: BoundaryValue, *, javascript: bool) -> JsonValue:
         }
     if isinstance(value, list):
         return [observe(value=child, javascript=javascript) for child in value]
-    if isinstance(value, bool) or value is None or isinstance(value, str):
+    if isinstance(value, (bool, str)) or value is None:
         return value
     if isinstance(value, int) and not javascript:
         return ["int", str(object=value)]
@@ -268,7 +268,7 @@ def observe(value: BoundaryValue, *, javascript: bool) -> JsonValue:
 
 
 def depth(value: BoundaryValue) -> int:
-    """Count container nesting before rendering or starting a subprocess."""
+    """Count container nesting before rendering or running a command."""
     if isinstance(value, dict):
         return 1 + max(
             (depth(value=child) for child in value.values()), default=0
@@ -355,6 +355,13 @@ def execute(
         case "go":
             filename, command = "main.go", ["go", "run", "main.go"]
         case "csharp":
+            _ = (directory / "global.json").write_text(
+                data=json.dumps(
+                    obj={
+                        "sdk": {"version": "8.0.426", "rollForward": "disable"}
+                    }
+                ),
+            )
             filename, command = (
                 "Program.cs",
                 [
@@ -470,7 +477,7 @@ def record_rejection_audit(target: Target) -> None:
 
 
 class Options(BaseModel, extra="forbid", frozen=True):
-    """Validate argparse's dynamically typed namespace at the boundary."""
+    """Validate dynamically typed command arguments at the boundary."""
 
     target: str
     mode: Literal["baseline", "expanded"]
@@ -490,12 +497,10 @@ def options() -> Options:
     return Options.model_validate(obj=parser.parse_args().__dict__)
 
 
-def main() -> None:
-    """Write reviewable inputs, generated source, diagnostics and timing."""
-    args = options()
-    target = targets()[args.target]
-    output: Path = args.output
-    output.mkdir(parents=True, exist_ok=True)
+def selected_document(
+    *, target: Target, args: Options
+) -> dict[str, BoundaryValue]:
+    """Select the existing corpus or the capability-aware expansion."""
     if args.mode == "baseline":
         document = TypeAdapter[dict[str, BoundaryValue]](
             type=dict[str, BoundaryValue],
@@ -509,13 +514,23 @@ def main() -> None:
         document = {
             key.replace("_", ""): value for key, value in document.items()
         }
-        # The established Go/C#/JS harnesses document this same exclusion.
+        # The existing non-Python harnesses document this same exclusion.
         if target.runtime != "python":
             _ = document.pop("biginteger")
     else:
         document = dict(cases(target=target))
         if args.case is not None:
             document = {args.case: document[args.case]}
+    return document
+
+
+def main() -> None:
+    """Write inputs, generated source, diagnostics and timing."""
+    args = options()
+    target = targets()[args.target]
+    output: Path = args.output
+    output.mkdir(parents=True, exist_ok=True)
+    document = selected_document(target=target, args=args)
     if len(document) > _MAX_CASES or depth(value=document) > _MAX_DEPTH:
         msg = "corpus exceeds its documented size/depth budget"
         raise ValueError(msg)

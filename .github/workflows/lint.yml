@@ -37,6 +37,11 @@ jobs:
       - name: Prepare dependencies
         timeout-minutes: 10
         run: uv sync --group dev
+      - name: Select the installed .NET SDK
+        if: startsWith(matrix.target, 'csharp')
+        run: >-
+          printf '%s\n' '{"sdk":{"version":"8.0.426","rollForward":"disable"}}'
+          > global.json
       - name: Record revision and tools
         run: |
           mkdir -p results
