@@ -15,7 +15,7 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 struct Record0 { long long value; };
-static void consume(CVal _a0) { (void)_a0; }
+static void consume(struct Record0 _a0) { (void)_a0; }
 int main(void) {
 struct Record0 item = (struct Record0){
     .value = 1,

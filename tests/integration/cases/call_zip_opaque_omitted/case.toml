@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = false
+call_transform_reports_zip_usage = false
+call_transform = "{call}"
+zip_source = "2024-01-15T12:00:00"
+zip_input_format = "yaml"

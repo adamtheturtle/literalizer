@@ -1550,3 +1550,9 @@ overrides = [
   { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
   { kind = "enum_member", option = "set_format", member = "SORTED_SET" },
 ]
+
+[special_axes.plain_collection_callbacks]
+reason = "A custom language supplies ordinary text-only sequence and map callbacks."
+
+[special_axes.typed_collection_callback]
+reason = "A custom typed opener supplies an ordinary element-type callback."

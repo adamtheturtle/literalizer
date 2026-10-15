@@ -16,6 +16,7 @@ from literalizer._formatters.collection_openers import (
     CollectionType,
     TypedOpenerConfig,
     TypeOpeners,
+    collection_type_open,
     fixed_open,
     infer_collection_type,
 )
@@ -105,6 +106,7 @@ from literalizer._language import (
     no_data_preamble,
     no_format_integer_widened,
     no_leading_preamble,
+    requires_declared_binding,
     unsupported_wrap_combined_in_file_static,
     value_contains,
     wrap_in_file_noop,
@@ -1254,6 +1256,10 @@ class Dart(metaclass=LanguageCls):
         """Format a set entry."""
         return passthrough_set_entry
 
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
+
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
@@ -1392,14 +1398,22 @@ class Dart(metaclass=LanguageCls):
         """Render the opener from the shared list type decision."""
         fmt = self.sequence_format.value
         if fmt.typed_opener_fallback is not None:
-            return lambda items: self._sequence_type(items).opener
+            return collection_type_open(
+                infer=self._sequence_type, fallback_type="List<dynamic>"
+            )
         return fmt.sequence_open
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=lambda items: self._dict_type(items).opener,
+            dict_open=collection_type_open(
+                infer=self._dict_type,
+                fallback_type=(
+                    f"Map<{self.default_dict_key_type}, "
+                    f"{self.default_dict_value_type}>"
+                ),
+            ),
             close="}",
             format_entry=dict_entry_with_separator(
                 separator=": ",

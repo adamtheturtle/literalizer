@@ -7,6 +7,7 @@ import functools
 import string
 import tomllib
 from collections.abc import Callable, Mapping
+from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Literal, get_args
 
@@ -167,13 +168,22 @@ class CallTransform:
 
     template: str
 
+    @cached_property
+    def uses_zipped(self) -> bool:
+        """Retain operand usage from the validated substitution
+        template.
+        """
+        return any(
+            field_name == "zipped"
+            for _, field_name, _, _ in string.Formatter().parse(
+                format_string=self.template
+            )
+        )
+
     @beartype
     def __call__(self, context: literalizer.CallContext, /) -> str:
-        """Return the transformed text for one generated call."""
-        return self.template.format(
-            call=context.call,
-            zipped=context.zipped,
-        )
+        """Return transformed text and the template's operand usage."""
+        return self.template.format(call=context.call, zipped=context.zipped)
 
 
 @beartype
@@ -541,6 +551,8 @@ class CallCaseSpec(  # noqa: NOD001
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
+    # Ordinary callbacks omit the template producer's zip-usage metadata.
+    call_transform_reports_zip_usage: bool = True
     # An additional call to the same target, emitted after the primary
     # call so a fixture can use its bound result.
     followup_source: str | None = None

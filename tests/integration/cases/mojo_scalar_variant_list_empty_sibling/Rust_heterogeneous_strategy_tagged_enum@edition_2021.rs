@@ -6,7 +6,7 @@ pub enum Value {
 fn main() {
     let my_data = vec![
         vec![Value::I32(1), Value::Str("value")],
-        vec![],
+        Vec::new(),
     ];
     let _ = &my_data;
 }

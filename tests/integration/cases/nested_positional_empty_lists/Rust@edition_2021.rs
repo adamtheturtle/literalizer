@@ -1,7 +1,7 @@
 fn main() {
     let my_data = vec![
         vec![
-            Vec::<String>::new(),
+            Vec::new(),
         ],
         vec![
             vec![

@@ -1,7 +1,7 @@
 schema_version = 1
 summary = "Typed complete-file wrappers reject assignment to an undeclared existing variable."
 exceptions = ["ExistingVariableNotSelfContainedError"]
-languages = ["CSharp", "Cpp", "Go", "Java", "Kotlin", "Rust", "Swift"]
+languages = ["CSharp", "Cpp", "Go", "Haskell", "Java", "Kotlin", "Roc", "Rust", "Swift"]
 
 [call]
 api = "literalize"

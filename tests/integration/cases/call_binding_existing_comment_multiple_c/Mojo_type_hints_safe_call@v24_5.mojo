@@ -1,4 +1,4 @@
-def make_widget(count: Int) -> None:
+def make_widget[*Ts: AnyType](*args: *Ts) -> None:
     pass
 def main():
     var my_data = make_widget(42)

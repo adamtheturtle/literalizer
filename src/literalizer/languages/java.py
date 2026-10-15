@@ -15,8 +15,10 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     CollectionType,
     TypedOpenerConfig,
+    collection_type_open,
     fixed_open,
     infer_collection_type,
+    validated_fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -124,6 +126,7 @@ from literalizer._language import (
     no_data_preamble,
     no_leading_preamble,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._statements import split_trailing_line_comments
 from literalizer._types import OrderedMap, Scalar, Value
@@ -1320,7 +1323,7 @@ class Java(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         LIST = SequenceFormatConfig(
-            sequence_open=_list_of_open,
+            sequence_open=validated_fixed_open(render=_list_of_open),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
@@ -2105,6 +2108,10 @@ class Java(metaclass=LanguageCls):
         """Format a set entry."""
         return passthrough_set_entry
 
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
+
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
@@ -2379,7 +2386,9 @@ class Java(metaclass=LanguageCls):
         fmt = self.sequence_format.value
         if fmt.typed_opener_fallback is None:
             return fmt.sequence_open
-        return lambda items: self._array_type(items).opener
+        return collection_type_open(
+            infer=self._array_type, fallback_type="Object[]"
+        )
 
     @cached_property
     def _array_type(self) -> Callable[[list[Value]], CollectionType]:

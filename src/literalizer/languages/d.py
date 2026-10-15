@@ -15,6 +15,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     fixed_open,
     sequence_surrogate_set_open,
+    validated_fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -116,6 +117,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._statements import split_trailing_line_comments
 from literalizer._types import Scalar, Value
@@ -1264,6 +1266,10 @@ class D(metaclass=LanguageCls):
         """
         return _format_d_entry
 
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
+
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable.
@@ -1559,7 +1565,9 @@ class D(metaclass=LanguageCls):
         if self._record_strategy_active:
             return dataclasses.replace(
                 base,
-                sequence_open=_d_record_sequence_open,
+                sequence_open=validated_fixed_open(
+                    render=_d_record_sequence_open
+                ),
                 close="]",
                 empty_sequence="[]",
                 format_entry=_format_d_entry_raw,
@@ -1568,7 +1576,9 @@ class D(metaclass=LanguageCls):
         if self._narrow_typed_active:
             return dataclasses.replace(
                 base,
-                sequence_open=_d_narrow_sequence_open,
+                sequence_open=validated_fixed_open(
+                    render=_d_narrow_sequence_open
+                ),
                 close="]",
                 empty_sequence="[]",
                 format_entry=_format_d_entry_raw,
@@ -1629,13 +1639,13 @@ class D(metaclass=LanguageCls):
         if self._record_strategy_active:
             return dataclasses.replace(
                 base,
-                dict_open=_d_record_dict_open,
+                dict_open=validated_fixed_open(render=_d_record_dict_open),
                 empty_dict=None,
             )
         if self._narrow_typed_active:
             return dataclasses.replace(
                 base,
-                dict_open=_d_narrow_dict_open,
+                dict_open=validated_fixed_open(render=_d_narrow_dict_open),
                 close="]",
                 format_entry=dict_entry_with_separator(
                     separator=": ",

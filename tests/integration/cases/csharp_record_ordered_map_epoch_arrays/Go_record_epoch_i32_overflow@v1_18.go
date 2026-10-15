@@ -2,49 +2,49 @@ package main
 type Record0 struct {
 	Values [][2]any
 	Flag bool
-	DirectArrays [][]int
+	DirectArrays [][]int64
 }
 
 func main() {
 my_data := Record0{
 	Values: [][2]any{
-		{"wide", [][]int{
-			[]int{
+		{"wide", []any{
+			[]int64{
 				2208988800,
 			},
-			[]int{},
+			[]int64{},
 		}},
-		{"narrow", [][]int{
+		{"narrow", []any{
 			[]int{
 				946684800,
 			},
 		}},
-		{"negative", [][]int{
-			[]int{
+		{"negative", []any{
+			[]int64{
 				-2208988800,
 			},
 		}},
-		{"shifted", [][]int{
-			[]int{
+		{"shifted", []any{
+			[]int64{
 				2208988800,
 			},
 		}},
-		{"mixed_width", [][]int{
+		{"mixed_width", []any{
 			[]int{
 				946684800,
 			},
-			[]int{
+			[]int64{
 				2208988800,
 			},
 		}},
 		{"text", "preserve"},
 	},
 	Flag: true,
-	DirectArrays: [][]int{
-		[]int{
+	DirectArrays: [][]int64{
+		[]int64{
 			2208988800,
 		},
-		[]int{},
+		[]int64{},
 	},
 }
 _ = my_data

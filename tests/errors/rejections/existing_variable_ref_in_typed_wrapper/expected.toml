@@ -1,0 +1,7 @@
+# languages rejecting: 4; languages accepting: 0
+
+[ExistingVariableNotSelfContainedError]
+C = "C cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
+Cpp = "Cpp cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
+Nim = "Nim cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
+Zig = "Zig cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"

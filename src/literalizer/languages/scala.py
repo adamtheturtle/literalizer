@@ -13,11 +13,14 @@ from beartype import beartype
 
 from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
+    CollectionSignature,
     TypedOpenerConfig,
     TypeOpeners,
+    collection_signature,
     fixed_open,
     make_narrowed_empty_form,
     make_type_to_opener,
+    signature_open,
     typed_collection_open,
     typed_dict_open,
 )
@@ -139,6 +142,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
@@ -311,7 +315,10 @@ def _resolve_sequence_open(
                 raise NullInCollectionError(msg)
             return _typed_open(items)
 
-        return _null_guarded
+        return signature_open(
+            render=_null_guarded,
+            infer=lambda items: collection_signature(_typed_open, items),
+        )
     return fmt.sequence_open
 
 
@@ -1392,6 +1399,10 @@ class Scala(metaclass=LanguageCls):
             return _scala_circe_wrap_value
         return passthrough_set_entry
 
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
+
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
@@ -1897,7 +1908,23 @@ class Scala(metaclass=LanguageCls):
                 return plain_open(items)
             return base(items)
 
-        return _open
+        def _signature(items: list[Value], /) -> CollectionSignature:
+            """Retain the record or ordinary producer's selected type."""
+            if (
+                any(
+                    isinstance(item, dict) and not isinstance(item, OrderedMap)
+                    for item in items
+                )
+                or nested_record_sequence_type(
+                    value=items,
+                    record_name_for_value=record_name_for_value,
+                )
+                is not None
+            ):
+                return collection_signature(plain_open, items)
+            return collection_signature(base, items)
+
+        return signature_open(render=_open, infer=_signature)
 
     @cached_property
     def dict_format_config(self) -> DictFormatConfig:

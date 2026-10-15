@@ -76,10 +76,12 @@ def literalize_call_with_declarations(
 ) -> LiteralizeResult:
     r"""Compose declarations and a call into one complete source file.
 
-    The declarations must be results returned by :func:`literalize`, and
-    *call* must be a result returned by :func:`literalize_call`, all rendered
-    with *language*.  Their header and body preambles are reconciled across
-    the combined data before :meth:`Language.wrap_calls_with_declarations`
+    The declarations must be results returned by :func:`literalize` or
+    :func:`literalize_call`, and *call* must be a result returned by
+    :func:`literalize_call`, all rendered with *language*. Earlier bindings
+    retain their form and order. Their header and body preambles are
+    reconciled across the combined data before
+    :meth:`Language.wrap_calls_with_declarations`
     assembles the file. *extra_body_preamble*, *extra_class_preamble*, and
     *extra_preamble* place supporting definitions in the statement body,
     wrapper class, and file header respectively.
@@ -676,7 +678,10 @@ def literalize_call(
         call_transform: Optional callable transforming each generated
             call.  Invoked once per call as ``call_transform(context)``
             with a :class:`CallContext` and returns the transformed
-            string (e.g. ``lambda ctx: f"print({ctx.call})"``).  The
+            string (e.g. ``lambda ctx: f"print({ctx.call})"``). A transform
+            can expose a boolean ``uses_zipped`` attribute to state whether
+            its template substitutes the zipped operand. Otherwise, usage
+            uses lexical matching against the returned source. The
             context also exposes the call's zero-based ``index``, its
             input ``row``, and the paired ``zipped`` literal, so a
             transform can render data from a parallel sequence beside

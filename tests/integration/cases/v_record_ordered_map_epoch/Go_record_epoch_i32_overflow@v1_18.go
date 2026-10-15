@@ -18,7 +18,7 @@ my_data := Record0{
 		}},
 	},
 	ListValues: [][2]any{
-		{"first", []int{
+		{"first", []int64{
 			2208988800,
 		}},
 	},

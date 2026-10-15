@@ -63,6 +63,7 @@ from literalizer._language import (
     ModifierCombination,
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
+    RenderedExistingBinding,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -87,8 +88,10 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
     reject_empty_dicts,
+    requires_declared_binding,
 )
 from literalizer._types import Value
+from literalizer.exceptions import UnsupportedCallShapeError
 
 _ADA_EMPTY_LITERAL = "AList'[]"
 _C0_CONTROL_LIMIT = 32
@@ -763,12 +766,27 @@ class Ada(metaclass=LanguageCls):
         call expressions go in the executable section.
         """
         body_preamble = context.body_preamble
+        object_declarations: list[str] = []
+        statements: list[str] = []
+        for fragment in declarations:
+            if isinstance(fragment, RenderedExistingBinding):
+                statements.append(fragment)
+            elif len(statements) > 0:
+                raise UnsupportedCallShapeError(
+                    language_name="Ada",
+                    reason=(
+                        "a declaration after an executable assignment "
+                        "requires a nested declarative region"
+                    ),
+                )
+            else:
+                object_declarations.append(fragment)
         return self.wrap_in_file(
-            content=calls,
+            content="\n".join((*statements, calls)),
             context=dataclasses.replace(
                 context,
                 variable_name="",
-                body_preamble=(*body_preamble, *declarations),
+                body_preamble=(*body_preamble, *object_declarations),
             ),
         )
 
@@ -926,6 +944,10 @@ class Ada(metaclass=LanguageCls):
         """Format a set entry."""
         return self._entry_formatter
 
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
+
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
@@ -989,6 +1011,18 @@ class Ada(metaclass=LanguageCls):
     ]:
         """Return stub declarations for a call expression."""
         return _ada_call_stub
+
+    @staticmethod
+    def format_feedback_call_statement_stub(
+        parts: Sequence[str], params: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Overload a synthetic function for its discarded feedback use.
+
+        Ada cannot discard a function result in a call statement. A
+        procedure overload lets a scaffold use the same target both to
+        produce the seed and to consume its final value.
+        """
+        return _ada_call_stub(parts, params, StubReturn.VOID, ())
 
     format_call_class_scope_stub = default_format_call_stub
 

@@ -4,17 +4,20 @@ import collections.abc
 import dataclasses
 import datetime as dt
 import enum
+import itertools
 import re
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import TYPE_CHECKING, ClassVar, TypeGuard
+from typing import TYPE_CHECKING, ClassVar, Self, TypeGuard
 
 from beartype import beartype
 
 from literalizer._checks import reject_cjson_unrepresentable
 from literalizer._formatters.collection_openers import (
+    CollectionSignature,
     fixed_open,
+    signature_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -50,6 +53,11 @@ from literalizer._formatters.format_json_value import (
 )
 from literalizer._formatters.format_strings import (
     format_string_c,
+)
+from literalizer._formatters.preamble_roles import (
+    import_preamble,
+    join_preamble,
+    preamble_imports,
 )
 from literalizer._formatters.record_strategy import (
     ActiveRecordStrategy,
@@ -117,6 +125,7 @@ from literalizer._language import (
     no_leading_preamble,
     no_validate_call_arg,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._statements import split_trailing_line_comments
 from literalizer._types import OrderedMap, Scalar, Value
@@ -501,6 +510,45 @@ def _check_c_record_field(
         )
 
 
+class _CPointerType(str):
+    """A pointer type selected by a C type producer."""
+
+    __slots__ = ()
+
+
+@beartype
+def _c_pointer_type(*, base: str) -> str:
+    """Select a pointer while retaining its identifier placement rule."""
+    return _CPointerType(object=f"{base} *")
+
+
+class _CArrayType(str):
+    """An array declaration type with an explicit base and dimension."""
+
+    __slots__ = ("_base", "_dimension")
+
+    _base: str
+    _dimension: int | None
+
+    @classmethod
+    def create(cls, code: str, /, *, base: str, dimension: int | None) -> Self:
+        """Retain identifier placement before spelling the declaration."""
+        result = cls(object=code)
+        result._base = base
+        result._dimension = dimension
+        return result
+
+    @property
+    def base(self) -> str:
+        """The array's element type, without its dimensions."""
+        return self._base
+
+    @property
+    def dimension(self) -> int | None:
+        """The fixed field length, or no length for a root array."""
+        return self._dimension
+
+
 @beartype
 def _c_render_record_declaration(
     name: str,
@@ -517,10 +565,11 @@ def _c_render_record_declaration(
     members: list[str] = []
     for field in fields:
         type_name = field.type_name
-        if type_name.endswith("]"):
-            base, _, dimension = type_name.partition(" [")
-            members.append(f"{base} {field.identifier}[{dimension};")
-        elif type_name.endswith("*"):
+        if isinstance(type_name, _CArrayType):
+            members.append(
+                f"{type_name.base} {field.identifier}[{type_name.dimension}];"
+            )
+        elif isinstance(type_name, _CPointerType):
             members.append(f"{type_name}{field.identifier};")
         else:
             members.append(f"{type_name} {field.identifier};")
@@ -561,9 +610,29 @@ def _c_stub_param(value_type: str, ident: str, /) -> str:
     identifier; a pointer type already ends in ``*`` and abuts the
     identifier directly.
     """
-    if value_type.endswith("*"):
+    if isinstance(value_type, _CPointerType):
         return f"{value_type}{ident}"
     return f"{value_type} {ident}"
+
+
+@beartype
+def _c_call_parameter_types(
+    *,
+    args: Sequence[Value],
+    parameter_count: int,
+    value_type: str,
+    record_name_for_value: Callable[[Value], str | None] | None,
+) -> list[str]:
+    """Keep native record types in the resolved call argument columns."""
+    parameter_types = [value_type] * parameter_count
+    if record_name_for_value is not None:
+        for row in args:
+            values = row if isinstance(row, list) else [row]
+            for index, value in enumerate(iterable=values):
+                record_name = record_name_for_value(value)
+                if record_name is not None:
+                    parameter_types[index] = f"struct {record_name}"
+    return parameter_types
 
 
 @beartype
@@ -571,11 +640,12 @@ def _c_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
-    _args: Sequence[Value],
+    args: Sequence[Value],
     /,
     *,
     value_type: str,
     value_zero: str,
+    record_name_for_value: Callable[[Value], str | None] | None,
 ) -> tuple[str, ...]:
     """Return C stub declarations for a call name.
 
@@ -591,7 +661,8 @@ def _c_call_stub(
     values through the universal value type; this avoids the K&R
     unspecified-parameter syntax (and the ``-Wdeprecated-non-prototype``
     clang warning it triggers) while still letting the same stub accept
-    any mix of argument types.
+    any mix of argument types. Known native records instead use their
+    assigned ``struct`` type in each parameter position.
 
     Single-name calls emit a ``static`` definition so the fixture links
     under the lint workflow's run step — a bare prototype without a body
@@ -603,11 +674,18 @@ def _c_call_stub(
     if is_value:
         return_keyword = value_type
         return_stmt = f" return {value_zero};"
+    parameter_types = _c_call_parameter_types(
+        args=args,
+        parameter_count=len(params),
+        value_type=value_type,
+        record_name_for_value=record_name_for_value,
+    )
     proto = "void"
     if len(params) > 0:
-        proto = ", ".join([value_type] * len(params))
+        proto = ", ".join(parameter_types)
     stub_params = ", ".join(
-        _c_stub_param(value_type, f"_a{i}") for i in range(len(params))
+        _c_stub_param(parameter_type, f"_a{i}")
+        for i, parameter_type in enumerate(iterable=parameter_types)
     )
     stub_signature = _stub_parameter_signature(parameters=stub_params)
     # Discard the parameters together: the stub treats every argument alike.
@@ -736,7 +814,9 @@ def _format_c_call_assignment(name: str, value: str, _data: Value) -> str:
 # Static preamble emitted under ``json_type=CJSON``: the cJSON header
 # replaces the default ``CVal`` / ``CKV`` type declarations, since every
 # value is built from cJSON's own ``cJSON *`` node type.
-_CJSON_STATIC_PREAMBLE: tuple[str, ...] = ("#include <cjson/cJSON.h>",)
+_CJSON_STATIC_PREAMBLE: tuple[str, ...] = (
+    import_preamble(code="#include <cjson/cJSON.h>"),
+)
 
 _CJSON_RECORD_REJECTED_MSG = (
     "C json_type renders data as a cJSON_Create*(...) node tree and is "
@@ -858,6 +938,7 @@ def _c_cjson_build(
     /,
     *,
     prefix: str,
+    node_indices: Iterator[int],
     format_integer: Callable[[int], str],
     format_float: Callable[[float], str],
 ) -> _CJsonBuild:
@@ -869,17 +950,15 @@ def _c_cjson_build(
     ``cJSON *{prefix}{n}``
     variable and added to its parent in a following statement -- the
     portable standard-C form every cJSON tutorial shows.  Nodes are
-    numbered in pre-order, so the document root is always ``{prefix}0``.
+    numbered in pre-order using the document-wide node index sequence,
+    including builds for other bindings in the same document.
     """
     lines: list[str] = []
-    counter = 0
 
     @beartype
     def _emit(node: JsonValue, /) -> str:
         """Emit the build statements for *node*; return its variable."""
-        nonlocal counter
-        name = f"{prefix}{counter}"
-        counter += 1
+        name = f"{prefix}{next(node_indices)}"
         match node:
             case dict():
                 lines.append(f"cJSON *{name} = cJSON_CreateObject();")
@@ -921,7 +1000,7 @@ def _c_temporal_field_type(
     *, value: str | bytes | dt.date | dt.time, epoch: bool
 ) -> str:
     """Choose the C field type for string and temporal values."""
-    field_type = "const char *"
+    field_type: str = _c_pointer_type(base="const char")
     if epoch and isinstance(value, dt.datetime):
         field_type = "long long"
     return field_type
@@ -1539,7 +1618,9 @@ class C(metaclass=LanguageCls):
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
     static_body_preamble: ClassVar[Sequence[str]] = ()
-    special_float_preamble: ClassVar[tuple[str, ...]] = ("#include <math.h>",)
+    special_float_preamble: ClassVar[tuple[str, ...]] = (
+        import_preamble(code="#include <math.h>"),
+    )
     call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
@@ -1591,8 +1672,13 @@ class C(metaclass=LanguageCls):
             value,
             list,
         ):
-            return f"struct {request.element_record_name} [{len(value)}]"
+            return _CArrayType.create(
+                f"struct {request.element_record_name} [{len(value)}]",
+                base=f"struct {request.element_record_name}",
+                dimension=len(value),
+            )
         epoch = self.datetime_format.value.type_produced is int
+        field_type: str
         match value:
             case bool():
                 field_type = "bool"
@@ -1601,11 +1687,11 @@ class C(metaclass=LanguageCls):
             case float():
                 field_type = "double"
             case None:
-                field_type = "const void *"
+                return _c_pointer_type(base="const void")
             case str() | bytes() | dt.date() | dt.time():
-                field_type = _c_temporal_field_type(value=value, epoch=epoch)
+                return _c_temporal_field_type(value=value, epoch=epoch)
             case list():
-                field_type = "const CVal *"
+                return _c_pointer_type(base="const CVal")
             case _:
                 field_type = "CVal"
         return field_type
@@ -1685,13 +1771,18 @@ class C(metaclass=LanguageCls):
         if self._json_type_active:
             return partial(
                 _c_call_stub,
-                value_type="cJSON *",
+                value_type=_c_pointer_type(base="cJSON"),
                 value_zero="NULL",
+                record_name_for_value=None,
             )
+        record_name_for_value = None
+        if self._record_strategy_active:
+            record_name_for_value = self._record_strategy.record_name_for_value
         return partial(
             _c_call_stub,
             value_type="CVal",
             value_zero="(CVal){0}",
+            record_name_for_value=record_name_for_value,
         )
 
     format_call_target = default_format_call_target
@@ -1851,7 +1942,19 @@ class C(metaclass=LanguageCls):
                 return "{"
             return "(CVal[]){"
 
-        return _open
+        def _signature(items: list[Value], /) -> CollectionSignature:
+            """Retain the producer's array representation choice."""
+            record_items = _all_record_shaped(items)
+            return CollectionSignature(
+                type_key="record-array" if record_items else "CVal-array",
+                arity=None,
+                arity_decision=False,
+                fallback_decision=True,
+                narrowing_decision=True,
+                uses_fallback_decision=not record_items,
+            )
+
+        return signature_open(render=_open, infer=_signature)
 
     @cached_property
     def sequence_format_config(self) -> SequenceFormatConfig:
@@ -2042,7 +2145,7 @@ class C(metaclass=LanguageCls):
         if record_name is not None:
             return f"struct {record_name}"
         if isinstance(data, list) and _all_record_shaped(data):
-            return f"{root}[]"
+            return _CArrayType.create(f"{root}[]", base=root, dimension=None)
         return None
 
     @staticmethod
@@ -2057,9 +2160,7 @@ class C(metaclass=LanguageCls):
         entries: Sequence[str], /
     ) -> tuple[str, ...]:
         """Keep headers required by the rendered bound values."""
-        return tuple(
-            entry for entry in entries if entry.startswith("#include ")
-        )
+        return preamble_imports(entries)
 
     def format_reference_variable_declaration(
         self,
@@ -2071,8 +2172,8 @@ class C(metaclass=LanguageCls):
     ) -> str:
         """Copy a reference using its resolved representation's type."""
         lhs = self._record_binding_lhs(data)
-        if lhs is not None and lhs.endswith("[]"):
-            lhs = f"const {lhs[:-2]} *"
+        if isinstance(lhs, _CArrayType):
+            return f"const {lhs.base} * {name} = {value};"
         if lhs is None:
             lhs = "cJSON *" if self._json_type_active else "CVal"
         return f"{lhs} {name} = {value};"
@@ -2083,6 +2184,13 @@ class C(metaclass=LanguageCls):
     ) -> str:
         """Assign an already rendered reference directly."""
         return f"{name} = {value};"
+
+    @cached_property
+    def _cjson_node_indices(self) -> Iterator[int]:
+        """Allocate cJSON helper names across every build in one
+        render.
+        """
+        return itertools.count()
 
     @cached_property
     def format_variable_declaration(
@@ -2116,11 +2224,12 @@ class C(metaclass=LanguageCls):
                 build = _c_cjson_build(
                     to_jsonable(data=data),
                     prefix="_n",
+                    node_indices=self._cjson_node_indices,
                     format_integer=format_integer,
                     format_float=format_float,
                 )
-                return "\n".join(
-                    (*build.lines, f"cJSON *{name} = {build.root};"),
+                return join_preamble(
+                    entries=(*build.lines, f"cJSON *{name} = {build.root};")
                 )
 
             return _format_cjson_decl
@@ -2135,14 +2244,18 @@ class C(metaclass=LanguageCls):
         ) -> str:
             """Format a C variable declaration."""
             lhs = self._record_binding_lhs(data)
-            if lhs is not None and lhs.endswith("[]"):
-                return f"{lhs[:-2]} {name}[] = {value};"
+            if isinstance(lhs, _CArrayType):
+                return f"{lhs.base} {name}[] = {value};"
             if lhs is not None:
                 return f"{lhs} {name} = {value};"
             wrapped = format_entry(data, value)
             return f"CVal {name} = {wrapped};"
 
         return _format_decl
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(
@@ -2175,10 +2288,13 @@ class C(metaclass=LanguageCls):
                 build = _c_cjson_build(
                     to_jsonable(data=data),
                     prefix="_m",
+                    node_indices=self._cjson_node_indices,
                     format_integer=format_integer,
                     format_float=format_float,
                 )
-                return "\n".join((*build.lines, f"{name} = {build.root};"))
+                return join_preamble(
+                    entries=(*build.lines, f"{name} = {build.root};")
+                )
 
             return _format_cjson_assign
         format_entry = self._format_entry
@@ -2187,7 +2303,7 @@ class C(metaclass=LanguageCls):
         def _format_assign(name: str, value: str, data: Value) -> str:
             """Format a C variable assignment."""
             lhs = self._record_binding_lhs(data)
-            if lhs is not None and not lhs.endswith("[]"):
+            if lhs is not None and not isinstance(lhs, _CArrayType):
                 return f"{name} = {value};"
             wrapped = format_entry(data, value)
             return f"{name} = {wrapped};"
@@ -2232,8 +2348,8 @@ class C(metaclass=LanguageCls):
         if self._json_type_active:
             return _CJSON_STATIC_PREAMBLE
         return (
-            "#include <stdbool.h>",
-            "#include <stddef.h>",
+            import_preamble(code="#include <stdbool.h>"),
+            import_preamble(code="#include <stddef.h>"),
             "typedef struct CVal CVal;",
             "typedef struct CKV CKV;",
             "struct CVal {",

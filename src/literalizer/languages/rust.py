@@ -132,6 +132,7 @@ from literalizer._language import (
     no_empty_container_literal_overrides,
     no_format_integer_widened,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._types import CallPreambleData, OrderedMap, Scalar, Value
 from literalizer.exceptions import (
@@ -223,6 +224,14 @@ def _reject_incompatible_nested_sibling_lists(data: Value, /) -> None:
     elif isinstance(data, dict):
         for child in data.values():
             _reject_incompatible_nested_sibling_lists(child)
+
+
+@beartype
+def _rust_narrowed_empty_vec(_siblings: Sequence[list[Value]]) -> str:
+    """Let Rust infer an empty vector from populated siblings or
+    cousins.
+    """
+    return "Vec::new()"
 
 
 @beartype
@@ -4187,6 +4196,10 @@ class Rust(metaclass=LanguageCls):
         """Format a set entry."""
         return passthrough_set_entry
 
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
+
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
@@ -4609,9 +4622,14 @@ class Rust(metaclass=LanguageCls):
                 declared_type=(effective_declared_type),
                 narrowed_empty_form=None,
             )
-        return self.sequence_format(
+        config = self.sequence_format(
             default_type=self.default_sequence_element_type,
         )
+        if self.sequence_format is type(self.sequence_format).VEC:
+            return dataclasses.replace(
+                config, narrowed_empty_form=_rust_narrowed_empty_vec
+            )
+        return config
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:

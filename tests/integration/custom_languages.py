@@ -1,0 +1,51 @@
+"""Custom language implementations exercised by compiling golden
+variants.
+"""
+
+import dataclasses
+from collections.abc import Callable
+from functools import cached_property
+from typing import override
+
+from literalizer import DictFormatConfig
+from literalizer._formatters.collection_openers import typed_collection_open
+from literalizer._formatters.type_inference import DictType, ListType
+from literalizer._types import Scalar, Value
+from literalizer.languages import Go
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class CallbackGo(Go):
+    """Use ordinary callbacks through the language extension
+    contract.
+    """
+
+    plain_callbacks: bool
+
+    @cached_property
+    @override
+    def sequence_open(self) -> Callable[[list[Value]], str]:
+        """Expose an ordinary sequence callback."""
+        native = Go(language_version=self.language_version)
+        if self.plain_callbacks:
+            return lambda items: str(object=native.sequence_open(items))
+
+        def _type_open(_element_type: type | ListType | DictType) -> str:
+            """Provide the extension's integer collection opener."""
+            return "[]int{"
+
+        return typed_collection_open(
+            type_to_opener=_type_open, fallback="[]any{"
+        )
+
+    @cached_property
+    @override
+    def dict_format_config(self) -> DictFormatConfig:
+        """Expose an ordinary mapping callback."""
+        native = Go(language_version=self.language_version)
+
+        def _open(items: dict[Scalar, Value], /) -> str:
+            """Keep the callback result as plain source text."""
+            return str(object=native.dict_format_config.dict_open(items))
+
+        return dataclasses.replace(native.dict_format_config, dict_open=_open)

@@ -10,6 +10,7 @@ from functools import partial
 from typing import (
     Final,
     Protocol,
+    Self,
     TypeGuard,
     assert_never,
     overload,
@@ -43,6 +44,11 @@ from literalizer._comments_resolve import (
 )
 from literalizer._dictionary_keys import dictionary_key_formatter
 from literalizer._document_formatting import format_document_fast
+from literalizer._formatters.collection_openers import (
+    CollectionOverride,
+    collection_signature,
+    selected_collection_open,
+)
 from literalizer._formatters.format_dates import datetime_epoch_seconds
 from literalizer._formatters.initializer_types import (
     finish_collection_initializer,
@@ -81,6 +87,7 @@ from literalizer._language import (
     PrefixCallStyle,
     RenderedCallStub,
     RenderedEmptySequence,
+    RenderedExistingBinding,
     StubReturn,
     decode_file_sections,
     empty_container_code,
@@ -207,6 +214,37 @@ def disabled_ref_key() -> str:
     return _DISABLED_REF_KEY
 
 
+@runtime_checkable
+class _RootMappingTableLanguage(Protocol):
+    """A language that lowers a bound multiline root mapping to a
+    table.
+    """
+
+    supports_root_mapping_table: bool
+
+
+class _RootMappingLiteral(str):
+    """A root mapping with table entries retained before flattening."""
+
+    __slots__ = ("_table_entries",)
+
+    _table_entries: tuple[str, ...]
+
+    @classmethod
+    def create(cls, code: str, /, *, table_entries: tuple[str, ...]) -> Self:
+        """Retain the selected table entries alongside the inline
+        value.
+        """
+        result = cls(object=code)
+        result._table_entries = table_entries
+        return result
+
+    @property
+    def table_entries(self) -> tuple[str, ...]:
+        """The formatted root entries for a wrapped table declaration."""
+        return self._table_entries
+
+
 @beartype
 @dataclasses.dataclass(frozen=True)
 class CallContext:
@@ -240,6 +278,34 @@ class CallContext:
     language-native literal, or ``None`` when no ``zip_source`` was
     supplied.
     """
+
+
+@runtime_checkable
+class _KnownZipUsageTransform(Protocol):
+    """A transform whose producer knows whether it substitutes zipped text."""
+
+    uses_zipped: bool
+
+
+@beartype
+@dataclasses.dataclass
+class _CallTransformUsage:
+    """Collect usage at each actual transform invocation."""
+
+    transform: Callable[[CallContext], str]
+    uses_zipped: bool
+
+    def __call__(self, context: CallContext, /) -> str:
+        """Retain known usage or handle opaque caller text at its boundary."""
+        result = self.transform(context)
+        if isinstance(self.transform, _KnownZipUsageTransform):
+            emitted_zip = self.transform.uses_zipped
+        else:
+            emitted_zip = (
+                context.zipped is not None and context.zipped in result
+            )
+        self.uses_zipped = self.uses_zipped or emitted_zip
+        return result
 
 
 @beartype
@@ -340,6 +406,13 @@ class LiteralizeResult:
     already been folded into a complete file.
     """
 
+    uses_existing_variable: bool
+    """Whether this unwrapped fragment uses ``ExistingVariable`` form.
+
+    Wrappers retain its place in the sequence and interpret its binding
+    syntax according to the language's declaration and statement regions.
+    """
+
     @property
     def code(self) -> str:
         """The formatted literal text.
@@ -425,6 +498,7 @@ def _file_wrapper_context(
     has_literal_declarations: bool,
     generated_body_preamble: tuple[str, ...],
     root_is_object_literal: bool,
+    root_mapping_entries: tuple[str, ...] | None,
 ) -> FileWrapperContext:
     """Keep declaration metadata available after rendering the binding."""
     modifiers = frozenset[enum.Enum]()
@@ -448,6 +522,7 @@ def _file_wrapper_context(
         has_literal_declarations=has_literal_declarations,
         generated_body_preamble=generated_body_preamble,
         root_is_object_literal=root_is_object_literal,
+        root_mapping_entries=root_mapping_entries,
     )
 
 
@@ -1005,14 +1080,19 @@ def _accumulate_sibling_list_empty_overrides(
         empty = [
             item for item in value if isinstance(item, list) and len(item) == 0
         ]
-        sibling_openers = {spec.sequence_open(item) for item in non_empty}
+        sibling_signatures = {
+            collection_signature(spec.sequence_open, item)
+            for item in non_empty
+        }
         widened_opener = _compute_sequence_open_override(
             items=non_empty,
             spec=spec,
         )
         sibling_opener = widened_opener
-        if len(sibling_openers) == 1:
-            sibling_opener = next(iter(sibling_openers))
+        if len(sibling_signatures) == 1:
+            sibling_opener = selected_collection_open(
+                spec.sequence_open, non_empty[0]
+            )
         if len(empty) > 0 and sibling_opener is not None:
             narrowed = spec.sequence_format_config.narrowed_empty_form
             if narrowed is not None and widened_opener is None:
@@ -1605,21 +1685,13 @@ def _format_dict_entry_value(
             non_empty_siblings = [
                 sibling for sibling in sibling_list_values if len(sibling) > 0
             ]
-            sibling_openers = {
-                ctx.spec.sequence_open(sibling)
+            sibling_signatures = {
+                collection_signature(ctx.spec.sequence_open, sibling)
                 for sibling in non_empty_siblings
             }
-            if len(sibling_openers) == 1:
-                (sibling_opener,) = sibling_openers
-                # Do not borrow an opener whose spelling includes the
-                # sequence length (for example ``std::array<T, N>``):
-                # doing so would turn an empty list into N default values.
-                length_bearing = any(
-                    ctx.spec.sequence_open([*sibling, sibling[0]])
-                    != sibling_opener
-                    for sibling in non_empty_siblings
-                )
-                if length_bearing:
+            if len(sibling_signatures) == 1:
+                (signature,) = sibling_signatures
+                if signature.arity_dependent:
                     return _format_list_value(
                         value=value,
                         sequence_open_override=None,
@@ -1633,7 +1705,9 @@ def _format_dict_entry_value(
                     return empty_container_code(
                         narrowed_empty_form(non_empty_siblings)
                     )
-                outer_sequence_override = sibling_opener
+                outer_sequence_override = selected_collection_open(
+                    ctx.spec.sequence_open, non_empty_siblings[0]
+                )
         tuple_literal = _maybe_format_tuple_literal(
             value=value,
             ctx=child_ctx,
@@ -1694,8 +1768,8 @@ def _compute_dict_open_override(
         for d in dicts
     ]
 
-    openers = {dict_open(d) for d in filtered_dicts}
-    if len(openers) <= 1:
+    signatures = {collection_signature(dict_open, d) for d in filtered_dicts}
+    if len(signatures) <= 1:
         return None
 
     # A mixed collection can name each map's narrow type as a distinct
@@ -1719,62 +1793,16 @@ def _compute_dict_open_override(
         for v in d.values():
             combined[f"_k{idx}"] = v
             idx += 1
-    return dict_open(combined)
-
-
-# Single-value dicts whose one value has a different scalar type, used
-# to probe whether a language's dict opener *narrows* by value type.  A
-# language whose opener ignores the values (dynamic languages emit a
-# fixed ``{``) can never produce a mismatch between a map and its
-# declared slot, so nested-map widening is irrelevant and the walk is
-# skipped entirely.
-_DICT_STR_PROBE: dict[Scalar, Value] = {"_probe": "s"}
-_DICT_INT_PROBE: dict[Scalar, Value] = {"_probe": 1}
-# Two dicts whose values mix disjoint scalar types, used to probe
-# whether a narrowing opener collapses to a stable "any"-like fallback
-# for mixed values.  When both probes yield the same opener the language
-# has a content-independent fallback (e.g. Go's ``map[string]any``,
-# Kotlin's ``Any?``); when they differ it builds a content-specific type
-# (C++'s ``std::variant``, etc.) with no widened form that accepts every
-# sibling, so nested-map widening must be left alone.  Every probe is
-# non-empty and string-keyed so the check never depends on an empty-dict
-# opener, which some strategies (e.g. D's ``RECORD``) reject.  Mirrors
-# :data:`_FALLBACK_PROBE` for sequences.
-_DICT_FALLBACK_PROBE_A: dict[Scalar, Value] = {"_probe_a": 1, "_probe_b": "s"}
-_DICT_FALLBACK_PROBE_B: dict[Scalar, Value] = {
-    "_probe_a": 1.5,
-    "_probe_b": False,
-}
+    return selected_collection_open(dict_open, combined)
 
 
 @beartype
 def _dict_widening_applies(*, spec: Language) -> bool:
-    """Return whether nested sibling-map widening can help *spec*.
-
-    Widening (#2878) is only relevant, and only produces output that
-    compiles, for languages whose dict opener both narrows by value type
-    and exposes a single "accepts anything" value type (Go's
-    ``map[string]any``, Kotlin's ``Any?``).  Two classes are excluded:
-
-    * Languages whose opener ignores the values (dynamic languages emit
-      a fixed ``{``): every map already shares an opener, so no map can
-      mismatch its declared slot and the whole walk is skipped.
-    * Languages whose opener is content-specific (variant/union typing,
-      e.g. C++): they have no widened type that accepts every sibling,
-      so widening would only shift the type mismatch; those are handled
-      by a dedicated heterogeneous check instead.
-
-    The probes are minimal, non-empty and string-keyed so every
-    language's dict opener returns a value for them (an empty-dict
-    opener, which some strategies such as D's ``RECORD`` reject, is
-    never requested).
-    """
-    dict_open = spec.dict_format_config.dict_open
-    if dict_open(_DICT_STR_PROBE) == dict_open(_DICT_INT_PROBE):
-        return False
-    return dict_open(_DICT_FALLBACK_PROBE_A) == dict_open(
-        _DICT_FALLBACK_PROBE_B
+    """Widen only producers with narrowing and a stable fallback type."""
+    signature = collection_signature(
+        spec.dict_format_config.dict_open, {"_value": 1}
     )
+    return signature.narrows and signature.stable_fallback
 
 
 @beartype
@@ -1800,7 +1828,7 @@ def _collect_dict_open_overrides(
     does when it derives the container's declared type.  Only languages
     the widening can help (see :func:`_dict_widening_applies`) are
     walked; the returned mapping is empty for every other language, so
-    they pay only the constant-cost probe.
+    they pay only one inference decision.
     """
     out: dict[int, str] = {}
     if _dict_widening_applies(spec=spec):
@@ -2115,10 +2143,10 @@ def _compute_sequence_dict_override(
     name one, so the elision is dropped there (issue #3938).
     """
     narrowed_open = spec.dict_format_config.narrowed_open
-    sequence_open = sequence_open_override
-    if sequence_open is None:
-        sequence_open = spec.sequence_open(items)
-    widened = sequence_open == spec.sequence_open([])
+    signature = collection_signature(spec.sequence_open, items)
+    if isinstance(sequence_open_override, CollectionOverride):
+        signature = sequence_open_override.signature
+    widened = signature.uses_fallback
     if narrowed_open is not None and not widened:
         element_type = infer_element_type(items=items)
         if isinstance(element_type, DictType):
@@ -2177,8 +2205,10 @@ def _compute_sequence_open_override(
     if len(lists) < min_lists_for_widening:
         return None
 
-    openers = {spec.sequence_open(lst) for lst in lists}
-    if len(openers) <= 1:
+    signatures = {
+        collection_signature(spec.sequence_open, lst) for lst in lists
+    }
+    if len(signatures) <= 1:
         return None
 
     pooled = [item for sibling in lists for item in sibling]
@@ -2189,21 +2219,22 @@ def _compute_sequence_open_override(
         float,
         MixedNumeric,
     }:
-        numeric_opener = spec.sequence_open(pooled)
-        if numeric_opener == spec.sequence_open(pooled + pooled):
-            return numeric_opener
+        signature = collection_signature(spec.sequence_open, pooled)
+        if not signature.arity_dependent:
+            return selected_collection_open(spec.sequence_open, pooled)
 
-    fallback = spec.sequence_open([])
-    if fallback != spec.sequence_open(_FALLBACK_PROBE):
+    signature = collection_signature(spec.sequence_open, [])
+    if not signature.stable_fallback:
         normalized_lists = _sequence_lists_for_type_widening(
             lists=lists, spec=spec
         )
         if normalized_lists != lists:
-            return spec.sequence_open(
-                [item for sibling in normalized_lists for item in sibling]
+            return selected_collection_open(
+                spec.sequence_open,
+                [item for sibling in normalized_lists for item in sibling],
             )
         return None
-    return fallback
+    return selected_collection_open(spec.sequence_open, [])
 
 
 @beartype
@@ -2241,18 +2272,24 @@ def _accumulate_sequence_open_overrides(
         return
     normalized = _sequence_lists_for_type_widening(lists=lists, spec=spec)
     pooled = [item for sibling in lists for item in sibling]
-    numeric = infer_element_type(items=pooled) in {
-        int,
-        WideInt,
-        BeyondI64,
-        float,
-        MixedNumeric,
-    } and spec.sequence_open(pooled) == spec.sequence_open(pooled + pooled)
+    numeric = (
+        infer_element_type(items=pooled)
+        in {
+            int,
+            WideInt,
+            BeyondI64,
+            float,
+            MixedNumeric,
+        }
+        and not collection_signature(
+            spec.sequence_open, pooled
+        ).arity_dependent
+    )
     if numeric or normalized != lists:
         opener = _compute_sequence_open_override(items=lists, spec=spec)
         if opener is not None and (
             numeric
-            or spec.sequence_open([]) != spec.sequence_open(_FALLBACK_PROBE)
+            or not collection_signature(spec.sequence_open, []).stable_fallback
         ):
             for sibling in lists:
                 _ = out.setdefault(id(sibling), opener)
@@ -2265,15 +2302,6 @@ def _accumulate_sequence_open_overrides(
             _accumulate_sequence_open_overrides(
                 lists=cousins, spec=spec, out=out
             )
-
-
-# Two scalars of incompatible types, used to probe whether a language's
-# sequence opener collapses to a stable "any"-like fallback for mixed
-# content.  When the opener for this probe equals the opener for an
-# empty sequence the language has a true fallback; otherwise it builds
-# a content-specific type (variant, union, etc.) that we must leave
-# alone to avoid cascading type mismatches.
-_FALLBACK_PROBE: list[Value] = [1, "probe"]
 
 
 @beartype
@@ -2343,10 +2371,13 @@ def _empty_child_sibling_opener(
     ]
     if len(non_empty_siblings) == 0:
         return None
-    sibling_openers = {spec.sequence_open(o) for o in non_empty_siblings}
-    if len(sibling_openers) != 1:
+    signatures = {
+        collection_signature(spec.sequence_open, sibling)
+        for sibling in non_empty_siblings
+    }
+    if len(signatures) != 1:
         return None
-    return next(iter(sibling_openers))
+    return selected_collection_open(spec.sequence_open, non_empty_siblings[0])
 
 
 @beartype
@@ -3163,6 +3194,7 @@ def _format_multiline_collection_value(
         collection_layout=CollectionLayout.MULTILINE,
         sequence_open_override=sequence_open_override,
         ctx=ctx,
+        root_mapping_entries=None,
     )
     body = "\n".join(lines)
     raw_opening = _collection_open_for_multiline_value(
@@ -3264,6 +3296,7 @@ def _append_entries(
     lines: list[str],
     body_prefix: str,
     trailing_comma: bool,
+    element_separator: str,
     spec: Language,
     collection_comments: CollectionComments | None,
 ) -> None:
@@ -3274,7 +3307,7 @@ def _append_entries(
         add_sep = i < last_idx or trailing_comma
         sep = ""
         if add_sep:
-            sep = spec.element_separator.strip()
+            sep = element_separator.strip()
         rendered_elements.append(
             f"{body_prefix}{rstrip_lines(text=entry)}{sep}"
         )
@@ -3368,6 +3401,7 @@ def _format_dict_lines(
     trailing_comma: bool,
     body_prefix: str,
     lines: list[str],
+    root_mapping_entries: list[str] | None,
 ) -> list[str]:
     """Format dictionary entries and their collection comments."""
     guard_dict_keys_supported(value=dict_data, spec=spec)
@@ -3445,7 +3479,18 @@ def _format_dict_lines(
         trailing_comma=dict_trailing,
         spec=spec,
         collection_comments=collection_comments,
+        element_separator=spec.element_separator,
     )
+    if root_mapping_entries is not None:
+        _append_entries(
+            formatted_entries=formatted_entries,
+            lines=root_mapping_entries,
+            body_prefix=body_prefix,
+            trailing_comma=False,
+            element_separator="",
+            spec=spec,
+            collection_comments=collection_comments,
+        )
     return lines
 
 
@@ -3459,6 +3504,7 @@ def _format_collection_lines(
     collection_layout: CollectionLayout,
     sequence_open_override: str | None,
     ctx: _RenderContext,
+    root_mapping_entries: list[str] | None,
 ) -> list[str]:
     """Format collection elements as indented lines."""
     spec = ctx.spec
@@ -3484,6 +3530,7 @@ def _format_collection_lines(
                 trailing_comma=trailing_comma,
                 body_prefix=body_prefix,
                 lines=lines,
+                root_mapping_entries=root_mapping_entries,
             )
         case set() as set_data:
             sorted_items = sorted(
@@ -3524,6 +3571,7 @@ def _format_collection_lines(
                 trailing_comma=set_trailing,
                 spec=spec,
                 collection_comments=collection_comments,
+                element_separator=spec.element_separator,
             )
         case list() as list_data:
             seq_trailing = (
@@ -3591,6 +3639,7 @@ def _format_collection_lines(
                 trailing_comma=seq_trailing,
                 spec=spec,
                 collection_comments=collection_comments,
+                element_separator=spec.element_separator,
             )
         case _ as unreachable:
             assert_never(unreachable)
@@ -4128,6 +4177,14 @@ def _format_root_collection(
     if include_delimiters:
         body_prefix = line_prefix + language.indent
     is_ordered_map = isinstance(data, OrderedMap)
+    root_mapping_entries: list[str] | None = None
+    if (
+        include_delimiters
+        and isinstance(data, dict)
+        and isinstance(language, _RootMappingTableLanguage)
+        and language.supports_root_mapping_table
+    ):
+        root_mapping_entries = []
     lines = _format_collection_lines(
         data=data,
         body_prefix=body_prefix,
@@ -4138,11 +4195,12 @@ def _format_root_collection(
         collection_layout=collection_layout,
         sequence_open_override=None,
         ctx=ctx,
+        root_mapping_entries=root_mapping_entries,
     )
     body = "\n".join(lines)
     if not include_delimiters or body == "":
         return body
-    return _wrap_body(
+    literal = _wrap_body(
         body=body,
         is_ordered_map=is_ordered_map,
         data=inference_data,
@@ -4151,6 +4209,16 @@ def _format_root_collection(
         dict_open_override=ctx.dict_open_overrides.get(id(data)),
         sequence_open_override=ctx.sequence_open_overrides.get(id(data)),
     )
+    if root_mapping_entries is not None:
+        return _RootMappingLiteral.create(
+            literal,
+            table_entries=tuple(
+                line.removeprefix(body_prefix)
+                for entry in root_mapping_entries
+                for line in entry.split(sep="\n")
+            ),
+        )
+    return literal
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
@@ -4425,6 +4493,13 @@ def _literalize(
 
 
 @runtime_checkable
+class _CallPreambleRepresentationLanguage(Protocol):
+    """A producer whose call preamble uses a separate representation."""
+
+    call_preamble_uses_literal_representation: bool
+
+
+@runtime_checkable
 class _ReferenceBindingLanguage(Protocol):
     """A language with binding syntax for an already rendered
     reference.
@@ -4610,6 +4685,7 @@ class _PreFormState:
     """The ref key the render actually used, or the disabled sentinel."""
     ref_case: IdentifierCase | None
     """The case a ref identifier was converted to, if any."""
+    root_mapping_entries: tuple[str, ...] | None
     initializer_type: str | None
     """Declaration type retained before comments or binding."""
     root_is_object_literal: bool
@@ -4734,6 +4810,10 @@ def _literalize_pre_form_impl(
         validate_data=True,
     )
 
+    root_mapping_entries = None
+    if isinstance(result, _RootMappingLiteral):
+        root_mapping_entries = result.table_entries
+
     root_initializer_type = retained_initializer_type(result)
     comment_line_prefix = line_prefix
     if include_delimiters:
@@ -4809,6 +4889,7 @@ def _literalize_pre_form_impl(
             ref_key=active_ref_key,
             include_delimiters=include_delimiters,
         ),
+        root_mapping_entries=root_mapping_entries,
     )
 
 
@@ -4993,29 +5074,15 @@ def _validate_ref_output_name(
         raise RefOutputCollisionError(name=variable_form.name)
 
 
-@beartype
-def _declaration_spellings(
-    *,
-    language: Language,
-    render: Callable[[Language], str],
-) -> set[str]:
-    """Return the declaration text each declaration style would give.
+@runtime_checkable
+class _SelfContainedAssignmentValidationLanguage(Protocol):
+    """A producer with additional complete-file binding preconditions."""
 
-    An assignment declares the name it binds when it reads as one of
-    these: F# ``let mutable v = ...`` and ``let v = ...`` are different
-    styles of the same declaration, and the second is what the
-    assignment form emits, so it stands on its own (issue #4465).
-    """
-    styles = language.declaration_styles
-    spellings: set[str] = set()
-    for style in styles:
-        try:
-            styled = dataclasses.replace(language, declaration_style=style)
-        except LiteralizerError:
-            # A style the rest of the spec rules out spells nothing.
-            continue
-        spellings.add(render(styled))
-    return spellings
+    def validate_self_contained_assignment(
+        self, name: str, data: Value, /
+    ) -> None:
+        """Validate an existing binding before its declaration requirement."""
+        ...
 
 
 @beartype
@@ -5027,52 +5094,30 @@ def reject_undeclared_assignment(
 ) -> None:
     """Reject an assignment a complete file would leave undeclared.
 
-    An assignment that reads as one of the language's declarations
-    introduces the name itself, so a whole file containing it compiles.
-    Where it reads as none of them, the file names something it never
-    declares (issue #4465).
+    The language retains whether the selected assignment supplies its
+    own declaration, including any annotation the value requires
+    (issue #4465).
     """
     if not isinstance(variable_form, ExistingVariable):
         return
-    assignment = _apply_variable_wrapper(
-        result=pre_form.result,
+    validate_new_variable_name(
         language=language,
-        data=_declaration_data(pre_form=pre_form, language=language),
-        variable_form=variable_form,
-        line_prefix=pre_form.line_prefix,
-        is_call_binding=False,
-        is_reference_binding=_extract_call_arg_ref_name(
+        name=variable_form.name,
+        name_source="ExistingVariable",
+    )
+    is_reference_binding = (
+        _extract_call_arg_ref_name(
             value=pre_form.data, ref_key=pre_form.active_ref_key
         )
-        is not None,
-        inferred_empty_sequence=False,
-        initializer_type=pre_form.initializer_type,
+        is not None
     )
-
-    def _render(styled: Language) -> str:
-        """Return the declaration *styled* would emit for this value."""
-        return _apply_variable_wrapper(
-            result=pre_form.result,
-            language=styled,
-            data=_declaration_data(pre_form=pre_form, language=styled),
-            variable_form=NewVariable(
-                name=variable_form.name,
-                modifiers=frozenset(),
-            ),
-            line_prefix=pre_form.line_prefix,
-            is_call_binding=False,
-            is_reference_binding=_extract_call_arg_ref_name(
-                value=pre_form.data, ref_key=pre_form.active_ref_key
-            )
-            is not None,
-            inferred_empty_sequence=False,
-            initializer_type=pre_form.initializer_type,
-        )
-
-    if assignment not in _declaration_spellings(
-        language=language,
-        render=_render,
-    ):
+    data = _declaration_data(pre_form=pre_form, language=language)
+    if isinstance(language, _SelfContainedAssignmentValidationLanguage):
+        language.validate_self_contained_assignment(variable_form.name, data)
+    declares_binding = language.assignment_declares_binding
+    if is_reference_binding:
+        declares_binding = language.reference_assignment_declares_binding
+    if not declares_binding(data):
         raise ExistingVariableNotSelfContainedError(
             language_name=type(language).__name__
         )
@@ -5183,11 +5228,13 @@ def literalize_apply_form(
                 ),
                 generated_body_preamble=computed.body,
                 root_is_object_literal=pre_form.root_is_object_literal,
+                root_mapping_entries=pre_form.root_mapping_entries,
             ),
         )
         if len(scoped.file_scope) > 0:
             wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
         return LiteralizeResult(
+            uses_existing_variable=False,
             declaration_code=wrapped,
             preamble=(),
             body_preamble=(),
@@ -5200,6 +5247,7 @@ def literalize_apply_form(
         )
 
     return LiteralizeResult(
+        uses_existing_variable=isinstance(variable_form, ExistingVariable),
         declaration_code=result,
         preamble=preamble,
         body_preamble=computed.body,
@@ -5295,11 +5343,13 @@ def literalize_both_forms(
             has_literal_declarations=True,
             generated_body_preamble=declaration.body_preamble,
             root_is_object_literal=False,
+            root_mapping_entries=None,
         ),
     )
     if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
+        uses_existing_variable=False,
         declaration_code=wrapped,
         preamble=(),
         body_preamble=(),
@@ -5652,6 +5702,7 @@ def _literalize_value_binding(
         )
     )
     return LiteralizeResult(
+        uses_existing_variable=False,
         declaration_code=wrapped,
         preamble=preamble,
         body_preamble=computed.body,
@@ -5821,6 +5872,7 @@ def _compose_bound_refs(
         ),
         generated_body_preamble=unified_body_preamble,
         root_is_object_literal=False,
+        root_mapping_entries=None,
     )
     context = dataclasses.replace(
         context, bound_variable_names=composition.bound_variable_names
@@ -5839,6 +5891,7 @@ def _compose_bound_refs(
     if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
+        uses_existing_variable=False,
         declaration_code=wrapped,
         preamble=(),
         body_preamble=(),
@@ -7386,10 +7439,6 @@ def _validate_parameter_count(
         )
 
 
-_CALL_BINDING_PROBE = "probe"
-"""A stand-in call result, used only to compare binding spellings."""
-
-
 @beartype
 def _validate_call_variable_form(
     *,
@@ -7437,33 +7486,14 @@ def _validate_call_variable_form(
                 "so the call result cannot be bound to a variable"
             ),
         )
-    if wrap_in_file and isinstance(variable_form, ExistingVariable):
-        # A whole file that assigns to a name it never declares does not
-        # compile, the same rule ``literalize`` applies to a value
-        # binding (issue #4468).  An assignment reading as one of the
-        # language's declarations introduces the name itself.
-        assignment = language.format_call_variable_assignment(
-            variable_form.name,
-            _CALL_BINDING_PROBE,
-            None,
+    if (
+        wrap_in_file
+        and isinstance(variable_form, ExistingVariable)
+        and not language.call_assignment_declares_binding
+    ):
+        raise ExistingVariableNotSelfContainedError(
+            language_name=type(language).__name__
         )
-
-        def _render_call_declaration(styled: Language) -> str:
-            """Return the call-binding declaration *styled* would emit."""
-            return styled.format_call_variable_declaration(
-                variable_form.name,
-                _CALL_BINDING_PROBE,
-                None,
-                frozenset(),
-            )
-
-        if assignment not in _declaration_spellings(
-            language=language,
-            render=_render_call_declaration,
-        ):
-            raise ExistingVariableNotSelfContainedError(
-                language_name=type(language).__name__
-            )
 
 
 _CONSTRUCTOR_CLASS_NAME = re.compile(pattern=r"[A-Z][A-Za-z0-9_]*")
@@ -8002,6 +8032,7 @@ def _wrap_call_in_file(
             has_literal_declarations=False,
             generated_body_preamble=computed_body,
             root_is_object_literal=False,
+            root_mapping_entries=None,
         ),
     )
     call_binding_pragmas: tuple[str, ...] = ()
@@ -8053,6 +8084,7 @@ def _compose_call_with_bound_ref_declarations(
     wrapper; otherwise a void stub suffices.
     """
     call_result = LiteralizeResult(
+        uses_existing_variable=False,
         declaration_code=result,
         preamble=preamble,
         body_preamble=body_preamble,
@@ -8198,6 +8230,7 @@ def _wrap_call_result_in_file(
         computed_body=scoped.body + computed_body,
     )
     return LiteralizeResult(
+        uses_existing_variable=False,
         declaration_code=wrapped,
         preamble=(),
         body_preamble=(),
@@ -8771,6 +8804,14 @@ def literalize_call_parsed(
         ref_values=materialized_ref_values,
     )
 
+    transform_usage = None
+    rendering_transform = call_transform
+    if call_transform is not None:
+        transform_usage = _CallTransformUsage(
+            transform=call_transform, uses_zipped=False
+        )
+        rendering_transform = transform_usage
+
     result = _render_parsed_call(
         data=data,
         per_element_data=per_element_data,
@@ -8779,7 +8820,7 @@ def literalize_call_parsed(
         style=style,
         target_function=target_function,
         parameter_names=parameter_names,
-        call_transform=call_transform,
+        call_transform=rendering_transform,
         zip_literals=zip_literals,
         ref_case=ref_case,
         consumable_refs=consumable_refs,
@@ -8789,11 +8830,8 @@ def literalize_call_parsed(
         variable_form=variable_form,
         collection_layout=collection_layout,
     )
-    rendered_uses_zip = zip_resolution is not None and any(
-        literal in result for literal in zip_resolution.literals
-    )
     effective_zip_resolution = None
-    if rendered_uses_zip:
+    if transform_usage is not None and transform_usage.uses_zipped:
         effective_zip_resolution = zip_resolution
     preamble_data = _preamble_data_with_zip(
         data_for_preamble=resolved_preamble_data.value,
@@ -8846,6 +8884,7 @@ def literalize_call_parsed(
         )
 
     return LiteralizeResult(
+        uses_existing_variable=isinstance(variable_form, ExistingVariable),
         declaration_code=result,
         preamble=preamble,
         body_preamble=computed.body,
@@ -8896,9 +8935,9 @@ def literalize_call_with_declarations(
     Args:
         language: The :class:`Language` to render with.  Must be the
             same instance used to produce *declarations* and *call*.
-        declarations: The per-ref :func:`literalize` results, in the
-            order they should appear, ahead of their first use in the
-            call.
+        declarations: Earlier literal or call-binding results in use
+            order. Their retained binding roles keep object declarations
+            separate from executable assignments.
         call: The :func:`literalize_call` result.  Refs represented by
             *declarations* may be omitted from its ``ref_values``;
             declaration-only types are included when the composed
@@ -8974,9 +9013,11 @@ def literalize_call_with_declarations(
     #   also keeps a *multi-line* declaration-only block, which the
     #   previous "drop any entry containing a newline" heuristic
     #   silently lost.
-    call_form_matches_declaration_form = language.data_dependent_preamble(
-        combined_source_data
-    ) == language.call_data_dependent_preamble(combined_source_data)
+    call_form_matches_declaration_form = True
+    if isinstance(language, _CallPreambleRepresentationLanguage):
+        call_form_matches_declaration_form = (
+            language.call_preamble_uses_literal_representation
+        )
     dropped_declaration_blocks: set[str] = set()
     call_preamble = call.preamble
     unified_data_dependent_preamble: tuple[str, ...] = ()
@@ -9035,7 +9076,12 @@ def literalize_call_with_declarations(
         ),
     )
     wrapped = language.wrap_calls_with_declarations(
-        declarations=tuple(d.bare_code for d in declarations),
+        declarations=tuple(
+            RenderedExistingBinding(object=d.bare_code)
+            if d.uses_existing_variable
+            else d.bare_code
+            for d in declarations
+        ),
         calls=call.bare_code,
         context=_file_wrapper_context(
             variable_form=None,
@@ -9046,11 +9092,13 @@ def literalize_call_with_declarations(
             has_literal_declarations=len(declarations) > 0,
             generated_body_preamble=unified_body_preamble,
             root_is_object_literal=False,
+            root_mapping_entries=None,
         ),
     )
     if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
+        uses_existing_variable=False,
         declaration_code=wrapped,
         preamble=(),
         body_preamble=(),

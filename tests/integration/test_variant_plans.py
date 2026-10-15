@@ -139,6 +139,8 @@ def test_special_axes_are_declared() -> None:
                 "record_modifiers",
                 "multiline_string_combined",
                 "multiline_string_pre_indent",
+                "plain_collection_callbacks",
+                "typed_collection_callback",
             }
         )
         == SPECIAL_VARIANT_AXES

@@ -112,6 +112,7 @@ from literalizer._language import (
     no_validate_spec_for_data,
     parenthesize_bare_object,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._types import OrderedMap, Scalar, Value
 
@@ -1524,6 +1525,10 @@ class TypeScript(metaclass=LanguageCls):
         return self.statement_terminator_style.wrap_formatter(
             formatter=self.declaration_style.value.formatter
         )
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(

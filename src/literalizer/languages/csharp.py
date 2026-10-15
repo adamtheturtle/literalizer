@@ -13,12 +13,16 @@ from beartype import beartype
 
 from literalizer._checks import reject_aware_datetimes
 from literalizer._formatters.collection_openers import (
+    CollectionSignature,
     CollectionType,
     TypedOpenerConfig,
     TypeOpeners,
+    collection_signature,
+    collection_type_open,
     fixed_open,
     infer_collection_type,
     make_type_to_opener,
+    signature_open,
     typed_dict_open,
 )
 from literalizer._formatters.format_dates import (
@@ -133,6 +137,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    requires_declared_binding,
     wrap_in_file_noop,
 )
 from literalizer._statements import split_trailing_line_comments
@@ -1703,6 +1708,10 @@ class CSharp(metaclass=LanguageCls):
         """Format a set entry."""
         return passthrough_set_entry
 
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
+
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable.
@@ -2182,7 +2191,10 @@ class CSharp(metaclass=LanguageCls):
             or self.sequence_format is self.sequence_formats.TUPLE
         ):
             return self.sequence_format_config.sequence_open
-        return lambda items: self._array_type(items).opener
+        return collection_type_open(
+            infer=self._array_type,
+            fallback_type=f"{self.default_sequence_element_type}[]",
+        )
 
     @cached_property
     def _array_type(self) -> Callable[[list[Value]], CollectionType]:
@@ -2276,11 +2288,11 @@ class CSharp(metaclass=LanguageCls):
             ),
         )
 
-        def _open(data: dict[Scalar, Value]) -> str:
+        def _normalized(data: dict[Scalar, Value]) -> dict[Scalar, Value]:
             """Infer epoch values from their rendered integer widths."""
             if self._dt_tp is not int:
-                return base_open(data)
-            normalized = {
+                return data
+            return {
                 key: (
                     datetime_epoch_seconds(value=value)
                     if isinstance(value, dt.datetime)
@@ -2288,10 +2300,19 @@ class CSharp(metaclass=LanguageCls):
                 )
                 for key, value in data.items()
             }
-            return base_open(normalized)
+
+        def _open(data: dict[Scalar, Value], /) -> str:
+            """Spell the map after normalizing epoch values."""
+            return base_open(_normalized(data=data))
+
+        def _signature(data: dict[Scalar, Value], /) -> CollectionSignature:
+            """Infer from the same normalized values as the map
+            renderer.
+            """
+            return collection_signature(base_open, _normalized(data=data))
 
         return DictFormatConfig(
-            dict_open=_open,
+            dict_open=signature_open(render=_open, infer=_signature),
             close="}",
             format_entry=dict_entry_with_template(
                 template="[{key}] = {value}",

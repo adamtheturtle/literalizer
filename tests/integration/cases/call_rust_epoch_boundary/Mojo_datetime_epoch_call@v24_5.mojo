@@ -1,4 +1,4 @@
-def consume(value: String):
+def consume(value: Int):
     pass
 def main():
     consume(-2147483649)

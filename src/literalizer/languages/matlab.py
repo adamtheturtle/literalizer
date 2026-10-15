@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING, ClassVar, override
 from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
+    CollectionSignature,
     fixed_open,
+    signature_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -66,6 +68,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     VariantMetadata,
     body_preamble_from_scalars,
+    declares_binding,
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier,
@@ -239,6 +242,21 @@ def _containers_map_open(data: dict[Scalar, Value]) -> str:
         _matlab_char_vector(s=k) for k in data if isinstance(k, str)
     )
     return f"containers.Map({{{keys}}}, {{"
+
+
+@beartype
+def _containers_map_signature(
+    data: dict[Scalar, Value], /
+) -> CollectionSignature:
+    """Keep constructor keys independently of their formatted literals."""
+    return CollectionSignature(
+        type_key=repr(tuple(key for key in data if isinstance(key, str))),
+        arity=None,
+        arity_decision=False,
+        fallback_decision=True,
+        narrowing_decision=False,
+        uses_fallback_decision=False,
+    )
 
 
 @beartype
@@ -540,7 +558,9 @@ class Matlab(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         CONTAINERS_MAP = DictFormatConfig(
-            dict_open=_containers_map_open,
+            dict_open=signature_open(
+                render=_containers_map_open, infer=_containers_map_signature
+            ),
             narrowed_open=None,
             supports_trailing_comma=True,
             close="})",
@@ -897,6 +917,10 @@ class Matlab(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
+
+    assignment_declares_binding = declares_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = True
 
     @cached_property
     def format_variable_assignment(
