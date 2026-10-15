@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Bash"]
-languages_reason = "Migrate the Bash existing-variable fragment with a declared seed and a use of the assigned result."
+languages = ["Bash", "Rust", "Cpp", "ObjectiveC", "Mojo"]
+languages_reason = "Migrate the Bash existing-variable fragment with uses of both the synthetic seed and the assigned result under strict validation."
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
