@@ -1643,26 +1643,31 @@ class Mojo(metaclass=LanguageCls):
     call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return format_string_backslash_nul_hex
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as a literal."""
         return str
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
 
     @cached_property
+    @beartype
     def skip_null_dict_values(self) -> bool:
         """Drop ``None`` dict values for the default ERROR strategy so
         the homogeneous-dict rendering stays valid Mojo.
@@ -1675,6 +1680,7 @@ class Mojo(metaclass=LanguageCls):
         return self.heterogeneous_strategy is cls.ERROR
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -1689,6 +1695,7 @@ class Mojo(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
         return self.heterogeneous_strategy.value.build_behavior(
@@ -1703,6 +1710,7 @@ class Mojo(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1713,6 +1721,7 @@ class Mojo(metaclass=LanguageCls):
         return _mojo_call_stub
 
     @cached_property
+    @beartype
     def format_call_preamble_stub(
         self,
     ) -> Callable[
@@ -1734,6 +1743,7 @@ class Mojo(metaclass=LanguageCls):
     format_call_target = default_format_call_target
 
     @cached_property
+    @beartype
     def _format_consumable_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -1767,6 +1777,7 @@ class Mojo(metaclass=LanguageCls):
         return _format_mojo_ref_identifier
 
     @cached_property
+    @beartype
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -1786,11 +1797,13 @@ class Mojo(metaclass=LanguageCls):
         return _format
 
     @cached_property
+    @beartype
     def format_known_null_ref_identifier(self) -> Callable[[str], str]:
         """Copy a known register-trivial null without a transfer."""
         return lambda name: name
 
     @cached_property
+    @beartype
     def format_call_arg_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -1814,6 +1827,7 @@ class Mojo(metaclass=LanguageCls):
         return _format
 
     @cached_property
+    @beartype
     def format_call_arg_ref_identifier_consumable(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -1831,6 +1845,7 @@ class Mojo(metaclass=LanguageCls):
         return self._format_consumable_ref_identifier
 
     @cached_property
+    @beartype
     def consumable_ref_value_inhibits_consuming_form(
         self,
     ) -> Callable[[Value], bool]:
@@ -1854,12 +1869,14 @@ class Mojo(metaclass=LanguageCls):
         return _inhibits
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value
         return config
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         base = self.sequence_format(
@@ -1871,6 +1888,7 @@ class Mojo(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _datetime_type(self) -> str:
         """Mojo type emitted by the selected datetime formatter."""
         return (
@@ -1880,6 +1898,7 @@ class Mojo(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         base = self.set_format(default_type=self.default_set_element_type)
@@ -1909,11 +1928,13 @@ class Mojo(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format_config.sequence_open
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         base = self.dict_format(
@@ -1926,6 +1947,7 @@ class Mojo(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _narrowed_empty_collection(
         self,
     ) -> Callable[[Sequence[Value]], str]:
@@ -1953,41 +1975,49 @@ class Mojo(metaclass=LanguageCls):
         return _narrowed_empty
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return _MojoOrderedMapFormatConfig(
@@ -1997,11 +2027,13 @@ class Mojo(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return _format_mojo_ordered_map_entry
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2048,6 +2080,7 @@ class Mojo(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -2055,16 +2088,19 @@ class Mojo(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble (Mojo needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Mojo needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:

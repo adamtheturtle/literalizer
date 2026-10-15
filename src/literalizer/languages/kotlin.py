@@ -1434,6 +1434,7 @@ class Kotlin(metaclass=LanguageCls):
         self._validate_json_type_spec()
 
     @cached_property
+    @beartype
     def supports_scalar_before_comments(self) -> bool:
         """Whether a comment can sit above the rendered value.
 
@@ -1445,6 +1446,7 @@ class Kotlin(metaclass=LanguageCls):
         return not self._json_type_active
 
     @cached_property
+    @beartype
     def supports_collection_comments(self) -> bool:
         """Whether a comment can sit inside the rendered value.
 
@@ -1456,11 +1458,13 @@ class Kotlin(metaclass=LanguageCls):
         return not self._json_type_active
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether Kotlin should render via ``JsonElement``."""
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def static_preamble(self) -> Sequence[str]:
         """Static preamble lines emitted once per file.
 
@@ -1473,6 +1477,7 @@ class Kotlin(metaclass=LanguageCls):
         return ()
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument."""
         if self._json_type_active:
@@ -1585,16 +1590,19 @@ class Kotlin(metaclass=LanguageCls):
             seen_names.add(name)
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return self.string_format
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
@@ -1604,6 +1612,7 @@ class Kotlin(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         if self._json_type_active:
@@ -1611,6 +1620,7 @@ class Kotlin(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    @beartype
     def _kotlin_record_scalar_resolver(
         self,
     ) -> Callable[[type | ListType | DictType], str | None]:
@@ -1742,6 +1752,7 @@ class Kotlin(metaclass=LanguageCls):
         return f"{constructor}<{', '.join(elem_types)}>"
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """Kotlin syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
@@ -1760,6 +1771,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _tuple_renderer(self) -> TupleRenderer:
         """Kotlin syntax hooks for the ``TUPLE`` strategy."""
         return TupleRenderer(
@@ -1806,11 +1818,13 @@ class Kotlin(metaclass=LanguageCls):
         return single_concrete_type(types=scalar_types, fallback_type="Any?")
 
     @cached_property
+    @beartype
     def _derecordized_map_narrowing(self) -> _KotlinWidenedMapNarrowing:
         """Per-pass narrow-value-type cache for widened fallback maps."""
         return _KotlinWidenedMapNarrowing(value_type=None)
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> RecordStrategy:
         """Resolve the active strategy to its behavior + preamble.
 
@@ -1877,6 +1891,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -1900,6 +1915,7 @@ class Kotlin(metaclass=LanguageCls):
         return _preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
         if self._json_type_active:
@@ -1916,6 +1932,7 @@ class Kotlin(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1942,6 +1959,7 @@ class Kotlin(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def _date_type_name(self) -> str | None:
         """Resolved Kotlin type name for the chosen date format."""
         return self._opener_config.type_name(
@@ -1949,6 +1967,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _dt_type_name(self) -> str | None:
         """Resolved Kotlin type name for the chosen datetime format.
 
@@ -1965,6 +1984,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
@@ -2073,6 +2093,7 @@ class Kotlin(metaclass=LanguageCls):
         return self._kotlin_list_sequence_type(items)
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Emit the constructor selected alongside the sequence's type."""
         if self._json_type_active:
@@ -2152,6 +2173,7 @@ class Kotlin(metaclass=LanguageCls):
         return signature_open(render=_open, infer=_signature)
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         if self._json_type_active:
@@ -2194,6 +2216,7 @@ class Kotlin(metaclass=LanguageCls):
         return dataclasses.replace(base, set_open=_open)
 
     @cached_property
+    @beartype
     def _kotlin_dict_value_type(
         self,
     ) -> Callable[[type | ListType | DictType], str | None]:
@@ -2260,6 +2283,7 @@ class Kotlin(metaclass=LanguageCls):
         return resolve
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         if self._json_type_active:
@@ -2329,36 +2353,43 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_local_time_of
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         base = self.integer_format.get_formatter(
@@ -2380,6 +2411,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_integer_widened(self) -> Callable[[int], str]:
         """Always-``L``-suffixed integer formatter for widened
         collections (mixed-magnitude int sets/lists).
@@ -2404,6 +2436,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_integer_beyond_i64(self) -> Callable[[int], str]:
         """Always-``BigInteger`` formatter for collections that exceed
         signed 64-bit range.
@@ -2411,11 +2444,13 @@ class Kotlin(metaclass=LanguageCls):
         return _format_kotlin_biginteger_literal
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         if self._json_type_active:
@@ -2438,6 +2473,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return dict_entry_with_separator(
@@ -2446,6 +2482,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2495,6 +2532,7 @@ class Kotlin(metaclass=LanguageCls):
         return self._kotlin_value_field_type(data)
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2536,6 +2574,7 @@ class Kotlin(metaclass=LanguageCls):
         return checked_formatter
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format.
 
@@ -2553,11 +2592,13 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Kotlin needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -2568,6 +2609,7 @@ class Kotlin(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value

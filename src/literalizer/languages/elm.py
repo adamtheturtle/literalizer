@@ -1244,6 +1244,7 @@ class Elm(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def _json_active(self) -> bool:
         """``True`` when ``Json.Encode.Value`` rendering is selected."""
         return self.json_type is not None
@@ -1268,11 +1269,13 @@ class Elm(metaclass=LanguageCls):
             _validate_elm_json_data(data=data)
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each formatted call argument in parentheses."""
         return _elm_format_call_arg
 
     @cached_property
+    @beartype
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language.
 
@@ -1407,21 +1410,25 @@ class Elm(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1441,11 +1448,13 @@ class Elm(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for Elm's call style."""
         return self.call_style.value
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1466,6 +1475,7 @@ class Elm(metaclass=LanguageCls):
     format_call_preamble_stub = default_format_call_stub
 
     @cached_property
+    @beartype
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite call target parts into an Elm identifier.
 
@@ -1488,6 +1498,7 @@ class Elm(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Literal representing ``None``."""
         if self._json_active:
@@ -1495,6 +1506,7 @@ class Elm(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Null"
 
     @cached_property
+    @beartype
     def true_literal(self) -> str:
         """Literal representing ``True``."""
         if self._json_active:
@@ -1504,6 +1516,7 @@ class Elm(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool True"
 
     @cached_property
+    @beartype
     def false_literal(self) -> str:
         """Literal representing ``False``."""
         if self._json_active:
@@ -1513,6 +1526,7 @@ class Elm(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool False"
 
     @cached_property
+    @beartype
     def _seq_open(self) -> Callable[[list[Value]], str]:
         """Shared sequence opener.
 
@@ -1529,11 +1543,13 @@ class Elm(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
         return _elm_dict_entry
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         return dataclasses.replace(
@@ -1545,6 +1561,7 @@ class Elm(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format.
 
@@ -1566,11 +1583,13 @@ class Elm(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self._seq_open
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting.
 
@@ -1607,11 +1626,13 @@ class Elm(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         if self._json_active:
@@ -1628,6 +1649,7 @@ class Elm(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_active:
@@ -1639,6 +1661,7 @@ class Elm(metaclass=LanguageCls):
         return _build_elm_date_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         base_formatter: Callable[[dt.datetime], str] = self.datetime_format
@@ -1661,6 +1684,7 @@ class Elm(metaclass=LanguageCls):
         return _build_elm_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self._json_active:
@@ -1670,11 +1694,13 @@ class Elm(metaclass=LanguageCls):
         return _build_elm_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_dict_key(self) -> Callable[[str], str]:
         """Render a string key without a value constructor."""
         return _elm_native_string
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         if self._json_active:
@@ -1686,6 +1712,7 @@ class Elm(metaclass=LanguageCls):
         return _build_elm_str_formatter(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an exactly representable int literal."""
         if self._json_active:
@@ -1712,6 +1739,7 @@ class Elm(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         if self._json_active:
@@ -1744,11 +1772,13 @@ class Elm(metaclass=LanguageCls):
         return _format_float_with_specials
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         open_str = _JSON_ENC_OBJECT_OPEN
@@ -1761,11 +1791,13 @@ class Elm(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return self._dict_entry
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1823,6 +1855,7 @@ class Elm(metaclass=LanguageCls):
     call_assignment_declares_binding = True
 
     @cached_property
+    @beartype
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1830,6 +1863,7 @@ class Elm(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1869,16 +1903,19 @@ class Elm(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble (Elm needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Elm needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -1910,6 +1947,7 @@ class Elm(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _json_format_float(self) -> Callable[[float], str]:
         """Float formatter for :attr:`json_type` mode."""
         _finite = _build_elm_json_float_formatter(

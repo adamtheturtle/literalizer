@@ -1250,6 +1250,7 @@ class Fortran(metaclass=LanguageCls):
     call_style: CallStyles = CallStyles.POSITIONAL
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as an int64 Fortran literal."""
 
@@ -1267,11 +1268,13 @@ class Fortran(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         return self.heterogeneous_strategy.value
@@ -1283,11 +1286,13 @@ class Fortran(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1300,6 +1305,7 @@ class Fortran(metaclass=LanguageCls):
     format_call_preamble_stub = default_format_call_stub
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1315,6 +1321,7 @@ class Fortran(metaclass=LanguageCls):
         return _format_fortran_call_declaration
 
     @cached_property
+    @beartype
     def format_call_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1328,6 +1335,7 @@ class Fortran(metaclass=LanguageCls):
         return _format_fortran_call_assignment
 
     @cached_property
+    @beartype
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
@@ -1335,6 +1343,7 @@ class Fortran(metaclass=LanguageCls):
         return _fortran_call_target
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap a call argument in the appropriate ``fval_t``
         constructor.
@@ -1342,6 +1351,7 @@ class Fortran(metaclass=LanguageCls):
         return self._format_entry
 
     @cached_property
+    @beartype
     def format_call_statement(self) -> Callable[[str], str]:
         """Prepend the Fortran ``call`` keyword to each call statement."""
         return _fortran_call_statement
@@ -1411,6 +1421,7 @@ class Fortran(metaclass=LanguageCls):
         return "\n".join((*type_decls, *exec_stmts))
 
     @cached_property
+    @beartype
     def _format_entry(self) -> Callable[[Value, str], str]:
         """Shared entry formatter for Fortran values."""
         return _build_format_fortran_entry(
@@ -1421,21 +1432,25 @@ class Fortran(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Literal representing ``None``."""
         return f"{self.null_name}()"
 
     @cached_property
+    @beartype
     def true_literal(self) -> str:
         """Literal representing ``True``."""
         return f"{self.bool_name}(.true.)"
 
     @cached_property
+    @beartype
     def false_literal(self) -> str:
         """Literal representing ``False``."""
         return f"{self.bool_name}(.false.)"
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         fmt = self.sequence_format.value
@@ -1463,6 +1478,7 @@ class Fortran(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         return SetFormatConfig(
@@ -1478,11 +1494,13 @@ class Fortran(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format_config.sequence_open
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
@@ -1502,56 +1520,67 @@ class Fortran(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         return _format_fortran_string
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats one sequence entry."""
         return self._format_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats one set entry."""
         return self._format_entry
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
@@ -1563,6 +1592,7 @@ class Fortran(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return dict_entry_with_template(
@@ -1571,6 +1601,7 @@ class Fortran(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1584,6 +1615,7 @@ class Fortran(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1593,11 +1625,13 @@ class Fortran(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def static_preamble(self) -> Sequence[str]:
         """Static preamble lines emitted once per file."""
         return ("module fval_m",)
 
     @cached_property
+    @beartype
     def static_body_preamble(self) -> Sequence[str]:
         """Static body-preamble lines emitted once per file.
 
@@ -1746,16 +1780,19 @@ class Fortran(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble (Fortran needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Fortran needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
