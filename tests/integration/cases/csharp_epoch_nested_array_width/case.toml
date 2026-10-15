@@ -1,6 +1,6 @@
 schema_version = 1
 owner = "variant"
-languages = ["CSharp"]
+languages = ["CSharp", "V"]
 languages_reason = "C# invariant nested dictionary arrays must use the width of rendered epoch seconds."
 
 [[variants]]
