@@ -1857,16 +1857,19 @@ class Nim(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return self.string_format
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
@@ -1877,6 +1880,7 @@ class Nim(metaclass=LanguageCls):
     """Callable that formats a set entry."""
 
     @cached_property
+    @beartype
     def _heterogeneous_variant_date_type(self) -> str:
         """Nim type used for :class:`datetime.date` variant payloads."""
         if self.date_format.value.type_produced is str:
@@ -1884,6 +1888,7 @@ class Nim(metaclass=LanguageCls):
         return "JsonNode"
 
     @cached_property
+    @beartype
     def _heterogeneous_variant_datetime_type(self) -> str:
         """Nim type used for :class:`datetime.datetime` variant
         payloads.
@@ -1896,6 +1901,7 @@ class Nim(metaclass=LanguageCls):
         return "JsonNode"
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -1985,6 +1991,7 @@ class Nim(metaclass=LanguageCls):
         return _preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy.
 
@@ -2010,6 +2017,7 @@ class Nim(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _uses_json_node(self) -> bool:
         """Whether the instance is configured to render values as
         ``JsonNode`` via the ``%*`` macro.
@@ -2017,6 +2025,7 @@ class Nim(metaclass=LanguageCls):
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def _uses_object_variant(self) -> bool:
         """Whether the instance is configured for the OBJECT_VARIANT
         heterogeneous strategy.
@@ -2025,6 +2034,7 @@ class Nim(metaclass=LanguageCls):
         return self.heterogeneous_strategy is cls.OBJECT_VARIANT
 
     @cached_property
+    @beartype
     def _uses_record(self) -> bool:
         """Whether the instance is configured for the RECORD
         heterogeneous strategy.
@@ -2032,6 +2042,7 @@ class Nim(metaclass=LanguageCls):
         return self.heterogeneous_strategy.value.resolves_per_instance
 
     @cached_property
+    @beartype
     def _uses_native_nim_collections(self) -> bool:
         """Whether collections render with their native Nim
         constructors (``@[...]`` / ``{...}.toTable``) rather than the
@@ -2148,6 +2159,7 @@ class Nim(metaclass=LanguageCls):
         return self._nim_value_field_type(request.value)
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """Nim syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
@@ -2169,6 +2181,7 @@ class Nim(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> RecordStrategy:
         """Behavior + ``type``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
@@ -2210,6 +2223,7 @@ class Nim(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -2229,6 +2243,7 @@ class Nim(metaclass=LanguageCls):
         return self._uses_record
 
     @cached_property
+    @beartype
     def call_data_dependent_preamble(
         self,
     ) -> Callable[[Value], tuple[str, ...]]:
@@ -2341,6 +2356,7 @@ class Nim(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format.
 
@@ -2379,6 +2395,7 @@ class Nim(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format.
 
@@ -2399,6 +2416,7 @@ class Nim(metaclass=LanguageCls):
         return self.set_format.value
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format_config.sequence_open
@@ -2414,6 +2432,7 @@ class Nim(metaclass=LanguageCls):
         return f"initTable[{key_type}, {value_type}]()"
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting.
 
@@ -2496,16 +2515,19 @@ class Nim(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal.
 
@@ -2518,6 +2540,7 @@ class Nim(metaclass=LanguageCls):
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
@@ -2533,16 +2556,19 @@ class Nim(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         base = self.integer_format.get_formatter(
@@ -2566,6 +2592,7 @@ class Nim(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_integer_widened(self) -> Callable[[int], str]:
         """Format every integer as an explicitly typed ``int64``.
 
@@ -2590,11 +2617,13 @@ class Nim(metaclass=LanguageCls):
         return _format
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting.
 
@@ -2624,6 +2653,7 @@ class Nim(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return dict_entry_with_separator(
@@ -2665,6 +2695,7 @@ class Nim(metaclass=LanguageCls):
         return f"{name} = {value}"
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2698,6 +2729,7 @@ class Nim(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -2717,6 +2749,7 @@ class Nim(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument.
 
@@ -2729,6 +2762,7 @@ class Nim(metaclass=LanguageCls):
         return identity_call_arg
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2744,6 +2778,7 @@ class Nim(metaclass=LanguageCls):
         return self.declaration_style.value.formatter
 
     @cached_property
+    @beartype
     def format_call_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -2758,6 +2793,7 @@ class Nim(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble for Nim scalar types.
 
@@ -2794,11 +2830,13 @@ class Nim(metaclass=LanguageCls):
         }
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Nim needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:

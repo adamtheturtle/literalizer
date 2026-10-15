@@ -1734,11 +1734,13 @@ class Python(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
@@ -1759,11 +1761,13 @@ class Python(metaclass=LanguageCls):
     call_assignment_declares_binding = True
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         return variable_formatter(template="{name} = {value}")
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1843,6 +1847,7 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_field_type(self) -> Callable[[RecordFieldType], str]:
         """Return the dataclass field-type resolver for the ``RECORD``
         strategy.
@@ -1879,6 +1884,7 @@ class Python(metaclass=LanguageCls):
         return _field_type
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """Python syntax hooks for the ``RECORD`` strategy."""
         return RecordRenderer(
@@ -1901,6 +1907,7 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> RecordStrategy:
         """Resolve the active strategy to its behavior + preamble."""
         cls = type(self.heterogeneous_strategy)
@@ -1917,6 +1924,7 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -1955,11 +1963,13 @@ class Python(metaclass=LanguageCls):
         return _preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
         return self._record_strategy.behavior
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1988,21 +1998,25 @@ class Python(metaclass=LanguageCls):
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         return self.sequence_format.value
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         return self.set_format.value
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format.value.sequence_open
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
@@ -2020,21 +2034,25 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if (
@@ -2048,21 +2066,25 @@ class Python(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return _format_time_python
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         return self.string_format
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         return self.integer_format.get_formatter(
@@ -2070,6 +2092,7 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
@@ -2077,6 +2100,7 @@ class Python(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
 
     @cached_property
+    @beartype
     def leading_preamble(self) -> LeadingPreamble:
         """Emit the PEP 563 future import, but only when the rendered
         code actually contains an annotation.
@@ -2137,6 +2161,7 @@ class Python(metaclass=LanguageCls):
         return _leading
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
@@ -2151,11 +2176,13 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return tuple_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
+    @beartype
     def _collection_type_hint_names(self) -> tuple[str, str, str]:
         """Return sequence, set, and dict type-hint names."""
         sequence_hint = self.sequence_format.type_hint
@@ -2192,6 +2219,7 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _join_union(self) -> Callable[[list[str]], str]:
         """Return the configured union-annotation formatter."""
         if self._uses_typing_union:
@@ -2199,6 +2227,7 @@ class Python(metaclass=LanguageCls):
         return _join_union_pipe
 
     @cached_property
+    @beartype
     def _record_eligible_for_annotation(self) -> Callable[[Value], bool]:
         """Predicate marking a value as a ``RECORD``-strategy
         record-shaped dict.
@@ -2227,6 +2256,7 @@ class Python(metaclass=LanguageCls):
         return _eligible
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2250,6 +2280,7 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
         return date_scalar_preamble(
@@ -2259,6 +2290,7 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -2271,6 +2303,7 @@ class Python(metaclass=LanguageCls):
     call_data_dependent_preamble = default_call_data_dependent_preamble
 
     @cached_property
+    @beartype
     def type_hint_collection_preamble_lines(
         self,
     ) -> Callable[[frozenset[type]], tuple[str, ...]]:
@@ -2308,6 +2341,7 @@ class Python(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value

@@ -1265,6 +1265,7 @@ class Gleam(metaclass=LanguageCls):
             _reject_nested_gleam_tuples(data)
 
     @cached_property
+    @beartype
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1272,6 +1273,7 @@ class Gleam(metaclass=LanguageCls):
         return no_validate_call_arg
 
     @cached_property
+    @beartype
     def format_call_statement(self) -> Callable[[str], str]:
         """Explicitly discard the value of an unbound call."""
         return _gleam_discard_call
@@ -1362,26 +1364,31 @@ class Gleam(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for Gleam's call style."""
         return self.call_style.value
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether the ``gleam_json.Json`` builder mode is set."""
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def static_preamble(self) -> Sequence[str]:
         """File-scope preamble.
 
@@ -1395,6 +1402,7 @@ class Gleam(metaclass=LanguageCls):
         return ()
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return the ``pub type`` declaration tailored to *data*.
 
@@ -1413,6 +1421,7 @@ class Gleam(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def bound_reference_data_preamble(
         self,
     ) -> Callable[[tuple[Value, ...]], tuple[str, ...] | None]:
@@ -1440,6 +1449,7 @@ class Gleam(metaclass=LanguageCls):
         return _compute
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
@@ -1491,6 +1501,7 @@ class Gleam(metaclass=LanguageCls):
         raise UnrepresentableInputError(msg)
 
     @cached_property
+    @beartype
     def _native_record_strategy(self) -> ActiveRecordStrategy:
         """Build shared record naming, rendering, and declarations."""
         return build_record_strategy(
@@ -1518,6 +1529,7 @@ class Gleam(metaclass=LanguageCls):
     format_call_stub = default_format_call_stub
 
     @cached_property
+    @beartype
     def format_call_preamble_stub(
         self,
     ) -> Callable[
@@ -1530,6 +1542,7 @@ class Gleam(metaclass=LanguageCls):
         return _gleam_call_preamble_stub
 
     @cached_property
+    @beartype
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
@@ -1549,6 +1562,7 @@ class Gleam(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Literal representing ``None``."""
         if self._json_type_active:
@@ -1556,6 +1570,7 @@ class Gleam(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Null"
 
     @cached_property
+    @beartype
     def true_literal(self) -> str:
         """Literal representing ``True``."""
         if self._json_type_active:
@@ -1565,6 +1580,7 @@ class Gleam(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool(True)"
 
     @cached_property
+    @beartype
     def false_literal(self) -> str:
         """Literal representing ``False``."""
         if self._json_type_active:
@@ -1574,11 +1590,13 @@ class Gleam(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool(False)"
 
     @cached_property
+    @beartype
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
         return _gleam_dict_entry
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format.
 
@@ -1626,11 +1644,13 @@ class Gleam(metaclass=LanguageCls):
         return fmt
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format_config.sequence_open
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format.
 
@@ -1659,6 +1679,7 @@ class Gleam(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting.
 
@@ -1692,11 +1713,13 @@ class Gleam(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         if self._json_type_active:
@@ -1713,6 +1736,7 @@ class Gleam(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
@@ -1724,6 +1748,7 @@ class Gleam(metaclass=LanguageCls):
         return _build_gleam_date_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         base_formatter: Callable[[dt.datetime], str] = self.datetime_format
@@ -1744,6 +1769,7 @@ class Gleam(metaclass=LanguageCls):
         return _build_gleam_datetime_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self._json_type_active:
@@ -1753,11 +1779,13 @@ class Gleam(metaclass=LanguageCls):
         return _build_gleam_time_iso(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_dict_key(self) -> Callable[[str], str]:
         """Render a string key without a value constructor."""
         return format_string_backslash_nul_braced_unicode
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         if self._json_type_active:
@@ -1769,6 +1797,7 @@ class Gleam(metaclass=LanguageCls):
         return _build_gleam_str_formatter(prefix=self.constructor_prefix)
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         if self._json_type_active:
@@ -1793,6 +1822,7 @@ class Gleam(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal.
 
@@ -1833,11 +1863,13 @@ class Gleam(metaclass=LanguageCls):
         return _format
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         if self._json_type_active:
@@ -1855,11 +1887,13 @@ class Gleam(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return self._dict_entry
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1881,6 +1915,7 @@ class Gleam(metaclass=LanguageCls):
     call_assignment_declares_binding = True
 
     @cached_property
+    @beartype
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1897,16 +1932,19 @@ class Gleam(metaclass=LanguageCls):
         return variable_formatter(template="let {name} = {value}")
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble (Gleam needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (Gleam needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:

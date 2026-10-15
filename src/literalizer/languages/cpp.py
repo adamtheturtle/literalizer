@@ -3806,6 +3806,7 @@ class Cpp(metaclass=LanguageCls):
     format_call_statement = default_format_call_statement
 
     @cached_property
+    @beartype
     def format_identity_transformed_call_statement(
         self,
     ) -> Callable[[str], str]:
@@ -3984,11 +3985,13 @@ class Cpp(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether C++ should render via ``nlohmann::json``."""
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def supports_collection_comments(self) -> bool:
         """Whether a comment can sit inside the rendered collection.
 
@@ -4000,6 +4003,7 @@ class Cpp(metaclass=LanguageCls):
         return not self._json_inline_document_active
 
     @cached_property
+    @beartype
     def _json_inline_document_active(self) -> bool:
         """Return whether ``nlohmann::json`` values render as one
         inline JSON document handed to ``nlohmann::json::parse``.
@@ -4007,6 +4011,7 @@ class Cpp(metaclass=LanguageCls):
         return self.json_rendering is self.JsonRenderings.INLINE_DOCUMENT
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Null literal for the active C++ representation.
 
@@ -4019,6 +4024,7 @@ class Cpp(metaclass=LanguageCls):
         return self._default_null_literal
 
     @cached_property
+    @beartype
     def static_preamble(self) -> Sequence[str]:
         """Static preamble lines emitted once per file.
 
@@ -4031,6 +4037,7 @@ class Cpp(metaclass=LanguageCls):
         return self._default_static_preamble
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal.
 
@@ -4060,6 +4067,7 @@ class Cpp(metaclass=LanguageCls):
         return _non_multiline_formatter
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
@@ -4074,6 +4082,7 @@ class Cpp(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         if self._json_type_active:
@@ -4092,6 +4101,7 @@ class Cpp(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value};")
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument."""
         if self._json_inline_document_active:
@@ -4109,6 +4119,7 @@ class Cpp(metaclass=LanguageCls):
     format_call_stub = default_format_call_stub
 
     @cached_property
+    @beartype
     def format_call_preamble_stub(
         self,
     ) -> Callable[
@@ -4172,6 +4183,7 @@ class Cpp(metaclass=LanguageCls):
         return value is None or isinstance(value, (bool, int, float))
 
     @cached_property
+    @beartype
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -4217,6 +4229,7 @@ class Cpp(metaclass=LanguageCls):
         ) or self._cpp_record_field_is_trivial(value)
 
     @cached_property
+    @beartype
     def format_reused_literal_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -4224,6 +4237,7 @@ class Cpp(metaclass=LanguageCls):
         return identity_call_ref_identifier
 
     @cached_property
+    @beartype
     def format_call_arg_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -4240,6 +4254,7 @@ class Cpp(metaclass=LanguageCls):
         return identity_call_ref_identifier
 
     @cached_property
+    @beartype
     def format_known_null_ref_identifier(self) -> Callable[[str], str]:
         """Keep native null references bare and owning JSON values movable."""
         if self._json_type_active:
@@ -4247,6 +4262,7 @@ class Cpp(metaclass=LanguageCls):
         return lambda name: name
 
     @cached_property
+    @beartype
     def format_call_arg_ref_identifier_consumable(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -4266,6 +4282,7 @@ class Cpp(metaclass=LanguageCls):
         return _format_cpp_ref_identifier_consumable
 
     @cached_property
+    @beartype
     def consumable_ref_value_inhibits_consuming_form(
         self,
     ) -> Callable[[Value], bool]:
@@ -4293,21 +4310,25 @@ class Cpp(metaclass=LanguageCls):
         return _inhibits
 
     @cached_property
+    @beartype
     def _cpp_date_type(self) -> str:
         """Resolved C++ type name for the chosen date format."""
         return self._resolved_date_format.cpp_type
 
     @cached_property
+    @beartype
     def _cpp_datetime_type(self) -> str:
         """Resolved C++ type name for the chosen datetime format."""
         return self._resolved_datetime_format.cpp_type
 
     @cached_property
+    @beartype
     def _uses_cpp20(self) -> bool:
         """Return whether C++20-only syntax and chrono types are available."""
         return self.language_version is self.version_formats.CPP20
 
     @cached_property
+    @beartype
     def _resolved_date_format(self) -> DateFormats:
         """Return the selected date representation for the target standard."""
         if not self._uses_cpp20 and self.date_format is self.date_formats.CPP:
@@ -4315,6 +4336,7 @@ class Cpp(metaclass=LanguageCls):
         return self.date_format
 
     @cached_property
+    @beartype
     def _resolved_datetime_format(self) -> DatetimeFormats:
         """Return the selected datetime representation for the target."""
         if (
@@ -4325,6 +4347,7 @@ class Cpp(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    @beartype
     def _tuple_strategy_active(self) -> bool:
         """Return whether native tuple rendering is active.
 
@@ -4336,6 +4359,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_strategy_active(self) -> bool:
         """Return whether the ``RECORD`` heterogeneous strategy is set."""
         return (
@@ -4344,6 +4368,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _uses_cpp14_tuple_record_strategy(self) -> bool:
         """Return whether C++14 should compose native tuples and
         records.
@@ -4419,6 +4444,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_renderer(self) -> RecordRenderer:
         """C++ syntax hooks for the ``RECORD`` strategy."""
         effective_render_literal = _cpp_record_literal_positional
@@ -4440,11 +4466,13 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _record_map_narrowing(self) -> _CppWidenedMapNarrowing:
         """Per-pass narrow-value-type cache for widened fallback maps."""
         return _CppWidenedMapNarrowing(value_type=None)
 
     @cached_property
+    @beartype
     def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
@@ -4501,6 +4529,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _tuple_record_strategy(self) -> ActiveRecordStrategy:
         """Compose C++14's native tuple and record forms.
 
@@ -4549,6 +4578,7 @@ class Cpp(metaclass=LanguageCls):
         return lookup(value)
 
     @cached_property
+    @beartype
     def _type_ctx(self) -> _CppTypeCtx:
         """Context bundle for C++ type resolution."""
         effective_variant_type_name = "std::variant"
@@ -4573,6 +4603,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         if self._json_inline_document_active:
@@ -4582,6 +4613,7 @@ class Cpp(metaclass=LanguageCls):
         return self.sequence_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format.
 
@@ -4595,6 +4627,7 @@ class Cpp(metaclass=LanguageCls):
         return self.set_format.value
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence.
 
@@ -4732,6 +4765,7 @@ class Cpp(metaclass=LanguageCls):
         return collection_signature(base_open, original_items)
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior.
 
@@ -4743,11 +4777,13 @@ class Cpp(metaclass=LanguageCls):
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
@@ -4755,6 +4791,7 @@ class Cpp(metaclass=LanguageCls):
         return self._resolved_date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if (
@@ -4765,16 +4802,19 @@ class Cpp(metaclass=LanguageCls):
         return self._resolved_datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal.
 
@@ -4833,6 +4873,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         if self._json_inline_document_active:
@@ -4842,11 +4883,13 @@ class Cpp(metaclass=LanguageCls):
         return self.dict_format.get_config(type_ctx=self._type_ctx)
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting.
 
@@ -4893,6 +4936,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry.
 
@@ -4907,6 +4951,7 @@ class Cpp(metaclass=LanguageCls):
         return braced_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
+    @beartype
     def data_dependent_preamble(
         self,
     ) -> Callable[[Value], tuple[str, ...]]:
@@ -4963,6 +5008,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
@@ -5059,6 +5105,7 @@ class Cpp(metaclass=LanguageCls):
         return f"{name} = {value};"
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -5117,6 +5164,7 @@ class Cpp(metaclass=LanguageCls):
         return _formatter
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
         if self._json_type_active:
@@ -5132,11 +5180,13 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble (C++ needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -5147,6 +5197,7 @@ class Cpp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value
