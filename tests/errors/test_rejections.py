@@ -8,7 +8,7 @@ language that joins a manifest's gates -- a new language declaring
 
 A message may instead declare an inline table with ``default`` and
 Python ``major.minor`` overrides. Each runtime checks its exact message;
-regeneration preserves the other runtimes' entries.
+regeneration preserves entries for every other Python version.
 """
 
 import re
