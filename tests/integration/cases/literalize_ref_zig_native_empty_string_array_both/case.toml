@@ -1,10 +1,10 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Zig"]
+languages = ["Nim", "Zig"]
 languages_reason = "An empty native array must take its element type from the populated string-array sibling."
 
 [ref]
-languages = ["Zig"]
+languages = ["Nim", "Zig"]
 languages_reason = "An empty native array must take its element type from the populated string-array sibling."
 declaration_style = "VAR"
 heterogeneous_strategy = "RECORD"
