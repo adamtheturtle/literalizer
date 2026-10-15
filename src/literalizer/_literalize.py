@@ -641,6 +641,13 @@ def _widened_int_formatter(
     widened = spec.format_integer_widened
     if beyond is None and widened is None:
         return None
+    if spec.datetime_format.value.type_produced is int:
+        items = [
+            datetime_epoch_seconds(value=value)
+            if isinstance(value, dt.datetime)
+            else value
+            for value in items
+        ]
     tier = int_widening_tier(items=items)
     if tier is BeyondI64:
         return beyond
@@ -663,13 +670,6 @@ def _map_widened_int_formatter(
     """
     if not spec.pools_map_integer_width:
         return None
-    if spec.datetime_format.value.type_produced is int:
-        items = [
-            datetime_epoch_seconds(value=value)
-            if isinstance(value, dt.datetime)
-            else value
-            for value in items
-        ]
     return _widened_int_formatter(items=items, spec=spec)
 
 
