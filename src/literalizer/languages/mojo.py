@@ -716,7 +716,7 @@ def _mojo_variant_for_scalar(
 
 
 _REGISTER_TRIVIAL_VARIANT_TYPE_NAMES: frozenset[str] = frozenset(
-    {"Bool", "Int", "Float64"},
+    {"Bool", "Int", "Float64", "NoneType"},
 )
 """Mojo ``Variant`` type-name buckets that map to register-trivial
 scalars.  Applying the ``^`` transfer operator to one of these is a
@@ -731,7 +731,7 @@ def _mojo_value_inhibits_consuming_form(
     """Return ``True`` when ``^`` is illegal for *value*'s Mojo type.
 
     Non-scalar values (lists, dicts, sets) and scalars that map to
-    non-trivial Mojo types (``String``, ``NoneType``) keep the existing
+    non-trivial Mojo types (``String``) keep the existing
     consuming-form behavior.
     """
     if isinstance(value, (list, dict, set)):
@@ -1727,7 +1727,11 @@ class Mojo(metaclass=LanguageCls):
         def _format_mojo_ref_identifier(
             name: str, value: Value | None, /
         ) -> str:
-            """Append ``^`` unless *value* is register-trivial."""
+            """Append ``^`` unless *value* is register-trivial.
+
+            ``None`` here may mean unknown metadata. Definite nulls use
+            ``format_known_null_ref_identifier`` instead.
+            """
             if value is not None and _mojo_value_inhibits_consuming_form(
                 value, datetime_type_produced=datetime_type_produced
             ):
@@ -1754,6 +1758,11 @@ class Mojo(metaclass=LanguageCls):
             return consume(name, value)
 
         return _format
+
+    @cached_property
+    def format_known_null_ref_identifier(self) -> Callable[[str], str]:
+        """Copy a known register-trivial null without a transfer."""
+        return lambda name: name
 
     @cached_property
     def format_call_arg_ref_identifier(
@@ -1788,7 +1797,7 @@ class Mojo(metaclass=LanguageCls):
         :func:`~literalizer.literalize_call` and that appear in just
         one call argument, so the transfer cannot strand a later use.
         Refs whose underlying value is a register-trivial scalar
-        (``Int``, ``Bool``, ``Float64``) are routed away from this
+        (``Int``, ``Bool``, ``Float64``, null) are routed away from this
         formatter at the call site (see
         :attr:`consumable_ref_value_inhibits_consuming_form`), because
         applying ``^`` to such a value is a hard error under ``--Werror``.
@@ -1802,8 +1811,8 @@ class Mojo(metaclass=LanguageCls):
         """Return ``True`` for ref values whose Mojo type is register-
         trivial.
 
-        Mojo 0.26.1.0+ rejects ``^`` on ``Int``, ``Bool``, and
-        ``Float64`` values under ``--Werror`` because the transfer has
+        Mojo rejects ``^`` on ``Int``, ``Bool``, ``Float64``, and null
+        values under ``--Werror`` because the transfer has
         no effect.  The trivial-register set is derived from
         :func:`_mojo_variant_for_scalar` so the formatter layer avoids
         hard-coded Mojo type-name strings.
