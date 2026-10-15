@@ -1668,9 +1668,7 @@ class FSharp(metaclass=LanguageCls):
             ),
         )
 
-    assignment_declares_binding: ClassVar["staticmethod[[Value], bool]"] = (
-        staticmethod(declares_binding)
-    )
+    assignment_declares_binding = declares_binding
     reference_assignment_declares_binding = assignment_declares_binding
     call_assignment_declares_binding = True
 

@@ -631,9 +631,7 @@ class Toml(metaclass=LanguageCls):
         """Format one ordered-map entry."""
         return _format_toml_dict_entry
 
-    assignment_declares_binding: ClassVar["staticmethod[[Value], bool]"] = (
-        staticmethod(declares_binding)
-    )
+    assignment_declares_binding = declares_binding
     reference_assignment_declares_binding = assignment_declares_binding
     call_assignment_declares_binding = True
 

@@ -2693,9 +2693,7 @@ class Nim(metaclass=LanguageCls):
             uses_json_wrap=not self._uses_native_nim_collections,
         )
 
-    assignment_declares_binding: ClassVar["staticmethod[[Value], bool]"] = (
-        staticmethod(requires_declared_binding)
-    )
+    assignment_declares_binding = requires_declared_binding
     reference_assignment_declares_binding = assignment_declares_binding
     call_assignment_declares_binding = False
 

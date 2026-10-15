@@ -1708,9 +1708,7 @@ class CSharp(metaclass=LanguageCls):
         """Format a set entry."""
         return passthrough_set_entry
 
-    assignment_declares_binding: ClassVar["staticmethod[[Value], bool]"] = (
-        staticmethod(requires_declared_binding)
-    )
+    assignment_declares_binding = requires_declared_binding
     reference_assignment_declares_binding = assignment_declares_binding
     call_assignment_declares_binding = False
 

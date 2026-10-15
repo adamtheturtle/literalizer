@@ -4179,14 +4179,16 @@ def decode_file_sections(payload: str, /) -> tuple[FileSection, ...]:
 
 
 @beartype
-def declares_binding(_data: Value, /) -> bool:
+def declares_binding(self: Language, _data: Value, /) -> bool:
     """An existing-variable form supplies its own binding declaration."""
+    del self
     return True
 
 
 @beartype
-def requires_declared_binding(_data: Value, /) -> bool:
+def requires_declared_binding(self: Language, _data: Value, /) -> bool:
     """An existing-variable form requires a separately declared
     binding.
     """
+    del self
     return False
