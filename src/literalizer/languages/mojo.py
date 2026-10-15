@@ -1081,7 +1081,9 @@ class Mojo(metaclass=LanguageCls):
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
         None
     )
-    reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset(
+        {"_"},
+    )
     reserved_call_parameter_identifier_pattern: ClassVar[
         re.Pattern[str] | None
     ] = None
