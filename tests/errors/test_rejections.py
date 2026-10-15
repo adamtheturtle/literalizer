@@ -66,9 +66,11 @@ def _bound_refs(
 ) -> dict[str, literalizer.ValueInput] | None:
     """Resolve scalar bindings and manifest-owned native YAML values."""
     bindings: dict[str, literalizer.ValueInput] = dict(call.bound_refs)
-    bindings.update(
-        _yaml_reference_values(sources=call.bound_ref_yaml, value=value) or {}
+    yaml_bindings = _yaml_reference_values(
+        sources=call.bound_ref_yaml, value=value
     )
+    if yaml_bindings is not None:
+        bindings.update(yaml_bindings)
     return bindings if len(bindings) > 0 else None
 
 
