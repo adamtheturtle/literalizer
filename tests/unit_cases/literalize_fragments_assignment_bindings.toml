@@ -1,0 +1,54 @@
+# These fragments assign to caller-owned bindings and call externally defined
+# functions, so they cannot use the self-contained compiler golden suite.
+
+[[literals]]
+name = "odin_json_existing_binding"
+language = "Odin"
+source = '{"a": 1}'
+input_format = "json"
+json_type = "JSON_VALUE"
+variable_form = "existing"
+pre_indent_level = 0
+include_delimiters = true
+
+[literals.expected]
+code = 'my_data = _json_parse(`{"a": 1}`)'
+
+[[calls]]
+name = "bash_existing_call_binding"
+language = "Bash"
+source = "1"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+
+[calls.expected]
+code = 'my_data="$(make_widget 1)"'
+
+[[calls]]
+name = "fortran_existing_call_binding"
+language = "Fortran"
+source = "1"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+
+[calls.expected]
+code = "my_data = make_widget(fint(1_int64))"
+
+[[calls]]
+name = "nim_existing_call_binding"
+language = "Nim"
+source = "1"
+input_format = "json"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+
+[calls.expected]
+code = "my_data = make_widget(1)"
