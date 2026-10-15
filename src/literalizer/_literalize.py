@@ -28,9 +28,8 @@ from tomlkit.toml_document import TOMLDocument
 from typing_extensions import TypeIs
 
 from literalizer._checks import check_data
+from literalizer._comment_types import CollectionComments, ElementComments
 from literalizer._comments import (
-    CollectionComments,
-    ElementComments,
     apply_collection_comments_to_elements,
     extract_toml_comments,
     extract_yaml_comments,
@@ -39,6 +38,7 @@ from literalizer._comments import (
 )
 from literalizer._comments_resolve import (
     ResolvedComments,
+    resolve_json_comments,
     resolve_toml_comments,
     resolve_yaml_comments,
 )
@@ -68,6 +68,7 @@ from literalizer._formatters.type_inference import (
     replace_positional_empty_lists,
     set_sort_key,
 )
+from literalizer._json_comments import JsonComments, collection_comment_nodes
 from literalizer._language import (
     CallParameterShadowing,
     CallStyle,
@@ -98,6 +99,7 @@ from literalizer._language import (
 from literalizer._parsing import (
     InputFormat,
     ParsedInput,
+    ParsedPlain,
     ParsedToml,
     ParsedYaml,
     parse_input,
@@ -358,8 +360,8 @@ class LiteralizeResult:
     contains_standalone_comments: bool
     """Whether the rendered source carried standalone comments (lines
     whose only content is a comment, distinct from inline trailing
-    comments).  Set when ``literalize_call`` parses YAML input that
-    contains top-level before-element or trailing comments.  Callers
+    comments). Set when ``literalize_call`` retains standalone source
+    comments from YAML, JSONC or JSON5 input.  Callers
     that wrap the result via :meth:`Language.wrap_calls_with_declarations`
     can consult this together with
     :attr:`Language.supports_standalone_comments_in_wrapped_calls`
@@ -792,6 +794,7 @@ class _RenderContext:
     # are already extracted, because a tomlkit document is addressed by
     # body position rather than by rendered container (issue #4483).
     toml_comments: CollectionComments | None
+    json_comment_nodes: Mapping[int, CollectionComments]
     comment_root_id: int | None
 
     def compact(self) -> "_RenderContext":
@@ -816,6 +819,7 @@ class _RenderContext:
             consumable_ref_names=self.consumable_ref_names,
             single_use_ref_names=self.single_use_ref_names,
             consume_inhibited_ref_names=self.consume_inhibited_ref_names,
+            json_comment_nodes=self.json_comment_nodes,
             yaml_comment_nodes=self.yaml_comment_nodes,
             toml_comments=self.toml_comments,
             comment_root_id=self.comment_root_id,
@@ -850,6 +854,7 @@ class _RenderContext:
             consumable_ref_names=self.consumable_ref_names,
             single_use_ref_names=self.single_use_ref_names,
             consume_inhibited_ref_names=self.consume_inhibited_ref_names,
+            json_comment_nodes=self.json_comment_nodes,
             yaml_comment_nodes=self.yaml_comment_nodes,
             toml_comments=self.toml_comments,
             comment_root_id=self.comment_root_id,
@@ -877,6 +882,7 @@ class _RenderContext:
             consumable_ref_names=self.consumable_ref_names,
             single_use_ref_names=self.single_use_ref_names,
             consume_inhibited_ref_names=self.consume_inhibited_ref_names,
+            json_comment_nodes=self.json_comment_nodes,
             yaml_comment_nodes=self.yaml_comment_nodes,
             toml_comments=self.toml_comments,
             comment_root_id=self.comment_root_id,
@@ -3263,6 +3269,8 @@ def _source_collection_comments(
     ctx: _RenderContext,
 ) -> CollectionComments | None:
     """Return the extracted comments for a collection, when present."""
+    if id(value) in ctx.json_comment_nodes:
+        return ctx.json_comment_nodes[id(value)]
     if ctx.toml_comments is not None:
         if id(value) != ctx.comment_root_id:
             return None
@@ -3908,6 +3916,7 @@ def _build_render_context(
     raw_yaml_data: object | None,
     toml_comment_doc: TOMLDocument | None,
     record_context_data: Value | None,
+    json_comments: JsonComments | None,
 ) -> _RenderContext:
     """Build the metadata used by recursive value rendering."""
     yaml_comment_nodes: dict[
@@ -3918,6 +3927,11 @@ def _build_render_context(
             value=data,
             raw_value=raw_yaml_data,
             out=yaml_comment_nodes,
+        )
+    json_comment_nodes: dict[int, CollectionComments] = {}
+    if json_comments is not None:
+        json_comment_nodes = collection_comment_nodes(
+            data=data, comments=json_comments
         )
     toml_comments = None
     if toml_comment_doc is not None:
@@ -3971,7 +3985,11 @@ def _build_render_context(
             ref_key=ref_key,
         )
     effective_comment_root_id = None
-    if len(yaml_comment_nodes) > 0 or bool(toml_comments):
+    if (
+        len(yaml_comment_nodes) > 0
+        or bool(toml_comments)
+        or bool(json_comment_nodes)
+    ):
         effective_comment_root_id = id(data)
     source_empty_ids = _empty_source_container_ids(data)
     return _RenderContext(
@@ -4033,6 +4051,7 @@ def _build_render_context(
             preserve_ref_values=preserve_ref_values,
         ),
         consume_inhibited_ref_names=frozenset(),
+        json_comment_nodes=json_comment_nodes,
         yaml_comment_nodes=yaml_comment_nodes,
         toml_comments=toml_comments,
         comment_root_id=effective_comment_root_id,
@@ -4113,6 +4132,7 @@ def _prepare_root_render(
     toml_comment_doc: TOMLDocument | None,
     validate_data: bool,
     record_context_data: Value | None,
+    json_comments: JsonComments | None,
 ) -> str | _RenderContext:
     """Validate a collection and return its fast rendering or recursive
     context.
@@ -4123,6 +4143,7 @@ def _prepare_root_render(
     if (
         ref_key is _DISABLED_REF_KEY
         and record_context_data is None
+        and json_comments is None
         and raw_yaml_data is None
         and toml_comment_doc is None
     ):
@@ -4146,6 +4167,7 @@ def _prepare_root_render(
         ref_key=ref_key,
         collection_layout=collection_layout,
         line_prefix=line_prefix,
+        json_comments=json_comments,
         raw_yaml_data=raw_yaml_data,
         toml_comment_doc=toml_comment_doc,
         record_context_data=record_context_data,
@@ -4237,6 +4259,7 @@ def _literalize_impl(
     toml_comment_doc: TOMLDocument | None,
     validate_data: bool,
     record_context_data: Value | None,
+    json_comments: JsonComments | None,
 ) -> str:
     r"""Convert data to native language literal text.
 
@@ -4273,6 +4296,7 @@ def _literalize_impl(
         ref_key: The key used to identify ref markers in the input.
         collection_layout: Controls layout for collections nested
             inside other collections.
+        json_comments: JSONC/JSON5 comment metadata, or ``None``.
         raw_yaml_data: The comment-preserving ruamel node corresponding
             to *data*, or ``None`` for non-YAML/comment-free input.
         toml_comment_doc: The comment-preserving tomlkit document
@@ -4327,6 +4351,7 @@ def _literalize_impl(
             ref_values=ref_values,
             ref_key=ref_key,
             collection_layout=collection_layout,
+            json_comments=json_comments,
             raw_yaml_data=raw_yaml_data,
             toml_comment_doc=toml_comment_doc,
             record_context_data=record_context_data,
@@ -4356,6 +4381,7 @@ def _literalize_impl(
         ref_values=ref_values,
         ref_key=ref_key,
         collection_layout=collection_layout,
+        json_comments=json_comments,
         raw_yaml_data=raw_yaml_data,
         toml_comment_doc=toml_comment_doc,
         validate_data=validate_data,
@@ -4421,6 +4447,7 @@ def _literalize_child_path(
                     ref_values=ref_values,
                     ref_key=ref_key,
                     collection_layout=collection_layout,
+                    json_comments=None,
                     raw_yaml_data=None,
                     toml_comment_doc=None,
                     validate_data=True,
@@ -4459,6 +4486,7 @@ def _literalize(
     toml_comment_doc: TOMLDocument | None,
     validate_data: bool,
     record_context_data: Value | None,
+    json_comments: JsonComments | None,
 ) -> str:
     """Render data and attach a path to value-specific renderer errors."""
     try:
@@ -4472,6 +4500,7 @@ def _literalize(
             ref_values=ref_values,
             ref_key=ref_key,
             collection_layout=collection_layout,
+            json_comments=json_comments,
             raw_yaml_data=raw_yaml_data,
             toml_comment_doc=toml_comment_doc,
             validate_data=validate_data,
@@ -4771,7 +4800,7 @@ def _literalize_pre_form_impl(
 ) -> _PreFormState:
     """Run the variable-form-independent phase of :func:`literalize`.
 
-    Parses the source, formats the literal, and resolves YAML/TOML
+    Parses the source, formats the literal, and resolves source
     comments.
     """
     line_prefix = language.indent * pre_indent_level
@@ -4804,6 +4833,9 @@ def _literalize_pre_form_impl(
         ref_values=ref_values,
         ref_key=active_ref_key,
         collection_layout=collection_layout,
+        json_comments=parsed.comments
+        if isinstance(parsed, ParsedPlain)
+        else None,
         raw_yaml_data=(effective_raw_yaml_data),
         toml_comment_doc=(effective_toml_comment_doc),
         record_context_data=None,
@@ -4821,6 +4853,16 @@ def _literalize_pre_form_impl(
 
     resolved: ResolvedComments | None = None
     match parsed:
+        case ParsedPlain(comments=comments) if comments is not None:
+            resolved = resolve_json_comments(
+                comments=comments,
+                data=data,
+                base=result,
+                language=language,
+                comment_line_prefix=comment_line_prefix,
+                line_prefix=line_prefix,
+            )
+            result = resolved.result
         case ParsedYaml() if parsed.needs_comment_resolve:
             comment_cfg = language.comment_config
             cp = comment_cfg.prefix
@@ -5656,6 +5698,7 @@ def _literalize_value_binding(
         ref_values=None,
         ref_key=_DISABLED_REF_KEY,
         collection_layout=collection_layout,
+        json_comments=None,
         raw_yaml_data=None,
         toml_comment_doc=None,
         validate_data=record_context_data is None,
@@ -6615,6 +6658,7 @@ def _format_single_call_arg(
         consumable_ref_names=consumable_ref_names,
         single_use_ref_names=single_use_ref_names,
         consume_inhibited_ref_names=consume_inhibited_ref_names,
+        json_comment_nodes={},
         yaml_comment_nodes={},
         toml_comments=None,
         comment_root_id=None,
@@ -7326,16 +7370,16 @@ def _value_is_multikey_non_ref_dict(*, value: Value, ref_key: str) -> bool:
 
 
 @beartype
-def _yaml_has_standalone_comments(*, parsed: ParsedInput) -> bool:
-    """Return ``True`` when the YAML source carries standalone comments.
+def _has_standalone_comments(*, parsed: ParsedInput) -> bool:
+    """Return whether source comments require a comment-capable wrapper.
 
-    Standalone comments are comments that appear on their own line —
-    either before a top-level element or after the last element.  Inline
-    comments (those that follow a value on the same line) do not count.
-    Returns ``False`` for non-YAML input or for YAML that parses to a
-    scalar; ``ruamel.yaml`` only attaches collection-comment metadata
-    to :class:`CommentedSeq` / :class:`CommentedMap` / :class:`CommentedSet`.
+    JSONC/JSON5 calls hoist comments from argument values into standalone
+    lines. YAML retains its existing top-level collection comment policy.
     """
+    if isinstance(parsed, ParsedPlain) and parsed.comments is not None:
+        # Whole-document calls hoist source comments; per-element calls
+        # hoist comments from inside argument rows as well.
+        return bool(parsed.comments.flattened())
     if not isinstance(parsed, ParsedYaml):
         return False
     if not isinstance(
@@ -8481,6 +8525,7 @@ def _render_zip_literal(
         consumable_ref_names=frozenset(),
         single_use_ref_names=frozenset(),
         consume_inhibited_ref_names=frozenset(),
+        json_comment_nodes={},
         yaml_comment_nodes={},
         toml_comments=None,
         comment_root_id=None,
@@ -8593,6 +8638,8 @@ def _render_parsed_call(
     """
     if per_element_data is not None:
         collection_comments: CollectionComments | None = None
+        if isinstance(parsed, ParsedPlain) and parsed.comments is not None:
+            collection_comments = parsed.comments.call_comments()
         if (
             isinstance(parsed, ParsedYaml)
             and parsed.needs_comment_resolve
@@ -8645,6 +8692,17 @@ def _render_parsed_call(
             collection_layout=collection_layout,
             variable_form=variable_form,
         )
+        if isinstance(parsed, ParsedPlain) and parsed.comments is not None:
+            config = language.comment_config
+            result = prepend_collection_comments(
+                collection_comments=CollectionComments(
+                    elements=(), trailing=parsed.comments.flattened()
+                ),
+                base=result,
+                comment_prefix=config.prefix,
+                comment_suffix=config.suffix,
+                line_prefix="",
+            )
     return result
 
 
@@ -8712,7 +8770,7 @@ def literalize_call_parsed(
         ref_key=ref_key,
         ref_case=ref_case,
     )
-    contains_standalone_comments = _yaml_has_standalone_comments(parsed=parsed)
+    contains_standalone_comments = _has_standalone_comments(parsed=parsed)
     match language.call_style_config:
         case CallSupport.NOT_IN_LANGUAGE:
             raise CallsNotSupportedByLanguageError(

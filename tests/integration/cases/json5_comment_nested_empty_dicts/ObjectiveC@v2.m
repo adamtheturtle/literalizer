@@ -1,0 +1,14 @@
+#import <Foundation/Foundation.h>
+int main(void) {
+@autoreleasepool {
+id my_data = @{
+    // outer heading
+    // first empty
+    @"a": @{},
+    // second empty
+    @"b": @{},
+};
+    (void)my_data;
+}
+    return 0;
+}

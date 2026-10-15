@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "f"
+parameter_names = ["a", "b"]
+per_element = true
+requires_standalone_wrapped_comments = true

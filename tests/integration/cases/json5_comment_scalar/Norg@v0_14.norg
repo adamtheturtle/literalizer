@@ -1,0 +1,8 @@
+* my_data
+@code javascript
+// scalar heading
+// second heading line
+42  // scalar inline
+// inline continuation
+// scalar trailing
+@end

@@ -34,6 +34,7 @@ from tomlkit.items import Integer as TomlInteger
 from tomlkit.toml_document import TOMLDocument
 from typing_extensions import TypeIs
 
+from literalizer._json_comments import JsonComments, extract_json_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ExcessiveIntegerDigitsError,
@@ -177,9 +178,8 @@ def _json_object_without_duplicate_keys(
 class InputFormat(enum.Enum):
     """Supported input serialization formats.
 
-    YAML and TOML comments are preserved for rendering in the target
-    language. JSON, JSONC and JSON5 are parsed as plain data, so their
-    comments are discarded.
+    YAML, TOML, JSONC and JSON5 comments are preserved for rendering
+    in the target language. JSON input does not accept comments.
     """
 
     JSON = enum.auto()
@@ -211,6 +211,7 @@ class ParsedPlain:
     """Result of parsing JSON, JSONC or JSON5 input as plain data."""
 
     data: Value
+    comments: JsonComments | None
 
 
 @beartype
@@ -676,7 +677,7 @@ def _reject_json_constant(value: str) -> Value:
 
 
 @beartype
-def _parse_json_data(*, source: str, input_format: InputFormat) -> ParsedInput:
+def _parse_json_data(*, source: str, input_format: InputFormat) -> ParsedPlain:
     """Parse JSON syntax with the error type of *input_format*."""
     try:
         data = json.loads(
@@ -709,7 +710,7 @@ def _parse_json_data(*, source: str, input_format: InputFormat) -> ParsedInput:
             line=exc.lineno,
             column=exc.colno,
         ) from exc
-    return ParsedPlain(data=data)
+    return ParsedPlain(data=data, comments=None)
 
 
 @beartype
@@ -779,9 +780,15 @@ def _strip_jsonc_comments(*, source: str) -> str:
 @beartype
 def _parse_jsonc(*, source: str) -> ParsedInput:
     """Parse JSON with comments, retaining JSON's strict syntax."""
-    return _parse_json_data(
+    parsed = _parse_json_data(
         source=_strip_jsonc_comments(source=source),
         input_format=InputFormat.JSONC,
+    )
+    return dataclasses.replace(
+        parsed,
+        comments=extract_json_comments(
+            source=source, data=parsed.data, json5=False
+        ),
     )
 
 
@@ -933,7 +940,13 @@ def _parse_json5(*, source: str) -> ParsedInput:
             line=effective_line,
             column=(effective_column),
         ) from exc
-    return ParsedPlain(data=_combine_surrogate_pairs(data=data))
+    combined = _combine_surrogate_pairs(data=data)
+    return ParsedPlain(
+        data=combined,
+        comments=extract_json_comments(
+            source=source, data=combined, json5=True
+        ),
+    )
 
 
 @beartype

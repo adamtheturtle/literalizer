@@ -1,4 +1,4 @@
-"""Resolve YAML and TOML comments and apply them to literalized output."""
+"""Resolve source comments and apply them to literalized output."""
 
 import dataclasses
 from collections.abc import Mapping
@@ -8,16 +8,18 @@ from beartype import beartype
 from ruamel.yaml.comments import CommentedMap, CommentedSeq, CommentedSet
 from tomlkit.toml_document import TOMLDocument
 
+from literalizer._comment_types import CollectionComments, ElementComments
 from literalizer._comments import (
-    CollectionComments,
-    ElementComments,
     apply_collection_comments,
     extract_toml_comments,
     extract_yaml_comments,
+    literalize_scalar_comments,
     literalize_yaml_scalar,
 )
+from literalizer._json_comments import JsonComments
 from literalizer._language import Language
 from literalizer._parsing import get_yaml
+from literalizer._types import Value
 
 
 @beartype
@@ -61,7 +63,7 @@ def _filter_null_dict_comments(
 @beartype
 @dataclasses.dataclass(frozen=True)
 class ResolvedComments:
-    """Result of resolving YAML comments for a collection or scalar."""
+    """Result of resolving comments for a collection or scalar."""
 
     result: str
     pending: CollectionComments | None
@@ -244,4 +246,59 @@ def resolve_toml_comments(
         # The renderer applies these while it still knows where each
         # element begins, the way it does for YAML (issue #4483).
         structurally_applied=True,
+    )
+
+
+@beartype
+def resolve_json_comments(
+    *,
+    comments: JsonComments,
+    data: Value,
+    base: str,
+    language: Language,
+    comment_line_prefix: str,
+    line_prefix: str,
+) -> ResolvedComments:
+    """Apply JSONC/JSON5 comments with the shared language policies."""
+    config = language.comment_config
+    if comments.collection is None:
+        result = literalize_scalar_comments(
+            scalar_comments=comments.scalar,
+            base=base,
+            comment_prefix=config.prefix,
+            comment_suffix=config.suffix,
+            line_prefix=line_prefix,
+            supports_scalar_before_comments=language.supports_scalar_before_comments,
+            supports_scalar_inline_comments=language.supports_scalar_inline_comments,
+        )
+        return ResolvedComments(
+            result=result.result,
+            pending=None,
+            pending_scalar_before=result.pending_before,
+        )
+    collection = comments.collection
+    if len(collection.elements) == 0:
+        return ResolvedComments(
+            result=base,
+            pending=collection,
+            pending_scalar_before=(),
+        )
+    structurally_applied = True
+    if not language.supports_collection_comments or (
+        isinstance(data, dict)
+        and language.skip_null_dict_values
+        and all(value is None for value in data.values())
+    ):
+        collection = CollectionComments(
+            elements=(), trailing=comments.flattened()
+        )
+        structurally_applied = False
+    return _resolve_collection_comments(
+        collection_comments=collection,
+        base=base,
+        language=language,
+        comment_prefix=config.prefix,
+        comment_suffix=config.suffix,
+        comment_line_prefix=comment_line_prefix,
+        structurally_applied=structurally_applied,
     )

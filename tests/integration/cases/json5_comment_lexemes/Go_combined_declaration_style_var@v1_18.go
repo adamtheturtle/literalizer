@@ -1,0 +1,19 @@
+package main
+
+func main() {
+var my_data = map[string]string{
+	// heading
+	"a": "single ' // data",
+	"b": "linecontinuation",
+	"c": "\\",  // actual comment
+	"d": "  ",  // final comment
+}
+my_data = map[string]string{
+	// heading
+	"a": "single ' // data",
+	"b": "linecontinuation",
+	"c": "\\",  // actual comment
+	"d": "  ",  // final comment
+}
+_ = my_data
+}

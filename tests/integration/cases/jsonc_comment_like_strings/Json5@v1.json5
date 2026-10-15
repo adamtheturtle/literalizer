@@ -1,0 +1,6 @@
+[
+    "// data",
+    "/* data */",
+    "escaped quote: \" // data",
+    "backslash: \\",
+]

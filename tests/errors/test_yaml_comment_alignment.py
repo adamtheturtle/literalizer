@@ -9,7 +9,7 @@ import importlib
 import pytest
 
 import literalizer
-from literalizer._comments import CollectionComments
+from literalizer._comment_types import CollectionComments
 from literalizer.languages import Java
 
 
