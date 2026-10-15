@@ -124,6 +124,7 @@ def make_backslash_string_formatter(
     :meth:`str.replace`.
     """
 
+    @beartype
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_backslash_formatter(
@@ -230,6 +231,7 @@ def reject_nul_string_formatter(
 ) -> Callable[[str], str]:
     """Wrap *formatter* to reject strings with an embedded null byte."""
 
+    @beartype
     def _format(value: str) -> str:
         """Reject a null byte, then delegate to the wrapped formatter."""
         if "\0" in value:
@@ -273,6 +275,7 @@ def format_string_concat_control(
     """
     empty = f"{quote_char}{quote_char}"
 
+    @beartype
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_concat_control(

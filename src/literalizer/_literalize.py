@@ -223,6 +223,7 @@ class _RootMappingTableLanguage(Protocol):
     supports_root_mapping_table: bool
 
 
+@beartype
 class _RootMappingLiteral(str):
     """A root mapping with table entries retained before flattening."""
 
@@ -2244,6 +2245,7 @@ def _collect_sequence_open_overrides(
     """Keep content-derived sequence types consistent through cousins."""
     overrides: dict[int, str] = {}
 
+    @beartype
     def _visit(value: Value) -> None:
         """Find sibling groups in lists and map values."""
         if isinstance(value, list):
@@ -3738,6 +3740,7 @@ def _inference_to_source_container_ids(
     """Map inferred container ids back to corresponding source ids."""
     id_map: dict[int, int] = {}
 
+    @beartype
     def _visit(*, source_item: Value, inferred_item: Value) -> None:
         """Record corresponding containers and traverse their peers."""
         if not isinstance(source_item, (dict, list, set)) or not isinstance(
@@ -3798,6 +3801,7 @@ def _empty_source_container_ids(value: Value, /) -> frozenset[int]:
     """Return identities of containers that are empty in source data."""
     ids: set[int] = set()
 
+    @beartype
     def _visit(item: Value, /) -> None:
         """Collect empty containers and traverse populated peers."""
         if isinstance(item, (dict, list, set)) and len(item) == 0:
@@ -5388,6 +5392,7 @@ def _contextual_bound_ref_values(
     """
     contextual: dict[str, Value] = dict(bound_refs)
 
+    @beartype
     def _visit(*, raw: Value, inferred: Value) -> None:
         """Find markers whose resolved siblings require float bindings."""
         raw_children: Iterable[Value]
@@ -5450,6 +5455,7 @@ def _bound_ref_parent_contexts(
     """
     contexts: dict[str, Value] = {}
 
+    @beartype
     def _visit(*, raw: Value, inferred: Value) -> None:
         """Pair each marker with a resolved copy of its parent."""
         if isinstance(raw, list) and isinstance(inferred, list):
@@ -6037,6 +6043,7 @@ def reject_unbound_refs_in_file(
         # written as the name and nothing more.
         return
 
+    @beartype
     def _spelled(name: str, /) -> str:
         """Return *name* as the emitted code spells it."""
         if ref_case is None:
@@ -8334,6 +8341,7 @@ def materialize_value_input(*, value: ValueInput, argument_name: str) -> Value:
     """
     active: set[int] = set()
 
+    @beartype
     def materialize(item: ValueInput) -> Value:
         """Materialize one node while tracking its active ancestors."""
         if not _is_value_mapping(item) and not _is_value_sequence(item):

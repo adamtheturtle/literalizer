@@ -101,6 +101,7 @@ class FileWrapperContext:
     """Formatted root table entries retained by the mapping producer."""
 
 
+@beartype
 class NewVariableNameSyntax(enum.Enum):
     """Conservative lexical grammars for ``NewVariable`` declarations.
 
@@ -425,6 +426,7 @@ class DatetimeFormatConfig:
     type_produced: type
 
 
+@beartype
 class DateFormatEnum(enum.Enum):
     """Date format options with a statically checked config payload."""
 
@@ -437,6 +439,7 @@ class DateFormatEnum(enum.Enum):
         return self._value_.formatter(date_value)  # pylint: disable=no-member
 
 
+@beartype
 class DatetimeFormatEnum(enum.Enum):
     """Datetime format options with a statically checked config
     payload.
@@ -932,6 +935,7 @@ class StubReturn(enum.Enum):
     """
 
 
+@beartype
 class IdentifierCase(enum.Enum):
     """A naming convention for a single identifier.
 
@@ -1355,6 +1359,7 @@ class ModifierCombination:
     """The set of modifier enum members that make up this combination."""
 
 
+@beartype
 class JsonType(enum.Enum):
     """Base class for JSON value-type options.
 
@@ -4076,6 +4081,7 @@ def body_preamble_from_scalars(
             (e.g. adding language-specific prefixes).
     """
 
+    @beartype
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return unique body-preamble lines for *types*."""
         del data  # unused by the generic implementation

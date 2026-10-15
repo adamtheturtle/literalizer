@@ -222,6 +222,7 @@ def build_tuple_strategy(
     list (which would re-trip the heterogeneity checks).
     """
 
+    @beartype
     def _tuple_aware_field_type(request: RecordFieldType) -> str:
         """Type a tuple-eligible record field via *tuple_renderer*;
         defer every other field to *record_renderer*.
@@ -245,6 +246,7 @@ def build_tuple_strategy(
         derecordized_map_open=None,
     )
 
+    @beartype
     def _compute_tuple_list_ids(data: Value, /) -> frozenset[int]:
         """Return the tuple-eligible list ids, raising for any whose
         length the language has no native tuple for.

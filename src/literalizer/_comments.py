@@ -1219,6 +1219,7 @@ def prepend_collection_comments(
     Returns *base* unchanged when there are no comments.
     """
 
+    @beartype
     def _fmt(text: str) -> str:
         """Delegate to module-level implementation."""
         return _format_comment(
