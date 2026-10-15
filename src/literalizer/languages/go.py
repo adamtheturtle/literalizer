@@ -1721,7 +1721,9 @@ class Go(metaclass=LanguageCls):
             base_formatter=self.declaration_style.value.formatter,
         )
 
-    assignment_declares_binding = staticmethod(requires_declared_binding)
+    assignment_declares_binding: ClassVar["staticmethod[[Value], bool]"] = (
+        staticmethod(requires_declared_binding)
+    )
     reference_assignment_declares_binding = assignment_declares_binding
     call_assignment_declares_binding = False
 

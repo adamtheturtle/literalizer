@@ -2211,7 +2211,9 @@ class C(metaclass=LanguageCls):
 
         return _format_decl
 
-    assignment_declares_binding = staticmethod(requires_declared_binding)
+    assignment_declares_binding: ClassVar["staticmethod[[Value], bool]"] = (
+        staticmethod(requires_declared_binding)
+    )
     reference_assignment_declares_binding = assignment_declares_binding
     call_assignment_declares_binding = False
 

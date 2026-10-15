@@ -1425,7 +1425,9 @@ class Sml(metaclass=LanguageCls):
             formatter=self._sml_decl
         )
 
-    assignment_declares_binding = staticmethod(declares_binding)
+    assignment_declares_binding: ClassVar["staticmethod[[Value], bool]"] = (
+        staticmethod(declares_binding)
+    )
     reference_assignment_declares_binding = assignment_declares_binding
 
     @property
