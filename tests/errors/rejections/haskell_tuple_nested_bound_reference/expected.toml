@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+Haskell = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT. Use LIST or select the Aeson JSON type."
