@@ -1564,3 +1564,15 @@ reason = "A custom language supplies ordinary text-only sequence and map callbac
 
 [special_axes.typed_collection_callback]
 reason = "A custom typed opener supplies an ordinary element-type callback."
+
+[axes.sequence_array_epoch]
+plan = "fixed_overrides"
+name_template = "{lang}_sequence_array_epoch"
+gates = [
+  { kind = "enum_member_present", option = "sequence_format", member = "ARRAY" },
+  { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
+]
+overrides = [
+  { kind = "enum_member", option = "sequence_format", member = "ARRAY" },
+  { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
+]
