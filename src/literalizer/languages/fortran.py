@@ -239,6 +239,7 @@ def _build_format_fortran_entry(
     constructor.
     """
 
+    @beartype
     def _format_fortran_entry(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_fortran_entry(
@@ -419,6 +420,7 @@ def _build_format_variable_declaration(
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Build a variable declaration formatter."""
 
+    @beartype
     def _format_variable_declaration(
         name: str,
         value: str,
@@ -453,6 +455,7 @@ def _build_format_variable_assignment(
 ) -> Callable[[str, str, Value], str]:
     """Build a variable assignment formatter."""
 
+    @beartype
     def _format_variable_assignment(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_fortran_variable_assignment(
@@ -1254,6 +1257,7 @@ class Fortran(metaclass=LanguageCls):
     def format_integer(self) -> Callable[[int], str]:
         """Format an int value as an int64 Fortran literal."""
 
+        @beartype
         def format_int64(value: int) -> str:
             """Avoid an out-of-range positive operand for INT64_MIN."""
             if value == I64_MIN:

@@ -542,6 +542,7 @@ class JavaScript(metaclass=LanguageCls):
             if self.value != "none":
                 return formatter
 
+            @beartype
             def without_semicolon(
                 name: str,
                 value: str,

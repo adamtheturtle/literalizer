@@ -694,6 +694,7 @@ class Racket(metaclass=LanguageCls):
         injected.
         """
 
+        @beartype
         def _raise_for_racket_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(

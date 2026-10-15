@@ -123,6 +123,7 @@ def _build_elm_date_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_date_iso(value=value, prefix=prefix)
@@ -144,6 +145,7 @@ def _build_elm_time_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_time_iso(value=value, prefix=prefix)
@@ -165,6 +167,7 @@ def _build_elm_datetime_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_datetime_iso(value=value, prefix=prefix)
@@ -198,6 +201,7 @@ def _build_elm_bytes_hex(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_bytes_hex(value=value, prefix=prefix)
@@ -219,6 +223,7 @@ def _build_elm_bytes_base64(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_bytes_base64(value=value, prefix=prefix)
@@ -246,6 +251,7 @@ def _build_elm_integer_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_integer_formatter(
@@ -275,6 +281,7 @@ def _build_elm_float_wrapper(
     constructors.
     """
 
+    @beartype
     def _format(value: float) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_float_wrapper(
@@ -299,6 +306,7 @@ def _build_elm_str_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_elm_string(value=value, prefix=prefix)
@@ -356,6 +364,7 @@ def _build_elm_body_preamble(
     needed.
     """
 
+    @beartype
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
         del data  # unused
@@ -656,6 +665,7 @@ def _build_elm_json_int_formatter(
 ) -> Callable[[int], str]:
     """Build an integer formatter producing ``Json.Encode.int <n>``."""
 
+    @beartype
     def _format(value: int) -> str:
         """Apply the ``Json.Encode.int`` constructor."""
         return _format_elm_json_with_ctor(
@@ -671,6 +681,7 @@ def _build_elm_json_float_formatter(
 ) -> Callable[[float], str]:
     """Build a float formatter producing ``Json.Encode.float <n>``."""
 
+    @beartype
     def _format(value: float) -> str:
         """Apply the ``Json.Encode.float`` constructor."""
         return _format_elm_json_with_ctor(
@@ -1928,6 +1939,7 @@ class Elm(metaclass=LanguageCls):
         """
         if self._json_active:
 
+            @beartype
             def _json_preamble(
                 _types: frozenset[type], _data: Value, /
             ) -> tuple[str, ...]:

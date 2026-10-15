@@ -600,6 +600,7 @@ class Json5(metaclass=LanguageCls):
         references, so refs are not supported.
         """
 
+        @beartype
         def _raise_for_json5_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(
@@ -690,6 +691,7 @@ class Json5(metaclass=LanguageCls):
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
 
+        @beartype
         def _format(value: str) -> str:
             """Format a string as a JSON5 quoted literal."""
             return (

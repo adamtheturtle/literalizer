@@ -172,6 +172,7 @@ def _php_integer_formatter(
         max_value=I64_MAX,
     )
 
+    @beartype
     def _format(value: int) -> str:
         """Format one PHP integer."""
         if value == I64_MIN:

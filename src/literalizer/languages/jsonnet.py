@@ -717,6 +717,7 @@ class Jsonnet(metaclass=LanguageCls):
         so variable references cannot be resolved.
         """
 
+        @beartype
         def _raise_for_jsonnet_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(
@@ -807,6 +808,7 @@ class Jsonnet(metaclass=LanguageCls):
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
 
+        @beartype
         def _format(value: str) -> str:
             """Format a string as a Jsonnet quoted literal."""
             return format_string_backslash_control(

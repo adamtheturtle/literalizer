@@ -135,6 +135,7 @@ def _build_occam_entry_formatter(
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter from datetime output metadata."""
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Wrap one Occam value."""
         return _format_occam_entry(

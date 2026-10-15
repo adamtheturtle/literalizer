@@ -781,6 +781,7 @@ class Scheme(metaclass=LanguageCls):
         injected via the call framework.
         """
 
+        @beartype
         def _raise_for_scheme_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(

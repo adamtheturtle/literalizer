@@ -977,6 +977,7 @@ class Perl(metaclass=LanguageCls):
             *(effective_contributors_2),
         )
 
+        @beartype
         def _composed(data: Value, /) -> tuple[str, ...]:
             """Concatenate every contributor's preamble lines."""
             return tuple(line for fn in contributors for line in fn(data))
@@ -1108,6 +1109,7 @@ class Perl(metaclass=LanguageCls):
         """Callable that formats a float value as a literal."""
         formatter = self.float_format
 
+        @beartype
         def format_numeric_float(value: float) -> str:
             """Force Perl to retain the value's numeric identity."""
             if value == 0.0 and math.copysign(1.0, value) < 0:

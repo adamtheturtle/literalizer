@@ -277,6 +277,7 @@ def _build_haskell_call_stub(
     types.
     """
 
+    @beartype
     def _haskell_call_stub(
         parts: Sequence[str],
         params: Sequence[str],
@@ -345,6 +346,7 @@ def _build_haskell_datetime_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _format_haskell_datetime(value=value, prefix=prefix)
@@ -472,6 +474,7 @@ def _build_date_formatters(
         case _ if is_explicit:
             _str_pfx = f"{constructor_prefix}Str "
 
+            @beartype
             def _explicit_date(value: dt.date) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_with_str_constructor_date(
@@ -492,6 +495,7 @@ def _build_date_formatters(
         case _ if is_explicit:
             _str_pfx_dt = f"{constructor_prefix}Str "
 
+            @beartype
             def _explicit_datetime(value: dt.datetime) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_with_str_constructor_datetime(
@@ -605,6 +609,7 @@ def _build_string_formatters(
     entries use tuple formatting.
     """
 
+    @beartype
     def base_format_string(value: str) -> str:
         r"""Format a Haskell string with ``\x..`` control-char escapes."""
         has_greedy_hex_boundary = any(
@@ -646,6 +651,7 @@ def _build_string_formatters(
 
     string_constructor = f"{constructor_prefix}Str "
 
+    @beartype
     def _format_string(value: str) -> str:
         """Delegate to module-level implementation."""
         return _wrap_str_with_constructor(
@@ -654,6 +660,7 @@ def _build_string_formatters(
             base_format_string=base_format_string,
         )
 
+    @beartype
     def _format_bytes(data: bytes) -> str:
         """Delegate to module-level implementation."""
         return _wrap_bytes_with_constructor(
@@ -1054,6 +1061,7 @@ def _build_scalar_body_preamble(
         indent=indent,
     )
 
+    @beartype
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
         return _haskell_compute_preamble(cfg=cfg, types=types, data=data)
@@ -1119,6 +1127,7 @@ def _build_declaration_formatters(
     if raw_declared is not None:
         sequence_declared_type = raw_declared.replace("Val", type_name)
 
+    @beartype
     def _haskell_declaration(
         name: str,
         value: str,
@@ -2707,6 +2716,7 @@ class Haskell(metaclass=LanguageCls):
         if self._string_fmts.is_explicit:
             _str_pfx = f"{self.constructor_prefix}Str "
 
+            @beartype
             def _explicit_time(value: dt.time) -> str:
                 """Wrap a bare ISO time literal with the HStr
                 constructor.
@@ -2726,6 +2736,7 @@ class Haskell(metaclass=LanguageCls):
             _float_prefix = f"{self.constructor_prefix}Float "
             _base_format_float: Callable[[float], str] = self.float_format
 
+            @beartype
             def _wrap_float(value: float) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_float_with_constructor(
@@ -2747,6 +2758,7 @@ class Haskell(metaclass=LanguageCls):
             _int_prefix = f"{self.constructor_prefix}Int "
             _base_format_integer: Callable[[int], str] = self.integer_format
 
+            @beartype
             def _wrap_integer(value: int) -> str:
                 """Delegate to module-level implementation."""
                 return _wrap_integer_with_constructor(
@@ -2789,6 +2801,7 @@ class Haskell(metaclass=LanguageCls):
         if self.dict_format is type(self.dict_format).RECORD:
             base = self.declaration_style.value.formatter
 
+            @beartype
             def _native_declaration(
                 name: str,
                 value: str,
@@ -2951,6 +2964,7 @@ class Haskell(metaclass=LanguageCls):
             return _aeson_value_body_preamble
         if self.dict_format is type(self.dict_format).RECORD:
 
+            @beartype
             def _native_body_preamble(
                 types: frozenset[type], data: Value, /
             ) -> tuple[str, ...]:

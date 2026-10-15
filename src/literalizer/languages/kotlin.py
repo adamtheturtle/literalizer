@@ -1246,6 +1246,7 @@ class Kotlin(metaclass=LanguageCls):
             if self in {type(self).NEVER, type(self).SAFE}:
                 return auto_formatter
 
+            @beartype
             def _typed_formatter(
                 name: str,
                 value: str,
@@ -1845,6 +1846,7 @@ class Kotlin(metaclass=LanguageCls):
             narrowing = self._derecordized_map_narrowing
             base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
 
+            @beartype
             def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
                 """Refresh the narrow-type cache alongside the wrap
                 ids.
@@ -1858,6 +1860,7 @@ class Kotlin(metaclass=LanguageCls):
                 )
                 return wrap_ids
 
+            @beartype
             def _widened_map_open() -> str:
                 """Return the widened-map opener for the current
                 pass.
@@ -1908,6 +1911,7 @@ class Kotlin(metaclass=LanguageCls):
             return no_data_preamble
         record_preamble = self._record_strategy.preamble
 
+        @beartype
         def _preamble(data: Value, /) -> tuple[str, ...]:
             """Combine the BigInteger import with record declarations."""
             return _kotlin_biginteger_preamble(data) + record_preamble(data)
@@ -2099,6 +2103,7 @@ class Kotlin(metaclass=LanguageCls):
         if self._json_type_active:
             return _JSON_NODE_SEQUENCE_CONFIG.sequence_open
 
+        @beartype
         def _open(items: list[Value], /) -> str:
             """Retain the selected sequence type through literal
             assembly.
@@ -2108,6 +2113,7 @@ class Kotlin(metaclass=LanguageCls):
                 selected.opener, declared_type=selected.declared_type
             )
 
+        @beartype
         def _signature(items: list[Value], /) -> CollectionSignature:
             """Retain constructor inference and tuple arity before
             emission.
@@ -2198,6 +2204,7 @@ class Kotlin(metaclass=LanguageCls):
             dict_key_type=self.default_dict_key_type,
         )
 
+        @beartype
         def _open(items: list[Value], /) -> str:
             """Carry the selected set type rather than inspect its
             constructor.
@@ -2261,6 +2268,7 @@ class Kotlin(metaclass=LanguageCls):
             self.sequence_format is type(self.sequence_format).LIST
         )
 
+        @beartype
         def resolve_list(element_type: ListType) -> str | None:
             """Map a list value to its rendered Kotlin type name."""
             if not renders_arrays:
@@ -2270,6 +2278,7 @@ class Kotlin(metaclass=LanguageCls):
                 scalar_resolver=scalar_resolver,
             )
 
+        @beartype
         def resolve(element_type: type | ListType | DictType) -> str | None:
             """Map an element type to its rendered Kotlin type name."""
             return _kotlin_dict_value_type_name(
@@ -2304,6 +2313,7 @@ class Kotlin(metaclass=LanguageCls):
             ),
         )
 
+        @beartype
         def _open(items: dict[Scalar, Value], /) -> str:
             """Retain the selected mapping type before emitting its opener."""
             selected = infer_collection_type(
@@ -2317,6 +2327,7 @@ class Kotlin(metaclass=LanguageCls):
                 selected.opener, declared_type=selected.declared_type
             )
 
+        @beartype
         def _signature(items: dict[Scalar, Value], /) -> CollectionSignature:
             """Retain the inferred mapping value type and stable
             fallback.
@@ -2553,6 +2564,7 @@ class Kotlin(metaclass=LanguageCls):
         ):
             return formatter
 
+        @beartype
         def checked_formatter(
             name: str,
             value: str,

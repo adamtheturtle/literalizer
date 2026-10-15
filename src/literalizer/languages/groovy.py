@@ -246,6 +246,7 @@ def _groovy_call_stub_factory(
     names.
     """
 
+    @beartype
     def _stub(
         parts: Sequence[str],
         params: Sequence[str],

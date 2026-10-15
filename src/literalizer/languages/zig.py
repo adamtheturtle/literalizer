@@ -1735,6 +1735,7 @@ class Zig(metaclass=LanguageCls):
             derecordized_map_open=".{ .map = &.{",
         )
 
+        @beartype
         def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
             """Tag a scalar stored in a widened ``ZVal`` map."""
             if raw_value is None:
@@ -1748,6 +1749,7 @@ class Zig(metaclass=LanguageCls):
                 datetime_type=self.datetime_format.value.type_produced,
             )
 
+        @beartype
         def _wrap_non_scalar(raw_value: Value, formatted: str) -> str:
             """Tag a sequence payload stored in a widened ``ZVal`` map."""
             if isinstance(raw_value, list):
@@ -1756,6 +1758,7 @@ class Zig(metaclass=LanguageCls):
 
         base_compute_wrap_ids = strategy.behavior.compute_wrap_ids
 
+        @beartype
         def _compute_wrap_ids(data: Value, /) -> frozenset[int]:
             """Tag every nested value inside a fallback map payload."""
             wrap_ids = set(base_compute_wrap_ids(data))
@@ -1811,6 +1814,7 @@ class Zig(metaclass=LanguageCls):
             record_preamble = self._record_strategy.preamble
             compute_wrap_ids = self._record_strategy.behavior.compute_wrap_ids
 
+            @beartype
             def _record_preamble(data: Value, /) -> tuple[str, ...]:
                 """Emit ``ZVal`` when a nested map needs that carrier."""
                 value_preamble = _RECORD_ZVAL_STATIC_PREAMBLE
@@ -1940,6 +1944,7 @@ class Zig(metaclass=LanguageCls):
         if not self._record_strategy_active:
             return self.sequence_format.value.sequence_open
 
+        @beartype
         def _open(items: list[Value]) -> str:
             """Return the slice opener, or the tuple opener for a
             heterogeneous list.
@@ -1948,6 +1953,7 @@ class Zig(metaclass=LanguageCls):
                 return ".{"
             return "&.{"
 
+        @beartype
         def _signature(items: list[Value], /) -> CollectionSignature:
             """Retain the producer's array representation choice."""
             tuple_items = (
@@ -2030,6 +2036,7 @@ class Zig(metaclass=LanguageCls):
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
 
+        @beartype
         def _format(value: str) -> str:
             """Format a string as a Zig quoted literal."""
             return format_string_backslash_control(

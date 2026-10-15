@@ -176,6 +176,7 @@ def _nil_safe_declaration(
     ``{name}: any = nil`` when the value is ``None``.
     """
 
+    @beartype
     def _format(
         name: str,
         value: str,

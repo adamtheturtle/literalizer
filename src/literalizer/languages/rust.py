@@ -504,6 +504,7 @@ def _make_rust_integer_suffix_formatter(
     narrowest type that holds *value*.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_rust_integer_suffix(value=value, base=base)
@@ -522,6 +523,7 @@ def _make_rust_i128_formatter(
     element agrees with the container type rustc infers.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Format *value* as ``<base>i128``."""
         return f"{base(value)}i128"
@@ -671,6 +673,7 @@ def _rust_type_annotation(
     since Rust has no const-expression dict format.
     """
 
+    @beartype
     def recurse(element: Value) -> str:
         """Delegate to module-level implementation."""
         return _rust_type_annotation(
@@ -762,6 +765,7 @@ def _format_typed_declaration(
     annotation.
     """
 
+    @beartype
     def _reject_dict(_key_type: str, _value_type: str) -> str:
         """Reject dict data for ``CONST`` / ``STATIC``.
 
@@ -775,6 +779,7 @@ def _format_typed_declaration(
         )
         raise IncompatibleFormatsError(msg)
 
+    @beartype
     def _reject_set(_element_type: str) -> str:
         """Reject set data for ``CONST`` / ``STATIC``.
 
@@ -1098,6 +1103,7 @@ def _rust_value_scalar_wrapper(
     ``{enum_name}::{Variant}`` for a unit variant such as ``Null``).
     """
 
+    @beartype
     def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``."""
         signature = _heterogeneous_variant_for_scalar(
@@ -1202,6 +1208,7 @@ def _rust_wrapped_container_kinds(
     has_populated_list = False
     has_populated_map = False
 
+    @beartype
     def _visit(item: Value) -> None:
         """Record which empty-container kinds *item* wraps."""
         nonlocal has_list, has_map, has_populated_list, has_populated_map
@@ -1243,6 +1250,7 @@ def _rust_container_wrapper(
     ``HashMap<&'static str, Value>``.
     """
 
+    @beartype
     def _wrap(raw_value: Value, formatted_value: str) -> str:
         """Wrap a container as ``{enum_name}::{List,Map}(...)``."""
         match raw_value:
@@ -1265,6 +1273,7 @@ def _rust_values_by_path(*, data: Value) -> dict[EmptyContainerPath, Value]:
     """Return *data* and its descendants indexed by input path."""
     by_path: dict[EmptyContainerPath, Value] = {}
 
+    @beartype
     def _visit(value: Value, path: EmptyContainerPath) -> None:
         """Index *value* and its descendants by their input paths."""
         by_path[path] = value
@@ -1318,6 +1327,7 @@ def _rust_empty_container_literal_override_hook(
     configuration.
     """
 
+    @beartype
     def _overrides(data: Value, /) -> Mapping[int, str]:
         """Resolve typed empty-container literals in *data*."""
         return _rust_empty_container_literal_overrides(
@@ -1393,6 +1403,7 @@ def _rust_tuple_nested_vec_empty_override_hook(
 ) -> Callable[[Value], Mapping[int, str]]:
     """Build the nested-tuple empty-``Vec`` inference hook."""
 
+    @beartype
     def _overrides(data: Value, /) -> Mapping[int, str]:
         """Combine configured and sibling-inferred empty types."""
         overrides = dict(
@@ -1435,6 +1446,7 @@ def _build_tagged_enum_behavior(
 ) -> HeterogeneousBehavior:
     """TAGGED_ENUM strategy: wrap scalars and skip scalar checks."""
 
+    @beartype
     def _compute(data: Value) -> frozenset[int]:
         """Return container ids whose children should wrap."""
         return _tagged_enum_wrap_ids(data)
@@ -1539,6 +1551,7 @@ def _build_tagged_enum_preamble(
 ) -> Callable[[Value], tuple[str, ...]]:
     """TAGGED_ENUM strategy: emit a minimal ``enum`` declaration."""
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the tagged-enum declaration for *data*."""
         values: tuple[Value, ...]
@@ -1777,6 +1790,7 @@ def _rust_record_wrap_ids_hook(
     narrow-type cache the scalar wrapper reads (issue #3608).
     """
 
+    @beartype
     def _compute_wrap_ids(data: Value) -> frozenset[int]:
         """Return the widened-map ids, refreshing the narrow-type
         cache.
@@ -1812,6 +1826,7 @@ def _rust_narrowing_scalar_wrapper(
     """
     base_wrap_scalar = _rust_value_scalar_wrapper(params)
 
+    @beartype
     def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
         """Construct the value-enum variant for a widened map."""
         if narrowing.value_type is not None:
@@ -2084,6 +2099,7 @@ def _record_field_type_signature(
     struct.
     """
 
+    @beartype
     def recurse(*, item: Value) -> Hashable:
         """Return the signature of one nested element of *value*."""
         return _record_field_type_signature(
@@ -2136,6 +2152,7 @@ def _record_dicts_in_document_order(
     ordered: list[dict[Scalar, Value]] = []
     seen: set[int] = set()
 
+    @beartype
     def walk(node: Value) -> None:
         """Append record dicts under *node* in document order."""
         match node:
@@ -2476,6 +2493,7 @@ def _record_behavior_impl(
     name_cache: dict[RecordShape, str] = {}
     id_to_shape: dict[int, RecordShape] = {}
 
+    @beartype
     def _alias_ids(id_map: Mapping[int, int], /) -> None:
         """Reuse resolved record shapes for their source containers."""
         id_to_shape.update(
@@ -2486,6 +2504,7 @@ def _record_behavior_impl(
             }
         )
 
+    @beartype
     def _compute_shapes(data: Value) -> Mapping[int, RecordShape]:
         """Walk *data* and return ``id(dict)`` -> :class:`RecordShape`.
 
@@ -2522,6 +2541,7 @@ def _record_behavior_impl(
         )
         return shapes_by_id
 
+    @beartype
     def _render_literal(
         value: "dict[Scalar, Value]",
         fields: Mapping[str, str],
@@ -2692,6 +2712,7 @@ def _rust_tuple_list_ids(data: Value, /) -> frozenset[int]:
     """
     found = set(collect_tuple_list_ids(data=data))
 
+    @beartype
     def _walk(value: Value, *, inside_uniform_list: bool) -> None:
         """Collect mixed scalar/collection lists recursively."""
         match value:
@@ -2813,6 +2834,7 @@ def _record_preamble_impl(
     struct blocks are the entire preamble either way.
     """
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build struct declarations for every record shape in *data*."""
         raw_shapes_by_id = collect_record_shapes(data=data)
@@ -3566,6 +3588,7 @@ class Rust(metaclass=LanguageCls):
             cls = type(self)
             if self is cls.LAZY_STATIC:
 
+                @beartype
                 def _lazy_formatter(
                     name: str,
                     value: str,
@@ -3586,6 +3609,7 @@ class Rust(metaclass=LanguageCls):
                 cls.LET_MUT: "let mut",
             }[self]
 
+            @beartype
             def _local_formatter(
                 name: str,
                 value: str,
@@ -3629,6 +3653,7 @@ class Rust(metaclass=LanguageCls):
             cls = type(self)
             if self is cls.LAZY_STATIC:
 
+                @beartype
                 def _lazy_formatter(
                     name: str,
                     value: str,
@@ -3669,6 +3694,7 @@ class Rust(metaclass=LanguageCls):
                 return config.formatter
             keyword = self.name.lower()
 
+            @beartype
             def _formatter(
                 name: str,
                 value: str,
@@ -4015,6 +4041,7 @@ class Rust(metaclass=LanguageCls):
         """
         enabled = self._json_type_active
 
+        @beartype
         def _recursion_limit(
             _data: Value, /, *, has_variable_declaration: bool
         ) -> tuple[str, ...]:
@@ -4416,6 +4443,7 @@ class Rust(metaclass=LanguageCls):
         references.
         """
 
+        @beartype
         def _format(name: str, value: Value | None, /) -> str:
             """Keep a reused binding available after this expression."""
             if self._reference_value_is_copy(value):
@@ -4712,6 +4740,7 @@ class Rust(metaclass=LanguageCls):
         to type-check (issue #3013).
         """
 
+        @beartype
         def recurse(element: Value) -> str:
             """Resolve a sibling element to its Rust type annotation."""
             return _rust_type_annotation(
@@ -4738,6 +4767,7 @@ class Rust(metaclass=LanguageCls):
                 default_dict_value_type=self.default_dict_value_type,
             )
 
+        @beartype
         def _form(siblings: Sequence[dict[Scalar, Value]]) -> str:
             """Type the empty map from its first non-empty sibling."""
             sibling = siblings[0]

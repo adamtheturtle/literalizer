@@ -134,6 +134,7 @@ def _build_purescript_date_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_date_iso(value=value, prefix=prefix)
@@ -155,6 +156,7 @@ def _build_purescript_time_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_time_iso(value=value, prefix=prefix)
@@ -176,6 +178,7 @@ def _build_purescript_datetime_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_datetime_iso(value=value, prefix=prefix)
@@ -212,6 +215,7 @@ def _build_purescript_bytes_hex(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_bytes_hex(value=value, prefix=prefix)
@@ -233,6 +237,7 @@ def _build_purescript_bytes_base64(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_bytes_base64(value=value, prefix=prefix)
@@ -335,6 +340,7 @@ def _build_purescript_integer_formatter(
     *value* overflows PureScript's 32-bit ``Int``.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_integer_formatter(
@@ -364,6 +370,7 @@ def _build_purescript_float_wrapper(
     constructors.
     """
 
+    @beartype
     def _format(value: float) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_float_wrapper(
@@ -418,6 +425,7 @@ def _build_purescript_str_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_purescript_string(value=value, prefix=prefix)
@@ -549,6 +557,7 @@ def _build_purescript_body_preamble(
     needed, plus any necessary imports.
     """
 
+    @beartype
     def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
         p = constructor_prefix

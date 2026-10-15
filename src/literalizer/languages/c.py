@@ -191,6 +191,7 @@ def _make_format_c_entry(
     ``CVal`` union literal using the given field names.
     """
 
+    @beartype
     def _format_c_entry(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_format_c_entry(
@@ -283,6 +284,7 @@ def _make_format_c_entry_record(
     formatter.
     """
 
+    @beartype
     def _format_c_entry(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_format_c_entry_record(
@@ -522,6 +524,7 @@ def _c_pointer_type(*, base: str) -> str:
     return _CPointerType(object=f"{base} *")
 
 
+@beartype
 class _CArrayType(str):
     """An array declaration type with an explicit base and dimension."""
 
@@ -1956,12 +1959,14 @@ class C(metaclass=LanguageCls):
         compound-literal array is a valid ``const CVal *`` field value.
         """
 
+        @beartype
         def _open(items: list[Value]) -> str:
             """Return the bare-brace or ``(CVal[]){`` opener."""
             if _all_record_shaped(items):
                 return "{"
             return "(CVal[]){"
 
+        @beartype
         def _signature(items: list[Value], /) -> CollectionSignature:
             """Retain the producer's array representation choice."""
             record_items = _all_record_shaped(items)

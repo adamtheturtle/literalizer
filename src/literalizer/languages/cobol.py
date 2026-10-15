@@ -389,6 +389,7 @@ def _bump_levels(content: str) -> str:
     are modified.
     """
 
+    @beartype
     def _bump(m: re.Match[str]) -> str:
         """Return the matched level-number prefix with its level
         incremented by 5.
@@ -751,6 +752,7 @@ def _build_variable_declaration(
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Build a declaration formatter from datetime output metadata."""
 
+    @beartype
     def _format(
         name: str,
         value: str,
@@ -1993,6 +1995,7 @@ class Cobol(metaclass=LanguageCls):
         identifier references, so refs are not supported.
         """
 
+        @beartype
         def _raise_for_cobol_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(

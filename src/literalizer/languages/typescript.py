@@ -881,6 +881,7 @@ class TypeScript(metaclass=LanguageCls):
             if self.value != "none":
                 return formatter
 
+            @beartype
             def without_semicolon(
                 name: str,
                 value: str,
@@ -1071,6 +1072,7 @@ class TypeScript(metaclass=LanguageCls):
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
 
+            @beartype
             def _typed_formatter(
                 name: str,
                 value: str,
@@ -1095,6 +1097,7 @@ class TypeScript(metaclass=LanguageCls):
             if self is type(self).ALWAYS:
                 return _typed_formatter
 
+            @beartype
             def _safe_formatter(
                 name: str,
                 value: str,
@@ -1113,6 +1116,7 @@ class TypeScript(metaclass=LanguageCls):
                 when callers asked to suppress hints.
                 """
 
+                @beartype
                 def _value_hint(value: Value) -> str:
                     """Type hint for one map value, for the
                     homogeneity check.

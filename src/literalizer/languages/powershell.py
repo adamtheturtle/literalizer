@@ -389,6 +389,7 @@ class PowerShell(metaclass=LanguageCls):
         """Return the rewriting a formatted call argument goes through."""
         date_type = self.date_format.value.type_produced
 
+        @beartype
         def _format(value: Value, formatted: str) -> str:
             """Parenthesize arguments emitted with a type literal."""
             return _powershell_call_arg(value, formatted, date_type=date_type)

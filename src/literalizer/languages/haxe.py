@@ -677,6 +677,7 @@ class Haxe(metaclass=LanguageCls):
             if self in {type(self).NEVER, type(self).SAFE}:
                 return auto_formatter
 
+            @beartype
             def _typed_formatter(
                 name: str,
                 value: str,

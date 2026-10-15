@@ -680,6 +680,7 @@ class Toml(metaclass=LanguageCls):
         references, so refs are not supported.
         """
 
+        @beartype
         def _raise_for_toml_ref(name: str, _value: Value | None, /) -> str:
             """Raise ``CallArgNotSupportedError`` unconditionally."""
             raise CallArgNotSupportedError(
@@ -770,6 +771,7 @@ class Toml(metaclass=LanguageCls):
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
 
+        @beartype
         def _format(value: str) -> str:
             """Format a string as a TOML quoted literal."""
             formatted = format_string_backslash_control(

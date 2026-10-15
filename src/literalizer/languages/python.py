@@ -408,6 +408,7 @@ def _format_inline_type_hint_declaration(
     return f"{name}: {hint} = {value}"
 
 
+@beartype
 class _PythonTypeDependencies(str):
     """Source whose type producer retained its typing dependency."""
 
@@ -719,6 +720,7 @@ def _build_type_hint_preamble(
         if needs
     )
 
+    @beartype
     def _preamble(
         annotated_collection_types: frozenset[type],
         /,
@@ -754,6 +756,7 @@ def _build_python_call_stub(
 ]:
     """Return a Python call-stub builder bound to ``indent``."""
 
+    @beartype
     def _python_call_stub(
         parts: Sequence[str],
         _params: Sequence[str],
@@ -831,6 +834,7 @@ def _build_type_hint_preamble_py38(
         if needs
     )
 
+    @beartype
     def _preamble(
         annotated_collection_types: frozenset[type],
         /,
@@ -1341,6 +1345,7 @@ class Python(metaclass=LanguageCls):
             """
             if self is type(self).ALWAYS:
 
+                @beartype
                 def _always_formatter(
                     name: str,
                     value: str,
@@ -1374,6 +1379,7 @@ class Python(metaclass=LanguageCls):
 
                 return _always_formatter
 
+            @beartype
             def _auto_formatter(
                 name: str,
                 value: str,
@@ -1817,6 +1823,7 @@ class Python(metaclass=LanguageCls):
         requires_union = False
         union_formatter = self._join_union
 
+        @beartype
         def _join_types(types: list[str], /) -> str:
             """Record the selected union syntax before spelling the
             annotation.
@@ -1867,6 +1874,7 @@ class Python(metaclass=LanguageCls):
         """
         sequence_hint, _, _ = self._collection_type_hint_names
 
+        @beartype
         def _field_type(request: RecordFieldType, /) -> str:
             """Type a record field from its nested-record name or its
             raw value.
@@ -1935,6 +1943,7 @@ class Python(metaclass=LanguageCls):
         """
         record_preamble = self._record_strategy.preamble
 
+        @beartype
         def _preamble(data: Value, /) -> tuple[str, ...]:
             """Prefix the record declarations with ``import
             dataclasses``.
@@ -2128,6 +2137,7 @@ class Python(metaclass=LanguageCls):
             is type(self.annotation_evaluation).EAGER
         ):
 
+            @beartype
             def _no_future_import(
                 _data: Value, /, *, has_variable_declaration: bool
             ) -> tuple[str, ...]:
@@ -2143,6 +2153,7 @@ class Python(metaclass=LanguageCls):
             self.variable_type_hints is type(self.variable_type_hints).ALWAYS
         )
 
+        @beartype
         def _leading(
             data: Value, /, *, has_variable_declaration: bool
         ) -> tuple[str, ...]:
@@ -2243,6 +2254,7 @@ class Python(metaclass=LanguageCls):
         if self.heterogeneous_strategy is not cls.RECORD:
             return lambda _data: False
 
+        @beartype
         def _eligible(data: Value, /) -> bool:
             """An ordered map is never record-eligible; a plain
             non-empty string-keyed dict is.

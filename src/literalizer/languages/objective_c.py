@@ -169,6 +169,7 @@ def _build_objc_entry_formatter(
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter from datetime output metadata."""
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Box one Objective-C value."""
         return _format_objc_entry(
@@ -186,6 +187,7 @@ def _build_objc_declaration(
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Build an Objective-C declaration formatter."""
 
+    @beartype
     def _format(
         name: str,
         value: str,
@@ -204,6 +206,7 @@ def _build_objc_assignment(
 ) -> Callable[[str, str, Value], str]:
     """Build an Objective-C assignment formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Assign one boxed Objective-C value."""
         return f"{name} = {format_entry(data, value)};"
@@ -1340,6 +1343,7 @@ class ObjectiveC(metaclass=LanguageCls):
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
 
+        @beartype
         def _format(value: dt.time) -> str:
             """Format a time as an Objective-C ``NSString`` literal."""
             return f"@{format_time_iso(value=value)}"

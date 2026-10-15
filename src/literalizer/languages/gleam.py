@@ -227,6 +227,7 @@ def _gleam_signed_base(
 ) -> Callable[[int], str]:
     """Build a Gleam-safe signed base formatter."""
 
+    @beartype
     def _format(value: int) -> str:
         """Format using *base* with a valid negative expression."""
         return _gleam_signed_base_impl(value=value, base=base)
@@ -248,6 +249,7 @@ def _build_gleam_date_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.date) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_str_wrapped_date(value=value, prefix=prefix)
@@ -269,6 +271,7 @@ def _build_gleam_time_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.time) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_str_wrapped_time(value=value, prefix=prefix)
@@ -290,6 +293,7 @@ def _build_gleam_datetime_iso(
     constructors.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_str_wrapped_datetime(value=value, prefix=prefix)
@@ -323,6 +327,7 @@ def _build_gleam_bytes_hex(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_bytes_hex(value=value, prefix=prefix)
@@ -344,6 +349,7 @@ def _build_gleam_bytes_base64(
     constructors.
     """
 
+    @beartype
     def _format(value: bytes) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_bytes_base64(value=value, prefix=prefix)
@@ -366,6 +372,7 @@ def _build_gleam_str_formatter(
     constructors.
     """
 
+    @beartype
     def _format(value: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_string(value=value, prefix=prefix)
@@ -390,6 +397,7 @@ def _build_gleam_integer_wrapper(
     constructors.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_integer_wrapped(
@@ -416,6 +424,7 @@ def _build_gleam_float_wrapper(
     constructors.
     """
 
+    @beartype
     def _format(value: float) -> str:
         """Delegate to module-level implementation."""
         return _apply_gleam_float_wrapped(
@@ -614,6 +623,7 @@ def _build_gleam_data_dependent_preamble(
     that are actually needed.
     """
 
+    @beartype
     def _compute(data: Value, /) -> tuple[str, ...]:
         """Return the ``pub type`` declaration for *data*."""
         types = _collect_gleam_types(value=data)
@@ -648,6 +658,7 @@ def _format_gleam_json_integer_factory(
 ) -> Callable[[int], str]:
     """Return an integer formatter that emits ``json.int(<n>)`` calls."""
 
+    @beartype
     def _format(value: int) -> str:
         """Format an integer via the underlying base formatter."""
         return f"json.int({base(value)})"
@@ -661,6 +672,7 @@ def _format_gleam_json_float_factory(
 ) -> Callable[[float], str]:
     """Return a float formatter that emits ``json.float(<n>)`` calls."""
 
+    @beartype
     def _format(value: float) -> str:
         """Format a float via the underlying base formatter."""
         return f"json.float({inner(value)})"
@@ -1429,6 +1441,7 @@ class Gleam(metaclass=LanguageCls):
         bindings.
         """
 
+        @beartype
         def _compute(values: tuple[Value, ...], /) -> tuple[str, ...] | None:
             """Return a shared carrier, retaining native and JSON policies."""
             if (

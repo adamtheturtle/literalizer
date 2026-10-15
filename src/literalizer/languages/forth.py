@@ -217,6 +217,7 @@ def _build_forth_value_formatter(
 ) -> Callable[[Value, str], str]:
     """Build a value formatter from datetime output metadata."""
 
+    @beartype
     def _format(value: Value, formatted: str) -> str:
         """Append the matching visitor marker."""
         return _forth_mark_value(
@@ -234,6 +235,7 @@ def _build_forth_declaration(
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Build a Forth colon-definition formatter."""
 
+    @beartype
     def _format(
         name: str,
         value: str,
@@ -256,6 +258,7 @@ def _build_forth_dict_entry(
 ) -> Callable[[str, Value, str], str]:
     """Build a Forth key/value entry formatter."""
 
+    @beartype
     def _format(key: str, raw_value: Value, formatted_value: str) -> str:
         """Format a ``+key`` token followed by a marked value."""
         marked = format_value(raw_value, formatted_value)

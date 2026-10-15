@@ -212,6 +212,7 @@ def _reject_subnormal_float(
 ) -> Callable[[float], str]:
     """Wrap *base* to refuse a subnormal, which Wren cannot read."""
 
+    @beartype
     def _format(value: float) -> str:
         """Reject a subnormal, then delegate to the wrapped formatter."""
         if 0 < abs(value) < sys.float_info.min:
