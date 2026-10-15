@@ -87,6 +87,7 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
     reject_empty_dicts,
+    requires_declared_binding,
 )
 from literalizer._types import Value
 
@@ -925,6 +926,10 @@ class Ada(metaclass=LanguageCls):
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return self._entry_formatter
+
+    assignment_declares_binding = staticmethod(requires_declared_binding)
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

@@ -93,6 +93,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     no_validate_spec_for_data,
+    requires_declared_binding,
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop_static,
 )
@@ -696,6 +697,10 @@ class Wren(metaclass=LanguageCls):
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return _format_wren_set_entry
+
+    assignment_declares_binding = staticmethod(requires_declared_binding)
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

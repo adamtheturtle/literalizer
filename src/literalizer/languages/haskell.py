@@ -2780,6 +2780,19 @@ class Haskell(metaclass=LanguageCls):
             return _native_declaration
         return self._decl_fmts.format_variable_declaration
 
+    def assignment_declares_binding(self, _data: Value, /) -> bool:
+        """Retain whether the configured literal assignment declares a
+        name.
+        """
+        return self._json_type_active
+
+    reference_assignment_declares_binding = assignment_declares_binding
+
+    @property
+    def call_assignment_declares_binding(self) -> bool:
+        """JSON assignments carry a literal-only annotation and parser."""
+        return not self._json_type_active
+
     @cached_property
     def format_variable_assignment(
         self,

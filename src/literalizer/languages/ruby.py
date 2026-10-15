@@ -78,6 +78,7 @@ from literalizer._language import (
     VariantMetadata,
     body_preamble_from_scalars,
     date_scalar_preamble,
+    declares_binding,
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier_consumable,
@@ -993,6 +994,10 @@ class Ruby(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
+
+    assignment_declares_binding = staticmethod(declares_binding)
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = True
 
     @cached_property
     def format_variable_assignment(

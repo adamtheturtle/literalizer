@@ -73,6 +73,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     VariantMetadata,
     body_preamble_from_scalars,
+    declares_binding,
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier,
@@ -847,6 +848,10 @@ class R(metaclass=LanguageCls):
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
+
+    assignment_declares_binding = staticmethod(declares_binding)
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = True
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

@@ -85,6 +85,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     VariantMetadata,
     body_preamble_from_scalars,
+    declares_binding,
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier,
@@ -1423,6 +1424,16 @@ class Sml(metaclass=LanguageCls):
         return declaration_formatter_ignoring_modifiers(
             formatter=self._sml_decl
         )
+
+    assignment_declares_binding = staticmethod(declares_binding)
+    reference_assignment_declares_binding = assignment_declares_binding
+
+    @property
+    def call_assignment_declares_binding(self) -> bool:
+        """Native record assignments omit the tagged-literal
+        annotation.
+        """
+        return self.dict_format is type(self.dict_format).RECORD
 
     @cached_property
     def format_variable_assignment(

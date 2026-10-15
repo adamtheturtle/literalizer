@@ -93,6 +93,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
@@ -1842,6 +1843,10 @@ class Cobol(metaclass=LanguageCls):
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return self.format_sequence_entry
+
+    assignment_declares_binding = staticmethod(requires_declared_binding)
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

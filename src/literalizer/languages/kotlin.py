@@ -144,6 +144,7 @@ from literalizer._language import (
     no_call_binding_file_pragmas,
     no_data_preamble,
     no_leading_preamble,
+    requires_declared_binding,
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop_static,
 )
@@ -1597,6 +1598,10 @@ class Kotlin(metaclass=LanguageCls):
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
+
+    assignment_declares_binding = staticmethod(requires_declared_binding)
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

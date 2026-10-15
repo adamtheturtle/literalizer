@@ -1619,6 +1619,15 @@ class Roc(metaclass=LanguageCls):
         """
         return self.declaration_style.value.formatter
 
+    def assignment_declares_binding(self, _data: Value, /) -> bool:
+        """Retain whether the configured literal assignment declares a
+        name.
+        """
+        return self.dict_format is type(self.dict_format).RECORD
+
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = True
+
     @cached_property
     def format_variable_assignment(
         self,

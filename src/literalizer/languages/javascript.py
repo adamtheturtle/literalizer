@@ -106,6 +106,7 @@ from literalizer._language import (
     no_leading_preamble,
     no_validate_spec_for_data,
     parenthesize_bare_object,
+    requires_declared_binding,
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop,
 )
@@ -1029,6 +1030,10 @@ class JavaScript(metaclass=LanguageCls):
         return self.statement_terminator_style.wrap_formatter(
             formatter=self.declaration_style.value.formatter,
         )
+
+    assignment_declares_binding = staticmethod(requires_declared_binding)
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(

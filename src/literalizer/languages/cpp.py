@@ -154,6 +154,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._statements import split_trailing_line_comments
 from literalizer._types import (
@@ -4067,6 +4068,10 @@ class Cpp(metaclass=LanguageCls):
         staticmethod(passthrough_set_entry)
     )
     """Callable that formats a set entry."""
+
+    assignment_declares_binding = staticmethod(requires_declared_binding)
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
