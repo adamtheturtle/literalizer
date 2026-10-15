@@ -13,10 +13,10 @@ all.
 
 import re
 import shutil
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
+
+from scripts.generated_code import Step, run_project
 
 # ``tsc`` type-checks the fixtures at ``TypeScript.language_version``
 # (``V5``) in ``src/literalizer/languages/typescript.py``; ``--target
@@ -66,28 +66,28 @@ def main() -> None:
     tsc = shutil.which(cmd="tsc")
     if tsc is None or tsc == "":
         tsc = "tsc"
-    with tempfile.TemporaryDirectory() as tmpdir:
-        names: list[str] = []
-        for golden in sys.argv[1:]:
-            path = Path(golden)
-            text = path.read_text(encoding="utf-8")
-            names.append(f"{path.parent.name}__{path.name}")
-            _ = (Path(tmpdir) / names[-1]).write_text(
-                data=text + _probe(text=text),
-                encoding="utf-8",
-            )
-        result = subprocess.run(
-            args=[tsc, *_TSC_FLAGS, *names],
-            capture_output=True,
-            text=True,
-            check=False,
-            cwd=tmpdir,
-            encoding="utf-8",
+    files: dict[str, str] = {}
+    for golden in sys.argv[1:]:
+        path = Path(golden)
+        text = path.read_text(encoding="utf-8")
+        name = f"{path.parent.name}__{path.name}"
+        if name in files:
+            msg = f"Duplicate TypeScript consumer fixture: {name}"
+            raise ValueError(msg)
+        files[name] = text + _probe(text=text)
+    try:
+        _ = run_project(
+            label="TypeScript consumers",
+            files=files,
+            steps=[
+                Step(
+                    args=[tsc, *_TSC_FLAGS, *files],
+                    failure_label="tsc --strict failed",
+                ),
+            ],
         )
-    if result.returncode != 0:
-        _ = sys.stderr.write(
-            f"tsc --strict failed\n{result.stdout}{result.stderr}"
-        )
+    except AssertionError as exc:
+        _ = sys.stderr.write(f"{exc}\n")
         sys.exit(1)
 
 

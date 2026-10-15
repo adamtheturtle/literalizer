@@ -257,6 +257,16 @@ Run the following commands to build and view documentation locally:
    $ uv run --group=dev sphinx-build -M html docs/source docs/build -W
    $ python -c 'import os, webbrowser; webbrowser.open("file://" + os.path.abspath("docs/build/html/index.html"))'
 
+Generated-code harness
+----------------------
+
+The extraction experiment records its API boundary and the decision to retain the runner locally.
+
+.. toctree::
+   :maxdepth: 1
+
+   generated-code-harness
+
 Continuous integration
 ----------------------
 

@@ -30,11 +30,8 @@ the final stdout to :func:`verify`.
 """
 
 import json
-import subprocess
 import sys
-import tempfile
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from pathlib import Path
 
 from pydantic import TypeAdapter
@@ -48,6 +45,20 @@ from literalizer import (
     literalize,
 )
 from scripts.bounded_command import bounded_command
+from scripts.generated_code import Step, run_project
+
+__all__ = [
+    "Step",
+    "execute",
+    "expected",
+    "input_for_capabilities",
+    "json_object",
+    "json_object_from_text",
+    "literalize_new_variable",
+    "read_input",
+    "trim_keys",
+    "verify",
+]
 
 INPUT_PATH = Path(__file__).resolve().parent / "roundtrip_input.json"
 CAPABILITY_INPUT_PATH = (
@@ -188,19 +199,6 @@ def literalize_new_variable(
     )
 
 
-@dataclass(frozen=True)
-class Step:
-    """A subprocess to run inside the per-script tmpdir.
-
-    *args* is the argv (cwd is always the tmpdir).  *failure_label* is
-    the short phrase :func:`execute` prefixes to stderr when the step's
-    exit code is non-zero (e.g. ``"rustc error"``, ``"go run error"``).
-    """
-
-    args: Sequence[str]
-    failure_label: str
-
-
 def execute(
     *,
     label: str,
@@ -226,44 +224,33 @@ def execute(
     line is written to stdout.  Callers do not need to emit that line
     themselves.
     """
-    extras: Mapping[str, str]
-    extras = dict[str, str]()
+    files = {source_filename: program}
     if extra_files is not None:
-        extras = extra_files
-    last_stdout = ""
-    with tempfile.TemporaryDirectory() as tmpdir_name:
-        tmpdir = Path(tmpdir_name)
-        source_path = tmpdir / source_filename
-        source_path.parent.mkdir(parents=True, exist_ok=True)
-        _ = source_path.write_text(data=program, encoding="utf-8")
-        for rel_path, content in extras.items():
-            extra_path = tmpdir / rel_path
-            extra_path.parent.mkdir(parents=True, exist_ok=True)
-            _ = extra_path.write_text(data=content, encoding="utf-8")
-        for step in steps:
-            args = list(step.args)
-            if len(steps) > 1:
-                args = bounded_command(
-                    args=args,
-                    fixture=str(object=source_path),
-                    timeout_seconds=60,
-                )
-            result = subprocess.run(
-                args=args,
-                capture_output=True,
-                text=True,
-                check=False,
-                cwd=tmpdir,
-                encoding="utf-8",
+        if source_filename in extra_files:
+            msg = (
+                f"{label}: supporting file replaces source: {source_filename}"
             )
-            if result.returncode != 0:
-                _ = sys.stderr.write(
-                    f"{label}: {step.failure_label}\n"
-                    f"{result.stdout}{result.stderr}",
-                )
-                _ = sys.stderr.write(f"\nProgram:\n{program}\n")
-                sys.exit(1)
-            last_stdout = result.stdout
+            raise ValueError(msg)
+        files.update(extra_files)
+    project_steps = [
+        Step(
+            args=bounded_command(
+                args=step.args,
+                fixture=f"{label}/{source_filename}",
+                timeout_seconds=60,
+            ),
+            failure_label=step.failure_label,
+        )
+        if len(steps) > 1
+        else step
+        for step in steps
+    ]
+    try:
+        results = run_project(label=label, files=files, steps=project_steps)
+    except AssertionError as exc:
+        _ = sys.stderr.write(f"{exc}\n")
+        sys.exit(1)
+    last_stdout = results[-1].stdout if len(results) > 0 else ""
     verify(
         label=label,
         produced_json=last_stdout,
