@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "JSON5 syntax errors after multiline comments retain original source coordinates."
+exceptions = ["JSON5ParseError"]
+languages = ["Rust"]
+position = [4, 18]
+
+[call]
+api = "literalize"
+sources = [
+    "/* heading\n continued */\n{\n \"a\": /* note */ ]\n}",
+]
+input_format = "json5"
+variable_form = "none"

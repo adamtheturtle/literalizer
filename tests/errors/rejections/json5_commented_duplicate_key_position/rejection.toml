@@ -1,0 +1,17 @@
+schema_version = 1
+summary = "JSON5 duplicate key errors retain original source coordinates across line endings."
+exceptions = ["JSON5ParseError"]
+languages = ["Python"]
+position = [2, 8]
+
+[call]
+api = "literalize"
+sources = [
+    "/* heading */\n{a: 1, a: 2}",
+    "/* heading */\r{a: 1, a: 2}",
+    "/* heading */\r\n{a: 1, a: 2}",
+    "/* heading */ {a: 1, a: 2}",
+    "/* heading */ {a: 1, a: 2}",
+]
+input_format = "json5"
+variable_form = "none"

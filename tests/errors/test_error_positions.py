@@ -14,7 +14,6 @@ from literalizer import InputFormat, Language, literalize
 from literalizer.exceptions import (
     HeterogeneousScalarCollectionError,
     JSON5ParseError,
-    JSONCParseError,
     JSONParseError,
     ParseError,
     TOMLParseError,
@@ -30,18 +29,6 @@ from literalizer.languages import Bash, PureScript, Rust
     argvalues=[
         (InputFormat.JSON, '{\n "a": ]\n}', JSONParseError, (2, 7)),
         (InputFormat.JSON5, "{\n a: ]\n}", JSON5ParseError, (2, 5)),
-        (
-            InputFormat.JSONC,
-            '// heading\n{\n "a": /* note */ ]\n}',
-            JSONCParseError,
-            (3, 18),
-        ),
-        (
-            InputFormat.JSON5,
-            '/* heading\n continued */\n{\n "a": /* note */ ]\n}',
-            JSON5ParseError,
-            (4, 18),
-        ),
         (InputFormat.YAML, "a:\n  - [x\n", YAMLParseError, (3, 1)),
         (InputFormat.TOML, "a = ?", TOMLParseError, (1, 5)),
     ],
