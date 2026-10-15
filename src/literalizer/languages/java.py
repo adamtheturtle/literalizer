@@ -15,8 +15,10 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import (
     CollectionType,
     TypedOpenerConfig,
+    collection_type_open,
     fixed_open,
     infer_collection_type,
+    validated_fixed_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -1320,7 +1322,7 @@ class Java(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         LIST = SequenceFormatConfig(
-            sequence_open=_list_of_open,
+            sequence_open=validated_fixed_open(render=_list_of_open),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,
             uses_typed_literal_for_scalars=False,
@@ -2379,7 +2381,9 @@ class Java(metaclass=LanguageCls):
         fmt = self.sequence_format.value
         if fmt.typed_opener_fallback is None:
             return fmt.sequence_open
-        return lambda items: self._array_type(items).opener
+        return collection_type_open(
+            infer=self._array_type, fallback_type="Object[]"
+        )
 
     @cached_property
     def _array_type(self) -> Callable[[list[Value]], CollectionType]:

@@ -16,9 +16,12 @@ from beartype import beartype
 
 from literalizer._checks import scalar_type_bucket
 from literalizer._formatters.collection_openers import (
+    CollectionSignature,
+    collection_signature,
     fixed_open,
     make_element_to_type,
     sequence_surrogate_set_open,
+    signature_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -889,7 +892,19 @@ def _build_cpp_array_open(
             f"{type_name}{{", declared_type=type_name
         )
 
-    return _open
+    def _signature(items: list[Value], /) -> CollectionSignature:
+        """Retain target identity and the selected arity policy."""
+        type_name = _cpp_array_type(items=items, type_ctx=type_ctx)
+        return CollectionSignature(
+            type_key=type_name,
+            arity=len(items) if type_name is not None else None,
+            arity_decision=type_name is not None,
+            fallback_decision=False,
+            narrowing_decision=True,
+            uses_fallback_decision=type_name is None,
+        )
+
+    return signature_open(render=_open, infer=_signature)
 
 
 @beartype
@@ -2109,6 +2124,29 @@ def _all_record_shaped(
 
 
 @beartype
+def _cpp14_record_list_type(
+    *,
+    items: list[dict[str, Value]],
+    record_shape_names: Mapping[frozenset[str], str],
+    record_rendering_active: bool,
+    record_name_for_value: Callable[[ValueInput], str | None],
+) -> str | None:
+    """Select the C++14 record vector type before adding literal
+    syntax.
+    """
+    first_item = items[0]
+    keys = frozenset(first_item.keys())
+    if all(frozenset(item.keys()) == keys for item in items):
+        name = record_shape_names.get(keys)
+        if name is not None:
+            return f"std::vector<{name}>"
+    if record_rendering_active:
+        name = record_name_for_value(first_item)
+        return f"std::vector<{name}>"
+    return None
+
+
+@beartype
 def _cpp14_record_list_open(
     *,
     items: list[dict[str, Value]],
@@ -2117,20 +2155,17 @@ def _cpp14_record_list_open(
     record_name_for_value: Callable[[ValueInput], str | None],
 ) -> str | None:
     """Return an explicit C++14 vector opener for record literals."""
-    first_item = items[0]
-    keys = frozenset(first_item.keys())
-    if all(frozenset(item.keys()) == keys for item in items):
-        name = record_shape_names.get(keys)
-        if name is not None:
-            return TypedCollectionOpen.create(
-                f"std::vector<{name}>{{", declared_type=f"std::vector<{name}>"
-            )
-    if record_rendering_active:
-        name = record_name_for_value(first_item)
-        return TypedCollectionOpen.create(
-            f"std::vector<{name}>{{", declared_type=f"std::vector<{name}>"
-        )
-    return None
+    type_name = _cpp14_record_list_type(
+        items=items,
+        record_shape_names=record_shape_names,
+        record_rendering_active=record_rendering_active,
+        record_name_for_value=record_name_for_value,
+    )
+    if type_name is None:
+        return None
+    return TypedCollectionOpen.create(
+        f"{type_name}{{", declared_type=type_name
+    )
 
 
 @beartype
@@ -2427,7 +2462,21 @@ def _build_variant_sequence_open(
         """Delegate to module-level implementation."""
         return _apply_cpp_variant_sequence_open(items=items, type_ctx=type_ctx)
 
-    return _open
+    def _signature(items: list[Value], /) -> CollectionSignature:
+        """Retain target identity and the selected arity policy."""
+        inner = _compute_element_type_for_items(
+            items=items, type_ctx=type_ctx, in_mapping_value=False
+        )
+        return CollectionSignature(
+            type_key=inner,
+            arity=None,
+            arity_decision=False,
+            fallback_decision=False,
+            narrowing_decision=True,
+            uses_fallback_decision=inner == "std::nullptr_t",
+        )
+
+    return signature_open(render=_open, infer=_signature)
 
 
 @beartype
@@ -2446,7 +2495,23 @@ def _build_variant_dict_open(
             type_ctx=type_ctx,
         )
 
-    return _open
+    def _signature(items: dict[Scalar, Value], /) -> CollectionSignature:
+        """Retain target identity and the selected arity policy."""
+        inner = _compute_element_type_for_items(
+            items=list(items.values()),
+            type_ctx=type_ctx,
+            in_mapping_value=True,
+        )
+        return CollectionSignature(
+            type_key=inner,
+            arity=None,
+            arity_decision=False,
+            fallback_decision=type_ctx.variant_type_name != "std::variant",
+            narrowing_decision=True,
+            uses_fallback_decision=inner == "std::nullptr_t",
+        )
+
+    return signature_open(render=_open, infer=_signature)
 
 
 @beartype
@@ -3265,7 +3330,7 @@ class Cpp(metaclass=LanguageCls):
         """Dict/map format options."""
 
         MAP = DictFormatConfig(
-            dict_open=lambda _items: "{",
+            dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=braced_dict_entry(
                 format_value=passthrough_sequence_entry
@@ -3277,7 +3342,7 @@ class Cpp(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         UNORDERED_MAP = DictFormatConfig(
-            dict_open=lambda _items: "{",
+            dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=braced_dict_entry(
                 format_value=passthrough_sequence_entry
@@ -4556,10 +4621,11 @@ class Cpp(metaclass=LanguageCls):
             or len(self.record_shape_names) == 0
         ):
             return base_open
-        if self._record_strategy_active:
-            record_strategy = self._record_strategy
-        else:
-            record_strategy = self._tuple_record_strategy
+        record_strategy = (
+            self._record_strategy
+            if self._record_strategy_active
+            else self._tuple_record_strategy
+        )
         record_name_for_value = record_strategy.record_name_for_value
 
         def _open(items: list[Value]) -> str:
@@ -4593,7 +4659,72 @@ class Cpp(metaclass=LanguageCls):
                 return "std::vector{"
             return base_open(base_items)
 
-        return _open
+        def _signature(items: list[Value], /) -> CollectionSignature:
+            """Delegate to record-aware target inference."""
+            return self._record_sequence_signature(
+                items,
+                record_rendering_active=record_rendering_active,
+                base_open=base_open,
+                record_name_for_value=record_name_for_value,
+            )
+
+        return signature_open(render=_open, infer=_signature)
+
+    def _record_sequence_signature(
+        self,
+        items: list[Value],
+        /,
+        *,
+        record_rendering_active: bool,
+        base_open: Callable[[list[Value]], str],
+        record_name_for_value: Callable[[ValueInput], str | None],
+    ) -> CollectionSignature:
+        """Keep record deduction separate from ordinary inferred types."""
+        original_items = items
+        if self.language_version is not self.version_formats.CPP14:
+            if (
+                _all_record_shaped(items)
+                or nested_record_sequence_type(
+                    value=items, record_name_for_value=record_name_for_value
+                )
+                is not None
+            ):
+                return CollectionSignature(
+                    type_key="deduced-record-vector",
+                    arity=None,
+                    arity_decision=False,
+                    fallback_decision=False,
+                    narrowing_decision=True,
+                    uses_fallback_decision=False,
+                )
+            return collection_signature(base_open, original_items)
+        type_name = None
+        if _all_record_shaped(items):
+            type_name = _cpp14_record_list_type(
+                items=items,
+                record_shape_names=self.record_shape_names,
+                record_rendering_active=record_rendering_active,
+                record_name_for_value=record_name_for_value,
+            )
+        else:
+            nested_type = nested_record_sequence_type(
+                value=items, record_name_for_value=record_name_for_value
+            )
+            if nested_type is not None:
+                depth, name = nested_type
+                type_name = name
+                for _ in range(depth):
+                    type_name = f"std::vector<{type_name}>"
+        if type_name is not None:
+            return CollectionSignature(
+                type_key=type_name,
+                arity=None,
+                arity_decision=False,
+                fallback_decision=False,
+                narrowing_decision=True,
+                uses_fallback_decision=False,
+            )
+        return collection_signature(base_open, original_items)
 
     @cached_property
     def trailing_comma_config(self) -> TrailingCommaConfig:

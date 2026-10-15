@@ -15,6 +15,7 @@ from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
     make_type_to_opener,
+    validated_fixed_open,
 )
 from literalizer._formatters.format_dates import (
     format_date_iso,
@@ -1022,7 +1023,7 @@ def _mojo_element_renders_as_string(
 def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
     """Build a Mojo LIST ``SequenceFormatConfig`` for the given type."""
     return SequenceFormatConfig(
-        sequence_open=_mojo_list_open,
+        sequence_open=validated_fixed_open(render=_mojo_list_open),
         close="])",
         supports_heterogeneity=False,
         single_element_trailing_comma=False,

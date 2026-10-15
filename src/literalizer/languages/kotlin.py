@@ -19,10 +19,12 @@ from literalizer._checks import (
 )
 from literalizer._comments import NestingCommentSuffix
 from literalizer._formatters.collection_openers import (
+    CollectionSignature,
     CollectionType,
     TypedOpenerConfig,
     fixed_open,
     infer_collection_type,
+    signature_open,
     typed_collection_open,
 )
 from literalizer._formatters.format_dates import (
@@ -2080,7 +2082,69 @@ class Kotlin(metaclass=LanguageCls):
                 selected.opener, declared_type=selected.declared_type
             )
 
-        return _open
+        def _signature(items: list[Value], /) -> CollectionSignature:
+            """Retain constructor inference and tuple arity before
+            emission.
+            """
+            record_type = self._kotlin_record_sequence_type(items)
+            if record_type is not None:
+                key = record_type.declared_type
+                return CollectionSignature(
+                    type_key=key,
+                    arity=None,
+                    arity_decision=False,
+                    fallback_decision=True,
+                    narrowing_decision=True,
+                    uses_fallback_decision=key == "List<Any?>",
+                )
+            if self.sequence_format is self.sequence_formats.ARRAY:
+                return CollectionSignature(
+                    type_key="Array<Any?>",
+                    arity=None,
+                    arity_decision=False,
+                    fallback_decision=True,
+                    narrowing_decision=False,
+                    uses_fallback_decision=True,
+                )
+            if self.sequence_format is self.sequence_formats.TUPLE:
+                arity = len(items) if len(items) in {2, 3} else None
+                return CollectionSignature(
+                    type_key="tuple" if arity is not None else "List<Any?>",
+                    arity=arity,
+                    arity_decision=len(items) in {1, 2, 3},
+                    fallback_decision=False,
+                    narrowing_decision=True,
+                    uses_fallback_decision=arity is None,
+                )
+            if len(items) == 0:
+                return CollectionSignature(
+                    type_key="Array<Any?>",
+                    arity=None,
+                    arity_decision=False,
+                    fallback_decision=False,
+                    narrowing_decision=True,
+                    uses_fallback_decision=True,
+                )
+            selected = self._kotlin_list_sequence_type(items)
+            element_type = infer_element_type(items=items)
+            constructor = None
+            if element_type is not None:
+                constructor = _kotlin_sequence_constructor(
+                    element_type=element_type
+                )
+            key = selected.declared_type
+            if constructor == "arrayOf":
+                key = "deduced-array"
+            return CollectionSignature(
+                type_key=key,
+                arity=None,
+                arity_decision=False,
+                fallback_decision=False,
+                narrowing_decision=True,
+                uses_fallback_decision=False,
+            )
+
+        return signature_open(render=_open, infer=_signature)
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:
@@ -2224,8 +2288,29 @@ class Kotlin(metaclass=LanguageCls):
                 selected.opener, declared_type=selected.declared_type
             )
 
+        def _signature(items: dict[Scalar, Value], /) -> CollectionSignature:
+            """Retain the inferred mapping value type and stable
+            fallback.
+            """
+            selected = infer_collection_type(
+                items=list(items.values()),
+                element_to_type=self._kotlin_dict_value_type,
+                opener_template=opener_template,
+                declared_type_template=type_template,
+                fallback=fallback,
+            )
+            return CollectionSignature(
+                type_key=selected.declared_type,
+                arity=None,
+                arity_decision=False,
+                fallback_decision=True,
+                narrowing_decision=True,
+                uses_fallback_decision=selected.declared_type
+                == fallback.declared_type,
+            )
+
         return DictFormatConfig(
-            dict_open=_open,
+            dict_open=signature_open(render=_open, infer=_signature),
             narrowed_open=None,
             supports_trailing_comma=True,
             close=")",
