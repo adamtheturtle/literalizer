@@ -35,8 +35,7 @@ from tomlkit.items import Integer as TomlInteger
 from tomlkit.toml_document import TOMLDocument
 from typing_extensions import TypeIs
 
-from literalizer._json_comments import JsonComments
-from literalizer._json_document_comments import extract_json_document_comments
+from literalizer._json_comments import JsonComments, extract_json_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ExcessiveIntegerDigitsError,
@@ -181,9 +180,8 @@ def _json_object_without_duplicate_keys(
 class InputFormat(enum.Enum):
     """Supported input serialization formats.
 
-    YAML, TOML, JSONC and JSON5 comments are preserved for rendering in the target
-    language. JSON, JSONC and JSON5 are parsed as plain data, so their
-    comments are discarded.
+    YAML, TOML, JSONC and JSON5 comments are preserved for rendering
+    in the target language. JSON input does not accept comments.
     """
 
     JSON = enum.auto()
@@ -735,7 +733,7 @@ def _parse_json_document(
         raise error_type(message, line=exc.lineno, column=exc.colno) from exc
     return ParsedPlain(
         data=_json_value(data=document.value),
-        comments=extract_json_document_comments(document=document),
+        comments=extract_json_comments(document=document),
     )
 
 
