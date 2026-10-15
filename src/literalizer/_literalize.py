@@ -4865,6 +4865,7 @@ def _literalize_pre_form_impl(
             ref_key=active_ref_key,
         )
         data_for_preamble = resolution.inference_value()
+        language.validate_spec_for_data(data=data_for_preamble)
 
     return _PreFormState(
         data=data,
