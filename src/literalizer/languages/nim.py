@@ -118,7 +118,6 @@ from literalizer._language import (
     default_format_call_target,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
-    default_validate_call_arg,
     default_wrap_calls_with_declarations,
     identity_call_arg,
     identity_constructor_target,
@@ -135,6 +134,7 @@ from literalizer._language import (
 )
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
+    CallArgNotSupportedError,
     IncompatibleFormatsError,
     UnrepresentableInputError,
 )
@@ -1765,7 +1765,22 @@ class Nim(metaclass=LanguageCls):
             )
             raise UnrepresentableInputError(msg)
 
-    validate_call_arg = default_validate_call_arg
+    def validate_call_arg(self, value: Value, /) -> None:
+        """Reject ragged arguments rendered as fixed-size native
+        arrays.
+        """
+        if not self._uses_json_node and not self._uses_native_nim_collections:
+            try:
+                reject_ragged_nested_sequences(
+                    data=value,
+                    language_name="Nim",
+                    record_fields_are_independent=False,
+                    list_elements_are_independent=False,
+                )
+            except UnrepresentableInputError as error:
+                raise CallArgNotSupportedError(
+                    language_name="Nim", reason=str(object=error)
+                ) from error
 
     format_call_statement = default_format_call_statement
 
