@@ -1,0 +1,18 @@
+schema_version = 1
+summary = "JSONC permits comments but retains the remaining strict JSON grammar."
+exceptions = ["JSONCParseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = [
+    '{"a": 1,}',
+    '{a: 1}',
+    "{'a': 1}",
+    '{"a": NaN}',
+    '{"a": 1, "a": 2}',
+    '1/',
+    '1/2',
+]
+input_format = "jsonc"
+variable_form = "none"

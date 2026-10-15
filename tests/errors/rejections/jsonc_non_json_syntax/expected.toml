@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSONCParseError]
+"Python['{\"a\": 1,}']" = "Invalid JSONC: Illegal trailing comma before end of object at line 1 column 8"
+"Python['{a: 1}']" = "Invalid JSONC: Expecting property name enclosed in double quotes at line 1 column 2"
+"Python[\"{'a': 1}\"]" = "Invalid JSONC: Expecting property name enclosed in double quotes at line 1 column 2"
+"Python['{\"a\": NaN}']" = "Invalid JSONC: Invalid JSON constant: NaN"
+"Python['{\"a\": 1, \"a\": 2}']" = "Invalid JSONC: duplicate key 'a'"
+"Python['1/']" = "Invalid JSONC: Extra data at line 1 column 2"
+"Python['1/2']" = "Invalid JSONC: Extra data at line 1 column 2"

@@ -3,8 +3,8 @@
 Most of ``literalize_call``'s negative paths are declared in
 ``tests/errors/rejections`` and run by ``test_rejections.py``.  What is
 left here needs something a manifest should not encode: a bare ``ValueError``
-rather than a ``literalizer.exceptions`` type, an explicit
-``variable_form=None``, or a call made straight to an internal check.
+rather than a ``literalizer.exceptions`` type, or a call made straight
+to an internal check.
 """
 
 import inspect
@@ -16,7 +16,6 @@ from literalizer import (
     BothVariableForms,
     ExistingVariable,
     InputFormat,
-    Language,
     NewVariable,
     literalize,
     literalize_call,
@@ -25,9 +24,8 @@ from literalizer import (
 from literalizer._language import validate_call_parameter_names
 from literalizer.exceptions import (
     UnsupportedCallShapeError,
-    WrapInFileWithoutVariableNotSupportedError,
 )
-from literalizer.languages import Ada, Elm, Haskell, Norg, Python
+from literalizer.languages import Ada, Elm, Python
 
 
 def test_call_parameter_validation_requires_language_metaclass() -> None:
@@ -70,30 +68,6 @@ def test_both_variable_forms_without_redefinition_support_raises() -> None:
             input_format=InputFormat.JSON,
             language=Elm(),
             variable_form=BothVariableForms(name="x", modifiers=frozenset()),
-            wrap_in_file=True,
-        )
-
-
-@pytest.mark.parametrize(argnames="language", argvalues=[Haskell(), Norg()])
-def test_literalize_wrap_in_file_without_variable_not_supported_raises(
-    language: Language,
-) -> None:
-    """``wrap_in_file=True, variable_form=None`` raises for languages
-    that cannot represent a bare value at file scope.
-    """
-    with pytest.raises(
-        expected_exception=WrapInFileWithoutVariableNotSupportedError,
-        match=(
-            rf"^{type(language).__name__} cannot wrap a bare value "
-            r"\(without a variable_form\) "
-            r"at file scope$"
-        ),
-    ):
-        _ = literalize(
-            source="42",
-            input_format=InputFormat.JSON,
-            language=language,
-            variable_form=None,
             wrap_in_file=True,
         )
 
