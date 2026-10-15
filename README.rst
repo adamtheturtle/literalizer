@@ -3,7 +3,7 @@
 literalizer
 ===========
 
-``literalizer`` converts JSON, JSONC, JSON5, YAML, and TOML data structures to native language literal syntax.
+``literalizer`` converts JSON, JSON5, YAML, and TOML data structures to native language literal syntax.
 
 .. contents::
    :local:
@@ -77,10 +77,10 @@ Comments in the source are preserved using the target language's comment syntax:
 Use cases
 ---------
 
-* Generate test fixtures from JSON, JSONC, JSON5, YAML, or TOML samples.
+* Generate test fixtures from JSON, JSON5, YAML, or TOML samples.
 * Generate multi-language request/response examples for API docs (see `guide <https://adamtheturtle.github.io/literalizer/json-api-use-case.html>`__).
 * Generate multi-language function call examples from data (see `guide <https://adamtheturtle.github.io/literalizer/function-call-use-case.html>`__).
-* Create type-safe literal data from JSON, JSONC, JSON5, YAML, or TOML config files.
+* Create type-safe literal data from JSON, JSON5, YAML, or TOML config files.
 
 CLI
 ---

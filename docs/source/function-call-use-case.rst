@@ -1,7 +1,7 @@
 Rendering function calls
 ========================
 
-If your documentation or test suite needs to show function calls with literal arguments across multiple languages, :func:`literalizer.literalize_call` generates those calls from a single YAML, JSON, JSONC, JSON5, or TOML source.
+If your documentation or test suite needs to show function calls with literal arguments across multiple languages, :func:`literalizer.literalize_call` generates those calls from a single YAML, JSON, JSON5, or TOML source.
 
 Each row of a top-level list becomes a separate function call, with arguments formatted according to the target language's calling convention.
 

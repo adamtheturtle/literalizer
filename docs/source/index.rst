@@ -1,7 +1,7 @@
 |project|
 =========
 
-|project| converts JSON, JSONC, JSON5, YAML, and TOML data structures to native language literal syntax.
+|project| converts JSON, JSON5, YAML, and TOML data structures to native language literal syntax.
 
 Supported languages
 -------------------
@@ -100,8 +100,7 @@ TOML is read the same way, and its comments are preserved too:
    #     "port": 8080,
    # }
 
-JSONC and JSON5 are also accepted.
-Comments from both formats are preserved using the target language's comment syntax.
+JSON5 is also accepted.
 Its relaxed syntax, such as comments, single-quoted strings, trailing commas, and hexadecimal numbers, is converted to the target language:
 
 .. code-block:: python
@@ -240,10 +239,10 @@ They diverge once a feature attaches to the *declaration* specifically: enabling
 Use cases
 ---------
 
-* Generate test fixtures from JSON, JSONC, JSON5, YAML, or TOML samples.
+* Generate test fixtures from JSON, JSON5, YAML, or TOML samples.
 * Convert API responses to language-native data structures for documentation.
 * Generate multi-language function call examples from data (see :doc:`function-call-use-case`).
-* Create type-safe literal data from JSON, JSONC, JSON5, YAML, or TOML config files.
+* Create type-safe literal data from JSON, JSON5, YAML, or TOML config files.
 
 CLI
 ---
