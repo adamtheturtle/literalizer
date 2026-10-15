@@ -1,0 +1,4 @@
+schema_version = 1
+languages = ["Rust"]
+languages_reason = "Rust VEC accepts ragged sequence lengths behind maps."
+suites = ["base"]

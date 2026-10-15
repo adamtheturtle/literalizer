@@ -47,8 +47,11 @@ _C0_UPPER_BOUND = 0x20
 class _SequenceShape:
     """The nested lengths which determine a sequence type."""
 
-    length: int
-    children: tuple["_SequenceShape | None", ...]
+    length: int | None
+    children: (
+        tuple["_SequenceShape | None", ...]
+        | frozenset["_SequenceShape | None"]
+    )
 
 
 @beartype
@@ -185,19 +188,59 @@ def guard_collection_nesting_depth(
 
 
 @beartype
-def _sequence_shape(value: Value, /) -> _SequenceShape | None:
+def _sequence_shape(
+    value: Value, /, *, record_fields_are_independent: bool
+) -> _SequenceShape | None:
     """Return the nested lengths a sequence's type is built from.
 
     A fixed-size type spells a length at every level it nests, so two
     sequences share a type only where their whole shapes agree, not
-    only their outer lengths (issue #4728).  Anything that is not a
-    sequence has no shape of its own to compare.
+    only their outer lengths (issue #4728). A scalar has no shape of its
+    own to compare. Mapping values retain
+    their nested shapes across map boundaries (issue #5686); map entry
+    counts do not determine the type. Record fields retain their order
+    by name because each field has an independent type.
     """
+    if isinstance(value, dict):
+        is_record = (
+            record_fields_are_independent
+            and not isinstance(value, OrderedMap)
+            and all(isinstance(key, str) for key in value)
+        )
+        values = (
+            [
+                item
+                for _, item in sorted(
+                    value.items(), key=lambda pair: str(object=pair[0])
+                )
+            ]
+            if is_record
+            else list(value.values())
+        )
+        children = tuple(
+            _sequence_shape(
+                item,
+                record_fields_are_independent=record_fields_are_independent,
+            )
+            for item in values
+        )
+        if all(child is None for child in children):
+            return None
+        return _SequenceShape(
+            length=None,
+            children=children if is_record else frozenset(children),
+        )
     if not isinstance(value, list):
         return None
     return _SequenceShape(
         length=len(value),
-        children=tuple(_sequence_shape(item) for item in value),
+        children=tuple(
+            _sequence_shape(
+                item,
+                record_fields_are_independent=record_fields_are_independent,
+            )
+            for item in value
+        ),
     )
 
 
@@ -206,6 +249,7 @@ def _reject_ragged_siblings(
     *,
     siblings: list[Value],
     language_name: str,
+    record_fields_are_independent: bool,
 ) -> None:
     """Reject sequences beside each other that cannot share one type."""
     lengths = {len(item) for item in siblings if isinstance(item, list)}
@@ -218,7 +262,11 @@ def _reject_ragged_siblings(
         )
         raise UnrepresentableInputError(msg)
     shapes = {
-        _sequence_shape(item) for item in siblings if isinstance(item, list)
+        _sequence_shape(
+            item, record_fields_are_independent=record_fields_are_independent
+        )
+        for item in siblings
+        if isinstance(item, list)
     }
     if len(shapes) > 1:
         msg = (
@@ -260,6 +308,7 @@ def reject_ragged_nested_sequences(
                 _reject_ragged_siblings(
                     siblings=list(data.values()),
                     language_name=language_name,
+                    record_fields_are_independent=record_fields_are_independent,
                 )
             for value in data.values():
                 reject_ragged_nested_sequences(
@@ -277,6 +326,7 @@ def reject_ragged_nested_sequences(
                 _reject_ragged_siblings(
                     siblings=data,
                     language_name=language_name,
+                    record_fields_are_independent=record_fields_are_independent,
                 )
             for item in data:
                 reject_ragged_nested_sequences(
