@@ -12,7 +12,7 @@ import enum
 import functools
 import json
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
 import pytest
@@ -525,6 +525,14 @@ def _literalize_call_case(
                 for name in config.variable_modifiers
             ),
         )
+    call_transform: Callable[[literalizer.CallContext], str] | None = (
+        config.call_transform
+    )
+    if (
+        call_transform is not None
+        and not config.call_transform_reports_zip_usage
+    ):
+        call_transform = functools.partial(call_transform)
     return literalizer.literalize_call(
         source=source,
         input_format=input_info.input_format,
@@ -532,7 +540,7 @@ def _literalize_call_case(
         language=spec,
         target_function=config.target_function,
         parameter_names=config.parameter_names,
-        call_transform=config.call_transform,
+        call_transform=call_transform,
         zip_source=config.zip_source,
         zip_input_format=config.zip_input_format,
         comment_source=config.comment_source,

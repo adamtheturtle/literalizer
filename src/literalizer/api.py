@@ -676,7 +676,10 @@ def literalize_call(
         call_transform: Optional callable transforming each generated
             call.  Invoked once per call as ``call_transform(context)``
             with a :class:`CallContext` and returns the transformed
-            string (e.g. ``lambda ctx: f"print({ctx.call})"``).  The
+            string (e.g. ``lambda ctx: f"print({ctx.call})"``). A transform
+            can expose a boolean ``uses_zipped`` attribute to state whether
+            its template substitutes the zipped operand. Otherwise, usage
+            uses lexical matching against the returned source. The
             context also exposes the call's zero-based ``index``, its
             input ``row``, and the paired ``zipped`` literal, so a
             transform can render data from a parallel sequence beside
