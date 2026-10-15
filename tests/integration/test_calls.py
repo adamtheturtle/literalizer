@@ -6,7 +6,9 @@ Rust's ``TAGGED_ENUM`` strategy on inputs the default ``ERROR``
 strategy rejects).
 """
 
+from contextlib import nullcontext
 from pathlib import Path
+from typing import NoReturn
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -19,6 +21,7 @@ from .call_cases import (
     CallCase,
     default_call_case_specs,
     discover_call_cases,
+    expected_call_shape_exception,
     run_call_golden_case,
     run_wrap_in_file_case,
 )
@@ -217,7 +220,34 @@ def test_call_variant_golden_file(
     # The plan already expands supported versions and resolves explicit
     # pins and syntax floors. Render each effective spec once.
     version_format = call_variant_case.variant.spec.language_version
+    expected_exception = expected_call_shape_exception(
+        lang_cls=lang_cls,
+        config=call_variant_case.config,
+        spec=call_variant_case.variant.spec,
+    )
     with subtests.test(version=version_format.name):
+        if expected_exception is not None:
+            with pytest.raises(expected_exception=expected_exception):
+                run_call_golden_case(
+                    config=call_variant_case.config,
+                    spec=call_variant_case.variant.spec,
+                    lang_cls=lang_cls,
+                    golden_name=f"{call_variant_case.variant.name}_call",
+                    cases_dir=cases_dir,
+                    file_regression=file_regression,
+                    version=version_format,
+                )
+            cleanup_stale_golden(
+                golden_path=make_golden_path(
+                    parent=cases_dir / call_variant_case.config.case_dir_name,
+                    name=f"{call_variant_case.variant.name}_call",
+                    extension=lang_cls.extension,
+                    lang_cls=lang_cls,
+                    version=version_format,
+                ),
+                config=file_regression.request.config,
+            )
+            return
         run_call_golden_case(
             config=call_variant_case.config,
             spec=call_variant_case.variant.spec,
@@ -226,4 +256,108 @@ def test_call_variant_golden_file(
             cases_dir=cases_dir,
             file_regression=file_regression,
             version=version_format,
+        )
+
+
+def _uncaptured_subtest(**_kwargs: object) -> nullcontext[None]:
+    """Let an outer raises assertion observe an inner test failure."""
+    return nullcontext()
+
+
+@pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
+def test_variant_rejection_handles_stale_fixture(
+    *,
+    tmp_path: Path,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
+    monkeypatch: pytest.MonkeyPatch,
+    regenerate: bool,
+) -> None:
+    """Expected variant refusals use the regeneration-only cleanup
+    policy.
+    """
+    case = next(
+        case
+        for case in build_call_variant_cases()
+        if case.config.case_dir_name == "call_zig_helper_member_zval"
+        and case.variant.name == "V_heterogeneous_strategy_record"
+    )
+    case_dir = tmp_path / case.config.case_dir_name
+    case_dir.mkdir()
+    for source in (cases_dir / case.config.case_dir_name).glob(pattern="*"):
+        if source.name == "case.toml" or source.name.startswith("input."):
+            _ = (case_dir / source.name).write_bytes(data=source.read_bytes())
+    golden_path = make_golden_path(
+        parent=case_dir,
+        name=f"{case.variant.name}_call",
+        extension=V.extension,
+        lang_cls=V,
+        version=case.variant.spec.language_version,
+    )
+    _ = golden_path.write_text(data="stale\n")
+    monkeypatch.setattr(
+        target=file_regression.request.config.option,
+        name="regen_all",
+        value=regenerate,
+    )
+    if regenerate:
+        test_call_variant_golden_file(
+            call_variant_case=case,
+            cases_dir=tmp_path,
+            file_regression=file_regression,
+            subtests=subtests,
+        )
+        assert not golden_path.exists()
+    else:
+        monkeypatch.setattr(
+            target=subtests, name="test", value=_uncaptured_subtest
+        )
+        with pytest.raises(
+            expected_exception=pytest.fail.Exception, match="Stale golden file"
+        ):
+            test_call_variant_golden_file(
+                call_variant_case=case,
+                cases_dir=tmp_path,
+                file_regression=file_regression,
+                subtests=subtests,
+            )
+        assert golden_path.read_text(encoding="utf-8") == "stale\n"
+
+
+def test_variant_rejection_preserves_unexpected_errors(
+    *,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A different error must never be treated as an expected refusal."""
+    case = next(
+        case
+        for case in build_call_variant_cases()
+        if case.config.case_dir_name == "call_zig_helper_member_zval"
+        and case.variant.name == "V_heterogeneous_strategy_record"
+    )
+
+    def fail_unexpectedly(**_kwargs: object) -> NoReturn:
+        """Simulate an unrelated harness failure."""
+        msg = "unexpected failure"
+        raise ValueError(msg)
+
+    monkeypatch.setattr(
+        target="tests.integration.test_calls.run_call_golden_case",
+        name=fail_unexpectedly,
+    )
+    monkeypatch.setattr(
+        target=subtests, name="test", value=_uncaptured_subtest
+    )
+    with pytest.raises(
+        expected_exception=ValueError, match="unexpected failure"
+    ):
+        test_call_variant_golden_file(
+            call_variant_case=case,
+            cases_dir=cases_dir,
+            file_regression=file_regression,
+            subtests=subtests,
         )
