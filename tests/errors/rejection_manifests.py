@@ -55,7 +55,7 @@ _CALL_TRANSFORM_PLACEHOLDERS = frozenset({"call", "zipped"})
 """Names a rejection-manifest call transform may substitute."""
 
 type ApiName = Literal["literalize", "literalize_call", "constructor"]
-type VariableFormName = Literal["new", "existing", "both"]
+type VariableFormName = Literal["new", "existing", "both", "none"]
 
 
 def _bound_refs_items(
@@ -420,8 +420,14 @@ class CallSpec(  # noqa: NOD001
         if has_comment_source and has_comment_source_bare:
             msg = "declare comment_source or comment_source_bare, not both"
             raise ValueError(msg)
-        if self.api != "literalize" and bool(self.modifiers):
-            msg = "modifiers apply to api = 'literalize'"
+        if len(self.modifiers) > 0 and not (
+            self.api != "constructor"
+            and (
+                self.variable_form in {"new", "both"}
+                or (self.api == "literalize" and self.variable_form is None)
+            )
+        ):
+            msg = "modifiers require a new or both variable form"
             raise ValueError(msg)
         _ = self._validate_call_only_arguments()
         _ = self._validate_call_transform()

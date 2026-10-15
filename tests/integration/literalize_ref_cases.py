@@ -16,7 +16,8 @@ import tomllib
 from pathlib import Path
 from typing import assert_never
 
-import json5
+import json5_document
+import jsonc_document
 from beartype import beartype
 from pydantic import TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -189,13 +190,10 @@ def _parse_ref_input(
     match input_format:
         case literalizer.InputFormat.JSON:
             parsed = json.loads(s=input_source)
-        case literalizer.InputFormat.JSONC | literalizer.InputFormat.JSON5:
-            # JSONC fixtures are also valid JSON5. The public API checks
-            # the stricter input grammar when rendering each fixture.
-            parsed = json5.loads(
-                s=input_source,
-                allow_duplicate_keys=False,
-            )
+        case literalizer.InputFormat.JSONC:
+            parsed = jsonc_document.loads(source=input_source)
+        case literalizer.InputFormat.JSON5:
+            parsed = json5_document.loads(source=input_source)
         case literalizer.InputFormat.YAML:
             # Reference discovery needs plain values, including YAML sets;
             # the public renderer preserves comments from input_source.

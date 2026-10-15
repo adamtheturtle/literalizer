@@ -1,0 +1,9 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"FSharp['{\"not-a-field\": 1}']" = "F# anonymous record mode cannot represent field 'not-a-field'"
+"FSharp['{\"let\": 1}']" = "F# anonymous record mode cannot represent field 'let'"
+"FSharp['{}']" = "F# anonymous record mode cannot represent empty records"
+"FSharp['{\"x\": null}']" = "F# anonymous record mode cannot represent NoneType"
+"FSharp['[{\"x\": 1}, {\"x\": \"one\"}]']" = "F# anonymous record mode requires uniform record list types"
+"FSharp['[{\"x\": 1}, {\"y\": 1}]']" = "F# anonymous record mode requires uniform record list types"

@@ -1,0 +1,17 @@
+schema_version = 1
+summary = "Nested Vec slots in a tuple must agree across siblings."
+exceptions = ["MixedListValuesError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = [
+    '[[1, [2]], [3, 4]]',
+    '[[1, []], [2, [3, [4]]]]',
+    '[[1, []], [2, [3]], [4, ["x"]]]',
+]
+input_format = "json"
+variable_form = "none"
+kwargs = [
+  { kind = "option_member", option = "sequence_format", member = "TUPLE_NESTED_VEC" },
+]

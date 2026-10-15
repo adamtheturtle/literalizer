@@ -1,2 +1,2 @@
-Use json5-document to parse JSON5 values, comments, and source positions.
-JSON5 syntax and numeric failures now expose coordinates in the original source.
+Use json5-document to parse JSON5 input.
+JSON5 parser error messages and coordinates now come from the new parser.

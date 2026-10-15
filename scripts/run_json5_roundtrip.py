@@ -1,13 +1,14 @@
 """JSON5 JSON round-trip check (issue #1867).
 
 Literalize the shared ``roundtrip_input.json`` document to a JSON5
-value, parse the resulting JSON5 text with ``json5``, then re-serialize
-the parsed value as JSON and hand it to :func:`roundtrip_common.verify`.
+value, parse the resulting JSON5 text with ``json5-document``, then
+re-serialize the parsed value as JSON and hand it to
+:func:`roundtrip_common.verify`.
 
 Like the TOML round-trip, there is no language runtime to invoke: the
 analogous "back to JSON" step is a JSON5 parser re-emitting the parsed
-value.  ``json5`` is a development dependency used as an independent oracle,
-so the JSON5 lint job's ``uv run`` resolves it without extra
+value.  ``json5-document`` is a core ``literalizer`` dependency, so the
+JSON5 lint job's ``uv run`` (project mode) resolves it without extra
 ``--with`` layering.  Unlike most other backends, ``Json5`` does not
 support a ``variable_form``: the literalized output is a bare JSON5
 value, so the parsed result is fed directly to ``verify``.
@@ -16,7 +17,7 @@ value, so the parsed result is fed directly to ``verify``.
 import json
 import sys
 
-import json5
+import json5_document
 
 from literalizer import InputFormat, literalize
 from literalizer.languages import Json5
@@ -48,10 +49,7 @@ def main() -> None:
     )
     document = _build_document(json_text=json_text)
     parsed = roundtrip_common.json_object(
-        value=json5.loads(
-            s=document,
-            allow_duplicate_keys=False,
-        ),
+        value=json5_document.loads(source=document),
     )
     produced_json = json.dumps(obj=parsed)
     roundtrip_common.verify(

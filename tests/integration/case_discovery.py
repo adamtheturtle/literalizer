@@ -16,7 +16,8 @@ import tomllib
 from pathlib import Path
 from typing import assert_never
 
-import json5
+import json5_document
+import jsonc_document
 from beartype import beartype
 from pydantic import TypeAdapter
 from ruamel.yaml import YAML
@@ -29,7 +30,6 @@ from literalizer.exceptions import (
     UnrepresentableStringError,
 )
 from literalizer.languages import Matlab
-from tests.integration.json5_validation import escape_json5_line_separators
 from tests.yaml_support import as_yaml_parser
 
 from .case_inputs import CaseInput
@@ -169,16 +169,10 @@ def _load_case_source(
     match input_format:
         case literalizer.InputFormat.JSON:
             return json.loads(s=source)
-        case literalizer.InputFormat.JSONC | literalizer.InputFormat.JSON5:
-            # JSONC fixtures are valid JSON5. Rendering exercises the
-            # stricter JSONC parser through the public API separately.
-            # The independent validation parser refuses a raw U+2028
-            # or U+2029 in a string; escape those source characters
-            # for this oracle only (issue #4518).
-            return json5.loads(
-                s=escape_json5_line_separators(source=source),
-                allow_duplicate_keys=False,
-            )
+        case literalizer.InputFormat.JSONC:
+            return jsonc_document.loads(source=source)
+        case literalizer.InputFormat.JSON5:
+            return json5_document.loads(source=source)
         case literalizer.InputFormat.YAML:
             # ``safe`` (not round-trip): yields plain ``dict``/``list``/
             # ``set`` instead of the ruamel comment-tracking subclasses,
