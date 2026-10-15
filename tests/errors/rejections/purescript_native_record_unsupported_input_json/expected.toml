@@ -1,0 +1,11 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"PureScript['{\"not-a-field\": 1}']" = "PureScript record mode cannot represent field 'not-a-field'"
+"PureScript['{\"case\": 1}']" = "PureScript record mode cannot represent field 'case'"
+"PureScript['{\"Bad\": 1}']" = "PureScript record mode cannot represent field 'Bad'"
+"PureScript['{}']" = "PureScript record mode cannot represent empty records"
+"PureScript['{\"x\": null}']" = "PureScript record mode cannot represent NoneType"
+"PureScript['[{\"x\": 1}, {\"x\": \"one\"}]']" = "PureScript record mode requires uniform record array types"
+"PureScript['[{\"x\": 1}, {\"y\": 1}]']" = "PureScript record mode requires uniform record array types"
+"PureScript['[1, 2147483648]']" = "PureScript record mode requires uniform integer widths"
