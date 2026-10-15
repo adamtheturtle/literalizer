@@ -13,7 +13,7 @@ jobs:
       matrix:
         target: [python, javascript, go, go-record, csharp, csharp-record]
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 15
     env:
       TARGET: ${{ matrix.target }}
       UV_PYTHON: '3.14'
@@ -48,6 +48,11 @@ jobs:
             csharp*) dotnet --info > results/runtime.txt ;;
             javascript) node --version > results/runtime.txt ;;
           esac
+      - name: Warm compiler and runtime caches
+        run: >-
+          scripts/run-bounded.sh "$TARGET warmup" --signal=KILL 480s
+          uv run --group dev python -m scripts.boundary_containers
+          --target "$TARGET" --mode baseline --output results/warmup
       - name: Baseline corpus
         id: baseline
         continue-on-error: true
