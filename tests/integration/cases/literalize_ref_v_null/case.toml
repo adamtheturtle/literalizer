@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["V"]
-languages_reason = "V copies known null pointers without invoking collection clone methods."
+languages = ["V", "Mojo"]
+languages_reason = "Mojo copies register-trivial null values without a transfer; V copies known null pointers without invoking collection clone methods."
 
 [ref.value_sources]
 value = "null"

@@ -5,8 +5,8 @@ owner = "literalize-call"
 target_function = "consume"
 parameter_names = ["value"]
 per_element = true
-languages = ["Cpp"]
-languages_reason = "C++ native nullptr references are trivial; nlohmann JSON null values retain ownership semantics."
+languages = ["Cpp", "Mojo"]
+languages_reason = "Mojo null references are register-trivial; C++ native nullptr references are trivial; nlohmann JSON null values retain ownership semantics."
 ref_declarations = { my_null = "null", regular_null = "null" }
 consumable_refs = ["my_null"]
 
