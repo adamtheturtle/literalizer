@@ -93,6 +93,8 @@ def _variable_form(
     values, so a manifest naming ``CONST`` covers every language whose
     declarations take one.  A language with no named variables to bind
     to renders the value on its own, which is the only form it has.
+    Explicit ``none`` renders a bare value even for languages with names;
+    an omitted form preserves the legacy default declaration.
     """
     name = substituted(template=call.variable_name, value=value)
     modifiers = frozenset(

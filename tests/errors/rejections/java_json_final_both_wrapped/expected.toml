@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ImmutableVariableModifierError]
+Java = "Java cannot combine BothVariableForms with _JavaModifiers.FINAL: the declaration binds the name once, so the assignment that follows it cannot compile"
