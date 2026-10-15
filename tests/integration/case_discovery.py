@@ -24,12 +24,12 @@ from ruamel.yaml.comments import TaggedScalar
 from typing_extensions import TypeIs
 
 import literalizer
-from literalizer._parsing import escape_json5_line_separators
 from literalizer.exceptions import (
     InvalidDictKeyError,
     UnrepresentableStringError,
 )
 from literalizer.languages import Matlab
+from tests.integration.json5_validation import escape_json5_line_separators
 from tests.yaml_support import as_yaml_parser
 
 from .case_inputs import CaseInput
@@ -172,10 +172,9 @@ def _load_case_source(
         case literalizer.InputFormat.JSONC | literalizer.InputFormat.JSON5:
             # JSONC fixtures are valid JSON5. Rendering exercises the
             # stricter JSONC parser through the public API separately.
-            # The library escapes a raw U+2028 or U+2029 inside a
-            # string before handing the source to ``json5``, which
-            # refuses one; parse the same way so a case may hold
-            # what the library accepts (issue #4518).
+            # The independent validation parser refuses a raw U+2028
+            # or U+2029 in a string; escape those source characters
+            # for this oracle only (issue #4518).
             return json5.loads(
                 s=escape_json5_line_separators(source=source),
                 allow_duplicate_keys=False,

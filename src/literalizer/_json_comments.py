@@ -1,4 +1,4 @@
-"""Associate comments with values in already-validated JSONC or JSON5."""
+"""Associate comments with values in already-validated JSONC."""
 
 import dataclasses
 from collections.abc import Iterator
@@ -94,10 +94,10 @@ def _string_end(*, source: str, start: int) -> int:
 
 
 @beartype
-def _tokens(*, source: str, json5: bool) -> Iterator[_Token]:
+def _tokens(*, source: str) -> Iterator[_Token]:
     """Scan valid source without interpreting string or number values."""
     index = 0
-    line_endings = "\r\n\u2028\u2029" if json5 else "\r\n"
+    line_endings = "\r\n"
     while index < len(source):
         char = source[index]
         if char.isspace() or char == "\ufeff":
@@ -217,21 +217,33 @@ class _CommentReader:
 
 
 @beartype
-def extract_json_comments(
-    *, source: str, data: Value, json5: bool
-) -> JsonComments | None:
+def extract_jsonc_comments(*, source: str, data: Value) -> JsonComments | None:
     """Read comments after successful parsing, leaving diagnostics
     intact.
     """
     if "/" not in source:
         return None
-    tokens = list(_tokens(source=source, json5=json5))
+    tokens = list(_tokens(source=source))
     if not any(token.is_comment for token in tokens):
         return None
     reader = _CommentReader(source=source, tokens=tokens, index=0)
     before = reader.comments()
     result = reader.value(data=data)
     inline, after = reader.after(end=tokens[reader.index - 1].end)
+    return attach_document_comments(
+        result=result, before=before, inline=inline, after=after
+    )
+
+
+@beartype
+def attach_document_comments(
+    *,
+    result: JsonComments,
+    before: tuple[str, ...],
+    inline: str,
+    after: tuple[str, ...],
+) -> JsonComments:
+    """Attach comments surrounding a complete input document."""
     if result.collection is None:
         return dataclasses.replace(
             result,
