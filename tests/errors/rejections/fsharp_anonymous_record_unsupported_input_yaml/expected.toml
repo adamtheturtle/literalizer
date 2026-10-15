@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"FSharp['1: one\\n']" = "F# anonymous record mode cannot represent field 1"
+"FSharp['--- !!omap\\n- a: 1\\n']" = "F# anonymous record mode cannot represent ordered maps"
+"FSharp['--- !!set\\na:\\n']" = "F# anonymous record mode cannot represent set"

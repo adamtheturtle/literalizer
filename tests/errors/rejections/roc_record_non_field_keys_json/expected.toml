@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Roc['{\"not-a-field\": 1}']" = "Roc native record mode cannot represent field 'not-a-field'"
+"Roc['{\"if\": 1}']" = "Roc native record mode cannot represent field 'if'"
+"Roc['{\"outer\": {\"Bad\": 1}}']" = "Roc native record mode cannot represent field 'Bad'"

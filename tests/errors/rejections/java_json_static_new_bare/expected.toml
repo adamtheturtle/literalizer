@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+Java = "Java json_type renders data through ObjectMapper.readTree(...) and does not support class-field modifiers (public, private, protected, static), which require handling the checked parsing exception in a field initializer. Remove these modifiers to use a local declaration."

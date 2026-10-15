@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Sml['1: one\\n']" = "SML record mode cannot represent field 1"
+"Sml['--- !!omap\\n- a: 1\\n']" = "SML record mode cannot represent ordered maps"
+"Sml['--- !!set\\na:\\n']" = "SML record mode cannot represent set"

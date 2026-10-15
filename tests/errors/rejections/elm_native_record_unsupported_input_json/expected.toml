@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Elm['{\"not-a-field\": 1}']" = "Elm record mode cannot represent field 'not-a-field'"
+"Elm['{\"if\": 1}']" = "Elm record mode cannot represent field 'if'"
+"Elm['{\"Bad\": 1}']" = "Elm record mode cannot represent field 'Bad'"
+"Elm['{}']" = "Elm record mode cannot represent empty records"
+"Elm['{\"x\": null}']" = "Elm record mode cannot represent NoneType"
+"Elm['[{\"x\": 1}, {\"x\": \"one\"}]']" = "Elm record mode requires uniform record list types"
+"Elm['[{\"x\": 1}, {\"y\": 1}]']" = "Elm record mode requires uniform record list types"

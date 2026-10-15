@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "Sibling records with different list element types cannot unify."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Sml"]
+
+[call]
+api = "literalize"
+sources = [
+    '[{"scores":[1]},{"scores":["one"]}]',
+]
+input_format = "json"
+variable_form = "none"
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "RECORD"},
+]

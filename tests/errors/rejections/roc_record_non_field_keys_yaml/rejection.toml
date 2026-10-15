@@ -1,0 +1,16 @@
+schema_version = 1
+summary = "Never emit a syntactically invalid Roc record field."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Roc"]
+
+[call]
+api = "literalize"
+sources = [
+    '''1: one
+''',
+]
+input_format = "yaml"
+variable_form = "none"
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "RECORD"},
+]

@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Languages requiring a top-level declaration cannot wrap a bare value."
+exceptions = ["WrapInFileWithoutVariableNotSupportedError"]
+languages = ["Haskell", "Norg"]
+
+[call]
+api = "literalize"
+sources = ['42']
+input_format = "json"
+variable_form = "none"
+wrap_in_file = true

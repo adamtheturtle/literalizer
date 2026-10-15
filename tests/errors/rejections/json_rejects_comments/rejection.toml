@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "JSON input rejects JSONC line comments."
+exceptions = ["JSONParseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ['''{"a": 1 // note
+}''']
+input_format = "json"
+variable_form = "none"

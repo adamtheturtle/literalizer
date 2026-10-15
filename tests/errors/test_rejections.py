@@ -5,9 +5,17 @@ language it selects and records what was raised in that manifest's
 ``expected.toml``: a table per exception type, a line per case.  A
 language that joins a manifest's gates -- a new language declaring
 ``json_type``, say -- shows up as a new line rather than as silence.
+
+A message may instead declare an inline table with ``default`` and
+Python ``major.minor`` overrides. Each runtime checks its exact message;
+regeneration preserves entries for every other Python version.
 """
 
+import re
+import sys
+import tomllib
 from collections.abc import Callable
+from pathlib import Path
 from typing import assert_never
 
 import pytest
@@ -16,8 +24,10 @@ from beartype import beartype
 from pydantic import ConfigDict, TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML
+from tomlkit.items import InlineTable
 
 import literalizer
+from literalizer.languages import Python
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import CallTransform
 from tests.integration.golden_checks import check_golden
@@ -43,6 +53,87 @@ _BOUND_VALUE = TypeAdapter[literalizer.ValueInput](
     type=literalizer.ValueInput,
     config=ConfigDict(arbitrary_types_allowed=True),
 )
+
+
+type ExpectedMessage = str | dict[str, str]
+type ExpectedMessages = dict[str, dict[str, ExpectedMessage]]
+
+_EXPECTED_MESSAGES = TypeAdapter[ExpectedMessages](type=ExpectedMessages)
+
+
+@beartype
+def _load_expected_messages(*, golden_path: Path) -> ExpectedMessages:
+    """Read messages and validate each optional Python-version map."""
+    if not golden_path.exists():
+        return {}
+    expected = _EXPECTED_MESSAGES.validate_python(
+        tomllib.loads(golden_path.read_text(encoding="utf-8")), strict=True
+    )
+    for cases in expected.values():
+        for message in cases.values():
+            if isinstance(message, dict):
+                if "default" not in message:
+                    msg = "a versioned message requires a default"
+                    raise ValueError(msg)
+                for version in message:
+                    if (
+                        version != "default"
+                        and re.fullmatch(
+                            pattern=r"[0-9]+\.[0-9]+", string=version
+                        )
+                        is None
+                    ):
+                        msg = f"invalid Python version key: {version!r}"
+                        raise ValueError(msg)
+    return expected
+
+
+@beartype
+def _message_golden(
+    *, message: str, expected: ExpectedMessage | None, python_version: str
+) -> str | InlineTable:
+    """Record the active runtime while retaining other exact messages."""
+    if not isinstance(expected, dict):
+        return message
+    active = python_version if python_version in expected else "default"
+    variants = tomlkit.inline_table()
+    for version, text in expected.items():
+        variants[version] = message if version == active else text
+    return variants
+
+
+@beartype
+def _rejection_document(
+    *,
+    messages_by_exception: dict[str, dict[str, str]],
+    expected: ExpectedMessages,
+    rejecting: int,
+    accepting: int,
+    python_version: str,
+) -> str:
+    """Build observed case tables, preserving inactive message
+    variants.
+    """
+    document = tomlkit.document()
+    _ = document.add(
+        key=tomlkit.comment(
+            string=(
+                f"languages rejecting: {rejecting}; "
+                f"languages accepting: {accepting}"
+            ),
+        ),
+    )
+    for exception_name in sorted(messages_by_exception):
+        table = tomlkit.table()
+        previous_cases = expected.get(exception_name, {})
+        for case_id, message in messages_by_exception[exception_name].items():
+            table[case_id] = _message_golden(
+                message=message,
+                expected=previous_cases.get(case_id),
+                python_version=python_version,
+            )
+        document[exception_name] = table
+    return tomlkit.dumps(data=document)
 
 
 @beartype
@@ -92,6 +183,8 @@ def _variable_form(
     values, so a manifest naming ``CONST`` covers every language whose
     declarations take one.  A language with no named variables to bind
     to renders the value on its own, which is the only form it has.
+    Explicit ``none`` renders a bare value even for languages with names;
+    an omitted form preserves the legacy default declaration.
     """
     name = substituted(template=call.variable_name, value=value)
     modifiers = frozenset(
@@ -99,10 +192,12 @@ def _variable_form(
         for modifier_name in call.modifiers
     )
     match call.variable_form:
+        case "none":
+            return None
         case "new":
             return literalizer.NewVariable(
                 name=name,
-                modifiers=frozenset(),
+                modifiers=modifiers,
             )
         case "existing":
             return literalizer.ExistingVariable(name=name)
@@ -239,26 +334,14 @@ def test_rejection_messages(
         raised_by = messages_by_exception.setdefault(type(raised).__name__, {})
         raised_by[case.case_id] = str(object=raised)
     accepting = len(manifest.accepting_languages)
-    document = tomlkit.document()
-    _ = document.add(
-        key=tomlkit.comment(
-            string=(
-                f"languages rejecting: "
-                f"{len(selected_languages(manifest=manifest)) - accepting}"
-                f"; languages accepting: {accepting}"
-            ),
-        ),
-    )
-    # One table per exception type, so a language raising a different
-    # one from the rest of its family stands out as its own table
-    # rather than as a word buried in a line.
-    for exception_name in sorted(messages_by_exception):
-        table = tomlkit.table()
-        for case_id, message in messages_by_exception[exception_name].items():
-            table[case_id] = message
-        document[exception_name] = table
     check_golden(
-        contents=tomlkit.dumps(data=document),
+        contents=_rejection_document(
+            messages_by_exception=messages_by_exception,
+            expected=_load_expected_messages(golden_path=manifest.golden_path),
+            rejecting=len(selected_languages(manifest=manifest)) - accepting,
+            accepting=accepting,
+            python_version=f"{sys.version_info.major}.{sys.version_info.minor}",
+        ),
         extension=".toml",
         golden_path=manifest.golden_path,
         file_regression=file_regression,
@@ -283,3 +366,105 @@ def test_accepting_languages_still_accept(
     """
     for case in accepting_cases(manifest=manifest):
         _run(case=case, call=manifest.call)
+
+
+@pytest.mark.parametrize(
+    argnames=("declaration", "expected"),
+    argvalues=[
+        ({}, literalizer.NewVariable(name="my_data", modifiers=frozenset())),
+        ({"variable_form": "none"}, None),
+    ],
+)
+def test_explicit_absence_preserves_omitted_default(
+    declaration: dict[str, str],
+    expected: literalizer.NewVariable | None,
+) -> None:
+    """An explicit bare value differs from the legacy implicit declaration."""
+    call = CallSpec.model_validate(
+        obj={
+            "api": "literalize",
+            "sources": ["1"],
+            "input_format": "json",
+            **declaration,
+        },
+    )
+    assert _variable_form(call=call, lang_cls=Python, value=None) == expected
+
+
+@pytest.mark.parametrize(
+    argnames=("source", "error", "message"),
+    argvalues=[
+        (
+            '[Error]\ncase = { "3.12" = "old" }',
+            ValueError,
+            "requires a default",
+        ),
+        (
+            '[Error]\ncase = { default = "new", py312 = "old" }',
+            ValueError,
+            "invalid Python version key",
+        ),
+        (
+            '[Error]\ncase = { default = "new", "3.12.1" = "old" }',
+            ValueError,
+            "invalid Python version key",
+        ),
+        ("[Error]\ncase = { default = 1 }", ValueError, "valid string"),
+        ("[Error]\ncase = 1", ValueError, "valid string"),
+    ],
+)
+def test_invalid_versioned_message_is_rejected(
+    source: str, error: type[Exception], message: str, tmp_path: Path
+) -> None:
+    """Malformed message variants cannot silently bypass comparison."""
+    golden_path = tmp_path / "expected.toml"
+    _ = golden_path.write_text(data=source, encoding="utf-8")
+    with pytest.raises(expected_exception=error, match=message):
+        _ = _load_expected_messages(golden_path=golden_path)
+
+
+def test_missing_message_golden_can_be_generated(tmp_path: Path) -> None:
+    """A new family starts with plain messages until variants are declared."""
+    assert (
+        _load_expected_messages(golden_path=tmp_path / "expected.toml") == {}
+    )
+
+
+@pytest.mark.parametrize(
+    argnames=("version", "active"),
+    argvalues=[("3.12", "3.12"), ("3.13", "default"), ("3.99", "default")],
+)
+def test_versioned_messages_preserve_inactive_variants(
+    version: str, active: str, tmp_path: Path
+) -> None:
+    """Regeneration changes only the active exact message and drops stale
+    cases.
+    """
+    golden_path = tmp_path / "expected.toml"
+    _ = golden_path.write_text(
+        data=(
+            '[Error]\nvariant = { default = "modern", "3.12" = "older" }\n'
+            'plain = "old"\nstale = "deleted case"\n'
+            '[StaleError]\ncase = "deleted exception"\n'
+        ),
+        encoding="utf-8",
+    )
+    expected = _load_expected_messages(golden_path=golden_path)
+    document = _rejection_document(
+        messages_by_exception={
+            "Error": {"variant": "actual", "plain": "actual", "new": "actual"}
+        },
+        expected=expected,
+        rejecting=1,
+        accepting=0,
+        python_version=version,
+    )
+    variants = {"default": "modern", "3.12": "older"}
+    variants[active] = "actual"
+    assert tomllib.loads(document) == {
+        "Error": {"variant": variants, "plain": "actual", "new": "actual"}
+    }
+    assert expected["Error"]["variant"] == {
+        "default": "modern",
+        "3.12": "older",
+    }

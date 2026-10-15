@@ -1,0 +1,18 @@
+schema_version = 1
+summary = "Field modifiers require handling the checked Jackson parsing exception."
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Java"]
+
+[call]
+api = "literalize"
+sources = ["42"]
+input_format = "json"
+variable_form = "both"
+variable_name = "data"
+modifiers = ["PROTECTED"]
+wrap_in_file = true
+
+[[call.kwargs]]
+kind = "option_member"
+option = "json_type"
+member = "JACKSON_JSON_NODE"

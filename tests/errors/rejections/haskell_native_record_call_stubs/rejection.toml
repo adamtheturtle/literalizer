@@ -1,0 +1,18 @@
+schema_version = 1
+summary = "Call stubs cannot assume the generic Val type in record mode."
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Haskell"]
+
+[call]
+api = "literalize_call"
+sources = [
+    '[{"x":1}]',
+]
+input_format = "json"
+variable_form = "none"
+target_function = "consume"
+parameter_names = ["item"]
+wrap_in_file = true
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "RECORD"},
+]

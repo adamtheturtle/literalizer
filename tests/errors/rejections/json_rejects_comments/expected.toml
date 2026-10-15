@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSONParseError]
+Python = "Invalid JSON: Expecting ',' delimiter at line 1 column 9"
