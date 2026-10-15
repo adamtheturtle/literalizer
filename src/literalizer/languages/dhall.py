@@ -709,12 +709,21 @@ class Dhall(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_declaration: ClassVar[property] = property(
-        fget=lambda _self: _dhall_format_call_variable_declaration,
-    )
-    format_call_variable_assignment: ClassVar[property] = property(
-        fget=lambda _self: _dhall_format_call_variable_assignment,
-    )
+
+    @property
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Return the checked call-result declaration formatter."""
+        return _dhall_format_call_variable_declaration
+
+    @property
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Return the checked call-result assignment formatter."""
+        return _dhall_format_call_variable_assignment
+
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas

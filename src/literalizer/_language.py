@@ -3306,6 +3306,12 @@ identity_call_target: Callable[[Sequence[str]], str] = _identity_call_target
 
 
 @beartype
+def identity_known_null_ref_identifier(name: str, /) -> str:
+    """Keep a known null reference identifier unchanged."""
+    return name
+
+
+@beartype
 def _identity_call_ref_identifier(name: str, value: Value | None, /) -> str:
     """Return *name* unchanged.
 

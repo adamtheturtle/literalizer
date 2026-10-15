@@ -1597,9 +1597,7 @@ def _reject_negative_zero_call_arg(value: Value, /) -> None:
 @beartype
 def _reject_tuple_call_arg(value: Value, /) -> None:
     """Call stubs take Val, which cannot contain a tuple."""
-    if value_contains(
-        data=value, predicate=lambda child: isinstance(child, list)
-    ):
+    if value_contains(data=value, predicate=_haskell_is_list):
         msg = (
             "Haskell sequence_format=TUPLE cannot represent "
             "tuple-valued call arguments as Val"
@@ -1621,6 +1619,12 @@ if TYPE_CHECKING:
 else:
     _BytesEnumMember = enum.member
     _IntegerEnumMember = enum.member
+
+
+@beartype
+def _haskell_is_list(value: Value, /) -> bool:
+    """Identify lists that the tuple configuration cannot represent."""
+    return isinstance(value, list)
 
 
 @beartype
@@ -2209,14 +2213,14 @@ class Haskell(metaclass=LanguageCls):
             nested_list = any(
                 value_contains(
                     data=item,
-                    predicate=lambda value: isinstance(value, list),
+                    predicate=_haskell_is_list,
                 )
                 for item in data
             )
         else:
             nested_list = value_contains(
                 data=data,
-                predicate=lambda value: isinstance(value, list),
+                predicate=_haskell_is_list,
             )
         if nested_list:
             msg = (

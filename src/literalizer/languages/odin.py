@@ -1617,10 +1617,16 @@ class Odin(metaclass=LanguageCls):
         base = self.integer_format.get_formatter(
             numeric_separator=self.numeric_separator,
         )
+
+        @beartype
+        def _format_unsigned(value: int, /) -> str:
+            """Render an unsigned integer using the selected base."""
+            return f"u64({base(value)})"
+
         return make_overflow_fallback_formatter(
             base=base,
             fallback=make_unsigned_overflow_fallback(
-                format_positive=lambda value: f"u64({base(value)})",
+                format_positive=_format_unsigned,
                 language_name="Odin",
             ),
             min_value=I64_MIN,

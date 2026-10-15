@@ -1540,9 +1540,15 @@ class FSharp(metaclass=LanguageCls):
             return format_datetime_iso
         if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
             if self.datetime_format is type(self.datetime_format).EPOCH:
-                return lambda value: self.format_integer(
-                    int(format_datetime_epoch(value=value))
-                )
+
+                @beartype
+                def _format_record_epoch(value: dt.datetime) -> str:
+                    """Render epoch seconds in a native record."""
+                    return self.format_integer(
+                        int(format_datetime_epoch(value=value))
+                    )
+
+                return _format_record_epoch
             return base_formatter
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_fsharp_datetime_epoch(

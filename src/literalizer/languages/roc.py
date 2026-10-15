@@ -690,6 +690,14 @@ def _indent_call_lines(*, content: str, indent: str) -> str:
 
 
 @beartype
+def _no_record_body_preamble(
+    _types: frozenset[type], _data: Value, /
+) -> tuple[str, ...]:
+    """Native records need no tag-union body preamble."""
+    return ()
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Roc(metaclass=LanguageCls):
     """Roc language specification.
@@ -1464,7 +1472,13 @@ class Roc(metaclass=LanguageCls):
             formatter = _ROC_BYTES_FORMATTERS[self.bytes_format.name](
                 self.constructor_prefix
             )
-            return lambda value: formatter(value).removeprefix(tag)
+
+            @beartype
+            def _format_record(value: bytes) -> str:
+                """Render a native record field without the union tag."""
+                return formatter(value).removeprefix(tag)
+
+            return _format_record
         if self.constructor_prefix == "R":
             return self.bytes_format
         return _ROC_BYTES_FORMATTERS[self.bytes_format.name](
@@ -1478,7 +1492,13 @@ class Roc(metaclass=LanguageCls):
         if self.dict_format is type(self.dict_format).RECORD:
             formatter = _build_roc_date_iso(prefix=self.constructor_prefix)
             tag = f"{self.constructor_prefix}Str "
-            return lambda value: formatter(value).removeprefix(tag)
+
+            @beartype
+            def _format_record(value: dt.date) -> str:
+                """Render a native record field without the union tag."""
+                return formatter(value).removeprefix(tag)
+
+            return _format_record
         if self.constructor_prefix == "R":
             return self.date_format
         return _build_roc_date_iso(prefix=self.constructor_prefix)
@@ -1498,7 +1518,13 @@ class Roc(metaclass=LanguageCls):
                     prefix=self.constructor_prefix
                 )
                 tag = f"{self.constructor_prefix}Str "
-            return lambda value: formatter(value).removeprefix(tag)
+
+            @beartype
+            def _format_record(value: dt.datetime) -> str:
+                """Render a native record field without the union tag."""
+                return formatter(value).removeprefix(tag)
+
+            return _format_record
         base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self.datetime_format is type(self.datetime_format).EPOCH:
             return _build_roc_datetime_epoch(prefix=self.constructor_prefix)
@@ -1513,7 +1539,13 @@ class Roc(metaclass=LanguageCls):
         formatter = _build_roc_time_iso(prefix=self.constructor_prefix)
         if self.dict_format is type(self.dict_format).RECORD:
             tag = f"{self.constructor_prefix}Str "
-            return lambda value: formatter(value).removeprefix(tag)
+
+            @beartype
+            def _format_record(value: dt.time) -> str:
+                """Render a native record field without the union tag."""
+                return formatter(value).removeprefix(tag)
+
+            return _format_record
         return formatter
 
     @cached_property
@@ -1542,7 +1574,13 @@ class Roc(metaclass=LanguageCls):
                 base=_ROC_INT_BASE[self.integer_format.name],
             )
             tag = f"{self.constructor_prefix}Int "
-            return lambda value: formatter(value).removeprefix(tag)
+
+            @beartype
+            def _format_record(value: int) -> str:
+                """Render a native record field without the union tag."""
+                return formatter(value).removeprefix(tag)
+
+            return _format_record
         if self.constructor_prefix == "R":
             return self.integer_format
         return _build_roc_integer_formatter(
@@ -1699,7 +1737,7 @@ class Roc(metaclass=LanguageCls):
         module header.
         """
         if self.dict_format is type(self.dict_format).RECORD:
-            return lambda _types, _data: ()
+            return _no_record_body_preamble
         return _build_roc_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,

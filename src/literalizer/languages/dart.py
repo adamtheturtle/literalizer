@@ -482,6 +482,28 @@ else:
 
 
 @beartype
+def _dart_requires_bigint(value: Value, /) -> bool:
+    """Identify integer values that require a runtime BigInt parser."""
+    return (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and not I64_MIN <= value <= I64_MAX
+    )
+
+
+@beartype
+def _dart_is_date(value: Value, /) -> bool:
+    """Identify dates independently of their datetime subclass."""
+    return isinstance(value, dt.date) and not isinstance(value, dt.datetime)
+
+
+@beartype
+def _dart_is_datetime(value: Value, /) -> bool:
+    """Identify datetime values requiring the datetime formatter."""
+    return isinstance(value, dt.datetime)
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Dart(metaclass=LanguageCls):
     """Dart language specification.
@@ -1205,11 +1227,7 @@ class Dart(metaclass=LanguageCls):
             return
         if value_contains(
             data=data,
-            predicate=lambda value: (
-                isinstance(value, int)
-                and not isinstance(value, bool)
-                and not I64_MIN <= value <= I64_MAX
-            ),
+            predicate=_dart_requires_bigint,
         ):
             msg = (
                 "Dart CONST requires a constant-expression initializer, "
@@ -1226,9 +1244,7 @@ class Dart(metaclass=LanguageCls):
         # ``datetime_format`` check below.
         if self.date_format is _date_cls.DART and value_contains(
             data=data,
-            predicate=lambda v: (
-                isinstance(v, dt.date) and not isinstance(v, dt.datetime)
-            ),
+            predicate=_dart_is_date,
         ):
             msg = (
                 "Dart CONST requires a constant-expression initializer, "
@@ -1239,7 +1255,7 @@ class Dart(metaclass=LanguageCls):
             raise IncompatibleFormatsError(msg)
         if self.datetime_format is _datetime_cls.DART and value_contains(
             data=data,
-            predicate=lambda v: isinstance(v, dt.datetime),
+            predicate=_dart_is_datetime,
         ):
             msg = (
                 "Dart CONST requires a constant-expression initializer, "

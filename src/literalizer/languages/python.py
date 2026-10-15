@@ -915,6 +915,12 @@ else:
 
 
 @beartype
+def _not_record_eligible(_data: Value, /) -> bool:
+    """Disable record annotations outside the RECORD strategy."""
+    return False
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Python(metaclass=LanguageCls):
     """Python language specification.
@@ -2252,7 +2258,7 @@ class Python(metaclass=LanguageCls):
         """
         cls = type(self.heterogeneous_strategy)
         if self.heterogeneous_strategy is not cls.RECORD:
-            return lambda _data: False
+            return _not_record_eligible
 
         @beartype
         def _eligible(data: Value, /) -> bool:

@@ -316,10 +316,12 @@ def _resolve_sequence_open(
                 raise NullInCollectionError(msg)
             return _typed_open(items)
 
-        return signature_open(
-            render=_null_guarded,
-            infer=lambda items: collection_signature(_typed_open, items),
-        )
+        @beartype
+        def _signature(items: list[Value], /) -> CollectionSignature:
+            """Retain the typed opener's collection signature."""
+            return collection_signature(_typed_open, items)
+
+        return signature_open(render=_null_guarded, infer=_signature)
     return fmt.sequence_open
 
 
@@ -2012,7 +2014,7 @@ class Scala(metaclass=LanguageCls):
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         if self._json_type_active:
-            return lambda value: format_bytes_hex(value=value)
+            return format_bytes_hex
         return self.bytes_format
 
     @cached_property
