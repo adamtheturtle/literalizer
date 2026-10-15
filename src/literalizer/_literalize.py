@@ -5075,13 +5075,17 @@ def reject_undeclared_assignment(
 ) -> None:
     """Reject an assignment a complete file would leave undeclared.
 
-    An assignment that reads as one of the language's declarations
-    introduces the name itself, so a whole file containing it compiles.
-    Where it reads as none of them, the file names something it never
-    declares (issue #4465).
+    The language retains whether the selected assignment supplies its
+    own declaration, including any annotation the value requires
+    (issue #4465).
     """
     if not isinstance(variable_form, ExistingVariable):
         return
+    validate_new_variable_name(
+        language=language,
+        name=variable_form.name,
+        name_source="ExistingVariable",
+    )
     is_reference_binding = (
         _extract_call_arg_ref_name(
             value=pre_form.data, ref_key=pre_form.active_ref_key
