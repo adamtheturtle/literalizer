@@ -12,6 +12,7 @@ class _PreambleImport(str):
     __slots__ = ()
 
 
+@beartype
 class _PreambleBlock(str):
     """A joined block whose constituent roles remain available."""
 

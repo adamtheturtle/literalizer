@@ -322,6 +322,7 @@ def _record_dicts_in_document_order(
     ordered: list[dict[Scalar, Value]] = []
     seen: set[int] = set()
 
+    @beartype
     def walk(node: Value) -> None:
         """Append record dicts under *node* in document order."""
         match node:
@@ -851,6 +852,7 @@ def _build_derecordized_map_open(
     simply closes over its string.
     """
 
+    @beartype
     def _open() -> str:
         """Return the fixed widened-map opener."""
         return open_str

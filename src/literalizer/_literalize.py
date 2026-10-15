@@ -223,6 +223,7 @@ class _RootMappingTableLanguage(Protocol):
     supports_root_mapping_table: bool
 
 
+@beartype
 class _RootMappingLiteral(str):
     """A root mapping with table entries retained before flattening."""
 
@@ -2244,22 +2245,21 @@ def _collect_sequence_open_overrides(
     """Keep content-derived sequence types consistent through cousins."""
     overrides: dict[int, str] = {}
 
-    def _visit(value: Value) -> None:
-        """Find sibling groups in lists and map values."""
+    pending = [data]
+    while len(pending) > 0:
+        value = pending.pop()
         if isinstance(value, list):
             children = value
         elif isinstance(value, dict):
             children = list(value.values())
         else:
-            return
+            continue
         lists = [child for child in children if _is_value_list(child)]
         _accumulate_sequence_open_overrides(
             lists=lists, spec=spec, out=overrides
         )
-        for child in children:
-            _visit(value=child)
+        pending.extend(reversed(children))
 
-    _visit(value=data)
     return overrides
 
 
@@ -3738,12 +3738,13 @@ def _inference_to_source_container_ids(
     """Map inferred container ids back to corresponding source ids."""
     id_map: dict[int, int] = {}
 
-    def _visit(*, source_item: Value, inferred_item: Value) -> None:
-        """Record corresponding containers and traverse their peers."""
+    pending = [(source, inferred)]
+    while len(pending) > 0:
+        source_item, inferred_item = pending.pop()
         if not isinstance(source_item, (dict, list, set)) or not isinstance(
             inferred_item, (dict, list, set)
         ):
-            return
+            continue
         id_map[id(inferred_item)] = id(source_item)
         if isinstance(source_item, list) and isinstance(inferred_item, list):
             source_children = _source_list_children_for_inference(
@@ -3751,21 +3752,15 @@ def _inference_to_source_container_ids(
                 ref_values=ref_values,
                 ref_key=ref_key,
             )
-            for source_child, inferred_child in zip(
-                source_children, inferred_item, strict=False
-            ):
-                _visit(
-                    source_item=source_child,
-                    inferred_item=inferred_child,
-                )
+            pairs = list(zip(source_children, inferred_item, strict=False))
+            pending.extend(reversed(pairs))
         elif isinstance(source_item, dict) and isinstance(inferred_item, dict):
-            for key in source_item.keys() & inferred_item.keys():
-                _visit(
-                    source_item=source_item[key],
-                    inferred_item=inferred_item[key],
-                )
+            pairs = [
+                (source_item[key], inferred_item[key])
+                for key in source_item.keys() & inferred_item.keys()
+            ]
+            pending.extend(reversed(pairs))
 
-    _visit(source_item=source, inferred_item=inferred)
     return id_map
 
 
@@ -3798,18 +3793,16 @@ def _empty_source_container_ids(value: Value, /) -> frozenset[int]:
     """Return identities of containers that are empty in source data."""
     ids: set[int] = set()
 
-    def _visit(item: Value, /) -> None:
-        """Collect empty containers and traverse populated peers."""
+    pending = [value]
+    while len(pending) > 0:
+        item = pending.pop()
         if isinstance(item, (dict, list, set)) and len(item) == 0:
             ids.add(id(item))
         if isinstance(item, dict):
-            for child in item.values():
-                _visit(child)
+            pending.extend(item.values())
         elif isinstance(item, list):
-            for child in item:
-                _visit(child)
+            pending.extend(item)
 
-    _visit(value)
     return frozenset(ids)
 
 
@@ -5388,6 +5381,7 @@ def _contextual_bound_ref_values(
     """
     contextual: dict[str, Value] = dict(bound_refs)
 
+    @beartype
     def _visit(*, raw: Value, inferred: Value) -> None:
         """Find markers whose resolved siblings require float bindings."""
         raw_children: Iterable[Value]
@@ -5450,6 +5444,7 @@ def _bound_ref_parent_contexts(
     """
     contexts: dict[str, Value] = {}
 
+    @beartype
     def _visit(*, raw: Value, inferred: Value) -> None:
         """Pair each marker with a resolved copy of its parent."""
         if isinstance(raw, list) and isinstance(inferred, list):
@@ -6037,6 +6032,7 @@ def reject_unbound_refs_in_file(
         # written as the name and nothing more.
         return
 
+    @beartype
     def _spelled(name: str, /) -> str:
         """Return *name* as the emitted code spells it."""
         if ref_case is None:
@@ -8334,6 +8330,7 @@ def materialize_value_input(*, value: ValueInput, argument_name: str) -> Value:
     """
     active: set[int] = set()
 
+    @beartype
     def materialize(item: ValueInput) -> Value:
         """Materialize one node while tracking its active ancestors."""
         if not _is_value_mapping(item) and not _is_value_sequence(item):

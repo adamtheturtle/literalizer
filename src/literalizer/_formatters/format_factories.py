@@ -101,6 +101,7 @@ def sequence_format_factory(
     name.  The ``open_template`` is wrapped in ``fixed_open``.
     """
 
+    @beartype
     def _build(default_type: str) -> SequenceFormatConfig:
         """Delegate to module-level implementation."""
         return _build_sequence_format_config(
@@ -177,6 +178,7 @@ def set_format_factory(
         config = factory("Any")
     """
 
+    @beartype
     def _build(default_type: str) -> SetFormatConfig:
         """Delegate to module-level implementation."""
         return _build_set_format_config(
@@ -244,6 +246,7 @@ def dict_format_factory(
     The ``open_template`` is wrapped in ``fixed_open``.
     """
 
+    @beartype
     def _build(
         default_type: str,
         *,
@@ -298,6 +301,7 @@ def ordered_map_format_factory(
     placeholders for the default value type and key type names.
     """
 
+    @beartype
     def _build(
         default_type: str,
         *,
