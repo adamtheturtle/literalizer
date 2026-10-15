@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Go"]
+languages_reason = "Go slice elements must share the map type selected after epoch formatting."
+
+[[variants]]
+axis = "datetime"
