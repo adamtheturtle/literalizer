@@ -11,8 +11,9 @@ from pathlib import Path
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import InputFormat
-from literalizer.languages import Bash
+from literalizer import InputFormat, LanguageCls, literalize_call
+from literalizer.exceptions import InvalidCallTargetError
+from literalizer.languages import Bash, Elm, Hcl, V
 
 from .call_cases import (
     CallCase,
@@ -25,6 +26,68 @@ from .call_variant_cases import CallVariantCase, build_call_variant_cases
 from .case_inputs import CaseInput
 from .golden_checks import cleanup_stale_golden
 from .language_specs import make_golden_path, make_spec
+
+
+def test_manual_scaffold_rejects_declaration_only_target_error(
+    *,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """A valid V fragment must not become an invalid method scaffold."""
+    config = next(
+        config
+        for config in default_call_case_specs()
+        if config.case_dir_name == "call_zig_helper_member_zkv"
+    )
+    spec = make_spec(lang_cls=V)
+    fragment = literalize_call(
+        source="1",
+        input_format=InputFormat.JSON,
+        language=spec,
+        target_function=config.target_function,
+        parameter_names=config.parameter_names,
+        per_element=False,
+    )
+    assert fragment.code == "obj.ZKV(1);"
+    with pytest.raises(expected_exception=InvalidCallTargetError):
+        run_call_golden_case(
+            config=config,
+            spec=spec,
+            lang_cls=V,
+            golden_name="V_call",
+            cases_dir=cases_dir,
+            file_regression=file_regression,
+            version=spec.language_version,
+        )
+
+
+@pytest.mark.parametrize(argnames="lang_cls", argvalues=[Elm, Hcl])
+def test_seeded_scaffold_rejects_immutable_binding(
+    *,
+    lang_cls: LanguageCls,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """A synthetic seed cannot precede a second immutable binding."""
+    config = next(
+        config
+        for config in default_call_case_specs()
+        if config.case_dir_name == "call_binding_existing_seeded"
+    )
+    spec = make_spec(lang_cls=lang_cls)
+    with pytest.raises(
+        expected_exception=pytest.skip.Exception,
+        match="cannot redefine the seeded binding",
+    ):
+        run_call_golden_case(
+            config=config,
+            spec=spec,
+            lang_cls=lang_cls,
+            golden_name=f"{lang_cls.__name__}_call",
+            cases_dir=cases_dir,
+            file_regression=file_regression,
+            version=spec.language_version,
+        )
 
 
 @pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])

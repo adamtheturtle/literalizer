@@ -49,6 +49,12 @@ from literalizer.exceptions import (
 )
 
 
+class RenderedExistingBinding(str):
+    """A fragment emitted in the existing-variable binding form."""
+
+    __slots__ = ()
+
+
 @beartype
 @dataclasses.dataclass(frozen=True)
 class RenderedCallStub:

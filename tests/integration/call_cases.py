@@ -14,6 +14,7 @@ import json
 import re
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
 import pytest
 from beartype import beartype
@@ -129,6 +130,17 @@ _PREAMBLE_STUB_SKIPS: SkipPolicy = SkipPolicy(
 )
 
 
+@runtime_checkable
+class _FeedbackStatementStubLanguage(Protocol):
+    """A producer needing a separate statement overload for feedback."""
+
+    def format_feedback_call_statement_stub(
+        self, parts: Sequence[str], params: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Declare the statement use of a value-returning synthetic callee."""
+        ...
+
+
 @dataclasses.dataclass(frozen=True)
 class CallCase:
     """A parameterized call-style golden-file test case."""
@@ -174,6 +186,7 @@ def _wrapper_capability_skip_reason(
     *,
     lang_cls: literalizer.LanguageCls,
     config: CallCaseSpec,
+    spec: literalizer.Language,
 ) -> str | None:
     """Return why this language cannot host the case's wrapper stub.
 
@@ -191,6 +204,16 @@ def _wrapper_capability_skip_reason(
     check are skipped (no golden) rather than emitting a non-compiling
     fixture.
     """
+    if (
+        isinstance(config.variable_form, literalizer.ExistingVariable)
+        and config.variable_form.name in config.ref_declarations
+        and spec.call_assignment_declares_binding
+        and len(find_redefinition_styles(spec=spec)) == 0
+    ):
+        return (
+            f"{lang_cls.__name__} cannot redefine the seeded binding "
+            f"for the {config.case_dir_name} fixture"
+        )
     if (
         len(config.transform_stub_param_names) > 1
         and not lang_cls.supports_multi_param_call_wrapper_stub
@@ -227,13 +250,16 @@ def _skip_if_wrapper_unsupported(
     *,
     config: CallCaseSpec,
     lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
     golden_path: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Skip (and check any stale golden) when this language cannot host
     the case's wrapper stub.
     """
-    reason = _wrapper_capability_skip_reason(lang_cls=lang_cls, config=config)
+    reason = _wrapper_capability_skip_reason(
+        lang_cls=lang_cls, config=config, spec=spec
+    )
     if reason is not None:
         skip_golden(
             reason=reason,
@@ -404,10 +430,11 @@ def _expected_call_shape_exception(
         )
     ):
         return InvalidCallParameterNameError
+    # Every golden declares a stub, including the manual wrapper path.
     if _invalid_target_grammar(
         lang_cls=lang_cls,
         target=config.target_function,
-        wrapped=config.wrap_in_file or bound_refs_wrap,
+        wrapped=True,
     ) or _is_reserved_call_target(
         lang_cls=lang_cls, target_function=config.target_function
     ):
@@ -609,6 +636,7 @@ class _CallWithDeclarations:
 
     decl_results: list[literalizer.LiteralizeResult]
     result: literalizer.LiteralizeResult
+    seeded_feedback: bool
 
 
 @beartype
@@ -726,7 +754,14 @@ def _run_call_with_declarations(
                 ref_key=config.ref_key,
                 ref_values=effective_ref_values,
             )
-    return _CallWithDeclarations(decl_results=decl_results, result=result)
+    return _CallWithDeclarations(
+        decl_results=decl_results,
+        result=result,
+        seeded_feedback=isinstance(
+            config.variable_form, literalizer.ExistingVariable
+        )
+        and config.followup_source is not None,
+    )
 
 
 @beartype
@@ -734,6 +769,7 @@ def _arg_values_for_stub(
     *,
     source_data: ParsedValue,
     per_element: bool,
+    seeded_feedback: bool,
 ) -> Sequence[ParsedValue]:
     """Return argument rows for stubs, preserving a whole list as
     one argument.
@@ -741,6 +777,10 @@ def _arg_values_for_stub(
     A per-element call always yields a list ``source_data``; the
     ``isinstance`` check narrows the type for the static checker.
     """
+    if seeded_feedback:
+        # The synthetic return carrier becomes an argument in later calls.
+        # Original argument metadata cannot type every use of the callee.
+        return ()
     if per_element and isinstance(source_data, list):
         return source_data
     return [[source_data]]
@@ -776,6 +816,7 @@ def run_call_golden_case(
     _skip_if_wrapper_unsupported(
         config=config,
         lang_cls=lang_cls,
+        spec=spec,
         golden_path=golden_path,
         file_regression=file_regression,
     )
@@ -852,6 +893,20 @@ def run_call_golden_case(
             file_regression=file_regression,
         )
         return
+    if _invalid_target_grammar(
+        lang_cls=lang_cls,
+        target=config.target_function,
+        wrapped=True,
+    ) and not _invalid_target_grammar(
+        lang_cls=lang_cls,
+        target=config.target_function,
+        wrapped=False,
+    ):
+        raise InvalidCallTargetError(
+            language_name=lang_cls.__name__,
+            target_function=config.target_function,
+            reason="cannot name a declaration in the generated file",
+        )
     call_outcome = _run_call_with_declarations(
         config=config,
         spec=spec,
@@ -879,6 +934,7 @@ def run_call_golden_case(
     call_arg_values = _arg_values_for_stub(
         source_data=result.source_data,
         per_element=config.per_element,
+        seeded_feedback=call_outcome.seeded_feedback,
     )
     body_stubs.extend(
         spec.format_call_stub(
@@ -888,6 +944,14 @@ def run_call_golden_case(
             call_arg_values,
         ),
     )
+    if call_outcome.seeded_feedback and isinstance(
+        spec, _FeedbackStatementStubLanguage
+    ):
+        body_stubs.extend(
+            spec.format_feedback_call_statement_stub(
+                target_function_parts, config.parameter_names
+            )
+        )
     class_stubs.extend(
         spec.format_call_class_scope_stub(
             target_function_parts,
