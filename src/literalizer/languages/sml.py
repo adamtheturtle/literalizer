@@ -559,6 +559,18 @@ else:
 
 
 @beartype
+def _sml_call_statement(statement: str, /) -> str:
+    """Bind a call result to the wildcard identifier."""
+    return f"val _ = {statement}"
+
+
+@beartype
+def _sml_record_declaration(name: str, value: str, _data: Value, /) -> str:
+    """Declare an inferred native record."""
+    return f"val {name} = {value}"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Sml(metaclass=LanguageCls):
     """Standard ML language specification.
@@ -1206,7 +1218,7 @@ class Sml(metaclass=LanguageCls):
         """Wrap a call expression as a val binding so it is a valid SML
         declaration inside a structure block.
         """
-        return lambda statement: f"val _ = {statement}"
+        return _sml_call_statement
 
     format_call_target = default_format_call_target
 
@@ -1438,7 +1450,7 @@ class Sml(metaclass=LanguageCls):
     def _sml_decl(self) -> Callable[[str, str, Value], str]:
         """Shared SML variable declaration formatter."""
         if self.dict_format is type(self.dict_format).RECORD:
-            return lambda name, value, _data: f"val {name} = {value}"
+            return _sml_record_declaration
         _sequence_declared_type = (
             self.sequence_format.value.declared_type.replace(
                 "val_t", self.type_name

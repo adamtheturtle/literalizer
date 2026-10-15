@@ -99,6 +99,7 @@ from literalizer._language import (
     identity_call_arg,
     identity_call_ref_identifier,
     identity_constructor_target,
+    identity_known_null_ref_identifier,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_data_preamble,
@@ -1805,7 +1806,7 @@ class Mojo(metaclass=LanguageCls):
     @beartype
     def format_known_null_ref_identifier(self) -> Callable[[str], str]:
         """Copy a known register-trivial null without a transfer."""
-        return lambda name: name
+        return identity_known_null_ref_identifier
 
     @cached_property
     @beartype
