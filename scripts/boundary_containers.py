@@ -70,7 +70,7 @@ class Target:
 
 
 def targets() -> dict[str, Target]:
-    """Return explicit audited variants; no backend capability inference."""
+    """Return explicit audited format variants."""
     return {
         "python": Target(
             language=Python(
@@ -248,7 +248,7 @@ def cases(target: Target) -> Iterator[tuple[str, BoundaryValue]]:
 
 
 def observe(value: BoundaryValue, *, javascript: bool) -> JsonValue:
-    """Build an independent typed semantic expectation for EPOCH format."""
+    """Build typed expectations independently of the renderer."""
     if isinstance(value, dt.datetime):
         value = (value - _EPOCH) // dt.timedelta(seconds=1)
     if isinstance(value, dict):
@@ -346,7 +346,7 @@ def program(*, target: Target, document: dict[str, BoundaryValue]) -> str:
 def execute(
     *, target: Target, source: str, directory: Path
 ) -> subprocess.CompletedProcess[str]:
-    """Compile/run one bounded batch without third-party runtime packages."""
+    """Compile and run one bounded native program."""
     match target.runtime:
         case "python":
             filename, command = "main.py", [sys.executable, "main.py"]
@@ -395,7 +395,7 @@ def execute(
 
 
 def rejection_audit(target: Target) -> None:
-    """Verify documented integer errors both alone and inside each shape."""
+    """Verify documented integer errors in each shape."""
     integers = (
         ()
         if target.runtime == "python"
