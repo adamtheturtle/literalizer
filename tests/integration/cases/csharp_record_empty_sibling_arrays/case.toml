@@ -1,7 +1,7 @@
 schema_version = 1
 owner = "variant"
-languages = ["CSharp"]
-languages_reason = "C# native record arrays require explicit record types for empty siblings."
+languages = ["CSharp", "Cpp"]
+languages_reason = "Native record arrays require explicit record types for empty siblings."
 
 [[variants]]
 axis = "heterogeneous_strategy_record"

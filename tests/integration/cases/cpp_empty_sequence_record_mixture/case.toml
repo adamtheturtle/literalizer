@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Cpp"]
+languages_reason = "An empty vector beside a record remains a distinct variant alternative."
+
+[[variants]]
+axis = "heterogeneous_strategy_record"

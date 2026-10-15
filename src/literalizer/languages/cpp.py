@@ -79,7 +79,6 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     build_record_strategy,
     identity_field_identifier_key,
-    nested_record_sequence_type,
 )
 from literalizer._formatters.tuple_strategy import (
     is_tuple_eligible,
@@ -1146,13 +1145,45 @@ def _collect_unique_cpp_types(
 
 
 @beartype
+def _cpp_nested_record_sequence_type(
+    *,
+    value: Value,
+    record_name_for_value: Callable[[ValueInput], str | None],
+) -> tuple[int, str] | None:
+    """Resolve uniform record vectors while borrowing types for
+    empties.
+    """
+    name = record_name_for_value(value)
+    if name is not None:
+        return (0, name)
+    if not isinstance(value, list) or len(value) == 0:
+        return None
+    children = {
+        _cpp_nested_record_sequence_type(
+            value=item, record_name_for_value=record_name_for_value
+        )
+        for item in value
+        if item != []
+    }
+    if len(children) != 1:
+        return None
+    (child,) = children
+    if child is None:
+        return None
+    depth, name = child
+    if depth == 0 and any(item == [] for item in value):
+        return None
+    return (depth + 1, name)
+
+
+@beartype
 def _infer_cpp_collection_element(
     *, items: list[Value], type_ctx: _CppTypeCtx
 ) -> type | ListType | DictType | None:
     """Infer a homogeneous type unless tuple rendering needs per-item
     types.
     """
-    nested_record_type = nested_record_sequence_type(
+    nested_record_type = _cpp_nested_record_sequence_type(
         value=items, record_name_for_value=type_ctx.record_name_for_value
     )
     has_record_item = nested_record_type is not None
@@ -1188,6 +1219,14 @@ def _compute_element_type_for_items(
     """
     if len(items) == 0:
         return _cpp_owned_atomic_type("std::nullptr_t")
+    record_type = _cpp_nested_record_sequence_type(
+        value=items, record_name_for_value=type_ctx.record_name_for_value
+    )
+    if not type_ctx.sequence_is_array and record_type is not None:
+        depth, inner = record_type
+        for _ in range(depth - 1):
+            inner = type_ctx.sequence_type(inner=inner, length=0)
+        return inner
     element_type = _infer_cpp_collection_element(
         items=items, type_ctx=type_ctx
     )
@@ -1231,9 +1270,10 @@ def _compute_element_type_for_items(
         type_ctx=type_ctx,
     ):
         case [single]:
-            return single
+            result = single
         case types:
-            return type_ctx.variant_type(types)
+            result = type_ctx.variant_type(types)
+    return result
 
 
 @beartype
@@ -4734,7 +4774,7 @@ class Cpp(metaclass=LanguageCls):
                         return record_open
                     return base_open(base_items)
                 return "std::vector{"
-            nested_type = nested_record_sequence_type(
+            nested_type = _cpp_nested_record_sequence_type(
                 value=items,
                 record_name_for_value=record_name_for_value,
             )
@@ -4753,68 +4793,37 @@ class Cpp(metaclass=LanguageCls):
             """Delegate to record-aware target inference."""
             return self._record_sequence_signature(
                 items,
-                record_rendering_active=record_rendering_active,
                 base_open=base_open,
                 record_name_for_value=record_name_for_value,
             )
 
         return signature_open(render=_open, infer=_signature)
 
+    @staticmethod
     def _record_sequence_signature(
-        self,
         items: list[Value],
         /,
         *,
-        record_rendering_active: bool,
         base_open: Callable[[list[Value]], str],
         record_name_for_value: Callable[[ValueInput], str | None],
     ) -> CollectionSignature:
         """Keep record deduction separate from ordinary inferred types."""
-        original_items = items
-        if self.language_version is not self.version_formats.CPP14:
-            if (
-                _all_record_shaped(items)
-                or nested_record_sequence_type(
-                    value=items, record_name_for_value=record_name_for_value
-                )
-                is not None
-            ):
-                return CollectionSignature(
-                    type_key="deduced-record-vector",
-                    arity=None,
-                    arity_decision=False,
-                    fallback_decision=False,
-                    narrowing_decision=True,
-                    uses_fallback_decision=False,
-                )
-            return collection_signature(base_open, original_items)
-        type_name = None
-        if _all_record_shaped(items):
-            type_name = _cpp14_record_list_type(
-                items=items,
-                record_shape_names=self.record_shape_names,
-                record_rendering_active=record_rendering_active,
-                record_name_for_value=record_name_for_value,
-            )
-        else:
-            nested_type = nested_record_sequence_type(
+        if (
+            _all_record_shaped(items)
+            or _cpp_nested_record_sequence_type(
                 value=items, record_name_for_value=record_name_for_value
             )
-            if nested_type is not None:
-                depth, name = nested_type
-                type_name = name
-                for _ in range(depth):
-                    type_name = f"std::vector<{type_name}>"
-        if type_name is not None:
+            is not None
+        ):
             return CollectionSignature(
-                type_key=type_name,
+                type_key="deduced-record-vector",
                 arity=None,
                 arity_decision=False,
                 fallback_decision=False,
                 narrowing_decision=True,
                 uses_fallback_decision=False,
             )
-        return collection_signature(base_open, original_items)
+        return collection_signature(base_open, items)
 
     @cached_property
     @beartype
