@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import assert_never
 
 import json5_document
+import jsonc_document
 from beartype import beartype
 from pydantic import TypeAdapter
 from ruamel.yaml import YAML
@@ -168,9 +169,9 @@ def _load_case_source(
     match input_format:
         case literalizer.InputFormat.JSON:
             return json.loads(s=source)
-        case literalizer.InputFormat.JSONC | literalizer.InputFormat.JSON5:
-            # JSONC fixtures are valid JSON5. Rendering exercises the
-            # stricter JSONC parser through the public API separately.
+        case literalizer.InputFormat.JSONC:
+            return jsonc_document.loads(source=source)
+        case literalizer.InputFormat.JSON5:
             return json5_document.loads(source=source)
         case literalizer.InputFormat.YAML:
             # ``safe`` (not round-trip): yields plain ``dict``/``list``/
