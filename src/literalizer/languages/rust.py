@@ -124,6 +124,7 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
+    empty_record_shape_names,
     identity_call_arg,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -3142,6 +3143,12 @@ else:
 
 
 @beartype
+def _empty_container_type_hints() -> MappingProxyType[EmptyContainerPath, str]:
+    """Create the immutable default for empty-container type overrides."""
+    return MappingProxyType[EmptyContainerPath, str](mapping={})
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Rust(metaclass=LanguageCls):
     """Rust language specification.
@@ -4140,16 +4147,12 @@ class Rust(metaclass=LanguageCls):
     heterogeneous_value_enum_name: str = "Value"
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
-        default_factory=lambda: MappingProxyType[frozenset[str], str](
-            mapping={}
-        ),
+        default_factory=empty_record_shape_names,
         hash=False,
     )
     empty_container_type_hints: Mapping[EmptyContainerPath, str] = (
         dataclasses.field(
-            default_factory=lambda: MappingProxyType[EmptyContainerPath, str](
-                mapping={}
-            ),
+            default_factory=_empty_container_type_hints,
             hash=False,
         )
     )

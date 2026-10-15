@@ -4216,3 +4216,9 @@ def requires_declared_binding(self: Language, _data: Value, /) -> bool:
     """
     del self
     return False
+
+
+@beartype
+def empty_record_shape_names() -> MappingProxyType[frozenset[str], str]:
+    """Create the immutable default for custom record shape names."""
+    return MappingProxyType[frozenset[str], str](mapping={})

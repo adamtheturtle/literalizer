@@ -134,6 +134,7 @@ from literalizer._language import (
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
     default_wrap_combined_in_file,
+    empty_record_shape_names,
     identity_call_arg,
     new_constructor_target,
     no_call_binding_body_preamble,
@@ -1307,9 +1308,7 @@ class Scala(metaclass=LanguageCls):
     )
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
-        default_factory=lambda: MappingProxyType[frozenset[str], str](
-            mapping={}
-        ),
+        default_factory=empty_record_shape_names,
         hash=False,
     )
     # Keep in sync with the `-S` flag passed to `scala-cli run` in
