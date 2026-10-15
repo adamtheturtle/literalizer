@@ -226,6 +226,14 @@ def _reject_incompatible_nested_sibling_lists(data: Value, /) -> None:
 
 
 @beartype
+def _rust_narrowed_empty_vec(_siblings: Sequence[list[Value]]) -> str:
+    """Let Rust infer an empty vector from populated siblings or
+    cousins.
+    """
+    return "Vec::new()"
+
+
+@beartype
 def _reject_float_collection_keys(data: Value) -> None:
     """Reject floats requiring unavailable Rust
     equality, hashing, and ordering traits.
@@ -4609,9 +4617,14 @@ class Rust(metaclass=LanguageCls):
                 declared_type=(effective_declared_type),
                 narrowed_empty_form=None,
             )
-        return self.sequence_format(
+        config = self.sequence_format(
             default_type=self.default_sequence_element_type,
         )
+        if self.sequence_format is type(self.sequence_format).VEC:
+            return dataclasses.replace(
+                config, narrowed_empty_form=_rust_narrowed_empty_vec
+            )
+        return config
 
     @cached_property
     def set_format_config(self) -> SetFormatConfig:

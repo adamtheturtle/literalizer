@@ -1,7 +1,7 @@
 schema_version = 1
 # Empty positional siblings must borrow the populated sibling's element type.
-languages = ["Cpp"]
-languages_reason = "This regression exercises C++ positional vector type inference; other backends do not uniformly support the nested empty/non-empty sibling shape."
+languages = ["Cpp", "Rust"]
+languages_reason = "This regression exercises C++ positional vector type inference; other backends do not uniformly support the nested empty/non-empty sibling shape. Rust vectors infer these empty element types from their populated siblings."
 suites = ["base", "combined"]
 
 [base_context]

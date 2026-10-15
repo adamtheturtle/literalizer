@@ -1,6 +1,6 @@
 schema_version = 1
-languages = ["Cpp", "V"]
-languages_reason = "C++ and V nested vector types must preserve an all-empty positional slot while borrowing a populated cousin type for another slot."
+languages = ["Cpp", "V", "Rust"]
+languages_reason = "C++ and V nested vector types must preserve an all-empty positional slot while borrowing a populated cousin type for another slot. Rust vectors infer these empty element types from their populated siblings."
 suites = ["base", "combined"]
 
 [base_context]
