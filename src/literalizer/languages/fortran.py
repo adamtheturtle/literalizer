@@ -86,6 +86,7 @@ from literalizer._language import (
     no_leading_preamble,
     no_validate_spec_for_data,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._types import Value
 
@@ -1577,6 +1578,10 @@ class Fortran(metaclass=LanguageCls):
         return _build_format_variable_declaration(
             format_entry=self._format_entry,
         )
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(

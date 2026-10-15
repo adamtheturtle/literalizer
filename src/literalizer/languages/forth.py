@@ -58,6 +58,7 @@ from literalizer._language import (
     TrailingCommaConfig,
     VariantMetadata,
     body_preamble_from_scalars,
+    declares_binding,
     default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier,
@@ -892,6 +893,10 @@ class Forth(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return _build_forth_declaration(format_value=self._value_formatter)
+
+    assignment_declares_binding = declares_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = True
 
     @cached_property
     def format_variable_assignment(

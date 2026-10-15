@@ -5066,29 +5066,15 @@ def _validate_ref_output_name(
         raise RefOutputCollisionError(name=variable_form.name)
 
 
-@beartype
-def _declaration_spellings(
-    *,
-    language: Language,
-    render: Callable[[Language], str],
-) -> set[str]:
-    """Return the declaration text each declaration style would give.
+@runtime_checkable
+class _SelfContainedAssignmentValidationLanguage(Protocol):
+    """A producer with additional complete-file binding preconditions."""
 
-    An assignment declares the name it binds when it reads as one of
-    these: F# ``let mutable v = ...`` and ``let v = ...`` are different
-    styles of the same declaration, and the second is what the
-    assignment form emits, so it stands on its own (issue #4465).
-    """
-    styles = language.declaration_styles
-    spellings: set[str] = set()
-    for style in styles:
-        try:
-            styled = dataclasses.replace(language, declaration_style=style)
-        except LiteralizerError:
-            # A style the rest of the spec rules out spells nothing.
-            continue
-        spellings.add(render(styled))
-    return spellings
+    def validate_self_contained_assignment(
+        self, name: str, data: Value, /
+    ) -> None:
+        """Validate an existing binding before its declaration requirement."""
+        ...
 
 
 @beartype
@@ -5100,52 +5086,30 @@ def reject_undeclared_assignment(
 ) -> None:
     """Reject an assignment a complete file would leave undeclared.
 
-    An assignment that reads as one of the language's declarations
-    introduces the name itself, so a whole file containing it compiles.
-    Where it reads as none of them, the file names something it never
-    declares (issue #4465).
+    The language retains whether the selected assignment supplies its
+    own declaration, including any annotation the value requires
+    (issue #4465).
     """
     if not isinstance(variable_form, ExistingVariable):
         return
-    assignment = _apply_variable_wrapper(
-        result=pre_form.result,
+    validate_new_variable_name(
         language=language,
-        data=_declaration_data(pre_form=pre_form, language=language),
-        variable_form=variable_form,
-        line_prefix=pre_form.line_prefix,
-        is_call_binding=False,
-        is_reference_binding=_extract_call_arg_ref_name(
+        name=variable_form.name,
+        name_source="ExistingVariable",
+    )
+    is_reference_binding = (
+        _extract_call_arg_ref_name(
             value=pre_form.data, ref_key=pre_form.active_ref_key
         )
-        is not None,
-        inferred_empty_sequence=False,
-        initializer_type=pre_form.initializer_type,
+        is not None
     )
-
-    def _render(styled: Language) -> str:
-        """Return the declaration *styled* would emit for this value."""
-        return _apply_variable_wrapper(
-            result=pre_form.result,
-            language=styled,
-            data=_declaration_data(pre_form=pre_form, language=styled),
-            variable_form=NewVariable(
-                name=variable_form.name,
-                modifiers=frozenset(),
-            ),
-            line_prefix=pre_form.line_prefix,
-            is_call_binding=False,
-            is_reference_binding=_extract_call_arg_ref_name(
-                value=pre_form.data, ref_key=pre_form.active_ref_key
-            )
-            is not None,
-            inferred_empty_sequence=False,
-            initializer_type=pre_form.initializer_type,
-        )
-
-    if assignment not in _declaration_spellings(
-        language=language,
-        render=_render,
-    ):
+    data = _declaration_data(pre_form=pre_form, language=language)
+    if isinstance(language, _SelfContainedAssignmentValidationLanguage):
+        language.validate_self_contained_assignment(variable_form.name, data)
+    declares_binding = language.assignment_declares_binding
+    if is_reference_binding:
+        declares_binding = language.reference_assignment_declares_binding
+    if not declares_binding(data):
         raise ExistingVariableNotSelfContainedError(
             language_name=type(language).__name__
         )
@@ -7462,10 +7426,6 @@ def _validate_parameter_count(
         )
 
 
-_CALL_BINDING_PROBE = "probe"
-"""A stand-in call result, used only to compare binding spellings."""
-
-
 @beartype
 def _validate_call_variable_form(
     *,
@@ -7513,33 +7473,14 @@ def _validate_call_variable_form(
                 "so the call result cannot be bound to a variable"
             ),
         )
-    if wrap_in_file and isinstance(variable_form, ExistingVariable):
-        # A whole file that assigns to a name it never declares does not
-        # compile, the same rule ``literalize`` applies to a value
-        # binding (issue #4468).  An assignment reading as one of the
-        # language's declarations introduces the name itself.
-        assignment = language.format_call_variable_assignment(
-            variable_form.name,
-            _CALL_BINDING_PROBE,
-            None,
+    if (
+        wrap_in_file
+        and isinstance(variable_form, ExistingVariable)
+        and not language.call_assignment_declares_binding
+    ):
+        raise ExistingVariableNotSelfContainedError(
+            language_name=type(language).__name__
         )
-
-        def _render_call_declaration(styled: Language) -> str:
-            """Return the call-binding declaration *styled* would emit."""
-            return styled.format_call_variable_declaration(
-                variable_form.name,
-                _CALL_BINDING_PROBE,
-                None,
-                frozenset(),
-            )
-
-        if assignment not in _declaration_spellings(
-            language=language,
-            render=_render_call_declaration,
-        ):
-            raise ExistingVariableNotSelfContainedError(
-                language_name=type(language).__name__
-            )
 
 
 _CONSTRUCTOR_CLASS_NAME = re.compile(pattern=r"[A-Z][A-Za-z0-9_]*")

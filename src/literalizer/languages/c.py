@@ -124,6 +124,7 @@ from literalizer._language import (
     no_leading_preamble,
     no_validate_call_arg,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._statements import split_trailing_line_comments
 from literalizer._types import OrderedMap, Scalar, Value
@@ -2243,6 +2244,10 @@ class C(metaclass=LanguageCls):
             return f"CVal {name} = {wrapped};"
 
         return _format_decl
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(

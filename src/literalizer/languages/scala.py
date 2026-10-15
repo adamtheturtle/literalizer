@@ -142,6 +142,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
@@ -1397,6 +1398,10 @@ class Scala(metaclass=LanguageCls):
         if self._json_type_active:
             return _scala_circe_wrap_value
         return passthrough_set_entry
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

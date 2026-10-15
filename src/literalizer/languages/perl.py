@@ -104,6 +104,7 @@ from literalizer._language import (
     no_format_integer_beyond_i64,
     no_format_integer_widened,
     no_leading_preamble,
+    requires_declared_binding,
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop_static,
 )
@@ -1148,6 +1149,10 @@ class Perl(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
         return self.declaration_style.value.formatter
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(

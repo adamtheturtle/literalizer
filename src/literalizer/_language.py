@@ -2523,6 +2523,27 @@ class Language(Protocol):
         """
         ...
 
+    def assignment_declares_binding(self, data: Value, /) -> bool:
+        """Whether an existing literal binding supplies its own
+        declaration.
+
+        The decision includes annotation requirements selected from *data*.
+        """
+        ...
+
+    def reference_assignment_declares_binding(self, data: Value, /) -> bool:
+        """Whether an existing reference binding supplies its
+        declaration.
+        """
+        ...
+
+    @property
+    def call_assignment_declares_binding(self) -> bool:
+        """Whether an existing call-result binding declares its own
+        name.
+        """
+        ...
+
     @property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable.
@@ -4155,3 +4176,19 @@ def decode_file_sections(payload: str, /) -> tuple[FileSection, ...]:
     sectioned = payload[payload.index(_FILE_SECTION_OPEN) :]
     chunks = sectioned.split(sep=f"\n{_FILE_SECTION_OPEN}")
     return tuple(_decode_one_section(chunk) for chunk in chunks)
+
+
+@beartype
+def declares_binding(self: Language, _data: Value, /) -> bool:
+    """An existing-variable form supplies its own binding declaration."""
+    del self
+    return True
+
+
+@beartype
+def requires_declared_binding(self: Language, _data: Value, /) -> bool:
+    """An existing-variable form requires a separately declared
+    binding.
+    """
+    del self
+    return False

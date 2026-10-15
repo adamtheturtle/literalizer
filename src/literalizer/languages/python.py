@@ -1743,6 +1743,21 @@ class Python(metaclass=LanguageCls):
         """Format a set entry."""
         return passthrough_set_entry
 
+    def assignment_declares_binding(self, data: Value, /) -> bool:
+        """Retain whether the configured literal assignment declares a
+        name.
+        """
+        return (
+            self.variable_type_hints
+            is not self.variable_type_hints_formats.ALWAYS
+            and not _needs_type_annotation(
+                data=data, record_eligible=self._record_eligible_for_annotation
+            )
+        )
+
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = True
+
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""

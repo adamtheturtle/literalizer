@@ -122,6 +122,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._statements import (
     split_statements,
@@ -1431,6 +1432,10 @@ class Zig(metaclass=LanguageCls):
         if self._json_type_active:
             return passthrough_sequence_entry
         return self._format_entry
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

@@ -1722,6 +1722,22 @@ class PureScript(metaclass=LanguageCls):
         """Format a set entry."""
         return passthrough_set_entry
 
+    def assignment_declares_binding(self, _data: Value, /) -> bool:
+        """Retain whether the configured literal assignment declares a
+        name.
+        """
+        return (
+            self._json_type_active
+            or self.dict_format is type(self.dict_format).RECORD
+        )
+
+    reference_assignment_declares_binding = assignment_declares_binding
+
+    @property
+    def call_assignment_declares_binding(self) -> bool:
+        """JSON assignments carry a literal-only annotation and parser."""
+        return not self._json_type_active
+
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""

@@ -132,6 +132,7 @@ from literalizer._language import (
     no_empty_container_literal_overrides,
     no_format_integer_widened,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._types import CallPreambleData, OrderedMap, Scalar, Value
 from literalizer.exceptions import (
@@ -4194,6 +4195,10 @@ class Rust(metaclass=LanguageCls):
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

@@ -129,6 +129,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    requires_declared_binding,
 )
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
@@ -1781,6 +1782,10 @@ class Go(metaclass=LanguageCls):
         return _nil_safe_declaration(
             base_formatter=self.declaration_style.value.formatter,
         )
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(

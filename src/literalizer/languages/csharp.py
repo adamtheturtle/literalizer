@@ -137,6 +137,7 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     prepend_body_preamble,
+    requires_declared_binding,
     wrap_in_file_noop,
 )
 from literalizer._statements import split_trailing_line_comments
@@ -1706,6 +1707,10 @@ class CSharp(metaclass=LanguageCls):
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

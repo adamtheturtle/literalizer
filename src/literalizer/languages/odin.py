@@ -120,6 +120,7 @@ from literalizer._language import (
     no_leading_preamble,
     no_validate_call_arg,
     prepend_body_preamble,
+    requires_declared_binding,
     unsupported_wrap_combined_in_file_static,
 )
 from literalizer._types import OrderedMap, Scalar, Value
@@ -1247,6 +1248,10 @@ class Odin(metaclass=LanguageCls):
         if self._json_type_active:
             return passthrough_sequence_entry
         return _format_set_entry
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:

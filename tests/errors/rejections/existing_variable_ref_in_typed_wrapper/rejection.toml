@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Complete-file root references do not declare an existing output binding."
+exceptions = ["ExistingVariableNotSelfContainedError"]
+languages = ["C", "Cpp", "Nim", "Zig"]
+
+[call]
+api = "literalize"
+sources = ['{"$ref": "seed"}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "existing"
+variable_name = "my_data"
+ref_key = "$ref"
+bound_refs = { seed = 42 }

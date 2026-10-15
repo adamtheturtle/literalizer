@@ -90,6 +90,7 @@ from literalizer._language import (
     no_leading_preamble,
     no_pygments_name,
     no_validate_spec_for_data,
+    requires_declared_binding,
     unsupported_wrap_combined_in_file_static,
 )
 from literalizer._types import Value
@@ -700,6 +701,10 @@ class Occam(metaclass=LanguageCls):
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return self._entry_formatter
+
+    assignment_declares_binding = requires_declared_binding
+    reference_assignment_declares_binding = assignment_declares_binding
+    call_assignment_declares_binding = False
 
     @cached_property
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
