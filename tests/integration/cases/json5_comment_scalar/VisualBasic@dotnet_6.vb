@@ -1,7 +1,7 @@
 Module Check
-    Dim my_data = ' scalar heading
+    ' scalar heading
     ' second heading line
-    42  ' scalar inline
+    Dim my_data = 42  ' scalar inline
     ' inline continuation
     ' scalar trailing
 End Module

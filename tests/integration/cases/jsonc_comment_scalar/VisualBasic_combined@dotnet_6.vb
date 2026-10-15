@@ -1,16 +1,16 @@
 Module Check
     Sub _declaration()
-        Dim my_data = ' scalar heading
+        ' scalar heading
         ' second heading line
-        42  ' scalar inline
+        Dim my_data = 42  ' scalar inline
         ' inline continuation
         ' scalar trailing
     End Sub
     Sub _assignment()
         Dim my_data As Object
-        my_data = ' scalar heading
+        ' scalar heading
         ' second heading line
-        42  ' scalar inline
+        my_data = 42  ' scalar inline
         ' inline continuation
         ' scalar trailing
     End Sub

@@ -1,4 +1,4 @@
 Module Check
-    Dim my_data = ' note
-    42
+    ' note
+    Dim my_data = 42
 End Module

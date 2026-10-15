@@ -1,4 +1,4 @@
 Module Check
-    Dim my_data = ' before
-    "plain"  ' inline
+    ' before
+    Dim my_data = "plain"  ' inline
 End Module
