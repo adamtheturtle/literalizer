@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "Native F# lists cannot contain unrelated scalar types."
+exceptions = ["HeterogeneousScalarCollectionError"]
+languages = ["FSharp"]
+
+[call]
+api = "literalize"
+sources = [
+    '[1, "hello"]',
+]
+input_format = "json"
+variable_form = "none"
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "ANONYMOUS_RECORD"},
+]

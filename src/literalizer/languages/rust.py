@@ -504,6 +504,7 @@ def _make_rust_integer_suffix_formatter(
     narrowest type that holds *value*.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _apply_rust_integer_suffix(value=value, base=base)
@@ -522,6 +523,7 @@ def _make_rust_i128_formatter(
     element agrees with the container type rustc infers.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Format *value* as ``<base>i128``."""
         return f"{base(value)}i128"
@@ -671,6 +673,7 @@ def _rust_type_annotation(
     since Rust has no const-expression dict format.
     """
 
+    @beartype
     def recurse(element: Value) -> str:
         """Delegate to module-level implementation."""
         return _rust_type_annotation(
@@ -762,6 +765,7 @@ def _format_typed_declaration(
     annotation.
     """
 
+    @beartype
     def _reject_dict(_key_type: str, _value_type: str) -> str:
         """Reject dict data for ``CONST`` / ``STATIC``.
 
@@ -775,6 +779,7 @@ def _format_typed_declaration(
         )
         raise IncompatibleFormatsError(msg)
 
+    @beartype
     def _reject_set(_element_type: str) -> str:
         """Reject set data for ``CONST`` / ``STATIC``.
 
@@ -1098,6 +1103,7 @@ def _rust_value_scalar_wrapper(
     ``{enum_name}::{Variant}`` for a unit variant such as ``Null``).
     """
 
+    @beartype
     def _wrap(raw_value: Scalar, formatted: str) -> str:
         """Wrap a scalar in ``{enum_name}::{Variant}(formatted)``."""
         signature = _heterogeneous_variant_for_scalar(
@@ -1202,6 +1208,7 @@ def _rust_wrapped_container_kinds(
     has_populated_list = False
     has_populated_map = False
 
+    @beartype
     def _visit(item: Value) -> None:
         """Record which empty-container kinds *item* wraps."""
         nonlocal has_list, has_map, has_populated_list, has_populated_map
@@ -1243,6 +1250,7 @@ def _rust_container_wrapper(
     ``HashMap<&'static str, Value>``.
     """
 
+    @beartype
     def _wrap(raw_value: Value, formatted_value: str) -> str:
         """Wrap a container as ``{enum_name}::{List,Map}(...)``."""
         match raw_value:
@@ -1265,6 +1273,7 @@ def _rust_values_by_path(*, data: Value) -> dict[EmptyContainerPath, Value]:
     """Return *data* and its descendants indexed by input path."""
     by_path: dict[EmptyContainerPath, Value] = {}
 
+    @beartype
     def _visit(value: Value, path: EmptyContainerPath) -> None:
         """Index *value* and its descendants by their input paths."""
         by_path[path] = value
@@ -1318,6 +1327,7 @@ def _rust_empty_container_literal_override_hook(
     configuration.
     """
 
+    @beartype
     def _overrides(data: Value, /) -> Mapping[int, str]:
         """Resolve typed empty-container literals in *data*."""
         return _rust_empty_container_literal_overrides(
@@ -1393,6 +1403,7 @@ def _rust_tuple_nested_vec_empty_override_hook(
 ) -> Callable[[Value], Mapping[int, str]]:
     """Build the nested-tuple empty-``Vec`` inference hook."""
 
+    @beartype
     def _overrides(data: Value, /) -> Mapping[int, str]:
         """Combine configured and sibling-inferred empty types."""
         overrides = dict(
@@ -1435,6 +1446,7 @@ def _build_tagged_enum_behavior(
 ) -> HeterogeneousBehavior:
     """TAGGED_ENUM strategy: wrap scalars and skip scalar checks."""
 
+    @beartype
     def _compute(data: Value) -> frozenset[int]:
         """Return container ids whose children should wrap."""
         return _tagged_enum_wrap_ids(data)
@@ -1539,6 +1551,7 @@ def _build_tagged_enum_preamble(
 ) -> Callable[[Value], tuple[str, ...]]:
     """TAGGED_ENUM strategy: emit a minimal ``enum`` declaration."""
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build the tagged-enum declaration for *data*."""
         values: tuple[Value, ...]
@@ -1777,6 +1790,7 @@ def _rust_record_wrap_ids_hook(
     narrow-type cache the scalar wrapper reads (issue #3608).
     """
 
+    @beartype
     def _compute_wrap_ids(data: Value) -> frozenset[int]:
         """Return the widened-map ids, refreshing the narrow-type
         cache.
@@ -1812,6 +1826,7 @@ def _rust_narrowing_scalar_wrapper(
     """
     base_wrap_scalar = _rust_value_scalar_wrapper(params)
 
+    @beartype
     def _wrap_scalar(raw_value: Scalar, formatted: str) -> str:
         """Construct the value-enum variant for a widened map."""
         if narrowing.value_type is not None:
@@ -2084,6 +2099,7 @@ def _record_field_type_signature(
     struct.
     """
 
+    @beartype
     def recurse(*, item: Value) -> Hashable:
         """Return the signature of one nested element of *value*."""
         return _record_field_type_signature(
@@ -2136,6 +2152,7 @@ def _record_dicts_in_document_order(
     ordered: list[dict[Scalar, Value]] = []
     seen: set[int] = set()
 
+    @beartype
     def walk(node: Value) -> None:
         """Append record dicts under *node* in document order."""
         match node:
@@ -2476,6 +2493,7 @@ def _record_behavior_impl(
     name_cache: dict[RecordShape, str] = {}
     id_to_shape: dict[int, RecordShape] = {}
 
+    @beartype
     def _alias_ids(id_map: Mapping[int, int], /) -> None:
         """Reuse resolved record shapes for their source containers."""
         id_to_shape.update(
@@ -2486,6 +2504,7 @@ def _record_behavior_impl(
             }
         )
 
+    @beartype
     def _compute_shapes(data: Value) -> Mapping[int, RecordShape]:
         """Walk *data* and return ``id(dict)`` -> :class:`RecordShape`.
 
@@ -2522,6 +2541,7 @@ def _record_behavior_impl(
         )
         return shapes_by_id
 
+    @beartype
     def _render_literal(
         value: "dict[Scalar, Value]",
         fields: Mapping[str, str],
@@ -2692,6 +2712,7 @@ def _rust_tuple_list_ids(data: Value, /) -> frozenset[int]:
     """
     found = set(collect_tuple_list_ids(data=data))
 
+    @beartype
     def _walk(value: Value, *, inside_uniform_list: bool) -> None:
         """Collect mixed scalar/collection lists recursively."""
         match value:
@@ -2813,6 +2834,7 @@ def _record_preamble_impl(
     struct blocks are the entire preamble either way.
     """
 
+    @beartype
     def _preamble(data: Value, /) -> tuple[str, ...]:
         """Build struct declarations for every record shape in *data*."""
         raw_shapes_by_id = collect_record_shapes(data=data)
@@ -3566,6 +3588,7 @@ class Rust(metaclass=LanguageCls):
             cls = type(self)
             if self is cls.LAZY_STATIC:
 
+                @beartype
                 def _lazy_formatter(
                     name: str,
                     value: str,
@@ -3586,6 +3609,7 @@ class Rust(metaclass=LanguageCls):
                 cls.LET_MUT: "let mut",
             }[self]
 
+            @beartype
             def _local_formatter(
                 name: str,
                 value: str,
@@ -3629,6 +3653,7 @@ class Rust(metaclass=LanguageCls):
             cls = type(self)
             if self is cls.LAZY_STATIC:
 
+                @beartype
                 def _lazy_formatter(
                     name: str,
                     value: str,
@@ -3669,6 +3694,7 @@ class Rust(metaclass=LanguageCls):
                 return config.formatter
             keyword = self.name.lower()
 
+            @beartype
             def _formatter(
                 name: str,
                 value: str,
@@ -4008,12 +4034,14 @@ class Rust(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def leading_preamble(self) -> LeadingPreamble:
         """Raise the macro recursion limit before every other file
         item.
         """
         enabled = self._json_type_active
 
+        @beartype
         def _recursion_limit(
             _data: Value, /, *, has_variable_declaration: bool
         ) -> tuple[str, ...]:
@@ -4156,11 +4184,13 @@ class Rust(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether Rust should render via ``serde_json::Value``."""
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Null literal for the active Rust representation."""
         if self._json_type_active:
@@ -4168,6 +4198,7 @@ class Rust(metaclass=LanguageCls):
         return self._default_null_literal
 
     @cached_property
+    @beartype
     def static_preamble(self) -> Sequence[str]:
         """Static preamble lines emitted once per file.
 
@@ -4180,6 +4211,7 @@ class Rust(metaclass=LanguageCls):
         return ()
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument."""
         if self._json_type_active:
@@ -4187,11 +4219,13 @@ class Rust(metaclass=LanguageCls):
         return identity_call_arg
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Format a sequence entry."""
         return passthrough_sequence_entry
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Format a set entry."""
         return passthrough_set_entry
@@ -4201,6 +4235,7 @@ class Rust(metaclass=LanguageCls):
     call_assignment_declares_binding = False
 
     @cached_property
+    @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
         """Format an assignment to an existing variable."""
         if self._json_type_active:
@@ -4208,6 +4243,7 @@ class Rust(metaclass=LanguageCls):
         return variable_formatter(template="{name} = {value};")
 
     @cached_property
+    @beartype
     def _heterogeneous_variant_date_type(self) -> str:
         """Rust type used for :class:`datetime.date` variant payloads."""
         if self.date_format.value.type_produced is str:
@@ -4215,6 +4251,7 @@ class Rust(metaclass=LanguageCls):
         return "NaiveDate"
 
     @cached_property
+    @beartype
     def _heterogeneous_variant_datetime_type(self) -> str:
         """Rust type used for :class:`datetime.datetime` variant
         payloads.
@@ -4227,6 +4264,7 @@ class Rust(metaclass=LanguageCls):
         return "NaiveDateTime"
 
     @cached_property
+    @beartype
     def _strategy_params(self) -> _StrategyParams:
         """Bundle of arguments handed to the active strategy's
         builders.
@@ -4249,6 +4287,7 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the behavior for the chosen heterogeneous strategy."""
         if self._json_type_active:
@@ -4290,6 +4329,7 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
@@ -4313,6 +4353,7 @@ class Rust(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -4394,6 +4435,7 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_reused_literal_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -4401,6 +4443,7 @@ class Rust(metaclass=LanguageCls):
         references.
         """
 
+        @beartype
         def _format(name: str, value: Value | None, /) -> str:
             """Keep a reused binding available after this expression."""
             if self._reference_value_is_copy(value):
@@ -4410,6 +4453,7 @@ class Rust(metaclass=LanguageCls):
         return _format
 
     @cached_property
+    @beartype
     def format_call_arg_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
@@ -4538,6 +4582,7 @@ class Rust(metaclass=LanguageCls):
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
     @cached_property
+    @beartype
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language.
 
@@ -4602,6 +4647,7 @@ class Rust(metaclass=LanguageCls):
             )
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         if self.json_type is not None:
@@ -4632,6 +4678,7 @@ class Rust(metaclass=LanguageCls):
         return config
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         if self._json_type_active:
@@ -4647,11 +4694,13 @@ class Rust(metaclass=LanguageCls):
         return self.set_format(default_type=self.default_set_element_type)
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format_config.sequence_open
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         if self._json_type_active:
@@ -4677,6 +4726,7 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _narrowed_empty_dict_form(
         self,
     ) -> Callable[[Sequence[dict[Scalar, Value]]], str]:
@@ -4690,6 +4740,7 @@ class Rust(metaclass=LanguageCls):
         to type-check (issue #3013).
         """
 
+        @beartype
         def recurse(element: Value) -> str:
             """Resolve a sibling element to its Rust type annotation."""
             return _rust_type_annotation(
@@ -4716,6 +4767,7 @@ class Rust(metaclass=LanguageCls):
                 default_dict_value_type=self.default_dict_value_type,
             )
 
+        @beartype
         def _form(siblings: Sequence[dict[Scalar, Value]]) -> str:
             """Type the empty map from its first non-empty sibling."""
             sibling = siblings[0]
@@ -4752,16 +4804,19 @@ class Rust(metaclass=LanguageCls):
         return _form
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
@@ -4769,6 +4824,7 @@ class Rust(metaclass=LanguageCls):
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         if self.datetime_format.value.type_produced is int:
@@ -4786,21 +4842,25 @@ class Rust(metaclass=LanguageCls):
         return self.datetime_format
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
         return self.string_format
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal.
 
@@ -4821,6 +4881,7 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_integer_beyond_i64(self) -> Callable[[int], str]:
         """Always-``i128``-suffixed formatter for collections that
         exceed signed 64-bit range.
@@ -4837,11 +4898,13 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         if self._json_type_active:
@@ -4859,6 +4922,7 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         if self._json_type_active:
@@ -4869,6 +4933,7 @@ class Rust(metaclass=LanguageCls):
         return tuple_dict_entry(format_value=passthrough_sequence_entry)
 
     @cached_property
+    @beartype
     def _declaration_date_type(self) -> str:
         """Rust type used to annotate :class:`datetime.date` values."""
         if self.date_format.value.type_produced is str:
@@ -4876,6 +4941,7 @@ class Rust(metaclass=LanguageCls):
         return "NaiveDate"
 
     @cached_property
+    @beartype
     def _declaration_datetime_type(self) -> str:
         """Rust type used to annotate :class:`datetime.datetime`
         values.
@@ -4888,6 +4954,7 @@ class Rust(metaclass=LanguageCls):
         return "NaiveDateTime"
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -4919,6 +4986,7 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
         if self._json_type_active:
@@ -4930,6 +4998,7 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -4940,6 +5009,7 @@ class Rust(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         return self.call_style.value

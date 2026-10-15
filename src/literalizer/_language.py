@@ -7,6 +7,7 @@ import math
 import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
+from functools import partial
 from types import MappingProxyType
 from typing import (
     TYPE_CHECKING,
@@ -101,6 +102,7 @@ class FileWrapperContext:
     """Formatted root table entries retained by the mapping producer."""
 
 
+@beartype
 class NewVariableNameSyntax(enum.Enum):
     """Conservative lexical grammars for ``NewVariable`` declarations.
 
@@ -425,6 +427,7 @@ class DatetimeFormatConfig:
     type_produced: type
 
 
+@beartype
 class DateFormatEnum(enum.Enum):
     """Date format options with a statically checked config payload."""
 
@@ -437,6 +440,7 @@ class DateFormatEnum(enum.Enum):
         return self._value_.formatter(date_value)  # pylint: disable=no-member
 
 
+@beartype
 class DatetimeFormatEnum(enum.Enum):
     """Datetime format options with a statically checked config
     payload.
@@ -932,6 +936,7 @@ class StubReturn(enum.Enum):
     """
 
 
+@beartype
 class IdentifierCase(enum.Enum):
     """A naming convention for a single identifier.
 
@@ -1355,6 +1360,7 @@ class ModifierCombination:
     """The set of modifier enum members that make up this combination."""
 
 
+@beartype
 class JsonType(enum.Enum):
     """Base class for JSON value-type options.
 
@@ -4075,21 +4081,33 @@ def body_preamble_from_scalars(
         format_lines: Post-processing for the deduplicated lines
             (e.g. adding language-specific prefixes).
     """
+    return partial(
+        _compute_scalar_body_preamble,
+        scalar_body_preamble=scalar_body_preamble,
+        format_lines=format_lines,
+    )
 
-    def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
-        """Return unique body-preamble lines for *types*."""
-        del data  # unused by the generic implementation
-        seen: set[str] = set()
-        result: list[str] = []
-        for scalar_type, lines in scalar_body_preamble.items():
-            if scalar_type in types:
-                for line in lines:
-                    if line not in seen:
-                        seen.add(line)
-                        result.append(line)
-        return format_lines(result)
 
-    return _compute
+@beartype
+def _compute_scalar_body_preamble(
+    types: frozenset[type],
+    data: Value,
+    /,
+    *,
+    scalar_body_preamble: dict[type, tuple[str, ...]],
+    format_lines: Callable[[list[str]], tuple[str, ...]],
+) -> tuple[str, ...]:
+    """Return unique preamble lines with a reusable checked callable."""
+    del data  # unused by the generic implementation
+    seen: set[str] = set()
+    result: list[str] = []
+    for scalar_type, lines in scalar_body_preamble.items():
+        if scalar_type in types:
+            for line in lines:
+                if line not in seen:
+                    seen.add(line)
+                    result.append(line)
+    return format_lines(result)
 
 
 @beartype

@@ -1,0 +1,18 @@
+schema_version = 1
+summary = "Haskell tuple-valued arguments cannot fit generated Val parameters."
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Haskell"]
+
+[call]
+api = "literalize_call"
+input_format = "json"
+target_function = "process"
+parameter_names = ["value"]
+wrap_in_file = true
+sources = [
+    '{"$ref":"items"}',
+]
+per_element = false
+ref_key = "$ref"
+bound_ref_yaml = { items = "[1, 2]" }
+kwargs = [{ kind = "option_member", option = "sequence_format", member = "TUPLE" }]

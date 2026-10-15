@@ -193,6 +193,7 @@ def make_long_suffix_formatter(
     Example: ``100`` → ``"100L"``, ``-10`` → ``"-10L"``.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _format_long_suffix(value=value, base=base)
@@ -234,6 +235,7 @@ def make_overflow_suffix_formatter(
     ``2147483648`` → ``"2147483648L"``.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _format_overflow_suffix(
@@ -262,6 +264,7 @@ def make_int64_cast_formatter(
     Example: ``100`` → ``"int64(100)"``.
     """
 
+    @beartype
     def _format(value: int) -> str:
         """Delegate to module-level implementation."""
         return _format_int64_cast(value=value, base=base)

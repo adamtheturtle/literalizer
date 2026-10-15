@@ -1,0 +1,16 @@
+schema_version = 1
+summary = "Generated type constructors need an uppercase Haskell name."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Haskell"]
+
+[call]
+api = "literalize"
+sources = [
+    '{"x":1}',
+]
+input_format = "json"
+variable_form = "none"
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "RECORD"},
+    {kind = "text", kwarg = "type_name", value = "lowercase"},
+]

@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"PureScript['1: one\\n']" = "PureScript record mode cannot represent field 1"
+"PureScript['--- !!omap\\n- a: 1\\n']" = "PureScript record mode cannot represent ordered maps"
+"PureScript['--- !!set\\na:\\n']" = "PureScript record mode cannot represent set"

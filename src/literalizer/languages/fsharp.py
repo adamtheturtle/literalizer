@@ -224,6 +224,7 @@ def _build_fsharp_entry_formatter(
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter that wraps values in F# constructors."""
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_fsharp_entry(
@@ -402,6 +403,7 @@ def _build_fsharp_json_declaration_inner(
 ) -> Callable[[str, str, Value], str]:
     """Build a new F# ``JsonNode`` declaration formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Format a JSON-backed declaration."""
         rhs = _fsharp_json_top_level(original=data, formatted=value)
@@ -418,6 +420,7 @@ def _build_fsharp_datetime_epoch(
     Unix epoch seconds.
     """
 
+    @beartype
     def _format(value: dt.datetime) -> str:
         """Format epoch seconds with the F# integer constructor."""
         formatted = format_datetime_epoch(value=value)
@@ -468,6 +471,7 @@ def _build_fsharp_declaration(
 ) -> Callable[[str, str, Value], str]:
     """Build an F# variable declaration/assignment formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_fsharp_declaration(
@@ -1135,6 +1139,7 @@ class FSharp(metaclass=LanguageCls):
     validate_call_arg = default_validate_call_arg
 
     @cached_property
+    @beartype
     def format_call_statement(self) -> Callable[[str], str]:
         """Explicitly discard the result of an unbound call."""
         return _fsharp_discard_call
@@ -1228,16 +1233,19 @@ class FSharp(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return format_string_backslash_nul_octal
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
@@ -1265,6 +1273,7 @@ class FSharp(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1277,6 +1286,7 @@ class FSharp(metaclass=LanguageCls):
         return _fsharp_call_stub
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument.
 
@@ -1294,6 +1304,7 @@ class FSharp(metaclass=LanguageCls):
         entry_formatter = self._entry_formatter
         if isinstance(self.call_style.value, CommandCallStyle):
 
+            @beartype
             def _curried_arg(original: Value, formatted: str) -> str:
                 """Tag the value and parenthesize the curried argument."""
                 tagged = entry_formatter(original, formatted)
@@ -1305,6 +1316,7 @@ class FSharp(metaclass=LanguageCls):
     format_call_preamble_stub = default_format_call_stub
 
     @cached_property
+    @beartype
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Quote future reserved words in each call-target component."""
         return _fsharp_call_target
@@ -1322,6 +1334,7 @@ class FSharp(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def _entry_formatter(self) -> Callable[[Value, str], str]:
         """Shared entry formatter with the configured constructor
         prefix.
@@ -1333,11 +1346,13 @@ class FSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Whether F# should render through ``JsonNode``."""
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Literal representing ``None``."""
         if self._json_type_active:
@@ -1345,6 +1360,7 @@ class FSharp(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Null"
 
     @cached_property
+    @beartype
     def true_literal(self) -> str:
         """Literal representing ``True``."""
         if self._json_type_active:
@@ -1354,6 +1370,7 @@ class FSharp(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool true"
 
     @cached_property
+    @beartype
     def false_literal(self) -> str:
         """Literal representing ``False``."""
         if self._json_type_active:
@@ -1363,6 +1380,7 @@ class FSharp(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool false"
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
@@ -1404,11 +1422,13 @@ class FSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         return self.sequence_format_config.sequence_open
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         if self._json_type_active:
@@ -1429,6 +1449,7 @@ class FSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         if self._json_type_active:
@@ -1473,16 +1494,19 @@ class FSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         if self._json_type_active:
@@ -1490,6 +1514,7 @@ class FSharp(metaclass=LanguageCls):
         return self.date_format
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal.
 
@@ -1505,6 +1530,7 @@ class FSharp(metaclass=LanguageCls):
             if self.datetime_format.value.type_produced is int:
                 format_integer = self.format_integer
 
+                @beartype
                 def _format_json_epoch(value: dt.datetime) -> str:
                     """Return an epoch-seconds ``int64`` literal."""
                     formatted = format_datetime_epoch(value=value)
@@ -1525,6 +1551,7 @@ class FSharp(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         if self._json_type_active:
@@ -1532,11 +1559,13 @@ class FSharp(metaclass=LanguageCls):
         return format_time_fsharp
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal.
 
@@ -1552,6 +1581,7 @@ class FSharp(metaclass=LanguageCls):
         if self._json_type_active:
             base = self.integer_format
 
+            @beartype
             def _format(value: int) -> str:
                 """Return a json-mode integer literal."""
                 rendered = base(value)
@@ -1570,6 +1600,7 @@ class FSharp(metaclass=LanguageCls):
         if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
             base = self.integer_format
 
+            @beartype
             def _native_integer(value: int) -> str:
                 """Give native integers an explicit 64-bit type."""
                 rendered = base(value)
@@ -1588,6 +1619,7 @@ class FSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats one sequence entry."""
         if self._json_type_active:
@@ -1597,6 +1629,7 @@ class FSharp(metaclass=LanguageCls):
         return self._entry_formatter
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats one set entry."""
         if self._json_type_active:
@@ -1604,11 +1637,13 @@ class FSharp(metaclass=LanguageCls):
         return self._entry_formatter
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         if self._json_type_active:
@@ -1628,6 +1663,7 @@ class FSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         if self._json_type_active:
@@ -1635,6 +1671,7 @@ class FSharp(metaclass=LanguageCls):
         return tuple_dict_entry(format_value=self._entry_formatter)
 
     @cached_property
+    @beartype
     def _sequence_declared_type(self) -> str:
         """Resolved declared type for sequence values."""
         return self.sequence_format.value.declared_type.replace(
@@ -1642,6 +1679,7 @@ class FSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1673,6 +1711,7 @@ class FSharp(metaclass=LanguageCls):
     call_assignment_declares_binding = True
 
     @cached_property
+    @beartype
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1689,6 +1728,7 @@ class FSharp(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1704,6 +1744,7 @@ class FSharp(metaclass=LanguageCls):
         return self.declaration_style.value.formatter
 
     @cached_property
+    @beartype
     def format_call_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1721,11 +1762,13 @@ class FSharp(metaclass=LanguageCls):
         return variable_formatter(template="let {name} = {value}")
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble."""
         return {}
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble with type declarations."""
         p = self.constructor_prefix
@@ -1767,6 +1810,7 @@ class FSharp(metaclass=LanguageCls):
         }
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -1827,6 +1871,7 @@ class FSharp(metaclass=LanguageCls):
         return _compute
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value

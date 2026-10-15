@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+variable_form = "existing"
+value_sources = {item = "null"}
+explicit_ref_value_sources = {item = "null"}

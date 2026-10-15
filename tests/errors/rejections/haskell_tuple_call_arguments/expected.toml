@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+"Haskell['[[[1, 2]]]']" = "Haskell sequence_format=TUPLE cannot represent tuple-valued call arguments as Val"
+"Haskell['[null, [[1, 2]]]']" = "Haskell sequence_format=TUPLE cannot represent tuple-valued call arguments as Val"
+"Haskell['[[{\"items\": [1, 2]}]]']" = "Haskell sequence_format=TUPLE cannot represent tuple-valued call arguments as Val"

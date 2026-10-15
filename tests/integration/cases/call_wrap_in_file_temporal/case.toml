@@ -8,3 +8,6 @@ target_function = "check"
 parameter_names = ["ts", "d"]
 per_element = true
 wrap_in_file = true
+
+[[call.variants]]
+axis = "sequence"

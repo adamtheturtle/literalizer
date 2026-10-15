@@ -21,7 +21,10 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer._language import RenderedCallStub, is_reserved_identifier
+from literalizer._language import (
+    RenderedCallStub,
+    is_reserved_identifier,
+)
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
@@ -160,7 +163,7 @@ _SUBSTITUTION_CALL_STYLES = (
 @beartype
 def _call_transform_style_unsupported(
     *,
-    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
     config: CallCaseSpec,
 ) -> bool:
     """Mirror ``_validate_call_preconditions``'s rejection of
@@ -177,7 +180,7 @@ def _call_transform_style_unsupported(
         return not issubclass(
             config.call_style_type, _SUBSTITUTION_CALL_STYLES
         )
-    default_style = lang_cls().call_style_config
+    default_style = spec.call_style_config
     return not isinstance(default_style, _SUBSTITUTION_CALL_STYLES)
 
 
@@ -303,7 +306,11 @@ def _invalid_parameter_grammar(
 
 @beartype
 def _invalid_target_grammar(
-    *, lang_cls: literalizer.LanguageCls, target: str, wrapped: bool
+    *,
+    lang_cls: literalizer.LanguageCls,
+    target: str,
+    wrapped: bool,
+    spec: literalizer.Language,
 ) -> bool:
     """Recognize targets a call or its generated declarations reject."""
     parts = target.split(sep=".")
@@ -311,8 +318,7 @@ def _invalid_target_grammar(
     if syntax is None:
         syntax = lang_cls.new_variable_name_syntax
     constructor = any(
-        make_spec(lang_cls=lang_cls).format_constructor_target(candidate)
-        == target
+        spec.format_constructor_target(candidate) == target
         for candidate in re.findall(pattern=r"[^\W\d]\w*", string=target)
         if re.fullmatch(pattern=r"[A-Z][A-Za-z0-9_]*", string=candidate)
         is not None
@@ -380,10 +386,11 @@ def _is_reserved_call_target(
 
 
 @beartype
-def _expected_call_shape_exception(
+def expected_call_shape_exception(
     *,
     lang_cls: literalizer.LanguageCls,
     config: CallCaseSpec,
+    spec: literalizer.Language,
 ) -> type[Exception] | None:
     """Return the exception ``literalize_call`` is expected to raise for
     this (lang, config) pair, or ``None`` if it should produce output.
@@ -395,15 +402,14 @@ def _expected_call_shape_exception(
     )
     if variable_form_exc is not None:
         return variable_form_exc
-    styles = list(lang_cls.CallStyles)
     if config.call_style_type is not None:
-        effective_style = next(
+        style = next(
             style
-            for style in styles
+            for style in lang_cls.CallStyles
             if isinstance(style.value, config.call_style_type)
         )
-    else:
-        effective_style = styles[0]
+        spec = dataclasses.replace(spec, call_style=style)
+    effective_style = spec.call_style_config
     bound_refs_wrap = (
         len(config.ref_declarations) > 0
         and len(config.unknown_ref_names) == 0
@@ -414,7 +420,7 @@ def _expected_call_shape_exception(
     rejects_reserved_parameters = (
         config.wrap_in_file
         or bound_refs_wrap
-        or isinstance(effective_style.value, literalizer.KeywordCallStyle)
+        or isinstance(effective_style, literalizer.KeywordCallStyle)
     )
     if any(
         _invalid_parameter_grammar(lang_cls=lang_cls, name=name)
@@ -435,6 +441,7 @@ def _expected_call_shape_exception(
         lang_cls=lang_cls,
         target=config.target_function,
         wrapped=True,
+        spec=spec,
     ) or _is_reserved_call_target(
         lang_cls=lang_cls, target_function=config.target_function
     ):
@@ -448,7 +455,7 @@ def _expected_call_shape_exception(
         and not lang_cls.call_returns_expression,
         config.requires_standalone_wrapped_comments
         and not lang_cls.supports_standalone_comments_in_wrapped_calls,
-        _call_transform_style_unsupported(lang_cls=lang_cls, config=config),
+        _call_transform_style_unsupported(spec=spec, config=config),
     )
     if any(unsupported_signals):
         return UnsupportedCallShapeError
@@ -514,9 +521,10 @@ def discover_call_cases() -> list[CallCase]:
                 default_style = styles[0]
                 if isinstance(default_style.value, config.call_style_type):
                     continue
-            expected_exception = _expected_call_shape_exception(
+            expected_exception = expected_call_shape_exception(
                 lang_cls=lang_cls,
                 config=config,
+                spec=make_spec(lang_cls=lang_cls),
             )
             cases.append(
                 CallCase(
@@ -897,10 +905,12 @@ def run_call_golden_case(
         lang_cls=lang_cls,
         target=config.target_function,
         wrapped=True,
+        spec=spec,
     ) and not _invalid_target_grammar(
         lang_cls=lang_cls,
         target=config.target_function,
         wrapped=False,
+        spec=spec,
     ):
         raise InvalidCallTargetError(
             language_name=lang_cls.__name__,

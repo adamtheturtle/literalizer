@@ -1,0 +1,22 @@
+schema_version = 1
+summary = "Unsupported shapes fail before invalid SML is emitted."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Sml"]
+
+[call]
+api = "literalize"
+sources = [
+    '''1: one
+''',
+    '''--- !!omap
+- a: 1
+''',
+    '''--- !!set
+a:
+''',
+]
+input_format = "yaml"
+variable_form = "none"
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "RECORD"},
+]

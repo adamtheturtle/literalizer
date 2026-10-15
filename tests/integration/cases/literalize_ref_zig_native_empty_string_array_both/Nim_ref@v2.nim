@@ -1,6 +1,6 @@
 {.warning[UnusedImport]:off.}
 import tables
-var shared = @[]
+var shared = seq[string](@[])
 var second = @[
     "one",
     "two"

@@ -1,0 +1,21 @@
+schema_version = 1
+summary = "Unsupported shapes fail before emitting invalid Elm syntax."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Elm"]
+
+[call]
+api = "literalize"
+sources = [
+    '{"not-a-field": 1}',
+    '{"if": 1}',
+    '{"Bad": 1}',
+    '{}',
+    '{"x": null}',
+    '[{"x": 1}, {"x": "one"}]',
+    '[{"x": 1}, {"y": 1}]',
+]
+input_format = "json"
+variable_form = "none"
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "RECORD"},
+]

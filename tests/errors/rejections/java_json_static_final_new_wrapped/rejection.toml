@@ -1,0 +1,18 @@
+schema_version = 1
+summary = "Finality does not make a checked Jackson field initializer valid."
+exceptions = ["IncompatibleFormatsError"]
+languages = ["Java"]
+
+[call]
+api = "literalize"
+sources = ["42"]
+input_format = "json"
+variable_form = "new"
+variable_name = "data"
+modifiers = ["STATIC", "FINAL"]
+wrap_in_file = true
+
+[[call.kwargs]]
+kind = "option_member"
+option = "json_type"
+member = "JACKSON_JSON_NODE"

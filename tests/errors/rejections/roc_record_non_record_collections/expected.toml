@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Roc['--- !!omap\\n- a: 1\\n']" = "Roc native record mode cannot represent ordered maps"
+"Roc['---\\n- x: !!set\\n    a:\\n- x: !!set\\n    b:\\n']" = "Roc native record mode cannot represent sets"

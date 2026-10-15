@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "A native Elm list must infer one scalar element type."
+exceptions = ["HeterogeneousScalarCollectionError"]
+languages = ["Elm"]
+
+[call]
+api = "literalize"
+sources = [
+    '[1, "hello"]',
+]
+input_format = "json"
+variable_form = "none"
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "RECORD"},
+]

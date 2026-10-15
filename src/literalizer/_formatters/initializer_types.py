@@ -7,6 +7,7 @@ from beartype import beartype
 from literalizer._formatters.collection_openers import CollectionOverride
 
 
+@beartype
 class TypedCollectionOpen(str):
     """An opening delimiter with its selected declaration type."""
 
@@ -27,6 +28,7 @@ class TypedCollectionOpen(str):
         return self._declared_type
 
 
+@beartype
 class TypedInitializer(str):
     """A literal whose declaration type is already known."""
 

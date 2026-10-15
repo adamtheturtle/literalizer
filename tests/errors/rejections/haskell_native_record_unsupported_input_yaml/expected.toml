@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Haskell['1: one\\n']" = "Haskell record mode cannot represent field 1"
+"Haskell['--- !!omap\\n- a: 1\\n']" = "Haskell record mode cannot represent ordered maps"
+"Haskell['--- !!set\\na:\\n']" = "Haskell record mode cannot represent set"

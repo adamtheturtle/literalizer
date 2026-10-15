@@ -1,0 +1,11 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"Sml['{\"bad-key\":1}']" = "SML record mode cannot represent field 'bad-key'"
+"Sml['{\"val\":1}']" = "SML record mode cannot represent field 'val'"
+"Sml['{}']" = "SML record mode cannot represent empty records"
+"Sml['{\"x\":null}']" = "SML record mode cannot represent NoneType"
+"Sml['[{\"x\":1},{\"x\":\"one\"}]']" = "SML record mode requires uniform list element types"
+"Sml['[{\"x\":1},{\"y\":1}]']" = "SML record mode requires uniform list element types"
+"Sml['[1,\"one\"]']" = "SML record mode requires uniform list element types"
+"Sml['{\"x\":2147483648}']" = "SML record mode requires 32-bit native integers"

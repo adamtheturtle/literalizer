@@ -304,7 +304,7 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                     'parameter_names = ["x"]\nmodifiers = ["CONST"]'
                 ),
             ),
-            "modifiers apply to api = 'literalize'",
+            "modifiers require a new or both variable form",
         ),
         (
             _manifest(
@@ -374,6 +374,49 @@ def test_invalid_manifest_is_rejected(
     with pytest.raises(
         expected_exception=RejectionManifestError,
         match=message,
+    ):
+        _ = load_rejection_manifest(manifest_path=manifest_path)
+
+
+@pytest.mark.parametrize(
+    argnames="call",
+    argvalues=[
+        'api = "constructor"',
+        (
+            'api = "literalize"\nsources = ["1"]\ninput_format = "json"\n'
+            'variable_form = "none"'
+        ),
+        (
+            'api = "literalize"\nsources = ["1"]\ninput_format = "json"\n'
+            'variable_form = "existing"'
+        ),
+        (
+            'api = "literalize_call"\nsources = ["1"]\ninput_format = "json"\n'
+            'target_function = "f"\nparameter_names = ["item"]\n'
+            'variable_form = "none"'
+        ),
+        (
+            'api = "literalize_call"\nsources = ["1"]\ninput_format = "json"\n'
+            'target_function = "f"\nparameter_names = ["item"]\n'
+            'variable_form = "existing"'
+        ),
+    ],
+)
+def test_modifiers_require_a_declaration(call: str, tmp_path: Path) -> None:
+    """Do not silently discard modifiers for forms without
+    declarations.
+    """
+    manifest_path = _write_manifest(
+        tmp_path=tmp_path,
+        manifest=_manifest(
+            selection='languages = ["CSharp"]',
+            extra=_NO_EXTRA,
+            call=f'{call}\nmodifiers = ["CONST"]',
+        ),
+    )
+    with pytest.raises(
+        expected_exception=RejectionManifestError,
+        match="modifiers require a new or both variable form",
     ):
         _ = load_rejection_manifest(manifest_path=manifest_path)
 

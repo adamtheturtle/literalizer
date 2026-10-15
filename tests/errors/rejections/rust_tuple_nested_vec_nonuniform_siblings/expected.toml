@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[MixedListValuesError]
+"Rust['[[1, [2]], [3, 4]]']" = "List contains elements of mixed types that cannot be represented in the target language (found types: int, list)"
+"Rust['[[1, []], [2, [3, [4]]]]']" = "List contains elements of mixed types that cannot be represented in the target language (found types: int, list)"
+"Rust['[[1, []], [2, [3]], [4, [\"x\"]]]']" = "List contains elements of mixed types that cannot be represented in the target language (found types: int, list)"

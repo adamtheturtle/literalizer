@@ -274,6 +274,7 @@ def _build_ocaml_entry_formatter(
     constructors using the given *prefix*.
     """
 
+    @beartype
     def _format(original: Value, formatted: str) -> str:
         """Delegate to module-level implementation."""
         return _apply_ocaml_entry(
@@ -445,6 +446,7 @@ def _build_ocaml_declaration(
 ) -> Callable[[str, str, Value], str]:
     """Build an OCaml variable declaration formatter."""
 
+    @beartype
     def _format(name: str, value: str, data: Value) -> str:
         """Delegate to module-level implementation."""
         return _apply_ocaml_declaration(
@@ -1001,6 +1003,7 @@ class OCaml(metaclass=LanguageCls):
             )
 
     @cached_property
+    @beartype
     def validate_call_arg(self) -> Callable[[Value], None]:
         """Return call-argument validation for this language."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1076,16 +1079,19 @@ class OCaml(metaclass=LanguageCls):
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
 
     @cached_property
+    @beartype
     def format_string(self) -> Callable[[str], str]:
         """Format a string value as a quoted literal."""
         return format_string_backslash_nul_octal
 
     @cached_property
+    @beartype
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines."""
         return no_data_preamble
 
     @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1135,6 +1141,7 @@ class OCaml(metaclass=LanguageCls):
         raise UnrepresentableInputError(msg)
 
     @cached_property
+    @beartype
     def _native_record_strategy(self) -> ActiveRecordStrategy:
         """Build shared record naming, rendering, and declarations."""
         return build_record_strategy(
@@ -1160,12 +1167,14 @@ class OCaml(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the chosen call style."""
         config: CallStyle = self.call_style.value
         return config
 
     @cached_property
+    @beartype
     def format_call_stub(
         self,
     ) -> Callable[
@@ -1178,6 +1187,7 @@ class OCaml(metaclass=LanguageCls):
         return _ocaml_call_stub
 
     @cached_property
+    @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Callable that rewrites a formatted direct call argument.
 
@@ -1188,6 +1198,7 @@ class OCaml(metaclass=LanguageCls):
         entry_formatter = self._entry_formatter
         if isinstance(self.call_style.value, CommandCallStyle):
 
+            @beartype
             def _curried_arg(original: Value, formatted: str) -> str:
                 """Tag the value and parenthesize the curried argument."""
                 tagged = entry_formatter(original, formatted)
@@ -1199,11 +1210,13 @@ class OCaml(metaclass=LanguageCls):
     format_call_preamble_stub = default_format_call_stub
 
     @cached_property
+    @beartype
     def format_call_statement(self) -> Callable[[str], str]:
         """Wrap a call expression as a let binding."""
         return lambda statement: f"let _ = {statement}"
 
     @cached_property
+    @beartype
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
         """Rewrite a dotted call target into the language's call
         syntax.
@@ -1223,11 +1236,13 @@ class OCaml(metaclass=LanguageCls):
     )
 
     @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Return whether OCaml should render as ``Yojson.Safe.t``."""
         return self.json_type is not None
 
     @cached_property
+    @beartype
     def null_literal(self) -> str:
         """Null literal using the configured constructor prefix."""
         if self._json_type_active:
@@ -1235,6 +1250,7 @@ class OCaml(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Null"
 
     @cached_property
+    @beartype
     def true_literal(self) -> str:
         """True literal using the configured constructor prefix."""
         if self._json_type_active:
@@ -1244,6 +1260,7 @@ class OCaml(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool true"
 
     @cached_property
+    @beartype
     def false_literal(self) -> str:
         """False literal using the configured constructor prefix."""
         if self._json_type_active:
@@ -1253,6 +1270,7 @@ class OCaml(metaclass=LanguageCls):
         return f"{self.constructor_prefix}Bool false"
 
     @cached_property
+    @beartype
     def _entry_formatter(self) -> Callable[[Value, str], str]:
         """Entry formatter built from the configured prefix."""
         if self._json_type_active:
@@ -1264,6 +1282,7 @@ class OCaml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def _nested_entry_formatter(self) -> Callable[[Value, str], str]:
         """Wrap nested arrays in the selected value carrier
         constructor.
@@ -1276,6 +1295,7 @@ class OCaml(metaclass=LanguageCls):
             return base
         prefix = self.constructor_prefix
 
+        @beartype
         def _format(original: Value, formatted: str) -> str:
             """Tag array entries while leaving root arrays unwrapped."""
             if isinstance(original, list):
@@ -1285,6 +1305,7 @@ class OCaml(metaclass=LanguageCls):
         return _format
 
     @cached_property
+    @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
         fmt: SequenceFormatConfig = self.sequence_format.value
@@ -1306,6 +1327,7 @@ class OCaml(metaclass=LanguageCls):
         return fmt
 
     @cached_property
+    @beartype
     def sequence_open(self) -> Callable[[list[Value]], str]:
         """Callable that returns the opening delimiter for a sequence."""
         fmt = self.sequence_format.value
@@ -1320,6 +1342,7 @@ class OCaml(metaclass=LanguageCls):
         return fmt.sequence_open
 
     @cached_property
+    @beartype
     def set_format_config(self) -> SetFormatConfig:
         """Configuration for the chosen set format."""
         # ``Yojson.Safe.t`` has no set constructor: render sets as JSON
@@ -1333,6 +1356,7 @@ class OCaml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         dict_open_str = "`Assoc ["
@@ -1352,16 +1376,19 @@ class OCaml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def trailing_comma_config(self) -> TrailingCommaConfig:
         """Configuration for trailing-comma behavior."""
         return self.trailing_comma.value
 
     @cached_property
+    @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
         return self.bytes_format
 
     @cached_property
+    @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
         base_formatter: Callable[[dt.date], str] = self.date_format
@@ -1379,6 +1406,7 @@ class OCaml(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
+    @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
         base_formatter: Callable[[dt.datetime], str] = self.datetime_format
@@ -1402,16 +1430,19 @@ class OCaml(metaclass=LanguageCls):
         return base_formatter
 
     @cached_property
+    @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
         return format_time_iso
 
     @cached_property
+    @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
         return self.float_format
 
     @cached_property
+    @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
         fallback: Callable[[int], str]
@@ -1428,11 +1459,13 @@ class OCaml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_set_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a set entry."""
         return self._nested_entry_formatter
 
     @cached_property
+    @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1440,11 +1473,13 @@ class OCaml(metaclass=LanguageCls):
         return self._nested_entry_formatter
 
     @cached_property
+    @beartype
     def comment_config(self) -> CommentConfig:
         """Configuration for the language's comment syntax."""
         return self.comment_format.value
 
     @cached_property
+    @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         ordered_open_str = "`Assoc ["
@@ -1457,11 +1492,13 @@ class OCaml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_ordered_map_entry(self) -> Callable[[str, Value, str], str]:
         """Callable that formats one ordered-map entry."""
         return tuple_dict_entry(format_value=self._nested_entry_formatter)
 
     @cached_property
+    @beartype
     def _ocaml_declaration(self) -> Callable[[str, str, Value], str]:
         """Declaration formatter built from the configured type name."""
         if self.dict_format is type(self.dict_format).RECORD:
@@ -1484,6 +1521,7 @@ class OCaml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1497,6 +1535,7 @@ class OCaml(metaclass=LanguageCls):
     call_assignment_declares_binding = True
 
     @cached_property
+    @beartype
     def format_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1504,6 +1543,7 @@ class OCaml(metaclass=LanguageCls):
         return self._ocaml_declaration
 
     @cached_property
+    @beartype
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -1519,6 +1559,7 @@ class OCaml(metaclass=LanguageCls):
         return self.declaration_style.value.formatter
 
     @cached_property
+    @beartype
     def format_call_variable_assignment(
         self,
     ) -> Callable[[str, str, Value], str]:
@@ -1537,11 +1578,13 @@ class OCaml(metaclass=LanguageCls):
         )
 
     @cached_property
+    @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar preamble (OCaml needs none)."""
         return {}
 
     @cached_property
+    @beartype
     def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
         """Per-instance scalar body preamble for OCaml."""
         if self._json_type_active:
@@ -1585,12 +1628,14 @@ class OCaml(metaclass=LanguageCls):
         }
 
     @cached_property
+    @beartype
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         if self.dict_format is type(self.dict_format).RECORD:
 
+            @beartype
             def _native_body_preamble(
                 _types: frozenset[type], data: Value, /
             ) -> tuple[str, ...]:
