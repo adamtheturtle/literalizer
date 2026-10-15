@@ -1062,14 +1062,16 @@ jobs:
       # ``src/literalizer/languages/typescript.py`` and ``--target es2015
       # --lib es2015`` matches ``JavaScript.language_version`` (``ES2015``)
       # in ``src/literalizer/languages/javascript.py``. Keep all three in
-      # sync. ``uv run --no-project`` suffices because the helper only
-      # drives ``tsc``; every fixture is a module, so one ``tsc`` process
-      # checks them all.
+      # sync. ``uv run --no-project --with generated-code-harness`` only
+      # installs the compiler harness and drives ``tsc``. Every fixture is
+      # a module, so one ``tsc`` process checks the entire batch.
       - name: Lint TypeScript
         timeout-minutes: 5
+        env:
+          GENERATED_CODE_HARNESS: generated-code-harness @ git+https://github.com/adamtheturtle/generated-code-harness@805d99b59d49d22a50d668b4462d756fbe421366
         run: |-
           find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts && test -s /tmp/files-ts
-          xargs -0 uv run --no-project python -m scripts.check_typescript_consumers < /tmp/files-ts
+          xargs -0 uv run --no-project --with "$GENERATED_CODE_HARNESS" python -m scripts.check_typescript_consumers < /tmp/files-ts
 
   # Execute TypeScript fixtures via tsx. Split from `lint-npm-installed`
   # so the per-fixture tsx startups run in parallel with the tsc syntax

@@ -16,7 +16,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from scripts.generated_code import Step, run_project
+from generated_code_harness import Step, run_project
 
 # ``tsc`` type-checks the fixtures at ``TypeScript.language_version``
 # (``V5``) in ``src/literalizer/languages/typescript.py``; ``--target
