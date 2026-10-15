@@ -16,7 +16,7 @@ import tomllib
 from pathlib import Path
 from typing import assert_never
 
-import json5
+import json5_document
 from beartype import beartype
 from pydantic import TypeAdapter
 from ruamel.yaml import YAML
@@ -46,7 +46,6 @@ from .case_manifests import (
     load_case_manifests,
     manifest_admits_language,
 )
-from .json5_validation import escape_json5_line_separators
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
@@ -172,12 +171,7 @@ def _load_case_source(
         case literalizer.InputFormat.JSONC | literalizer.InputFormat.JSON5:
             # JSONC fixtures are valid JSON5. Rendering exercises the
             # stricter JSONC parser through the public API separately.
-            # This independent parser needs raw string line separators
-            # escaped to accept the same JSON5 inputs (issue #4518).
-            return json5.loads(
-                s=escape_json5_line_separators(source=source),
-                allow_duplicate_keys=False,
-            )
+            return json5_document.loads(source=source)
         case literalizer.InputFormat.YAML:
             # ``safe`` (not round-trip): yields plain ``dict``/``list``/
             # ``set`` instead of the ruamel comment-tracking subclasses,
