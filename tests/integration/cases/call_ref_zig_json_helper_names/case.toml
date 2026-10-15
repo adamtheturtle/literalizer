@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Zig"]
-languages_reason = "Zig JSON call arguments preserve caller references whose names do not shadow the parser."
+languages = ["Zig", "C"]
+languages_reason = "JSON call arguments preserve distinct bound objects and their helper declarations."
 target_function = "process"
 parameter_names = ["value"]
 per_element = true

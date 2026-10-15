@@ -4,8 +4,9 @@ import collections.abc
 import dataclasses
 import datetime as dt
 import enum
+import itertools
 import re
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from functools import cached_property, partial
 from types import MappingProxyType
 from typing import TYPE_CHECKING, ClassVar, Self, TypeGuard
@@ -936,6 +937,7 @@ def _c_cjson_build(
     /,
     *,
     prefix: str,
+    node_indices: Iterator[int],
     format_integer: Callable[[int], str],
     format_float: Callable[[float], str],
 ) -> _CJsonBuild:
@@ -947,17 +949,15 @@ def _c_cjson_build(
     ``cJSON *{prefix}{n}``
     variable and added to its parent in a following statement -- the
     portable standard-C form every cJSON tutorial shows.  Nodes are
-    numbered in pre-order, so the document root is always ``{prefix}0``.
+    numbered in pre-order using the document-wide node index sequence,
+    including builds for other bindings in the same document.
     """
     lines: list[str] = []
-    counter = 0
 
     @beartype
     def _emit(node: JsonValue, /) -> str:
         """Emit the build statements for *node*; return its variable."""
-        nonlocal counter
-        name = f"{prefix}{counter}"
-        counter += 1
+        name = f"{prefix}{next(node_indices)}"
         match node:
             case dict():
                 lines.append(f"cJSON *{name} = cJSON_CreateObject();")
@@ -2185,6 +2185,13 @@ class C(metaclass=LanguageCls):
         return f"{name} = {value};"
 
     @cached_property
+    def _cjson_node_indices(self) -> Iterator[int]:
+        """Allocate cJSON helper names across every build in one
+        render.
+        """
+        return itertools.count()
+
+    @cached_property
     def format_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
@@ -2216,6 +2223,7 @@ class C(metaclass=LanguageCls):
                 build = _c_cjson_build(
                     to_jsonable(data=data),
                     prefix="_n",
+                    node_indices=self._cjson_node_indices,
                     format_integer=format_integer,
                     format_float=format_float,
                 )
@@ -2275,6 +2283,7 @@ class C(metaclass=LanguageCls):
                 build = _c_cjson_build(
                     to_jsonable(data=data),
                     prefix="_m",
+                    node_indices=self._cjson_node_indices,
                     format_integer=format_integer,
                     format_float=format_float,
                 )

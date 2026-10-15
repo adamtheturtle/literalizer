@@ -9,8 +9,10 @@ import datetime as dt
 from concurrent.futures import ThreadPoolExecutor
 from textwrap import dedent
 
-from literalizer import InputFormat, NewVariable, literalize
-from literalizer.languages import Python, Rust
+import pytest
+
+from literalizer import InputFormat, Language, NewVariable, literalize
+from literalizer.languages import C, Python, Rust
 
 
 def test_time_key_in_public_substitution_uses_time_formatter() -> None:
@@ -50,11 +52,16 @@ def test_yaml_parsing_is_thread_safe() -> None:
     assert len(results) == render_count
 
 
-def test_record_language_instance_is_thread_safe() -> None:
-    """Each public call gets independent RECORD inference state."""
-    language = Rust(
-        heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD
-    )
+@pytest.mark.parametrize(
+    argnames="language",
+    argvalues=[
+        Rust(heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD),
+        C(json_type=C.json_types.CJSON),
+    ],
+    ids=["rust-record", "c-cjson"],
+)
+def test_language_instance_is_thread_safe(language: Language) -> None:
+    """Each public call gets independent cached rendering state."""
     sources = (
         '{"a":1,"b":"x"}',
         '{"x":true,"y":[1,2]}',
