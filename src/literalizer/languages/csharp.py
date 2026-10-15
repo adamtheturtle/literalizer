@@ -612,12 +612,17 @@ _PASCAL_CASE_IDENTIFIER = re.compile(pattern=r"^[A-Z][A-Za-z0-9_]*$")
 
 @beartype
 def _csharp_epoch_array_item(value: Value, /) -> Value:
-    """Size epoch arrays from rendered values, preserving records."""
+    """Size epoch containers from their rendered integer values."""
     match value:
         case dt.datetime():
             return datetime_epoch_seconds(value=value)
         case list():
             return [_csharp_epoch_array_item(item) for item in value]
+        case dict():
+            return {
+                key: _csharp_epoch_array_item(item)
+                for key, item in value.items()
+            }
         case _:
             return value
 
@@ -2327,11 +2332,7 @@ class CSharp(metaclass=LanguageCls):
             if self._dt_tp is not int:
                 return data
             return {
-                key: (
-                    datetime_epoch_seconds(value=value)
-                    if isinstance(value, dt.datetime)
-                    else value
-                )
+                key: _csharp_epoch_array_item(value)
                 for key, value in data.items()
             }
 
