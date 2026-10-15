@@ -1,5 +1,5 @@
 fn main() {
-    let empty_values = vec![];
+    let empty_values = Vec::new();
     let integer_values = vec![
         1,
     ];
