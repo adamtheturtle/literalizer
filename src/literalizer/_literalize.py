@@ -5066,6 +5066,17 @@ def _validate_ref_output_name(
         raise RefOutputCollisionError(name=variable_form.name)
 
 
+@runtime_checkable
+class _SelfContainedAssignmentValidationLanguage(Protocol):
+    """A producer with additional complete-file binding preconditions."""
+
+    def validate_self_contained_assignment(
+        self, name: str, data: Value, /
+    ) -> None:
+        """Validate an existing binding before its declaration requirement."""
+        ...
+
+
 @beartype
 def reject_undeclared_assignment(
     *,
@@ -5092,12 +5103,13 @@ def reject_undeclared_assignment(
         )
         is not None
     )
+    data = _declaration_data(pre_form=pre_form, language=language)
+    if isinstance(language, _SelfContainedAssignmentValidationLanguage):
+        language.validate_self_contained_assignment(variable_form.name, data)
     declares_binding = language.assignment_declares_binding
     if is_reference_binding:
         declares_binding = language.reference_assignment_declares_binding
-    if not declares_binding(
-        _declaration_data(pre_form=pre_form, language=language)
-    ):
+    if not declares_binding(data):
         raise ExistingVariableNotSelfContainedError(
             language_name=type(language).__name__
         )

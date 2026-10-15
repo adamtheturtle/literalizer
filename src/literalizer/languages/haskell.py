@@ -2763,15 +2763,7 @@ class Haskell(metaclass=LanguageCls):
                 modifiers: frozenset[enum.Enum],
             ) -> str:
                 """Bind a native value with its concrete inferred type."""
-                if any(
-                    name in shape.keys
-                    for shape in collect_record_shapes(data=data).values()
-                ):
-                    msg = (
-                        "Haskell record mode cannot use a field label "
-                        f"as variable name {name!r}"
-                    )
-                    raise UnrepresentableInputError(msg)
+                self.validate_self_contained_assignment(name, data)
                 declared_type = self._native_declared_type(data=data)
                 return f"{name} :: {declared_type}\n" + base(
                     name, value, data, modifiers
@@ -2779,6 +2771,24 @@ class Haskell(metaclass=LanguageCls):
 
             return _native_declaration
         return self._decl_fmts.format_variable_declaration
+
+    def validate_self_contained_assignment(
+        self, name: str, data: Value, /
+    ) -> None:
+        """Keep native record labels separate from module binding
+        names.
+        """
+        if self._json_type_active:
+            return
+        if self.dict_format is type(self.dict_format).RECORD and any(
+            name in shape.keys
+            for shape in collect_record_shapes(data=data).values()
+        ):
+            msg = (
+                "Haskell record mode cannot use a field label "
+                f"as variable name {name!r}"
+            )
+            raise UnrepresentableInputError(msg)
 
     def assignment_declares_binding(self, _data: Value, /) -> bool:
         """Retain whether the configured literal assignment declares a
