@@ -10,6 +10,7 @@ from functools import partial
 from typing import (
     Final,
     Protocol,
+    Self,
     TypeGuard,
     assert_never,
     overload,
@@ -205,6 +206,37 @@ _DISABLED_REF_KEY = _DisabledRefKey()
 def disabled_ref_key() -> str:
     """Return the internal marker for disabled reference detection."""
     return _DISABLED_REF_KEY
+
+
+@runtime_checkable
+class _RootMappingTableLanguage(Protocol):
+    """A language that lowers a bound multiline root mapping to a
+    table.
+    """
+
+    supports_root_mapping_table: bool
+
+
+class _RootMappingLiteral(str):
+    """A root mapping with table entries retained before flattening."""
+
+    __slots__ = ("_table_entries",)
+
+    _table_entries: tuple[str, ...]
+
+    @classmethod
+    def create(cls, code: str, /, *, table_entries: tuple[str, ...]) -> Self:
+        """Retain the selected table entries alongside the inline
+        value.
+        """
+        result = cls(object=code)
+        result._table_entries = table_entries
+        return result
+
+    @property
+    def table_entries(self) -> tuple[str, ...]:
+        """The formatted root entries for a wrapped table declaration."""
+        return self._table_entries
 
 
 @beartype
@@ -425,6 +457,7 @@ def _file_wrapper_context(
     has_literal_declarations: bool,
     generated_body_preamble: tuple[str, ...],
     root_is_object_literal: bool,
+    root_mapping_entries: tuple[str, ...] | None,
 ) -> FileWrapperContext:
     """Keep declaration metadata available after rendering the binding."""
     modifiers = frozenset[enum.Enum]()
@@ -448,6 +481,7 @@ def _file_wrapper_context(
         has_literal_declarations=has_literal_declarations,
         generated_body_preamble=generated_body_preamble,
         root_is_object_literal=root_is_object_literal,
+        root_mapping_entries=root_mapping_entries,
     )
 
 
@@ -3163,6 +3197,7 @@ def _format_multiline_collection_value(
         collection_layout=CollectionLayout.MULTILINE,
         sequence_open_override=sequence_open_override,
         ctx=ctx,
+        root_mapping_entries=None,
     )
     body = "\n".join(lines)
     raw_opening = _collection_open_for_multiline_value(
@@ -3264,6 +3299,7 @@ def _append_entries(
     lines: list[str],
     body_prefix: str,
     trailing_comma: bool,
+    element_separator: str,
     spec: Language,
     collection_comments: CollectionComments | None,
 ) -> None:
@@ -3274,7 +3310,7 @@ def _append_entries(
         add_sep = i < last_idx or trailing_comma
         sep = ""
         if add_sep:
-            sep = spec.element_separator.strip()
+            sep = element_separator.strip()
         rendered_elements.append(
             f"{body_prefix}{rstrip_lines(text=entry)}{sep}"
         )
@@ -3368,6 +3404,7 @@ def _format_dict_lines(
     trailing_comma: bool,
     body_prefix: str,
     lines: list[str],
+    root_mapping_entries: list[str] | None,
 ) -> list[str]:
     """Format dictionary entries and their collection comments."""
     guard_dict_keys_supported(value=dict_data, spec=spec)
@@ -3445,7 +3482,18 @@ def _format_dict_lines(
         trailing_comma=dict_trailing,
         spec=spec,
         collection_comments=collection_comments,
+        element_separator=spec.element_separator,
     )
+    if root_mapping_entries is not None:
+        _append_entries(
+            formatted_entries=formatted_entries,
+            lines=root_mapping_entries,
+            body_prefix=body_prefix,
+            trailing_comma=False,
+            element_separator="",
+            spec=spec,
+            collection_comments=collection_comments,
+        )
     return lines
 
 
@@ -3459,6 +3507,7 @@ def _format_collection_lines(
     collection_layout: CollectionLayout,
     sequence_open_override: str | None,
     ctx: _RenderContext,
+    root_mapping_entries: list[str] | None,
 ) -> list[str]:
     """Format collection elements as indented lines."""
     spec = ctx.spec
@@ -3484,6 +3533,7 @@ def _format_collection_lines(
                 trailing_comma=trailing_comma,
                 body_prefix=body_prefix,
                 lines=lines,
+                root_mapping_entries=root_mapping_entries,
             )
         case set() as set_data:
             sorted_items = sorted(
@@ -3524,6 +3574,7 @@ def _format_collection_lines(
                 trailing_comma=set_trailing,
                 spec=spec,
                 collection_comments=collection_comments,
+                element_separator=spec.element_separator,
             )
         case list() as list_data:
             seq_trailing = (
@@ -3591,6 +3642,7 @@ def _format_collection_lines(
                 trailing_comma=seq_trailing,
                 spec=spec,
                 collection_comments=collection_comments,
+                element_separator=spec.element_separator,
             )
         case _ as unreachable:
             assert_never(unreachable)
@@ -4128,6 +4180,14 @@ def _format_root_collection(
     if include_delimiters:
         body_prefix = line_prefix + language.indent
     is_ordered_map = isinstance(data, OrderedMap)
+    root_mapping_entries: list[str] | None = None
+    if (
+        include_delimiters
+        and isinstance(data, dict)
+        and isinstance(language, _RootMappingTableLanguage)
+        and language.supports_root_mapping_table
+    ):
+        root_mapping_entries = []
     lines = _format_collection_lines(
         data=data,
         body_prefix=body_prefix,
@@ -4138,11 +4198,12 @@ def _format_root_collection(
         collection_layout=collection_layout,
         sequence_open_override=None,
         ctx=ctx,
+        root_mapping_entries=root_mapping_entries,
     )
     body = "\n".join(lines)
     if not include_delimiters or body == "":
         return body
-    return _wrap_body(
+    literal = _wrap_body(
         body=body,
         is_ordered_map=is_ordered_map,
         data=inference_data,
@@ -4151,6 +4212,16 @@ def _format_root_collection(
         dict_open_override=ctx.dict_open_overrides.get(id(data)),
         sequence_open_override=ctx.sequence_open_overrides.get(id(data)),
     )
+    if root_mapping_entries is not None:
+        return _RootMappingLiteral.create(
+            literal,
+            table_entries=tuple(
+                line.removeprefix(body_prefix)
+                for entry in root_mapping_entries
+                for line in entry.split(sep="\n")
+            ),
+        )
+    return literal
 
 
 @beartype(conf=BeartypeConf(is_pep484_tower=True))
@@ -4610,6 +4681,7 @@ class _PreFormState:
     """The ref key the render actually used, or the disabled sentinel."""
     ref_case: IdentifierCase | None
     """The case a ref identifier was converted to, if any."""
+    root_mapping_entries: tuple[str, ...] | None
     initializer_type: str | None
     """Declaration type retained before comments or binding."""
     root_is_object_literal: bool
@@ -4734,6 +4806,10 @@ def _literalize_pre_form_impl(
         validate_data=True,
     )
 
+    root_mapping_entries = None
+    if isinstance(result, _RootMappingLiteral):
+        root_mapping_entries = result.table_entries
+
     root_initializer_type = retained_initializer_type(result)
     comment_line_prefix = line_prefix
     if include_delimiters:
@@ -4809,6 +4885,7 @@ def _literalize_pre_form_impl(
             ref_key=active_ref_key,
             include_delimiters=include_delimiters,
         ),
+        root_mapping_entries=root_mapping_entries,
     )
 
 
@@ -5183,6 +5260,7 @@ def literalize_apply_form(
                 ),
                 generated_body_preamble=computed.body,
                 root_is_object_literal=pre_form.root_is_object_literal,
+                root_mapping_entries=pre_form.root_mapping_entries,
             ),
         )
         if len(scoped.file_scope) > 0:
@@ -5295,6 +5373,7 @@ def literalize_both_forms(
             has_literal_declarations=True,
             generated_body_preamble=declaration.body_preamble,
             root_is_object_literal=False,
+            root_mapping_entries=None,
         ),
     )
     if len(scoped.file_scope) > 0:
@@ -5821,6 +5900,7 @@ def _compose_bound_refs(
         ),
         generated_body_preamble=unified_body_preamble,
         root_is_object_literal=False,
+        root_mapping_entries=None,
     )
     context = dataclasses.replace(
         context, bound_variable_names=composition.bound_variable_names
@@ -8002,6 +8082,7 @@ def _wrap_call_in_file(
             has_literal_declarations=False,
             generated_body_preamble=computed_body,
             root_is_object_literal=False,
+            root_mapping_entries=None,
         ),
     )
     call_binding_pragmas: tuple[str, ...] = ()
@@ -9046,6 +9127,7 @@ def literalize_call_with_declarations(
             has_literal_declarations=len(declarations) > 0,
             generated_body_preamble=unified_body_preamble,
             root_is_object_literal=False,
+            root_mapping_entries=None,
         ),
     )
     if len(scoped.file_scope) > 0:
