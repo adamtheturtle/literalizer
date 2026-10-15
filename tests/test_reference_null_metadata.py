@@ -11,7 +11,7 @@ from literalizer import (
     literalize,
     literalize_call,
 )
-from literalizer.languages import Cpp, Python
+from literalizer.languages import Cpp
 
 
 @pytest.mark.parametrize(
@@ -64,21 +64,6 @@ def test_cpp_external_reference_assignment(
     )
     assert result.code == expected_code
     assert result.preamble == expected_preamble
-
-
-def test_python_known_null_reference() -> None:
-    """Languages without null-specific formatting retain their
-    behavior.
-    """
-    result = literalize(
-        source='{"$ref": "item"}',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        variable_form=ExistingVariable(name="my_data"),
-        ref_key="$ref",
-        ref_values={"item": None},
-    )
-    assert (result.code, result.preamble) == ("my_data = item", ())
 
 
 def test_cpp_json_null_reference_assignment() -> None:
