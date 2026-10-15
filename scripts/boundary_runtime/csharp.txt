@@ -1,0 +1,27 @@
+static class Observer {
+    public static object? Observe(object? value) {
+        if (value is null || value is string || value is bool) return value;
+        if (value is double number)
+            return new string[] { "float", BitConverter.DoubleToUInt64Bits(number).ToString("x16") };
+        if (value is float single)
+            return new string[] { "float", BitConverter.DoubleToUInt64Bits(single).ToString("x16") };
+        if (value is sbyte || value is byte || value is short || value is ushort ||
+            value is int || value is uint || value is long || value is ulong)
+            return new string[] { "int", Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture)! };
+        if (value is System.Collections.IDictionary mapping) {
+            var result = new System.Collections.Generic.Dictionary<string, object?>();
+            foreach (System.Collections.DictionaryEntry entry in mapping)
+                result.Add((string)entry.Key, Observe(entry.Value));
+            return result;
+        }
+        if (value is System.Collections.IEnumerable sequence) {
+            var result = new System.Collections.Generic.List<object?>();
+            foreach (var child in sequence) result.Add(Observe(child));
+            return result;
+        }
+        var record = new System.Collections.Generic.Dictionary<string, object?>();
+        foreach (var property in value.GetType().GetProperties())
+            record.Add(property.Name.ToLowerInvariant(), Observe(property.GetValue(value)));
+        return record;
+    }
+}

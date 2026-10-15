@@ -1,0 +1,14 @@
+function observe(value) {
+    if (typeof value === "number") {
+        const bytes = Buffer.alloc(8);
+        bytes.writeDoubleBE(value);
+        return ["float", bytes.toString("hex")];
+    }
+    if (Array.isArray(value)) return value.map(observe);
+    if (value !== null && typeof value === "object") {
+        return Object.fromEntries(Object.entries(value).map(
+            ([key, child]) => [key.toLowerCase(), observe(child)]));
+    }
+    return value;
+}
+process.stdout.write(JSON.stringify(observe(data)));

@@ -1,0 +1,73 @@
+---
+name: Boundary container discovery
+
+on:
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  discover:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [python, javascript, go, go-record, csharp, csharp-record]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      TARGET: ${{ matrix.target }}
+      UV_PYTHON: '3.14'
+      DOTNET_NOLOGO: '1'
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v7
+        if: matrix.target == 'javascript'
+        with:
+          node-version: '22'
+      - uses: actions/setup-dotnet@v5
+        if: startsWith(matrix.target, 'csharp')
+        with:
+          dotnet-version: '8.0.426'
+      - name: Prepare dependencies
+        timeout-minutes: 10
+        run: uv sync --group dev
+      - name: Record revision and tools
+        run: |
+          mkdir -p results
+          git rev-parse HEAD > results/revision.txt
+          uv --version > results/uv.txt
+          uv run python --version > results/python.txt
+          case "$TARGET" in
+            go*) go version > results/runtime.txt ;;
+            csharp*) dotnet --info > results/runtime.txt ;;
+            javascript) node --version > results/runtime.txt ;;
+          esac
+      - name: Baseline corpus
+        id: baseline
+        continue-on-error: true
+        run: >-
+          scripts/run-bounded.sh "$TARGET baseline" --signal=KILL 480s
+          uv run --group dev python -m scripts.boundary_containers
+          --target "$TARGET" --mode baseline --output results/baseline
+      - name: Expanded corpus
+        id: expanded
+        continue-on-error: true
+        run: >-
+          scripts/run-bounded.sh "$TARGET expanded" --signal=KILL 480s
+          uv run --group dev python -m scripts.boundary_containers
+          --target "$TARGET" --mode expanded --output results/expanded
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: boundary-${{ matrix.target }}
+          path: results
+          retention-days: 14
+      - name: Preserve failed discovery verdicts
+        if: steps.baseline.outcome == 'failure' || steps.expanded.outcome == 'failure'
+        run: exit 1

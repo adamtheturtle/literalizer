@@ -1,0 +1,37 @@
+func observe(value reflect.Value) any {
+    if !value.IsValid() { return nil }
+    switch value.Kind() {
+    case reflect.Interface, reflect.Pointer:
+        if value.IsNil() { return nil }
+        return observe(value.Elem())
+    case reflect.Map:
+        out := map[string]any{}
+        for _, key := range value.MapKeys() {
+            out[key.String()] = observe(value.MapIndex(key))
+        }
+        return out
+    case reflect.Struct:
+        out := map[string]any{}
+        for index := 0; index < value.NumField(); index++ {
+            name := strings.ToLower(value.Type().Field(index).Name)
+            out[name] = observe(value.Field(index))
+        }
+        return out
+    case reflect.Slice, reflect.Array:
+        out := make([]any, value.Len())
+        for index := range out { out[index] = observe(value.Index(index)) }
+        return out
+    case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+        return []string{"int", strconv.FormatInt(value.Int(), 10)}
+    case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+        return []string{"int", strconv.FormatUint(value.Uint(), 10)}
+    case reflect.Float32, reflect.Float64:
+        return []string{"float", fmt.Sprintf("%016x", math.Float64bits(value.Float()))}
+    case reflect.Bool:
+        return value.Bool()
+    case reflect.String:
+        return value.String()
+    default:
+        panic(value.Kind())
+    }
+}

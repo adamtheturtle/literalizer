@@ -1,0 +1,22 @@
+import dataclasses
+import json
+import struct
+
+
+def observe(value):
+    if dataclasses.is_dataclass(value):
+        return observe(dataclasses.asdict(value))
+    if isinstance(value, dict):
+        return {key.lower(): observe(child) for key, child in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [observe(child) for child in value]
+    if isinstance(value, bool) or value is None or isinstance(value, str):
+        return value
+    if isinstance(value, int):
+        return ["int", str(value)]
+    if isinstance(value, float):
+        return ["float", struct.pack(">d", value).hex()]
+    raise TypeError(type(value))
+
+
+print(json.dumps(observe(data), ensure_ascii=True))
