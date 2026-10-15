@@ -4,6 +4,7 @@ procedure Main is
     procedure Make_Widget (Count : A_Val) is begin null; end Make_Widget;
     my_data : A_Val := Make_Widget(count => AInt (42));
 begin
+    Make_Widget(count => my_data);
     my_data := Make_Widget(count => my_data);
     Make_Widget(count => my_data);
 end Main;

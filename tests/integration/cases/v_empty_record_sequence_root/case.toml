@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["V"]
+languages_reason = "V empty arrays retain their populated sibling record type."
+
+[[variants]]
+axis = "heterogeneous_strategy_record"
