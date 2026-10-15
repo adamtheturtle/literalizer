@@ -6,7 +6,7 @@ the parsed value as JSON and hand it to :func:`roundtrip_common.verify`.
 
 Like the TOML round-trip, there is no language runtime to invoke: the
 analogous "back to JSON" step is a JSON5 parser re-emitting the parsed
-value.  ``json5`` is already a core ``literalizer`` dependency, so the
+value.  ``json5`` is a development dependency, so the
 JSON5 lint job's ``uv run`` (project mode) resolves it without extra
 ``--with`` layering.  Unlike most other backends, ``Json5`` does not
 support a ``variable_form``: the literalized output is a bare JSON5

@@ -12,7 +12,7 @@ import threading
 from collections.abc import Callable, Iterable, Mapping
 from typing import Protocol, assert_never, runtime_checkable
 
-import json5
+import json5_document
 import tomlkit
 from beartype import beartype
 from ruamel.yaml import YAML
@@ -629,24 +629,6 @@ def _parse_integer_preserving_negative_zero(value: str) -> int | float:
 
 
 @beartype
-def _parse_json5_integer(  # noqa: NOD001
-    value: str, base: int = 10
-) -> int | float:
-    """Parse a JSON5 integer token, decimal or hexadecimal.
-
-    ``json5`` calls this hook with the number base for a hexadecimal
-    token (``0xdeadbeef``) and without one for a decimal token, so the
-    parameter carries the default the library relies on rather than
-    being passed explicitly (issue #3921).
-    """
-    if base != _DECIMAL_BASE:
-        parsed = int(value, base=base)
-        reject_excessive_integer_digits(value=parsed)
-        return parsed
-    return _parse_integer_preserving_negative_zero(value=value)
-
-
-@beartype
 def _validate_yaml_float_tokens(*, source: str) -> None:
     """Check plain YAML numeric tokens before their value is rounded."""
     if "e" not in source.lower():
@@ -786,157 +768,37 @@ def _parse_jsonc(*, source: str) -> ParsedInput:
     )
 
 
-type _Json5Value = (
-    str
-    | int
-    | float
-    | bool
-    | list[_Json5Value]
-    | dict[str, _Json5Value]
-    | None
-)
-"""The shape ``json5.loads`` returns: its object keys are always
-strings.
-"""
-
-
 @beartype
-def _combine_surrogate_pairs_in_text(*, text: str) -> str:
-    r"""Return *text* with well-formed UTF-16 surrogate pairs combined.
-
-    The ``json5`` package leaves a ``\uD83D\uDE00`` escape pair as two
-    separate code points, which the shared lone-surrogate check then
-    refuses even though the pair is well formed.  Re-encoding through
-    UTF-16 joins a pair and leaves a genuinely lone surrogate alone, so
-    that check still catches one (issue #4519).
-    """
-    return text.encode(encoding="utf-16", errors="surrogatepass").decode(
-        encoding="utf-16",
-        errors="surrogatepass",
-    )
-
-
-@beartype
-def _combine_surrogate_pairs(*, data: _Json5Value) -> Value:
-    """Return *data* with every string's surrogate pairs combined."""
+def _json5_value(*, data: json5_document.Value) -> Value:
+    """Widen string-keyed parser collections to the shared value model."""
     match data:
-        case str():
-            return _combine_surrogate_pairs_in_text(text=data)
         case dict():
-            combined: dict[Scalar, Value] = {}
-            for key, value in data.items():
-                combined_key = _combine_surrogate_pairs_in_text(text=key)
-                # Two keys spelled differently -- one as the astral
-                # character, one as its escape pair -- name the same
-                # member once combined.  The JSON parser calls that a
-                # duplicate, so this one does too rather than silently
-                # keeping the last (issue #4519).
-                if combined_key in combined:
-                    msg = f"duplicate key {combined_key!r}"
-                    raise _format_parse_error(
-                        input_format=InputFormat.JSON5,
-                        detail=msg,
-                    )
-                combined[combined_key] = _combine_surrogate_pairs(data=value)
-            return combined
+            return {
+                key: _json5_value(data=value) for key, value in data.items()
+            }
         case list():
-            return [_combine_surrogate_pairs(data=item) for item in data]
+            return [_json5_value(data=value) for value in data]
         case _:
             return data
-
-
-_JSON5_STRING_OR_COMMENT = re.compile(
-    pattern=(
-        r"\"(?:[^\"\\]|\\.)*\""
-        r"|'(?:[^'\\]|\\.)*'"
-        r"|//[^\n\r\u2028\u2029]*"
-        r"|/\*.*?\*/"
-    ),
-    flags=re.DOTALL,
-)
-
-_JSON5_ESCAPE_OR_SEPARATOR = re.compile(
-    pattern=r"\\.|[\u2028\u2029]",
-    flags=re.DOTALL,
-)
-
-_JSON5_RAW_LINE_SEPARATORS = {
-    "\u2028": "\\u2028",
-    "\u2029": "\\u2029",
-}
-
-
-@beartype
-def escape_json5_line_separators(*, source: str) -> str:
-    r"""Escape raw U+2028 and U+2029 inside JSON5 string literals.
-
-    JSON5 allows both of them raw inside a string, precisely so that
-    every JSON document is also a JSON5 document, but the ``json5``
-    package refuses one while reading the string.  Escaping them
-    before the parse restores the guarantee, and the parser turns the
-    escapes back into the same two characters (issue #4518).
-
-    Outside a string both are line terminators, which end a ``//``
-    comment, so only the ones a string literal encloses are rewritten.
-    """
-    if not any(
-        separator in source for separator in _JSON5_RAW_LINE_SEPARATORS
-    ):
-        return source
-
-    @beartype
-    def _escape_separator(match: re.Match[str]) -> str:
-        """Return the escape for a bare separator, or the text as-is."""
-        return _JSON5_RAW_LINE_SEPARATORS.get(match.group(), match.group())
-
-    @beartype
-    def _escape_token(match: re.Match[str]) -> str:
-        """Return the matched token with any enclosed separator
-        escaped.
-        """
-        token = match.group()
-        if token[0] not in {"'", '"'}:
-            return token
-        # A backslash before a separator is a line continuation, which
-        # escaping the separator would turn into an escaped backslash
-        # followed by the text "u2028", so escape pairs are matched
-        # first and passed through whole.
-        return _JSON5_ESCAPE_OR_SEPARATOR.sub(
-            repl=_escape_separator,
-            string=token,
-        )
-
-    return _JSON5_STRING_OR_COMMENT.sub(repl=_escape_token, string=source)
 
 
 @beartype
 def _parse_json5(*, source: str) -> ParsedInput:
     """Parse a JSON5 string into a ``ParsedInput``."""
     try:
-        data = json5.loads(
-            s=escape_json5_line_separators(source=source),
-            allow_duplicate_keys=False,
-            parse_float=_parse_finite_float,
-            parse_int=_parse_json5_integer,
+        data = json5_document.loads(source=source)
+    except json5_document.JSON5DecodeError as exc:
+        if exc.reason == json5_document.ErrorKind.INTEGER_DIGITS:
+            raise ExcessiveIntegerDigitsError(
+                limit=sys.get_int_max_str_digits()
+            ) from exc
+        message = (
+            f"Invalid JSON5: {exc.msg} at line {exc.lineno} column {exc.colno}"
         )
-    except ValueError as exc:
-        message = f"Invalid JSON5: {exc}"
-        position = re.search(
-            pattern=r"<string>:(?P<line>\d+).* column (?P<column>\d+)",
-            string=str(object=exc),
-        )
-        effective_line = None
-        if position is not None:
-            effective_line = int(position["line"])
-        effective_column = None
-        if position is not None:
-            effective_column = int(position["column"])
         raise JSON5ParseError(
-            message,
-            line=effective_line,
-            column=(effective_column),
+            message, line=exc.lineno, column=exc.colno
         ) from exc
-    return ParsedPlain(data=_combine_surrogate_pairs(data=data))
+    return ParsedPlain(data=_json5_value(data=data))
 
 
 @beartype
