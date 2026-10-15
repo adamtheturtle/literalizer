@@ -29,6 +29,7 @@ dynamic = [
 dependencies = [
     "beartype>=0.23.0,<1",
     "json5-document>=2026.10.15.1",
+    "jsonc-document>=2026.10.15",
     "pyhumps>=3.8",
     # We require >=0.18.16 as a minimum because some users use sphinx-toolbox,
     # which has a maximum ruamel.yaml version of 0.18.16.

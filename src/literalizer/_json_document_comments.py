@@ -1,9 +1,10 @@
-"""Translate JSON5 document metadata into Literalizer comment policies."""
+"""Translate JSON document metadata into Literalizer comment policies."""
 
 import dataclasses
 
+import json5_document
+import jsonc_document
 from beartype import beartype
-from json5_document import Document, Node, Token
 
 from literalizer._comment_types import (
     CollectionComments,
@@ -12,9 +13,13 @@ from literalizer._comment_types import (
 )
 from literalizer._json_comments import JsonComments, attach_document_comments
 
+type _Token = jsonc_document.Token | json5_document.Token
+type _Node = jsonc_document.Node | json5_document.Node
+type _Document = jsonc_document.Document | json5_document.Document
+
 
 @beartype
-def _comment_lines(*, token: Token) -> tuple[str, ...]:
+def _comment_lines(*, token: _Token) -> tuple[str, ...]:
     """Remove comment delimiters using the existing whitespace policy."""
     text = token.text[2:]
     if token.text.startswith("/*"):
@@ -28,7 +33,7 @@ def _comment_lines(*, token: Token) -> tuple[str, ...]:
 
 @beartype
 def _split_comments(
-    *, source: str, comments: tuple[Token, ...], end: int
+    *, source: str, comments: tuple[_Token, ...], end: int
 ) -> tuple[str, tuple[str, ...]]:
     """Separate inline comments from following standalone comment
     lines.
@@ -54,15 +59,15 @@ def _split_comments(
 @beartype
 @dataclasses.dataclass
 class _Comments:
-    """Consume comments using source spans supplied by the JSON5
-    parser.
+    """Consume comments using source spans supplied by the document
+    parsers.
     """
 
     source: str
-    comments: tuple[Token, ...]
+    comments: tuple[_Token, ...]
     index: int
 
-    def before(self, *, position: int) -> tuple[Token, ...]:
+    def before(self, *, position: int) -> tuple[_Token, ...]:
         """Take comments preceding a syntax node or separator."""
         start = self.index
         while (
@@ -72,7 +77,7 @@ class _Comments:
             self.index += 1
         return self.comments[start : self.index]
 
-    def node(self, *, node: Node) -> JsonComments:
+    def node(self, *, node: _Node) -> JsonComments:
         """Read associations from syntax nodes and their source spans."""
         scalar = ScalarComments(before=[], inline="", after=[])
         if not isinstance(node.value, (dict, list)):
@@ -80,8 +85,10 @@ class _Comments:
         elements: list[ElementComments] = []
         children: list[JsonComments] = []
         pending: tuple[str, ...] = ()
-        starts = node.keys if bool(node.keys) else node.children
-        for index, child_node in enumerate(iterable=node.children):
+        nodes: tuple[_Node, ...] = node.children
+        keys: tuple[_Token, ...] = node.keys
+        starts: tuple[_Node | _Token, ...] = keys if bool(keys) else nodes
+        for index, child_node in enumerate(iterable=nodes):
             before = (
                 *pending,
                 *(
@@ -144,8 +151,10 @@ class _Comments:
 
 
 @beartype
-def extract_json5_comments(*, document: Document) -> JsonComments | None:
-    """Adapt validated JSON5 parser metadata to existing comment rendering."""
+def extract_json_document_comments(
+    *, document: _Document
+) -> JsonComments | None:
+    """Adapt validated parser metadata to existing comment rendering."""
     if not bool(document.comments):
         return None
     reader = _Comments(

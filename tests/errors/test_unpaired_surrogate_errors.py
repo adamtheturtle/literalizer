@@ -13,6 +13,7 @@ import pytest
 from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.exceptions import (
     JSON5ParseError,
+    JSONCParseError,
     JSONParseError,
     ParseError,
     TOMLParseError,
@@ -89,6 +90,8 @@ def _toml_key(*, surrogate: str) -> str:
     argvalues=[
         (InputFormat.JSON, JSONParseError, _json_value),
         (InputFormat.JSON, JSONParseError, _json_key),
+        (InputFormat.JSONC, JSONCParseError, _json_value),
+        (InputFormat.JSONC, JSONCParseError, _json_key),
         (InputFormat.JSON5, JSON5ParseError, _json5_value),
         (InputFormat.JSON5, JSON5ParseError, _json5_key),
         (InputFormat.YAML, YAMLParseError, _yaml_value),

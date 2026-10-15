@@ -13,6 +13,7 @@ from collections.abc import Callable, Iterable, Mapping
 from typing import Protocol, assert_never, runtime_checkable
 
 import json5_document
+import jsonc_document
 import tomlkit
 from beartype import beartype
 from ruamel.yaml import YAML
@@ -34,8 +35,8 @@ from tomlkit.items import Integer as TomlInteger
 from tomlkit.toml_document import TOMLDocument
 from typing_extensions import TypeIs
 
-from literalizer._json5_comments import extract_json5_comments
-from literalizer._json_comments import JsonComments, extract_jsonc_comments
+from literalizer._json_comments import JsonComments
+from literalizer._json_document_comments import extract_json_document_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ExcessiveIntegerDigitsError,
@@ -661,8 +662,8 @@ def _reject_json_constant(value: str) -> Value:
 
 
 @beartype
-def _parse_json_data(*, source: str, input_format: InputFormat) -> ParsedPlain:
-    """Parse JSON syntax with the error type of *input_format*."""
+def _parse_json(*, source: str) -> ParsedPlain:
+    """Parse strict JSON through the standard library."""
     try:
         data = json.loads(
             s=source,
@@ -677,19 +678,13 @@ def _parse_json_data(*, source: str, input_format: InputFormat) -> ParsedPlain:
         _FiniteFloatRangeError,
     ) as exc:
         raise _format_parse_error(
-            input_format=input_format, detail=str(object=exc)
+            input_format=InputFormat.JSON, detail=str(object=exc)
         ) from exc
     except json.JSONDecodeError as exc:
-        error_type = (
-            JSONParseError
-            if input_format == InputFormat.JSON
-            else JSONCParseError
-        )
         message = (
-            f"Invalid {input_format.name}: {exc.msg} "
-            f"at line {exc.lineno} column {exc.colno}"
+            f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
         )
-        raise error_type(
+        raise JSONParseError(
             message,
             line=exc.lineno,
             column=exc.colno,
@@ -698,92 +693,37 @@ def _parse_json_data(*, source: str, input_format: InputFormat) -> ParsedPlain:
 
 
 @beartype
-def _parse_json(*, source: str) -> ParsedInput:
-    """Parse a JSON string into a ``ParsedInput``."""
-    return _parse_json_data(source=source, input_format=InputFormat.JSON)
-
-
-@beartype
-def _jsonc_comment_end(*, source: str, index: int) -> int | None:
-    """Return the end of a comment starting at *index*, if present."""
-    if index + 1 >= len(source):
-        return None
-    next_char = source[index + 1]
-    if next_char == "/":
-        end = index + 2
-        while end < len(source) and source[end] not in "\r\n":
-            end += 1
-        return end
-    if next_char != "*":
-        return None
-    close = source.find("*/", index + 2)
-    if close == -1:
-        prefix = source[:index]
-        line = len(re.findall(pattern=r"\r\n|\r|\n", string=prefix)) + 1
-        column = index - max(prefix.rfind("\n"), prefix.rfind("\r"))
-        message = (
-            f"Invalid JSONC: unterminated comment "
-            f"at line {line} column {column}"
-        )
-        raise JSONCParseError(message, line=line, column=column)
-    return close + 2
-
-
-@beartype
-def _strip_jsonc_comments(*, source: str) -> str:
-    """Replace comments with spaces while keeping JSON error positions."""
-    result = list(source)
-    index = 0
-    in_string = False
-    while index < len(source):
-        char = source[index]
-        if in_string:
-            if char == "\\":
-                index += 2
-                continue
-            if char == '"':
-                in_string = False
-            index += 1
-            continue
-        if char == '"':
-            in_string = True
-            index += 1
-            continue
-        if char == "/":
-            end = _jsonc_comment_end(source=source, index=index)
-            if end is not None:
-                for position in range(index, end):
-                    if source[position] not in "\r\n":
-                        result[position] = " "
-                index = end
-                continue
-        index += 1
-    return "".join(result)
-
-
-@beartype
 def _parse_jsonc(*, source: str) -> ParsedInput:
-    """Parse JSON with comments, retaining JSON's strict syntax."""
-    parsed = _parse_json_data(
-        source=_strip_jsonc_comments(source=source),
-        input_format=InputFormat.JSONC,
-    )
-    return dataclasses.replace(
-        parsed,
-        comments=extract_jsonc_comments(source=source, data=parsed.data),
+    """Read strict JSONC values and metadata from jsonc-document."""
+    try:
+        document = jsonc_document.parse(source=source)
+    except jsonc_document.JSONCDecodeError as exc:
+        if exc.reason == jsonc_document.ErrorKind.INTEGER_DIGITS:
+            raise ExcessiveIntegerDigitsError(
+                limit=sys.get_int_max_str_digits()
+            ) from exc
+        message = (
+            f"Invalid JSONC: {exc.msg} at line {exc.lineno} column {exc.colno}"
+        )
+        raise JSONCParseError(
+            message, line=exc.lineno, column=exc.colno
+        ) from exc
+    return ParsedPlain(
+        data=_json_value(data=document.value),
+        comments=extract_json_document_comments(document=document),
     )
 
 
 @beartype
-def _json5_value(*, data: json5_document.Value) -> Value:
+def _json_value(*, data: jsonc_document.Value | json5_document.Value) -> Value:
     """Widen string-keyed parser collections to the shared value model."""
     match data:
         case dict():
             return {
-                key: _json5_value(data=value) for key, value in data.items()
+                key: _json_value(data=value) for key, value in data.items()
             }
         case list():
-            return [_json5_value(data=value) for value in data]
+            return [_json_value(data=value) for value in data]
         case _:
             return data
 
@@ -805,8 +745,8 @@ def _parse_json5(*, source: str) -> ParsedInput:
             message, line=exc.lineno, column=exc.colno
         ) from exc
     return ParsedPlain(
-        data=_json5_value(data=document.value),
-        comments=extract_json5_comments(document=document),
+        data=_json_value(data=document.value),
+        comments=extract_json_document_comments(document=document),
     )
 
 
