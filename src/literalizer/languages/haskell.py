@@ -269,6 +269,7 @@ def _build_haskell_call_stub(
     *,
     type_name: str,
     curried: bool,
+    validate_arg: Callable[[Value], None],
 ) -> Callable[
     [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
     tuple[str, ...],
@@ -285,7 +286,11 @@ def _build_haskell_call_stub(
         args: Sequence[Value],
         /,
     ) -> tuple[str, ...]:
-        """Delegate to module-level implementation."""
+        """Validate resolved arguments before declaring Val parameters."""
+        for row in args:
+            row_args = row if isinstance(row, list) else [row]
+            for value in row_args:
+                validate_arg(value)
         return _build_haskell_call_stub_lines(
             parts=parts,
             params=params,
@@ -1590,6 +1595,19 @@ def _reject_negative_zero_call_arg(value: Value, /) -> None:
 
 
 @beartype
+def _reject_tuple_call_arg(value: Value, /) -> None:
+    """Call stubs take Val, which cannot contain a tuple."""
+    if value_contains(
+        data=value, predicate=lambda child: isinstance(child, list)
+    ):
+        msg = (
+            "Haskell sequence_format=TUPLE cannot represent "
+            "tuple-valued call arguments as Val"
+        )
+        raise IncompatibleFormatsError(msg)
+
+
+@beartype
 def _reject_native_record_call_arg(_value: Value, /) -> None:
     """Avoid emitting a call stub with the obsolete generic Val type."""
     msg = "Haskell record mode cannot infer concrete call stub types"
@@ -2222,6 +2240,8 @@ class Haskell(metaclass=LanguageCls):
             return _reject_negative_zero_call_arg
         if self.dict_format is type(self.dict_format).RECORD:
             return _reject_native_record_call_arg
+        if self.sequence_format is type(self.sequence_format).TUPLE:
+            return _reject_tuple_call_arg
         return no_validate_call_arg
 
     format_call_statement = default_format_call_statement
@@ -3005,6 +3025,7 @@ class Haskell(metaclass=LanguageCls):
         return _build_haskell_call_stub(
             type_name=stub_type_name,
             curried=isinstance(self.call_style.value, CommandCallStyle),
+            validate_arg=self.validate_call_arg,
         )
 
     @cached_property

@@ -341,6 +341,9 @@ class CallSpec(  # noqa: NOD001
     source, which is how one refusal shown by inputs that differ only
     in shape -- a null on its own, in a mapping, in a sequence -- is
     declared once rather than as a directory apiece.
+
+    ``ref_value_yaml`` supplies reference inference hints without emitting
+    bindings, using the same native YAML value syntax as ``bound_ref_yaml``.
     """
 
     api: ApiName
@@ -367,6 +370,7 @@ class CallSpec(  # noqa: NOD001
     ref_case: str | None = None
     bound_refs: BoundRefs = ()
     bound_ref_yaml: BoundRefYaml = ()
+    ref_value_yaml: BoundRefYaml = ()
     comment_source: Annotated[tuple[str, ...], Field(strict=False)] | None = (
         None
     )
@@ -555,6 +559,7 @@ class _RejectionData(  # noqa: NOD001
         ]
         templates.extend(self.call.parameter_names)
         templates.extend(source for _, source in self.call.bound_ref_yaml)
+        templates.extend(source for _, source in self.call.ref_value_yaml)
         templates.append(self.call.variable_name)
         if self.call.target_function is not None:
             templates.append(self.call.target_function)
