@@ -11,17 +11,18 @@ from literalizer.languages import Cpp
 
 
 @pytest.mark.parametrize(
-    argnames=("bound_value", "hint", "expected_code"),
+    argnames=("bound_value", "hint"),
     argvalues=[
-        ([1, 2], None, "consume(std::move(item));"),
-        (None, [1, 2], "consume(item);"),
+        ([1, 2], None),
+        (None, [1, 2]),
     ],
 )
-def test_cpp_null_consumption_uses_bound_value(
-    bound_value: ValueInput, hint: ValueInput, expected_code: str
+def test_cpp_bound_consumption_preserves_source_hint(
+    bound_value: ValueInput, hint: ValueInput
 ) -> None:
-    """Actual bindings determine null ownership without replacing
-    hints.
+    """Actual bindings do not replace caller-supplied source metadata.
+
+    Rendering and ownership are covered by compiling call-ref goldens.
     """
     result = literalize_call(
         source='{"$ref": "item"}',
@@ -35,5 +36,4 @@ def test_cpp_null_consumption_uses_bound_value(
         ref_values={"item": hint},
         consumable_refs=frozenset({"item"}),
     )
-    assert result.code == expected_code
     assert result.source_data == hint

@@ -624,7 +624,16 @@ def run_wrap_in_file_case(
             effective_ref_case=effective_ref_case,
             variable_form=config.variable_form,
             wrap_in_file=True,
-            ref_values=None,
+            ref_values=(
+                None
+                if config.explicit_ref_value_sources is None
+                else {
+                    name: json.loads(s=ref_source)
+                    for name, ref_source in (
+                        config.explicit_ref_value_sources.items()
+                    )
+                }
+            ),
             bound_refs={
                 ref_name: json.loads(s=ref_source)
                 for ref_name, ref_source in config.ref_declarations.items()
