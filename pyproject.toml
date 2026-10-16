@@ -58,10 +58,6 @@ dev = [
     "doc8==2.0.0",
     "doccmd==2026.9.16.1",
     "furo==2025.12.19",
-    """\
-    generated-code-harness @ \
-    git+https://github.com/adamtheturtle/generated-code-harness@805d99b59d49d22a50d668b4462d756fbe421366\
-    """,
     "hypothesis>=6.0",
     "interrogate==1.7.0",
     "mypy==2.4.0",

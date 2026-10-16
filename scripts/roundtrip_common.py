@@ -34,7 +34,6 @@ import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from generated_code_harness import Step, run_project
 from pydantic import TypeAdapter
 
 from literalizer import (
@@ -46,6 +45,7 @@ from literalizer import (
     literalize,
 )
 from scripts.bounded_command import bounded_command
+from scripts.generated_code import Step, run_project
 
 __all__ = [
     "Step",

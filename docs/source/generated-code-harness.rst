@@ -4,17 +4,18 @@ Generated-code harness evaluation
 Decision (issue #5532)
 ----------------------
 
-Extract the project runner as `generated-code-harness <https://github.com/adamtheturtle/generated-code-harness>`_.
-Literalizer is its first maintained consumer; an independent toy schema generator exercises the same API without importing Literalizer.
-The new project has its own MIT license, Python package, compiler-backed tests, complete branch coverage, documentation and release workflow.
+Retain the shared project runner in ``scripts/generated_code.py``.
+The evaluation found a useful local abstraction, but insufficient benefit to maintain a separate package for Literalizer alone.
+The round-trip helper already centralizes execution for the language adapters, and the TypeScript checker remains similar in complexity after adopting the runner.
+Sharing temporary-project execution and diagnostics locally provides the same factoring without another dependency, release process or repository to maintain.
+The independent toy schema generator demonstrates API independence, but does not establish demand from a second maintained project.
 
-The public ``generated_code_harness`` API accepts a fixture label, a mapping of relative file names to UTF-8 source/supporting files, and an ordered sequence of ``Step(args=..., failure_label=...)`` values.
+The local API accepts a fixture label, a mapping of relative file names to UTF-8 source/supporting files, and an ordered sequence of ``Step(args=..., failure_label=...)`` values.
 ``run_project`` writes a fresh temporary project, runs each command without a shell, captures output, and returns the completed steps.
 A failed command raises an assertion with the label, command, status, streams and project files.
 Temporary directories are removed on success and failure; unavailable commands report their label and command.
 The module uses only the Python standard library and imports neither Literalizer nor its tests.
-Literalizer installs it as a development dependency rather than a runtime dependency of its rendering library.
-The initial integration pins the standalone project's release commit on GitHub while its first PyPI publisher is configured.
+Reconsider publishing only when another maintained generator needs this shared functionality.
 
 Assertions compose independently
 --------------------------------
@@ -26,7 +27,7 @@ Assertions compose independently
 * Execute: add a consumer or runtime step and inspect any returned step's ``stdout``/``stderr``.
   Caller assertions define semantic equality.
 
-The standalone project's ``tests/test_generated_code.py`` exercises all three with a tiny schema-to-dataclass generator and a separate consumer.
+``tests/integration/test_generated_code.py`` exercises all three with a tiny schema-to-dataclass generator and a separate consumer.
 Its assertions distinguish integers from booleans and check the sign of negative zero; ordinary Python equality alone would miss those distinctions.
 A second example copies only the runner into an isolated temporary project and invokes an independent generator with Python's site initialization disabled.
 It checks that neither Literalizer nor its test package was imported.
@@ -67,20 +68,19 @@ Adopting its test-file and configuration model would be a larger migration than 
 
 `pytest-regressions <https://pytest-regressions.readthedocs.io/en/latest/overview.html>`_ already supplies snapshot comparison, diffs and explicit regeneration in pytest.
 Keep using it rather than inventing another snapshot format, update flag or pytest plugin.
-The package's ordinary Python assertions and assertion exceptions work directly with pytest without plugin registration.
+The runner's ordinary Python assertions and assertion exceptions work directly with pytest without plugin registration.
 
 `Doccmd <https://github.com/adamtheturtle/doccmd>`_ runs caller-selected tools over documentation code blocks, including grouped examples.
 It remains the appropriate tool for documentation linting and formatting.
 This runner instead starts from an in-memory generated project with supporting files, ordered compiler/runtime steps and returned outputs.
 Adding schema/generator assertions and fixture ownership to ``doccmd`` would broaden its documented purpose without demonstrated demand.
 
-Ownership after extraction
---------------------------
+Local ownership
+---------------
 
-The standalone project owns temporary-project execution, captured results and failure diagnostics.
-Literalizer owns toolchain installation, command deadlines, compiler versions, consumer-probe construction, snapshots and semantic assertions.
-The package accepts batched compiler commands and isolated project invocations without choosing either policy for callers.
+``scripts/generated_code.py`` owns temporary-project execution, captured results and failure diagnostics.
+Its callers own compiler installation, command deadlines, compiler versions, consumer-probe construction, snapshots and semantic assertions.
+The runner accepts batched compiler commands and isolated project invocations without choosing either policy for callers.
 Keep Literalizer's JSON policy, capability model, manifests, version/axis vocabulary and source-text consumer-probe heuristics here.
 
-The TypeScript workflow installs only the lightweight harness when using ``uv run --no-project``.
-Other scripts use the shared development dependency through the normal project environment.
+The TypeScript workflow continues to use ``uv run --no-project`` without installing any Python dependencies.
