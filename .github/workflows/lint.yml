@@ -1956,7 +1956,6 @@ jobs:
 
   lint-cpp-tidy:
     strategy:
-      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
@@ -2101,7 +2100,6 @@ jobs:
 
   lint-cpp:
     strategy:
-      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
