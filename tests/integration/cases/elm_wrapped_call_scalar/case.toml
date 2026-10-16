@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Elm"]
+languages_reason = "Elm call wrappers must place JSON encoder imports before generated stub declarations."
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+
+[[call.variants]]
+axis = "json_type"

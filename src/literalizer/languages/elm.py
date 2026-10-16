@@ -810,6 +810,15 @@ def _elm_call_module(preamble: str, let_lines: list[str], indent: str) -> str:
     """Build a complete Elm call-mode module from preamble and let-
     bindings.
     """
+    # Call stubs can precede the data-dependent Json.Encode import in
+    # the shared body preamble. Elm requires all imports to precede
+    # declarations, including those generated stubs.
+    preamble_lines = preamble.split(sep="\n")
+    imports = [line for line in preamble_lines if line.startswith("import ")]
+    declarations = [
+        line for line in preamble_lines if not line.startswith("import ")
+    ]
+    preamble = "\n".join([*imports, *declarations])
     return (
         f"module Check exposing (..)\n\n\n"
         f"{preamble}\n\n\n"

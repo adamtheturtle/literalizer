@@ -1,0 +1,19 @@
+module Check exposing (..)
+
+
+make_widget : a -> ()
+make_widget _ = ()
+type Val
+    = EInt Int
+
+
+main : Program () () Never
+main =
+    let
+        _ = make_widget (EInt 1)
+    in
+    Platform.worker
+        { init = \_ -> ( (), Cmd.none )
+        , update = \_ m -> ( m, Cmd.none )
+        , subscriptions = \_ -> Sub.none
+        }
