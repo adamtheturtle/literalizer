@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Nim"]
+languages_reason = "Nim value stubs constrain empty native arrays while keeping populated arguments generic and JSON arguments unchanged."
+target_function = "thing.go"
+parameter_names = ["before", "populated", "after"]
+per_element = true
+wrap_in_file = true
+call_transform = "{call}"
+
+[[call.variants]]
+axis = "json_type"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"

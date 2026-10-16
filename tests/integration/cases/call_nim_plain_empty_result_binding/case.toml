@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Nim"]
+languages_reason = "Nim generic result stubs need concrete types for empty array arguments; populated arrays and JsonNode arguments retain their representation."
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+
+[[call.variants]]
+axis = "json_type"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"
