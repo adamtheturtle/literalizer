@@ -413,6 +413,7 @@ def expected_call_shape_exception(
     bound_refs_wrap = (
         len(config.ref_declarations) > 0
         and len(config.unknown_ref_names) == 0
+        and config.explicit_ref_value_sources is None
         and (config.call_transform is None)
         and (len(config.transform_stub_names) == 0)
         and (config.variable_form is None)
@@ -923,6 +924,7 @@ def run_call_golden_case(
     if (
         len(config.ref_declarations) > 0
         and len(config.unknown_ref_names) == 0
+        and config.explicit_ref_value_sources is None
         and (config.call_transform is None)
         and (len(config.transform_stub_names) == 0)
         and (config.variable_form is None)

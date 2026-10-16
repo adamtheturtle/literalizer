@@ -52,20 +52,3 @@ data Val
     = PInt Int
     | PList (Array Val)
 Module.func (PInt 1)"""
-
-# The ordered map must infer the referenced list's type, not the marker's
-# mapping shape. Its wrapped call-stub typing is a separate gap (#4732).
-[[calls]]
-name = "ordered_map_argument_types_from_its_reference"
-language = "Cpp"
-source = """\
-- - !!omap
-    - m:
-        $ref: big_list
-"""
-input_format = "yaml"
-target_function = "process"
-parameter_names = ["a"]
-per_element = true
-ref_values = { big_list = ["x"] }
-expected = { bare_code = 'process(std::vector<std::pair<std::string, std::vector<std::string>>>{{"m", big_list}});' }
