@@ -376,17 +376,27 @@ def run_literalize_ref_golden_case(
             ),
         )
     if len(config.external_declarations) > 0:
-        declarations = [
-            literalizer.literalize(
-                source=source,
-                input_format=literalizer.InputFormat.JSON,
-                language=spec,
-                variable_form=literalizer.NewVariable(
-                    name=name, modifiers=frozenset()
-                ),
+        declarations: list[literalizer.LiteralizeResult] = []
+        for name, source in config.external_declarations.items():
+            declaration_spec = spec
+            style = config.external_declaration_styles.get(name)
+            if style is not None:
+                declaration_spec = dataclasses.replace(
+                    spec,
+                    declaration_style=enum_member_by_name(
+                        enum_cls=lang_cls.DeclarationStyles, name=style
+                    ),
+                )
+            declarations.append(
+                literalizer.literalize(
+                    source=source,
+                    input_format=literalizer.InputFormat.JSON,
+                    language=declaration_spec,
+                    variable_form=literalizer.NewVariable(
+                        name=name, modifiers=frozenset()
+                    ),
+                )
             )
-            for name, source in config.external_declarations.items()
-        ]
         observed_result = dataclasses.replace(
             result,
             declaration_code=(

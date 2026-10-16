@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+languages = ["Zig"]
+languages_reason = "Zig external references retain their expression in native and std.json.Value declarations and assignments."
+variable_form = "new"
+json_type = "STD_JSON_VALUE"
+external_declarations = {shared = "[1, 2]"}
+explicit_ref_value_sources = {shared = "[1, 2]"}
+fixture_suffix = "\n_ = my_data;"

@@ -499,6 +499,8 @@ class RefCaseSpec(  # noqa: NOD001
     without passing ``bound_refs`` or deriving inference hints from them.
     *explicit_ref_value_sources* independently selects reference hints;
     omission passes ``None``, while an empty table passes ``{}``.
+    *external_declaration_styles* selects declaration styles per fixture
+    binding, such as a mutable destination alongside an immutable source.
 
     When *ref_case_override* is set, the case forces that identifier
     case for the ``ref_case`` argument of :func:`literalizer.literalize`
@@ -532,6 +534,9 @@ class RefCaseSpec(  # noqa: NOD001
     # Fixture declarations are composed after rendering, so the API still
     # sees external references rather than materialized bound_refs.
     external_declarations: dict[str, str] = Field(
+        default_factory=_empty_sources,
+    )
+    external_declaration_styles: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
     fixture_prefix: str = ""
