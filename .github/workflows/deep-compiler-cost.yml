@@ -1,0 +1,77 @@
+---
+name: Deep compiler cost
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseline_ref:
+        description: Baseline revision to compare with this workflow revision
+        type: string
+        default: main
+  pull_request:
+    paths:
+      - .github/workflows/deep-compiler-cost.yml
+      - scripts/measure_deep_compiler_cost.py
+
+permissions: {}
+
+jobs:
+  measure:
+    name: Measure ${{ matrix.language }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Pin compiler binaries AND the C++ standard-library headers. A compiler
+    # version alone does not fix the cost of instantiating nested std::vector.
+    container:
+      image: swift:6.4.0-noble@sha256:31d14d727f4451f25e29bac9c42563a098c39ac66415e8bad970f48038e38aca
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: cpp
+            compiler: clang++
+          - language: swift
+            compiler: swiftc
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: candidate
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          path: baseline
+          ref: ${{ github.event.pull_request.base.sha || inputs.baseline_ref }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: 0.13.0
+          enable-cache: false
+      - name: Install both revisions
+        run: |
+          uv sync --directory baseline --no-dev --python 3.14
+          uv sync --directory candidate --no-dev --python 3.14
+      - name: Measure identical workloads with identical tools
+        working-directory: candidate
+        env:
+          LANGUAGE: ${{ matrix.language }}
+          COMPILER: ${{ matrix.compiler }}
+        run: |
+          status=0
+          for revision in baseline candidate; do
+            "../$revision/.venv/bin/python" -m scripts.measure_deep_compiler_cost \
+              --language "$LANGUAGE" --compiler "$COMPILER" \
+              --revision "$(git -C "../$revision" rev-parse HEAD)" \
+              --depths 0 16 20 30 --timeout 60 \
+              --output "results-$revision" || status=1
+          done
+          exit "$status"
+      # A command deadline is a recorded measurement. A job cancellation has
+      # no completed report and must never be interpreted as a command result.
+      - name: Retain sources, commands, versions and measurements
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: deep-compiler-cost-${{ matrix.language }}
+          path: candidate/results-*
+          if-no-files-found: error

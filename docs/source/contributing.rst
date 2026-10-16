@@ -264,6 +264,30 @@ Continuous integration
 Tests are run on GitHub Actions.
 The configuration for this is in :file:`.github/workflows/`.
 
+Compiler performance reproduction
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``Deep compiler cost`` workflow compares a baseline revision with the selected revision using the same container, pinned by image digest.
+Run it manually with ``baseline_ref`` set to the revision to compare, or open a pull request changing its script or workflow.
+It measures the public API's map containing singleton arrays at depths 0, 16, 20 and 30 for C++20 and Swift 5 language mode.
+Each compiler command has a separate 60-second deadline.
+Successful syntax checks are followed by compilation and execution, including array-shape/value checks and a Swift type check at runtime.
+
+Download the workflow artifacts for the exact source files, compiler versions, revision IDs, command lines, elapsed seconds, return codes and output.
+``command_deadline`` means GNU timeout explicitly reported sending its termination signal.
+Other nonzero exits are compiler or execution errors; a cancelled job with no completed measurement is not a command deadline.
+Timeout measurements do not fail this diagnostic workflow, and a green workflow does not establish that every workload compiled.
+Use the ordinary compiler jobs to validate the golden corpus.
+
+To run the same workload with a locally installed compiler:
+
+.. code-block:: console
+
+   $ uv run python -m scripts.measure_deep_compiler_cost --language swift --compiler swiftc --revision "$(git rev-parse HEAD)" --depths 0 16 20 30 --timeout 60 --output /tmp/swift-compiler-cost
+
+Use ``--language cpp --compiler clang++`` for C++20.
+Local measurements record the installed tool version; compare their timings only with measurements from the same environment.
+
 Performing a release
 --------------------
 

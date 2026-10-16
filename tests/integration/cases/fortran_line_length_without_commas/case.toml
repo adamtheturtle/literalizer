@@ -1,4 +1,4 @@
 schema_version = 1
-languages = ["Fortran"]
-languages_reason = "Fortran-specific: free-form source caps a physical line at 132 columns, and a single-element nesting chain offers no comma to continue at."
+languages = ["Fortran", "Swift"]
+languages_reason = "Fortran line continuation and Swift bounded type inference for a depth-30 singleton-list chain."
 suites = ["base"]
