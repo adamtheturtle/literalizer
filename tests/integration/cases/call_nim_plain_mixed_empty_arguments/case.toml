@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Nim"]
-languages_reason = "Nim value stubs constrain empty native arrays while keeping populated arguments generic and JSON arguments unchanged."
+languages = ["Nim", "V"]
+languages_reason = "Nim value stubs constrain empty native arrays; V bare-call stubs provide a control for mixed and empty interface-backed list arguments."
 target_function = "make_widget"
 parameter_names = ["before", "populated", "after"]
 per_element = true

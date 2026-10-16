@@ -1,7 +1,7 @@
 interface IVal {}
 interface ICallArg_ {}
 struct ThrottlerType_ {}
-fn (r ThrottlerType_) check(args ...ICallArg_) {}
+fn (r ThrottlerType_) check() {}
 
 fn main() {
 	throttler := ThrottlerType_{}

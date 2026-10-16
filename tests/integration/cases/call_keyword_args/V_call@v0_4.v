@@ -1,6 +1,6 @@
 interface ICallArg_ {}
 struct ThrottlerType_ {}
-fn (r ThrottlerType_) check(args ...ICallArg_) ICallArg_ { return 0 }
+fn (r ThrottlerType_) check(arg0 ICallArg_, arg1 ICallArg_) ICallArg_ { return 0 }
 fn emit(args ...ICallArg_) {}
 
 fn main() {

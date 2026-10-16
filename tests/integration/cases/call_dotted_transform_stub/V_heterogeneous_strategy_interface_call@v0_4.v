@@ -2,7 +2,7 @@ interface IVal {}
 interface ICallArg_ {}
 fn process(args ...ICallArg_) ICallArg_ { return 0 }
 struct TracerType_ {}
-fn (r TracerType_) emit(args ...ICallArg_) {}
+fn (r TracerType_) emit(arg0 ICallArg_) {}
 
 fn main() {
 	tracer := TracerType_{}

@@ -1,7 +1,7 @@
 interface IVal {}
 interface ICallArg_ {}
 struct ClientType_ {}
-fn (r ClientType_) post(args ...ICallArg_) {}
+fn (r ClientType_) post(arg0 ICallArg_) {}
 struct ApiType_ {
 	client ClientType_
 }

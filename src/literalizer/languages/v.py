@@ -496,7 +496,7 @@ def _has_null_only_container(item: Value) -> bool:
 @beartype
 def _v_call_preamble_stub(
     parts: Sequence[str],
-    _params: Sequence[str],
+    params: Sequence[str],
     stub_return: StubReturn,
     _args: Sequence[Value],
     /,
@@ -509,6 +509,9 @@ def _v_call_preamble_stub(
     duplicate copies can be dropped when multiple stubs are combined.
     For dotted targets like ``app.client.fetch``, one struct per
     prefix level is emitted together with the method declaration.
+    Methods use fixed-arity interface parameters: the pinned V compiler
+    tries to convert interface-backed array elements to ``ICallArg_``
+    when such arrays are passed to variadic methods (issue #5730).
     """
     iface = "interface ICallArg_ {}"
 
@@ -535,13 +538,12 @@ def _v_call_preamble_stub(
     else:
         receiver_type = _cap_type(root)
 
+    method_params = ", ".join(f"arg{i} ICallArg_" for i in range(len(params)))
     if stub_return is StubReturn.VOID:
-        method_line = (
-            f"fn (r {receiver_type}) {method}(args ...ICallArg_) {{}}"
-        )
+        method_line = f"fn (r {receiver_type}) {method}({method_params}) {{}}"
     else:
         method_line = (
-            f"fn (r {receiver_type}) {method}(args ...ICallArg_)"
+            f"fn (r {receiver_type}) {method}({method_params})"
             f" ICallArg_ {{ return 0 }}"
         )
 
