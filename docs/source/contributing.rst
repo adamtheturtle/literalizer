@@ -264,29 +264,35 @@ Continuous integration
 Tests are run on GitHub Actions.
 The configuration for this is in :file:`.github/workflows/`.
 
-Compiler performance reproduction
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Compiler benchmarks
+~~~~~~~~~~~~~~~~~~~
 
-The ``Deep compiler cost`` workflow compares a baseline revision with the selected revision using the same container, pinned by image digest.
-Run it manually with ``baseline_ref`` set to the revision to compare, or open a pull request changing its script or workflow.
-It measures the public API's map containing singleton arrays at depths 0, 16, 20 and 30 for C++20 and Swift 5 language mode.
+The compiler benchmarks in :file:`tests/benchmarks/test_bench_compilers.py` measure the public API's map containing singleton arrays at depths 0, 16, 20 and 30 for C++20 and Swift 5 language mode.
+The ``compiler-benchmarks`` job in :file:`.github/workflows/ci.yml` runs them with CodSpeed's ``walltime`` instrument.
+The other benchmark jobs use CPU simulation to measure code generation.
+Sources are generated before measurement, and the compiler binaries and C++ standard-library headers are pinned together by container image digest.
+CodSpeed tracks completed compiler timings across revisions; new benchmarks acquire their baseline after running on the default branch.
+Shared GitHub runners introduce timing noise, so small changes need repeated measurements in the same environment.
+
 Each compiler command has a separate 60-second deadline.
-Successful syntax checks are followed by compilation and execution, including array-shape/value checks and a Swift type check at runtime.
+A probe before measurement skips a workload that reaches its deadline, without publishing a completed compiler timing.
+Compiler errors and failures during measured rounds fail the job.
+The skipped workload remains in the suite so later improvements can make it measurable.
+A green job therefore does not establish that every workload compiled.
+Use the integration golden tests for correctness, including runtime type and value checks.
 
-Download the workflow artifacts for the exact source files, compiler versions, revision IDs, command lines, elapsed seconds, return codes and output.
-``command_deadline`` means GNU timeout explicitly reported sending its termination signal.
-Other nonzero exits are compiler or execution errors; a canceled job with no completed measurement is not a command deadline.
-Timeout measurements do not fail this diagnostic workflow, and a green workflow does not establish that every workload compiled.
-Use the ordinary compiler jobs to validate the golden corpus.
+Download the ``compiler-benchmarks`` artifact for generated sources, compiler versions, revision, commands, output and test results.
+A command deadline requires GNU timeout's explicit termination diagnostic; a canceled job is not a command deadline.
+These are individual syntax/type-check workloads, not measurements of whole-corpus CI cost.
 
-To run the same workload with a locally installed compiler:
+To run with locally installed Swift and Clang compilers and GNU timeout:
 
 .. code-block:: console
 
-   $ uv run python -m scripts.measure_deep_compiler_cost --language swift --compiler swiftc --revision "$(git rev-parse HEAD)" --depths 0 16 20 30 --timeout 60 --output /tmp/swift-compiler-cost
+   $ uv run --group=benchmark pytest tests/benchmarks/test_bench_compilers.py --codspeed --codspeed-mode=walltime -o addopts= --basetemp=/tmp/literalizer-compiler-benchmarks -rs
 
-Use ``--language cpp --compiler clang++`` for C++20.
-Local measurements record the installed tool version; compare their timings only with measurements from the same environment.
+Use ``-k swift`` or ``-k cpp`` to select one language.
+Local measurements use the installed tool versions; compare timings only within the same environment.
 
 Performing a release
 --------------------

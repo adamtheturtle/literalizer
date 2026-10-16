@@ -128,23 +128,72 @@ jobs:
         uses: CodSpeedHQ/action@v5.4.2
         with:
           mode: simulation
-          run: .venv/bin/python -m pytest tests/benchmarks --codspeed -o addopts=
-            --test-group=${{ matrix.shard }} --test-group-count=6
+          run: .venv/bin/python -m pytest tests/benchmarks --ignore=tests/benchmarks/test_bench_compilers.py
+            --codspeed -o addopts= --test-group=${{ matrix.shard }} --test-group-count=6
         env:
           # Benchmark the checkout rather than the copy of the same code
           # inside the virtual environment, so CodSpeed's call graph maps
           # back onto ``src/``.
           PYTHONPATH: src
 
+  compiler-benchmarks:
+    needs: [benchmark-wheel]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Pin the compiler binaries and C++ standard-library headers together.
+    container:
+      image: swift:6.4.0-noble@sha256:31d14d727f4451f25e29bac9c42563a098c39ac66415e8bad970f48038e38aca
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: 0.13.0
+          enable-cache: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: benchmark-wheel
+          path: dist
+      - name: Create the benchmark environment
+        run: |
+          uv venv --python 3.14
+          uv pip install "$(echo dist/*.whl)"
+          uv pip install --group=benchmark
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git rev-parse HEAD > compiler-benchmark-revision.txt
+      - name: Run compiler benchmarks
+        uses: CodSpeedHQ/action@v5.4.2
+        with:
+          mode: walltime
+          run: .venv/bin/python -m pytest tests/benchmarks/test_bench_compilers.py
+            --codspeed -o addopts= --basetemp=compiler-benchmark-results --junitxml=compiler-benchmarks.xml
+            -rs
+        env:
+          PYTHONPATH: src
+      - name: Retain compiler sources and diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: compiler-benchmarks
+          path: |
+            compiler-benchmark-results
+            compiler-benchmark-revision.txt
+            compiler-benchmarks.xml
+          if-no-files-found: error
+
   completion-ci:
-    needs: [build, benchmark-wheel, benchmarks]
+    needs: [build, benchmark-wheel, benchmarks, compiler-benchmarks]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: ${{ !cancelled() }}
     steps:
       - name: Check matrix job status
         run: |-
-          if ! ${{ needs.build.result == 'success' && needs['benchmark-wheel'].result == 'success' && needs.benchmarks.result == 'success' }}; then
+          if ! ${{ needs.build.result == 'success' && needs['benchmark-wheel'].result == 'success' && needs.benchmarks.result == 'success' && needs['compiler-benchmarks'].result == 'success' }}; then
             echo "One or more matrix jobs failed"
             exit 1
           fi
