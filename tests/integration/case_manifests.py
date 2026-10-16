@@ -476,6 +476,20 @@ class _OwnedCaseSpec(
         return {**data, "case_dir_name": context["case_dir_name"]}
 
 
+class RefConsumerSpec(  # noqa: NOD001
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """A generated call using the reference case's output binding.
+
+    Assignment cases can also consume the caller's initial value before
+    the assignment. The consumer is composed after the API under test has
+    rendered, so it cannot change reference inference.
+    """
+
+    target_function: Annotated[str, Field(min_length=1)]
+    before_assignment: bool = False
+
+
 class RefCaseSpec(  # noqa: NOD001
     _OwnedCaseSpec,
     LanguageSelection,
@@ -542,6 +556,22 @@ class RefCaseSpec(  # noqa: NOD001
     fixture_prefix: str = ""
     fixture_suffix: str = ""
     explicit_ref_value_sources: dict[str, str] | None = None
+    consumer: RefConsumerSpec | None = None
+
+    @model_validator(mode="after")
+    def _validate_consumer(self) -> RefCaseSpec:
+        """Require the caller context needed by composed consumers."""
+        if self.consumer is not None:
+            if len(self.external_declarations) == 0:
+                msg = "consumer requires external_declarations"
+                raise ValueError(msg)
+            if self.consumer.before_assignment and (
+                self.variable_form != "existing"
+                or "my_data" not in self.external_declarations
+            ):
+                msg = "before_assignment requires an existing my_data binding"
+                raise ValueError(msg)
+        return self
 
     def ref_case_for(
         self, *, lang_cls: literalizer.LanguageCls

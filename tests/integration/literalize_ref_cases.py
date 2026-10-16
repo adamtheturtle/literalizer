@@ -40,6 +40,7 @@ from .case_manifests import (
     REF_DEFAULT_OWNER,
     REF_OWNER,
     RefCaseSpec,
+    RefConsumerSpec,
     case_input,
     ref_case_specs,
 )
@@ -283,6 +284,47 @@ def _ref_language_options(
 
 
 @beartype
+def _compose_ref_consumer(
+    *,
+    consumer: RefConsumerSpec,
+    spec: literalizer.Language,
+    declarations: list[literalizer.LiteralizeResult],
+    result: literalizer.LiteralizeResult,
+) -> literalizer.LiteralizeResult:
+    """Compose a generated consumer around an external-reference
+    result.
+    """
+    parameters = ("_arg",)
+    target = tuple(consumer.target_function.split(sep="."))
+    call = literalizer.literalize_call(
+        source='{"$ref": "my_data"}',
+        input_format=literalizer.InputFormat.JSON,
+        language=spec,
+        target_function=consumer.target_function,
+        parameter_names=parameters,
+        per_element=False,
+        ref_key="$ref",
+    )
+    if consumer.before_assignment:
+        declarations.append(call)
+    declarations.append(result)
+    return literalizer.literalize_call_with_declarations(
+        language=spec,
+        declarations=declarations,
+        call=call,
+        extra_body_preamble=spec.format_call_stub(
+            target, parameters, literalizer.StubReturn.VOID, ()
+        ),
+        extra_class_preamble=spec.format_call_class_scope_stub(
+            target, parameters, literalizer.StubReturn.VOID, ()
+        ),
+        extra_preamble=spec.format_call_preamble_stub(
+            target, parameters, literalizer.StubReturn.VOID, ()
+        ),
+    )
+
+
+@beartype
 def run_literalize_ref_golden_case(
     *,
     config: RefCaseSpec,
@@ -405,14 +447,19 @@ def run_literalize_ref_golden_case(
                 + config.fixture_suffix
             ),
         )
-        result = literalizer.literalize_call_with_declarations(
-            language=spec,
-            declarations=declarations,
-            call=observed_result,
-            extra_body_preamble=(),
-            extra_class_preamble=(),
-            extra_preamble=(),
-        )
+        if config.consumer is None:
+            result = literalizer.literalize_call_with_declarations(
+                language=spec,
+                declarations=declarations,
+                call=observed_result,
+            )
+        else:
+            result = _compose_ref_consumer(
+                consumer=config.consumer,
+                spec=spec,
+                declarations=declarations,
+                result=observed_result,
+            )
     check_golden(
         contents=result.code + "\n",
         extension=lang_cls.extension,

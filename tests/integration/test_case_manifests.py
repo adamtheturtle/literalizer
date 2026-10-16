@@ -110,6 +110,32 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
             "base_context requires participation in the base suite",
         ),
         (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref.consumer]\ntarget_function = "consume_widget"\n'
+            ),
+            "consumer requires external_declarations",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref]\nexternal_declarations = {my_data = "0"}\n'
+                '[ref.consumer]\ntarget_function = "consume_widget"\n'
+                "before_assignment = true\n"
+            ),
+            "before_assignment requires an existing my_data binding",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref]\nvariable_form = "existing"\n'
+                'external_declarations = {other = "0"}\n'
+                '[ref.consumer]\ntarget_function = "consume_widget"\n'
+                "before_assignment = true\n"
+            ),
+            "before_assignment requires an existing my_data binding",
+        ),
+        (
             'schema_version = 1\nowner = "literalize-call"\n',
             r"requires a \[call\] table",
         ),

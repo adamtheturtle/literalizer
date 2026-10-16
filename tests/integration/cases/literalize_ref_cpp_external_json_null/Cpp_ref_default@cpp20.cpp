@@ -1,12 +1,12 @@
 #include <nlohmann/json.hpp>
-#include <utility>
+auto consume_widget(auto...) { return 0; }
 int main() {
     try {
 auto item = nlohmann::json(nullptr);
 auto my_data = nlohmann::json(nullptr);
-(void)my_data;
+consume_widget(my_data);
 my_data = std::move(item);
-(void)my_data;
+consume_widget(my_data);
         return 0;
     } catch (...) {
         return 1;
