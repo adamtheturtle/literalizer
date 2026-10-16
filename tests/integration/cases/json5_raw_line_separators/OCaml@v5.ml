@@ -6,6 +6,7 @@ type val_t =
 let my_data : val_t = OMap [
     ("double", OStr "a b");
     ("single", OStr "c d");
+    (* A comment, which both separators would end. *)
     ("both", OStr "e f g");
     ("continued", OStr "hi");
     ("escaped backslash", OStr "j\\ k")

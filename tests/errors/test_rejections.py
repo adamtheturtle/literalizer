@@ -27,6 +27,7 @@ from ruamel.yaml import YAML
 from tomlkit.items import InlineTable
 
 import literalizer
+from literalizer.exceptions import ParseError
 from literalizer.languages import Python
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import CallTransform
@@ -331,6 +332,9 @@ def test_rejection_messages(
         with pytest.raises(expected_exception=manifest.exceptions) as caught:
             _run(case=case, call=manifest.call)
         raised = caught.value
+        if manifest.position is not None:
+            assert isinstance(raised, ParseError)
+            assert (raised.line, raised.column) == manifest.position
         raised_by = messages_by_exception.setdefault(type(raised).__name__, {})
         raised_by[case.case_id] = str(object=raised)
     accepting = len(manifest.accepting_languages)

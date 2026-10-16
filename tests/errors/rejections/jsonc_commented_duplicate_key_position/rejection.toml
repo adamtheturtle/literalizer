@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "JSONC duplicate key errors retain original source coordinates across line endings."
+exceptions = ["JSONCParseError"]
+languages = ["Python"]
+position = [2, 10]
+
+[call]
+api = "literalize"
+sources = [
+    "/* heading */\n{\"a\": 1, \"a\": 2}",
+    "/* heading */\r{\"a\": 1, \"a\": 2}",
+    "/* heading */\r\n{\"a\": 1, \"a\": 2}",
+]
+input_format = "jsonc"
+variable_form = "none"

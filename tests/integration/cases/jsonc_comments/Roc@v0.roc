@@ -8,6 +8,8 @@ Val : [
 
 my_data : Val
 my_data = RDict [
-    ("url", RStr "https://example.org/a/*b*/"),
-    ("count", RInt 2i128),
+    # A JSONC input case with both comment forms.
+    ("url", RStr "https://example.org/a/*b*/"),  # detail
+    # continued
+    ("count", RInt 2i128),  # trailing line comment
 ]

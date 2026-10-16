@@ -3,7 +3,9 @@ datatype val_t =
   | SStr of string
   | SMap of (string * val_t) list
 val my_data : val_t = SMap [
-    ("url", SStr "https://example.org/a/*b*/"),
-    ("count", SInt 2)
+    (* A JSONC input case with both comment forms. *)
+    ("url", SStr "https://example.org/a/*b*/"),  (* detail *)
+    (* continued *)
+    ("count", SInt 2)  (* trailing line comment *)
 ]
 val _ = my_data

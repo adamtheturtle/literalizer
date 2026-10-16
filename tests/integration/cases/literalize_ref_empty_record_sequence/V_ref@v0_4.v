@@ -4,7 +4,7 @@ struct Record0 {
 }
 
 fn main() {
-	empty_items := []IVal{}
+	empty_items := []Record0{}
 	populated_items := [
 		Record0{ x: 1 },
 	]

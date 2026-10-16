@@ -57,6 +57,7 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     build_record_strategy,
     identity_field_identifier_key,
+    nested_record_sequence_type,
 )
 from literalizer._formatters.type_inference import (
     DictType,
@@ -116,6 +117,7 @@ from literalizer._language import (
     identity_call_arg,
     identity_call_ref_identifier,
     identity_constructor_target,
+    identity_known_null_ref_identifier,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_compute_call_slot_wrap_ids,
@@ -1720,7 +1722,7 @@ class V(metaclass=LanguageCls):
         """Copy a known null pointer without invoking collection
         methods.
         """
-        return lambda name: name
+        return identity_known_null_ref_identifier
 
     @cached_property
     @beartype
@@ -1748,7 +1750,33 @@ class V(metaclass=LanguageCls):
     @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
-        return self.sequence_format.value
+        if (
+            self.heterogeneous_strategy
+            is not self.heterogeneous_strategies.RECORD
+        ):
+            return self.sequence_format.value
+
+        @beartype
+        def _narrow(
+            siblings: Sequence[list[Value]], /
+        ) -> RenderedEmptySequence:
+            """Borrow the nominal record type from populated siblings."""
+            record_type = nested_record_sequence_type(
+                value=[item for sibling in siblings for item in sibling],
+                record_name_for_value=self._record_strategy.record_name_for_value,
+            )
+            if record_type is not None:
+                depth, name = record_type
+                inner = "[]" * (depth - 1) + name
+                return RenderedEmptySequence(
+                    code=f"[]{inner}{{}}",
+                    uses_fallback_element_type=False,
+                )
+            return _v_narrowed_empty_form(siblings=siblings)
+
+        return dataclasses.replace(
+            self.sequence_format.value, narrowed_empty_form=_narrow
+        )
 
     @cached_property
     @beartype

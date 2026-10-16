@@ -3306,6 +3306,12 @@ identity_call_target: Callable[[Sequence[str]], str] = _identity_call_target
 
 
 @beartype
+def identity_known_null_ref_identifier(name: str, /) -> str:
+    """Keep a known null reference identifier unchanged."""
+    return name
+
+
+@beartype
 def _identity_call_ref_identifier(name: str, value: Value | None, /) -> str:
     """Return *name* unchanged.
 
@@ -4216,3 +4222,9 @@ def requires_declared_binding(self: Language, _data: Value, /) -> bool:
     """
     del self
     return False
+
+
+@beartype
+def empty_record_shape_names() -> MappingProxyType[frozenset[str], str]:
+    """Create the immutable default for custom record shape names."""
+    return MappingProxyType[frozenset[str], str](mapping={})

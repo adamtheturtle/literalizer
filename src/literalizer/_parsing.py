@@ -13,6 +13,7 @@ from collections.abc import Callable, Iterable, Mapping
 from typing import Protocol, assert_never, runtime_checkable
 
 import json5_document
+import jsonc_document
 import tomlkit
 from beartype import beartype
 from ruamel.yaml import YAML
@@ -34,6 +35,7 @@ from tomlkit.items import Integer as TomlInteger
 from tomlkit.toml_document import TOMLDocument
 from typing_extensions import TypeIs
 
+from literalizer._json_comments import JsonComments, extract_json_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ExcessiveIntegerDigitsError,
@@ -178,9 +180,8 @@ def _json_object_without_duplicate_keys(
 class InputFormat(enum.Enum):
     """Supported input serialization formats.
 
-    YAML and TOML comments are preserved for rendering in the target
-    language. JSON, JSONC and JSON5 are parsed as plain data, so their
-    comments are discarded.
+    YAML, TOML, JSONC and JSON5 comments are preserved for rendering
+    in the target language. JSON input does not accept comments.
     """
 
     JSON = enum.auto()
@@ -212,6 +213,7 @@ class ParsedPlain:
     """Result of parsing JSON, JSONC or JSON5 input as plain data."""
 
     data: Value
+    comments: JsonComments | None
 
 
 @beartype
@@ -659,8 +661,8 @@ def _reject_json_constant(value: str) -> Value:
 
 
 @beartype
-def _parse_json_data(*, source: str, input_format: InputFormat) -> ParsedInput:
-    """Parse JSON syntax with the error type of *input_format*."""
+def _parse_json(*, source: str) -> ParsedInput:
+    """Parse a JSON string into a ``ParsedInput``."""
     try:
         data = json.loads(
             s=source,
@@ -675,130 +677,64 @@ def _parse_json_data(*, source: str, input_format: InputFormat) -> ParsedInput:
         _FiniteFloatRangeError,
     ) as exc:
         raise _format_parse_error(
-            input_format=input_format, detail=str(object=exc)
+            input_format=InputFormat.JSON, detail=str(object=exc)
         ) from exc
     except json.JSONDecodeError as exc:
-        error_type = (
-            JSONParseError
-            if input_format == InputFormat.JSON
-            else JSONCParseError
-        )
         message = (
-            f"Invalid {input_format.name}: {exc.msg} "
-            f"at line {exc.lineno} column {exc.colno}"
+            f"Invalid JSON: {exc.msg} at line {exc.lineno} column {exc.colno}"
         )
-        raise error_type(
+        raise JSONParseError(
             message,
             line=exc.lineno,
             column=exc.colno,
         ) from exc
-    return ParsedPlain(data=data)
+    return ParsedPlain(data=data, comments=None)
 
 
 @beartype
-def _parse_json(*, source: str) -> ParsedInput:
-    """Parse a JSON string into a ``ParsedInput``."""
-    return _parse_json_data(source=source, input_format=InputFormat.JSON)
-
-
-@beartype
-def _jsonc_comment_end(*, source: str, index: int) -> int | None:
-    """Return the end of a comment starting at *index*, if present."""
-    if index + 1 >= len(source):
-        return None
-    next_char = source[index + 1]
-    if next_char == "/":
-        end = index + 2
-        while end < len(source) and source[end] not in "\r\n":
-            end += 1
-        return end
-    if next_char != "*":
-        return None
-    close = source.find("*/", index + 2)
-    if close == -1:
-        prefix = source[:index]
-        line = len(re.findall(pattern=r"\r\n|\r|\n", string=prefix)) + 1
-        column = index - max(prefix.rfind("\n"), prefix.rfind("\r"))
-        message = (
-            f"Invalid JSONC: unterminated comment "
-            f"at line {line} column {column}"
-        )
-        raise JSONCParseError(message, line=line, column=column)
-    return close + 2
-
-
-@beartype
-def _strip_jsonc_comments(*, source: str) -> str:
-    """Replace comments with spaces while keeping JSON error positions."""
-    result = list(source)
-    index = 0
-    in_string = False
-    while index < len(source):
-        char = source[index]
-        if in_string:
-            if char == "\\":
-                index += 2
-                continue
-            if char == '"':
-                in_string = False
-            index += 1
-            continue
-        if char == '"':
-            in_string = True
-            index += 1
-            continue
-        if char == "/":
-            end = _jsonc_comment_end(source=source, index=index)
-            if end is not None:
-                for position in range(index, end):
-                    if source[position] not in "\r\n":
-                        result[position] = " "
-                index = end
-                continue
-        index += 1
-    return "".join(result)
-
-
-@beartype
-def _parse_jsonc(*, source: str) -> ParsedInput:
-    """Parse JSON with comments, retaining JSON's strict syntax."""
-    return _parse_json_data(
-        source=_strip_jsonc_comments(source=source),
-        input_format=InputFormat.JSONC,
-    )
-
-
-@beartype
-def _json5_value(*, data: json5_document.Value) -> Value:
+def _json_value(*, data: json5_document.Value | jsonc_document.Value) -> Value:
     """Widen string-keyed parser collections to the shared value model."""
     match data:
         case dict():
             return {
-                key: _json5_value(data=value) for key, value in data.items()
+                key: _json_value(data=value) for key, value in data.items()
             }
         case list():
-            return [_json5_value(data=value) for value in data]
+            return [_json_value(data=value) for value in data]
         case _:
             return data
 
 
 @beartype
-def _parse_json5(*, source: str) -> ParsedInput:
-    """Parse a JSON5 string into a ``ParsedInput``."""
+def _parse_json_document(
+    *, source: str, input_format: InputFormat
+) -> ParsedInput:
+    """Parse JSONC or JSON5 values and adapt document-parser errors."""
+    is_jsonc = input_format == InputFormat.JSONC
+    parse = jsonc_document.parse if is_jsonc else json5_document.parse
     try:
-        data = json5_document.loads(source=source)
-    except json5_document.JSON5DecodeError as exc:
-        if exc.reason == json5_document.ErrorKind.INTEGER_DIGITS:
+        document = parse(source=source)
+    except (
+        jsonc_document.JSONCDecodeError,
+        json5_document.JSON5DecodeError,
+    ) as exc:
+        if exc.reason in (
+            jsonc_document.ErrorKind.INTEGER_DIGITS,
+            json5_document.ErrorKind.INTEGER_DIGITS,
+        ):
             raise ExcessiveIntegerDigitsError(
                 limit=sys.get_int_max_str_digits()
             ) from exc
         message = (
-            f"Invalid JSON5: {exc.msg} at line {exc.lineno} column {exc.colno}"
+            f"Invalid {input_format.name}: {exc.msg} "
+            f"at line {exc.lineno} column {exc.colno}"
         )
-        raise JSON5ParseError(
-            message, line=exc.lineno, column=exc.colno
-        ) from exc
-    return ParsedPlain(data=_json5_value(data=data))
+        error_type = JSONCParseError if is_jsonc else JSON5ParseError
+        raise error_type(message, line=exc.lineno, column=exc.colno) from exc
+    return ParsedPlain(
+        data=_json_value(data=document.value),
+        comments=extract_json_comments(document=document),
+    )
 
 
 @beartype
@@ -1214,10 +1150,10 @@ def _parse_by_format(
     match input_format:
         case InputFormat.JSON:
             return _parse_json(source=source)
-        case InputFormat.JSONC:
-            return _parse_jsonc(source=source)
-        case InputFormat.JSON5:
-            return _parse_json5(source=source)
+        case InputFormat.JSONC | InputFormat.JSON5:
+            return _parse_json_document(
+                source=source, input_format=input_format
+            )
         case InputFormat.YAML:
             return _parse_yaml(source=source)
         case InputFormat.TOML:

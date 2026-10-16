@@ -10,8 +10,10 @@ instance Num Val where
     negate _ = error "not implemented"
 my_data :: Val
 my_data = HMap [
-    ("url", HStr "https://example.org/a/*b*/"),
-    ("count", 2)
+    -- A JSONC input case with both comment forms.
+    ("url", HStr "https://example.org/a/*b*/"),  -- detail
+    -- continued
+    ("count", 2)  -- trailing line comment
     ]
 main :: IO ()
 main = seq my_data (return ())

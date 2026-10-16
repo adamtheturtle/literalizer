@@ -14,6 +14,7 @@ pub fn main() void {
     const my_data: ZVal = .{ .map = &.{
         .{ .key = "double", .val = .{ .str = "a     b" } },
         .{ .key = "single", .val = .{ .str = "c     d" } },
+        // A comment, which both separators would end.
         .{ .key = "both", .val = .{ .str = "e     f     g" } },
         .{ .key = "continued", .val = .{ .str = "hi" } },
         .{ .key = "escaped backslash", .val = .{ .str = "j\\     k" } },

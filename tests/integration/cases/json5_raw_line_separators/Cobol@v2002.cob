@@ -5,6 +5,7 @@ WORKING-STORAGE SECTION.
 01 MY-DATA.
     05 F-DOUBLE PIC X(5) VALUE "a b".
     05 F-SINGLE PIC X(5) VALUE "c d".
+    *> A comment, which both separators would end.
     05 F-BOTH PIC X(9) VALUE "e f g".
     05 F-CONTINUED PIC X(2) VALUE "hi".
     05 F-ESCAPED-BACKSLASH PIC X(6) VALUE "j\ k".

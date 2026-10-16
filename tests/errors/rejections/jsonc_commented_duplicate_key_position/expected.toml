@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSONCParseError]
+"Python['/* heading */\\n{\"a\": 1, \"a\": 2}']" = "Invalid JSONC: Duplicate key 'a' at line 2 column 10"
+"Python['/* heading */\\r{\"a\": 1, \"a\": 2}']" = "Invalid JSONC: Duplicate key 'a' at line 2 column 10"
+"Python['/* heading */\\r\\n{\"a\": 1, \"a\": 2}']" = "Invalid JSONC: Duplicate key 'a' at line 2 column 10"

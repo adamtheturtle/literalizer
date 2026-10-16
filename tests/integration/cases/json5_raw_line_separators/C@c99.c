@@ -18,6 +18,7 @@ int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
     {"double", ((CVal){.s = "a b"})},
     {"single", ((CVal){.s = "c d"})},
+    // A comment, which both separators would end.
     {"both", ((CVal){.s = "e f g"})},
     {"continued", ((CVal){.s = "hi"})},
     {"escaped backslash", ((CVal){.s = "j\\ k"})},

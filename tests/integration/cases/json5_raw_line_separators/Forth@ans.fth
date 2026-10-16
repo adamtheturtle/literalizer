@@ -1,3 +1,4 @@
+\ A comment, which both separators would end.
 : my_data
 +obj
     s\" double" +key s\" a b" +str

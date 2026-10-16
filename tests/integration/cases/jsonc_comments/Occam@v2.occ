@@ -13,8 +13,10 @@ MOBILE DATA TYPE LIT IS
 
 PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
-        MOBILE LIT(lit.pair; MOBILE []BYTE "url"; MOBILE LIT(lit.str; MOBILE []BYTE "https://example.org/a/*b*/")),
-        MOBILE LIT(lit.pair; MOBILE []BYTE "count"; MOBILE LIT(lit.int; 2))
+        -- A JSONC input case with both comment forms.
+        MOBILE LIT(lit.pair; MOBILE []BYTE "url"; MOBILE LIT(lit.str; MOBILE []BYTE "https://example.org/a/*b*/")),  -- detail
+        -- continued
+        MOBILE LIT(lit.pair; MOBILE []BYTE "count"; MOBILE LIT(lit.int; 2))  -- trailing line comment
     ]):
     SEQ
         SKIP

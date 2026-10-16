@@ -27,7 +27,7 @@ var my_data = new Record0(
         }),
         Map.entry("mixed_width", new long[][]{
             new long[]{
-                946684800
+                946684800L
             },
             new long[]{
                 2208988800L

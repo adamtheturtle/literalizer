@@ -5,6 +5,7 @@ main :: proc() {
 my_data := map[string]any{
 	"double" = "a b",
 	"single" = "c d",
+	// A comment, which both separators would end.
 	"both" = "e f g",
 	"continued" = "hi",
 	"escaped backslash" = "j\\ k",

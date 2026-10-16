@@ -1,0 +1,3 @@
+// null heading
+{"a": /* before null */ null, // first null
+ "b": null /* second null */}

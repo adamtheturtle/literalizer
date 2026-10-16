@@ -1,0 +1,4 @@
+<?php
+function make_widget($count) {}
+$my_data = make_widget(count: 0);
+$my_data = make_widget(count: 1);

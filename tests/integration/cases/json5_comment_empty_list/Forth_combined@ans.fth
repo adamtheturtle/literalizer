@@ -1,0 +1,8 @@
+\ empty heading
+\ empty body
+\ after empty
+: my_data +arr -arr ;
+\ empty heading
+\ empty body
+\ after empty
+: my_data +arr -arr ;

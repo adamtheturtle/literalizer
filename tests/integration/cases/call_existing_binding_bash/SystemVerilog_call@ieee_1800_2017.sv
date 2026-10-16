@@ -15,6 +15,7 @@ function _VVal make_widget(input _VVal count);
 endfunction
 initial begin
 static _VVal my_data = make_widget(_VVal'{tag: _VVAL_INT, i: 0, r: 0.0, s: ""});
+void'(make_widget(my_data));
 my_data = make_widget(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""});
 void'(make_widget(my_data));
 end

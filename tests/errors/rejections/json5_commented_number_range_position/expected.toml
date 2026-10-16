@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSON5ParseError]
+"Python['/* heading */\\n{a: 1e999}']" = "Invalid JSON5: Finite numeric token is outside binary64 range at line 2 column 5"
+"Python['/* heading */\\r{a: 1e999}']" = "Invalid JSON5: Finite numeric token is outside binary64 range at line 2 column 5"
+"Python['/* heading */\\r\\n{a: 1e999}']" = "Invalid JSON5: Finite numeric token is outside binary64 range at line 2 column 5"
+"Python['/* heading */\\u2028{a: 1e999}']" = "Invalid JSON5: Finite numeric token is outside binary64 range at line 2 column 5"
+"Python['/* heading */\\u2029{a: 1e999}']" = "Invalid JSON5: Finite numeric token is outside binary64 range at line 2 column 5"

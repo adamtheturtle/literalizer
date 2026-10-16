@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "JSONC syntax errors after multiline comments retain original source coordinates."
+exceptions = ["JSONCParseError"]
+languages = ["Rust"]
+position = [3, 18]
+
+[call]
+api = "literalize"
+sources = [
+    "// heading\n{\n \"a\": /* note */ ]\n}",
+]
+input_format = "jsonc"
+variable_form = "none"

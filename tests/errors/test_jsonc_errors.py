@@ -22,7 +22,7 @@ def test_jsonc_unterminated_comment_has_source_position() -> None:
 
 
 def test_jsonc_syntax_error_keeps_source_position() -> None:
-    """Replacing comments with spaces preserves JSON error columns."""
+    """Parser metadata preserves original JSONC error columns."""
     with pytest.raises(expected_exception=JSONCParseError) as caught:
         _ = literalize(
             source='{"a": /* note */ ]}',

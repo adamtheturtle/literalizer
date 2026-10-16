@@ -1,0 +1,7 @@
+// calls heading
+[
+  // before call one
+  [1 /* first argument */, 2], // after call one
+  [3, /* second argument */ 4]
+  // after all calls
+]

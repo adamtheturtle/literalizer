@@ -5,6 +5,8 @@ type Val =
     | FStr of string
     | FMap of (string * Val) list
 let my_data: Val = FMap [
-    ("url", FStr "https://example.org/a/*b*/");
-    ("count", FInt 2L)
+    // A JSONC input case with both comment forms.
+    ("url", FStr "https://example.org/a/*b*/");  // detail
+    // continued
+    ("count", FInt 2L)  // trailing line comment
 ]

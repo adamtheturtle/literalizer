@@ -1,0 +1,17 @@
+schema_version = 1
+summary = "JSON5 syntax errors retain original source coordinates across line endings."
+exceptions = ["JSON5ParseError"]
+languages = ["Python"]
+position = [2, 5]
+
+[call]
+api = "literalize"
+sources = [
+    "/* heading */\n{a: !}",
+    "/* heading */\r{a: !}",
+    "/* heading */\r\n{a: !}",
+    "/* heading */ {a: !}",
+    "/* heading */ {a: !}",
+]
+input_format = "json5"
+variable_form = "none"

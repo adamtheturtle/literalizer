@@ -15,7 +15,7 @@ struct Record0 {
 fn main() {
 	my_data := Record0{
 		integers: [
-			[]IVal{},
+			[]Record1{},
 			[
 				Record1{
 					item: 1,
@@ -23,7 +23,7 @@ fn main() {
 			],
 		],
 		nulls: [
-			[]IVal{},
+			[]Record2{},
 			[
 				Record2{
 					item: unsafe { nil },
@@ -32,7 +32,7 @@ fn main() {
 		],
 		nested: [
 			[
-				[]IVal{},
+				[]Record1{},
 				[
 					Record1{
 						item: 2,
@@ -45,7 +45,7 @@ fn main() {
 						item: 3,
 					},
 				],
-				[]IVal{},
+				[]Record1{},
 			],
 		],
 		reversed: [
@@ -54,7 +54,7 @@ fn main() {
 					item: 4,
 				},
 			],
-			[]IVal{},
+			[]Record1{},
 		],
 	}
 	_ = my_data

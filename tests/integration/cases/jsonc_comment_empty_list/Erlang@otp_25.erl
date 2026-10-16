@@ -1,0 +1,8 @@
+-module(fixture_jsonc_comment_empty_list_erlang).
+-export([x/0]).
+x() ->
+    % empty heading
+    % empty body
+    % after empty
+    My_data = [],
+    My_data.

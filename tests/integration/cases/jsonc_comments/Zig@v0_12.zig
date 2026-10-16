@@ -12,8 +12,10 @@ const ZVal = union(enum) {
 const ZKV = struct { key: []const u8, val: ZVal };
 pub fn main() void {
     const my_data: ZVal = .{ .map = &.{
-        .{ .key = "url", .val = .{ .str = "https://example.org/a/*b*/" } },
-        .{ .key = "count", .val = .{ .int = 2 } },
+        // A JSONC input case with both comment forms.
+        .{ .key = "url", .val = .{ .str = "https://example.org/a/*b*/" } },  // detail
+        // continued
+        .{ .key = "count", .val = .{ .int = 2 } },  // trailing line comment
     }};
     _ = my_data;
 }

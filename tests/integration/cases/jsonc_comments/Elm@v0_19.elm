@@ -9,6 +9,8 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("url", EStr "https://example.org/a/*b*/"),
-    ("count", EInt 2)
+    -- A JSONC input case with both comment forms.
+    ("url", EStr "https://example.org/a/*b*/"),  -- detail
+    -- continued
+    ("count", EInt 2)  -- trailing line comment
     ]

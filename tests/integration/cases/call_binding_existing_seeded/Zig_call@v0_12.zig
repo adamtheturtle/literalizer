@@ -13,6 +13,7 @@ const ZKV = struct { key: []const u8, val: ZVal };
 fn make_widget(count: ZVal) ZVal { _ = count; return .nil; }
 pub fn main() void {
     var my_data = make_widget(.{ .int = 42 });
+    make_widget(my_data);
     my_data = make_widget(my_data);
     make_widget(my_data);
     _ = &my_data;

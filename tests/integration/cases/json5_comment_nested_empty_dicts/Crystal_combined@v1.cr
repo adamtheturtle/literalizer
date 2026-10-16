@@ -1,0 +1,17 @@
+module Fixture_json5_comment_nested_empty_dicts_Crystal_combined
+extend self
+my_data = {
+    # outer heading
+    # first empty
+    "a" => {} of String => String,
+    # second empty
+    "b" => {} of String => String,
+}
+my_data = {
+    # outer heading
+    # first empty
+    "a" => {} of String => String,
+    # second empty
+    "b" => {} of String => String,
+}
+end

@@ -79,7 +79,6 @@ from literalizer._formatters.record_strategy import (
     RecordRenderer,
     build_record_strategy,
     identity_field_identifier_key,
-    nested_record_sequence_type,
 )
 from literalizer._formatters.tuple_strategy import (
     is_tuple_eligible,
@@ -140,9 +139,11 @@ from literalizer._language import (
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
+    empty_record_shape_names,
     identity_call_arg,
     identity_call_ref_identifier,
     identity_constructor_target,
+    identity_known_null_ref_identifier,
     line_comment_call_variable_assignment,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -921,6 +922,14 @@ def _make_initializer_list_config(
     type_ctx: _CppTypeCtx,
 ) -> SequenceFormatConfig:
     """Build an INITIALIZER_LIST sequence config."""
+
+    @beartype
+    def _narrowed_empty(siblings: Sequence[list[Value]], /) -> str:
+        """Render an empty sequence using its siblings' selected type."""
+        return _cpp_narrowed_empty_sequence(
+            siblings=siblings, type_ctx=type_ctx
+        )
+
     return SequenceFormatConfig(
         sequence_open=_build_variant_sequence_open(type_ctx=type_ctx),
         close="}",
@@ -935,9 +944,7 @@ def _make_initializer_list_config(
         uses_typed_literal_for_scalars=False,
         requires_uniform_record_shapes=False,
         declared_type=None,
-        narrowed_empty_form=lambda siblings: _cpp_narrowed_empty_sequence(
-            siblings=siblings, type_ctx=type_ctx
-        ),
+        narrowed_empty_form=_narrowed_empty,
     )
 
 
@@ -1138,24 +1145,75 @@ def _collect_unique_cpp_types(
 
 
 @beartype
-def _infer_cpp_collection_element(
-    *, items: list[Value], type_ctx: _CppTypeCtx
-) -> type | ListType | DictType | None:
-    """Infer a homogeneous type unless tuple rendering needs per-item
-    types.
+def _cpp_nested_record_sequence_type(
+    *,
+    value: Value,
+    record_name_for_value: Callable[[ValueInput], str | None],
+) -> tuple[int, str] | None:
+    """Resolve uniform record vectors while borrowing types for
+    empties.
     """
-    nested_record_type = nested_record_sequence_type(
+    name = record_name_for_value(value)
+    if name is not None:
+        return (0, name)
+    if not isinstance(value, list) or len(value) == 0:
+        return None
+    children = {
+        _cpp_nested_record_sequence_type(
+            value=item, record_name_for_value=record_name_for_value
+        )
+        for item in value
+        if item != []
+    }
+    if len(children) != 1:
+        return None
+    (child,) = children
+    if child is None:
+        return None
+    depth, name = child
+    if depth == 0 and any(item == [] for item in value):
+        return None
+    return (depth + 1, name)
+
+
+@beartype
+def _infer_cpp_collection_type(
+    *, items: list[Value], type_ctx: _CppTypeCtx
+) -> str | None:
+    """Resolve a common rendered type before considering variant arms."""
+    record_type = _cpp_nested_record_sequence_type(
         value=items, record_name_for_value=type_ctx.record_name_for_value
     )
-    has_record_item = nested_record_type is not None
+    if not type_ctx.sequence_is_array and record_type is not None:
+        depth, inner = record_type
+        for _ in range(depth - 1):
+            inner = type_ctx.sequence_type(inner=inner, length=0)
+        return inner
     has_tuple_item = type_ctx.tuple_strategy and any(
         isinstance(item, list) and is_tuple_eligible(value=item)
         for item in items
     )
-    element_type = None
-    if not has_tuple_item and not has_record_item:
-        element_type = infer_element_type(items=items)
-    return element_type
+    if has_tuple_item or record_type is not None:
+        return None
+    element_type = infer_element_type(items=items)
+    match element_type:
+        case None:
+            return None
+        case DictType(value_type=None, values=dict_values):
+            value_type = _compute_element_type_for_items(
+                items=list(dict_values),
+                type_ctx=type_ctx,
+                in_mapping_value=True,
+            )
+            return type_ctx.dict_type(value_type)
+        case _:
+            int_leaves = _collect_int_leaves(
+                items=items, element_type=element_type
+            )
+            element_to_type = type_ctx.element_to_type(
+                int_type=type_ctx.int_resolver(int_leaves),
+            )
+            return element_to_type(element_type)
 
 
 @beartype
@@ -1180,30 +1238,9 @@ def _compute_element_type_for_items(
     """
     if len(items) == 0:
         return _cpp_owned_atomic_type("std::nullptr_t")
-    element_type = _infer_cpp_collection_element(
-        items=items, type_ctx=type_ctx
-    )
-    if element_type is not None:
-        match element_type:
-            case DictType(value_type=None, values=dict_values):
-                value_type = _compute_element_type_for_items(
-                    items=list(dict_values),
-                    type_ctx=type_ctx,
-                    in_mapping_value=True,
-                )
-                return type_ctx.dict_type(value_type)
-            case _:
-                int_leaves = _collect_int_leaves(
-                    items=items,
-                    element_type=element_type,
-                )
-                homogeneous_int_type = type_ctx.int_resolver(int_leaves)
-                element_to_type = type_ctx.element_to_type(
-                    int_type=homogeneous_int_type,
-                )
-                cpp_type = element_to_type(element_type)
-                if cpp_type is not None:
-                    return cpp_type
+    common_type = _infer_cpp_collection_type(items=items, type_ctx=type_ctx)
+    if common_type is not None:
+        return common_type
     sibling_lists = [item for item in items if isinstance(item, list)]
     if not type_ctx.tuple_strategy and len(sibling_lists) == len(items):
         normalized_lists = replace_positional_empty_lists(lists=sibling_lists)
@@ -1223,9 +1260,10 @@ def _compute_element_type_for_items(
         type_ctx=type_ctx,
     ):
         case [single]:
-            return single
+            result = single
         case types:
-            return type_ctx.variant_type(types)
+            result = type_ctx.variant_type(types)
+    return result
 
 
 @beartype
@@ -2948,6 +2986,12 @@ else:
 
 
 @beartype
+def _cpp_discard_call_result(call: str, /) -> str:
+    """Explicitly discard a transformed call result."""
+    return f"static_cast<void>({call})"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Cpp(metaclass=LanguageCls):
     """C++ language specification.
@@ -3832,7 +3876,7 @@ class Cpp(metaclass=LanguageCls):
         self,
     ) -> Callable[[str], str]:
         """Explicitly discard an unchanged transformed call's return value."""
-        return lambda call: f"static_cast<void>({call})"
+        return _cpp_discard_call_result
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
@@ -3974,9 +4018,7 @@ class Cpp(metaclass=LanguageCls):
     json_rendering: JsonRenderings | None = None
     record_struct_name_prefix: str = "Record"
     record_shape_names: Mapping[frozenset[str], str] = dataclasses.field(
-        default_factory=lambda: MappingProxyType[frozenset[str], str](
-            mapping={}
-        ),
+        default_factory=empty_record_shape_names,
         hash=False,
     )
     record_map_value_typing: RecordMapValueTypings = (
@@ -4284,8 +4326,14 @@ class Cpp(metaclass=LanguageCls):
     def format_known_null_ref_identifier(self) -> Callable[[str], str]:
         """Keep native null references bare and owning JSON values movable."""
         if self._json_type_active:
-            return lambda name: self.format_call_ref_identifier(name, None)
-        return lambda name: name
+
+            @beartype
+            def _format(name: str, /) -> str:
+                """Format a reference known to contain null."""
+                return self.format_call_ref_identifier(name, None)
+
+            return _format
+        return identity_known_null_ref_identifier
 
     @cached_property
     @beartype
@@ -4716,7 +4764,7 @@ class Cpp(metaclass=LanguageCls):
                         return record_open
                     return base_open(base_items)
                 return "std::vector{"
-            nested_type = nested_record_sequence_type(
+            nested_type = _cpp_nested_record_sequence_type(
                 value=items,
                 record_name_for_value=record_name_for_value,
             )
@@ -4735,68 +4783,37 @@ class Cpp(metaclass=LanguageCls):
             """Delegate to record-aware target inference."""
             return self._record_sequence_signature(
                 items,
-                record_rendering_active=record_rendering_active,
                 base_open=base_open,
                 record_name_for_value=record_name_for_value,
             )
 
         return signature_open(render=_open, infer=_signature)
 
+    @staticmethod
     def _record_sequence_signature(
-        self,
         items: list[Value],
         /,
         *,
-        record_rendering_active: bool,
         base_open: Callable[[list[Value]], str],
         record_name_for_value: Callable[[ValueInput], str | None],
     ) -> CollectionSignature:
         """Keep record deduction separate from ordinary inferred types."""
-        original_items = items
-        if self.language_version is not self.version_formats.CPP14:
-            if (
-                _all_record_shaped(items)
-                or nested_record_sequence_type(
-                    value=items, record_name_for_value=record_name_for_value
-                )
-                is not None
-            ):
-                return CollectionSignature(
-                    type_key="deduced-record-vector",
-                    arity=None,
-                    arity_decision=False,
-                    fallback_decision=False,
-                    narrowing_decision=True,
-                    uses_fallback_decision=False,
-                )
-            return collection_signature(base_open, original_items)
-        type_name = None
-        if _all_record_shaped(items):
-            type_name = _cpp14_record_list_type(
-                items=items,
-                record_shape_names=self.record_shape_names,
-                record_rendering_active=record_rendering_active,
-                record_name_for_value=record_name_for_value,
-            )
-        else:
-            nested_type = nested_record_sequence_type(
+        if (
+            _all_record_shaped(items)
+            or _cpp_nested_record_sequence_type(
                 value=items, record_name_for_value=record_name_for_value
             )
-            if nested_type is not None:
-                depth, name = nested_type
-                type_name = name
-                for _ in range(depth):
-                    type_name = f"std::vector<{type_name}>"
-        if type_name is not None:
+            is not None
+        ):
             return CollectionSignature(
-                type_key=type_name,
+                type_key="deduced-record-vector",
                 arity=None,
                 arity_decision=False,
                 fallback_decision=False,
                 narrowing_decision=True,
                 uses_fallback_decision=False,
             )
-        return collection_signature(base_open, original_items)
+        return collection_signature(base_open, items)
 
     @cached_property
     @beartype

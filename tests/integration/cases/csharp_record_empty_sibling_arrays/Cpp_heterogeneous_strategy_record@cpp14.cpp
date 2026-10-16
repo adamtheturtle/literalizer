@@ -2,7 +2,6 @@
 #include <string>
 #include <cstddef>
 #include <vector>
-#include <map>
 #include <memory>
 #include <utility>
 struct Value {
@@ -44,10 +43,10 @@ struct Value {
 };
 struct Record1 { int item{}; };
 struct Record2 { std::nullptr_t item{}; };
-struct Record0 { std::vector<std::vector<std::map<std::string, int>>> integers; std::vector<Value> nulls; std::vector<std::vector<std::vector<std::map<std::string, int>>>> nested; std::vector<std::vector<std::map<std::string, int>>> reversed; };
+struct Record0 { std::vector<std::vector<Record1>> integers; std::vector<std::vector<Record2>> nulls; std::vector<std::vector<std::vector<Record1>>> nested; std::vector<std::vector<Record1>> reversed; };
 int main() {
 auto my_data = Record0{
-    std::vector<Value>{
+    {
         std::vector<Record1>{},
         std::vector<Record1>{
             Record1{
@@ -56,15 +55,15 @@ auto my_data = Record0{
         },
     },
     {
-        Value{std::vector<Record2>{}},
-        Value{std::vector<Record2>{
+        std::vector<Record2>{},
+        std::vector<Record2>{
             Record2{
                 nullptr,
             },
-        }},
+        },
     },
-    std::vector<Value>{
-        std::vector<std::vector<std::map<std::string, int>>>{
+    {
+        std::vector<std::vector<Record1>>{
             std::vector<Record1>{},
             std::vector<Record1>{
                 Record1{
@@ -72,7 +71,7 @@ auto my_data = Record0{
                 },
             },
         },
-        std::vector<std::vector<std::map<std::string, int>>>{
+        std::vector<std::vector<Record1>>{
             std::vector<Record1>{
                 Record1{
                     3,
@@ -81,7 +80,7 @@ auto my_data = Record0{
             std::vector<Record1>{},
         },
     },
-    std::vector<Value>{
+    {
         std::vector<Record1>{
             Record1{
                 4,

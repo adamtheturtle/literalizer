@@ -1,0 +1,9 @@
+* my_data
+@code javascript
+[
+    "// data",
+    "/* data */",
+    "escaped quote: \" // data",
+    "backslash: \\"
+]
+@end

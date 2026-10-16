@@ -6,8 +6,10 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GDict([
-    #("url", GStr("https://example.org/a/*b*/")),
-    #("count", GInt(2)),
+    // A JSONC input case with both comment forms.
+    #("url", GStr("https://example.org/a/*b*/")),  // detail
+    // continued
+    #("count", GInt(2)),  // trailing line comment
   ])
   let _ = my_data
 }

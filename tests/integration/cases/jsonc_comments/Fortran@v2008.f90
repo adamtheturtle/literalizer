@@ -85,7 +85,9 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('url', fstr('https://example.org/a/*b*/')), &
-        fentry('count', fint(2_int64)) &
+        ! A JSONC input case with both comment forms.
+        fentry('url', fstr('https://example.org/a/*b*/')), &  ! detail
+        ! continued
+        fentry('count', fint(2_int64)) &  ! trailing line comment
     ])
 end program main

@@ -1,0 +1,17 @@
+schema_version = 1
+summary = "JSON5 number range errors retain original source coordinates across line endings."
+exceptions = ["JSON5ParseError"]
+languages = ["Python"]
+position = [2, 5]
+
+[call]
+api = "literalize"
+sources = [
+    "/* heading */\n{a: 1e999}",
+    "/* heading */\r{a: 1e999}",
+    "/* heading */\r\n{a: 1e999}",
+    "/* heading */ {a: 1e999}",
+    "/* heading */ {a: 1e999}",
+]
+input_format = "json5"
+variable_form = "none"

@@ -42,6 +42,7 @@ from literalizer._literalize import (
 from literalizer._parsing import (
     InputFormat,
     ParsedInput,
+    ParsedPlain,
     parse_input,
 )
 from literalizer._types import Value, ValueInput
@@ -119,6 +120,11 @@ def _select_input_root(
         selected = parsed.data[input_root_key]
     except KeyError as exc:
         raise InputRootKeyNotFoundError(input_root_key=input_root_key) from exc
+    if isinstance(parsed, ParsedPlain) and parsed.comments is not None:
+        index = list(parsed.data).index(input_root_key)
+        return dataclasses.replace(
+            parsed, data=selected, comments=parsed.comments.children[index]
+        )
     return dataclasses.replace(parsed, data=selected)
 
 
@@ -352,12 +358,11 @@ def literalize(
     record_null_substitutions: Mapping[str, ValueInput] | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
 ) -> LiteralizeResult:
-    r"""Convert a JSON, JSON5, YAML, or TOML string to a native
+    r"""Convert a JSON, JSONC, JSON5, YAML, or TOML string to a native
     language literal.
 
-    YAML and TOML comments are preserved in the output using the target
-    language's comment syntax. JSON5 comments are not preserved; JSON5 input
-    is parsed as plain data.
+    YAML, TOML, JSONC and JSON5 comments are preserved in the output
+    using the target language's comment syntax and capability policies.
 
     Args:
         source: The input string to convert.

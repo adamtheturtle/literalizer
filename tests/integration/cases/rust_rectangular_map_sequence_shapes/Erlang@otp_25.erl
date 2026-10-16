@@ -1,0 +1,8 @@
+-module(fixture_rust_rectangular_map_sequence_shapes_erlang).
+-export([x/0]).
+x() ->
+    My_data = #{
+        "a" => [#{"item" => [1]}],
+        "b" => [#{"item" => [2]}]
+    },
+    My_data.

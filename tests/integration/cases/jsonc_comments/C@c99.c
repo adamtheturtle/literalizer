@@ -16,8 +16,10 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
-    {"url", ((CVal){.s = "https://example.org/a/*b*/"})},
-    {"count", ((CVal){.i = 2})},
+    // A JSONC input case with both comment forms.
+    {"url", ((CVal){.s = "https://example.org/a/*b*/"})},  // detail
+    // continued
+    {"count", ((CVal){.i = 2})},  // trailing line comment
 }});
     (void)my_data;
     return 0;

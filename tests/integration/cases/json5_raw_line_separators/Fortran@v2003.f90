@@ -88,6 +88,7 @@ program main
     my_data = fmap([fval_t :: &
         fentry('double', fstr('a' // achar(226) // achar(128) // achar(168) // 'b')), &
         fentry('single', fstr('c' // achar(226) // achar(128) // achar(169) // 'd')), &
+        ! A comment, which both separators would end.
         fentry('both', &
     & fstr('e' // achar(226) // achar(128) // achar(168) // 'f' // achar(226) // achar(128) // achar(169) // 'g')), &
         fentry('continued', fstr('hi')), &

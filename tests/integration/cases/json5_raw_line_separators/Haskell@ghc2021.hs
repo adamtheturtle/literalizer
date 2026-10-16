@@ -4,6 +4,7 @@ my_data :: Val
 my_data = HMap [
     ("double", HStr "a\x2028\&b"),
     ("single", HStr "c\x2029\&d"),
+    -- A comment, which both separators would end.
     ("both", HStr "e\x2028\&f\x2029g"),
     ("continued", HStr "hi"),
     ("escaped backslash", HStr "j\\\x2028k")

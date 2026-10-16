@@ -1,0 +1,3 @@
+def f(*_args: object, **_kwargs: object) -> object: ...
+# selected heading
+f(a=1, b=2)  # selected inline

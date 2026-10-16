@@ -4,5 +4,6 @@ class Make_widget_ {
 }
 var make_widget = Make_widget_.new()
 var my_data = make_widget.call(42)
+make_widget.call(my_data)
 my_data = make_widget.call(my_data)
 make_widget.call(my_data)

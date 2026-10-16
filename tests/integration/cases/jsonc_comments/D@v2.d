@@ -1,7 +1,9 @@
 import std.json;
 void main() {
 auto my_data = JSONValue([
-    "url": JSONValue("https://example.org/a/*b*/"),
-    "count": JSONValue(2),
+    // A JSONC input case with both comment forms.
+    "url": JSONValue("https://example.org/a/*b*/"),  // detail
+    // continued
+    "count": JSONValue(2),  // trailing line comment
 ]);
 }

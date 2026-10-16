@@ -1,0 +1,6 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSONCParseError]
+"Python['/* heading */\\n{\"a\": !}']" = "Invalid JSONC: Unexpected character at line 2 column 7"
+"Python['/* heading */\\r{\"a\": !}']" = "Invalid JSONC: Unexpected character at line 2 column 7"
+"Python['/* heading */\\r\\n{\"a\": !}']" = "Invalid JSONC: Unexpected character at line 2 column 7"

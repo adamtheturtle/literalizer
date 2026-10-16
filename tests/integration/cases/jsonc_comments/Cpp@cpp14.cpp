@@ -43,8 +43,10 @@ struct Value {
 };
 int main() {
 auto my_data = std::map<std::string, Value>{
-    {"url", Value{"https://example.org/a/*b*/"}},
-    {"count", Value{2}},
+    // A JSONC input case with both comment forms.
+    {"url", Value{"https://example.org/a/*b*/"}},  // detail
+    // continued
+    {"count", Value{2}},  // trailing line comment
 };
     (void)my_data;
     return 0;

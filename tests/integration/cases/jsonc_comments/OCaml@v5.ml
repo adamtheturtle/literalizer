@@ -5,8 +5,10 @@ type val_t =
   | OStr of string
   | OMap of (string * val_t) list
 let my_data : val_t = OMap [
-    ("url", OStr "https://example.org/a/*b*/");
-    ("count", OInt 2)
+    (* A JSONC input case with both comment forms. *)
+    ("url", OStr "https://example.org/a/*b*/");  (* detail *)
+    (* continued *)
+    ("count", OInt 2)  (* trailing line comment *)
 ]
 
 end

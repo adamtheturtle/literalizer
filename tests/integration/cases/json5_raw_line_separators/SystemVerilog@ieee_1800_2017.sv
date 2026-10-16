@@ -14,6 +14,7 @@ initial begin
 static _VKV my_data[] = '{
     _VKV'{k: "double", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "a b"}},
     _VKV'{k: "single", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "c d"}},
+    // A comment, which both separators would end.
     _VKV'{k: "both", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "e f g"}},
     _VKV'{k: "continued", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "hi"}},
     _VKV'{k: "escaped backslash", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "j\\ k"}}

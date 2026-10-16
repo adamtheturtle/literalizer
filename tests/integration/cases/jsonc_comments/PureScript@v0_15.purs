@@ -10,6 +10,8 @@ data Val
 
 my_data :: Val
 my_data = PDict [
-    (Tuple "url" (PStr "https://example.org/a/*b*/")),
-    (Tuple "count" (PInt 2))
+    -- A JSONC input case with both comment forms.
+    (Tuple "url" (PStr "https://example.org/a/*b*/")),  -- detail
+    -- continued
+    (Tuple "count" (PInt 2))  -- trailing line comment
 ]

@@ -1,3 +1,4 @@
+# A comment, which both separators would end.
 set my_data [dict create \
     "double" "a b" \
     "single" "c d" \

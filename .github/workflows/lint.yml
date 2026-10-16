@@ -1035,7 +1035,7 @@ jobs:
       - name: Lint Jsonc
         run: |-
           find tests/integration/cases -name '*.jsonc' -print0 > /tmp/files-jsonc && test -s /tmp/files-jsonc
-          xargs -0 node .github/npm-linters/lint-jsonc.cjs < /tmp/files-jsonc
+          xargs -0 uv run python -m scripts.check_jsonc_syntax < /tmp/files-jsonc
 
       - name: Lint Norg
         run: |-
@@ -1956,6 +1956,7 @@ jobs:
 
   lint-cpp-tidy:
     strategy:
+      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
@@ -2100,6 +2101,7 @@ jobs:
 
   lint-cpp:
     strategy:
+      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest

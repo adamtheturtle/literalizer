@@ -968,7 +968,8 @@ class VisualBasic(metaclass=LanguageCls):
     element_separator: ClassVar[str] = ", "
     skip_null_dict_values: ClassVar[bool] = False
     supports_collection_comments: ClassVar[bool] = False
-    supports_scalar_before_comments: ClassVar[bool] = True
+    # A numeric value after leading comments can be parsed as a line label.
+    supports_scalar_before_comments: ClassVar[bool] = False
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ""
     static_preamble: ClassVar[Sequence[str]] = ()

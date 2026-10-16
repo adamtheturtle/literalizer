@@ -2,6 +2,7 @@ module Fixture_call_binding_existing_comment_next_line_objective_c_Crystal_type_
 extend self
 def make_widget(count = nil); 0; end
 my_data = make_widget(count: 42)
+make_widget(count: my_data);
 my_data = make_widget(count: my_data)
 // note
 make_widget(count: my_data);

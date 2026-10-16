@@ -1,4 +1,6 @@
 val my_data = mapOf<String, Any?>(
-    "url" to "https://example.org/a/*b*/",
-    "count" to 2,
+    // A JSONC input case with both comment forms.
+    "url" to "https://example.org/a/*b*/",  // detail
+    // continued
+    "count" to 2,  // trailing line comment
 )
