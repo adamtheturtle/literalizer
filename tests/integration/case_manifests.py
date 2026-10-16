@@ -683,8 +683,7 @@ class CallCaseSpec(  # noqa: NOD001
     # case-specific opt-out.
     variant_only: bool = False
 
-    @model_validator(mode="after")
-    def _validate_followup_target(self) -> CallCaseSpec:
+    def _validate_followup_target(self) -> None:
         """Require a separate follow-up target to have a source."""
         if self.followup_target_function is not None:
             if self.followup_source is None:
@@ -695,7 +694,6 @@ class CallCaseSpec(  # noqa: NOD001
                     "followup_target_function must differ from target_function"
                 )
                 raise ValueError(msg)
-        return self
 
     @model_validator(mode="after")
     def _validate_call_variants(self) -> CallCaseSpec:
@@ -705,6 +703,7 @@ class CallCaseSpec(  # noqa: NOD001
         default per-language matrix names at least one, so no call case
         declares itself into having no coverage at all.
         """
+        self._validate_followup_target()
         axes = [entry.axis for entry in self.variants]
         if len(axes) != len(set(axes)):
             msg = "duplicate call variant axis"
