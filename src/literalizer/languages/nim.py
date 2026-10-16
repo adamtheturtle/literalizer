@@ -238,8 +238,8 @@ def _nim_json_value_expression(raw_value: Value, value: str, /) -> str:
 def _format_nim_call_arg(raw_value: Value, formatted: str) -> str:
     """Give empty array arguments a concrete element type.
 
-    An unconstrained ``[]`` instantiates a generic proc with Nim's
-    internal empty element type, which crashes C code generation.
+    An unconstrained ``[]`` instantiates a generic proc with an internal
+    empty element type, which crashes C code generation.
     """
     if isinstance(raw_value, list) and len(raw_value) == 0:
         return "default(array[0, int])"
