@@ -112,31 +112,3 @@ def test_cpp_null_consumption_uses_bound_value(
     )
     assert result.code == expected_code
     assert result.source_data == hint
-
-
-@pytest.mark.parametrize(
-    argnames=("ref_values", "expected_code"),
-    argvalues=[
-        (None, "consume(std::move(item));"),
-        ({}, "consume(std::move(item));"),
-        ({"item": None}, "consume(item);"),
-    ],
-)
-def test_cpp_external_consumable_reference(
-    ref_values: Mapping[str, ValueInput] | None, expected_code: str
-) -> None:
-    """Unknown external ownership retains the historical consuming
-    form.
-    """
-    result = literalize_call(
-        source='{"$ref": "item"}',
-        input_format=InputFormat.JSON,
-        language=Cpp(),
-        target_function="consume",
-        parameter_names=["value"],
-        per_element=False,
-        ref_key="$ref",
-        ref_values=ref_values,
-        consumable_refs=frozenset({"item"}),
-    )
-    assert result.code == expected_code

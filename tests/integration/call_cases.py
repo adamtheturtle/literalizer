@@ -738,6 +738,13 @@ def _run_call_with_declarations(
         effective_ref_values = None
         if len(ref_values) > 0:
             effective_ref_values = ref_values
+        if config.explicit_ref_value_sources is not None:
+            effective_ref_values = {
+                name: json.loads(s=ref_source)
+                for name, ref_source in (
+                    config.explicit_ref_value_sources.items()
+                )
+            }
         followup_result = None
         if config.followup_source is not None:
             followup_result = literalizer.literalize_call(

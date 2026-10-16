@@ -608,6 +608,9 @@ class CallCaseSpec(  # noqa: NOD001
     unknown_ref_names: StringFrozenSet = Field(
         default_factory=_empty_name_set,
     )
+    # An explicit mapping overrides declaration-derived inference hints.
+    # An empty table passes {}, while omission keeps the inferred hints.
+    explicit_ref_value_sources: dict[str, str] | None = None
     # Additional JSON sources used to seed ``ref_values`` without
     # emitting declarations.  This covers mappings whose names are not
     # referenced by the input while keeping generated fixtures free of
