@@ -141,6 +141,41 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 'target_function = "process"\n'
                 'parameter_names = ["value"]\n'
                 "per_element = true\n"
+                'followup_target_function = "consume"\n'
+            ),
+            "followup_target_function requires followup_source",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                'followup_source = "1"\n'
+                'followup_target_function = "process"\n'
+            ),
+            "followup_target_function must differ from target_function",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
+                'followup_source = "1"\n'
+                "followup_target_function = 1\n"
+            ),
+            "Input should be a valid string",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
                 'call_style = "mystery"\n'
             ),
             ("Input should be 'command', 'keyword', 'object', 'positional'"),
