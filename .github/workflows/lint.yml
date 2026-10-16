@@ -76,7 +76,7 @@ jobs:
         grep -F 'toml_table/Mojo_combined@v24_5.mojo: END ' /tmp/mojo-memory-probe.log | grep -F 'status 0;'
     - name: Check Mojo syntax
       run: |-
-        printf 'Mojo compiler workers: 2; fixture budget: 60s + 10s termination\n'
+        printf 'Mojo compiler workers: 2; pool ceiling: 4 GiB; hard fixture deadline: 60s\n'
         free -m
         df -h /tmp
         tr '\0' '\n' < /tmp/files-to-lint | wc -l
