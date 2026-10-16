@@ -15,7 +15,7 @@ printf '%s: START %s (pid %s)\n' "$fixture" "$(date -u +%FT%TZ)" "$$" >&2
 status=0
 /usr/bin/time --quiet -o "$workspace/resources" \
     -f 'elapsed=%es max_rss=%MKiB exit=%x' \
-    "$bounded_runner" "$fixture" --kill-after=10s 60s \
+    "$bounded_runner" "$fixture" --signal=KILL 60s \
     mojo run --Werror "$fixture" > "$workspace/output" 2>&1 || status=$?
 # Emit completed diagnostics together. Otherwise even a single GNU time
 # line can interleave byte-by-byte with another compiler's output.

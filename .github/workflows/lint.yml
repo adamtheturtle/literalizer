@@ -2996,7 +2996,8 @@ jobs:
 
   # Keep compiler concurrency bounded even when nproc grows: the expanded
   # corpus has lost hosted runners without a completed compiler result.
-  # Per-fixture deadlines, progress and resource use identify active work.
+  # Per-fixture deadlines and a 4 GiB pool ceiling contain runaway work;
+  # labelled progress and resource use identify every active fixture.
   # Pull requests use the exact supported version; the scheduled workflow
   # also tries the latest stable release as a non-blocking canary.
   lint-mojo:
@@ -3038,10 +3039,10 @@ jobs:
           mojo --version
       - name: Check Mojo syntax
         run: |-
-          printf 'Mojo compiler workers: 2; fixture budget: 60s + 10s termination\n'
+          printf 'Mojo compiler workers: 2; pool ceiling: 4 GiB; hard fixture deadline: 60s\n'
           free -m
           df -h /tmp
-          xargs -0 -P 2 -n1 scripts/lint-mojo-fixture.sh < /tmp/files-to-lint
+          scripts/lint-mojo.sh < /tmp/files-to-lint
       # Basic JSON -> Mojo -> JSON round-trip (issue 2664). Runs here
       # because this is the job with the Mojo toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
