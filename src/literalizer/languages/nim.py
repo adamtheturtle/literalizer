@@ -120,6 +120,7 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
+    identity_call_arg,
     identity_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -232,18 +233,6 @@ def _nim_json_value_expression(raw_value: Value, value: str, /) -> str:
     if isinstance(raw_value, (dict, list, set)):
         return value
     return f"{_NIM_JSON_MACRO}({value})"
-
-
-@beartype
-def _format_nim_call_arg(raw_value: Value, formatted: str) -> str:
-    """Give empty array arguments a concrete element type.
-
-    An unconstrained ``[]`` instantiates a generic proc with an internal
-    empty element type, which crashes C code generation.
-    """
-    if isinstance(raw_value, list) and len(raw_value) == 0:
-        return "default(array[0, int])"
-    return formatted
 
 
 @beartype
@@ -1044,6 +1033,54 @@ def _nim_record_literal(
 
 
 @beartype
+def _nim_value_call_stubs(
+    *,
+    method: str,
+    params: Sequence[str],
+    args: Sequence[Value],
+    self_type: str | None,
+    uses_json_node: bool,
+) -> tuple[str, ...]:
+    """Keep generic stubs and constrain observed empty array arguments.
+
+    A generic proc accepts ``[]`` but crashes C code generation. A
+    concrete overload gives that expression an element type while the
+    generic signature still accepts populated arrays and bound refs.
+    """
+    patterns: list[frozenset[int]] = [frozenset()]
+    if not uses_json_node:
+        for row in args:
+            values = row if isinstance(row, list) else [row]
+            empty_slots = frozenset(
+                i
+                for i, value in enumerate(iterable=values)
+                if isinstance(value, list) and len(value) == 0
+            )
+            if len(empty_slots) > 0 and empty_slots not in patterns:
+                patterns.append(empty_slots)
+    lines: list[str] = []
+    for empty_slots in patterns:
+        type_params = [
+            f"T{i}" for i in range(len(params)) if i not in empty_slots
+        ]
+        type_clause = ""
+        if len(type_params) > 0:
+            type_clause = f"[{', '.join(type_params)}]"
+        declarations = [
+            f"{name}: array[0, int]" if i in empty_slots else f"{name}: T{i}"
+            for i, name in enumerate(iterable=params)
+        ]
+        if self_type is not None:
+            declarations.insert(0, f"self: {self_type}")
+        params_str = "; ".join(declarations)
+        lines.append(
+            f"proc {method}{type_clause}"
+            f"({params_str}): int {{.discardable.}} = 0"
+        )
+    return tuple(lines)
+
+
+@beartype
 def _nim_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
@@ -1052,6 +1089,7 @@ def _nim_call_stub(
     /,
     *,
     indent: str,
+    uses_json_node: bool,
 ) -> tuple[str, ...]:
     """Return Nim stub declarations for a call name.
 
@@ -1095,20 +1133,13 @@ def _nim_call_stub(
         lines.append(f"var {root}: {root_type}")
         return tuple(lines)
 
-    # VALUE: use a generic proc instead of a template
-    type_params = [f"T{i}" for i in range(len(_params))]
-    type_clause = ""
-    if len(type_params) > 0:
-        type_clause = f"[{', '.join(type_params)}]"
     if len(parts) == 1:
-        params_str = "; ".join(
-            f"{p}: {t}" for p, t in zip(_params, type_params, strict=True)
-        )
-        return (
-            (
-                f"proc {method}{type_clause}"
-                f"({params_str}): int {{.discardable.}} = 0"
-            ),
+        return _nim_value_call_stubs(
+            method=method,
+            params=_params,
+            args=_args,
+            self_type=None,
+            uses_json_node=uses_json_node,
         )
     chain = list(parts[:-1])
     holder = chain[-1]
@@ -1125,16 +1156,14 @@ def _nim_call_stub(
                 f"{indent}{inner}: {inner_type}",
             ]
         )
-    params_str = "; ".join(
-        f"{p}: {t}" for p, t in zip(_params, type_params, strict=True)
-    )
-    if params_str != "":
-        self_and_params = f"self: {holder_type}; {params_str}"
-    else:
-        self_and_params = f"self: {holder_type}"
-    lines.append(
-        f"proc {method}{type_clause}"
-        f"({self_and_params}): int {{.discardable.}} = 0"
+    lines.extend(
+        _nim_value_call_stubs(
+            method=method,
+            params=_params,
+            args=_args,
+            self_type=holder_type,
+            uses_json_node=uses_json_node,
+        )
     )
     root = chain[0]
     root_type = f"{root.title()}Type"
@@ -2270,7 +2299,11 @@ class Nim(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return stub declarations for a call expression."""
-        return partial(_nim_call_stub, indent=self.indent)
+        return partial(
+            _nim_call_stub,
+            indent=self.indent,
+            uses_json_node=self._uses_json_node,
+        )
 
     format_call_preamble_stub = default_format_call_stub
 
@@ -2820,12 +2853,11 @@ class Nim(metaclass=LanguageCls):
 
         Under ``json_type`` every call argument is wrapped in ``%*`` so
         the underlying proc receives a ``JsonNode``; under any other
-        mode empty arrays receive an explicit element type so generic
-        proc stubs can compile them.
+        mode call arguments pass through unchanged.
         """
         if self._uses_json_node:
             return _format_nim_json_call_arg
-        return _format_nim_call_arg
+        return identity_call_arg
 
     @cached_property
     @beartype

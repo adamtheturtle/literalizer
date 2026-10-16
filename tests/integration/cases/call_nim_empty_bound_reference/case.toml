@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Nim"]
+languages_reason = "Nim empty argument overloads preserve void templates and the declared types of empty bound references."
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+call_transform = "{call}"
+ref_declarations = {items = "[]"}
+
+[[call.variants]]
+axis = "json_type"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"
