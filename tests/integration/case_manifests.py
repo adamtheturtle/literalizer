@@ -23,7 +23,7 @@ from pydantic import (
 
 import literalizer
 from literalizer import ValueInput
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import ALL_LANGUAGES, Cpp, Rust
 
 from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
 from .language_metadata import language_metadata
@@ -92,6 +92,10 @@ REF_OWNER: OwnerName = "literalize-ref"
 REF_DEFAULT_OWNER: OwnerName = "literalize-ref-default"
 
 _REF_OWNERS: frozenset[OwnerName] = frozenset({REF_OWNER, REF_DEFAULT_OWNER})
+
+_VALUE_CHECK_LANGUAGES: frozenset[literalizer.LanguageCls] = frozenset(
+    {Cpp, Rust}
+)
 
 KEBAB_NEW_VARIABLE_OWNER: OwnerName = "new-variable-kebab"
 PRIMED_NEW_VARIABLE_OWNER: OwnerName = "new-variable-prime"
@@ -553,10 +557,30 @@ class RefCaseSpec(  # noqa: NOD001
     external_declaration_styles: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
-    fixture_prefix: str = ""
-    fixture_suffix: str = ""
     explicit_ref_value_sources: dict[str, str] | None = None
+    expected_value_source: str | None = None
     consumer: RefConsumerSpec | None = None
+
+    @model_validator(mode="after")
+    def _validate_expected_value(self) -> RefCaseSpec:
+        """Limit executable value checks to their supported fixture
+        context.
+        """
+        if self.expected_value_source is not None:
+            if len(self.external_declarations) == 0:
+                msg = "expected_value_source requires external_declarations"
+                raise ValueError(msg)
+            if len(self.languages) == 0 or any(
+                lang not in _VALUE_CHECK_LANGUAGES for lang in self.languages
+            ):
+                msg = "expected_value_source requires Cpp or Rust languages"
+                raise ValueError(msg)
+            if self.consumer is not None:
+                msg = (
+                    "consumer and expected_value_source are mutually exclusive"
+                )
+                raise ValueError(msg)
+        return self
 
     @model_validator(mode="after")
     def _validate_consumer(self) -> RefCaseSpec:

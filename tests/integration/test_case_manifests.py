@@ -136,6 +136,42 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
             "before_assignment requires an existing my_data binding",
         ),
         (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref]\nexpected_value_source = "[0, 1]"\n'
+            ),
+            "expected_value_source requires external_declarations",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref]\nexternal_declarations = {a = "0"}\n'
+                'expected_value_source = "[0, 1]"\n'
+            ),
+            "expected_value_source requires Cpp or Rust languages",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref]\nlanguages = ["Python"]\n'
+                'languages_reason = "Unsupported assertion backend."\n'
+                'external_declarations = {a = "0"}\n'
+                'expected_value_source = "[0, 1]"\n'
+            ),
+            "expected_value_source requires Cpp or Rust languages",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref]\nlanguages = ["Rust"]\n'
+                'languages_reason = "Consumer and assertion conflict."\n'
+                'external_declarations = {a = "0"}\n'
+                'expected_value_source = "[0, 1]"\n'
+                '[ref.consumer]\ntarget_function = "consume_widget"\n'
+            ),
+            "consumer and expected_value_source are mutually exclusive",
+        ),
+        (
             'schema_version = 1\nowner = "literalize-call"\n',
             r"requires a \[call\] table",
         ),

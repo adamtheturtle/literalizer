@@ -7,5 +7,5 @@ languages_reason = "Rust must not infer the unresolved marker mapping as a colle
 # Compose the caller's declaration after rendering so a remains unresolved
 # during public API inference, while the resulting fixture compiles.
 external_declarations = {a = "0"}
-fixture_suffix = "\nassert_eq!(my_data, vec![0, 1]);"
+expected_value_source = "[0, 1]"
 explicit_ref_value_sources = {zzz = "5"}
