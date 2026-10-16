@@ -1,3 +1,6 @@
 function make_widget(...) end
+function consume_widget(...) end
 local my_data = make_widget(0)
+consume_widget(my_data)
 my_data = make_widget(1)
+consume_widget(my_data)

@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "json_type", member = "JSON_VALUE" },
+]
+json_type = "JSON_VALUE"
+variable_form = "existing"
+external_declarations = {my_data = '{"a": 0}'}
+fixture_prefix = "_ = my_data\n"
+fixture_suffix = "\n_ = my_data"

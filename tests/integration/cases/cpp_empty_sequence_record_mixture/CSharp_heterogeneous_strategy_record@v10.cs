@@ -1,7 +1,7 @@
 record Record0(int X);
 class Check {
     public static void Main() {
-var my_data = new[] {
+var my_data = new object?[] {
     new object?[] {},
     new Record0(1)
 };

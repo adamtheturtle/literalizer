@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "json_type", member = "STD_JSON_VALUE" },
+]
+variable_form = "new"
+json_type = "STD_JSON_VALUE"
+external_declarations = {shared = "[1, 2]"}
+explicit_ref_value_sources = {shared = "[1, 2]"}
+fixture_suffix = "\n_ = my_data;"

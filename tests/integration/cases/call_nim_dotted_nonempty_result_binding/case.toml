@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "thing.go"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "{call}"
+
+[[call.variants]]
+axis = "json_type"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"

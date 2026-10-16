@@ -14,9 +14,14 @@ MOBILE DATA TYPE LIT IS
 MOBILE LIT FUNCTION make_widget (VAL MOBILE LIT count)
     RESULT MOBILE LIT(lit.null)
 :
+PROC consume_widget (VAL MOBILE LIT count)
+    SKIP
+:
 PROC main ()
     VAL MOBILE LIT my_data IS make_widget(MOBILE LIT(lit.int; 0)):
+    consume_widget(my_data)
     my_data := make_widget(MOBILE LIT(lit.int; 1))
+    consume_widget(my_data)
     SEQ
         SKIP
 :

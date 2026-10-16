@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+variable_form = "existing"
+external_declarations = {item = "[1, 2]", my_data = "[1, 2]"}
+fixture_prefix = "(void)my_data;\n"
+fixture_suffix = "\n(void)my_data;"

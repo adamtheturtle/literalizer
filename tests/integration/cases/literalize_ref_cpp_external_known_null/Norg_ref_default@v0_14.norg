@@ -1,0 +1,14 @@
+* item
+@code javascript
+null
+@end
+* my_data
+@code javascript
+null
+@end
+(void)my_data;
+* my_data
+@code javascript
+item
+@end
+(void)my_data;

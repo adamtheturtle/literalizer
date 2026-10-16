@@ -1347,6 +1347,24 @@ class FSharp(metaclass=LanguageCls):
 
     @cached_property
     @beartype
+    def _collection_entry_formatter(self) -> Callable[[Value, str], str]:
+        """Box nested arrays as values while preserving array bindings."""
+        if self.sequence_format is not type(self.sequence_format).ARRAY:
+            return self._entry_formatter
+        prefix = self.constructor_prefix
+        base = self._entry_formatter
+
+        @beartype
+        def _format(original: Value, formatted: str) -> str:
+            """Wrap array entries in the matching union constructor."""
+            if isinstance(original, list):
+                return f"{prefix}List ({formatted})"
+            return base(original, formatted)
+
+        return _format
+
+    @cached_property
+    @beartype
     def _json_type_active(self) -> bool:
         """Whether F# should render through ``JsonNode``."""
         return self.json_type is not None
@@ -1484,7 +1502,7 @@ class FSharp(metaclass=LanguageCls):
             ),
             close="]",
             format_entry=tuple_dict_entry(
-                format_value=self._entry_formatter,
+                format_value=self._collection_entry_formatter,
             ),
             empty_dict=None,
             preamble_lines=(),
@@ -1632,7 +1650,7 @@ class FSharp(metaclass=LanguageCls):
             return _format_fsharp_json_entry
         if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
             return passthrough_sequence_entry
-        return self._entry_formatter
+        return self._collection_entry_formatter
 
     @cached_property
     @beartype
@@ -1640,7 +1658,7 @@ class FSharp(metaclass=LanguageCls):
         """Callable that formats one set entry."""
         if self._json_type_active:
             return _format_fsharp_json_entry
-        return self._entry_formatter
+        return self._collection_entry_formatter
 
     @cached_property
     @beartype
@@ -1674,7 +1692,9 @@ class FSharp(metaclass=LanguageCls):
         """Callable that formats one ordered-map entry."""
         if self._json_type_active:
             return tuple_dict_entry(format_value=_format_fsharp_json_entry)
-        return tuple_dict_entry(format_value=self._entry_formatter)
+        return tuple_dict_entry(
+            format_value=self._collection_entry_formatter,
+        )
 
     @cached_property
     @beartype
@@ -1780,6 +1800,11 @@ class FSharp(metaclass=LanguageCls):
         p = self.constructor_prefix
         header = f"type {self.type_name} ="
         f_str = f"    | {p}Str of string"
+        sequence_type = (
+            "array"
+            if self.sequence_format is type(self.sequence_format).ARRAY
+            else "list"
+        )
         if self.date_format.value.type_produced is dt.date:
             effective_header = (header, f"    | {p}Date of System.DateOnly")
         else:
@@ -1800,7 +1825,10 @@ class FSharp(metaclass=LanguageCls):
             float: (header, f"    | {p}Float of float"),
             str: (header, f_str),
             bytes: (header, f_str),
-            list: (header, f"    | {p}List of {self.type_name} list"),
+            list: (
+                header,
+                f"    | {p}List of {self.type_name} {sequence_type}",
+            ),
             dict: (
                 header,
                 f"    | {p}Map of (string * {self.type_name}) list",

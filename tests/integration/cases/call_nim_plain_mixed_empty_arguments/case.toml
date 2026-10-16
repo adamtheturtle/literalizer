@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["before", "populated", "after"]
+per_element = true
+wrap_in_file = true
+call_transform = "{call}"
+
+[[call.variants]]
+axis = "json_type"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"

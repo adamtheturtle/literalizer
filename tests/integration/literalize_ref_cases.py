@@ -309,6 +309,27 @@ def _ref_language_options(
 
 
 @beartype
+def _probe_ref_variable_form(
+    *,
+    spec: literalizer.Language,
+    variable_form: literalizer.VariableForm | None,
+    wrap_in_file: bool,
+) -> literalizer.VariableForm | None:
+    """Use unnamed output for languages that cannot name a variable."""
+    try:
+        _ = literalizer.literalize(
+            source='{"key": "value"}',
+            input_format=literalizer.InputFormat.JSON,
+            language=spec,
+            variable_form=variable_form,
+            wrap_in_file=wrap_in_file,
+        )
+    except VariableNameNotSupportedError:
+        return None
+    return variable_form
+
+
+@beartype
 def run_literalize_ref_golden_case(
     *,
     config: RefCaseSpec,
@@ -368,16 +389,11 @@ def run_literalize_ref_golden_case(
         prefix=lang_cls.__name__,
         config=file_regression.request.config,
     ):
-        try:
-            _ = literalizer.literalize(
-                source='{"key": "value"}',
-                input_format=literalizer.InputFormat.JSON,
-                language=spec,
-                variable_form=variable_form_obj,
-                wrap_in_file=True,
-            )
-        except VariableNameNotSupportedError:
-            variable_form_obj = None
+        variable_form_obj = _probe_ref_variable_form(
+            spec=spec,
+            variable_form=variable_form_obj,
+            wrap_in_file=len(config.external_declarations) == 0,
+        )
     raw_data = _parse_ref_input(
         input_format=input_info.input_format,
         input_source=input_source,
@@ -394,10 +410,10 @@ def run_literalize_ref_golden_case(
         config=file_regression.request.config,
     ):
         effective_bound_refs = None
-        if len(bound_refs_input) > 0:
+        if len(bound_refs_input) > 0 and config.external_declarations == {}:
             effective_bound_refs = bound_refs_input
         effective_ref_values = None
-        if len(config.explicit_ref_value_sources) > 0:
+        if config.explicit_ref_value_sources is not None:
             effective_ref_values = {
                 name: json.loads(s=source)
                 for name, source in (config.explicit_ref_value_sources.items())
@@ -407,7 +423,7 @@ def run_literalize_ref_golden_case(
             input_format=input_info.input_format,
             language=spec,
             variable_form=variable_form_obj,
-            wrap_in_file=True,
+            wrap_in_file=len(config.external_declarations) == 0,
             ref_case=ref_case,
             bound_refs=(effective_bound_refs),
             ref_values=(effective_ref_values),
@@ -416,6 +432,44 @@ def run_literalize_ref_golden_case(
             collection_layout=literalizer.CollectionLayout(
                 value=config.collection_layout
             ),
+        )
+    if len(config.external_declarations) > 0:
+        declarations: list[literalizer.LiteralizeResult] = []
+        for name, source in config.external_declarations.items():
+            declaration_spec = spec
+            style = config.external_declaration_styles.get(name)
+            if style is not None:
+                declaration_spec = dataclasses.replace(
+                    spec,
+                    declaration_style=enum_member_by_name(
+                        enum_cls=lang_cls.DeclarationStyles, name=style
+                    ),
+                )
+            declarations.append(
+                literalizer.literalize(
+                    source=source,
+                    input_format=literalizer.InputFormat.JSON,
+                    language=declaration_spec,
+                    variable_form=literalizer.NewVariable(
+                        name=name, modifiers=frozenset()
+                    ),
+                )
+            )
+        observed_result = dataclasses.replace(
+            result,
+            declaration_code=(
+                config.fixture_prefix
+                + result.declaration_code
+                + config.fixture_suffix
+            ),
+        )
+        result = literalizer.literalize_call_with_declarations(
+            language=spec,
+            declarations=declarations,
+            call=observed_result,
+            extra_body_preamble=(),
+            extra_class_preamble=(),
+            extra_preamble=(),
         )
     check_golden(
         contents=result.code + "\n",

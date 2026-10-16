@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+variable_form = "existing"
+external_declarations = {item = "null", my_data = "null"}
+explicit_ref_value_sources = {item = "null"}
+fixture_prefix = "(void)my_data;\n"
+fixture_suffix = "\n(void)my_data;"

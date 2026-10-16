@@ -1,7 +1,10 @@
 package main
 func make_widget(args ...any) any { return nil }
+func consume_widget(args ...any) any { return nil }
 
 func main() {
 my_data := make_widget(0)
+consume_widget(my_data)
 my_data = make_widget(1)
+consume_widget(my_data)
 }

@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+gates = [
+  { kind = "enum_member_present", option = "json_type", member = "NLOHMANN_JSON" },
+]
+variable_form = "existing"
+json_type = "NLOHMANN_JSON"
+external_declarations = {item = "null", my_data = "null"}
+explicit_ref_value_sources = {item = "null"}
+fixture_prefix = "(void)my_data;\n"
+fixture_suffix = "\n(void)my_data;"

@@ -475,6 +475,14 @@ class RefCaseSpec(  # noqa: NOD001
     and times that JSON sources cannot express. These values override
     the corresponding source-derived bindings.
 
+    *external_declarations* supplies a caller's declarations as JSON
+    sources. They are composed around the unwrapped result afterwards,
+    without passing ``bound_refs`` or deriving inference hints from them.
+    *explicit_ref_value_sources* independently selects reference hints;
+    omission passes ``None``, while an empty table passes ``{}``.
+    *external_declaration_styles* selects declaration styles per fixture
+    binding, such as a mutable destination alongside an immutable source.
+
     When *ref_case_override* is set, the case forces that identifier
     case for the ``ref_case`` argument of :func:`literalizer.literalize`
     instead of using the language's default (``identifier_cases[0]``).
@@ -504,9 +512,17 @@ class RefCaseSpec(  # noqa: NOD001
     extra_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
-    explicit_ref_value_sources: dict[str, str] = Field(
+    # Fixture declarations are composed after rendering, so the API still
+    # sees external references rather than materialized bound_refs.
+    external_declarations: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
+    external_declaration_styles: dict[str, str] = Field(
+        default_factory=_empty_sources,
+    )
+    fixture_prefix: str = ""
+    fixture_suffix: str = ""
+    explicit_ref_value_sources: dict[str, str] | None = None
 
     def ref_case_for(
         self, *, lang_cls: literalizer.LanguageCls
@@ -553,9 +569,11 @@ class CallCaseSpec(  # noqa: NOD001
     call_transform: CallTransformTemplate | None = None
     # Ordinary callbacks omit the template producer's zip-usage metadata.
     call_transform_reports_zip_usage: bool = True
-    # An additional call to the same target, emitted after the primary
-    # call so a fixture can use its bound result.
+    # An additional call, emitted after the primary call so a fixture
+    # can use its bound result. A separate target accommodates languages
+    # that distinguish value-returning functions from procedures.
     followup_source: str | None = None
+    followup_target_function: str | None = None
     transform_stub_names: StringTuple = Field(default_factory=_empty_names)
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,
@@ -589,6 +607,9 @@ class CallCaseSpec(  # noqa: NOD001
     unknown_ref_names: StringFrozenSet = Field(
         default_factory=_empty_name_set,
     )
+    # An explicit mapping overrides declaration-derived inference hints.
+    # An empty table passes {}, while omission keeps the inferred hints.
+    explicit_ref_value_sources: dict[str, str] | None = None
     # Additional JSON sources used to seed ``ref_values`` without
     # emitting declarations.  This covers mappings whose names are not
     # referenced by the input while keeping generated fixtures free of
@@ -659,6 +680,18 @@ class CallCaseSpec(  # noqa: NOD001
     # case-specific opt-out.
     variant_only: bool = False
 
+    def _validate_followup_target(self) -> None:
+        """Require a separate follow-up target to have a source."""
+        if self.followup_target_function is not None:
+            if self.followup_source is None:
+                msg = "followup_target_function requires followup_source"
+                raise ValueError(msg)
+            if self.followup_target_function == self.target_function:
+                msg = (
+                    "followup_target_function must differ from target_function"
+                )
+                raise ValueError(msg)
+
     @model_validator(mode="after")
     def _validate_call_variants(self) -> CallCaseSpec:
         """Validate the variant coverage a call case declares.
@@ -667,6 +700,7 @@ class CallCaseSpec(  # noqa: NOD001
         default per-language matrix names at least one, so no call case
         declares itself into having no coverage at all.
         """
+        self._validate_followup_target()
         axes = [entry.axis for entry in self.variants]
         if len(axes) != len(set(axes)):
             msg = "duplicate call variant axis"

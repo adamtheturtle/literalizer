@@ -2,8 +2,8 @@ module Main
 
 type Val =
     | FInt of int64
-    | FList of Val list
+    | FList of Val array
 let my_data: Val array = [|
-    [|[|FInt 1L|]|];
-    [|[||]|]
+    FList ([|FList ([|FInt 1L|])|]);
+    FList ([|FList ([||])|])
 |]

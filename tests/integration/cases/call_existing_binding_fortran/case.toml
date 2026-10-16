@@ -7,3 +7,5 @@ parameter_names = ["count"]
 per_element = false
 variable_form = "existing"
 ref_declarations = {my_data = "0"}
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume_widget"

@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+ref_declarations = {item = "null"}
+consumable_refs = ["item"]
+explicit_ref_value_sources = {item = "null"}

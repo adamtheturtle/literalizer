@@ -5,8 +5,8 @@ type Val =
     | FInt of int64
     | FFloat of float
     | FStr of string
-    | FList of Val list
+    | FList of Val array
     | FMap of (string * Val) list
 let my_data: Val = FMap [
-    ("d", [|FMap [("a", [|FMap [("b", [|FInt 1L; [|FFloat 2.5; [|FStr "x"; [|FBool true|]|]|]|])]|])]|])
+    ("d", FList ([|FMap [("a", FList ([|FMap [("b", FList ([|FInt 1L; FList ([|FFloat 2.5; FList ([|FStr "x"; FList ([|FBool true|])|])|])|]))]|]))]|]))
 ]
