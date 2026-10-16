@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Nim"]
-languages_reason = "Nim value stubs constrain empty native arrays while keeping populated arguments generic and JSON arguments unchanged."
+languages = ["Nim", "V"]
+languages_reason = "Nim value stubs constrain empty native arrays; V method stubs must accept interface-backed lists with mixed and empty arguments on the pinned compiler."
 target_function = "thing.go"
 parameter_names = ["before", "populated", "after"]
 per_element = true

@@ -1,7 +1,7 @@
 interface IVal {}
 interface ICallArg_ {}
 struct ClientType_ {}
-fn (r ClientType_) fetch(args ...ICallArg_) ICallArg_ { return 0 }
+fn (r ClientType_) fetch(arg0 ICallArg_) ICallArg_ { return 0 }
 struct AppType_ {
 	client ClientType_
 }

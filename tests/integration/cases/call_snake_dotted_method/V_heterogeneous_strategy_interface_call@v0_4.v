@@ -1,7 +1,7 @@
 interface IVal {}
 interface ICallArg_ {}
 struct Http_clientType_ {}
-fn (r Http_clientType_) fetch(args ...ICallArg_) {}
+fn (r Http_clientType_) fetch(arg0 ICallArg_) {}
 struct My_appType_ {
 	http_client Http_clientType_
 }
