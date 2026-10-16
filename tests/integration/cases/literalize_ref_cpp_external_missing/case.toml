@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+languages = ["Cpp"]
+languages_reason = "C++ external assignment distinguishes absent inference, native nullptr, and owning JSON null without materializing bound_refs."
+variable_form = "existing"
+external_declarations = {item = "[1, 2]", my_data = "[1, 2]"}
+fixture_prefix = "(void)my_data;\n"
+fixture_suffix = "\n(void)my_data;"
