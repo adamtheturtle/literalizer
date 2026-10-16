@@ -120,7 +120,6 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
-    identity_call_arg,
     identity_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -233,6 +232,18 @@ def _nim_json_value_expression(raw_value: Value, value: str, /) -> str:
     if isinstance(raw_value, (dict, list, set)):
         return value
     return f"{_NIM_JSON_MACRO}({value})"
+
+
+@beartype
+def _format_nim_call_arg(raw_value: Value, formatted: str) -> str:
+    """Give empty array arguments a concrete element type.
+
+    An unconstrained ``[]`` instantiates a generic proc with Nim's
+    internal empty element type, which crashes C code generation.
+    """
+    if isinstance(raw_value, list) and len(raw_value) == 0:
+        return "default(array[0, int])"
+    return formatted
 
 
 @beartype
@@ -2809,11 +2820,12 @@ class Nim(metaclass=LanguageCls):
 
         Under ``json_type`` every call argument is wrapped in ``%*`` so
         the underlying proc receives a ``JsonNode``; under any other
-        mode call arguments pass through unchanged.
+        mode empty arrays receive an explicit element type so generic
+        proc stubs can compile them.
         """
         if self._uses_json_node:
             return _format_nim_json_call_arg
-        return identity_call_arg
+        return _format_nim_call_arg
 
     @cached_property
     @beartype

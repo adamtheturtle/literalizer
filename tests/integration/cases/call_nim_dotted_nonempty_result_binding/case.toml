@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Nim"]
+languages_reason = "Nim generic result stubs need concrete types for empty array arguments; populated arrays and JsonNode arguments retain their representation."
+target_function = "thing.go"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "{call}"
+
+[[call.variants]]
+axis = "json_type"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"
