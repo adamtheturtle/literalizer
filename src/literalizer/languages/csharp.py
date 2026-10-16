@@ -652,6 +652,11 @@ def _csharp_record_sequence_type(
     if child_type is None:
         return None
     depth, name = child_type
+    # An empty array can adopt an array type, but cannot become a record.
+    if depth == 0 and any(
+        isinstance(item, list) and len(item) == 0 for item in value
+    ):
+        return None
     return (depth + 1, name)
 
 
