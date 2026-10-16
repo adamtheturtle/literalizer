@@ -180,6 +180,8 @@ jobs:
           PYTHONPATH: src
           # Sampling requires host permissions unavailable in this container.
           CODSPEED_PROFILER_ENABLED: 'false'
+          # The container has no systemd or dedicated CPU-isolation hooks.
+          CODSPEED_ISOLATION: 'false'
       - name: Retain compiler sources and diagnostics
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
