@@ -751,7 +751,11 @@ def _run_call_with_declarations(
                 source=config.followup_source,
                 input_format=input_info.input_format,
                 language=spec,
-                target_function=config.target_function,
+                target_function=(
+                    config.target_function
+                    if config.followup_target_function is None
+                    else config.followup_target_function
+                ),
                 parameter_names=config.parameter_names,
                 per_element=config.per_element,
                 ref_case=effective_ref_case,
@@ -816,6 +820,22 @@ def _arg_values_for_stub(
     if per_element and isinstance(source_data, list):
         return source_data
     return [[source_data]]
+
+
+@beartype
+def _statement_stub_targets(
+    *, config: CallCaseSpec
+) -> list[tuple[str, tuple[str, ...]]]:
+    """Pair each statement target with its own parameter names."""
+    targets = [
+        (name, config.transform_stub_param_names)
+        for name in config.transform_stub_names
+    ]
+    if config.followup_target_function is not None:
+        targets.append(
+            (config.followup_target_function, config.parameter_names)
+        )
+    return targets
 
 
 @beartype
@@ -978,8 +998,10 @@ def run_call_golden_case(
             call_arg_values,
         ),
     )
-    if call_outcome.seeded_feedback and isinstance(
-        spec, _FeedbackStatementStubLanguage
+    if (
+        call_outcome.seeded_feedback
+        and config.followup_target_function is None
+        and isinstance(spec, _FeedbackStatementStubLanguage)
     ):
         body_stubs.extend(
             spec.format_feedback_call_statement_stub(
@@ -1008,16 +1030,17 @@ def run_call_golden_case(
                 call_arg_values,
             ),
         )
-    # Stubs for transform function names.  The parameter count matches
-    # ``transform_stub_param_names`` so a wrapper called with the call
-    # and the zipped value (two arguments) compiles in
-    # fixed-parameter-count languages.
-    for wrapper_name in config.transform_stub_names:
+    # Statement stubs cover transform wrappers and a separate follow-up
+    # consumer. Keep each target's parameter names so their argument
+    # counts remain valid in languages with fixed parameter counts.
+    for wrapper_name, parameter_names in _statement_stub_targets(
+        config=config
+    ):
         wrapper_name_parts = tuple(wrapper_name.split(sep="."))
         body_stubs.extend(
             spec.format_call_stub(
                 wrapper_name_parts,
-                config.transform_stub_param_names,
+                parameter_names,
                 literalizer.StubReturn.VOID,
                 (),
             ),
@@ -1025,7 +1048,7 @@ def run_call_golden_case(
         class_stubs.extend(
             spec.format_call_class_scope_stub(
                 wrapper_name_parts,
-                config.transform_stub_param_names,
+                parameter_names,
                 literalizer.StubReturn.VOID,
                 (),
             ),
@@ -1033,7 +1056,7 @@ def run_call_golden_case(
         preamble_stubs.extend(
             spec.format_call_preamble_stub(
                 wrapper_name_parts,
-                config.transform_stub_param_names,
+                parameter_names,
                 literalizer.StubReturn.VOID,
                 (),
             ),

@@ -85,7 +85,9 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = make_widget(fint(0_int64))
+    call consume_widget(my_data)
     my_data = make_widget(fint(1_int64))
+    call consume_widget(my_data)
 contains
     function make_widget(count) result(r)
         implicit none
@@ -93,4 +95,8 @@ contains
         type(fval_t) :: r
         r = fnull()
     end function make_widget
+    subroutine consume_widget(count)
+        implicit none
+        type(fval_t), intent(in) :: count
+    end subroutine consume_widget
 end program main

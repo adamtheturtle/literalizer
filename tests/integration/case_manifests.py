@@ -572,9 +572,11 @@ class CallCaseSpec(  # noqa: NOD001
     call_transform: CallTransformTemplate | None = None
     # Ordinary callbacks omit the template producer's zip-usage metadata.
     call_transform_reports_zip_usage: bool = True
-    # An additional call to the same target, emitted after the primary
-    # call so a fixture can use its bound result.
+    # An additional call, emitted after the primary call so a fixture
+    # can use its bound result. A separate target accommodates languages
+    # that distinguish value-returning functions from procedures.
     followup_source: str | None = None
+    followup_target_function: str | None = None
     transform_stub_names: StringTuple = Field(default_factory=_empty_names)
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,
@@ -681,6 +683,18 @@ class CallCaseSpec(  # noqa: NOD001
     # case-specific opt-out.
     variant_only: bool = False
 
+    def _validate_followup_target(self) -> None:
+        """Require a separate follow-up target to have a source."""
+        if self.followup_target_function is not None:
+            if self.followup_source is None:
+                msg = "followup_target_function requires followup_source"
+                raise ValueError(msg)
+            if self.followup_target_function == self.target_function:
+                msg = (
+                    "followup_target_function must differ from target_function"
+                )
+                raise ValueError(msg)
+
     @model_validator(mode="after")
     def _validate_call_variants(self) -> CallCaseSpec:
         """Validate the variant coverage a call case declares.
@@ -689,6 +703,7 @@ class CallCaseSpec(  # noqa: NOD001
         default per-language matrix names at least one, so no call case
         declares itself into having no coverage at all.
         """
+        self._validate_followup_target()
         axes = [entry.axis for entry in self.variants]
         if len(axes) != len(set(axes)):
             msg = "duplicate call variant axis"

@@ -62,6 +62,7 @@ from literalizer._language import (
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
+    RenderedExistingBinding,
     RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -1388,6 +1389,8 @@ class Fortran(metaclass=LanguageCls):
         the first line and an assignment on the remaining lines.  This
         method splits them so that all type-declaration lines appear
         before any assignment or call lines, producing a valid program.
+        Existing-binding fragments contain only executable statements
+        and retain their position after the seed assignment.
 
         Call stubs are placed in the ``contains`` section via
         :meth:`wrap_in_file`.
@@ -1395,6 +1398,9 @@ class Fortran(metaclass=LanguageCls):
         type_decls: list[str] = []
         exec_stmts: list[str] = []
         for bare_code in declarations:
+            if isinstance(bare_code, RenderedExistingBinding):
+                exec_stmts.append(bare_code)
+                continue
             lines = bare_code.splitlines()
             type_decls.append(lines[0])
             exec_stmts.extend(lines[1:])
