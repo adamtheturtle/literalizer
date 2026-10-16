@@ -1,6 +1,7 @@
 #include <initializer_list>
 #include <vector>
-#include <utility>
+#include <cstddef>
+template <typename... Args> auto consume_widget(Args...) { return 0; }
 int main() {
 auto ref_data = std::vector<int>{
     1,
@@ -9,8 +10,8 @@ auto ref_data = std::vector<int>{
 auto my_data = std::vector<int>{
     0,
 };
-(void)my_data;
+consume_widget(my_data);
 my_data = std::move(ref_data);
-(void)my_data;
+consume_widget(my_data);
     return 0;
 }

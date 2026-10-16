@@ -1,11 +1,13 @@
 #include <initializer_list>
+#include <vector>
 #include <cstddef>
-#include <utility>
+#include <variant>
+auto consume_widget(auto...) { return 0; }
 int main() {
 auto item = nullptr;
 auto my_data = nullptr;
-(void)my_data;
+consume_widget(my_data);
 my_data = item;
-(void)my_data;
+consume_widget(my_data);
     return 0;
 }

@@ -7,5 +7,7 @@ languages_reason = "C++ external assignment distinguishes absent inference, nati
 variable_form = "existing"
 external_declarations = {item = "null", my_data = "null"}
 explicit_ref_value_sources = {item = "null"}
-fixture_prefix = "(void)my_data;\n"
-fixture_suffix = "\n(void)my_data;"
+
+[ref.consumer]
+target_function = "consume_widget"
+before_assignment = true
