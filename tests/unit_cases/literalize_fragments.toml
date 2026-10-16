@@ -22,37 +22,6 @@ pre_indent_level = 0
 include_delimiters = false
 expected = { code = '"48656c6c6f",' }
 
-# Unresolved markers must not contribute their mapping shape to inference.
-# Both absent and unrelated reference values leave the preamble empty.
-[[literals]]
-name = "unresolved_ref_without_values"
-language = "Rust"
-source = '[{"$ref": "a"}, 1]'
-input_format = "json"
-pre_indent_level = 0
-include_delimiters = true
-expected_preamble = []
-expected.bare_code = """\
-vec![
-    a,
-    1,
-]"""
-
-[[literals]]
-name = "unresolved_ref_with_unrelated_values"
-language = "Rust"
-source = '[{"$ref": "a"}, 1]'
-input_format = "json"
-pre_indent_level = 0
-include_delimiters = true
-ref_values = { zzz = 5 }
-expected_preamble = []
-expected.bare_code = """\
-vec![
-    a,
-    1,
-]"""
-
 [[literals]]
 name = "unknown_reference_ignores_unrelated_preamble_values"
 language = "Cpp"

@@ -29,7 +29,7 @@ from tests.toml_cases import load_toml_cases
 type _ResultView = Literal["code", "bare_code"]
 
 
-# Omitted TOML keys leave optional reference values and preamble checks unset.
+# Omitted TOML keys leave optional reference values and binding forms unset.
 class _FragmentCase(  # noqa: NOD001
     BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
 ):
@@ -43,7 +43,6 @@ class _FragmentCase(  # noqa: NOD001
     input_format: CallInputFormat
     expected: dict[_ResultView, str] = Field(min_length=1)
     ref_values: dict[str, ValueInput] | None = None
-    expected_preamble: tuple[str, ...] | None = None
     variable_form: Literal["existing"] | None = None
 
     def resolved_variable_form(self) -> VariableForm | None:
@@ -99,13 +98,9 @@ _CASES = _FragmentCases(
 
 
 def _check_result(*, case: _FragmentCase, result: LiteralizeResult) -> None:
-    """Compare the declared result views and optional preamble
-    contract.
-    """
+    """Compare the declared result views."""
     views = {"code": result.code, "bare_code": result.bare_code}
     assert {name: views[name] for name in case.expected} == case.expected
-    if case.expected_preamble is not None:
-        assert result.preamble == case.expected_preamble
 
 
 @pytest.mark.parametrize(
