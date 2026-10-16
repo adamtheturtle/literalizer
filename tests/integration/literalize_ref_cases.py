@@ -284,6 +284,46 @@ def _ref_language_options(
 
 
 @beartype
+def _compose_ref_value_check(
+    *,
+    source: str,
+    spec: literalizer.Language,
+    declarations: list[literalizer.LiteralizeResult],
+    result: literalizer.LiteralizeResult,
+) -> literalizer.LiteralizeResult:
+    """Assert a reference result against an independently rendered value.
+
+    Expected data is rendered separately, after the operation under test,
+    and never participates in its reference inference.
+    """
+    expected = literalizer.literalize(
+        source=source,
+        input_format=literalizer.InputFormat.JSON,
+        language=spec,
+        variable_form=literalizer.NewVariable(
+            name="expected_data", modifiers=frozenset()
+        ),
+    )
+    assertion = literalizer.literalize_call(
+        source='[[{"$ref": "my_data"}, {"$ref": "expected_data"}]]',
+        target_function="assert_equal",
+        parameter_names=("actual", "expected"),
+        input_format=literalizer.InputFormat.JSON,
+        language=spec,
+        ref_key="$ref",
+    )
+    helper = (
+        Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
+    )
+    return literalizer.literalize_call_with_declarations(
+        language=spec,
+        declarations=[*declarations, result, expected],
+        call=assertion,
+        extra_preamble=(helper.read_text(encoding="utf-8").rstrip(),),
+    )
+
+
+@beartype
 def _compose_ref_consumer(
     *,
     consumer: RefConsumerSpec,
@@ -321,6 +361,57 @@ def _compose_ref_consumer(
         extra_preamble=spec.format_call_preamble_stub(
             target, parameters, literalizer.StubReturn.VOID, ()
         ),
+    )
+
+
+@beartype
+def _compose_external_ref_fixture(
+    *,
+    config: RefCaseSpec,
+    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
+    result: literalizer.LiteralizeResult,
+) -> literalizer.LiteralizeResult:
+    """Compose caller declarations and optional generated checks."""
+    declarations: list[literalizer.LiteralizeResult] = []
+    for name, source in config.external_declarations.items():
+        declaration_spec = spec
+        style = config.external_declaration_styles.get(name)
+        if style is not None:
+            declaration_spec = dataclasses.replace(
+                spec,
+                declaration_style=enum_member_by_name(
+                    enum_cls=lang_cls.DeclarationStyles, name=style
+                ),
+            )
+        declarations.append(
+            literalizer.literalize(
+                source=source,
+                input_format=literalizer.InputFormat.JSON,
+                language=declaration_spec,
+                variable_form=literalizer.NewVariable(
+                    name=name, modifiers=frozenset()
+                ),
+            )
+        )
+    if config.expected_value_source is not None:
+        return _compose_ref_value_check(
+            source=config.expected_value_source,
+            spec=spec,
+            declarations=declarations,
+            result=result,
+        )
+    if config.consumer is not None:
+        return _compose_ref_consumer(
+            consumer=config.consumer,
+            spec=spec,
+            declarations=declarations,
+            result=result,
+        )
+    return literalizer.literalize_call_with_declarations(
+        language=spec,
+        declarations=declarations,
+        call=result,
     )
 
 
@@ -418,48 +509,12 @@ def run_literalize_ref_golden_case(
             ),
         )
     if len(config.external_declarations) > 0:
-        declarations: list[literalizer.LiteralizeResult] = []
-        for name, source in config.external_declarations.items():
-            declaration_spec = spec
-            style = config.external_declaration_styles.get(name)
-            if style is not None:
-                declaration_spec = dataclasses.replace(
-                    spec,
-                    declaration_style=enum_member_by_name(
-                        enum_cls=lang_cls.DeclarationStyles, name=style
-                    ),
-                )
-            declarations.append(
-                literalizer.literalize(
-                    source=source,
-                    input_format=literalizer.InputFormat.JSON,
-                    language=declaration_spec,
-                    variable_form=literalizer.NewVariable(
-                        name=name, modifiers=frozenset()
-                    ),
-                )
-            )
-        observed_result = dataclasses.replace(
-            result,
-            declaration_code=(
-                config.fixture_prefix
-                + result.declaration_code
-                + config.fixture_suffix
-            ),
+        result = _compose_external_ref_fixture(
+            config=config,
+            lang_cls=lang_cls,
+            spec=spec,
+            result=result,
         )
-        if config.consumer is None:
-            result = literalizer.literalize_call_with_declarations(
-                language=spec,
-                declarations=declarations,
-                call=observed_result,
-            )
-        else:
-            result = _compose_ref_consumer(
-                consumer=config.consumer,
-                spec=spec,
-                declarations=declarations,
-                result=observed_result,
-            )
     check_golden(
         contents=result.code + "\n",
         extension=lang_cls.extension,
