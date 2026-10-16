@@ -386,6 +386,19 @@ def _is_reserved_call_target(
 
 
 @beartype
+def _uses_bound_ref_wrapper(*, config: CallCaseSpec) -> bool:
+    """Select the same reference wrapper for validation and rendering."""
+    return (
+        len(config.ref_declarations) > 0
+        and len(config.unknown_ref_names) == 0
+        and config.explicit_ref_value_sources is None
+        and (config.call_transform is None)
+        and (len(config.transform_stub_names) == 0)
+        and (config.variable_form is None)
+    )
+
+
+@beartype
 def expected_call_shape_exception(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -410,14 +423,7 @@ def expected_call_shape_exception(
         )
         spec = dataclasses.replace(spec, call_style=style)
     effective_style = spec.call_style_config
-    bound_refs_wrap = (
-        len(config.ref_declarations) > 0
-        and len(config.unknown_ref_names) == 0
-        and config.explicit_ref_value_sources is None
-        and (config.call_transform is None)
-        and (len(config.transform_stub_names) == 0)
-        and (config.variable_form is None)
-    )
+    bound_refs_wrap = _uses_bound_ref_wrapper(config=config)
     rejects_reserved_parameters = (
         config.wrap_in_file
         or bound_refs_wrap
@@ -921,14 +927,7 @@ def run_call_golden_case(
             pytest_config=file_regression.request.config,
         )
         return
-    if (
-        len(config.ref_declarations) > 0
-        and len(config.unknown_ref_names) == 0
-        and config.explicit_ref_value_sources is None
-        and (config.call_transform is None)
-        and (len(config.transform_stub_names) == 0)
-        and (config.variable_form is None)
-    ):
+    if _uses_bound_ref_wrapper(config=config):
         with GoldenSkips(
             policy=_DECLARATION_SKIPS,
             golden_path=golden_path,
