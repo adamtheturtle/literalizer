@@ -55,3 +55,6 @@ context = { variable_form = "both" }
 axis = "json_rendering"
 suffix = "_multiline"
 context = { collection_layout = "multiline" }
+
+[[variants]]
+axis = "sequence"
