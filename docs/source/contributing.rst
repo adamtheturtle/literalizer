@@ -209,7 +209,7 @@ A language raising a different exception from the rest of its family therefore a
 A case is keyed by its language, then by the option member it ran under and the declared value it substituted, if the manifest varies either.
 An option member is named (``[CJSON]``) and a declared value is quoted (``['9Entry']``).
 
-The manifest itself declares only what provokes the rejection:
+The manifest itself declares what provokes the rejection:
 
 .. code-block:: toml
 
@@ -232,6 +232,7 @@ A rejection about one language's own rendering names it in ``languages`` instead
 
 ``api`` is ``constructor``, ``literalize``, or ``literalize_call``, and the loader rejects an argument the named API does not take.
 ``exceptions`` lists the exception types any selected language may raise; the golden file records which one each raised, together with its message.
+For parser diagnostics, an optional top-level ``position = [line, column]`` also asserts the public error's one-based ``line`` and ``column`` attributes for every source in that manifest.
 
 A language a gate admits that represents the input rather than refusing it is declared in an ``accepts`` entry with the reason it does:
 

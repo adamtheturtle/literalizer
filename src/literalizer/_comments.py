@@ -17,6 +17,11 @@ from ruamel.yaml.tokens import CommentToken
 from tomlkit.items import AoT, Comment, Item, Table, Whitespace
 from tomlkit.toml_document import TOMLDocument
 
+from literalizer._comment_types import (
+    CollectionComments,
+    ElementComments,
+    ScalarComments,
+)
 from literalizer._formatters.fallbacks import nonempty_or_default
 from literalizer._parsing import unwrap_yaml_scalar
 from literalizer._types import Scalar
@@ -88,15 +93,6 @@ class NestingCommentSuffix(QuoteSensitiveCommentSuffix):
             "*/": "/*",
             "-}": "{-",
         }[self.strip()]
-
-
-@beartype
-@dataclasses.dataclass(frozen=True)
-class ElementComments:
-    """Comments associated with a single top-level YAML element."""
-
-    before: tuple[str, ...]
-    inline: str
 
 
 @beartype
@@ -192,15 +188,6 @@ def _parse_after_token(
         before_next=before_next,
         standalone_column=(effective_standalone_column),
     )
-
-
-@beartype
-@dataclasses.dataclass(frozen=True)
-class CollectionComments:
-    """Comments extracted from a YAML sequence or mapping string."""
-
-    elements: tuple[ElementComments, ...]
-    trailing: tuple[str, ...]
 
 
 @beartype
@@ -938,17 +925,7 @@ def neutralize_comment_terminator(
 
 
 @beartype
-@dataclasses.dataclass(frozen=True)
-class _ScalarComments:
-    """Comments extracted from a scalar YAML string."""
-
-    before: list[str]
-    inline: str
-    after: list[str]
-
-
-@beartype
-def _split_scalar_after_token(*, value: str) -> _ScalarComments:
+def _split_scalar_after_token(*, value: str) -> ScalarComments:
     r"""Split a trailing comment token into its comment position classes.
 
     *ruamel.yaml* hands the whole run of comments that follow a scalar
@@ -962,12 +939,12 @@ def _split_scalar_after_token(*, value: str) -> _ScalarComments:
     lines = value.split(sep="\n")
     head, tail = lines[0], lines[1:]
     if head.strip().startswith("#"):
-        return _ScalarComments(
+        return ScalarComments(
             before=[],
             inline=_strip_comment_marker(text=head),
             after=_token_comment_lines(value="\n".join(tail)),
         )
-    return _ScalarComments(
+    return ScalarComments(
         before=[],
         inline="",
         after=_token_comment_lines(value=value),
@@ -978,7 +955,7 @@ def _split_scalar_after_token(*, value: str) -> _ScalarComments:
 def _extract_scalar_comments(
     *,
     tokens: Iterable[object],
-) -> _ScalarComments:
+) -> ScalarComments:
     """Extract comments from scanned YAML tokens for a scalar value.
 
     *ruamel.yaml*'s round-trip loader returns plain Python objects
@@ -989,7 +966,7 @@ def _extract_scalar_comments(
     *tokens* should come from ``YAML().scan()``.
     """
     before_comments: list[str] = []
-    trailing = _ScalarComments(before=[], inline="", after=[])
+    trailing = ScalarComments(before=[], inline="", after=[])
     for token in tokens:
         if not isinstance(token, _CommentedToken):
             raise NotImplementedError
@@ -1008,7 +985,7 @@ def _extract_scalar_comments(
                     _token_comment_lines(value=before_token.value),
                 )
         break
-    return _ScalarComments(
+    return ScalarComments(
         before=before_comments,
         inline=trailing.inline,
         after=trailing.after,
@@ -1080,6 +1057,29 @@ def literalize_yaml_scalar(
         tokens=tokens,
     )
 
+    return literalize_scalar_comments(
+        scalar_comments=scalar_comments,
+        base=base,
+        comment_prefix=comment_prefix,
+        comment_suffix=comment_suffix,
+        line_prefix=line_prefix,
+        supports_scalar_before_comments=supports_scalar_before_comments,
+        supports_scalar_inline_comments=supports_scalar_inline_comments,
+    )
+
+
+@beartype
+def literalize_scalar_comments(
+    *,
+    scalar_comments: ScalarComments,
+    base: str,
+    comment_prefix: str,
+    comment_suffix: str,
+    line_prefix: str,
+    supports_scalar_before_comments: bool,
+    supports_scalar_inline_comments: bool,
+) -> ScalarCommentResult:
+    """Render source comments using the target's scalar policies."""
     if (
         len(scalar_comments.before) == 0
         and scalar_comments.inline == ""

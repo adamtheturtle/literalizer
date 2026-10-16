@@ -1,0 +1,19 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. CHECK.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+PROCEDURE DIVISION.
+    *> calls heading
+    *> before call one
+    *> first argument
+    CALL "F" USING BY CONTENT 1 BY CONTENT 2.  *> after call one
+    *> second argument
+    CALL "F" USING BY CONTENT 3 BY CONTENT 4.
+    *> after all calls
+    STOP RUN.
+IDENTIFICATION DIVISION.
+PROGRAM-ID. F.
+PROCEDURE DIVISION.
+    STOP RUN.
+END PROGRAM F.
+END PROGRAM CHECK.

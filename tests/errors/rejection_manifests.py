@@ -480,6 +480,7 @@ class _RejectionData(  # noqa: NOD001
     schema_version: Literal[1]
     summary: Annotated[str, Field(min_length=1)]
     exceptions: ExceptionTypes
+    position: Annotated[tuple[int, int], Field(strict=False)] | None = None
     gates: Annotated[tuple[LanguageGate, ...], Field(strict=False)] = Field(
         default_factory=_no_gates,
     )
@@ -608,6 +609,7 @@ class RejectionManifest:
     name: str
     summary: str
     exceptions: tuple[type[Exception], ...]
+    position: tuple[int, int] | None
     gates: tuple[LanguageGate, ...]
     languages: tuple[str, ...]
     option: str | None
@@ -646,6 +648,7 @@ def load_rejection_manifest(*, manifest_path: Path) -> RejectionManifest:
         name=manifest_path.parent.name,
         summary=data.summary,
         exceptions=data.exceptions,
+        position=data.position,
         gates=tuple(data.gates),
         languages=tuple(data.languages),
         option=data.option,

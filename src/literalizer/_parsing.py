@@ -35,6 +35,7 @@ from tomlkit.items import Integer as TomlInteger
 from tomlkit.toml_document import TOMLDocument
 from typing_extensions import TypeIs
 
+from literalizer._json_comments import JsonComments, extract_json_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ExcessiveIntegerDigitsError,
@@ -179,9 +180,8 @@ def _json_object_without_duplicate_keys(
 class InputFormat(enum.Enum):
     """Supported input serialization formats.
 
-    YAML and TOML comments are preserved for rendering in the target
-    language. JSON, JSONC and JSON5 are parsed as plain data, so their
-    comments are discarded.
+    YAML, TOML, JSONC and JSON5 comments are preserved for rendering
+    in the target language. JSON input does not accept comments.
     """
 
     JSON = enum.auto()
@@ -213,6 +213,7 @@ class ParsedPlain:
     """Result of parsing JSON, JSONC or JSON5 input as plain data."""
 
     data: Value
+    comments: JsonComments | None
 
 
 @beartype
@@ -687,7 +688,7 @@ def _parse_json(*, source: str) -> ParsedInput:
             line=exc.lineno,
             column=exc.colno,
         ) from exc
-    return ParsedPlain(data=data)
+    return ParsedPlain(data=data, comments=None)
 
 
 @beartype
@@ -710,9 +711,9 @@ def _parse_json_document(
 ) -> ParsedInput:
     """Parse JSONC or JSON5 values and adapt document-parser errors."""
     is_jsonc = input_format == InputFormat.JSONC
-    loads = jsonc_document.loads if is_jsonc else json5_document.loads
+    parse = jsonc_document.parse if is_jsonc else json5_document.parse
     try:
-        data = loads(source=source)
+        document = parse(source=source)
     except (
         jsonc_document.JSONCDecodeError,
         json5_document.JSON5DecodeError,
@@ -730,7 +731,10 @@ def _parse_json_document(
         )
         error_type = JSONCParseError if is_jsonc else JSON5ParseError
         raise error_type(message, line=exc.lineno, column=exc.colno) from exc
-    return ParsedPlain(data=_json_value(data=data))
+    return ParsedPlain(
+        data=_json_value(data=document.value),
+        comments=extract_json_comments(document=document),
+    )
 
 
 @beartype

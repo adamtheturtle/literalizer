@@ -1,0 +1,27 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC f (VAL MOBILE LIT a, VAL MOBILE LIT b)
+    SKIP
+:
+PROC main ()
+    -- calls heading
+    -- before call one
+    -- first argument
+    f(MOBILE LIT(lit.int; 1), MOBILE LIT(lit.int; 2))  -- after call one
+    -- second argument
+    f(MOBILE LIT(lit.int; 3), MOBILE LIT(lit.int; 4))
+    -- after all calls
+    SEQ
+        SKIP
+:

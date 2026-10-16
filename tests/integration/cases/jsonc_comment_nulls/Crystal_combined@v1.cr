@@ -1,0 +1,15 @@
+module Fixture_jsonc_comment_nulls_Crystal_combined
+extend self
+my_data = {
+    # null heading
+    # before null
+    "a" => nil,  # first null
+    "b" => nil,  # second null
+}
+my_data = {
+    # null heading
+    # before null
+    "a" => nil,  # first null
+    "b" => nil,  # second null
+}
+end

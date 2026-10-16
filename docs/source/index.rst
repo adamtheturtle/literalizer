@@ -123,9 +123,38 @@ The relaxed JSON5 syntax, such as comments, single-quoted strings, trailing comm
    )
    # result.code:
    # {
+   #     # Relaxed syntax is accepted here.
    #     "name": "literalizer",
    #     "port": 8080,
    # }
+
+JSONC and JSON5 comment attachment
+----------------------------------
+
+Line comments (``//``) and block comments (``/* ... */``) follow the same formatting, neutralization, and language capability rules as YAML and TOML comments.
+Source comment delimiters and surrounding whitespace are removed; each line of a block comment is preserved as comment text.
+
+* Document headings attach before the first collection entry.
+  Comments in an empty root collection move before its declaration.
+  Comments in a nested empty collection move before its parent entry, preserving the target's typed empty-collection syntax.
+* Standalone comments before an entry attach to that entry.
+  Comments between a mapping key, its colon, and its value also attach before that entry.
+* Comments starting on the same line as a completed value attach inline to that entry, including comments after its comma.
+  Consecutive same-line comments are joined with a space.
+  Further lines of a multiline block attach before the next entry, or trail the collection when there is no next entry.
+* Comments before a closing delimiter trail that collection.
+  Comments after the root collection trail its entries.
+  Nested collections keep their own comment associations.
+* Scalar documents retain headings, inline comments, and following standalone comments.
+  Targets that cannot place a comment there move it before the declaration, following their existing scalar comment policy.
+* Targets that cannot place comments inside collections move them before the declaration.
+  For per-element calls, comments inside an argument row move before that row's call; row comments remain before or inline with the call.
+  Whole-document calls move input comments before the call.
+  The existing wrapped-call capability checks also apply to these comments.
+
+JSONC retains strict JSON syntax, including rejecting trailing commas.
+JSON5 retains its relaxed syntax.
+Comment-like text inside strings is data.
 
 Binding the result to a variable
 --------------------------------

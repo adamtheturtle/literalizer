@@ -55,6 +55,11 @@ def fixture_lowered_digit_limit() -> Iterator[None]:
         ),
         pytest.param(
             f'{{"a": {_OVER_LIMIT_DIGITS}}}',
+            InputFormat.JSONC,
+            id="jsonc-decimal",
+        ),
+        pytest.param(
+            f'{{"a": {_OVER_LIMIT_DIGITS}}}',
             InputFormat.JSON5,
             id="json5-decimal",
         ),

@@ -1,0 +1,18 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. CHECK.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+PROCEDURE DIVISION.
+    *> scalar heading
+    *> second heading line
+    *> scalar inline
+    *> inline continuation
+    *> scalar trailing
+    CALL "F" USING BY CONTENT 42.
+    STOP RUN.
+IDENTIFICATION DIVISION.
+PROGRAM-ID. F.
+PROCEDURE DIVISION.
+    STOP RUN.
+END PROGRAM F.
+END PROGRAM CHECK.

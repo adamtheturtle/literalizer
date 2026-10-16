@@ -1,0 +1,23 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        -- null heading
+        -- before null
+        MOBILE LIT(lit.pair; MOBILE []BYTE "a"; MOBILE LIT(lit.null)),  -- first null
+        MOBILE LIT(lit.pair; MOBILE []BYTE "b"; MOBILE LIT(lit.null))  -- second null
+    ]):
+    SEQ
+        SKIP
+:

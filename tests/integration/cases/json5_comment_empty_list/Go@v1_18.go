@@ -1,0 +1,9 @@
+package main
+
+func main() {
+// empty heading
+// empty body
+// after empty
+my_data := []any{}
+_ = my_data
+}

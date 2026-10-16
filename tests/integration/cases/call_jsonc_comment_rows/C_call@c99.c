@@ -1,0 +1,27 @@
+#include <stdbool.h>
+#include <stddef.h>
+typedef struct CVal CVal;
+typedef struct CKV CKV;
+struct CVal {
+    union {
+        _Bool b;
+        long long i;
+        unsigned long long u;
+        double f;
+        const char *s;
+        const CVal *a;
+        const CKV *m;
+    };
+};
+struct CKV { const char *k; CVal v; };
+static void f(CVal _a0, CVal _a1) { (void)_a0, (void)_a1; }
+int main(void) {
+// calls heading
+// before call one
+// first argument
+f(((CVal){.i = 1}), ((CVal){.i = 2}));  // after call one
+// second argument
+f(((CVal){.i = 3}), ((CVal){.i = 4}));
+// after all calls
+    return 0;
+}

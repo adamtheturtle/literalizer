@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "JSONC comments cannot be preserved in wrapped Erlang calls."
+exceptions = ["UnsupportedCallShapeError"]
+languages = ["Erlang"]
+
+[call]
+api = "literalize_call"
+sources = [
+    "/* heading */ [[1]]",
+]
+input_format = "jsonc"
+target_function = "f"
+parameter_names = ["a"]
+per_element = true
+wrap_in_file = true
