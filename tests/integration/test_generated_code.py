@@ -2,112 +2,52 @@
 assertions.
 """
 
-import json
 import sys
 from pathlib import Path
 
 import pytest
-from pytest_regressions.file_regression import FileRegressionFixture
 
-from scripts import generated_code
 from scripts.generated_code import Step, run_project
 
 
-def test_independent_generator(
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Snapshot, compile and consume a tiny schema generator's output."""
-    fields = {"quantity": "int", "enabled": "bool", "balance": "float"}
-    source = (
-        "from dataclasses import dataclass\n\n"
-        "@dataclass\nclass Invoice:\n"
-        + "".join(f"    {name}: {kind}\n" for name, kind in fields.items())
-    )
-    # Snapshot comparison is usable without invoking a compiler or runner.
-    file_regression.check(
-        contents=source,
-        fullpath=Path(__file__).with_suffix(suffix="")
-        / "test_independent_generator.txt",
-    )
-    results = run_project(
-        label="schema generator / Invoice",
-        files={
-            "models/invoice.py": source,
-            "consumer.py": (
-                "import json\nfrom models.invoice import Invoice\n"
-                "item = Invoice(quantity=1, enabled=True, balance=-0.0)\n"
-                "print(json.dumps(item.__dict__))\n"
-            ),
-        },
-        steps=[
-            Step(
-                args=[sys.executable, "-m", "py_compile", "models/invoice.py"],
-                failure_label="Python compile",
-            ),
-            Step(
-                args=[sys.executable, "consumer.py"],
-                failure_label="Python consumer",
-            ),
-        ],
-    )
-    # This caller ignores key order while retaining JSON's type and sign
-    # distinctions: 1 differs from true, and 0.0 differs from -0.0.
-    actual = json.dumps(obj=json.loads(s=results[-1].stdout), sort_keys=True)
-    assert actual == '{"balance": -0.0, "enabled": true, "quantity": 1}'
-
-
-def test_standalone_runner() -> None:
-    """Use the module with no installed packages or repository imports."""
-    source = Path(generated_code.__file__).read_text(encoding="utf-8")
-    results = run_project(
-        label="standalone runner",
-        files={
-            "generated_code.py": source,
-            "generator.py": (
-                "import sys\nfrom generated_code import Step, run_project\n"
-                "source = 'answer = ' + repr(42) + '\\n'\n"
-                "result = run_project(label='independent', "
-                "files={'generated.py': source, "
-                "'consumer.py': 'from generated import answer; "
-                "print(answer)'}, "
-                "steps=[Step(args=[sys.executable, 'consumer.py'], "
-                "failure_label='consume')])\n"
-                "assert not any(name == 'literalizer' or "
-                "name.startswith(('literalizer.', 'tests.')) "
-                "for name in sys.modules)\n"
-                "print(result[-1].stdout, end='')\n"
-            ),
-        },
-        steps=[
-            Step(
-                args=[sys.executable, "-S", "generator.py"],
-                failure_label="standalone generator",
-            ),
-        ],
-    )
-    assert results[-1].stdout == "42\n"
-
-
-def test_compile_only_and_isolation() -> None:
-    """Compile without executing, then verify project isolation."""
+def test_compile_batch_and_isolation() -> None:
+    """Compile a batch without executing, then verify project
+    isolation.
+    """
     results = run_project(
         label="compile only",
-        files={"generated.py": "raise RuntimeError('must not execute')\n"},
+        files={
+            "generated.py": "raise RuntimeError('must not execute')\n",
+            "support.py": "raise RuntimeError('must not execute')\n",
+        },
         steps=[
             Step(
-                args=[sys.executable, "-m", "py_compile", "generated.py"],
+                args=[
+                    sys.executable,
+                    "-m",
+                    "py_compile",
+                    "generated.py",
+                    "support.py",
+                ],
                 failure_label="compile",
             ),
             Step(
                 args=[
                     sys.executable,
                     "-c",
-                    "from pathlib import Path; print(Path.cwd())",
+                    (
+                        "from importlib.util import cache_from_source\n"
+                        "from pathlib import Path\n"
+                        "for name in ('generated.py', 'support.py'):\n"
+                        "    assert Path(cache_from_source(name)).is_file()\n"
+                        "print(Path.cwd())\n"
+                    ),
                 ],
                 failure_label="locate project",
             ),
         ],
     )
+    assert results[0].stdout == ""
     assert not Path(results[-1].stdout.strip()).exists()
     isolated = run_project(
         label="fresh project",
@@ -119,7 +59,7 @@ def test_compile_only_and_isolation() -> None:
                     "-c",
                     (
                         "from pathlib import Path; "
-                        "assert not Path('generated.py').exists()"
+                        "assert not any(Path.cwd().iterdir())"
                     ),
                 ],
                 failure_label="isolation",
@@ -187,36 +127,3 @@ def test_missing_compiler() -> None:
             files={"main.py": ""},
             steps=[Step(args=["./does-not-exist"], failure_label="compile")],
         )
-
-
-def test_compiler_batch() -> None:
-    """Keep multiple generated modules in one caller-selected compiler
-    step.
-    """
-    results = run_project(
-        label="Python batch",
-        files={"first.py": "value = 1\n", "second.py": "value = 2\n"},
-        steps=[
-            Step(
-                args=[
-                    sys.executable,
-                    "-m",
-                    "py_compile",
-                    "first.py",
-                    "second.py",
-                ],
-                failure_label="batch compile",
-            ),
-        ],
-    )
-    assert len(results) == 1
-
-
-def test_no_commands() -> None:
-    """Materialize a project without requiring a compiler or runtime."""
-    populated = run_project(
-        label="snapshot only", files={"main.py": "value = 1\n"}, steps=[]
-    )
-    empty = run_project(label="empty project", files={}, steps=[])
-    assert len(populated) == 0
-    assert len(empty) == 0

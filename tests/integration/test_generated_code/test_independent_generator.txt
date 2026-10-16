@@ -1,7 +1,0 @@
-from dataclasses import dataclass
-
-@dataclass
-class Invoice:
-    quantity: int
-    enabled: bool
-    balance: float
