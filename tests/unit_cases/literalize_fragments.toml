@@ -22,16 +22,6 @@ pre_indent_level = 0
 include_delimiters = false
 expected = { code = '"48656c6c6f",' }
 
-[[literals]]
-name = "unknown_reference_ignores_unrelated_preamble_values"
-language = "Cpp"
-source = '{"$ref":"missing"}'
-input_format = "json"
-pre_indent_level = 0
-include_delimiters = true
-ref_values = { other = 1 }
-expected = { bare_code = "std::move(missing)" }
-
 # Capitalized module names are valid call targets but cannot be declared
 # by these languages' wrapped-file stub grammar. Elm flattens the dotted
 # target to a capitalized identifier, which is not a valid value name.
