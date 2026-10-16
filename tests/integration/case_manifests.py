@@ -494,6 +494,12 @@ class RefCaseSpec(  # noqa: NOD001
     and times that JSON sources cannot express. These values override
     the corresponding source-derived bindings.
 
+    *external_declarations* supplies a caller's declarations as JSON
+    sources. They are composed around the unwrapped result afterwards,
+    without passing ``bound_refs`` or deriving inference hints from them.
+    *explicit_ref_value_sources* independently selects reference hints;
+    omission passes ``None``, while an empty table passes ``{}``.
+
     When *ref_case_override* is set, the case forces that identifier
     case for the ``ref_case`` argument of :func:`literalizer.literalize`
     instead of using the language's default (``identifier_cases[0]``).
@@ -523,9 +529,14 @@ class RefCaseSpec(  # noqa: NOD001
     extra_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
-    explicit_ref_value_sources: dict[str, str] = Field(
+    # Fixture declarations are composed after rendering, so the API still
+    # sees external references rather than materialized bound_refs.
+    external_declarations: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
+    fixture_prefix: str = ""
+    fixture_suffix: str = ""
+    explicit_ref_value_sources: dict[str, str] | None = None
 
     def ref_case_for(
         self, *, lang_cls: literalizer.LanguageCls
