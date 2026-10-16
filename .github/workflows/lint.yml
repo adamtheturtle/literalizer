@@ -68,8 +68,7 @@ jobs:
         df -h /tmp
         tr '\0' '\n' < /tmp/files-to-lint | wc -l
         status=0
-        /usr/bin/time -f 'SWEEP elapsed=%es max_rss=%MKiB exit=%x' xargs -0 -P 2 -n1 scripts/lint-mojo-fixture.sh < /tmp/files-to-lint > /tmp/mojo-sweep.log 2>&1 || status=$?
-        cat /tmp/mojo-sweep.log
+        /usr/bin/time -f 'SWEEP elapsed=%es max_rss=%MKiB exit=%x' xargs -0 -P 2 -n1 scripts/lint-mojo-fixture.sh < /tmp/files-to-lint 2>&1 | tee /tmp/mojo-sweep.log || status=${PIPESTATUS[0]}
         free -m
         exit "$status"
       # Basic JSON -> Mojo -> JSON round-trip (issue 2664). Runs here
