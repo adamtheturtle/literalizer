@@ -275,7 +275,7 @@ Successful syntax checks are followed by compilation and execution, including ar
 
 Download the workflow artifacts for the exact source files, compiler versions, revision IDs, command lines, elapsed seconds, return codes and output.
 ``command_deadline`` means GNU timeout explicitly reported sending its termination signal.
-Other nonzero exits are compiler or execution errors; a cancelled job with no completed measurement is not a command deadline.
+Other nonzero exits are compiler or execution errors; a canceled job with no completed measurement is not a command deadline.
 Timeout measurements do not fail this diagnostic workflow, and a green workflow does not establish that every workload compiled.
 Use the ordinary compiler jobs to validate the golden corpus.
 
