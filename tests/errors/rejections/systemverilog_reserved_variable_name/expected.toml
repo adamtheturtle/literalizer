@@ -3,6 +3,7 @@
 [ReservedVariableNameError]
 "SystemVerilog['and']" = "SystemVerilog cannot use NewVariable name 'and': it is a reserved identifier"
 "SystemVerilog['assert']" = "SystemVerilog cannot use NewVariable name 'assert': it is a reserved identifier"
+"SystemVerilog['before']" = "SystemVerilog cannot use NewVariable name 'before': it is a reserved identifier"
 "SystemVerilog['let']" = "SystemVerilog cannot use NewVariable name 'let': it is a reserved identifier"
 "SystemVerilog['new']" = "SystemVerilog cannot use NewVariable name 'new': it is a reserved identifier"
 "SystemVerilog['not']" = "SystemVerilog cannot use NewVariable name 'not': it is a reserved identifier"
