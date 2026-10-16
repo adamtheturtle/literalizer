@@ -22,7 +22,7 @@ def test_cpp_bound_consumption_preserves_source_hint(
 ) -> None:
     """Actual bindings do not replace caller-supplied source metadata.
 
-    Rendering and ownership are covered by compiling call-ref goldens.
+    Rendering and ownership are covered by compiling golden cases.
     """
     result = literalize_call(
         source='{"$ref": "item"}',
