@@ -682,6 +682,46 @@ def test_anchor_warning_requires_yaml(tmp_path: Path) -> None:
         _ = load_case_manifest(case_dir=case_dir)
 
 
+def test_input_roundtrip_is_loaded(tmp_path: Path) -> None:
+    """A roundtrip resolves its producer and subsequent input parser."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            "schema_version = 1\n"
+            'suites = ["base"]\n'
+            "[input_roundtrip]\n"
+            'language = "Jsonc"\n'
+            'input_format = "jsonc"\n'
+        ),
+        input_name="input.yaml",
+    )
+    roundtrip = load_case_manifest(case_dir=case_dir).input_roundtrip
+    assert roundtrip is not None
+    assert roundtrip.language.__name__ == "Jsonc"
+    assert roundtrip.input_format is literalizer.InputFormat.JSONC
+
+
+def test_input_roundtrip_rejects_non_literal_owner(tmp_path: Path) -> None:
+    """Other runners cannot silently ignore a declared roundtrip."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            "schema_version = 1\n"
+            'owner = "literalize-ref"\n'
+            "[ref]\n"
+            "[input_roundtrip]\n"
+            'language = "Jsonc"\n'
+            'input_format = "jsonc"\n'
+        ),
+        input_name="input.yaml",
+    )
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match="input_roundtrip requires a literal rendering suite",
+    ):
+        _ = load_case_manifest(case_dir=case_dir)
+
+
 def test_render_context_is_loaded(tmp_path: Path) -> None:
     """Simple rendering arguments load into the typed context."""
     expected_pre_indent_level = 2

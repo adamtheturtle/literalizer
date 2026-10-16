@@ -277,6 +277,15 @@ type RefIdentifierCase = Annotated[
 ]
 
 
+class InputRoundtripSpec(
+    BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
+):
+    """Render the input once, then parse that output for the golden."""
+
+    language: ManifestLanguage
+    input_format: CallInputFormat
+
+
 # A field default here is what a manifest means by leaving the key
 # out, rather than a value a caller may lean on: a manifest supplies
 # only what it has an opinion about, and TOML cannot spell the
@@ -793,6 +802,7 @@ class _CaseManifestData(  # noqa: NOD001
 
     schema_version: Literal[1]
     input: str | None = None
+    input_roundtrip: InputRoundtripSpec | None = None
     expected_reused_anchor_warning: ReusedAnchorWarningSpec | None = None
     suites: list[SuiteName] = Field(default_factory=_empty_suites)
     owner: OwnerName | None = None
@@ -829,6 +839,9 @@ class _CaseManifestData(  # noqa: NOD001
     @model_validator(mode="after")
     def _validate_consistency(self) -> _CaseManifestData:
         """Validate relationships that span manifest fields."""
+        if self.input_roundtrip is not None and self.owner is not None:
+            msg = "input_roundtrip requires a literal rendering suite"
+            raise ValueError(msg)
         self._validate_owned_table(
             table_name="call",
             table=self.call,
@@ -877,6 +890,7 @@ class CaseManifest:
     case_dir: Path
     schema_version: Literal[1]
     input: CaseInput
+    input_roundtrip: InputRoundtripSpec | None
     selection: LanguageSelection
     suites: frozenset[SuiteName]
     owner: OwnerName | None
@@ -959,6 +973,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         case_dir=case_dir,
         schema_version=data.schema_version,
         input=input_info,
+        input_roundtrip=data.input_roundtrip,
         selection=LanguageSelection(
             languages=data.languages,
             languages_reason=data.languages_reason,
