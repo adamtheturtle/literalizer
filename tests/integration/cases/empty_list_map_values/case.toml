@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["Cpp", "Gleam", "Go", "OCaml", "Rust"]
-languages_reason = "Typed maps need a common sequence representation, including empty values and sequence format variants."
 suites = ["base"]
 
 [[variants]]

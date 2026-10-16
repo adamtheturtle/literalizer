@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+[
+    {"s": 1},
+    {"t": 3}
+]
+@end

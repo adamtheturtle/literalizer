@@ -1,0 +1,9 @@
+* my_data
+@code javascript
+{
+    "a": 1,
+    "b": "x",
+    "e": [1, 2],
+    "f": {"g": "h"}
+}
+@end

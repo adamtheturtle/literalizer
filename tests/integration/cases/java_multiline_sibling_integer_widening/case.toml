@@ -1,7 +1,5 @@
 schema_version = 1
 suites = ["base"]
-languages = ["Java"]
-languages_reason = "Java must use long literals in every sibling array when one value exceeds int range."
 
 [base_context]
 collection_layout = "multiline"
