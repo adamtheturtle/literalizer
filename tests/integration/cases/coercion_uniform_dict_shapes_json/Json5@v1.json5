@@ -1,0 +1,4 @@
+[
+    {type: "create", name: "a"},
+    {type: "update", name: "b"},
+]
