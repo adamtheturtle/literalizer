@@ -60,6 +60,20 @@ jobs:
           uv tool install "mojo-compiler==$MOJO_VERSION"
         fi
         mojo --version
+    - name: Verify memory ceiling with compiler outlier and healthy controls
+      run: |
+        set +e
+        printf '%s\0' \
+          tests/integration/cases/toml_table/Mojo@v24_5.mojo \
+          tests/integration/cases/fortran_line_length_without_commas/Mojo@v24_5.mojo \
+          tests/integration/cases/toml_table/Mojo_combined@v24_5.mojo | \
+          scripts/lint-mojo.sh 2>&1 | tee /tmp/mojo-memory-probe.log
+        status=${PIPESTATUS[1]}
+        set -e
+        test "$status" = 123
+        test "$(grep -c ': END ' /tmp/mojo-memory-probe.log)" = 3
+        grep -F 'toml_table/Mojo@v24_5.mojo: END ' /tmp/mojo-memory-probe.log | grep -F 'status 0;'
+        grep -F 'toml_table/Mojo_combined@v24_5.mojo: END ' /tmp/mojo-memory-probe.log | grep -F 'status 0;'
     - name: Check Mojo syntax
       run: |-
         printf 'Mojo compiler workers: 2; fixture budget: 60s + 10s termination\n'
@@ -67,7 +81,7 @@ jobs:
         df -h /tmp
         tr '\0' '\n' < /tmp/files-to-lint | wc -l
         set +e
-        /usr/bin/time -f 'SWEEP elapsed=%es max_rss=%MKiB exit=%x' xargs -0 -P 2 -n1 scripts/lint-mojo-fixture.sh < /tmp/files-to-lint 2>&1 | tee /tmp/mojo-sweep.log
+        /usr/bin/time -f 'SWEEP elapsed=%es max_rss=%MKiB exit=%x' scripts/lint-mojo.sh < /tmp/files-to-lint 2>&1 | tee /tmp/mojo-sweep.log
         status=${PIPESTATUS[0]}
         set -e
         free -m
@@ -88,4 +102,6 @@ jobs:
       uses: actions/upload-artifact@v6
       with:
         name: mojo-${{ matrix.corpus }}
-        path: /tmp/mojo-sweep.log
+        path: |
+          /tmp/mojo-sweep.log
+          /tmp/mojo-memory-probe.log
