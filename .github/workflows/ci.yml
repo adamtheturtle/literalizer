@@ -11,11 +11,14 @@ on:
 
 permissions: {}
 
-# We often have a long CI queue, so cancel superseded runs for a PR as soon
-# as a new commit is pushed. Non-PR runs (push/schedule on main) fall back to
-# the unique run ID so they never cancel each other.
+# Cancel superseded PR and main-push runs to reduce runner contention.
+# Main-push cancellation trades intermediate benchmark history and failure
+# evidence for validating the latest main. Scheduled/manual runs stay unique.
 concurrency:
-  group: ci-pr-${{ github.event.pull_request.number || github.run_id }}
+  group: >-
+    ci-${{ github.event_name == 'push' && github.ref == 'refs/heads/main'
+    && 'push-main' || format('pr-{0}', github.event.pull_request.number || github.run_id)
+    }}
   cancel-in-progress: true
 
 jobs:
