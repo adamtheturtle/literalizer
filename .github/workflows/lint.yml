@@ -3248,7 +3248,7 @@ jobs:
       # release is the only mechanism for pinning the language version.
       # Without an explicit ``version`` the installed Racket drifts
       # with the ``setup-racket`` action default.
-      - uses: Bogdanp/setup-racket@v1.15
+      - uses: Bogdanp/setup-racket@v1.16
         with:
           version: '8.17'
       - name: Check Racket syntax
