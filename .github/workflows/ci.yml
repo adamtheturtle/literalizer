@@ -178,6 +178,8 @@ jobs:
             -rs
         env:
           PYTHONPATH: src
+          # Sampling requires host permissions unavailable in this container.
+          CODSPEED_PROFILER_ENABLED: 'false'
       - name: Retain compiler sources and diagnostics
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
