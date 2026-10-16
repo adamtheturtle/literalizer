@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["SystemVerilog"]
+languages_reason = "SystemVerilog keyword validation preserves permitted names and case (issue #5725)."
+target_function = "make_widget"
+parameter_names = ["first_value"]
+per_element = false
+wrap_in_file = true

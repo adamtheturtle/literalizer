@@ -1,0 +1,7 @@
+schema_version = 1
+languages = ["SystemVerilog"]
+languages_reason = "SystemVerilog keyword validation preserves permitted names and case (issue #5725)."
+suites = ["base"]
+
+[base_context]
+variable_name = "first_value"

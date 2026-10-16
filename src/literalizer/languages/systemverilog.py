@@ -463,6 +463,7 @@ class SystemVerilog(metaclass=LanguageCls):
             "assert",
             "assign",
             "automatic",
+            "before",
             "begin",
             "bit",
             "break",
