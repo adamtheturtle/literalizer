@@ -46,7 +46,6 @@ from literalizer._formatters.format_integers import (
     format_integer_binary,
     format_integer_hex,
     format_integer_octal,
-    make_overflow_suffix_formatter,
 )
 from literalizer._formatters.format_strings import (
     format_string_backslash_nul_octal,
@@ -969,7 +968,11 @@ class FSharp(metaclass=LanguageCls):
         FIXED = enum.member(value=format_float_fixed)
 
     class IntegerFormats(enum.Enum):
-        """Integer format options."""
+        """Integer format options.
+
+        Values outside the signed 64-bit range require decimal ``bigint``
+        literals; non-decimal formats reject those values.
+        """
 
         _value_: Callable[[int], str]
 
@@ -1621,26 +1624,28 @@ class FSharp(metaclass=LanguageCls):
                 raise UnrepresentableIntegerError(msg)
 
             return _format
-        if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
-            base = self.integer_format
 
-            @beartype
-            def _native_integer(value: int) -> str:
-                """Give native integers an explicit 64-bit type."""
-                rendered = base(value)
-                return (
-                    f"{rendered}L"
-                    if I64_MIN <= value <= I64_MAX
-                    else f"{rendered}I"
-                )
+        @beartype
+        def _native_integer(value: int) -> str:
+            """Only decimal literals support F#'s ``bigint`` suffix."""
+            if not I64_MIN <= value <= I64_MAX:
+                if (
+                    self.integer_format
+                    is not type(self.integer_format).DECIMAL
+                ):
+                    msg = (
+                        "F# bigint literals require decimal integer_format: "
+                        f"cannot represent integer {value} in "
+                        f"{self.integer_format.name.lower()} format."
+                    )
+                    raise UnrepresentableIntegerError(msg)
+                return f"{self.integer_format(value)}I"
+            rendered = self.integer_format(value)
+            if self.dict_format is type(self.dict_format).ANONYMOUS_RECORD:
+                return f"{rendered}L"
+            return rendered
 
-            return _native_integer
-        return make_overflow_suffix_formatter(
-            base=self.integer_format,
-            min_value=I64_MIN,
-            max_value=I64_MAX,
-            suffix="I",
-        )
+        return _native_integer
 
     @cached_property
     @beartype

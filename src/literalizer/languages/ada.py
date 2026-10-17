@@ -5,6 +5,7 @@ import datetime as dt
 import enum
 import math
 import re
+import sys
 import textwrap
 from collections.abc import Callable, Sequence
 from functools import cached_property
@@ -1172,7 +1173,18 @@ class Ada(metaclass=LanguageCls):
     @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+
+        @beartype
+        def _format(value: float) -> str:
+            """Parse subnormal values without compile-time underflow
+            warnings.
+            """
+            formatted = self.float_format(value)
+            if 0 < abs(value) < sys.float_info.min:
+                return f'Long_Float\'Value("{formatted}")'
+            return formatted
+
+        return _format
 
     @cached_property
     @beartype
