@@ -1700,7 +1700,7 @@ class Swift(metaclass=LanguageCls):
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
         if (
-            self.sequence_format is self.SequenceFormats.ARRAY
+            self.sequence_format is type(self.sequence_format).ARRAY
             and self.array_inference_policy
             is self.ArrayInferencePolicies.LITERAL
         ):

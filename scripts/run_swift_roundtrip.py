@@ -21,6 +21,7 @@ Zig exclusions.
 import shutil
 from pathlib import Path
 
+from literalizer import Language
 from literalizer.languages import Swift
 from scripts import roundtrip_common
 
@@ -29,7 +30,7 @@ _LABEL = "Swift"
 _EXCLUDED_KEYS = ("biginteger",)
 
 
-def _build_program(json_text: str, language: Swift) -> str:
+def _build_program(json_text: str, language: Language) -> str:
     """Return a runnable Swift program literalized from *json_text*."""
     trimmed_json = roundtrip_common.trim_keys(
         json_text=json_text,
