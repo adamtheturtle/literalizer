@@ -268,7 +268,7 @@ class GoldenRendering:
 
     @property
     def extension(self) -> str:
-        """Use text goldens for deliberately unwrapped indented
+        """Use text fixtures for deliberately unwrapped indented
         fragments.
         """
         if self.render.pre_indent_level > 0 and not self.render.wrap_in_file:
