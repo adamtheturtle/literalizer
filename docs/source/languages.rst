@@ -199,6 +199,14 @@ This option has no effect unless ``string_format=Cpp.string_formats.MULTILINE`` 
      - Multiline single-quoted string
      - Escapes single quotes and backslashes; falls back for carriage returns, NUL, or source-line trailing whitespace without enabling interpolation.
 
+Kotlin compatibility
+--------------------
+
+Kotlin output targets language and API version 2.4, validated with compiler 2.4.21.
+The default and only supported target is ``Kotlin.version_formats.V2_4``.
+The former ``V1_9`` target is retired: Kotlin 2.4 removes the 1.9 language mode, and Literalizer no longer validates or advertises Kotlin 1.9 compatibility.
+Generated scripts compile with fatal warnings before execution.
+
 Python annotation evaluation
 ----------------------------
 
