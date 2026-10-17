@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Cpp"]
+languages_reason = "C++ ordered-map argument types must follow the referenced list rather than the reference marker's mapping shape."
+target_function = "process"
+parameter_names = ["a"]
+per_element = true
+ref_declarations = { big_list = '["x"]' }
+# Keep the binding external to the API call, as in the original fragment.
+explicit_ref_value_sources = { big_list = '["x"]' }
