@@ -3190,6 +3190,8 @@ jobs:
         timeout-minutes: 1
         run: uv run python -m scripts.run_nim_roundtrip
 
+  # lint-fast compiles and executes every Python fixture on Python 3.12.
+  # This job additionally checks py38 fixtures on Python 3.8.
   lint-python:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -3214,20 +3216,6 @@ jobs:
       - name: Run Python 3.8 golden files
         run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.8 --no-project python <
           /tmp/files-python38
-      - name: Find default Python golden files
-        shell: bash
-        run: python3 -m tests.integration.list_fixtures .py py39 > /tmp/files-python
-          && test -s /tmp/files-python
-      # The default (``@py39``) Python fixtures emit ``datetime.UTC``,
-      # which requires Python 3.11+, so they cannot run on the 3.8
-      # interpreter used above. Pin this run to the
-      # ``requires-python = ">=3.12"`` floor in ``pyproject.toml`` so a
-      # generator change that outpaces the declared minimum interpreter
-      # fails CI loudly here rather than silently working on a newer
-      # version; keep this in sync with that floor.
-      - name: Run default Python golden files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.12 --no-project python <
-          /tmp/files-python
 
   lint-racket:
     runs-on: ubuntu-latest
