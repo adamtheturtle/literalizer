@@ -39,7 +39,7 @@ def test_refused_scaffold_handles_stale_fixture(
         },
         context={"case_dir_name": "external"},
     )
-    version = Python.VersionFormats.PY39
+    version = Python.VersionFormats["PY39"]
     golden_path = make_golden_path(
         parent=case_dir,
         name="Python_ref_default",
