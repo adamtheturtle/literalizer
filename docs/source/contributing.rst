@@ -264,35 +264,13 @@ Continuous integration
 Tests are run on GitHub Actions.
 The configuration for this is in :file:`.github/workflows/`.
 
-Compiler benchmarks
-~~~~~~~~~~~~~~~~~~~
+Code generation benchmarks
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The compiler benchmarks in :file:`tests/benchmarks/test_bench_compilers.py` measure the public API's map containing singleton arrays at depths 0, 16, 20 and 30 for C++20 and Swift 5 language mode.
-The ``compilers`` entry in the benchmark matrix in :file:`.github/workflows/ci.yml` runs them with CodSpeed's ``walltime`` instrument.
-The numbered entries use CPU simulation to measure code generation, sharing the same setup steps.
-Sources are generated before measurement, and the compiler binaries and C++ standard-library headers are pinned together by container image digest.
-CodSpeed tracks completed compiler timings across revisions; new benchmarks acquire their baseline after running on the default branch.
-Shared GitHub runners introduce timing noise, so small changes need repeated measurements in the same environment.
-
-Each compiler command has a separate 60-second deadline.
-A probe before measurement skips a workload that reaches its deadline, without publishing a completed compiler timing.
-Compiler errors and failures during measured rounds fail the job.
-The skipped workload remains in the suite so later improvements can make it measurable.
-A green job therefore does not establish that every workload compiled.
-Use the integration golden tests for correctness, including runtime type and value checks.
-
-Download the ``compiler-benchmarks`` artifact for generated sources, compiler versions, revision, commands, output and test results.
-A command deadline requires GNU timeout's explicit termination diagnostic; a canceled job is not a command deadline.
-These are individual syntax/type-check workloads, not measurements of whole-corpus CI cost.
-
-To run with locally installed Swift and Clang compilers and GNU timeout:
-
-.. code-block:: console
-
-   $ uv run --group=benchmark pytest tests/benchmarks/test_bench_compilers.py --codspeed --codspeed-mode=walltime -o addopts= --basetemp=/tmp/literalizer-compiler-benchmarks -rs
-
-Use ``-k swift`` or ``-k cpp`` to select one language.
-Local measurements use the installed tool versions; compare timings only within the same environment.
+The benchmarks in :file:`tests/benchmarks/test_bench_literalize.py` measure code generation with CodSpeed's CPU simulation instrument.
+The six benchmark shards in :file:`.github/workflows/ci.yml` publish results to the same CodSpeed report.
+Compiler correctness is checked by the integration golden tests and language round-trip checks.
+Individual compiler commands have deadlines to bound pathological workloads.
 
 Performing a release
 --------------------
