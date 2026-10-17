@@ -1,0 +1,5 @@
+object Fixture_call_carrier_member_separate_Scala_call {
+class _AppType { def go(first_value: Any = null, second_value: Any = null): Any = null }
+val app = new _AppType
+app.go(first_value = List[Int](1), second_value = List[String]("text"))
+}

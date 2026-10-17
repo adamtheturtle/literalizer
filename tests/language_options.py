@@ -428,6 +428,7 @@ OPTIONS: Mapping[str, Option] = {
 }
 
 CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
+    "supports_dotted_calls": lambda lang_cls: lang_cls.supports_dotted_calls,
     "supports_typed_dict_open": (
         lambda lang_cls: lang_cls.supports_typed_dict_open
     ),
