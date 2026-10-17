@@ -57,6 +57,26 @@ option = "annotation_evaluation"
 per_version = true
 gates = [{ kind = "spec_field_present", field = "annotation_evaluation" }]
 
+[axes.array_inference_policy]
+plan = "every_non_default_member"
+name_template = "{lang}_array_inference_{format}"
+option = "array_inference_policy"
+include_default = true
+gates = [{ kind = "spec_field_present", field = "array_inference_policy" }]
+layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
+
+[axes.array_inference_policy_mutable]
+plan = "fixed_overrides"
+name_template = "{lang}_array_inference_{format}_mutable"
+primary_axis = "array_inference_policy"
+overrides = [{ kind = "enum_member", option = "declaration_style", member = "VAR" }]
+
+[axes.array_inference_policy_tuple]
+plan = "fixed_overrides"
+name_template = "{lang}_array_inference_{format}_tuple"
+primary_axis = "array_inference_policy"
+overrides = [{ kind = "enum_member", option = "sequence_format", member = "TUPLE" }]
+
 [axes.bool_format]
 plan = "every_non_default_member"
 name_template = "{lang}_bool_format_{format}"
