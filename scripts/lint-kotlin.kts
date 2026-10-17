@@ -67,7 +67,7 @@ for (path in files) {
         }
     }, timeoutSeconds * 1000L)
     try {
-        // `-language-version 1.9` and `-api-version 1.9` match
+        // `-language-version 2.4` and `-api-version 2.4` match
         // `Kotlin.language_version` in `src/literalizer/languages/kotlin.py`;
         // keep them in sync.
         val args = mutableListOf(
@@ -75,8 +75,8 @@ for (path in files) {
             // then instantiate the emitted script class only on strict success.
             "-Xallow-any-scripts-in-source-roots",
             "-Werror",
-            "-language-version", "1.9",
-            "-api-version", "1.9",
+            "-language-version", "2.4",
+            "-api-version", "2.4",
             "-d", out.absolutePath,
         )
         args.addAll(classpathArgs)

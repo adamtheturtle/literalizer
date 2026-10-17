@@ -1363,10 +1363,10 @@ plan = "fixed_overrides"
 name_template = "{lang}_widened_i64_min"
 gates = [
   { kind = "capability_flag", flag = "supports_widened_integer_formatter" },
-  { kind = "enum_member_present", option = "language_version", member = "V1_9" },
+  { kind = "enum_member_present", option = "language_version", member = "V2_4" },
 ]
 overrides = [
-  { kind = "enum_member", option = "language_version", member = "V1_9" },
+  { kind = "enum_member", option = "language_version", member = "V2_4" },
 ]
 
 [axes.nim_i64_min_integer_format]

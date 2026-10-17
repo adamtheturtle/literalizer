@@ -2209,12 +2209,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The host uses the compiler bundled with this distribution.
-    # 2.1.21 supports the v1_9 fixtures without deprecation warnings;
-    # later compilers deprecate or remove that language mode.
+    # Kotlin 1.9 support is retired; compile the v2_4 fixtures in 2.4 mode.
     env:
-      KOTLIN_VERSION: 2.1.21
+      KOTLIN_VERSION: 2.4.21
       KOTLINX_SERIALIZATION_VERSION: 1.7.3
-      KOTLIN_FIXTURE_TAG: v1_9
+      KOTLIN_FIXTURE_TAG: v2_4
     steps:
       - uses: actions/checkout@v7
         with:
