@@ -1,0 +1,12 @@
+* external_value
+@code javascript
+{
+    "_": "_"
+}
+@end
+* my_data
+@code javascript
+[
+    external_value
+]
+@end

@@ -1,0 +1,8 @@
+* my_data
+@code javascript
+[
+    {"first": 1},
+    {"repeated": "a"},
+    {"repeated": "b"}
+]
+@end

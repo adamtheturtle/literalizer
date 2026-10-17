@@ -2,5 +2,3 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["Python"]
-languages_reason = "Sampled: Python is an arbitrary representative for a ref key spelled with a YAML escape."
