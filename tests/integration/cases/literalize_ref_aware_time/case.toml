@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+languages = ["Hcl"]
+languages_reason = "HCL's string time formatter preserves the UTC offset of an aware time binding."
+bound_ref_times = { value = "12:30:15+02:00" }

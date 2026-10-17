@@ -1,18 +1,16 @@
 """Validation for timezone-aware ``datetime.time`` values.
 
-A manifest spells ``bound_refs`` as a TOML inline table, and TOML has
-no offset-carrying time, so the value these bind cannot be written in
-one.
+Native formatter rejections remain direct tests. Offset-preserving
+rendering is covered by the manifest-owned aware-time reference case.
 """
 
 import datetime as dt
-from textwrap import dedent
 
 import pytest
 
 from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.exceptions import UnrepresentableInputError
-from literalizer.languages import Go, Hcl, Python
+from literalizer.languages import Go, Python
 
 _AWARE_TIME = dt.time(
     hour=12,
@@ -40,24 +38,3 @@ def test_aware_time_rejected_when_native_formatter_drops_offset(
             variable_form=NewVariable(name="out", modifiers=frozenset()),
             wrap_in_file=True,
         )
-
-
-def test_aware_time_allowed_when_string_formatter_preserves_offset() -> None:
-    """Offset-preserving string back ends remain supported."""
-    result = literalize(
-        source='{"x": {"$ref": "value"}}',
-        input_format=InputFormat.JSON,
-        language=Hcl(),
-        ref_key="$ref",
-        bound_refs={"value": _AWARE_TIME},
-        variable_form=NewVariable(name="out", modifiers=frozenset()),
-        wrap_in_file=True,
-    )
-
-    assert result.code == dedent(
-        text="""\
-        value = "12:30:15+02:00"
-        out = {
-            "x" = value,
-        }"""
-    )

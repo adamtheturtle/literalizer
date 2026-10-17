@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime as dt
 import functools
 import string
 import tomllib
@@ -489,6 +490,21 @@ class _OwnedCaseSpec(
         return {**data, "case_dir_name": context["case_dir_name"]}
 
 
+def _parse_ref_time(value: object, /) -> object:
+    """Resolve an ISO time source while preserving native TOML times."""
+    if isinstance(value, str):
+        return dt.time.fromisoformat(value)
+    return value
+
+
+type RefTimeInput = Annotated[dt.time, BeforeValidator(func=_parse_ref_time)]
+
+
+def _empty_ref_times() -> dict[str, dt.time]:
+    """Return the default time-valued reference bindings."""
+    return {}
+
+
 class RefConsumerSpec(  # noqa: NOD001
     BaseModel, extra="forbid", frozen=True, strict=True
 ):
@@ -555,6 +571,10 @@ class RefCaseSpec(  # noqa: NOD001
     )
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
     bound_refs: Mapping[str, ValueInput] | None = None
+    # ISO time strings can carry UTC offsets that TOML's native time cannot.
+    bound_ref_times: dict[str, RefTimeInput] = Field(
+        default_factory=_empty_ref_times,
+    )
     extra_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
