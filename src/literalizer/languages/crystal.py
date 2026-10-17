@@ -1413,7 +1413,12 @@ class Crystal(metaclass=LanguageCls):
 
     @beartype
     def _crystal_list_type(self, *, value: list[Value]) -> str:
-        """Infer the Crystal array type from informative elements."""
+        """Infer the selected Crystal sequence type from its elements."""
+        if self.sequence_format is self.SequenceFormats.TUPLE:
+            item_types = ", ".join(
+                self._crystal_type_for_value(item) for item in value
+            )
+            return f"Tuple({item_types})"
         narrowed_kinds: tuple[type, ...] = tuple(
             kind
             for kind in (list, dict, set)
