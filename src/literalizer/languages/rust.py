@@ -1576,7 +1576,18 @@ def _build_tagged_enum_preamble(
                 for value in values
                 for wrap_id in _tagged_enum_wrap_ids(value)
             )
-            wrap_ids = slot_wrap_ids | value_wrap_ids
+            # Rendering also widens collections across the arguments in
+            # each call row. Keep those ids while discovering variants
+            # only inside real arguments, never the synthetic row itself.
+            row_wrap_ids = frozenset(
+                wrap_id
+                for row in data
+                for wrap_id in (
+                    collect_heterogeneous_container_ids(data=row)
+                    | collect_sibling_map_wrap_ids(data=row)
+                )
+            )
+            wrap_ids = slot_wrap_ids | value_wrap_ids | row_wrap_ids
         else:
             values = (data,)
             wrap_ids = _tagged_enum_wrap_ids(data)
