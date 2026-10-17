@@ -1,11 +1,12 @@
 module constructor_types
   implicit none
   type fval_t
-    integer :: value = 42
+    integer :: value
   end type
 contains
   function Playlist() result(value)
     type(fval_t) :: value
+    value%value = 42
   end function
 end module
 
