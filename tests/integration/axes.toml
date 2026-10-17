@@ -1397,16 +1397,16 @@ overrides = [
   { kind = "enum_member", option = "language_version", member = "V2_4" },
 ]
 
-[axes.nim_i64_min_integer_format]
+[axes.i64_min_integer_format]
 plan = "every_non_default_member"
 name_template = "{lang}_i64_min_integer_format_{format}"
 option = "integer_format"
-gates = [{ kind = "metadata_field", field = "language_id", value = "nim" }]
+gates = []
 
-[axes.nim_i64_min_record_integer_format]
+[axes.i64_min_record_integer_format]
 plan = "cross_product"
 name_template = "{lang}_i64_min_record_integer_format_{tag}_{secondary}"
-gates = [{ kind = "metadata_field", field = "language_id", value = "nim" }]
+gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" }]
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
