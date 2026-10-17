@@ -1414,7 +1414,7 @@ class Crystal(metaclass=LanguageCls):
     @beartype
     def _crystal_list_type(self, *, value: list[Value]) -> str:
         """Infer the selected Crystal sequence type from its elements."""
-        if self.sequence_format is self.SequenceFormats.TUPLE:
+        if self.sequence_format is self.SequenceFormats["TUPLE"]:
             item_types = ", ".join(
                 self._crystal_type_for_value(item) for item in value
             )
