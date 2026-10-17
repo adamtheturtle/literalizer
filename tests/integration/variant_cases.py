@@ -324,10 +324,11 @@ def case_for_manifest_variant(
                 value=context.collection_layout
             ),
         )
-    if context.record_null_substitutions is not None:
+    substitutions = context.resolved_record_null_substitutions()
+    if substitutions is not None:
         variant = dataclasses.replace(
             variant,
-            record_null_substitutions=context.record_null_substitutions,
+            record_null_substitutions=substitutions,
         )
     return VariantCase(
         variant_name=f"{variant.name}{manifest_variant.suffix}",

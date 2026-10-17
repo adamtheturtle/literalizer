@@ -23,6 +23,7 @@ from pydantic import (
 
 import literalizer
 from literalizer import ValueInput
+from literalizer._types import Scalar
 from literalizer.languages import ALL_LANGUAGES, Cpp, Rust
 
 from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
@@ -286,6 +287,19 @@ class InputRoundtripSpec(
     input_format: CallInputFormat
 
 
+class SubstitutionMappingEntry(
+    BaseModel,
+    arbitrary_types_allowed=True,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """A mapping entry whose scalar key need not be a TOML table key."""
+
+    key: Scalar
+    value: ValueInput
+
+
 # A field default here is what a manifest means by leaving the key
 # out, rather than a value a caller may lean on: a manifest supplies
 # only what it has an opinion about, and TOML cannot spell the
@@ -304,6 +318,24 @@ class RenderContext(  # noqa: NOD001
     collection_layout: CollectionLayoutName | None = None
     pre_indent_level: Annotated[int, Field(ge=0)] = 0
     record_null_substitutions: Mapping[str, ValueInput] | None = None
+    record_null_mapping_substitutions: dict[
+        str, list[SubstitutionMappingEntry]
+    ] = Field(default_factory=dict)
+
+    def resolved_record_null_substitutions(
+        self,
+    ) -> Mapping[str, ValueInput] | None:
+        """Merge ordinary substitutions with mappings using scalar
+        keys.
+        """
+        if len(self.record_null_mapping_substitutions) == 0:
+            return self.record_null_substitutions
+        substitutions = dict[str, ValueInput]()
+        if self.record_null_substitutions is not None:
+            substitutions.update(self.record_null_substitutions)
+        for name, entries in self.record_null_mapping_substitutions.items():
+            substitutions[name] = {entry.key: entry.value for entry in entries}
+        return substitutions
 
 
 # Defaults stand in for omitted keys, as above.
