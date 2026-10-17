@@ -88,7 +88,11 @@ def test_constructor_targets_golden_file(
 @pytest.mark.parametrize(
     argnames="case",
     argvalues=constructor_binding_cases(),
-    ids=lambda case: case.name,
+    ids=lambda case: (
+        case.name
+        if case.manifest is None
+        else f"{case.manifest.case_dir.name}/{case.name}"
+    ),
 )
 def test_constructor_binding_golden_file(
     *,

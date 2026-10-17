@@ -169,23 +169,18 @@ def constructor_binding_cases() -> list[ConstructorBindingCase]:
         for manifest in load_case_manifests(cases_dir=CASES_DIR)
         if manifest.owner == "constructor-binding"
     ]
-    return [
-        dataclasses.replace(
-            case,
-            manifest=next(
-                (
-                    manifest
-                    for manifest in manifests
-                    if manifest.selection.admits_language(
-                        lang_cls=case.lang_cls
-                    )
-                ),
-                None,
-            ),
+    cases: list[ConstructorBindingCase] = []
+    for case in [
+        *_default_binding_cases(),
+        *_call_style_binding_cases(),
+        *_modifier_binding_cases(),
+    ]:
+        owners: tuple[CaseManifest | None, ...] = tuple(
+            manifest
+            for manifest in manifests
+            if manifest.selection.admits_language(lang_cls=case.lang_cls)
+        ) or (None,)
+        cases.extend(
+            dataclasses.replace(case, manifest=manifest) for manifest in owners
         )
-        for case in [
-            *_default_binding_cases(),
-            *_call_style_binding_cases(),
-            *_modifier_binding_cases(),
-        ]
-    ]
+    return cases
