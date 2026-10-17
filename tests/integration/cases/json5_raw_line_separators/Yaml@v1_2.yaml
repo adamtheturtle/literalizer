@@ -1,8 +1,8 @@
 {
-    "double": "a b",
-    "single": "c d",
+    "double": "a\u2028b",
+    "single": "c\u2029d",
     # A comment, which both separators would end.
-    "both": "e f g",
+    "both": "e\u2028f\u2029g",
     "continued": "hi",
-    "escaped backslash": "j\\ k"
+    "escaped backslash": "j\\\u2028k"
 }
