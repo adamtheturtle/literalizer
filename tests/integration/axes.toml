@@ -485,7 +485,7 @@ plan = "fixed_overrides"
 name_template = "{lang}_json_type_{format}_variable_multiline"
 primary_axis = "json_type"
 layouts = [{ layout = "MULTILINE" }]
-gates = [{ kind = "metadata_field", field = "language_id", value = "cpp" }]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
 
 [axes.json_type_call_result]
 plan = "filtered"
