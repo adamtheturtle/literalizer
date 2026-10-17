@@ -1256,11 +1256,10 @@ overrides = [
   { kind = "enum_member", option = "json_type", member = "OTP_JSON" },
 ]
 
-[axes.occam_epoch_datetime_list]
+[axes.epoch_datetime_list]
 plan = "fixed_overrides"
 name_template = "{lang}_epoch_datetime_list"
 gates = [
-  { kind = "metadata_field", field = "language_id", value = "occam" },
   { kind = "enum_member_present", option = "datetime_format", member = "EPOCH" },
 ]
 overrides = [
