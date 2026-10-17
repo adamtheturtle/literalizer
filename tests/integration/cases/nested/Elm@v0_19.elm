@@ -9,5 +9,5 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("users", EList [EDict [("name", EStr "Bob"), ("tags", EList [EStr "admin", EStr "user"])], EDict [("name", EStr "Carol"), ("tags", EList [EStr "guest"])]])
+    ("users", EList [EDict [("name", EStr "Bob"), ("tags", EList [EStr "admin", EStr "user"])], EDict [("name", EStr "Carol"), ("tags", EList (EStr "guest" :: []))]])
     ]

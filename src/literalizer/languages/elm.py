@@ -1579,6 +1579,15 @@ class Elm(metaclass=LanguageCls):
         return dataclasses.replace(
             self.sequence_format.value,
             sequence_open=self._seq_open,
+            # elm-format 0.8.8 explores layouts exponentially for nested
+            # singleton list literals. Cons preserves the same List Val
+            # while keeping formatting of deep constructor chains bounded.
+            single_element_template=(
+                None
+                if self._json_active
+                or self.dict_format is type(self.dict_format).RECORD
+                else f"{self.constructor_prefix}List ({{items}} :: [])"
+            ),
             supports_heterogeneity=(
                 self.dict_format is not type(self.dict_format).RECORD
             ),

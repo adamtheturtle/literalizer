@@ -7,8 +7,8 @@ type Val
 
 
 my_data : Val
-my_data = EList [
+my_data = EList (
     -- line 1
     -- line 2
     EStr "a"
-    ]
+     :: [])

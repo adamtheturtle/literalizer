@@ -118,6 +118,7 @@ def _configuration_requires_shared_renderer(
         not _inference_is_inert(language=language)
         or language.skip_null_dict_values
         or sequence_config.single_element_trailing_comma
+        or sequence_config.single_element_template is not None
         or dict_config.narrowed_open is not None
     ):
         return True
