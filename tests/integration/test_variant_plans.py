@@ -141,6 +141,7 @@ def test_special_axes_are_declared() -> None:
                 "multiline_string_pre_indent",
                 "plain_collection_callbacks",
                 "typed_collection_callback",
+                "custom_zig_null_policy",
             }
         )
         == SPECIAL_VARIANT_AXES

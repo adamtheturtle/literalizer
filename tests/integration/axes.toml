@@ -1596,3 +1596,6 @@ overrides = [
   { kind = "enum_member", option = "sequence_format", member = "ARRAY" },
   { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
 ]
+
+[special_axes.custom_zig_null_policy]
+reason = "A caller-defined Zig subclass overrides the null dictionary-field policy in JSON mode."

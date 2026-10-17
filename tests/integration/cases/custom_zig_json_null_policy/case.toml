@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "variant"
+languages = ["Zig"]
+languages_reason = "A caller-defined Zig subclass retains its null-field policy with std.json.Value output."
+
+[[variants]]
+axis = "custom_zig_null_policy"

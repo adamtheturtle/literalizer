@@ -5,7 +5,7 @@ variants.
 import dataclasses
 from collections.abc import Callable
 from functools import cached_property
-from typing import override
+from typing import ClassVar, override
 
 from beartype import beartype
 
@@ -13,7 +13,7 @@ from literalizer import DictFormatConfig
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._types import Scalar, Value
-from literalizer.languages import Go
+from literalizer.languages import Go, Zig
 
 from .variant_types import Variant, compact_variant
 
@@ -55,10 +55,28 @@ class CallbackGo(Go):
         return dataclasses.replace(native.dict_format_config, dict_open=_open)
 
 
+class SkipNullZig(Zig):
+    """A caller-defined Zig policy that omits null mapping fields."""
+
+    skip_null_dict_values: ClassVar[bool] = True
+
+
 @beartype
 def variants_for_custom_language_axis(*, axis_key: str) -> list[Variant]:
     """Build the custom language variants for an axis, if it has any."""
     match axis_key:
+        case "custom_zig_null_policy":
+            return [
+                compact_variant(
+                    name=f"Zig_{axis_key}",
+                    spec=SkipNullZig(
+                        language_version=version,
+                        json_type=Zig.JsonTypes["STD_JSON_VALUE"],
+                    ),
+                    lang_cls=Zig,
+                )
+                for version in Zig.VersionFormats
+            ]
         case "plain_collection_callbacks":
             plain_callbacks = True
         case "typed_collection_callback":
