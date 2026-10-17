@@ -268,8 +268,8 @@ Compiler benchmarks
 ~~~~~~~~~~~~~~~~~~~
 
 The compiler benchmarks in :file:`tests/benchmarks/test_bench_compilers.py` measure the public API's map containing singleton arrays at depths 0, 16, 20 and 30 for C++20 and Swift 5 language mode.
-The ``compiler-benchmarks`` job in :file:`.github/workflows/ci.yml` runs them with CodSpeed's ``walltime`` instrument.
-The other benchmark jobs use CPU simulation to measure code generation.
+The ``compilers`` entry in the benchmark matrix in :file:`.github/workflows/ci.yml` runs them with CodSpeed's ``walltime`` instrument.
+The numbered entries use CPU simulation to measure code generation, sharing the same setup steps.
 Sources are generated before measurement, and the compiler binaries and C++ standard-library headers are pinned together by container image digest.
 CodSpeed tracks completed compiler timings across revisions; new benchmarks acquire their baseline after running on the default branch.
 Shared GitHub runners introduce timing noise, so small changes need repeated measurements in the same environment.
