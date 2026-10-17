@@ -1,4 +1,4 @@
-object Fixture_scala3_record_keyword_fields_Scala_scala3_record_keyword_fields {
+object Fixture_native_record_keyword_fields_Scala_record_keyword_fields {
 case class Record0(`enum`: Int, `export`: Int, `given`: Int, `then`: Int, `as`: Int, `derives`: Int, `end`: Int, `extension`: Int, `infix`: Int, `inline`: Int, `opaque`: Int, `open`: Int, `transparent`: Int, `using`: Int)
 val my_data = Record0(
     `enum` = 1,
