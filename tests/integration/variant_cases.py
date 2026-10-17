@@ -18,7 +18,6 @@ from typing import Protocol, assert_never, runtime_checkable
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import Go
 
 from .case_discovery import cases_with_special_floats
 from .case_manifests import (
@@ -28,7 +27,7 @@ from .case_manifests import (
     load_case_manifests,
     variable_form_for_context,
 )
-from .custom_languages import CallbackGo
+from .custom_languages import variants_for_custom_language_axis
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
@@ -458,27 +457,15 @@ def build_variant_cases() -> list[VariantCase]:
         )
 
     for case_dir_name, entry in entries:
-        if entry.axis not in {
-            "plain_collection_callbacks",
-            "typed_collection_callback",
-        }:
-            continue
         cases.extend(
             case_for_manifest_variant(
                 case_dir_name=case_dir_name,
                 manifest_variant=entry,
-                variant=compact_variant(
-                    name=f"Go_{entry.axis}",
-                    spec=CallbackGo(
-                        language_version=version,
-                        plain_callbacks=(
-                            entry.axis == "plain_collection_callbacks"
-                        ),
-                    ),
-                    lang_cls=Go,
-                ),
+                variant=variant,
             )
-            for version in Go.VersionFormats
+            for variant in variants_for_custom_language_axis(
+                axis_key=entry.axis,
+            )
         )
 
     modifier_inputs = {
