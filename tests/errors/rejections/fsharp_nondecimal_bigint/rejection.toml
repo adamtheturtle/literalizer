@@ -1,0 +1,19 @@
+schema_version = 1
+summary = "F# requires decimal bigint literals in both native dictionary modes."
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["FSharp"]
+option = "dict_format"
+values = ["BINARY", "HEX", "OCTAL"]
+
+[call]
+api = "literalize"
+sources = [
+    "-9223372036854775809",
+    "9223372036854775808",
+    "340282366920938463463374607431768211456",
+]
+input_format = "json"
+variable_form = "none"
+kwargs = [
+    { kind = "option_member", option = "integer_format", member = "{value}" },
+]

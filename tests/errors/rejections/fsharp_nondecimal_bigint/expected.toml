@@ -1,0 +1,21 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"FSharp[DEFAULT]['BINARY']['-9223372036854775809']" = "F# bigint literals require decimal integer_format: cannot represent integer -9223372036854775809 in binary format."
+"FSharp[DEFAULT]['BINARY']['9223372036854775808']" = "F# bigint literals require decimal integer_format: cannot represent integer 9223372036854775808 in binary format."
+"FSharp[DEFAULT]['BINARY']['340282366920938463463374607431768211456']" = "F# bigint literals require decimal integer_format: cannot represent integer 340282366920938463463374607431768211456 in binary format."
+"FSharp[DEFAULT]['HEX']['-9223372036854775809']" = "F# bigint literals require decimal integer_format: cannot represent integer -9223372036854775809 in hex format."
+"FSharp[DEFAULT]['HEX']['9223372036854775808']" = "F# bigint literals require decimal integer_format: cannot represent integer 9223372036854775808 in hex format."
+"FSharp[DEFAULT]['HEX']['340282366920938463463374607431768211456']" = "F# bigint literals require decimal integer_format: cannot represent integer 340282366920938463463374607431768211456 in hex format."
+"FSharp[DEFAULT]['OCTAL']['-9223372036854775809']" = "F# bigint literals require decimal integer_format: cannot represent integer -9223372036854775809 in octal format."
+"FSharp[DEFAULT]['OCTAL']['9223372036854775808']" = "F# bigint literals require decimal integer_format: cannot represent integer 9223372036854775808 in octal format."
+"FSharp[DEFAULT]['OCTAL']['340282366920938463463374607431768211456']" = "F# bigint literals require decimal integer_format: cannot represent integer 340282366920938463463374607431768211456 in octal format."
+"FSharp[ANONYMOUS_RECORD]['BINARY']['-9223372036854775809']" = "F# bigint literals require decimal integer_format: cannot represent integer -9223372036854775809 in binary format."
+"FSharp[ANONYMOUS_RECORD]['BINARY']['9223372036854775808']" = "F# bigint literals require decimal integer_format: cannot represent integer 9223372036854775808 in binary format."
+"FSharp[ANONYMOUS_RECORD]['BINARY']['340282366920938463463374607431768211456']" = "F# bigint literals require decimal integer_format: cannot represent integer 340282366920938463463374607431768211456 in binary format."
+"FSharp[ANONYMOUS_RECORD]['HEX']['-9223372036854775809']" = "F# bigint literals require decimal integer_format: cannot represent integer -9223372036854775809 in hex format."
+"FSharp[ANONYMOUS_RECORD]['HEX']['9223372036854775808']" = "F# bigint literals require decimal integer_format: cannot represent integer 9223372036854775808 in hex format."
+"FSharp[ANONYMOUS_RECORD]['HEX']['340282366920938463463374607431768211456']" = "F# bigint literals require decimal integer_format: cannot represent integer 340282366920938463463374607431768211456 in hex format."
+"FSharp[ANONYMOUS_RECORD]['OCTAL']['-9223372036854775809']" = "F# bigint literals require decimal integer_format: cannot represent integer -9223372036854775809 in octal format."
+"FSharp[ANONYMOUS_RECORD]['OCTAL']['9223372036854775808']" = "F# bigint literals require decimal integer_format: cannot represent integer 9223372036854775808 in octal format."
+"FSharp[ANONYMOUS_RECORD]['OCTAL']['340282366920938463463374607431768211456']" = "F# bigint literals require decimal integer_format: cannot represent integer 340282366920938463463374607431768211456 in octal format."
