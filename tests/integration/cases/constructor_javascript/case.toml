@@ -1,0 +1,19 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["JavaScript"]
+languages_reason = "A caller-owned JavaScript class supplies a real constructor."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+class Playlist {
+    constructor(_options = {}) {}
+}
+
+"""
+fixture_suffix = """\
+if (!(p instanceof Playlist)) {
+    throw new Error("Expected a Playlist instance");
+}
+"""

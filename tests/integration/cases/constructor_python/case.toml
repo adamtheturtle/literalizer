@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["Python"]
+languages_reason = "A caller-owned Python class supplies a real zero-argument constructor."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+class Playlist:
+    pass
+
+
+"""
+fixture_suffix = "assert isinstance(p, Playlist)\n"
