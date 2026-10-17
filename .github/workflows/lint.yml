@@ -268,12 +268,8 @@ jobs:
         uses: astral-sh/setup-uv@v10.3.0
         with:
           # Pinned to the ``requires-python = ">=3.12"`` floor in
-          # ``pyproject.toml``; keep this in sync with that floor so the
-          # Python fixture gate runs under the declared minimum
-          # interpreter. The ``Python.VersionFormats`` enum
-          # (``PY38``/``PY39``) only selects typing-alias syntax and does
-          # not encode this runtime floor, so it is not the source of
-          # truth here.
+          # ``pyproject.toml``; the roundtrip helpers below import the
+          # project and need at least this interpreter version.
           python-version: '3.12'
 
       # The fixture set spans every `Java.VersionFormats` member in
@@ -472,12 +468,6 @@ jobs:
       # The run step reuses the same trick: one pwsh process iterates
       # every fixture, executing its script block in a child scope so
       # `$my_data` (and anything else) does not leak between fixtures.
-      - name: Lint Python
-        run: |-
-          find tests/integration/cases -name '*.py' -print0 > /tmp/files-python
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m py_compile < /tmp/files-python
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python < /tmp/files-python
-
       - name: Lint PowerShell
         run: |-
           find tests/integration/cases -name '*.ps1' -print0 > /tmp/files-ps1 && test -s /tmp/files-ps1
@@ -3190,11 +3180,24 @@ jobs:
         timeout-minutes: 1
         run: uv run python -m scripts.run_nim_roundtrip
 
-  # lint-fast compiles and executes every Python fixture on Python 3.12.
-  # This job additionally checks py38 fixtures on Python 3.8.
+  # Check py38 fixtures on Python 3.8 and both typing-alias formats on
+  # the project's Python 3.12 floor. Keep each interpreter/tag pair once.
   lint-python:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: '3.8'
+            fixture-tag: py38
+          - python-version: '3.12'
+            fixture-tag: py38
+          - python-version: '3.12'
+            fixture-tag: py39
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      PYTHON_VERSION: ${{ matrix.python-version }}
+      PYTHON_FIXTURE_TAG: ${{ matrix.fixture-tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -3203,19 +3206,23 @@ jobs:
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.0
         with:
+          python-version: ${{ matrix.python-version }}
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       # ``test -s`` guards against the version tags drifting and
       # silently dropping every fixture; see the
       # ``Python.VersionFormats`` enum in
       # ``src/literalizer/languages/python.py``.
-      - name: Find Python 3.8 golden files
+      - name: Find Python golden files
         shell: bash
-        run: python3 -m tests.integration.list_fixtures .py py38 > /tmp/files-python38
-          && test -s /tmp/files-python38
-      - name: Run Python 3.8 golden files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.8 --no-project python <
-          /tmp/files-python38
+        run: python3 -m tests.integration.list_fixtures .py "$PYTHON_FIXTURE_TAG"
+          > /tmp/files-python && test -s /tmp/files-python
+      - name: Check Python syntax
+        run: xargs -0 -P "$(nproc)" -n1 uv run --python "$PYTHON_VERSION" --no-project
+          python -m py_compile < /tmp/files-python
+      - name: Run Python golden files
+        run: xargs -0 -P "$(nproc)" -n1 uv run --python "$PYTHON_VERSION" --no-project
+          python < /tmp/files-python
 
   lint-racket:
     runs-on: ubuntu-latest
