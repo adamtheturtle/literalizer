@@ -381,12 +381,12 @@ def _compose_external_ref_fixture(
         style = config.external_declaration_styles.get(name)
         if config.variable_form == "existing" and name == "my_data":
             styles = find_redefinition_styles(spec=spec)
-            if len(styles) == 0:
+            if len(styles) == 0 and spec.call_assignment_declares_binding:
                 msg = (
                     "the external destination needs a reassignable declaration"
                 )
                 raise UnrepresentableInputError(msg)
-            if style is None:
+            if len(styles) > 0 and style is None:
                 declaration_spec = dataclasses.replace(
                     spec, declaration_style=styles[0]
                 )
