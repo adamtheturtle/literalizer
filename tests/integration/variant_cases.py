@@ -45,10 +45,9 @@ from .variant_types import (
     Variant,
     VariantCase,
     compact_variant,
-    wrap_variable_form,
 )
 
-__all__ = ("Variant", "wrap_variable_form")
+__all__ = ("Variant",)
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -103,23 +102,6 @@ def build_json_type_variable_form_cases(
                         pre_indent_level=0,
                     )
                 )
-        if json_variant.lang_cls.language_id == "cpp":
-            name = f"{json_variant.name}_variable_multiline"
-            cases.append(
-                VariantCase(
-                    variant_name=name,
-                    variant=dataclasses.replace(
-                        json_variant,
-                        name=name,
-                        collection_layout=(
-                            literalizer.CollectionLayout.MULTILINE
-                        ),
-                    ),
-                    case_dir_name=case_dir_name,
-                    variable_form=wrap_variable_form(),
-                    pre_indent_level=0,
-                )
-            )
         redef_styles = find_redefinition_styles(spec=spec)
         if len(redef_styles) == 0:
             name = f"{json_variant.name}_existing"
