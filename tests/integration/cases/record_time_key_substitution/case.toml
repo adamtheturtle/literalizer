@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+languages = ["Python"]
+languages_reason = "Python preserves a time-only scalar key supplied through record-null substitution metadata."
+
+[base_context]
+record_null_mapping_substitutions = { value = [{ key = 01:02:03, value = 1 }] }
