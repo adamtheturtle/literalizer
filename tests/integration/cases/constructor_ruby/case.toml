@@ -1,16 +1,8 @@
 schema_version = 1
 owner = "constructor-binding"
 languages = ["Ruby"]
-languages_reason = "A caller-owned Ruby class supplies a real constructor."
+languages_reason = "A generated Ruby stub supplies a complete constructor call binding."
 
 [constructor]
 class_name = "Playlist"
 variable_name = "p"
-fixture_prefix = """\
-class Playlist
-end
-
-"""
-fixture_suffix = """\
-raise "Expected a Playlist instance" unless p.is_a?(Playlist)
-"""

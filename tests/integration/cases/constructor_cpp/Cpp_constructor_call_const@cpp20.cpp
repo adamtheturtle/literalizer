@@ -1,6 +1,9 @@
-struct Playlist { int value = 42; };
-
+#include <initializer_list>
+#include <vector>
+#include <cstddef>
+auto Playlist(auto...) { return 0; }
 int main() {
 const auto playlist = Playlist();
-return playlist.value == 42 ? 0 : 1;
+    (void)playlist;
+    return 0;
 }

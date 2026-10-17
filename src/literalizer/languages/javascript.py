@@ -247,6 +247,8 @@ def _js_call_stub(
 ) -> tuple[str, ...]:
     """Return JavaScript stub declarations for a call name."""
     root = parts[0]
+    if root.startswith("new "):
+        return (f"function {root.removeprefix('new ')}() {{}}",)
     if len(parts) > 1:
         proxy = "new Proxy(function(){}, {get: g})"
         handler = f"get: function g() {{ return {proxy}; }}"

@@ -9,6 +9,5 @@ auto my_data = std::vector<std::map<std::string, std::string>>{
     // This comment describes the next item.
     std::map<std::string, std::string>{{"item", "next"}},
 };
-    (void)my_data;
     return 0;
 }

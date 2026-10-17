@@ -352,9 +352,8 @@ class ManifestVariant(  # noqa: NOD001
 
     axis: Annotated[str, Field(min_length=1)]
     suffix: str = ""
-    # An enclosing fixture can compile a fragment rendered without the
-    # language's whole-file wrapper, such as an indented Python assignment.
-    fixture_prefix: str = ""
+    # Generate a declaration before an existing-variable assignment.
+    initialize_variable: bool = False
     wrap_in_file: bool = True
     context: RenderContext = Field(default_factory=RenderContext)
     # The language capabilities this input needs in order to render at
@@ -850,12 +849,10 @@ class CallCaseSpec(  # noqa: NOD001
 class ConstructorCaseSpec(  # noqa: NOD001
     BaseModel, extra="forbid", frozen=True
 ):
-    """A caller-owned class around a complete constructor binding."""
+    """A constructor target and variable for a generated call binding."""
 
     class_name: Annotated[str, Field(min_length=1)] = "Playlist"
     variable_name: Annotated[str, Field(min_length=1)] = "p"
-    fixture_prefix: str = ""
-    fixture_suffix: str = ""
 
 
 # Defaults stand in for omitted keys, as above.

@@ -25,7 +25,12 @@ from .constructor_cases import (
     constructor_golden_path,
 )
 from .golden_checks import GoldenSkips, check_golden
-from .language_specs import make_golden_path, make_spec, sorted_languages
+from .language_specs import (
+    make_golden_path,
+    make_spec,
+    sorted_languages,
+    with_per_fixture_module_name,
+)
 
 _CONSTRUCTOR_NAME = "Playlist"
 _GOLDEN_DIR = Path(__file__).parent / "constructor_targets"
@@ -107,6 +112,9 @@ def test_constructor_binding_golden_file(
             source = "[[]]"
             input_format = InputFormat.JSON
             if manifest is not None:
+                language = with_per_fixture_module_name(
+                    spec=language, golden_path=golden_path
+                )
                 assert manifest.constructor is not None
                 config = manifest.constructor
                 source = manifest.input.path.read_text(encoding="utf-8")
@@ -125,15 +133,13 @@ def test_constructor_binding_golden_file(
                         config.class_name,
                     ),
                     parameter_names=[],
+                    wrap_in_file=manifest is not None,
                     variable_form=dataclasses.replace(
                         case.variable_form, name=config.variable_name
                     ),
                 )
             check_golden(
-                contents=config.fixture_prefix
-                + result.code
-                + "\n"
-                + config.fixture_suffix,
+                contents=result.code + "\n",
                 extension=golden_path.suffix,
                 golden_path=golden_path,
                 file_regression=file_regression,

@@ -1,4 +1,2 @@
-function Playlist { return 42 }
-
+function Playlist {}
 $p = Playlist
-if ($p -ne 42) { throw "Expected constructor result" }

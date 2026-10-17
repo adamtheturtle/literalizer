@@ -16,6 +16,5 @@ auto my_data = Record0{
         },
     },
 };
-    (void)my_data;
     return 0;
 }

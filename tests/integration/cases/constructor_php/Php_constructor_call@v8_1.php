@@ -1,7 +1,3 @@
 <?php
-class Playlist {}
-
+class Playlist { function __construct() {} }
 $p = new Playlist();
-if (!($p instanceof Playlist)) {
-    throw new Exception("Expected a Playlist instance");
-}

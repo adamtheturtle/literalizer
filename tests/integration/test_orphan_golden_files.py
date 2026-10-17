@@ -97,7 +97,7 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
             make_golden_path(
                 parent=cases_dir / variant_case.case_dir_name,
                 name=variant_case.variant_name,
-                extension=variant_case.variant.spec.extension,
+                extension=variant_case.extension,
                 lang_cls=variant_case.variant.lang_cls,
                 version=variant_case.variant.spec.language_version,
             )

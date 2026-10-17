@@ -48,6 +48,5 @@ auto my_data = std::vector<std::vector<Value>>{
     // next element
     std::vector<Value>{Value{3}, Value{"world"}},
 };
-    (void)my_data;
     return 0;
 }

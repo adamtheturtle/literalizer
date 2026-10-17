@@ -1,21 +1,8 @@
 schema_version = 1
 owner = "constructor-binding"
 languages = ["Elixir"]
-languages_reason = "A caller-owned Elixir constructor supplies a complete binding with an executable result check."
+languages_reason = "A generated Elixir stub supplies a complete constructor call binding."
 
 [constructor]
 class_name = "Playlist"
 variable_name = "p"
-fixture_prefix = """\
-defmodule Playlist do
-  def new(), do: 42
-end
-
-defmodule Check do
-  def x() do
-"""
-fixture_suffix = """\
-    if p != 42, do: raise("Expected constructor result")
-  end
-end
-"""

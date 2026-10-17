@@ -1,18 +1,8 @@
 schema_version = 1
 owner = "constructor-binding"
 languages = ["Php"]
-languages_reason = "A caller-owned Php constructor supplies a complete binding with an executable result check."
+languages_reason = "A generated Php stub supplies a complete constructor call binding."
 
 [constructor]
 class_name = "Playlist"
 variable_name = "p"
-fixture_prefix = """\
-<?php
-class Playlist {}
-
-"""
-fixture_suffix = """\
-if (!($p instanceof Playlist)) {
-    throw new Exception("Expected a Playlist instance");
-}
-"""

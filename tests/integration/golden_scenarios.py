@@ -261,9 +261,19 @@ class GoldenRendering:
     golden_parent: Path
     spec_source: SpecSource
     render: RenderArguments
-    fixture_prefix: str
+    extra_preamble: tuple[str, ...]
+    initialize_variable: bool
     apply_fixture_module_name: bool
     skip: SkipPolicy
+
+    @property
+    def extension(self) -> str:
+        """Use text fixtures for deliberately unwrapped indented
+        fragments.
+        """
+        if self.render.pre_indent_level > 0 and not self.render.wrap_in_file:
+            return ".txt"
+        return self.lang_cls.extension
 
     @property
     def versions(self) -> tuple[enum.Enum, ...]:
@@ -300,12 +310,7 @@ def unprefixed_rendering(
     render: RenderArguments,
     skip: SkipPolicy,
 ) -> GoldenRendering:
-    """Return a rendering whose golden carries no fixture preamble.
-
-    Only the format variants put a preamble in front of the rendered
-    code, so every other scenario says what it renders rather than
-    restating that it has none.
-    """
+    """Return a rendering needing no supporting preamble or initialization."""
     return GoldenRendering(
         lang_cls=lang_cls,
         case_dir_name=case_dir_name,
@@ -313,7 +318,8 @@ def unprefixed_rendering(
         golden_parent=_CASES_DIR / case_dir_name,
         spec_source=spec_source,
         render=render,
-        fixture_prefix="",
+        extra_preamble=(),
+        initialize_variable=False,
         apply_fixture_module_name=True,
         skip=skip,
     )
@@ -422,7 +428,8 @@ def _default_module_name_renderings(
                     modifiers=frozenset(),
                 ),
             ),
-            fixture_prefix="",
+            extra_preamble=(),
+            initialize_variable=False,
             apply_fixture_module_name=False,
             skip=NO_SKIPS,
         )
@@ -553,7 +560,8 @@ def _variant_renderings(
                 ),
                 wrap_in_file=variant_case.variant.wrap_in_file,
             ),
-            fixture_prefix=variant_case.variant.fixture_prefix,
+            extra_preamble=variant_case.variant.extra_preamble,
+            initialize_variable=variant_case.variant.initialize_variable,
             apply_fixture_module_name=True,
             skip=VARIANT_SKIPS,
         )

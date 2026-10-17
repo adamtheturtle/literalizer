@@ -71,11 +71,12 @@ def test_multiline_string_golden_roundtrip(
     golden_path = make_golden_path(
         parent=input_info.path.parent,
         name=case.variant_name,
-        extension=spec.extension,
+        extension=case.extension,
         lang_cls=case.variant.lang_cls,
         version=spec.language_version,
     )
-    tree = ast.parse(source=golden_path.read_text(encoding="utf-8"))
+    # Remove the initial statement margin without changing literal contents.
+    tree = ast.parse(source=golden_path.read_text(encoding="utf-8").lstrip())
     values = _assignment_values(
         tree=tree,
         evaluation_path=tmp_path / "roundtrip.py",

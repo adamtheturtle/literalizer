@@ -61,7 +61,11 @@ def _literalize(
             pre_indent_level=render.pre_indent_level,
             include_delimiters=True,
             variable_form=variable_form,
-            wrap_in_file=render.wrap_in_file,
+            wrap_in_file=(
+                render.wrap_in_file
+                and len(rendering.extra_preamble) == 0
+                and not rendering.initialize_variable
+            ),
             collection_layout=render.collection_layout,
             record_null_substitutions=render.record_null_substitutions,
         )
@@ -98,7 +102,7 @@ def _check_rendering(
     golden_path = make_golden_path(
         parent=rendering.golden_parent,
         name=rendering.golden_name,
-        extension=spec.extension,
+        extension=rendering.extension,
         lang_cls=rendering.lang_cls,
         version=version,
     )
@@ -126,9 +130,36 @@ def _check_rendering(
                 source_text=source_text,
                 variable_form=None,
             )
+    if rendering.initialize_variable or len(rendering.extra_preamble) > 0:
+        declarations: list[literalizer.LiteralizeResult] = []
+        if rendering.initialize_variable:
+            assert isinstance(
+                rendering.render.variable_form, literalizer.ExistingVariable
+            )
+            declarations.append(
+                _literalize(
+                    rendering=rendering,
+                    spec=spec,
+                    input_info=input_info,
+                    source_text=source_text,
+                    variable_form=literalizer.NewVariable(
+                        name=rendering.render.variable_form.name,
+                        modifiers=frozenset(),
+                    ),
+                )
+            )
+        # External types must be available before generated record definitions.
+        result = dataclasses.replace(
+            result, preamble=rendering.extra_preamble + result.preamble
+        )
+        result = literalizer.literalize_call_with_declarations(
+            language=spec,
+            declarations=declarations,
+            call=result,
+        )
     check_golden(
-        contents=rendering.fixture_prefix + result.code + "\n",
-        extension=spec.extension,
+        contents=result.code + "\n",
+        extension=rendering.extension,
         golden_path=golden_path,
         file_regression=file_regression,
     )

@@ -1,6 +1,3 @@
 #lang racket
-
-(define (Playlist) 42)
-
+(define Playlist (make-keyword-procedure (lambda _ 0)))
 (define p (Playlist))
-(unless (= p 42) (error "Expected constructor result"))

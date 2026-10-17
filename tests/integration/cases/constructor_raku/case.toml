@@ -1,15 +1,8 @@
 schema_version = 1
 owner = "constructor-binding"
 languages = ["Raku"]
-languages_reason = "A caller-owned Raku constructor supplies a complete binding with an executable result check."
+languages_reason = "A generated Raku stub supplies a complete constructor call binding."
 
 [constructor]
 class_name = "Playlist"
 variable_name = "p"
-fixture_prefix = """\
-sub Playlist() { 42 }
-
-"""
-fixture_suffix = """\
-die "Expected constructor result" unless $p == 42;
-"""

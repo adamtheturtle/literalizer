@@ -54,6 +54,5 @@ auto my_data = std::map<std::string, Value>{
         2,  // second
     }}},
 };
-    (void)my_data;
     return 0;
 }
