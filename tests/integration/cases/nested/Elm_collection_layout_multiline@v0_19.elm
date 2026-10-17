@@ -19,9 +19,9 @@ my_data = EDict [
             ],
         EDict [
             ("name", EStr "Carol"),
-            ("tags", EList [
+            ("tags", EList (
                 EStr "guest"
-                ])
+                 :: []))
             ]
         ])
     ]

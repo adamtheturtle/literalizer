@@ -8,6 +8,6 @@ type Val
 
 
 my_data : Val
-my_data = EList [
+my_data = EList (
     EList [EList [EInt 1, EInt 2], EList [EStr "a", EStr "b"]]
-    ]
+     :: [])

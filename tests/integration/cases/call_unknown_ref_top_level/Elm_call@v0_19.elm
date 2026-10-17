@@ -12,9 +12,9 @@ main : Program () () Never
 main =
     let
         unknown_value : Val
-        unknown_value = EList [
+        unknown_value = EList (
             EInt 1
-            ]
+             :: [])
         _ = process unknown_value
     in
     Platform.worker

@@ -100,6 +100,31 @@ Access a language's enum members through the class itself, e.g. ``Go.sequence_fo
 
 Each ``__init__`` parameter has a sensible default, so you only need to specify the options you want to change.
 
+Swift array inference
+---------------------
+
+Swift defaults to ``array_inference_policy=Swift.array_inference_policies.AUTO``.
+For long singleton-array chains ending in a scalar whose type can be inferred, this inserts immediately invoked closures with explicit returns to bound the compiler's type-inference work.
+The nested array type and value are preserved; chains ending in ``nil`` or empty collections retain their enclosing inference context.
+
+Choose ``LITERAL`` to keep direct array syntax when embedding or reviewing generated code:
+
+.. code-block:: python
+
+   """Keep direct Swift array literals."""
+
+   from literalizer.languages import Swift
+
+   language = Swift(
+       array_inference_policy=Swift.array_inference_policies.LITERAL,
+   )
+
+For nine nested arrays, ``AUTO`` renders ``[({ return [[[[[[[[2]]]]]]]] })()]`` and ``LITERAL`` renders ``[[[[[[[[[2]]]]]]]]]``.
+Direct literals can take substantially longer to compile at greater depths.
+Both policies retain the selected collection layout and variable form.
+This option applies only to ``SequenceFormats.ARRAY``; tuple rendering and other generated closures are unchanged.
+The inference chunk size is internal, and explicit deeply nested type annotations can still be expensive under either policy.
+
 Native multiline strings
 ------------------------
 

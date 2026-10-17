@@ -9,6 +9,6 @@ type Val
 
 
 my_data : Val
-my_data = EList [
+my_data = EList (
     EDict [("key", EStr "hello   world"), ("value", EInt 1)]
-    ]
+     :: [])

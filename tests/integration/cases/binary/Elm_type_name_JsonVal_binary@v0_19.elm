@@ -7,6 +7,6 @@ type JsonVal
 
 
 my_data : JsonVal
-my_data = EList [
+my_data = EList (
     EStr "48656c6c6f"
-    ]
+     :: [])

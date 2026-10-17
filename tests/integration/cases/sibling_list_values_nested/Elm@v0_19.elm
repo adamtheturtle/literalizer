@@ -11,5 +11,5 @@ type Val
 my_data : Val
 my_data = EDict [
     ("lint", EList [EInt 2, EList []]),
-    ("test", EList [EInt 5, EList [EStr "compile"]])
+    ("test", EList [EInt 5, EList (EStr "compile" :: [])])
     ]

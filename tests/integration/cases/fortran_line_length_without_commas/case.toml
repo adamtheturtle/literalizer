@@ -1,4 +1,4 @@
 schema_version = 1
-languages = ["Fortran", "Swift"]
-languages_reason = "Fortran line continuation and Swift bounded type inference for a depth-30 singleton-list chain."
+languages = ["Elm", "Fortran", "Swift"]
+languages_reason = "Fortran line continuation, Swift bounded type inference, and Elm bounded formatting for a depth-30 singleton-list chain."
 suites = ["base"]

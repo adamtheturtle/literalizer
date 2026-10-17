@@ -5,3 +5,28 @@ suites = ["base", "combined"]
 
 [[variants]]
 axis = "collection_layout"
+
+[[variants]]
+axis = "array_inference_policy"
+
+[[variants]]
+axis = "array_inference_policy_mutable"
+suffix = "_combined"
+
+[variants.context]
+variable_form = "both"
+
+[[variants]]
+axis = "array_inference_policy_mutable"
+suffix = "_existing"
+wrap_in_file = false
+fixture_prefix = "var my_data: [String: Any] = [:]\n"
+
+[variants.context]
+variable_form = "existing"
+
+[[variants]]
+axis = "array_inference_policy_tuple"
+
+[[variants]]
+axis = "array_inference_policy_mutable"

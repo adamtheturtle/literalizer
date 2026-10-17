@@ -970,6 +970,14 @@ class Swift(metaclass=LanguageCls):
             """Create a sequence format config for the given type."""
             return self._value_(default_type)
 
+    class ArrayInferencePolicies(enum.Enum):
+        """Whether array literals use independent inference scopes."""
+
+        AUTO = enum.auto()
+        LITERAL = enum.auto()
+
+    array_inference_policies = ArrayInferencePolicies
+
     class SetFormats(enum.Enum):
         """Set type options for Swift."""
 
@@ -1380,6 +1388,9 @@ class Swift(metaclass=LanguageCls):
     datetime_format: DatetimeFormats = DatetimeFormats.SWIFT
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
+    array_inference_policy: ArrayInferencePolicies = (
+        ArrayInferencePolicies.AUTO
+    )
     set_format: SetFormats = SetFormats.SET
     default_set_element_type: str = "AnyHashable"
     default_sequence_element_type: str = "Any"
@@ -1688,6 +1699,12 @@ class Swift(metaclass=LanguageCls):
     @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
+        if (
+            self.sequence_format is type(self.sequence_format).ARRAY
+            and self.array_inference_policy
+            is self.ArrayInferencePolicies.LITERAL
+        ):
+            return passthrough_sequence_entry
         return self.sequence_format_config.format_entry
 
     @cached_property
