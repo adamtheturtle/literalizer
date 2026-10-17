@@ -1,7 +1,5 @@
 schema_version = 1
 suites = ["base"]
-languages = ["Python"]
-languages_reason = "The JSONC producer/parser roundtrip is pinned as executable Python, including its preserved YAML comment."
 
 [input_roundtrip]
 language = "Jsonc"

@@ -120,7 +120,11 @@ def _check_rendering(
                 spec=spec,
                 input_info=input_info,
                 source_text=source_text,
-                variable_form=rendering.render.variable_form,
+                variable_form=(
+                    rendering.render.variable_form
+                    if spec.supports_variable_names
+                    else None
+                ),
             )
         except VariableNameNotSupportedError:
             result = _literalize(

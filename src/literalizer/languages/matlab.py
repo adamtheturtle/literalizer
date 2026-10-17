@@ -176,7 +176,7 @@ def _format_matlab_key(raw_key: str, _formatted_key: str) -> str:
 class _MatlabDictFormatConfig(DictFormatConfig):
     """A dict format that spells fields from their source keys."""
 
-    key_syntax = _MATLAB_FIELD_NAME
+    key_syntax: ClassVar[NewVariableNameSyntax | None] = _MATLAB_FIELD_NAME
 
     @staticmethod
     @override
@@ -193,7 +193,7 @@ class _MatlabDictFormatConfig(DictFormatConfig):
 class _MatlabOrderedMapFormatConfig(OrderedMapFormatConfig):
     """An ordered-map format that spells fields from their source keys."""
 
-    key_syntax = _MATLAB_FIELD_NAME
+    key_syntax: ClassVar[NewVariableNameSyntax | None] = _MATLAB_FIELD_NAME
 
     @staticmethod
     @override
