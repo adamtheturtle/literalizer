@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["Racket"]
+languages_reason = "A caller-owned Racket constructor supplies a complete binding with an executable result check."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+#lang racket
+
+(define (Playlist) 42)
+
+"""
+fixture_suffix = """\
+(unless (= p 42) (error "Expected constructor result"))
+"""

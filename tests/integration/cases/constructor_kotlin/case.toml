@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["Kotlin"]
+languages_reason = "A caller-owned Kotlin constructor supplies a complete binding with an executable result check."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+class Playlist { val value = 42 }
+
+"""
+fixture_suffix = """\
+check(p.value == 42)
+"""

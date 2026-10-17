@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["CommonLisp"]
+languages_reason = "A caller-owned CommonLisp constructor supplies a complete binding with an executable result check."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+(defun Playlist () 42)
+
+"""
+fixture_suffix = """\
+(assert (= *p* 42))
+"""
