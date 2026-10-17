@@ -428,7 +428,6 @@ OPTIONS: Mapping[str, Option] = {
 }
 
 CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
-    "supports_dotted_calls": lambda lang_cls: lang_cls.supports_dotted_calls,
     "supports_typed_dict_open": (
         lambda lang_cls: lang_cls.supports_typed_dict_open
     ),
@@ -492,4 +491,5 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
             vars(lang_cls).get("dotted_call_stub_requires_unique_parts", False)
         )
     ),
+    "supports_dotted_calls": lambda lang_cls: lang_cls.supports_dotted_calls,
 }
