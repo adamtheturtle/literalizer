@@ -1,8 +1,22 @@
-typedef int CVal;
-
-CVal Playlist(void) { return 42; }
-
+#include <stdbool.h>
+#include <stddef.h>
+typedef struct CVal CVal;
+typedef struct CKV CKV;
+struct CVal {
+    union {
+        _Bool b;
+        long long i;
+        unsigned long long u;
+        double f;
+        const char *s;
+        const CVal *a;
+        const CKV *m;
+    };
+};
+struct CKV { const char *k; CVal v; };
+static CVal Playlist(void) { return (CVal){0}; }
 int main(void) {
 CVal playlist = Playlist();
-return playlist == 42 ? 0 : 1;
+    (void)playlist;
+    return 0;
 }

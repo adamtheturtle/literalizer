@@ -1305,20 +1305,20 @@ def _build_spec(
 
 
 @beartype
-def _external_record_shape_prefix(
+def _external_record_shape_preamble(
     *,
     lang_cls: literalizer.LanguageCls,
     metadata: LanguageMetadata,
-) -> str:
-    """Return the fixture preamble hosting an external record shape."""
-    declared = metadata.variants.external_record_shape_fixture_prefix
+) -> tuple[str, ...]:
+    """Return API preamble entries hosting an external record shape."""
+    declared = metadata.variants.external_record_shape_preamble
     if lang_cls.record_shape_names_emit_declarations:
         if declared is not None:
             raise NotImplementedError
-        return ""
+        return ()
     if declared is None:
         raise NotImplementedError
-    return declared
+    return tuple(declared)
 
 
 @beartype
@@ -1755,7 +1755,7 @@ def _admitted_overrides(
 class _FixtureContext:
     """What an axis pins about the fixture hosting its variants."""
 
-    fixture_prefix: str
+    extra_preamble: tuple[str, ...]
     record_version: Mapping[str, object]
 
 
@@ -1769,10 +1769,10 @@ def _fixture_context(
 ) -> _FixtureContext:
     """Return the fixture preamble and record version an axis pins."""
     if not isinstance(axis, _FixedOverridesPlan):
-        return _FixtureContext(fixture_prefix="", record_version={})
-    effective_fixture_prefix = ""
+        return _FixtureContext(extra_preamble=(), record_version={})
+    effective_extra_preamble: tuple[str, ...] = ()
     if axis.external_record_shape_fixture:
-        effective_fixture_prefix = _external_record_shape_prefix(
+        effective_extra_preamble = _external_record_shape_preamble(
             lang_cls=lang_cls,
             metadata=metadata,
         )
@@ -1784,7 +1784,7 @@ def _fixture_context(
             default_spec=default_spec,
         )
     return _FixtureContext(
-        fixture_prefix=(effective_fixture_prefix),
+        extra_preamble=(effective_extra_preamble),
         record_version=(effective_record_version),
     )
 
@@ -1868,7 +1868,8 @@ def _axis_variants(
                         collection_layout=literalizer.CollectionLayout[
                             layout.layout
                         ],
-                        fixture_prefix=fixture.fixture_prefix,
+                        extra_preamble=fixture.extra_preamble,
+                        initialize_variable=False,
                         wrap_in_file=True,
                         record_null_substitutions=None,
                     )

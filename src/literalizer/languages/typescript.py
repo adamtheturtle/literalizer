@@ -258,6 +258,9 @@ def _ts_call_stub(
     regardless of how the fixture uses it.
     """
     root = parts[0]
+    if root.startswith("new "):
+        name = root.removeprefix("new ")
+        return (f"class {name} {{ constructor(..._args: any[]) {{}} }}",)
     if len(parts) > 1:
         proxy = "new Proxy(function(){}, {get: g})"
         handler = f"get: function g() {{ return {proxy}; }}"

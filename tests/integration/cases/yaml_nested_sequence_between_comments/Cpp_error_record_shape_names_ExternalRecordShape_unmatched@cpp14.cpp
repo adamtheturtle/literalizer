@@ -54,6 +54,5 @@ auto my_data = std::vector<std::vector<Value>>{
     // This comment describes the last pair.
     std::vector<Value>{Value{std::map<std::string, std::string>{{"item", "last"}}}, Value{"kept too"}},
 };
-    (void)my_data;
     return 0;
 }

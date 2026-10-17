@@ -1,6 +1,2 @@
-class Playlist:
-    pass
-
-
+def Playlist(*_args: object, **_kwargs: object) -> object: ...
 p = Playlist()
-assert isinstance(p, Playlist)

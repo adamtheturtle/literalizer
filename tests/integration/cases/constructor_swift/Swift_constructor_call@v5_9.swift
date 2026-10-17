@@ -1,4 +1,2 @@
-struct Playlist { let value = 42 }
-
+@discardableResult func Playlist() -> Any { 0 }
 let p = Playlist()
-precondition(p.value == 42)

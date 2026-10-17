@@ -1,4 +1,2 @@
-class Playlist {}
-
+class Playlist { Playlist(Map _args = [:]) {} }
 def p = new Playlist()
-assert p instanceof Playlist

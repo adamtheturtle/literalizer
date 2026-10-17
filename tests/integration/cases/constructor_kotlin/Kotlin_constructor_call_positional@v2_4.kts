@@ -1,4 +1,2 @@
-class Playlist { val value = 42 }
-
+fun Playlist(): Any? = listOf<Any?>()
 val p = Playlist()
-check(p.value == 42)

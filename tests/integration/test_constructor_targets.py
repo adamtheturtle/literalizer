@@ -125,15 +125,13 @@ def test_constructor_binding_golden_file(
                         config.class_name,
                     ),
                     parameter_names=[],
+                    wrap_in_file=manifest is not None,
                     variable_form=dataclasses.replace(
                         case.variable_form, name=config.variable_name
                     ),
                 )
             check_golden(
-                contents=config.fixture_prefix
-                + result.code
-                + "\n"
-                + config.fixture_suffix,
+                contents=result.code + "\n",
                 extension=golden_path.suffix,
                 golden_path=golden_path,
                 file_regression=file_regression,

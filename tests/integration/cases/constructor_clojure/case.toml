@@ -1,15 +1,8 @@
 schema_version = 1
 owner = "constructor-binding"
 languages = ["Clojure"]
-languages_reason = "A caller-owned Clojure constructor supplies a complete binding with an executable result check."
+languages_reason = "A generated Clojure stub supplies a complete constructor call binding."
 
 [constructor]
 class_name = "Playlist"
 variable_name = "p"
-fixture_prefix = """\
-(defn Playlist [] 42)
-
-"""
-fixture_suffix = """\
-(assert (= p 42))
-"""

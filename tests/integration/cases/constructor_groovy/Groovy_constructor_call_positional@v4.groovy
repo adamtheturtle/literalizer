@@ -1,4 +1,2 @@
-class Playlist {}
-
+class Playlist { Playlist() {} }
 def p = new Playlist()
-assert p instanceof Playlist

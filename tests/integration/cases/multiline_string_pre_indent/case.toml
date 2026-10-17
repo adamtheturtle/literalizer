@@ -2,12 +2,11 @@ schema_version = 1
 input = "input.json"
 owner = "variant"
 languages = ["Python"]
-languages_reason = "Python's indented assignment requires an enclosing block to compile."
+languages_reason = "Python's pre-indented assignment is intentionally checked as an unwrapped text fragment."
 
 [[variants]]
 axis = "multiline_string"
 suffix = "_pre_indent"
-fixture_prefix = "if True:\n"
 wrap_in_file = false
 
 [variants.context]

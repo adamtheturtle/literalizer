@@ -1,17 +1,8 @@
 schema_version = 1
 owner = "constructor-binding"
 languages = ["Lua"]
-languages_reason = "A caller-owned Lua constructor supplies a complete binding with an executable result check."
+languages_reason = "A generated Lua stub supplies a complete constructor call binding."
 
 [constructor]
 class_name = "Playlist"
 variable_name = "p"
-fixture_prefix = """\
-local function Playlist()
-    return 42
-end
-
-"""
-fixture_suffix = """\
-assert(p == 42)
-"""

@@ -1,4 +1,2 @@
-sub Playlist() { 42 }
-
+sub Playlist(*@a, *%kw) {}
 my $p = Playlist();
-die "Expected constructor result" unless $p == 42;

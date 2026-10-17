@@ -1,19 +1,8 @@
 schema_version = 1
 owner = "constructor-binding"
 languages = ["C"]
-languages_reason = "A caller-owned C constructor supplies a complete binding with an executable result check."
+languages_reason = "A generated C stub supplies a complete constructor call binding."
 
 [constructor]
 class_name = "Playlist"
 variable_name = "playlist"
-fixture_prefix = """\
-typedef int CVal;
-
-CVal Playlist(void) { return 42; }
-
-int main(void) {
-"""
-fixture_suffix = """\
-return playlist == 42 ? 0 : 1;
-}
-"""

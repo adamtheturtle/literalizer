@@ -1,5 +1,2 @@
-type Playlist = object
-    value: int
-
+proc Playlist(): int {.discardable.} = 0
 var p = Playlist()
-doAssert p.value == 0

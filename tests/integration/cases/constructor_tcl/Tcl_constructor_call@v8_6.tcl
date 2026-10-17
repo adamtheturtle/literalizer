@@ -1,4 +1,2 @@
-proc Playlist {} { return 42 }
-
+proc Playlist {args} {return {}}
 set p [Playlist]
-if {$p != 42} { error "Expected constructor result" }

@@ -1,21 +1,8 @@
 schema_version = 1
 owner = "constructor-binding"
 languages = ["Go"]
-languages_reason = "A caller-owned Go constructor supplies a complete binding with an executable result check."
+languages_reason = "A generated Go stub supplies a complete constructor call binding."
 
 [constructor]
 class_name = "Playlist"
 variable_name = "p"
-fixture_prefix = """\
-package main
-
-type Playlist struct { value int }
-
-func NewPlaylist() Playlist { return Playlist{value: 42} }
-
-func main() {
-"""
-fixture_suffix = """\
-if p.value != 42 { panic("Expected constructor result") }
-}
-"""

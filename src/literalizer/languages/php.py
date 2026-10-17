@@ -242,6 +242,9 @@ def _php_call_stub(
 ) -> tuple[str, ...]:
     """Return PHP stub declarations for a call name."""
     param_list = ", ".join(f"${p}" for p in params)
+    if parts[0].startswith("new "):
+        name = parts[0].removeprefix("new ")
+        return (f"class {name} {{ function __construct({param_list}) {{}} }}",)
     if len(parts) == 1:
         return (f"function {parts[0]}({param_list}) {{}}",)
     root = parts[0]

@@ -258,6 +258,11 @@ def _groovy_call_stub_factory(
         param_list = "Map _args"
         if not keyword_style:
             param_list = ", ".join(params)
+        if parts[0].startswith("new "):
+            name = parts[0].removeprefix("new ")
+            if keyword_style:
+                param_list += " = [:]"
+            return (f"class {name} {{ {name}({param_list}) {{}} }}",)
         if len(parts) == 1:
             return (f"def {parts[0]}({param_list}) {{ null }}",)
         root = parts[0]

@@ -17,7 +17,8 @@ class Variant:
     spec: literalizer.Language
     lang_cls: literalizer.LanguageCls
     collection_layout: literalizer.CollectionLayout
-    fixture_prefix: str
+    extra_preamble: tuple[str, ...]
+    initialize_variable: bool
     record_null_substitutions: Mapping[str, ValueInput] | None
     wrap_in_file: bool
 
@@ -31,7 +32,7 @@ def compact_variant(
 ) -> Variant:
     """Return a variant carrying the shared default render context.
 
-    Nearly every axis renders compactly, without a fixture preamble and
+    Nearly every axis renders compactly, without extra preamble entries and
     without record null substitutions; the handful that vary one of
     those build a :class:`Variant` naming all three instead of
     restating the defaults at every construction site.
@@ -41,7 +42,8 @@ def compact_variant(
         spec=spec,
         lang_cls=lang_cls,
         collection_layout=literalizer.CollectionLayout.COMPACT,
-        fixture_prefix="",
+        extra_preamble=(),
+        initialize_variable=False,
         record_null_substitutions=None,
         wrap_in_file=True,
     )
@@ -56,3 +58,12 @@ class VariantCase:
     case_dir_name: str
     variable_form: literalizer.VariableForm
     pre_indent_level: int
+
+    @property
+    def extension(self) -> str:
+        """Keep intentionally indented fragments out of compiler
+        inputs.
+        """
+        if self.pre_indent_level > 0 and not self.variant.wrap_in_file:
+            return ".txt"
+        return self.variant.spec.extension

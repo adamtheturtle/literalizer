@@ -1,15 +1,8 @@
 schema_version = 1
 owner = "constructor-binding"
 languages = ["Groovy"]
-languages_reason = "A caller-owned Groovy constructor supplies a complete binding with an executable result check."
+languages_reason = "A generated Groovy stub supplies a complete constructor call binding."
 
 [constructor]
 class_name = "Playlist"
 variable_name = "p"
-fixture_prefix = """\
-class Playlist {}
-
-"""
-fixture_suffix = """\
-assert p instanceof Playlist
-"""

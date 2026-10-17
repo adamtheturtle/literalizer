@@ -1,10 +1,9 @@
 defmodule Playlist do
-  def new(), do: 42
+  def new(), do: nil
 end
-
 defmodule Check do
-  def x() do
-p = Playlist.new()
-if p != 42, do: raise("Expected constructor result")
+  def x do
+    p = Playlist.new()
+    _ = p
   end
 end

@@ -20,7 +20,7 @@ variable_form = "both"
 axis = "array_inference_policy_mutable"
 suffix = "_existing"
 wrap_in_file = false
-fixture_prefix = "var my_data: [String: Any] = [:]\n"
+initialize_variable = true
 
 [variants.context]
 variable_form = "existing"

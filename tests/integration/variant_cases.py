@@ -293,9 +293,7 @@ def case_for_manifest_variant(
     )
     variant = dataclasses.replace(
         variant,
-        fixture_prefix=(
-            manifest_variant.fixture_prefix + variant.fixture_prefix
-        ),
+        initialize_variable=manifest_variant.initialize_variable,
         wrap_in_file=manifest_variant.wrap_in_file,
     )
     if context.collection_layout is not None:
