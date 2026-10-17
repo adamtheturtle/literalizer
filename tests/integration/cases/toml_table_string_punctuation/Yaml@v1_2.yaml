@@ -1,0 +1,8 @@
+{
+    "comma_hash": "a,#b",
+    "comma_space_hash": "trail, # comment",
+    "escaped_quote": "quote \" and , #",
+    "next_line": "x\x85y",
+    "line_separator": "x y",
+    "paragraph_separator": "x y"
+}
