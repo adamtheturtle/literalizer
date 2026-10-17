@@ -129,6 +129,31 @@ from literalizer.exceptions import (
 
 _CONTROL_CHAR_THRESHOLD = 32
 _NESTED_TUPLE_RECORD_DEPTH = 2
+_ARRAY_INFERENCE_CHUNK_DEPTH = 8
+
+
+@beartype
+def _array_sequence_entry(data: Value, value: str, /) -> str:
+    """Infer long singleton-array chains in independent closure bodies.
+
+    An explicit return gives each closure body a separate inference scope.
+    Small chunks retain the inferred array type without solving the entire
+    default literal expression at once.
+    Only scalar-ended chains whose leaf type can be inferred qualify;
+    nil and empty collections still need their enclosing type context.
+    """
+    depth = 0
+    leaf = data
+    while isinstance(leaf, list) and len(leaf) == 1:
+        depth += 1
+        leaf = leaf[0]
+    if (
+        depth > 0
+        and depth % _ARRAY_INFERENCE_CHUNK_DEPTH == 0
+        and isinstance(leaf, (bool, int, float, str, bytes, dt.date, dt.time))
+    ):
+        return f"({{ return {value} }})()"
+    return value
 
 
 @beartype
@@ -922,7 +947,7 @@ class Swift(metaclass=LanguageCls):
                 supports_trailing_comma=True,
                 empty_template="[{type}]()",
                 preamble_lines=(),
-                format_entry=passthrough_sequence_entry,
+                format_entry=_array_sequence_entry,
                 typed_opener_fallback_template=None,
             )
         )
