@@ -1356,6 +1356,8 @@ class Kotlin(metaclass=LanguageCls):
         IdentifierCase.PASCAL,
         IdentifierCase.UPPER_SNAKE,
     )
+    uses_resolved_ref_declaration_data = True
+
     supported_ref_cases: ClassVar[frozenset[IdentifierCase]] = (
         NON_KEBAB_REF_CASES
     )
@@ -2539,6 +2541,11 @@ class Kotlin(metaclass=LanguageCls):
             if self.date_format.value.type_produced is str:
                 date_type = "String"
             return date_type
+        record_name_for_value = self._record_strategy.record_name_for_value
+        if record_name_for_value is not None:
+            record_name = record_name_for_value(data)
+            if record_name is not None:
+                return record_name
         return self._kotlin_value_field_type(data)
 
     @cached_property
