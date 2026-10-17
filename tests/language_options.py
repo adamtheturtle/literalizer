@@ -27,6 +27,14 @@ from tests.integration.language_metadata import language_metadata
 
 
 @runtime_checkable
+class _HasArrayInferencePolicy(Protocol):
+    """A spec exposing a configurable array-inference policy."""
+
+    array_inference_policy: enum.Enum
+    array_inference_policies: type[enum.Enum]
+
+
+@runtime_checkable
 class _HasBoolFormat(Protocol):
     """A spec exposing a configurable boolean literal spelling."""
 
@@ -102,6 +110,22 @@ class _HasBytesFormat(Protocol):
     """A spec exposing the configured bytes format."""
 
     bytes_format: enum.Enum
+
+
+@beartype
+def _array_inference_policy(spec: literalizer.Language) -> object:
+    """Return the configured array-inference policy."""
+    if not isinstance(spec, _HasArrayInferencePolicy):
+        raise NotImplementedError
+    return spec.array_inference_policy
+
+
+@beartype
+def _array_inference_policies(spec: literalizer.Language) -> type[enum.Enum]:
+    """Return the array-inference policies a language offers."""
+    if not isinstance(spec, _HasArrayInferencePolicy):
+        raise NotImplementedError
+    return spec.array_inference_policies
 
 
 @beartype
@@ -254,6 +278,11 @@ OPTIONS: Mapping[str, Option] = {
         kwarg="annotation_evaluation",
         get_default=_annotation_evaluation,
         get_members=_annotation_evaluations,
+    ),
+    "array_inference_policy": Option(
+        kwarg="array_inference_policy",
+        get_default=_array_inference_policy,
+        get_members=_array_inference_policies,
     ),
     "bool_format": Option(
         kwarg="bool_format",
