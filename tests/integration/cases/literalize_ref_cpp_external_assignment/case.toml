@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-ref-default"
 
 [ref]
-languages = ["Cpp"]
-languages_reason = "C++ assigns an external owning reference with std::move; declarations supply a compiling caller context without bound_refs."
+languages = ["Cpp", "Rust"]
+languages_reason = "Regression controls for external-reference inference, mutable destinations, and portable generated consumer parameters; preserve the caller-owned value and before/after reads."
 variable_form = "existing"
 external_declarations = {ref_data = "[1, 2]", my_data = "[0]"}
 explicit_ref_value_sources = {ref_data = "[1, 2]"}
