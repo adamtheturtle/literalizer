@@ -1,0 +1,2 @@
+Playlist() { :; }
+declare created="$(Playlist)"

@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "constructor_declaration_syntax", class_name = "Playlist"}]
+
+[constructor]
+class_name = "Playlist"
+variable_name = "created"
