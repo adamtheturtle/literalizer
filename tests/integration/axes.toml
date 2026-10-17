@@ -479,6 +479,14 @@ name_template = "{lang}_json_type_{format}_{tag}_{secondary}"
 primary_axis = "json_type"
 secondaries = [{ tag = "bytes", option = "bytes_format" }]
 
+# Preserve the C++ variable-form layout regression from issue #3595.
+[axes.json_type_variable_multiline]
+plan = "fixed_overrides"
+name_template = "{lang}_json_type_{format}_variable_multiline"
+primary_axis = "json_type"
+layouts = [{ layout = "MULTILINE" }]
+gates = [{ kind = "metadata_field", field = "language_id", value = "cpp" }]
+
 [axes.json_type_call_result]
 plan = "filtered"
 base = "json_type"
