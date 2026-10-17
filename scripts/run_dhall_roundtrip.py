@@ -25,7 +25,7 @@ has no ``wrap_non_scalar`` so a dict mixing scalar and container
 values still raises ``MixedDictValuesError``.  The trimmed subset
 below keeps every JSON-safe scalar-valued top-level key (twelve of
 them: full Integer / Double / Bool / Text coverage), drops every
-container-valued one, and omits the multiline string because the small
+container-valued one, and omits multiline and CRLF strings because the small
 JSON walker does not escape control characters.  The root therefore
 becomes a uniform-family record of ``Value``-wrapped scalars.  The
 dropped keys still ride through
@@ -60,7 +60,7 @@ _LABEL = "Dhall"
 # wraps scalars only (no ``wrap_non_scalar``), so a root dict that mixes
 # scalar and container values raises ``MixedDictValuesError``.  The
 # hand-rolled JSON walker also cannot escape control characters in Text,
-# so the multiline scalar is omitted.  Trimming these keys keeps the root
+# so multiline and CRLF scalars are omitted. Trimming these keys keeps the root
 # a uniform-family record of JSON-safe ``Value``-wrapped scalars.
 _EXCLUDED_KEYS: tuple[str, ...] = (
     "empty_array",
@@ -73,6 +73,7 @@ _EXCLUDED_KEYS: tuple[str, ...] = (
     "flat_object",
     "nested_object",
     "string_multiline",
+    "string_crlf",
 )
 
 # Tail that the ``Dhall`` ``NewVariable`` form appends to the literalize
