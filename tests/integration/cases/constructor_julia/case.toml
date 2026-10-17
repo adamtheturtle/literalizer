@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["Julia"]
+languages_reason = "A caller-owned Julia constructor supplies a complete binding with an executable result check."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+struct Playlist end
+
+"""
+fixture_suffix = """\
+@assert p isa Playlist
+"""

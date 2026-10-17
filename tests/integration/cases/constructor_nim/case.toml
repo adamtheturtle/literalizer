@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["Nim"]
+languages_reason = "A caller-owned Nim constructor supplies a complete binding with an executable result check."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+type Playlist = object
+    value: int
+
+"""
+fixture_suffix = """\
+doAssert p.value == 0
+"""

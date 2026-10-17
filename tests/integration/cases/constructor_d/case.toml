@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["D"]
+languages_reason = "A caller-owned D constructor supplies a complete binding with an executable result check."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+struct Playlist { int value = 42; }
+
+void main() {
+"""
+fixture_suffix = """\
+assert(p.value == 42);
+}
+"""

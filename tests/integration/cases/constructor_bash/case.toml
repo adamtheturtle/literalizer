@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["Bash"]
+languages_reason = "A caller-owned Bash constructor supplies a complete binding with an executable result check."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+Playlist() { printf '%s\\n' 42; }
+
+"""
+fixture_suffix = """\
+[[ "$p" == 42 ]] || exit 1
+"""

@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["PowerShell"]
+languages_reason = "A caller-owned PowerShell constructor supplies a complete binding with an executable result check."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+function Playlist { return 42 }
+
+"""
+fixture_suffix = """\
+if ($p -ne 42) { throw "Expected constructor result" }
+"""

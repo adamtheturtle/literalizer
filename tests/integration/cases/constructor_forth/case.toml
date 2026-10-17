@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "constructor-binding"
+languages = ["Forth"]
+languages_reason = "A caller-owned Forth constructor supplies a complete binding with an executable result check."
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+: Playlist 42 ;
+
+"""
+fixture_suffix = """\
+: check-constructor p 42 <> abort" Expected constructor result" ;
+check-constructor
+"""
