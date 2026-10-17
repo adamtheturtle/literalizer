@@ -179,7 +179,9 @@ def constructor_binding_cases() -> list[ConstructorBindingCase]:
             manifest
             for manifest in manifests
             if manifest.selection.admits_language(lang_cls=case.lang_cls)
-        ) or (None,)
+        )
+        if len(owners) == 0:
+            owners = (None,)
         cases.extend(
             dataclasses.replace(case, manifest=manifest) for manifest in owners
         )
