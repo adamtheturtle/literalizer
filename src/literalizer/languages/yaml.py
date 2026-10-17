@@ -688,7 +688,9 @@ class Yaml(metaclass=LanguageCls):
             return re.sub(
                 pattern=r"[\x7f-\x9f]",
                 repl=_escape_c1_control,
-                string=formatted,
+                string=formatted.replace("\u2028", "\\u2028").replace(
+                    "\u2029", "\\u2029"
+                ),
             )
 
         return _format

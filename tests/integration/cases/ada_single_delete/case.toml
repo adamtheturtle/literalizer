@@ -1,4 +1,2 @@
 schema_version = 1
-languages = ["Ada"]
-languages_reason = "Ada requires a String expression rather than a bare Character for a single DEL byte."
 suites = ["base"]

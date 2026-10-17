@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["Python"]
-languages_reason = "Python-specific: a raw string literal cannot spell a carriage return, so the RAW string format falls back to an escaped one."
 suites = ["base"]
 
 [[variants]]

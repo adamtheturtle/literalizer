@@ -3,5 +3,5 @@
     "a": "single ' // data",
     "b": "linecontinuation",
     "c": "\\",  # actual comment
-    "d": "  "  # final comment
+    "d": "\u2028\u2029"  # final comment
 }
