@@ -7,7 +7,7 @@ type Val
 
 
 my_data : Val
-my_data = EList [
+my_data = EList (
     EInt 1
     -- closing
-    ]
+     :: [])

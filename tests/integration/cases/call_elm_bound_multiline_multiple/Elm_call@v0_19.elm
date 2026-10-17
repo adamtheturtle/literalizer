@@ -16,12 +16,12 @@ main =
             EInt 1,
             EInt 2
             ]
-        _ = f (EList [
+        _ = f (EList (
             ref_data
-            ])
-        _ = f (EList [
+             :: []))
+        _ = f (EList (
             ref_data
-            ])
+             :: []))
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

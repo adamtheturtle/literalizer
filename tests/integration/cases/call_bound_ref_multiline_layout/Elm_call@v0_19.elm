@@ -22,11 +22,11 @@ main =
                 EInt 4
                 ]
             ]
-        _ = f (EList [
-            EList [
+        _ = f (EList (
+            EList (
                 ref_data
-                ]
-            ])
+                 :: [])
+             :: []))
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )
