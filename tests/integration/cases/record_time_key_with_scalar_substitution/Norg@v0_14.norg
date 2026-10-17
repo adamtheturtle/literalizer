@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "value": {"01:02:03": 1},
+    "other": 2
+}
+@end

@@ -1,0 +1,12 @@
+#include <initializer_list>
+#include <string>
+#include <utility>
+#include <vector>
+int main() {
+auto my_data = std::vector<std::pair<std::string, std::string>>{
+    {"", "unnamed"},
+    {"named", "value"},
+};
+    (void)my_data;
+    return 0;
+}

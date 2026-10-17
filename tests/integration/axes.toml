@@ -1607,3 +1607,8 @@ overrides = [
 
 [special_axes.custom_zig_null_policy]
 reason = "A caller-defined Zig subclass overrides the null dictionary-field policy in JSON mode."
+
+[axes.default_empty_dict_key]
+plan = "fixed_overrides"
+name_template = "{lang}_default_empty_dict_key"
+gates = [{kind = "capability_flag", flag = "default_allows_empty_ordered_map_keys"}]
