@@ -160,6 +160,8 @@ def _haxe_call_stub(
     becomes a local bound to a nested anonymous structure of closures
     (``var app = { client: { fetch: function(...) ... } };``).
     """
+    if len(parts) == 1 and parts[0].startswith("new "):
+        return ()
     param_list = _haxe_params(params=params)
     if len(parts) == 1:
         return (f"function {parts[0]}({param_list}):Dynamic return null;",)
@@ -170,6 +172,24 @@ def _haxe_call_stub(
     for field in reversed(fields):
         structure = f"{{ {field}: {structure} }}"
     return (f"var {parts[0]} = {structure};",)
+
+
+@beartype
+def _haxe_constructor_stub(
+    parts: Sequence[str],
+    params: Sequence[str],
+    _stub_return: StubReturn,
+    _args: Sequence[Value],
+    /,
+) -> tuple[str, ...]:
+    """Declare constructor types outside the generated entrypoint."""
+    if len(parts) == 1 and parts[0].startswith("new "):
+        class_name = parts[0].removeprefix("new ")
+        param_list = _haxe_params(params=params)
+        return (
+            f"class {class_name} {{ public function new({param_list}) {{}} }}",
+        )
+    return ()
 
 
 _HAXE_RESERVED: frozenset[str] = frozenset(
@@ -924,7 +944,16 @@ class Haxe(metaclass=LanguageCls):
         """Return stub declarations for a call expression."""
         return _haxe_call_stub
 
-    format_call_preamble_stub = default_format_call_stub
+    @cached_property
+    @beartype
+    def format_call_preamble_stub(
+        self,
+    ) -> Callable[
+        [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
+        tuple[str, ...],
+    ]:
+        """Return constructor declarations outside the entrypoint."""
+        return _haxe_constructor_stub
 
     format_call_target = default_format_call_target
 

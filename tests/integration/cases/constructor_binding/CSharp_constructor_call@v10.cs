@@ -1,6 +1,6 @@
 using System;
 class Check {
-static object? new Playlist() => null;
+class Playlist { public Playlist() {} }
     public static void Main() {
 var created = new Playlist();
     _ = created;

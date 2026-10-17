@@ -1,8 +1,9 @@
 Imports System.Collections.Generic
 Module Check
-    Function New Playlist() As Object
-        Return Nothing
-    End Function
+    Class Playlist
+        Public Sub New()
+        End Sub
+    End Class
     Sub _calls()
         Dim created = New Playlist()
     End Sub

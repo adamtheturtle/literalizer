@@ -266,6 +266,11 @@ def _java_call_stub(
     arguments.
     """
     parameters = ", ".join(f"Object arg{i}" for i in range(len(params)))
+    if len(parts) == 1 and parts[0].startswith("new "):
+        class_name = parts[0].removeprefix("new ")
+        return (
+            f"static class {class_name} {{ {class_name}({parameters}) {{}} }}",
+        )
     if len(parts) == 1:
         return (f"static Object {parts[0]}({parameters}) {{ return null; }}",)
     root = parts[0]

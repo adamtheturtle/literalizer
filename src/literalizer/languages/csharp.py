@@ -562,6 +562,11 @@ def _csharp_call_stub(
     failing at runtime.
     """
     param_list = ", ".join(f"object? {p} = null" for p in params)
+    if len(parts) == 1 and parts[0].startswith("new "):
+        class_name = parts[0].removeprefix("new ")
+        return (
+            f"class {class_name} {{ public {class_name}({param_list}) {{}} }}",
+        )
     if len(parts) == 1:
         return (f"static object? {parts[0]}({param_list}) => null;",)
     root = parts[0]

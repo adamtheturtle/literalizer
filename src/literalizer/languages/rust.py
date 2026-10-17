@@ -3093,6 +3093,18 @@ def _rust_call_stub(
     generic_clause = ""
     if generic_decl != "":
         generic_clause = f"<{generic_decl}>"
+    if len(parts) == 1 and parts[0].endswith("::new"):
+        class_name = parts[0].removesuffix("::new")
+        param_list = ", ".join(
+            f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)
+        )
+        return (
+            f"struct {class_name};",
+            (
+                f"impl {class_name} {{ fn new{generic_clause}({param_list})"
+                " -> Self { Self } }"
+            ),
+        )
     if len(parts) == 1:
         param_list = ", ".join(
             f"_{p}: {t}" for p, t in zip(params, type_vars, strict=True)

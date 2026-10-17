@@ -1,4 +1,4 @@
 class Main {
-static Object new Playlist() { return null; }
+static class Playlist { Playlist() {} }
 protected Object created = new Playlist();
 }
