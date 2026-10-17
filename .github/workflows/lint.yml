@@ -3203,20 +3203,20 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      # ``test -s`` guards against the version tag drifting from these
-      # patterns and silently dropping every fixture; see the
+      # ``test -s`` guards against the version tags drifting and
+      # silently dropping every fixture; see the
       # ``Python.VersionFormats`` enum in
       # ``src/literalizer/languages/python.py``.
       - name: Find Python 3.8 golden files
         shell: bash
-        run: find tests/integration/cases -name 'Python_version_py38@py38.py' -print0
-          > /tmp/files-python38 && test -s /tmp/files-python38
+        run: python3 -m tests.integration.list_fixtures .py py38 > /tmp/files-python38
+          && test -s /tmp/files-python38
       - name: Run Python 3.8 golden files
         run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.8 --no-project python <
           /tmp/files-python38
       - name: Find default Python golden files
         shell: bash
-        run: find tests/integration/cases -name 'Python@py39.py' -print0 > /tmp/files-python
+        run: python3 -m tests.integration.list_fixtures .py py39 > /tmp/files-python
           && test -s /tmp/files-python
       # The default (``@py39``) Python fixtures emit ``datetime.UTC``,
       # which requires Python 3.11+, so they cannot run on the 3.8
