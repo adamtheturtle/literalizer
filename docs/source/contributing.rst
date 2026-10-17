@@ -269,6 +269,8 @@ Code generation benchmarks
 
 The benchmarks in :file:`tests/benchmarks/test_bench_literalize.py` measure code generation with CodSpeed's CPU simulation instrument.
 The six benchmark shards in :file:`.github/workflows/ci.yml` publish results to the same CodSpeed report.
+They use Ubuntu 24.04, managed CPython 3.14.8 and a fixed ``PYTHONHASHSEED`` of ``0``.
+Changing the benchmark runtime requires a new baseline for meaningful performance comparisons.
 Compiler correctness is checked by the integration golden tests and language round-trip checks.
 Individual compiler commands have deadlines to bound pathological workloads.
 

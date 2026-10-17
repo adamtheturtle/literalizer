@@ -96,7 +96,7 @@ jobs:
         # Keep in sync with ``--test-group-count`` below.
         shard: [1, 2, 3, 4, 5, 6]
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     permissions:
@@ -124,7 +124,7 @@ jobs:
         # Install the wheel and the pinned benchmark dependency group without
         # building the project again.
         run: |
-          uv venv
+          uv venv --python 3.14.8 --managed-python
           uv pip install "$(echo dist/*.whl)"
           uv pip install --group=benchmark
 
@@ -139,6 +139,8 @@ jobs:
           # inside the virtual environment, so CodSpeed's call graph maps
           # back onto ``src/``.
           PYTHONPATH: src
+          # Keep string hashing consistent across benchmark processes.
+          PYTHONHASHSEED: '0'
 
   completion-ci:
     needs: [build, benchmark-wheel, benchmarks]
