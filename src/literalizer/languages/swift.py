@@ -5,6 +5,7 @@ import datetime as dt
 import enum
 import functools
 import re
+import struct
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -1684,9 +1685,14 @@ class Swift(metaclass=LanguageCls):
 
         @beartype
         def _format(value: float) -> str:
-            """Use exact hexadecimal literals for subnormal doubles."""
+            """Construct subnormal doubles from their exact bit
+            patterns.
+            """
             if 0 < abs(value) < sys.float_info.min:
-                return float(value).hex()
+                bits = int.from_bytes(
+                    bytes=struct.pack("!d", value), byteorder="big"
+                )
+                return f"Double(bitPattern: 0x{bits:x})"
             return self.float_format(value)
 
         return _format

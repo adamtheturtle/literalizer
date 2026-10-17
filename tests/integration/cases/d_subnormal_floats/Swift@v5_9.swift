@@ -1,5 +1,5 @@
 let my_data = [
-    0x0.0000000000001p-1022,
-    -0x0.0000000000001p-1022,
-    0x0.012688b70e62bp-1022,
+    Double(bitPattern: 0x1),
+    Double(bitPattern: 0x8000000000000001),
+    Double(bitPattern: 0x12688b70e62b),
 ]
