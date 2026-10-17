@@ -1482,13 +1482,7 @@ class LanguageCls(type):
             "wrap_in_file_tolerates_pre_indent",
         }
     )
-    """What every language says for itself rather than inheriting.
-
-    Each of these once carried a default here, which let a language
-    take a behavior nobody had considered for it.  A language now
-    declares each one, and a test holds every language to the list
-    (issue #4655).
-    """
+    """Attributes every language class must declare explicitly."""
 
     stringifies_nested_collections: bool
     """Whether nested collection syntax becomes string payload data."""
@@ -1501,19 +1495,17 @@ class LanguageCls(type):
     Unwrapped results are unaffected: the entries stay in
     :attr:`~literalizer.LiteralizeResult.preamble` so callers embedding
     :attr:`~literalizer.LiteralizeResult.code` receive the declarations
-    separately.  Scala opts in because its generated ``case class``
-    declarations must live inside the per-fixture ``object`` -- the
-    fixture lint compiles every fixture in one ``scala-cli`` invocation,
-    so a file-scope ``case class Record0`` would collide across cases.
+    separately.  Scala places generated ``case class`` declarations
+    inside the enclosing ``object`` to avoid name collisions when
+    multiple generated files are compiled together.
     """
 
     language_id: str
     __dataclass_fields__: dict[str, dataclasses.Field[object]]
     """Stable, implementation-neutral identifier for this language.
 
-    Consumers that need to name a language without depending on the
-    Python class (for example the integration suite's own language
-    metadata files) key off this identifier.
+    Consumers can use this identifier to name a language without
+    depending on its Python class.
     """
 
     DateFormats: type[enum.Enum]
@@ -1756,8 +1748,7 @@ class LanguageCls(type):
     """Whether ``record_shape_names`` mappings emit declarations.
 
     When ``False``, the mapping supplies only the type used by record
-    literals. Generic standalone-fixture builders exclude that mode because
-    the mapped type is not declared by literalizer.
+    literals, and the caller must supply the corresponding declaration.
     """
     dict_supports_heterogeneous_values: bool
     _language_classes: ClassVar[list["LanguageCls"]] = []
@@ -2185,8 +2176,8 @@ class Language(Protocol):
         """Identifier case conventions idiomatic for this language.
 
         Ordered by stylistic preference -- the first element is the
-        language's default/idiomatic case for generated defaults and
-        golden fixtures.  This list is *not* used to validate user
+        language's default/idiomatic case for generated identifiers.
+        This list is *not* used to validate user
         ``ref_case`` choices; that role belongs to
         :attr:`supported_ref_cases`.  A language may prefer only
         ``SNAKE`` while still syntactically supporting ``CAMEL``,
@@ -2225,7 +2216,7 @@ class Language(Protocol):
     """Whether the language can declare a stub for a dotted call wrapper
     name (e.g. ``tracer.emit``).  :func:`~literalizer.literalize_call`
     no longer inspects this (a context-aware ``call_transform`` is
-    opaque); it is metadata for callers and the test harness, which use
+    opaque); it is metadata for callers, which use
     it to decide whether a generated dotted-wrapper stub can compile in
     this language.
     """
@@ -2233,17 +2224,17 @@ class Language(Protocol):
     has_free_function_calls: bool
     """Whether the language has a free function call syntax (i.e. the
     ability to call a function by a bare name with no dot).  Metadata
-    for callers and the test harness, which use it to decide whether a
+    for callers, which use it to decide whether a
     generated bare-wrapper stub can compile in this language;
     :func:`~literalizer.literalize_call` does not inspect it.
     """
 
     supports_multi_param_call_wrapper_stub: bool
     """Whether the language can declare, and positionally invoke, a
-    harness wrapper stub that receives the call's result alongside one
-    or more additional positional arguments.  Metadata for the test
-    harness only; :func:`~literalizer.literalize_call` does not inspect
-    it.  ``False`` for languages whose generated multi-parameter stub
+    wrapper stub that receives the call's result alongside one or more
+    additional positional arguments.
+    :func:`~literalizer.literalize_call` does not inspect this flag.
+    ``False`` for languages whose generated multi-parameter stub
     cannot accept the call expression positionally -- e.g. a strongly
     typed stub fed a ``void``-returning call, or an object-style stub
     that rejects a positional multi-argument invocation.
@@ -2252,9 +2243,9 @@ class Language(Protocol):
     supports_dict_literal_as_free_expression: bool
     """Whether a dict/map literal can appear as a free-standing
     expression (e.g. spliced as a call argument) rather than only on
-    the right-hand side of a typed assignment.  Metadata for the test
-    harness only; :func:`~literalizer.literalize_call` does not inspect
-    it.  ``False`` for languages whose map-literal syntax needs a typed
+    the right-hand side of a typed assignment.
+    :func:`~literalizer.literalize_call` does not inspect this flag.
+    ``False`` for languages whose map-literal syntax needs a typed
     left-hand side to be sized -- e.g. SystemVerilog ``'{...}``
     assignment patterns.
     """
@@ -4122,8 +4113,7 @@ class FileSection:
     """One named region of a multi-section language's rendered output.
 
     Most languages render a value as a single fragment that a caller can
-    drop straight into a program template (the way the C, C++, Haskell
-    and Zig round-trip helpers do).  A few cannot: their output spans
+    drop straight into a program template.  A few cannot: their output spans
     more than one region of a source file that a wrapping template must
     place separately.  COBOL under ``json_type=CJSON`` is the current
     example -- it produces WORKING-STORAGE declarations and PROCEDURE

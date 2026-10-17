@@ -1469,7 +1469,7 @@ class Kotlin(metaclass=LanguageCls):
         """Static preamble lines emitted once per file.
 
         When :attr:`json_type` is active the ``Json`` and ``JsonElement``
-        imports are emitted here so every fixture has them in scope
+        imports are emitted here so the generated file has them in scope
         regardless of the rendered data.
         """
         if self._json_type_active:

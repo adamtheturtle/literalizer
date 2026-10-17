@@ -1632,17 +1632,15 @@ class Python(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Python version to target.
 
-        This selects typing-alias syntax; it is *not* the runtime
-        version floor.  The floor under which the default fixtures are
-        exercised in CI is governed by ``requires-python`` in
-        ``pyproject.toml`` (``>=3.12``), not by this enum.
+        This selects the syntax of generated code. The Python version required
+        to run Literalizer itself is documented under Installation.
 
         * ``VersionFormats.PY38`` — target Python 3.8; uses built-in
           collection generics with postponed annotations and ``typing``
           aliases with eager annotations, and emits ``datetime.timezone.utc``
           for UTC.
         * ``VersionFormats.PY39`` — uses built-in generic aliases
-          ``list``, ``dict``, etc. (PEP 585, valid 3.9+).  Note this
+          ``list``, ``dict``, etc. (PEP 585, valid 3.9+). Note this
           variant also emits ``datetime.UTC``, which requires Python
           3.11+, so its true minimum interpreter is 3.11, not 3.9.
         """

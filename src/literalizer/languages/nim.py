@@ -1974,7 +1974,7 @@ class Nim(metaclass=LanguageCls):
         the data, preceded by ``import tables`` and the
         ``UnusedImport`` opt-out: a non-record dict (the empty dict, or
         an ordered map) renders as a runtime ``Table`` that needs the
-        import, while a pure-record fixture leaves it unused, so the
+        import, while data containing only records leaves it unused, so the
         pragma keeps the always-present import warning-free rather than
         making the import data-dependent.  For
         ``HeterogeneousStrategies.OBJECT_VARIANT`` emits
@@ -2546,7 +2546,7 @@ class Nim(metaclass=LanguageCls):
         record-shaped dict never reaches this config (it is intercepted
         by the record renderer and emitted as a ``Record0(...)``
         literal), so ``import tables`` would be an ``UnusedImport`` for
-        the common record-only fixture; the import is instead added by
+        data containing only records; the import is instead added by
         :attr:`data_dependent_preamble` only when the data still carries
         a genuinely non-record dict that renders as a table.
 
@@ -2555,7 +2555,7 @@ class Nim(metaclass=LanguageCls):
         widens to ``newJObject()`` (the explicit builder).  The
         ``import json`` line that powers ``%*`` is contributed by
         :attr:`data_dependent_preamble`, not by this config, so a
-        heterogeneous-strategy-free fixture still imports it exactly
+        generated file still imports it exactly
         once.
         """
         if self._uses_json_node:

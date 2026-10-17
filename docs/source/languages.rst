@@ -202,10 +202,9 @@ This option has no effect unless ``string_format=Cpp.string_formats.MULTILINE`` 
 Kotlin compatibility
 --------------------
 
-Kotlin output targets language and API version 2.4, validated with compiler 2.4.21.
+Kotlin output targets language and API version 2.4.
 The default and only supported target is ``Kotlin.version_formats.V2_4``.
-The former ``V1_9`` target is retired: Kotlin 2.4 removes the 1.9 language mode, and Literalizer no longer validates or advertises Kotlin 1.9 compatibility.
-Generated scripts compile with fatal warnings before execution.
+The former ``V1_9`` target is no longer supported.
 
 Python annotation evaluation
 ----------------------------
@@ -334,7 +333,7 @@ The remaining languages differ only in the emitted form and a few extra constrai
    * - Elm
      - ``JSON_ENCODE_VALUE``
      - ``Json.Encode.int`` / ``string`` / ``list identity`` / ``object`` calls yielding ``Json.Encode.Value``
-     - Adds an ``import Json.Encode`` line in place of the per-fixture ``Val`` ADT.
+     - Adds an ``import Json.Encode`` line in place of the generated ``Val`` type.
    * - PureScript
      - ``ARGONAUT_JSON``
      - ``fromRight jsonNull (jsonParser "...")`` yielding ``Data.Argonaut.Core.Json``
@@ -527,9 +526,7 @@ Custom language implementations
 
 To support a language that is not built in, create a class that satisfies the :class:`~literalizer.Language` protocol, using ``metaclass=LanguageCls`` and defining the required nested enum classes and attributes.
 
-When an attribute is part of the :class:`~literalizer.Language` protocol but should resolve to ``None``, expose that value through a descriptor or property instead of storing literal ``None`` on the class.
-CPython treats class-level ``None`` as "attribute is not implemented" during runtime protocol checks, which can prevent ABC cache warming for large ``@runtime_checkable`` protocols; see `python/cpython#156413 <https://github.com/python/cpython/issues/156413>`__.
-Built-in languages use shared descriptors such as ``no_pygments_name`` and ``no_format_integer_widened`` for this pattern.
+When a required protocol attribute has no value for your language, expose ``None`` through a descriptor or property so runtime protocol checks recognize the attribute.
 
 Look at any built-in language module under ``literalizer/languages/`` for a complete working example.
 The :class:`~literalizer.Language` protocol documents every required attribute.

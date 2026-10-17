@@ -2085,7 +2085,7 @@ class Java(metaclass=LanguageCls):
         """Static preamble lines emitted once per file.
 
         When :attr:`json_type` is active the Jackson ``JsonNode`` and
-        ``ObjectMapper`` imports are emitted here so every fixture has
+        ``ObjectMapper`` imports are emitted here so the generated file has
         them in scope regardless of the rendered data.
         """
         if self._json_type_active:
@@ -2501,8 +2501,7 @@ class Java(metaclass=LanguageCls):
         integer literal outside 32-bit range: a bare ``4085195400``
         fails to compile as an ``int`` literal even when assigned to a
         ``long``.  In-range epoch seconds format identically to the
-        plain integer, so every checked-in golden file stays
-        byte-identical.
+        plain integer.
         """
         base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self.datetime_format is type(self.datetime_format).EPOCH:

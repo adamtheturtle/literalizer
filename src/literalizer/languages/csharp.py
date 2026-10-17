@@ -2319,7 +2319,7 @@ class CSharp(metaclass=LanguageCls):
         object, and an empty dict widens to ``new JsonObject()``.  The
         ``using System.Text.Json.Nodes;`` line that powers
         ``JsonObject`` is contributed by :attr:`data_dependent_preamble`
-        rather than from this config, so a json-mode fixture imports it
+        rather than from this config, so a generated file imports it
         exactly once regardless of how many dict literals appear.
         """
         if self._json_type_active:

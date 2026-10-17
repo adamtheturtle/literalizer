@@ -1908,13 +1908,10 @@ class Elm(metaclass=LanguageCls):
     ) -> str:
         """Wrap a call-result variable binding in an Elm module.
 
-        The literal-binding scaffold emits a top-level ``name : Val`` /
-        ``name = …`` pair that the test driver forces externally via a
-        ``Check.my_data`` reference.  A call-mode fixture is instead
-        driven through ``Check.main``, so the binding is placed inside
-        the ``main`` ``let`` block; evaluating the block forces the
-        call.  *content* is the single-line ``name = call …`` binding
-        produced by :attr:`format_call_variable_declaration`.
+        The binding is placed inside the ``main`` ``let`` block so evaluating
+        that block executes the call.
+        *content* is the single-line ``name = call …`` binding produced by
+        :attr:`format_call_variable_declaration`.
         """
         let_indent = self.indent * 2
         let_lines = [f"{let_indent}{line}" for line in content.split(sep="\n")]
@@ -1945,7 +1942,7 @@ class Elm(metaclass=LanguageCls):
         """Compute body-preamble lines.
 
         Under :attr:`json_type` the preamble is a single
-        ``import Json.Encode`` line; otherwise the per-fixture ``Val``
+        ``import Json.Encode`` line; otherwise the generated ``Val``
         ADT declaration is emitted with only the constructors actually
         referenced by the data.
         """

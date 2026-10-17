@@ -239,7 +239,6 @@ Per-language support matrix
 
 Every built-in language supports ``ERROR`` and defaults to it.
 The table below lists every language that exposes a richer strategy; any language not listed exposes ``ERROR`` only.
-It is generated from the language registry at build time, so it always matches the ``heterogeneous_strategies`` enum on each language class.
 
 .. jinja:: heterogeneous_strategies
 

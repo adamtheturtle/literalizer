@@ -1,4 +1,4 @@
-|Build Status| |PyPI| |CodSpeed|
+|PyPI|
 
 literalizer
 ===========
@@ -95,12 +95,8 @@ A Sphinx extension is available at `sphinx-literalizer <https://github.com/adamt
 Full documentation
 ------------------
 
-See the `full documentation <https://adamtheturtle.github.io/literalizer/>`__ for more information including how to contribute.
+See the `full documentation <https://adamtheturtle.github.io/literalizer/>`__ for usage guides and the API reference.
 
-.. |Build Status| image:: https://github.com/adamtheturtle/literalizer/actions/workflows/ci.yml/badge.svg?branch=main
-   :target: https://github.com/adamtheturtle/literalizer/actions
 .. |PyPI| image:: https://badge.fury.io/py/literalizer.svg
    :target: https://badge.fury.io/py/literalizer
-.. |CodSpeed| image:: https://img.shields.io/endpoint?url=https://codspeed.io/badge.json
-   :target: https://codspeed.io/adamtheturtle/literalizer?utm_source=badge
 .. |minimum-python-version| replace:: 3.12

@@ -857,12 +857,11 @@ class VisualBasic(metaclass=LanguageCls):
     ) -> str:
         """Wrap a VB.NET Dim declaration inside a Module.
 
-        The context carries module-member call stubs separately from
-        body bindings. When member declarations are present, *content* is
-        placed inside ``Sub _calls()``: VB rejects bare expression
-        statements at module level, but shared subs taking no
-        arguments are invoked by the fixture linter so the calls
-        still execute.
+        The context carries module-member call stubs separately from body
+        bindings.
+        When member declarations are present, *content* is placed inside ``Sub
+        _calls()`` because VB rejects bare expression statements at module
+        level.
         """
         body_preamble = context.body_preamble
         if len(context.class_preamble) > 0:

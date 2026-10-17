@@ -1955,11 +1955,10 @@ class Cobol(metaclass=LanguageCls):
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Prepend ``BY CONTENT`` to each COBOL CALL argument.
 
-        Under ``json_type=CJSON`` a value is a multi-statement ``cJSON``
-        node tree, and COBOL has no inline call-expression form to pass one
-        as
-        a CALL argument, so call binding is rejected (the case is skipped,
-        no golden emitted).
+        Under ``json_type=CJSON``, a value is a multi-statement ``cJSON`` node
+        tree.
+        COBOL has no inline call-expression form to pass one as a CALL
+        argument, so call binding is rejected.
         """
         if self._json_type_active:
 

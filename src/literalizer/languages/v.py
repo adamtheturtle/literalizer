@@ -1863,7 +1863,7 @@ class V(metaclass=LanguageCls):
         ``4085195400`` is otherwise an out-of-range ``int`` literal),
         matching the ``i64`` field type the ``RECORD`` strategy derives
         for it.  In-range epoch seconds format identically to the plain
-        integer, so every checked-in golden file stays byte-identical.
+        integer.
         """
         base_formatter: Callable[[dt.datetime], str] = self.datetime_format
         if self.datetime_format is type(self.datetime_format).EPOCH:

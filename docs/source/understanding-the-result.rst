@@ -7,7 +7,6 @@ The examples elsewhere reach for whichever field they need, but the object is wo
 The fields
 ----------
 
-The members below are rendered directly from the :class:`~literalizer.LiteralizeResult` source, the authoritative description of each field.
 :attr:`~literalizer.LiteralizeResult.code` is the field most callers read; the rest of this page explains when you need the others.
 
 .. autoclass:: literalizer.LiteralizeResult

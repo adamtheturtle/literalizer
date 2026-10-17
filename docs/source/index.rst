@@ -276,9 +276,7 @@ Reference
 
 .. toctree::
    :maxdepth: 3
-   :caption: Project / Development
+   :caption: Release notes
 
-   release-process
    unreleased
    changelog
-   contributing

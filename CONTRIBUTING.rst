@@ -1,5 +1,5 @@
-Contributing to |project|
-=========================
+Contributing to literalizer
+===========================
 
 Contributions to this repository must pass tests and linting.
 
@@ -46,16 +46,18 @@ Regeneration also rewrites supported golden files, so select only the affected t
 Changelog entries
 -----------------
 
-Describe each user-facing change in a news fragment at :file:`newsfragments/<issue>.change.md`.
+Describe each user-facing change in a news fragment at ``newsfragments/<issue>.change.md``.
+Keep CI changes, test migrations, benchmarks, and internal refactoring out of news fragments; record maintenance details in commit messages and pull requests.
+Older maintenance notes are archived in `Development history <docs/development/changelog.md>`__.
 Write fragments in Markdown using the ``.change.md`` suffix.
 Towncrier rejects invalid fragment names at release time.
-The release workflow assembles the fragments into ``CHANGELOG.md`` and the GitHub release notes, then deletes them.
+The release workflow assembles the fragments into ``docs/source/changelog/<version>.md`` and the GitHub release notes, then deletes them.
 Do not re-add a fragment that a release has already consumed, for example when merging ``main`` into a long-running branch.
 
 Golden case manifests
 ---------------------
 
-Every directory under :file:`tests/integration/cases/` contains a versioned :file:`case.toml`.
+Every directory under ``tests/integration/cases/`` contains a versioned ``case.toml``.
 The manifest is the source of truth for the input's suite, variant-axis and ``literalize_call`` coverage; language capability checks and expansion remain in the typed Python runner.
 
 A YAML case that deliberately reuses an anchor declares its expected parser warning:
@@ -92,7 +94,7 @@ The default module-name suite checks each constructor's public default across it
    suites = ["default-module-name"]
    gates = [{ kind = "capability_flag", flag = "supports_module_name" }]
 
-Its input lives beside the manifest, while its golden files remain under :file:`tests/integration/default_module_names/`.
+Its input lives beside the manifest, while its golden files remain under ``tests/integration/default_module_names/``.
 Those files retain the default module names; regular compiler fixtures use unique names derived from their paths.
 
 A variant-only case declares its specialized owner and the axes that consume it.
@@ -193,8 +195,8 @@ The loader rejects unknown fields or axes, missing inputs, duplicate logical cas
 Rejection manifests
 -------------------
 
-A rejection that holds for a family of languages -- every language with a ``json_type`` refusing a non-string dict key, every language taking ``record_shape_names`` refusing a name that is not PascalCase -- is declared once under :file:`tests/errors/rejections/`.
-Each directory holds a :file:`rejection.toml` and an :file:`expected.toml` golden file.
+A rejection that holds for a family of languages -- every language with a ``json_type`` refusing a non-string dict key, every language taking ``record_shape_names`` refusing a name that is not PascalCase -- is declared once under ``tests/errors/rejections/``.
+Each directory holds a ``rejection.toml`` and an ``expected.toml`` golden file.
 The golden opens with the split of the languages the manifest selected, then groups what each raised under a table per exception type:
 
 .. code-block:: toml
@@ -262,13 +264,13 @@ Continuous integration
 ----------------------
 
 Tests are run on GitHub Actions.
-The configuration for this is in :file:`.github/workflows/`.
+The configuration for this is in ``.github/workflows/``.
 
 Compiler benchmarks
 ~~~~~~~~~~~~~~~~~~~
 
-The compiler benchmarks in :file:`tests/benchmarks/test_bench_compilers.py` measure the public API's map containing singleton arrays at depths 0, 16, 20 and 30 for C++20 and Swift 5 language mode.
-The ``compilers`` entry in the benchmark matrix in :file:`.github/workflows/ci.yml` runs them with CodSpeed's ``walltime`` instrument.
+The compiler benchmarks in ``tests/benchmarks/test_bench_compilers.py`` measure the public API's map containing singleton arrays at depths 0, 16, 20 and 30 for C++20 and Swift 5 language mode.
+The ``compilers`` entry in the benchmark matrix in ``.github/workflows/ci.yml`` runs them with CodSpeed's ``walltime`` instrument.
 The numbered entries use CPU simulation to measure code generation, sharing the same setup steps.
 Sources are generated before measurement, and the compiler binaries and C++ standard-library headers are pinned together by container image digest.
 CodSpeed tracks completed compiler timings across revisions; new benchmarks acquire their baseline after running on the default branch.
@@ -297,4 +299,16 @@ Local measurements use the installed tool versions; compare timings only within 
 Performing a release
 --------------------
 
-See :doc:`release-process`.
+A release creates a new Git tag and publishes a package on PyPI.
+With the `GitHub CLI <https://cli.github.com/>`__ installed, run:
+
+.. code-block:: console
+
+   $ gh workflow run release.yml --repo adamtheturtle/literalizer
+
+Language protocol implementation notes
+--------------------------------------
+
+When an attribute is part of the ``Language`` protocol but should resolve to ``None``, expose that value through a descriptor or property instead of storing literal ``None`` on the class.
+CPython treats class-level ``None`` as "attribute is not implemented" during runtime protocol checks, which can prevent ABC cache warming for large ``@runtime_checkable`` protocols; see `python/cpython#156413 <https://github.com/python/cpython/issues/156413>`__.
+Built-in languages use shared descriptors such as ``no_pygments_name`` and ``no_format_integer_widened`` for this pattern.

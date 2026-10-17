@@ -1727,7 +1727,7 @@ class Scala(metaclass=LanguageCls):
         data, so unwrapped results carry the declarations in
         :attr:`~literalizer.LiteralizeResult.preamble` like every other
         ``RECORD``-capable language (issue #3615).  File wrapping still
-        places them inside the per-fixture ``object`` via
+        places them inside the enclosing ``object`` via
         :attr:`wraps_data_dependent_preamble_in_body`.  When
         :attr:`json_type` is active the data flows through Circe
         ``Json`` instead of typed records, so nothing is emitted.

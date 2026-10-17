@@ -847,14 +847,10 @@ class Ada(metaclass=LanguageCls):
         assignment: str,
         context: FileWrapperContext,
     ) -> str:
-        """Wrap Ada declaration + assignment in a single procedure.
+        """Wrap Ada declaration and assignment in a single procedure.
 
-        Earlier revisions wrapped each form in its own nested
-        ``Check_Declaration`` / ``Check_Assignment`` procedure, but the
-        assignment then referenced ``my_data`` from a sibling scope and
-        only compiled because the lint job did syntax-only checking.
-        Putting both in one procedure keeps the variable in scope so
-        the fixture compiles and runs end-to-end.
+        Keeping both forms in one procedure lets the assignment reference the
+        declared variable.
         """
         body_preamble = context.body_preamble
         declaration = prepend_body_preamble(

@@ -1,6 +1,6 @@
 # Changelog
 
-Releases are assembled from `newsfragments/` using Towncrier.
+Changes in each published release.
 
 ```{toctree}
 :maxdepth: 1

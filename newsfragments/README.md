@@ -1,6 +1,7 @@
 # Release notes
 
 Add user-facing changes in `newsfragments/<issue>.<type>.md`, using an issue or pull request number.
+Keep CI changes, test migrations, benchmarks, and internal refactoring in commit messages and pull requests.
 The available types are `change`.
 Use `+name.<type>.md` for changes without an issue number.
 

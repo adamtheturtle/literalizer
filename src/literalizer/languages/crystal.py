@@ -1043,7 +1043,7 @@ class Crystal(metaclass=LanguageCls):
         with a container (``Hash`` requires a homogeneous value type).
         ``RECORD`` instead renders each record-shaped dict (non-empty,
         string-keyed) as a generated ``record`` struct declared in the
-        per-fixture module body plus a matching positional
+        generated module body plus a matching positional
         ``Record0.new(value, ...)`` literal, so such fields are
         representable.
         """
@@ -1381,16 +1381,10 @@ class Crystal(metaclass=LanguageCls):
     def data_dependent_preamble(self) -> Callable[[Value], tuple[str, ...]]:
         """Return data-dependent preamble lines.
 
-        The ``RECORD`` strategy's generated ``record`` declarations are
-        not emitted here (file scope): Crystal compiles every fixture in
-        one ``crystal run`` invocation, so a file-scope ``record
-        Record0`` would collide across cases.  They are emitted into the
-        per-fixture module body instead; see
-        :attr:`compute_body_preamble`.
-
-        Under ``json_type`` the rendered output always passes through
-        ``JSON.parse``, so ``require "json"`` is contributed
-        unconditionally.
+        The ``RECORD`` strategy places generated record declarations in the
+        module body; see :attr:`compute_body_preamble`.
+        Under ``json_type``, the output passes through ``JSON.parse``, so
+        ``require "json"`` is included unconditionally.
         """
         if self._uses_json_any:
 
@@ -1879,17 +1873,12 @@ class Crystal(metaclass=LanguageCls):
     def compute_body_preamble(
         self,
     ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
-        """Compute body-preamble lines from the scalar map, prefixed
-        with the ``RECORD`` strategy's generated ``record``
+        """Compute body-preamble lines, prefixed with generated record
         declarations.
 
-        Crystal compiles every fixture in one ``crystal run``
-        invocation, so a file-scope ``record Record0`` would collide
-        across cases.  Emitting the declarations into the body preamble
-        (which :meth:`wrap_in_file` places inside the per-fixture
-        module, ahead of the value) scopes each ``RecordN`` to its own
-        fixture; the declarations precede the scalar body lines so a
-        record type is in scope before its literal.
+        The declarations appear inside the module, before the value, so each
+        record type is in scope before its literal and its name does not
+        collide with records in other generated modules.
         """
         scalar_body = body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
