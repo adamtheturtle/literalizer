@@ -8,6 +8,6 @@ type Val
 
 my_data : Val
 my_data = EList [
-    EList [ENull],
+    EList (ENull :: []),
     EList []
     ]

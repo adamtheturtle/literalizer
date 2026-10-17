@@ -1,3 +1,8 @@
+class Consume_widget_ {
+    construct new() {}
+    call(arg) {}
+}
+var consume_widget = Consume_widget_.new()
 var shared = [
     1,
     2,
@@ -5,6 +10,6 @@ var shared = [
 var my_data = [
     0,
 ]
-_ = &my_data;
+consume_widget.call(my_data)
 my_data = shared
-_ = &my_data;
+consume_widget.call(my_data)

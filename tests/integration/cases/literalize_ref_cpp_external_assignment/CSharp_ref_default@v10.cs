@@ -1,4 +1,7 @@
 using System;
+class Check {
+static object? consume_widget(object? _arg = null) => null;
+    public static void Main() {
 var ref_data = (
     1,
     2
@@ -6,6 +9,8 @@ var ref_data = (
 var my_data = ValueTuple.Create(
     0
 );
-(void)my_data;
+consume_widget(my_data);
 my_data = ref_data;
-(void)my_data;
+consume_widget(my_data);
+    }
+}

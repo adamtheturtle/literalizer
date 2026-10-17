@@ -14,8 +14,8 @@ my_data = EList [
         ],
     EList [
         EList [],
-        EList [
+        EList (
             EInt 1
-            ]
+             :: [])
         ]
     ]

@@ -1,0 +1,19 @@
+schema_version = 1
+owner = "constructor-binding"
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+package main
+
+type Playlist struct { value int }
+
+func NewPlaylist() Playlist { return Playlist{value: 42} }
+
+func main() {
+"""
+fixture_suffix = """\
+if p.value != 42 { panic("Expected constructor result") }
+}
+"""

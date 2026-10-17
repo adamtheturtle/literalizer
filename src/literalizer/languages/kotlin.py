@@ -1346,7 +1346,7 @@ class Kotlin(metaclass=LanguageCls):
     class VersionFormats(enum.Enum):
         """Version options for Kotlin."""
 
-        V1_9 = enum.auto()
+        V2_4 = enum.auto()
 
     version_formats = VersionFormats
 
@@ -1414,7 +1414,7 @@ class Kotlin(metaclass=LanguageCls):
     )
     # Keep in sync with the version flags passed to the Kotlin lint host in
     # `scripts/lint-kotlin.kts`.
-    language_version: VersionFormats = VersionFormats.V1_9
+    language_version: VersionFormats = VersionFormats.V2_4
     indent: str = "    "
     skip_null_dict_values: bool = False
 

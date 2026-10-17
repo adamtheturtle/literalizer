@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "constructor-binding"
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+class Playlist { val value = 42 }
+
+"""
+fixture_suffix = """\
+check(p.value == 42)
+"""

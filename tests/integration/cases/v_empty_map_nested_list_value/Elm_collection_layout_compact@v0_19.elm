@@ -9,6 +9,6 @@ type Val
 
 my_data : Val
 my_data = EList [
-    EList [EDict [("values", EList [EList []])], EDict []],
-    EList [EDict [], EDict [("values", EList [EList []])]]
+    EList [EDict [("values", EList (EList [] :: []))], EDict []],
+    EList [EDict [], EDict [("values", EList (EList [] :: []))]]
     ]

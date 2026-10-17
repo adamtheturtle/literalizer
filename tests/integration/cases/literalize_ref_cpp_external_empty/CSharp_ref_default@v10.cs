@@ -1,4 +1,7 @@
 using System;
+class Check {
+static object? consume_widget(object? _arg = null) => null;
+    public static void Main() {
 var item = (
     1,
     2
@@ -7,6 +10,8 @@ var my_data = (
     1,
     2
 );
-(void)my_data;
+consume_widget(my_data);
 my_data = item;
-(void)my_data;
+consume_widget(my_data);
+    }
+}

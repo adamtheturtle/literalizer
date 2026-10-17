@@ -1,4 +1,5 @@
 fn main() {
+    fn consume_widget<A>(__arg: A) {}
     let ref_data = vec![
         1,
         2,
@@ -6,7 +7,7 @@ fn main() {
     let my_data = vec![
         0,
     ];
-    (void)my_data;
+    consume_widget(my_data);
     my_data = ref_data;
-    (void)my_data;
+    consume_widget(my_data);
 }

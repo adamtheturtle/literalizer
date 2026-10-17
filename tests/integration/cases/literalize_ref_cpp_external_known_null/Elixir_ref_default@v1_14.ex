@@ -1,9 +1,10 @@
 defmodule Check do
+  def consume_widget(_arg), do: nil
   def x do
     item = nil
     my_data = nil
-    (void)my_data;
+    consume_widget(my_data)
     my_data = item
-    (void)my_data;
+    consume_widget(my_data)
   end
 end

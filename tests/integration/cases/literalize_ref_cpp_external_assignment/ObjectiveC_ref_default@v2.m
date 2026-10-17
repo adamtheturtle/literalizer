@@ -1,4 +1,5 @@
 #import <Foundation/Foundation.h>
+static void consume_widget(id _a0) { (void)_a0; }
 int main(void) {
 @autoreleasepool {
 id ref_data = @[
@@ -8,9 +9,9 @@ id ref_data = @[
 id my_data = @[
     @0,
 ];
-(void)my_data;
+consume_widget(my_data);
 my_data = ref_data;
-(void)my_data;
+consume_widget(my_data);
 }
     return 0;
 }

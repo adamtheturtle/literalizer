@@ -7,14 +7,14 @@ type Val
 
 my_data : Val
 my_data = EList [
-    EList [
-        EList [
+    EList (
+        EList (
             EList []
-            ]
-        ],
-    EList [
-        EList [
+             :: [])
+         :: []),
+    EList (
+        EList (
             EList []
-            ]
-        ]
+             :: [])
+         :: [])
     ]

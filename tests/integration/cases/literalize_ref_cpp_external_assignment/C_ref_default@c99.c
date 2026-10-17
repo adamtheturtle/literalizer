@@ -14,6 +14,7 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
+static void consume_widget(CVal _a0) { (void)_a0; }
 int main(void) {
 CVal ref_data = ((CVal){.a = (CVal[]){
     ((CVal){.i = 1}),
@@ -22,8 +23,8 @@ CVal ref_data = ((CVal){.a = (CVal[]){
 CVal my_data = ((CVal){.a = (CVal[]){
     ((CVal){.i = 0}),
 }});
-(void)my_data;
+consume_widget(my_data);
 my_data = ref_data;
-(void)my_data;
+consume_widget(my_data);
     return 0;
 }

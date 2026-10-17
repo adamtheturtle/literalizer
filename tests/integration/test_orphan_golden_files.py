@@ -26,6 +26,10 @@ from .case_manifests import (
     case_dir_name_for_owner,
     load_case_manifests,
 )
+from .constructor_cases import (
+    constructor_binding_cases,
+    constructor_golden_path,
+)
 from .golden_scenarios import golden_groups
 from .language_specs import make_golden_path, make_spec
 from .literalize_ref_cases import (
@@ -204,6 +208,13 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     for manifest in load_case_manifests(cases_dir=cases_dir):
         expected.add(manifest.path)
         expected.add(manifest.input.path)
+
+    expected.update(
+        constructor_golden_path(case=case, version=version)
+        for case in constructor_binding_cases()
+        if case.manifest is not None
+        for version in case.lang_cls.VersionFormats
+    )
 
     expected.update(_expected_default_module_name_golden_files())
 

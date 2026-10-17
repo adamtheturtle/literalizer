@@ -1,0 +1,5 @@
+schema_version = 1
+suites = ["base"]
+
+[base_context]
+variable_name = "Before"

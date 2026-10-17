@@ -1,0 +1,8 @@
+class Playlist:
+    pass
+
+
+type val_t =
+  | OList of val_t list
+let p = Playlist()
+assert isinstance(p, Playlist)

@@ -10,5 +10,5 @@ type Val
 my_data : Val
 my_data = EList [
     EInt 0,
-    EList [EList [EStr "plain"]]
+    EList (EList (EStr "plain" :: []) :: [])
     ]

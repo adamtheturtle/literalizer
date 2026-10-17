@@ -14,6 +14,6 @@ shared = EList [
     EInt 2
     ]
 my_data : Val
-my_data = EList [
+my_data = EList (
     EDict [("left", shared), ("right", shared)]
-    ]
+     :: [])

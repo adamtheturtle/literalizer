@@ -11,5 +11,7 @@ json_type = "STD_JSON_VALUE"
 external_declarations = {shared = "[1, 2]", my_data = "[0]"}
 explicit_ref_value_sources = {shared = "[1, 2]"}
 external_declaration_styles = {my_data = "VAR"}
-fixture_prefix = "_ = &my_data;\n"
-fixture_suffix = "\n_ = &my_data;"
+
+[ref.consumer]
+target_function = "consume_widget"
+before_assignment = true

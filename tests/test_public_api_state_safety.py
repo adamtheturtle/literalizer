@@ -1,37 +1,16 @@
 """Public rendering boundaries remain safe under hostile shared state.
 
-These use time-only keys, mutate caller-owned configuration, or render
-from several threads at once, which a case file cannot declare
+These mutate caller-owned configuration or render from several threads
+at once, which a case file cannot declare
 (issue #4699).
 """
 
-import datetime as dt
 from concurrent.futures import ThreadPoolExecutor
-from textwrap import dedent
 
 import pytest
 
 from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.languages import C, Python, Rust
-
-
-def test_time_key_in_public_substitution_uses_time_formatter() -> None:
-    """Supplemental mappings preserve time-only scalar keys."""
-    result = literalize(
-        source='{"value": null}',
-        input_format=InputFormat.JSON,
-        language=Python(),
-        record_null_substitutions={
-            "value": {dt.time(hour=1, minute=2, second=3): 1}
-        },
-    )
-
-    assert result.bare_code == dedent(
-        text="""\
-        {
-            "value": {datetime.time(hour=1, minute=2, second=3): 1},
-        }"""
-    )
 
 
 def test_yaml_parsing_is_thread_safe() -> None:

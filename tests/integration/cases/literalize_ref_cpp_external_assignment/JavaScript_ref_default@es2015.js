@@ -1,3 +1,4 @@
+function consume_widget() {}
 const ref_data = [
   1,
   2,
@@ -5,6 +6,6 @@ const ref_data = [
 const my_data = [
   0,
 ];
-(void)my_data;
+consume_widget({ _arg: my_data });
 my_data = ref_data;
-(void)my_data;
+consume_widget({ _arg: my_data });

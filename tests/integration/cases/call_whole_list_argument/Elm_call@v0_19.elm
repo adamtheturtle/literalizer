@@ -11,7 +11,7 @@ type Val
 main : Program () () Never
 main =
     let
-        _ = f (EList [EInt 1])
+        _ = f (EList (EInt 1 :: []))
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

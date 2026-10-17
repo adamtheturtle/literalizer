@@ -10,5 +10,5 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("deep", EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EList [EInt 1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]])
+    ("deep", EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EList (EInt 1 :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []) :: []))
     ]

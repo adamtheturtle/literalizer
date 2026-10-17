@@ -18,7 +18,6 @@ from typing import Protocol, assert_never, runtime_checkable
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import Go
 
 from .case_discovery import cases_with_special_floats
 from .case_manifests import (
@@ -28,7 +27,7 @@ from .case_manifests import (
     load_case_manifests,
     variable_form_for_context,
 )
-from .custom_languages import CallbackGo
+from .custom_languages import variants_for_custom_language_axis
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
@@ -46,10 +45,9 @@ from .variant_types import (
     Variant,
     VariantCase,
     compact_variant,
-    wrap_variable_form,
 )
 
-__all__ = ("Variant", "wrap_variable_form")
+__all__ = ("Variant",)
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -104,23 +102,6 @@ def build_json_type_variable_form_cases(
                         pre_indent_level=0,
                     )
                 )
-        if json_variant.lang_cls.language_id == "cpp":
-            name = f"{json_variant.name}_variable_multiline"
-            cases.append(
-                VariantCase(
-                    variant_name=name,
-                    variant=dataclasses.replace(
-                        json_variant,
-                        name=name,
-                        collection_layout=(
-                            literalizer.CollectionLayout.MULTILINE
-                        ),
-                    ),
-                    case_dir_name=case_dir_name,
-                    variable_form=wrap_variable_form(),
-                    pre_indent_level=0,
-                )
-            )
         redef_styles = find_redefinition_styles(spec=spec)
         if len(redef_styles) == 0:
             name = f"{json_variant.name}_existing"
@@ -324,10 +305,11 @@ def case_for_manifest_variant(
                 value=context.collection_layout
             ),
         )
-    if context.record_null_substitutions is not None:
+    substitutions = context.resolved_record_null_substitutions()
+    if substitutions is not None:
         variant = dataclasses.replace(
             variant,
-            record_null_substitutions=context.record_null_substitutions,
+            record_null_substitutions=substitutions,
         )
     return VariantCase(
         variant_name=f"{variant.name}{manifest_variant.suffix}",
@@ -457,27 +439,15 @@ def build_variant_cases() -> list[VariantCase]:
         )
 
     for case_dir_name, entry in entries:
-        if entry.axis not in {
-            "plain_collection_callbacks",
-            "typed_collection_callback",
-        }:
-            continue
         cases.extend(
             case_for_manifest_variant(
                 case_dir_name=case_dir_name,
                 manifest_variant=entry,
-                variant=compact_variant(
-                    name=f"Go_{entry.axis}",
-                    spec=CallbackGo(
-                        language_version=version,
-                        plain_callbacks=(
-                            entry.axis == "plain_collection_callbacks"
-                        ),
-                    ),
-                    lang_cls=Go,
-                ),
+                variant=variant,
             )
-            for version in Go.VersionFormats
+            for variant in variants_for_custom_language_axis(
+                axis_key=entry.axis,
+            )
         )
 
     modifier_inputs = {

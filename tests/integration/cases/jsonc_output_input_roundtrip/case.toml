@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+
+[input_roundtrip]
+language = "Jsonc"
+input_format = "jsonc"

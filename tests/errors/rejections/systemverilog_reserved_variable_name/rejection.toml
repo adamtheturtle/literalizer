@@ -2,7 +2,7 @@ schema_version = 1
 summary = "IEEE 1800-2017 keywords that no SystemVerilog declaration can name."
 exceptions = ["ReservedVariableNameError"]
 languages = ["SystemVerilog"]
-values = ["and", "assert", "let", "new", "not", "null", "or"]
+values = ["and", "assert", "before", "let", "new", "not", "null", "or"]
 
 [call]
 api = "literalize"

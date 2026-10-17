@@ -10,6 +10,6 @@ type Val
 
 my_data : Val
 my_data = EList [
-    EDict [("nested", EDict [("times", EList [EInt (-2208988800)])])],
+    EDict [("nested", EDict [("times", EList (EInt (-2208988800) :: []))])],
     EDict []
     ]

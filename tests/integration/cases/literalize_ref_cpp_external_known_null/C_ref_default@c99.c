@@ -14,11 +14,12 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
+static void consume_widget(CVal _a0) { (void)_a0; }
 int main(void) {
 CVal item = ((CVal){.s = NULL});
 CVal my_data = ((CVal){.s = NULL});
-(void)my_data;
+consume_widget(my_data);
 my_data = item;
-(void)my_data;
+consume_widget(my_data);
     return 0;
 }

@@ -1,0 +1,6 @@
+class Playlist {}
+
+type val_t =
+  | OList of val_t list
+let p = Playlist()
+assert p instanceof Playlist

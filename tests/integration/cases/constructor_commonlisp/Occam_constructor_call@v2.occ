@@ -1,0 +1,4 @@
+(defun Playlist () 42)
+
+VAL MOBILE LIT p IS Playlist():
+(assert (= *p* 42))

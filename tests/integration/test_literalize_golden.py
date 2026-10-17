@@ -12,6 +12,7 @@ second member to a language's enum automatically produces a parallel
 set of golden files.
 """
 
+import dataclasses
 import enum
 from pathlib import Path
 
@@ -23,7 +24,7 @@ import literalizer
 from literalizer.exceptions import VariableNameNotSupportedError
 
 from .case_inputs import CaseInput
-from .case_manifests import case_input
+from .case_manifests import load_case_manifest
 from .golden_checks import GoldenSkips, check_golden
 from .golden_scenarios import (
     GoldenGroup,
@@ -76,8 +77,24 @@ def _check_rendering(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Render one golden file and compare it against its fixture."""
-    input_info = case_input(case_dir=cases_dir / rendering.case_dir_name)
+    manifest = load_case_manifest(case_dir=cases_dir / rendering.case_dir_name)
+    input_info = manifest.input
     source_text = input_info.path.read_text(encoding="utf-8")
+    roundtrip = manifest.input_roundtrip
+    if roundtrip is not None:
+        with expected_yaml_warnings(
+            expectation=input_info.expected_reused_anchor_warning,
+        ):
+            source_text = literalizer.literalize(
+                source=source_text,
+                input_format=input_info.input_format,
+                language=roundtrip.language(),
+            ).code
+        input_info = dataclasses.replace(
+            input_info,
+            input_format=roundtrip.input_format,
+            expected_reused_anchor_warning=None,
+        )
     golden_path = make_golden_path(
         parent=rendering.golden_parent,
         name=rendering.golden_name,

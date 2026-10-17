@@ -12,5 +12,5 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("d", EList [EDict [("a", EList [EDict [("b", EList [EInt 1, EList [EFloat 2.5, EList [EStr "x", EList [EBool True]]]])]])]])
+    ("d", EList (EDict [("a", EList (EDict [("b", EList [EInt 1, EList [EFloat 2.5, EList [EStr "x", EList (EBool True :: [])]]])] :: []))] :: []))
     ]

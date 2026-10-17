@@ -1,9 +1,9 @@
 module Check exposing (..)
 
 
+import Json.Encode
 make_widget : a -> Json.Encode.Value
 make_widget _ = Json.Encode.null
-import Json.Encode
 
 
 main : Program () () Never

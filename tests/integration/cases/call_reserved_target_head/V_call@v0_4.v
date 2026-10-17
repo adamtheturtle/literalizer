@@ -1,6 +1,6 @@
 interface ICallArg_ {}
 struct ClassType_ {}
-fn (r ClassType_) member(args ...ICallArg_) {}
+fn (r ClassType_) member(arg0 ICallArg_) {}
 
 fn main() {
 	class := ClassType_{}

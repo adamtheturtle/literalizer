@@ -1,0 +1,19 @@
+schema_version = 1
+owner = "constructor-binding"
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+class Playlist {
+    constructor(_options: object = {}) {}
+}
+
+"""
+fixture_suffix = """\
+if (!(p instanceof Playlist)) {
+    throw new Error("Expected a Playlist instance");
+}
+
+export {};
+"""

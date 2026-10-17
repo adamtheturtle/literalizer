@@ -11,7 +11,7 @@ type Val
 main : Program () () Never
 main =
     let
-        my_data = make_widget (EList [EList [EInt 1, EInt 2], EList [EInt 3]])
+        my_data = make_widget (EList [EList [EInt 1, EInt 2], EList (EInt 3 :: [])])
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

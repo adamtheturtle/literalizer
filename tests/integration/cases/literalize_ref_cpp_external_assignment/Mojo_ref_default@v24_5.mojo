@@ -1,3 +1,5 @@
+def consume_widget[*Ts: AnyType](*args: *Ts):
+    pass
 def main():
     var ref_data = List([
         1,
@@ -6,6 +8,6 @@ def main():
     var my_data = List([
         0,
     ])
-    (void)my_data;
+    consume_widget(my_data)
     my_data = ref_data.copy()
-    (void)my_data;
+    consume_widget(my_data)

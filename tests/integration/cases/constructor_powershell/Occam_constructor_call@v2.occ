@@ -1,0 +1,4 @@
+function Playlist { return 42 }
+
+VAL MOBILE LIT p IS Playlist():
+if ($p -ne 42) { throw "Expected constructor result" }

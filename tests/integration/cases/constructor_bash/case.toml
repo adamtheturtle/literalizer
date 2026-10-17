@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "constructor-binding"
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+Playlist() { printf '%s\\n' 42; }
+
+"""
+fixture_suffix = """\
+[[ "$p" == 42 ]] || exit 1
+"""

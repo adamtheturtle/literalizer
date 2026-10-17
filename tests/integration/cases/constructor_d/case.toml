@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "constructor-binding"
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+struct Playlist { int value = 42; }
+
+void main() {
+"""
+fixture_suffix = """\
+assert(p.value == 42);
+}
+"""

@@ -10,6 +10,7 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
+task consume_widget(input _VVal _arg); endtask
 initial begin
 static _VVal item[] = '{
     _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""},
@@ -19,8 +20,8 @@ static _VVal my_data[] = '{
     _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""},
     _VVal'{tag: _VVAL_INT, i: 2, r: 0.0, s: ""}
 };
-(void)my_data;
+void'(consume_widget(my_data));
 my_data = item;
-(void)my_data;
+void'(consume_widget(my_data));
 end
 endmodule

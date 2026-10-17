@@ -11,18 +11,18 @@ my_data : Val
 my_data = EList [
     EList [
         EDict [
-            ("values", EList [
+            ("values", EList (
                 EList []
-                ])
+                 :: []))
             ],
         EDict []
         ],
     EList [
         EDict [],
         EDict [
-            ("values", EList [
+            ("values", EList (
                 EList []
-                ])
+                 :: []))
             ]
         ]
     ]

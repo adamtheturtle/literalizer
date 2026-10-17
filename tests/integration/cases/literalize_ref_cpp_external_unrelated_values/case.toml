@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+# The API sees only the unrelated hint; the referenced vector is declared
+# afterwards so the historical unknown-value expression can compile.
+external_declarations = {missing = "[1, 2]"}
+expected_value_source = "[1, 2]"
+explicit_ref_value_sources = {other = "1"}

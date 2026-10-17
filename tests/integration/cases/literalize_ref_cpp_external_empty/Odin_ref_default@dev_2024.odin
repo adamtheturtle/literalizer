@@ -1,5 +1,6 @@
 #+feature dynamic-literals
 package main
+consume_widget :: proc(args: ..any) -> any { return nil }
 
 main :: proc() {
 item := [dynamic]any{
@@ -10,7 +11,7 @@ my_data := [dynamic]any{
 	1,
 	2,
 }
-(void)my_data;
+consume_widget(my_data);
 my_data = item
-(void)my_data;
+consume_widget(my_data);
 }

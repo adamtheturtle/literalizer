@@ -2,6 +2,7 @@
 name: CI
 
 on:
+  workflow_dispatch: {}
   push:
     branches: [main]
   pull_request:
@@ -11,16 +12,20 @@ on:
 
 permissions: {}
 
-# We often have a long CI queue, so cancel superseded runs for a PR as soon
-# as a new commit is pushed. Non-PR runs (push/schedule on main) fall back to
-# the unique run ID so they never cancel each other.
+# Cancel superseded PR and main-push runs to reduce runner contention.
+# Main-push cancellation trades intermediate benchmark history and failure
+# evidence for validating the latest main. Scheduled/manual runs stay unique.
 concurrency:
-  group: ci-pr-${{ github.event.pull_request.number || github.run_id }}
+  group: >-
+    ci-${{ github.event_name == 'push' && github.ref == 'refs/heads/main'
+    && 'push-main' || format('pr-{0}', github.event.pull_request.number || github.run_id)
+    }}
   cancel-in-progress: true
 
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.12', '3.13', '3.14', '3.15']
         platform: [ubuntu-latest, windows-latest]
@@ -76,6 +81,7 @@ jobs:
           retention-days: 1
 
   benchmarks:
+    name: benchmarks (${{ matrix.shard }})
     needs: [benchmark-wheel]
 
     strategy:
@@ -83,7 +89,7 @@ jobs:
       # having, and CodSpeed reports on whatever it receives.
       fail-fast: false
       matrix:
-        # The benchmarks take around eleven minutes in total, and each
+        # Code-generation benchmarks take around eleven minutes in total, and each
         # shard pays about a minute of fixed setup, so six shards keep
         # every shard under about four minutes.  ``pytest-test-groups``
         # deals the benchmarks out round-robin, which spreads the slow
@@ -91,9 +97,20 @@ jobs:
         #
         # Keep in sync with ``--test-group-count`` below.
         shard: [1, 2, 3, 4, 5, 6]
+        include:
+          - mode: simulation
+            args: tests/benchmarks --ignore=tests/benchmarks/test_bench_compilers.py
+              --test-group-count=6
+          - shard: compilers
+            mode: walltime
+            args: tests/benchmarks/test_bench_compilers.py --basetemp=compiler-benchmark-results
+              --junitxml=compiler-benchmarks.xml -rs
+            # Pin compiler binaries and C++ standard-library headers together.
+            container: swift:6.4.0-noble@sha256:31d14d727f4451f25e29bac9c42563a098c39ac66415e8bad970f48038e38aca
 
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    runs-on: ${{ matrix.mode == 'walltime' && 'ubuntu-24.04' || 'ubuntu-latest' }}
+    container: ${{ matrix.container || '' }}
+    timeout-minutes: ${{ matrix.mode == 'walltime' && 20 || 30 }}
 
     permissions:
       contents: read
@@ -104,10 +121,18 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Prepare compiler container
+        if: matrix.mode == 'walltime'
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends --yes curl
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git rev-parse HEAD > compiler-benchmark-revision.txt
+
       - name: Install uv
         uses: astral-sh/setup-uv@v10.3.0
         with:
-          enable-cache: true
+          enable-cache: ${{ matrix.mode == 'simulation' }}
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Download the wheel
@@ -120,21 +145,35 @@ jobs:
         # Install the wheel and the pinned benchmark dependency group without
         # building the project again.
         run: |
-          uv venv
+          uv venv ${{ matrix.mode == 'walltime' && '--python 3.14' || '' }}
           uv pip install "$(echo dist/*.whl)"
           uv pip install --group=benchmark
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v5.4.2
         with:
-          mode: simulation
-          run: .venv/bin/python -m pytest tests/benchmarks --codspeed -o addopts=
-            --test-group=${{ matrix.shard }} --test-group-count=6
+          mode: ${{ matrix.mode }}
+          run: .venv/bin/python -m pytest ${{ matrix.args }} --codspeed -o addopts=
+            ${{ matrix.mode == 'simulation' && format('--test-group={0}', matrix.shard) || '' }}
         env:
           # Benchmark the checkout rather than the copy of the same code
           # inside the virtual environment, so CodSpeed's call graph maps
           # back onto ``src/``.
           PYTHONPATH: src
+          # The compiler container has no sampling permissions or systemd.
+          CODSPEED_PROFILER_ENABLED: ${{ matrix.mode != 'walltime' }}
+          CODSPEED_ISOLATION: ${{ matrix.mode == 'walltime' && 'false' || '' }}
+
+      - name: Retain compiler sources and diagnostics
+        if: ${{ always() && matrix.mode == 'walltime' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: compiler-benchmarks
+          path: |
+            compiler-benchmark-results
+            compiler-benchmark-revision.txt
+            compiler-benchmarks.xml
+          if-no-files-found: error
 
   completion-ci:
     needs: [build, benchmark-wheel, benchmarks]

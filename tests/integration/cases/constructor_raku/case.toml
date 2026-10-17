@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "constructor-binding"
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+sub Playlist() { 42 }
+
+"""
+fixture_suffix = """\
+die "Expected constructor result" unless $p == 42;
+"""

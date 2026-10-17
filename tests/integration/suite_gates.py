@@ -114,6 +114,7 @@ SPEC_CONFIG_FIELDS: Mapping[str, Callable[[literalizer.Language], object]] = {
 # presence is the capability test.
 SPEC_FIELDS = frozenset(
     {
+        "array_inference_policy",
         "annotation_evaluation",
         "bool_format",
         "default_sequence_element_type",

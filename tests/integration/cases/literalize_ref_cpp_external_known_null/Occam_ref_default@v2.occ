@@ -11,12 +11,15 @@ MOBILE DATA TYPE LIT IS
     lit.set ; MOBILE []MOBILE LIT
 :
 
+PROC consume_widget (VAL MOBILE LIT _arg)
+    SKIP
+:
 PROC main ()
     VAL MOBILE LIT item IS MOBILE LIT(lit.null):
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.null):
-    (void)my_data;
+    consume_widget(my_data)
     my_data := item
-    (void)my_data;
+    consume_widget(my_data)
     SEQ
         SKIP
 :

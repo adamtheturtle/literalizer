@@ -1,3 +1,4 @@
+: consume_widget ;
 : item
 +arr
     1 +int
@@ -10,6 +11,6 @@
     2 +int
  -arr
 ;
-(void)my_data;
+my_data consume_widget
 : my_data item ;
-(void)my_data;
+my_data consume_widget

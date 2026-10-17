@@ -16,7 +16,7 @@ main =
         my_list = EDict [
             ("unused", EStr "value")
             ]
-        _ = process (EList [EList [EDict [("inner", my_list)]]])
+        _ = process (EList (EList (EDict [("inner", my_list)] :: []) :: []))
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

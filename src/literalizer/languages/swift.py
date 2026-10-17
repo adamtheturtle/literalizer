@@ -129,6 +129,31 @@ from literalizer.exceptions import (
 
 _CONTROL_CHAR_THRESHOLD = 32
 _NESTED_TUPLE_RECORD_DEPTH = 2
+_ARRAY_INFERENCE_CHUNK_DEPTH = 8
+
+
+@beartype
+def _array_sequence_entry(data: Value, value: str, /) -> str:
+    """Infer long singleton-array chains in independent closure bodies.
+
+    An explicit return gives each closure body a separate inference scope.
+    Small chunks retain the inferred array type without solving the entire
+    default literal expression at once.
+    Only scalar-ended chains whose leaf type can be inferred qualify;
+    nil and empty collections still need their enclosing type context.
+    """
+    depth = 0
+    leaf = data
+    while isinstance(leaf, list) and len(leaf) == 1:
+        depth += 1
+        leaf = leaf[0]
+    if (
+        depth > 0
+        and depth % _ARRAY_INFERENCE_CHUNK_DEPTH == 0
+        and isinstance(leaf, (bool, int, float, str, bytes, dt.date, dt.time))
+    ):
+        return f"({{ return {value} }})()"
+    return value
 
 
 @beartype
@@ -922,7 +947,7 @@ class Swift(metaclass=LanguageCls):
                 supports_trailing_comma=True,
                 empty_template="[{type}]()",
                 preamble_lines=(),
-                format_entry=passthrough_sequence_entry,
+                format_entry=_array_sequence_entry,
                 typed_opener_fallback_template=None,
             )
         )
@@ -944,6 +969,14 @@ class Swift(metaclass=LanguageCls):
         def __call__(self, default_type: str) -> SequenceFormatConfig:
             """Create a sequence format config for the given type."""
             return self._value_(default_type)
+
+    class ArrayInferencePolicies(enum.Enum):
+        """Whether array literals use independent inference scopes."""
+
+        AUTO = enum.auto()
+        LITERAL = enum.auto()
+
+    array_inference_policies = ArrayInferencePolicies
 
     class SetFormats(enum.Enum):
         """Set type options for Swift."""
@@ -1355,6 +1388,9 @@ class Swift(metaclass=LanguageCls):
     datetime_format: DatetimeFormats = DatetimeFormats.SWIFT
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.ARRAY
+    array_inference_policy: ArrayInferencePolicies = (
+        ArrayInferencePolicies.AUTO
+    )
     set_format: SetFormats = SetFormats.SET
     default_set_element_type: str = "AnyHashable"
     default_sequence_element_type: str = "Any"
@@ -1663,6 +1699,12 @@ class Swift(metaclass=LanguageCls):
     @beartype
     def format_sequence_entry(self) -> Callable[[Value, str], str]:
         """Callable that formats a sequence entry."""
+        if (
+            self.sequence_format is type(self.sequence_format).ARRAY
+            and self.array_inference_policy
+            is self.ArrayInferencePolicies.LITERAL
+        ):
+            return passthrough_sequence_entry
         return self.sequence_format_config.format_entry
 
     @cached_property

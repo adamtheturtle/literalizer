@@ -1,4 +1,5 @@
 class Main {
+static Object consume_widget(Object arg0) { return null; }
     public static void main() {
 var shared = new int[]{
     1,
@@ -7,8 +8,8 @@ var shared = new int[]{
 var my_data = new int[]{
     0
 };
-_ = &my_data;
+consume_widget(my_data);
 my_data = shared;
-_ = &my_data;
+consume_widget(my_data);
     }
 }

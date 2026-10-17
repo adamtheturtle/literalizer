@@ -12,11 +12,14 @@ on:
 
 permissions: {}
 
-# We often have a long CI queue, so cancel superseded runs for a PR as soon
-# as a new commit is pushed. Non-PR runs (push/schedule on main) fall back to
-# the unique run ID so they never cancel each other.
+# Cancel superseded PR and main-push runs to reduce runner contention.
+# Main-push cancellation trades intermediate failure evidence for validating
+# the latest main. Scheduled/manual runs stay unique.
 concurrency:
-  group: lint-pr-${{ github.event.pull_request.number || github.run_id }}
+  group: >-
+    lint-${{ github.event_name == 'push' && github.ref == 'refs/heads/main'
+    && 'push-main' || format('pr-{0}', github.event.pull_request.number || github.run_id)
+    }}
   cancel-in-progress: true
 
 env:
@@ -265,12 +268,8 @@ jobs:
         uses: astral-sh/setup-uv@v10.3.0
         with:
           # Pinned to the ``requires-python = ">=3.12"`` floor in
-          # ``pyproject.toml``; keep this in sync with that floor so the
-          # Python fixture gate runs under the declared minimum
-          # interpreter. The ``Python.VersionFormats`` enum
-          # (``PY38``/``PY39``) only selects typing-alias syntax and does
-          # not encode this runtime floor, so it is not the source of
-          # truth here.
+          # ``pyproject.toml``; the roundtrip helpers below import the
+          # project and need at least this interpreter version.
           python-version: '3.12'
 
       # The fixture set spans every `Java.VersionFormats` member in
@@ -469,12 +468,6 @@ jobs:
       # The run step reuses the same trick: one pwsh process iterates
       # every fixture, executing its script block in a child scope so
       # `$my_data` (and anything else) does not leak between fixtures.
-      - name: Lint Python
-        run: |-
-          find tests/integration/cases -name '*.py' -print0 > /tmp/files-python
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m py_compile < /tmp/files-python
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python < /tmp/files-python
-
       - name: Lint PowerShell
         run: |-
           find tests/integration/cases -name '*.ps1' -print0 > /tmp/files-ps1 && test -s /tmp/files-ps1
@@ -1956,6 +1949,7 @@ jobs:
 
   lint-cpp-tidy:
     strategy:
+      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
@@ -2100,6 +2094,7 @@ jobs:
 
   lint-cpp:
     strategy:
+      fail-fast: false
       matrix:
         shard: [0, 1, 2]
     runs-on: ubuntu-latest
@@ -2206,12 +2201,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The host uses the compiler bundled with this distribution.
-    # 2.1.21 supports the v1_9 fixtures without deprecation warnings;
-    # later compilers deprecate or remove that language mode.
+    # Kotlin 1.9 support is retired; compile the v2_4 fixtures in 2.4 mode.
     env:
-      KOTLIN_VERSION: 2.1.21
+      KOTLIN_VERSION: 2.4.21
       KOTLINX_SERIALIZATION_VERSION: 1.7.3
-      KOTLIN_FIXTURE_TAG: v1_9
+      KOTLIN_FIXTURE_TAG: v2_4
     steps:
       - uses: actions/checkout@v7
         with:
@@ -3188,9 +3182,24 @@ jobs:
         timeout-minutes: 1
         run: uv run python -m scripts.run_nim_roundtrip
 
+  # Check py38 fixtures on Python 3.8 and both typing-alias formats on
+  # the project's Python 3.12 floor. Keep each interpreter/tag pair once.
   lint-python:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: '3.8'
+            fixture-tag: py38
+          - python-version: '3.12'
+            fixture-tag: py38
+          - python-version: '3.12'
+            fixture-tag: py39
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      PYTHON_VERSION: ${{ matrix.python-version }}
+      PYTHON_FIXTURE_TAG: ${{ matrix.fixture-tag }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -3199,33 +3208,23 @@ jobs:
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.0
         with:
+          python-version: ${{ matrix.python-version }}
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      # ``test -s`` guards against the version tag drifting from these
-      # patterns and silently dropping every fixture; see the
+      # ``test -s`` guards against the version tags drifting and
+      # silently dropping every fixture; see the
       # ``Python.VersionFormats`` enum in
       # ``src/literalizer/languages/python.py``.
-      - name: Find Python 3.8 golden files
+      - name: Find Python golden files
         shell: bash
-        run: find tests/integration/cases -name 'Python_version_py38@py38.py' -print0
-          > /tmp/files-python38 && test -s /tmp/files-python38
-      - name: Run Python 3.8 golden files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.8 --no-project python <
-          /tmp/files-python38
-      - name: Find default Python golden files
-        shell: bash
-        run: find tests/integration/cases -name 'Python@py39.py' -print0 > /tmp/files-python
-          && test -s /tmp/files-python
-      # The default (``@py39``) Python fixtures emit ``datetime.UTC``,
-      # which requires Python 3.11+, so they cannot run on the 3.8
-      # interpreter used above. Pin this run to the
-      # ``requires-python = ">=3.12"`` floor in ``pyproject.toml`` so a
-      # generator change that outpaces the declared minimum interpreter
-      # fails CI loudly here rather than silently working on a newer
-      # version; keep this in sync with that floor.
-      - name: Run default Python golden files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --python 3.12 --no-project python <
-          /tmp/files-python
+        run: python3 -m tests.integration.list_fixtures .py "$PYTHON_FIXTURE_TAG"
+          > /tmp/files-python && test -s /tmp/files-python
+      - name: Check Python syntax
+        run: xargs -0 -P "$(nproc)" -n1 uv run --python "$PYTHON_VERSION" --no-project
+          python -m py_compile < /tmp/files-python
+      - name: Run Python golden files
+        run: xargs -0 -P "$(nproc)" -n1 uv run --python "$PYTHON_VERSION" --no-project
+          python < /tmp/files-python
 
   lint-racket:
     runs-on: ubuntu-latest
@@ -3245,7 +3244,7 @@ jobs:
       # release is the only mechanism for pinning the language version.
       # Without an explicit ``version`` the installed Racket drifts
       # with the ``setup-racket`` action default.
-      - uses: Bogdanp/setup-racket@v1.15
+      - uses: Bogdanp/setup-racket@v1.16
         with:
           version: '8.17'
       - name: Check Racket syntax

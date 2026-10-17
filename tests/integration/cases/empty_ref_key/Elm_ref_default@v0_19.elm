@@ -12,6 +12,6 @@ external_value = EDict [
     ("_", EStr "_")
     ]
 my_data : Val
-my_data = EList [
+my_data = EList (
     external_value
-    ]
+     :: [])

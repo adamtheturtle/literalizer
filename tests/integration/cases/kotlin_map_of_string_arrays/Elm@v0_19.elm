@@ -9,6 +9,6 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("a", EList [EStr "x"]),
-    ("b", EList [EStr "y"])
+    ("a", EList (EStr "x" :: [])),
+    ("b", EList (EStr "y" :: []))
     ]

@@ -1,4 +1,5 @@
 <?php
+function consume_widget($_arg) {}
 $item = [
     1,
     2,
@@ -7,6 +8,6 @@ $my_data = [
     1,
     2,
 ];
-(void)my_data;
+consume_widget(_arg: $my_data);
 $my_data = $item;
-(void)my_data;
+consume_widget(_arg: $my_data);

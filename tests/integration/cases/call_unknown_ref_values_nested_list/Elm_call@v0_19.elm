@@ -12,7 +12,7 @@ main =
     let
         unknown_value : Val
         unknown_value = EList []
-        _ = process (EList [unknown_value])
+        _ = process (EList (unknown_value :: []))
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

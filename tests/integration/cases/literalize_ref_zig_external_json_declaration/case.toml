@@ -9,4 +9,6 @@ variable_form = "new"
 json_type = "STD_JSON_VALUE"
 external_declarations = {shared = "[1, 2]"}
 explicit_ref_value_sources = {shared = "[1, 2]"}
-fixture_suffix = "\n_ = my_data;"
+
+[ref.consumer]
+target_function = "consume_widget"

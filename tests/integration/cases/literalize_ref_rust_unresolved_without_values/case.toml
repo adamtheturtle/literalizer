@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+# Compose the caller's declaration after rendering so a remains unresolved
+# during public API inference, while the resulting fixture compiles.
+external_declarations = {a = "0"}
+expected_value_source = "[0, 1]"

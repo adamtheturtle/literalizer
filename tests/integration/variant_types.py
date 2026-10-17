@@ -9,18 +9,6 @@ import literalizer
 from literalizer import ValueInput
 
 
-@beartype
-def wrap_variable_form() -> literalizer.NewVariable:
-    """Return the canonical new-variable form for variant tests.
-
-    Callers that pass the result to ``literalize`` should treat
-    :class:`~literalizer.exceptions.VariableNameNotSupportedError` as
-    the signal that the language cannot wrap output in a named variable,
-    rather than pre-filtering on ``supports_variable_names``.
-    """
-    return literalizer.NewVariable(name="my_data", modifiers=frozenset())
-
-
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Variant:
     """A formatting variant for a language (date, sequence, set, etc.)."""

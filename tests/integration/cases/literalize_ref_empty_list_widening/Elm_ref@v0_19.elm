@@ -9,9 +9,9 @@ type Val
 emptyValues : Val
 emptyValues = EList []
 integerValues : Val
-integerValues = EList [
+integerValues = EList (
     EInt 1
-    ]
+     :: [])
 my_data : Val
 my_data = EList [
     emptyValues,

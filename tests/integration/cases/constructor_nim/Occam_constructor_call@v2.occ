@@ -1,0 +1,5 @@
+type Playlist = object
+    value: int
+
+VAL MOBILE LIT p IS Playlist():
+doAssert p.value == 0

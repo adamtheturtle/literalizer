@@ -1,0 +1,6 @@
+class Playlist:
+    pass
+
+
+VAL MOBILE LIT p IS Playlist():
+assert isinstance(p, Playlist)

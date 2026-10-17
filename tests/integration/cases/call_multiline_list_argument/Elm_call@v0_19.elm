@@ -15,9 +15,9 @@ main =
             EInt 1,
             EInt 2
             ])
-        _ = process (EList [
+        _ = process (EList (
             EInt 3
-            ])
+             :: []))
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

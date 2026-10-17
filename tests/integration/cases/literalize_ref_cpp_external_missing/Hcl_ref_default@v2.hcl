@@ -6,6 +6,6 @@ my_data = [
     1,
     2,
 ]
-_0 = (void)my_data;
+_0 = consume_widget(my_data)
 my_data = item
-_1 = (void)my_data;
+_1 = consume_widget(my_data)

@@ -10,13 +10,13 @@ type Val
 emptyValues : Val
 emptyValues = EList []
 integerValues : Val
-integerValues = EList [
+integerValues = EList (
     EInt 1
-    ]
+     :: [])
 floatValues : Val
-floatValues = EList [
+floatValues = EList (
     EFloat 1.5
-    ]
+     :: [])
 my_data : Val
 my_data = EList [
     emptyValues,

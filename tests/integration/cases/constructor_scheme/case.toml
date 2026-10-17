@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "constructor-binding"
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+(import (scheme base))
+
+(define (Playlist) 42)
+
+"""
+fixture_suffix = """\
+(unless (= p 42) (error "Expected constructor result"))
+"""

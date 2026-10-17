@@ -1,3 +1,4 @@
+sub consume_widget {}
 my $ref_data = [
     1,
     2,
@@ -5,6 +6,6 @@ my $ref_data = [
 my $my_data = [
     0,
 ];
-(void)my_data;
+consume_widget($my_data);
 $my_data = $ref_data;
-(void)my_data;
+consume_widget($my_data);

@@ -8,12 +8,12 @@ type Val
 
 my_data : Val
 my_data = EList [
-    EList [
-        EList [
+    EList (
+        EList (
             EInt 1
-            ]
-        ],
-    EList [
+             :: [])
+         :: []),
+    EList (
         EList []
-        ]
+         :: [])
     ]

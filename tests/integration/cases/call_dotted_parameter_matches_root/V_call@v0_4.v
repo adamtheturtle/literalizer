@@ -1,6 +1,6 @@
 interface ICallArg_ {}
 struct OuterType_ {}
-fn (r OuterType_) inner(args ...ICallArg_) {}
+fn (r OuterType_) inner(arg0 ICallArg_, arg1 ICallArg_) {}
 
 fn main() {
 	outer := OuterType_{}

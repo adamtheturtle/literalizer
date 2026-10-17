@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "constructor-binding"
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+class Playlist
+end
+
+"""
+fixture_suffix = """\
+raise "Expected a Playlist instance" unless p.is_a?(Playlist)
+"""

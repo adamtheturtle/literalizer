@@ -1,3 +1,4 @@
+consume_widget() { :; }
 declare item=(
     1
     2
@@ -6,6 +7,6 @@ declare my_data=(
     1
     2
 )
-(void)my_data;
+consume_widget my_data
 my_data=item
-(void)my_data;
+consume_widget my_data

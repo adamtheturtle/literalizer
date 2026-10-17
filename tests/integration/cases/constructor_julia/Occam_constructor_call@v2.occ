@@ -1,0 +1,4 @@
+struct Playlist end
+
+VAL MOBILE LIT p IS Playlist():
+@assert p isa Playlist

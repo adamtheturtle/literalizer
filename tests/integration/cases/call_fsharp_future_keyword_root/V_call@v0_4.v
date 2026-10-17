@@ -1,6 +1,6 @@
 interface ICallArg_ {}
 struct ApiType_ {}
-fn (r ApiType_) fetch(args ...ICallArg_) {}
+fn (r ApiType_) fetch(arg0 ICallArg_) {}
 struct ProcessType_ {
 	api ApiType_
 }

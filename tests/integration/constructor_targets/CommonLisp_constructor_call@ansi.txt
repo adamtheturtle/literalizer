@@ -1,1 +1,0 @@
-(defparameter *p* (Playlist))

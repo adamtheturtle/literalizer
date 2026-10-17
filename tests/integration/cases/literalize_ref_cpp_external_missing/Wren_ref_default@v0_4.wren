@@ -1,3 +1,8 @@
+class Consume_widget_ {
+    construct new() {}
+    call(arg) {}
+}
+var consume_widget = Consume_widget_.new()
 var item = [
     1,
     2,
@@ -6,6 +11,6 @@ var my_data = [
     1,
     2,
 ]
-(void)my_data;
+consume_widget.call(my_data)
 my_data = item
-(void)my_data;
+consume_widget.call(my_data)

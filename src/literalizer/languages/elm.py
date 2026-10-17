@@ -806,10 +806,24 @@ def _elm_discard_call_bindings(*, calls: str, let_indent: str) -> list[str]:
 
 
 @beartype
-def _elm_call_module(preamble: str, let_lines: list[str], indent: str) -> str:
+def _elm_call_module(
+    *,
+    context: FileWrapperContext,
+    json_active: bool,
+    let_lines: list[str],
+    indent: str,
+) -> str:
     """Build a complete Elm call-mode module from preamble and let-
     bindings.
     """
+    # In JSON-value mode, the generated data preamble contains imports;
+    # in native mode, it contains type declarations. Use that producer
+    # metadata to put imports before call stubs without parsing code.
+    imports = context.generated_body_preamble if json_active else ()
+    declarations = tuple(
+        entry for entry in context.body_preamble if entry not in imports
+    )
+    preamble = "\n".join(imports + declarations)
     return (
         f"module Check exposing (..)\n\n\n"
         f"{preamble}\n\n\n"
@@ -1320,18 +1334,18 @@ class Elm(metaclass=LanguageCls):
         lines. Standalone comments are rejected in this path.
         """
         variable_name = context.variable_name
-        body_preamble = context.body_preamble
-        preamble = "\n".join(body_preamble)
         let_indent = self.indent * 2
         if variable_name == "":
             let_lines = _elm_discard_call_bindings(
                 calls=content, let_indent=let_indent
             )
             return _elm_call_module(
-                preamble=preamble,
+                context=context,
+                json_active=self._json_active,
                 let_lines=let_lines,
                 indent=self.indent,
             )
+        preamble = "\n".join(context.body_preamble)
         return f"module Check exposing (..)\n\n\n{preamble}\n\n\n{content}"
 
     def wrap_calls_with_declarations(
@@ -1350,8 +1364,6 @@ class Elm(metaclass=LanguageCls):
         call expression per statement, which may span multiple lines.
         Standalone comments are rejected in this path.
         """
-        body_preamble = context.body_preamble
-        preamble = "\n".join(body_preamble)
         let_indent = self.indent * 2
         let_lines: list[str] = []
         for decl in declarations:
@@ -1362,7 +1374,8 @@ class Elm(metaclass=LanguageCls):
             _elm_discard_call_bindings(calls=calls, let_indent=let_indent)
         )
         return _elm_call_module(
-            preamble=preamble,
+            context=context,
+            json_active=self._json_active,
             let_lines=let_lines,
             indent=self.indent,
         )
@@ -1566,6 +1579,15 @@ class Elm(metaclass=LanguageCls):
         return dataclasses.replace(
             self.sequence_format.value,
             sequence_open=self._seq_open,
+            # elm-format 0.8.8 explores layouts exponentially for nested
+            # singleton list literals. Cons preserves the same List Val
+            # while keeping formatting of deep constructor chains bounded.
+            single_element_template=(
+                None
+                if self._json_active
+                or self.dict_format is type(self.dict_format).RECORD
+                else f"{self.constructor_prefix}List ({{items}} :: [])"
+            ),
             supports_heterogeneity=(
                 self.dict_format is not type(self.dict_format).RECORD
             ),
@@ -1903,12 +1925,11 @@ class Elm(metaclass=LanguageCls):
         call.  *content* is the single-line ``name = call …`` binding
         produced by :attr:`format_call_variable_declaration`.
         """
-        body_preamble = context.body_preamble
-        preamble = "\n".join(body_preamble)
         let_indent = self.indent * 2
         let_lines = [f"{let_indent}{line}" for line in content.split(sep="\n")]
         return _elm_call_module(
-            preamble=preamble,
+            context=context,
+            json_active=self._json_active,
             let_lines=let_lines,
             indent=self.indent,
         )

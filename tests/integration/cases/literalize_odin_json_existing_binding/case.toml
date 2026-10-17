@@ -8,5 +8,7 @@ gates = [
 json_type = "JSON_VALUE"
 variable_form = "existing"
 external_declarations = {my_data = '{"a": 0}'}
-fixture_prefix = "_ = my_data\n"
-fixture_suffix = "\n_ = my_data"
+
+[ref.consumer]
+target_function = "consume_widget"
+before_assignment = true

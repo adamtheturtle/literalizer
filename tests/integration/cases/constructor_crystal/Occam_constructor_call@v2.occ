@@ -1,0 +1,7 @@
+module ConstructorBinding
+class Playlist
+end
+
+VAL MOBILE LIT p IS Playlist():
+raise "Expected a Playlist instance" unless p.is_a?(Playlist)
+end

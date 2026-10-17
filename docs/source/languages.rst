@@ -100,6 +100,31 @@ Access a language's enum members through the class itself, e.g. ``Go.sequence_fo
 
 Each ``__init__`` parameter has a sensible default, so you only need to specify the options you want to change.
 
+Swift array inference
+---------------------
+
+Swift defaults to ``array_inference_policy=Swift.array_inference_policies.AUTO``.
+For long singleton-array chains ending in a scalar whose type can be inferred, this inserts immediately invoked closures with explicit returns to bound the compiler's type-inference work.
+The nested array type and value are preserved; chains ending in ``nil`` or empty collections retain their enclosing inference context.
+
+Choose ``LITERAL`` to keep direct array syntax when embedding or reviewing generated code:
+
+.. code-block:: python
+
+   """Keep direct Swift array literals."""
+
+   from literalizer.languages import Swift
+
+   language = Swift(
+       array_inference_policy=Swift.array_inference_policies.LITERAL,
+   )
+
+For nine nested arrays, ``AUTO`` renders ``[({ return [[[[[[[[2]]]]]]]] })()]`` and ``LITERAL`` renders ``[[[[[[[[[2]]]]]]]]]``.
+Direct literals can take substantially longer to compile at greater depths.
+Both policies retain the selected collection layout and variable form.
+This option applies only to ``SequenceFormats.ARRAY``; tuple rendering and other generated closures are unchanged.
+The inference chunk size is internal, and explicit deeply nested type annotations can still be expensive under either policy.
+
 Native multiline strings
 ------------------------
 
@@ -198,6 +223,14 @@ This option has no effect unless ``string_format=Cpp.string_formats.MULTILINE`` 
    * - Perl
      - Multiline single-quoted string
      - Escapes single quotes and backslashes; falls back for carriage returns, NUL, or source-line trailing whitespace without enabling interpolation.
+
+Kotlin compatibility
+--------------------
+
+Kotlin output targets language and API version 2.4, validated with compiler 2.4.21.
+The default and only supported target is ``Kotlin.version_formats.V2_4``.
+The former ``V1_9`` target is retired: Kotlin 2.4 removes the 1.9 language mode, and Literalizer no longer validates or advertises Kotlin 1.9 compatibility.
+Generated scripts compile with fatal warnings before execution.
 
 Python annotation evaluation
 ----------------------------

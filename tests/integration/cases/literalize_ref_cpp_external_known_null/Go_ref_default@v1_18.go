@@ -1,9 +1,10 @@
 package main
+func consume_widget(args ...any) any { return nil }
 
 func main() {
 var item any = nil
 var my_data any = nil
-(void)my_data;
+consume_widget(my_data)
 my_data = item
-(void)my_data;
+consume_widget(my_data)
 }

@@ -1,5 +1,6 @@
+function consume_widget() {}
 const item = null;
 const my_data = null;
-(void)my_data;
+consume_widget({ _arg: my_data });
 my_data = item;
-(void)my_data;
+consume_widget({ _arg: my_data });

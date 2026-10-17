@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "constructor-binding"
+
+[constructor]
+class_name = "Playlist"
+variable_name = "playlist"
+fixture_prefix = """\
+typedef int CVal;
+
+CVal Playlist(void) { return 42; }
+
+int main(void) {
+"""
+fixture_suffix = """\
+return playlist == 42 ? 0 : 1;
+}
+"""

@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidCallParameterNameError]
+"SystemVerilog['before']" = "SystemVerilog cannot use call parameter 'before': it is a reserved identifier"
+"SystemVerilog['int']" = "SystemVerilog cannot use call parameter 'int': it is a reserved identifier"

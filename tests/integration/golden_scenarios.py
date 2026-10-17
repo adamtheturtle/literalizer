@@ -386,7 +386,7 @@ def _base_renderings(
                         value=(effective_value)
                     ),
                     record_null_substitutions=(
-                        context.record_null_substitutions
+                        context.resolved_record_null_substitutions()
                     ),
                     wrap_in_file=True,
                 ),

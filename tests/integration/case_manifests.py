@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime as dt
 import functools
 import string
 import tomllib
@@ -23,6 +24,7 @@ from pydantic import (
 
 import literalizer
 from literalizer import ValueInput
+from literalizer._types import Scalar
 from literalizer.languages import ALL_LANGUAGES
 
 from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
@@ -48,6 +50,7 @@ type OwnerName = Literal[
     "new-variable-kebab",
     "new-variable-prime",
     "variant",
+    "constructor-binding",
 ]
 
 # Spelled as an assignment rather than a ``type`` statement so the
@@ -92,6 +95,7 @@ REF_OWNER: OwnerName = "literalize-ref"
 REF_DEFAULT_OWNER: OwnerName = "literalize-ref-default"
 
 _REF_OWNERS: frozenset[OwnerName] = frozenset({REF_OWNER, REF_DEFAULT_OWNER})
+
 
 KEBAB_NEW_VARIABLE_OWNER: OwnerName = "new-variable-kebab"
 PRIMED_NEW_VARIABLE_OWNER: OwnerName = "new-variable-prime"
@@ -275,6 +279,28 @@ type RefIdentifierCase = Annotated[
 ]
 
 
+class InputRoundtripSpec(
+    BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
+):
+    """Render the input once, then parse that output for the golden."""
+
+    language: ManifestLanguage
+    input_format: CallInputFormat
+
+
+class SubstitutionMappingEntry(
+    BaseModel,
+    arbitrary_types_allowed=True,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """A mapping entry whose scalar key need not be a TOML table key."""
+
+    key: Scalar
+    value: ValueInput
+
+
 # A field default here is what a manifest means by leaving the key
 # out, rather than a value a caller may lean on: a manifest supplies
 # only what it has an opinion about, and TOML cannot spell the
@@ -293,6 +319,24 @@ class RenderContext(  # noqa: NOD001
     collection_layout: CollectionLayoutName | None = None
     pre_indent_level: Annotated[int, Field(ge=0)] = 0
     record_null_substitutions: Mapping[str, ValueInput] | None = None
+    record_null_mapping_substitutions: dict[
+        str, list[SubstitutionMappingEntry]
+    ] = Field(default_factory=dict)
+
+    def resolved_record_null_substitutions(
+        self,
+    ) -> Mapping[str, ValueInput] | None:
+        """Merge ordinary substitutions with mappings using scalar
+        keys.
+        """
+        if len(self.record_null_mapping_substitutions) == 0:
+            return self.record_null_substitutions
+        substitutions = dict[str, ValueInput]()
+        if self.record_null_substitutions is not None:
+            substitutions.update(self.record_null_substitutions)
+        for name, entries in self.record_null_mapping_substitutions.items():
+            substitutions[name] = {entry.key: entry.value for entry in entries}
+        return substitutions
 
 
 # Defaults stand in for omitted keys, as above.
@@ -457,6 +501,35 @@ class _OwnedCaseSpec(
         return {**data, "case_dir_name": context["case_dir_name"]}
 
 
+def _parse_ref_time(value: object, /) -> object:
+    """Resolve an ISO time source while preserving native TOML times."""
+    if isinstance(value, str):
+        return dt.time.fromisoformat(value)
+    return value
+
+
+type RefTimeInput = Annotated[dt.time, BeforeValidator(func=_parse_ref_time)]
+
+
+def _empty_ref_times() -> dict[str, dt.time]:
+    """Return the default time-valued reference bindings."""
+    return {}
+
+
+class RefConsumerSpec(  # noqa: NOD001
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """A generated call using the reference case's output binding.
+
+    Assignment cases can also consume the caller's initial value before
+    the assignment. The consumer is composed after the API under test has
+    rendered, so it cannot change reference inference.
+    """
+
+    target_function: Annotated[str, Field(min_length=1)]
+    before_assignment: bool = False
+
+
 class RefCaseSpec(  # noqa: NOD001
     _OwnedCaseSpec,
     LanguageSelection,
@@ -509,6 +582,10 @@ class RefCaseSpec(  # noqa: NOD001
     )
     value_sources: dict[str, str] = Field(default_factory=_empty_sources)
     bound_refs: Mapping[str, ValueInput] | None = None
+    # ISO time strings can carry UTC offsets that TOML's native time cannot.
+    bound_ref_times: dict[str, RefTimeInput] = Field(
+        default_factory=_empty_ref_times,
+    )
     extra_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
@@ -520,9 +597,40 @@ class RefCaseSpec(  # noqa: NOD001
     external_declaration_styles: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
-    fixture_prefix: str = ""
-    fixture_suffix: str = ""
     explicit_ref_value_sources: dict[str, str] | None = None
+    expected_value_source: str | None = None
+    consumer: RefConsumerSpec | None = None
+
+    @model_validator(mode="after")
+    def _validate_expected_value(self) -> RefCaseSpec:
+        """Limit executable value checks to their supported fixture
+        context.
+        """
+        if self.expected_value_source is not None:
+            if len(self.external_declarations) == 0:
+                msg = "expected_value_source requires external_declarations"
+                raise ValueError(msg)
+            if self.consumer is not None:
+                msg = (
+                    "consumer and expected_value_source are mutually exclusive"
+                )
+                raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _validate_consumer(self) -> RefCaseSpec:
+        """Require the caller context needed by composed consumers."""
+        if self.consumer is not None:
+            if len(self.external_declarations) == 0:
+                msg = "consumer requires external_declarations"
+                raise ValueError(msg)
+            if self.consumer.before_assignment and (
+                self.variable_form != "existing"
+                or "my_data" not in self.external_declarations
+            ):
+                msg = "before_assignment requires an existing my_data binding"
+                raise ValueError(msg)
+        return self
 
     def ref_case_for(
         self, *, lang_cls: literalizer.LanguageCls
@@ -711,6 +819,18 @@ class CallCaseSpec(  # noqa: NOD001
         return self
 
 
+# Defaults describe omitted manifest fields, as for RenderContext.
+class ConstructorCaseSpec(  # noqa: NOD001
+    BaseModel, extra="forbid", frozen=True
+):
+    """A caller-owned class around a complete constructor binding."""
+
+    class_name: Annotated[str, Field(min_length=1)] = "Playlist"
+    variable_name: Annotated[str, Field(min_length=1)] = "p"
+    fixture_prefix: str = ""
+    fixture_suffix: str = ""
+
+
 # Defaults stand in for omitted keys, as above.
 class _CaseManifestData(  # noqa: NOD001
     LanguageSelection,
@@ -720,6 +840,7 @@ class _CaseManifestData(  # noqa: NOD001
 
     schema_version: Literal[1]
     input: str | None = None
+    input_roundtrip: InputRoundtripSpec | None = None
     expected_reused_anchor_warning: ReusedAnchorWarningSpec | None = None
     suites: list[SuiteName] = Field(default_factory=_empty_suites)
     owner: OwnerName | None = None
@@ -729,6 +850,7 @@ class _CaseManifestData(  # noqa: NOD001
     roles: list[CaseRoleName] = Field(default_factory=_empty_roles)
     base_context: RenderContext = Field(default_factory=RenderContext)
     variants: list[ManifestVariant] = Field(default_factory=_empty_variants)
+    constructor: ConstructorCaseSpec | None = None
     call: CallCaseSpec | None = None
     ref: RefCaseSpec | None = None
 
@@ -756,6 +878,14 @@ class _CaseManifestData(  # noqa: NOD001
     @model_validator(mode="after")
     def _validate_consistency(self) -> _CaseManifestData:
         """Validate relationships that span manifest fields."""
+        if self.input_roundtrip is not None and self.owner is not None:
+            msg = "input_roundtrip requires a literal rendering suite"
+            raise ValueError(msg)
+        self._validate_owned_table(
+            table_name="constructor",
+            table=self.constructor,
+            owners=frozenset({"constructor-binding"}),
+        )
         self._validate_owned_table(
             table_name="call",
             table=self.call,
@@ -804,12 +934,14 @@ class CaseManifest:
     case_dir: Path
     schema_version: Literal[1]
     input: CaseInput
+    input_roundtrip: InputRoundtripSpec | None
     selection: LanguageSelection
     suites: frozenset[SuiteName]
     owner: OwnerName | None
     roles: frozenset[CaseRoleName]
     base_context: RenderContext
     variants: tuple[ManifestVariant, ...]
+    constructor: ConstructorCaseSpec | None
     call: CallCaseSpec | None
     ref: RefCaseSpec | None
 
@@ -886,6 +1018,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         case_dir=case_dir,
         schema_version=data.schema_version,
         input=input_info,
+        input_roundtrip=data.input_roundtrip,
         selection=LanguageSelection(
             gates=data.gates,
         ),
@@ -894,6 +1027,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         roles=frozenset(data.roles),
         base_context=data.base_context,
         variants=tuple(data.variants),
+        constructor=data.constructor,
         call=data.call,
         ref=data.ref,
     )

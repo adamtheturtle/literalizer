@@ -8,6 +8,8 @@ instance Num Val where
     signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
+consume_widget :: a -> IO ()
+consume_widget _ = return ()
 item :: Val
 item = HList [
     1,
@@ -18,9 +20,9 @@ my_data = HList [
     1,
     2
     ]
+consume_widget my_data
+my_data = item
 main :: IO ()
 main = do
-    _ <- (void)my_data;
-    _ <- my_data = item
-    _ <- (void)my_data;
+    _ <- consume_widget my_data
     pure ()

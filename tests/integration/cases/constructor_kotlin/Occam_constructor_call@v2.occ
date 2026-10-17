@@ -1,0 +1,4 @@
+class Playlist { val value = 42 }
+
+VAL MOBILE LIT p IS Playlist():
+check(p.value == 42)

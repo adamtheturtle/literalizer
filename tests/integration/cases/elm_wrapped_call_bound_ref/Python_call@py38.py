@@ -1,0 +1,3 @@
+def make_widget(*_args: object, **_kwargs: object) -> object: ...
+value = 1
+make_widget(value=value)

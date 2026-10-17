@@ -1,4 +1,5 @@
 package main
+func consume_widget(args ...any) any { return nil }
 
 func main() {
 shared := []int{
@@ -8,7 +9,7 @@ shared := []int{
 var my_data = []int{
 	0,
 }
-_ = &my_data;
+consume_widget(my_data)
 my_data = shared
-_ = &my_data;
+consume_widget(my_data)
 }

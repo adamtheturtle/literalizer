@@ -1,4 +1,5 @@
 defmodule Check do
+  def consume_widget(_arg), do: nil
   def x do
     ref_data = [
         1,
@@ -7,8 +8,8 @@ defmodule Check do
     my_data = [
         0,
     ]
-    (void)my_data;
+    consume_widget(my_data)
     my_data = ref_data
-    (void)my_data;
+    consume_widget(my_data)
   end
 end

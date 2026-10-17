@@ -1,4 +1,5 @@
 package main
+func consume_widget(args ...any) any { return nil }
 
 func main() {
 item := []int{
@@ -9,7 +10,7 @@ my_data := []int{
 	1,
 	2,
 }
-(void)my_data;
+consume_widget(my_data)
 my_data = item
-(void)my_data;
+consume_widget(my_data)
 }

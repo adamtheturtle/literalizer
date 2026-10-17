@@ -4,17 +4,20 @@ module Check where
 import Prelude
 data Val
     = PNull
+    | PList (Array Val)
+consume_widget :: Val -> Unit
+consume_widget _ = unit
 item :: Val
 item = PNull
 my_data :: Val
 my_data = PNull
+consume_widget my_data
+my_data = item
 
 
 main :: Unit
 main =
     let
-        _ = (void)my_data;
-        _ = my_data = item
-        _ = (void)my_data;
+        _ = consume_widget my_data
     in
     unit

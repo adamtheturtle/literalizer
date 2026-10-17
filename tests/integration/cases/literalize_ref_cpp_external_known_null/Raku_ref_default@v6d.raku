@@ -1,5 +1,6 @@
+sub consume_widget(*@a, *%kw) {}
 my $item = Nil;
 my $my_data = Nil;
-(void)my_data;
+consume_widget($my_data);
 $my_data = $item;
-(void)my_data;
+consume_widget($my_data);

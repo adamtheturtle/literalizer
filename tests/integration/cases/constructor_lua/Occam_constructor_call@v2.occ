@@ -1,0 +1,6 @@
+local function Playlist()
+    return 42
+end
+
+VAL MOBILE LIT p IS Playlist():
+assert(p == 42)

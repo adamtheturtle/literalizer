@@ -10,6 +10,7 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
+fn consume_widget(_arg: anytype) void { _ = _arg; }
 pub fn main() void {
     const ref_data: ZVal = .{ .arr = &.{
         .{ .int = 1 },
@@ -18,7 +19,7 @@ pub fn main() void {
     const my_data: ZVal = .{ .arr = &.{
         .{ .int = 0 },
     }};
-    (void)my_data;
+    consume_widget(my_data);
     my_data = ref_data;
-    (void)my_data;
+    consume_widget(my_data);
 }

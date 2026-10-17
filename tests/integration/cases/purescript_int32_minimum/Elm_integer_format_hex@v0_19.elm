@@ -13,5 +13,5 @@ my_data = EDict [
     ("minimum", EInt (-0x80000000)),
     ("neighbor", EInt (-0x7fffffff)),
     ("maximum", EInt 0x7fffffff),
-    ("nested", EList [EInt (-0x80000000)])
+    ("nested", EList (EInt (-0x80000000) :: []))
     ]

@@ -109,6 +109,57 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
             "base_context requires participation in the base suite",
         ),
         (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref.consumer]\ntarget_function = "consume_widget"\n'
+            ),
+            "consumer requires external_declarations",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref]\nexternal_declarations = {my_data = "0"}\n'
+                '[ref.consumer]\ntarget_function = "consume_widget"\n'
+                "before_assignment = true\n"
+            ),
+            "before_assignment requires an existing my_data binding",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref]\nvariable_form = "existing"\n'
+                'external_declarations = {other = "0"}\n'
+                '[ref.consumer]\ntarget_function = "consume_widget"\n'
+                "before_assignment = true\n"
+            ),
+            "before_assignment requires an existing my_data binding",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref]\nexpected_value_source = "[0, 1]"\n'
+            ),
+            "expected_value_source requires external_declarations",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
+                "[ref]\n"
+                'external_declarations = {a = "0"}\n'
+                'expected_value_source = "[0, 1]"\n'
+                '[ref.consumer]\ntarget_function = "consume_widget"\n'
+            ),
+            "consumer and expected_value_source are mutually exclusive",
+        ),
+        (
+            'schema_version = 1\nowner = "constructor-binding"\n',
+            r"requires a \[constructor\] table",
+        ),
+        (
+            'schema_version = 1\nsuites = ["base"]\n[constructor]\n',
+            r"a \[constructor\] table requires owner",
+        ),
+        (
             'schema_version = 1\nowner = "literalize-call"\n',
             r"requires a \[call\] table",
         ),
@@ -619,6 +670,46 @@ def test_anchor_warning_requires_yaml(tmp_path: Path) -> None:
         _ = load_case_manifest(case_dir=case_dir)
 
 
+def test_input_roundtrip_is_loaded(tmp_path: Path) -> None:
+    """A roundtrip resolves its producer and subsequent input parser."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            "schema_version = 1\n"
+            'suites = ["base"]\n'
+            "[input_roundtrip]\n"
+            'language = "Jsonc"\n'
+            'input_format = "jsonc"\n'
+        ),
+        input_name="input.yaml",
+    )
+    roundtrip = load_case_manifest(case_dir=case_dir).input_roundtrip
+    assert roundtrip is not None
+    assert roundtrip.language.__name__ == "Jsonc"
+    assert roundtrip.input_format is literalizer.InputFormat.JSONC
+
+
+def test_input_roundtrip_rejects_non_literal_owner(tmp_path: Path) -> None:
+    """Other runners cannot silently ignore a declared roundtrip."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            "schema_version = 1\n"
+            'owner = "literalize-ref"\n'
+            "[ref]\n"
+            "[input_roundtrip]\n"
+            'language = "Jsonc"\n'
+            'input_format = "jsonc"\n'
+        ),
+        input_name="input.yaml",
+    )
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match="input_roundtrip requires a literal rendering suite",
+    ):
+        _ = load_case_manifest(case_dir=case_dir)
+
+
 def test_render_context_is_loaded(tmp_path: Path) -> None:
     """Simple rendering arguments load into the typed context."""
     expected_pre_indent_level = 2
@@ -815,3 +906,27 @@ def test_duplicate_golden_target_is_actionable() -> None:
         match="duplicate golden target",
     ):
         validate_unique_variant_targets(cases=[example, example])
+
+
+@pytest.mark.parametrize(
+    argnames="time_source",
+    argvalues=['"not-a-time"', "42"],
+)
+def test_invalid_reference_time_source(
+    tmp_path: Path, time_source: str
+) -> None:
+    """Malformed time bindings fail with their owning manifest path."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            "schema_version = 1\n"
+            'owner = "literalize-ref-default"\n'
+            "[ref]\n"
+            f"bound_ref_times = {{ value = {time_source} }}\n"
+        ),
+        input_name="input.json",
+    )
+    with pytest.raises(
+        expected_exception=CaseManifestError, match=r"bound_ref_times\.value"
+    ):
+        _ = load_case_manifest(case_dir=case_dir)

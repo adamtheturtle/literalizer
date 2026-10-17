@@ -1,5 +1,6 @@
+function consume_widget {}
 $item = $null
 $my_data = $null
-(void)my_data;
+consume_widget $my_data
 $my_data = $item
-(void)my_data;
+consume_widget $my_data

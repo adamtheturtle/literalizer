@@ -10,5 +10,5 @@ type Val
 
 my_data : Val
 my_data = EDict [
-    ("groups", EList [EList [EDict [("id", EInt 1)]], EList [EDict [("id", EInt 2)]]])
+    ("groups", EList [EList (EDict [("id", EInt 1)] :: []), EList (EDict [("id", EInt 2)] :: [])])
     ]

@@ -14,9 +14,9 @@ main : Program () () Never
 main =
     let
         big_list : Val
-        big_list = EList [
+        big_list = EList (
             EStr "x"
-            ]
+             :: [])
         _ = process (EDict [("k", big_list)]) (EInt 2)
     in
     Platform.worker

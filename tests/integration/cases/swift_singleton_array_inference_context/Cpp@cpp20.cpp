@@ -1,0 +1,15 @@
+#include <initializer_list>
+#include <string>
+#include <cstddef>
+#include <map>
+#include <vector>
+#include <variant>
+int main() {
+auto my_data = std::map<std::string, std::variant<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>>>, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>>>>, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>>>>>>{
+    {"nil", std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>{std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>{std::vector<std::vector<std::vector<std::nullptr_t>>>{std::vector<std::vector<std::nullptr_t>>{std::vector<std::nullptr_t>{nullptr}}}}}}}}}},
+    {"empty", std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>{std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>{std::vector<std::vector<std::vector<std::nullptr_t>>>{std::vector<std::vector<std::nullptr_t>>{std::vector<std::nullptr_t>{}}}}}}}}}}},
+    {"siblings", std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>{std::vector<std::vector<std::vector<std::vector<int>>>>{std::vector<std::vector<std::vector<int>>>{std::vector<std::vector<int>>{std::vector<int>{4, 5}}}}}}}}}}},
+};
+    (void)my_data;
+    return 0;
+}

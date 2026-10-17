@@ -1,0 +1,5 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+bound_ref_times = { value = "12:30:15+02:00" }

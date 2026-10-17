@@ -1,3 +1,4 @@
+const consume_widget: any = () => {};
 const shared = [
   1,
   2,
@@ -5,7 +6,7 @@ const shared = [
 var my_data = [
   0,
 ];
-_ = &my_data;
+consume_widget({ _arg: my_data });
 my_data = shared;
-_ = &my_data;
+consume_widget({ _arg: my_data });
 export {};

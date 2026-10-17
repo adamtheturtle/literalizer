@@ -1,0 +1,8 @@
+* my_data
+@code javascript
+{
+    "nil": [[[[[[[[[null]]]]]]]]],
+    "empty": [[[[[[[[[[]]]]]]]]]],
+    "siblings": [[[[[[[[[[4, 5]]]]]]]]]]
+}
+@end

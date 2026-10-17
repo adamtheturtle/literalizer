@@ -11,7 +11,7 @@ type Val
 my_data : Val
 my_data = EDict [
     ("a", EDict [
-        ("b", EList [EInt 1]),
+        ("b", EList (EInt 1 :: [])),
         -- Outdented from the sequence, so the inner mapping claims this.
         ("c", EInt 2)
         ]),

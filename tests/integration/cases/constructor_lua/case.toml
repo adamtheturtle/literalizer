@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "constructor-binding"
+
+[constructor]
+class_name = "Playlist"
+variable_name = "p"
+fixture_prefix = """\
+local function Playlist()
+    return 42
+end
+
+"""
+fixture_suffix = """\
+assert(p == 42)
+"""

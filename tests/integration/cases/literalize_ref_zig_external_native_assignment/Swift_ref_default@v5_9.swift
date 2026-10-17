@@ -1,3 +1,4 @@
+@discardableResult func consume_widget(_ _arg: Any = 0) -> Any { 0 }
 let shared = [
     1,
     2,
@@ -5,6 +6,6 @@ let shared = [
 var my_data = [
     0,
 ]
-_ = &my_data;
+consume_widget(_arg: my_data);
 my_data = shared
-_ = &my_data;
+consume_widget(_arg: my_data);

@@ -1,0 +1,12 @@
+-module(fixture_swift_singleton_array_inference_erlang_collection_layout_compact).
+-export([x/0]).
+x() ->
+    My_data = #{
+        "below" => [[[[[[[[1]]]]]]]],
+        "boundary" => [[[[[[[[[2]]]]]]]]],
+        "multiple" => [[[[[[[[[[[[[[[[[3]]]]]]]]]]]]]]]]],
+        "text" => [[[[[[[[["value"]]]]]]]]],
+        "boolean" => [[[[[[[[[true]]]]]]]]],
+        "float" => [[[[[[[[[1.5]]]]]]]]]
+    },
+    My_data.

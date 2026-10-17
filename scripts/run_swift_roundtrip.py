@@ -19,7 +19,9 @@ Zig exclusions.
 """
 
 import shutil
+from pathlib import Path
 
+from literalizer import Language
 from literalizer.languages import Swift
 from scripts import roundtrip_common
 
@@ -28,14 +30,14 @@ _LABEL = "Swift"
 _EXCLUDED_KEYS = ("biginteger",)
 
 
-def _build_program(json_text: str) -> str:
+def _build_program(json_text: str, language: Language) -> str:
     """Return a runnable Swift program literalized from *json_text*."""
     trimmed_json = roundtrip_common.trim_keys(
         json_text=json_text,
         excluded_keys=_EXCLUDED_KEYS,
     )
     result = roundtrip_common.literalize_new_variable(
-        language=Swift(),
+        language=language,
         json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=1,
@@ -53,12 +55,58 @@ def _build_program(json_text: str) -> str:
     )
 
 
+def _check_array_inference(swift: str) -> None:
+    """Round-trip both policies and assert exact nested array types."""
+    case_dir = (
+        Path(__file__).resolve().parent.parent
+        / "tests/integration/cases/swift_singleton_array_inference"
+    )
+    json_text = (case_dir / "input.json").read_text(encoding="utf-8")
+    checks = "\n".join(
+        f'precondition(type(of: {_VAR_NAME}["{key}"]!) == '
+        f"{'[' * depth}{leaf_type}{']' * depth}.self)"
+        for key, depth, leaf_type in (
+            ("below", 8, "Int"),
+            ("boundary", 9, "Int"),
+            ("multiple", 17, "Int"),
+            ("text", 9, "String"),
+            ("boolean", 9, "Bool"),
+            ("float", 9, "Double"),
+        )
+    )
+    for policy in Swift.array_inference_policies:
+        program = _build_program(
+            json_text=json_text,
+            language=Swift(array_inference_policy=policy),
+        )
+        roundtrip_common.execute(
+            label=f"Swift array inference {policy.name}",
+            source_filename="main.swift",
+            program=program + checks + "\n",
+            steps=[
+                roundtrip_common.Step(
+                    args=[
+                        swift,
+                        "-swift-version",
+                        "5",
+                        "-warnings-as-errors",
+                        "main.swift",
+                    ],
+                    failure_label="swift array inference run error",
+                ),
+            ],
+            excluded_keys=(),
+            expected_json=json_text,
+            extra_files=None,
+        )
+
+
 def main() -> None:
     """Round-trip the shared document through the Swift backend."""
     json_text = roundtrip_common.input_for_capabilities(
         capabilities=Swift.variant_metadata.round_trip_capabilities,
     )
-    program = _build_program(json_text=json_text)
+    program = _build_program(json_text=json_text, language=Swift())
     swift = shutil.which(cmd="swift")
     if swift is None or swift == "":
         swift = "swift"
@@ -82,6 +130,8 @@ def main() -> None:
         expected_json=json_text,
         extra_files=None,
     )
+
+    _check_array_inference(swift=swift)
 
 
 if __name__ == "__main__":

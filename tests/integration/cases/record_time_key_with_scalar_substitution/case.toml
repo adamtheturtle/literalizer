@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+
+[base_context]
+record_null_substitutions = { other = 2 }
+record_null_mapping_substitutions = { value = [{ key = 01:02:03, value = 1 }] }

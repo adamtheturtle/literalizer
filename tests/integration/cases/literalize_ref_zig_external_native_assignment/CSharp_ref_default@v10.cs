@@ -1,4 +1,7 @@
 using System;
+class Check {
+static object? consume_widget(object? _arg = null) => null;
+    public static void Main() {
 var shared = (
     1,
     2
@@ -6,6 +9,8 @@ var shared = (
 var my_data = ValueTuple.Create(
     0
 );
-_ = &my_data;
+consume_widget(my_data);
 my_data = shared;
-_ = &my_data;
+consume_widget(my_data);
+    }
+}

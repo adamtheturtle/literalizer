@@ -1,0 +1,4 @@
+class Playlist {}
+
+VAL MOBILE LIT p IS Playlist():
+assert p instanceof Playlist

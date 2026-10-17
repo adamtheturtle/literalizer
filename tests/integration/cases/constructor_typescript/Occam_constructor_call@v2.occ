@@ -1,0 +1,10 @@
+class Playlist {
+    constructor(_options: object = {}) {}
+}
+
+VAL MOBILE LIT p IS Playlist():
+if (!(p instanceof Playlist)) {
+    throw new Error("Expected a Playlist instance");
+}
+
+export {};

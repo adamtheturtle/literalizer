@@ -1,0 +1,4 @@
+struct Playlist { let value = 42 }
+
+VAL MOBILE LIT p IS Playlist():
+precondition(p.value == 42)

@@ -8,6 +8,6 @@ type Val
 
 
 my_data : Val
-my_data = EList [
+my_data = EList (
     EDict [("", EStr "external_value")]
-    ]
+     :: [])

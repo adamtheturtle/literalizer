@@ -1,5 +1,6 @@
 class Fixture_literalize_ref_zig_external_native_assignment_Haxe_ref_default {
     public static function main() {
+        function consume_widget(_arg:Dynamic):Dynamic return null;
         final shared = ([
             1,
             2,
@@ -7,8 +8,8 @@ class Fixture_literalize_ref_zig_external_native_assignment_Haxe_ref_default {
         var my_data = ([
             0,
         ] : Array<Dynamic>);
-        _ = &my_data;
+        consume_widget(my_data);
         my_data = shared;
-        _ = &my_data;
+        consume_widget(my_data);
     }
 }
