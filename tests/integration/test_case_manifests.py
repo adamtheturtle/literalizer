@@ -963,3 +963,27 @@ def test_duplicate_golden_target_is_actionable() -> None:
         match="duplicate golden target",
     ):
         validate_unique_variant_targets(cases=[example, example])
+
+
+@pytest.mark.parametrize(
+    argnames="time_source",
+    argvalues=['"not-a-time"', "42"],
+)
+def test_invalid_reference_time_source(
+    tmp_path: Path, time_source: str
+) -> None:
+    """Malformed time bindings fail with their owning manifest path."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            "schema_version = 1\n"
+            'owner = "literalize-ref-default"\n'
+            "[ref]\n"
+            f"bound_ref_times = {{ value = {time_source} }}\n"
+        ),
+        input_name="input.json",
+    )
+    with pytest.raises(
+        expected_exception=CaseManifestError, match=r"bound_ref_times\.value"
+    ):
+        _ = load_case_manifest(case_dir=case_dir)
