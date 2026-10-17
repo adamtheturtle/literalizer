@@ -1,7 +1,7 @@
 schema_version = 1
 summary = "An empty dict key has no form in these back ends."
 exceptions = ["InvalidDictKeyError"]
-languages = ["Dhall", "R"]
+gates = [{kind = "capability_flag", flag = "default_rejects_empty_dict_keys"}]
 
 [call]
 api = "literalize"

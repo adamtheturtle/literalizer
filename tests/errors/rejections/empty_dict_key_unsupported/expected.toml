@@ -1,5 +1,8 @@
-# languages rejecting: 2; languages accepting: 0
+# languages rejecting: 5; languages accepting: 0
 
 [InvalidDictKeyError]
+Bash = "Bash does not support the dict key ''. Associative-array keys must be non-empty printable ASCII."
 Dhall = "Dhall does not support the dict key \"\". Backtick-quoted labels must be non-empty and contain only printable ASCII (no backticks or control characters)."
+Matlab = "MATLAB does not support the struct field name ''. Field names must start with a letter and contain only letters, digits, and underscores."
+Nix = "Nix does not support the dict key \"\". Attribute names must be non-empty and must not contain control characters."
 R = "R does not support the dict key \"\". Use empty_dict_key=R.EmptyDictKey.POSITIONAL to emit them as unnamed list elements instead."
