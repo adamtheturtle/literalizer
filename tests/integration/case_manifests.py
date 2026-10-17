@@ -50,6 +50,7 @@ type OwnerName = Literal[
     "new-variable-kebab",
     "new-variable-prime",
     "variant",
+    "constructor-binding",
 ]
 
 # Spelled as an assignment rather than a ``type`` statement so the
@@ -845,6 +846,18 @@ class CallCaseSpec(  # noqa: NOD001
         return self
 
 
+# Defaults describe omitted manifest fields, as for RenderContext.
+class ConstructorCaseSpec(  # noqa: NOD001
+    BaseModel, extra="forbid", frozen=True
+):
+    """A caller-owned class around a complete constructor binding."""
+
+    class_name: Annotated[str, Field(min_length=1)] = "Playlist"
+    variable_name: Annotated[str, Field(min_length=1)] = "p"
+    fixture_prefix: str = ""
+    fixture_suffix: str = ""
+
+
 # Defaults stand in for omitted keys, as above.
 class _CaseManifestData(  # noqa: NOD001
     LanguageSelection,
@@ -864,6 +877,7 @@ class _CaseManifestData(  # noqa: NOD001
     roles: list[CaseRoleName] = Field(default_factory=_empty_roles)
     base_context: RenderContext = Field(default_factory=RenderContext)
     variants: list[ManifestVariant] = Field(default_factory=_empty_variants)
+    constructor: ConstructorCaseSpec | None = None
     call: CallCaseSpec | None = None
     ref: RefCaseSpec | None = None
 
@@ -894,6 +908,11 @@ class _CaseManifestData(  # noqa: NOD001
         if self.input_roundtrip is not None and self.owner is not None:
             msg = "input_roundtrip requires a literal rendering suite"
             raise ValueError(msg)
+        self._validate_owned_table(
+            table_name="constructor",
+            table=self.constructor,
+            owners=frozenset({"constructor-binding"}),
+        )
         self._validate_owned_table(
             table_name="call",
             table=self.call,
@@ -949,6 +968,7 @@ class CaseManifest:
     roles: frozenset[CaseRoleName]
     base_context: RenderContext
     variants: tuple[ManifestVariant, ...]
+    constructor: ConstructorCaseSpec | None
     call: CallCaseSpec | None
     ref: RefCaseSpec | None
 
@@ -1036,6 +1056,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         roles=frozenset(data.roles),
         base_context=data.base_context,
         variants=tuple(data.variants),
+        constructor=data.constructor,
         call=data.call,
         ref=data.ref,
     )

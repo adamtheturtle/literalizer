@@ -172,6 +172,14 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
             "consumer and expected_value_source are mutually exclusive",
         ),
         (
+            'schema_version = 1\nowner = "constructor-binding"\n',
+            r"requires a \[constructor\] table",
+        ),
+        (
+            'schema_version = 1\nsuites = ["base"]\n[constructor]\n',
+            r"a \[constructor\] table requires owner",
+        ),
+        (
             'schema_version = 1\nowner = "literalize-call"\n',
             r"requires a \[call\] table",
         ),
