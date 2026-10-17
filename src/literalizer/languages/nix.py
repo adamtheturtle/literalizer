@@ -5,6 +5,7 @@ import datetime as dt
 import enum
 import math
 import re
+import sys
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from typing import TYPE_CHECKING, ClassVar
@@ -835,7 +836,19 @@ class Nix(metaclass=LanguageCls):
     @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+
+        @beartype
+        def _format(value: float) -> str:
+            """Construct subnormal values from literals accepted by
+            Nix.
+            """
+            if 0 < abs(value) < sys.float_info.min:
+                factor = self.float_format(value / sys.float_info.min)
+                minimum = self.float_format(sys.float_info.min)
+                return f"({factor} * {minimum})"
+            return self.float_format(value)
+
+        return _format
 
     @cached_property
     @beartype

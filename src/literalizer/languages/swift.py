@@ -5,6 +5,8 @@ import datetime as dt
 import enum
 import functools
 import re
+import struct
+import sys
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -1680,7 +1682,20 @@ class Swift(metaclass=LanguageCls):
     @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+
+        @beartype
+        def _format(value: float) -> str:
+            """Construct subnormal doubles from their exact bit
+            patterns.
+            """
+            if 0 < abs(value) < sys.float_info.min:
+                bits = int.from_bytes(
+                    bytes=struct.pack("!d", value), byteorder="big"
+                )
+                return f"Double(bitPattern: 0x{bits:x})"
+            return self.float_format(value)
+
+        return _format
 
     @cached_property
     @beartype
