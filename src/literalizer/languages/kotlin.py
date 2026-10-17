@@ -1994,7 +1994,26 @@ class Kotlin(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
             return _JSON_NODE_SEQUENCE_CONFIG
-        return self.sequence_format.value
+        config = self.sequence_format.value
+        if self.sequence_format is not self.sequence_formats.LIST:
+            return config
+
+        @beartype
+        def _narrow_empty(siblings: Sequence[list[Value]]) -> str:
+            """Keep empty bindings typed independently of their uses."""
+            items = [item for sibling in siblings for item in sibling]
+            selected = self._kotlin_sequence_type(items)
+            element_type = infer_element_type(items=items)
+            if (
+                self._kotlin_record_sequence_type(items) is None
+                and element_type is not None
+                and _kotlin_sequence_constructor(element_type=element_type)
+                == "arrayOf"
+            ):
+                return f"arrayOf<{self._kotlin_array_element_type(items)}>()"
+            return selected.opener + config.close
+
+        return dataclasses.replace(config, narrowed_empty_form=_narrow_empty)
 
     def _kotlin_record_sequence_type(
         self, items: list[Value], /
