@@ -1,0 +1,10 @@
+from __future__ import annotations
+from typing import Any
+my_data: tuple[tuple[tuple[int, ...], ...] | tuple[tuple[Any, ...], ...], ...] = (
+    ((1,),),
+    ((),),
+)
+my_data = (
+    ((1,),),
+    ((),),
+)
