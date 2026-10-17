@@ -1,4 +1,4 @@
-"""F# only admits decimal literals with the bigint suffix."""
+"""F# only admits decimal literals with the ``bigint`` suffix."""
 
 import pytest
 
@@ -24,7 +24,9 @@ def test_nondecimal_bigint(
     integer_format: str,
     dict_format: str,
 ) -> None:
-    """Reject unsupported bigint literals in both native output modes."""
+    """Reject unsupported ``bigint`` literals in both native output
+    modes.
+    """
     with pytest.raises(
         expected_exception=UnrepresentableIntegerError,
         match="F# bigint literals require decimal integer_format",

@@ -970,7 +970,7 @@ class FSharp(metaclass=LanguageCls):
     class IntegerFormats(enum.Enum):
         """Integer format options.
 
-        Values outside the signed 64-bit range require decimal bigint
+        Values outside the signed 64-bit range require decimal ``bigint``
         literals; non-decimal formats reject those values.
         """
 
@@ -1627,7 +1627,7 @@ class FSharp(metaclass=LanguageCls):
 
         @beartype
         def _native_integer(value: int) -> str:
-            """Only decimal literals support F#'s bigint suffix."""
+            """Only decimal literals support F#'s ``bigint`` suffix."""
             if not I64_MIN <= value <= I64_MAX:
                 if (
                     self.integer_format

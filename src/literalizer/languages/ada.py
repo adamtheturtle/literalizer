@@ -1176,7 +1176,7 @@ class Ada(metaclass=LanguageCls):
 
         @beartype
         def _format(value: float) -> str:
-            """Parse subnormals without compile-time underflow
+            """Parse subnormal values without compile-time underflow
             warnings.
             """
             formatted = self.float_format(value)
