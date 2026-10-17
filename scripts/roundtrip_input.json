@@ -13,6 +13,7 @@
   "string_unicode": "unicode é 中",
   "string_escapes": "quote \" backslash \\",
   "string_multiline": "first line\n  indented\n\nlast line\n",
+  "string_crlf": "first\r\nsecond",
   "empty_array": [],
   "int_array": [1, 2, 3],
   "double_array": [1.0, 2.5],

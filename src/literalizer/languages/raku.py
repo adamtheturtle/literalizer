@@ -144,10 +144,8 @@ _format_string_double = make_backslash_string_formatter(
 
 @beartype
 def _format_string_single(value: str) -> str:
-    """Use an escaped double-quoted literal when a null byte is
-    present.
-    """
-    if "\0" in value:
+    """Escape null bytes and ``CRLF`` pairs in a double-quoted literal."""
+    if "\0" in value or "\r\n" in value:
         return _format_string_double(value=value)
     return format_string_backslash_single_minimal(value=value)
 
