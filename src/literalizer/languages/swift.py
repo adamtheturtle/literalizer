@@ -5,6 +5,7 @@ import datetime as dt
 import enum
 import functools
 import re
+import sys
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -1680,7 +1681,15 @@ class Swift(metaclass=LanguageCls):
     @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        return self.float_format
+
+        @beartype
+        def _format(value: float) -> str:
+            """Use exact hexadecimal literals for subnormal doubles."""
+            if 0 < abs(value) < sys.float_info.min:
+                return float(value).hex()
+            return self.float_format(value)
+
+        return _format
 
     @cached_property
     @beartype

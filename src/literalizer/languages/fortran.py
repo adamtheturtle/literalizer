@@ -93,6 +93,7 @@ from literalizer._types import Value
 
 _FORTRAN_WRAP_COLUMN = 110
 _FORTRAN_STRING_CHUNK_LENGTH = 105
+_FORTRAN_NUMERIC_CHUNK_LENGTH = 64
 _FORTRAN_LINE_LIMIT = 132
 """The longest physical line free-form Fortran 2018 source admits."""
 
@@ -194,7 +195,13 @@ def _suffix_real64(
         """Apply *formatter* and tag the result with the ``_real64``
         kind.
         """
-        return f"{formatter(value)}_real64"
+        literal = f"{formatter(value)}_real64"
+        # A token can span free-form continuation lines only when no
+        # space separates its fragments from the continuation markers.
+        return "&\n&".join(
+            literal[start : start + _FORTRAN_NUMERIC_CHUNK_LENGTH]
+            for start in range(0, len(literal), _FORTRAN_NUMERIC_CHUNK_LENGTH)
+        )
 
     return _suffixed
 
