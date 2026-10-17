@@ -1,0 +1,10 @@
+* existing
+@code javascript
+1
+@end
+* my_data
+@code javascript
+{
+    "nested": [0, existing]
+}
+@end

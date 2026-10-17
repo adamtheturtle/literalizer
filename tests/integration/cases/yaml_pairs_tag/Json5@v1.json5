@@ -1,0 +1,5 @@
+[
+    {first: 1},
+    {repeated: "a"},
+    {repeated: "b"},
+]
