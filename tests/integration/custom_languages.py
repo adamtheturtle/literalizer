@@ -7,11 +7,15 @@ from collections.abc import Callable
 from functools import cached_property
 from typing import override
 
+from beartype import beartype
+
 from literalizer import DictFormatConfig
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._types import Scalar, Value
 from literalizer.languages import Go
+
+from .variant_types import Variant, compact_variant
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -49,3 +53,26 @@ class CallbackGo(Go):
             return str(object=native.dict_format_config.dict_open(items))
 
         return dataclasses.replace(native.dict_format_config, dict_open=_open)
+
+
+@beartype
+def variants_for_custom_language_axis(*, axis_key: str) -> list[Variant]:
+    """Build the custom language variants for an axis, if it has any."""
+    match axis_key:
+        case "plain_collection_callbacks":
+            plain_callbacks = True
+        case "typed_collection_callback":
+            plain_callbacks = False
+        case _:
+            return []
+    return [
+        compact_variant(
+            name=f"Go_{axis_key}",
+            spec=CallbackGo(
+                language_version=version,
+                plain_callbacks=plain_callbacks,
+            ),
+            lang_cls=Go,
+        )
+        for version in Go.VersionFormats
+    ]
