@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+[
+    {"timestamp": 1577836800},
+    {}
+]
+@end

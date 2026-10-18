@@ -1,0 +1,4 @@
+declare my_data=(
+    "([\"timestamp\"]=2208988800)"
+    "()"
+)
