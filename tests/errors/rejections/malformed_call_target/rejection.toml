@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Empty call targets and empty dotted components are rejected before rendering."
+exceptions = ["InvalidCallTargetError"]
+values = ["", ".", ".f", "f.", "f...g", "f..g"]
+gates = [{ kind = "capability_flag", flag = "declares_call_styles" }]
+
+[call]
+api = "literalize_call"
+sources = ["[1]"]
+input_format = "json"
+target_function = "{value}"
+parameter_names = ["x"]
+per_element = true
+wrap_in_file = false
