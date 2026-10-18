@@ -1,0 +1,6 @@
+* my_data
+@code javascript
+{
+    "rows": [{"x": 1, "y": "a"}, {"x": 2, "y": "b"}]
+}
+@end
