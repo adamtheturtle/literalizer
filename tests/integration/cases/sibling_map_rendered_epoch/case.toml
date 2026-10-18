@@ -1,7 +1,5 @@
 schema_version = 1
 owner = "variant"
-languages = ["V", "Go"]
-languages_reason = "Go and V homogeneous map siblings compare the scalar types selected by date and time formatting."
 
 [[variants]]
 axis = "datetime"
