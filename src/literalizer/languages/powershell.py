@@ -90,7 +90,10 @@ from literalizer._language import (
     wrap_in_file_noop_static,
 )
 from literalizer._types import OrderedMap, Value
-from literalizer.exceptions import InvalidDictKeyError
+from literalizer.exceptions import (
+    InvalidDictKeyError,
+    UnrepresentableInputError,
+)
 
 
 @beartype
@@ -121,12 +124,15 @@ def _powershell_call_arg(
 
 
 @beartype
-def _reject_case_colliding_dict_keys(data: Value) -> None:
-    """Reject keys that PowerShell hash tables compare as duplicates."""
+def _reject_invalid_dict_keys(data: Value) -> None:
+    """Reject null and case-insensitively colliding hash-table keys."""
     match data:
         case dict():
             seen: dict[str, str] = {}
             for key, value in data.items():
+                if key is None:
+                    msg = "PowerShell hash-table keys cannot be null."
+                    raise UnrepresentableInputError(msg)
                 if isinstance(key, str):
                     folded_key = key.casefold()
                     if folded_key in seen:
@@ -136,10 +142,10 @@ def _reject_case_colliding_dict_keys(data: Value) -> None:
                         )
                         raise InvalidDictKeyError(msg)
                     seen[folded_key] = key
-                _reject_case_colliding_dict_keys(data=value)
+                _reject_invalid_dict_keys(data=value)
         case list() | set():
             for item in data:
-                _reject_case_colliding_dict_keys(data=item)
+                _reject_invalid_dict_keys(data=item)
         case _:
             return
 
@@ -642,8 +648,10 @@ class PowerShell(metaclass=LanguageCls):
 
     @staticmethod
     def validate_spec_for_data(data: Value) -> None:
-        """Reject case-insensitively colliding hash-table keys."""
-        _reject_case_colliding_dict_keys(data=data)
+        """Reject null and case-insensitively colliding hash-table
+        keys.
+        """
+        _reject_invalid_dict_keys(data=data)
 
     validate_call_arg = default_validate_call_arg
 
