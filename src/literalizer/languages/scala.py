@@ -76,6 +76,7 @@ from literalizer._formatters.tuple_strategy import (
 from literalizer._formatters.type_inference import (
     DictType,
     ListType,
+    MixedNumeric,
     WideInt,
     record_shape_for_dict,
     single_concrete_type,
@@ -1882,8 +1883,22 @@ class Scala(metaclass=LanguageCls):
                 supports_heterogeneity=True,
                 supports_trailing_comma=True,
             )
+        type_to_opener = self._openers.set
+        if self.set_format.value.supports_heterogeneity:
+
+            @beartype
+            def _heterogeneous_set_open(
+                element_type: type | ListType | DictType,
+                /,
+            ) -> str | None:
+                """Keep integer values without coercing them to Double."""
+                if element_type is MixedNumeric:
+                    return "Set[Any]("
+                return self._openers.set(element_type)
+
+            type_to_opener = _heterogeneous_set_open
         return self.set_format.value.with_typed_opener(
-            type_to_opener=self._openers.set,
+            type_to_opener=type_to_opener,
             fallback=self.set_format.value.set_open([]),
         )
 
