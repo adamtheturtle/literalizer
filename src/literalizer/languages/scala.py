@@ -33,6 +33,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_iso,
     format_time_iso,
     format_time_local_time_of,
+    normalize_datetime_utc,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -243,6 +244,9 @@ def _format_scala_bigint_literal(value: int) -> str:
 @beartype
 def _format_datetime_scala(value: dt.datetime) -> str:
     """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call."""
+    offset = value.utcoffset()
+    if offset is not None and abs(offset) > dt.timedelta(hours=18):
+        value = normalize_datetime_utc(value=value, language_name="Scala")
     raw_timezone_name = value.tzname()
     timezone_name = "UTC"
     if raw_timezone_name is not None and raw_timezone_name != "":

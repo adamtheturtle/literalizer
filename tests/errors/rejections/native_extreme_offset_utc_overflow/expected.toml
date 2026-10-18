@@ -1,0 +1,7 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableInputError]
+"Scala['0001-01-01T00:00:00+23:59']" = "Scala cannot normalize datetime to UTC within Python's supported year range: 0001-01-01T00:00:00+23:59"
+"Scala['9999-12-31T23:59:59-23:59']" = "Scala cannot normalize datetime to UTC within Python's supported year range: 9999-12-31T23:59:59-23:59"
+"Swift['0001-01-01T00:00:00+23:59']" = "Swift cannot normalize datetime to UTC within Python's supported year range: 0001-01-01T00:00:00+23:59"
+"Swift['9999-12-31T23:59:59-23:59']" = "Swift cannot normalize datetime to UTC within Python's supported year range: 9999-12-31T23:59:59-23:59"
