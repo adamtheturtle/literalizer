@@ -1,0 +1,18 @@
+schema_version = 1
+summary = "Kotlin explicit hints refuse mixed empty/nonempty siblings through bound references."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Kotlin"]
+
+[call]
+api = "literalize"
+sources = ['[{"$ref":"shared"},{"$ref":"second"}]']
+input_format = "json"
+ref_key = "$ref"
+variable_form = "both"
+wrap_in_file = true
+bound_ref_yaml = { shared = "[]", second = '["one", "two"]' }
+kwargs = [
+ {kind = "option_member", option = "heterogeneous_strategy", member = "RECORD"},
+ {kind = "option_member", option = "variable_type_hints", member = "ALWAYS"},
+ {kind = "option_member", option = "declaration_style", member = "VAR"},
+]
