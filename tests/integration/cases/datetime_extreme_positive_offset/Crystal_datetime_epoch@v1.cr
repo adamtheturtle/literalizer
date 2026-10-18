@@ -1,0 +1,4 @@
+module Fixture_datetime_extreme_positive_offset_Crystal_datetime_epoch
+extend self
+my_data = 1592136060
+end

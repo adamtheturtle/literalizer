@@ -21,6 +21,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_iso,
+    normalize_datetime_utc,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -258,6 +259,9 @@ def _format_date_swift(value: dt.date) -> str:
 def _format_datetime_swift(value: dt.datetime) -> str:
     """Format a datetime as a native Swift ``Date`` expression."""
     offset = value.utcoffset()
+    if offset is not None and abs(offset) > dt.timedelta(hours=18):
+        value = normalize_datetime_utc(value=value, language_name="Swift")
+        offset = dt.timedelta()
     if offset is None or offset == dt.timedelta():
         offset = dt.timedelta()
     offset_seconds = int(offset.total_seconds())
