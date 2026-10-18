@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["C", "Cpp", "ObjectiveC"]
-languages_reason = "C-family character-array expressions must preserve embedded null bytes beside bidirectional controls."
 suites = ["base"]
 
 [[variants]]
