@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["C", "Cpp", "D", "PureScript", "SystemVerilog"]
-languages_reason = "These backends need special handling for the magnitude at the signed 32-bit boundary."
 suites = ["base"]
 
 [[variants]]
