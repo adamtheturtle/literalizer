@@ -98,7 +98,7 @@ from literalizer._language import (
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import InvalidDictKeyError
 
-_MATLAB_FIELD_NAME = re.compile(pattern=r"^[A-Za-z][A-Za-z0-9_]*$")
+_MATLAB_FIELD_NAME = NewVariableNameSyntax.ASCII_LETTER_START
 
 
 @beartype
@@ -161,7 +161,7 @@ def _matlab_char_vector(s: str) -> str:
 @beartype
 def _format_matlab_key(raw_key: str, _formatted_key: str) -> str:
     """Format a MATLAB field key directly from its source value."""
-    if _MATLAB_FIELD_NAME.fullmatch(string=raw_key) is None:
+    if not _MATLAB_FIELD_NAME.accepts(name=raw_key):
         msg = (
             f"MATLAB does not support the struct field name {raw_key!r}. "
             "Field names must start with a letter and contain only letters, "
@@ -175,6 +175,8 @@ def _format_matlab_key(raw_key: str, _formatted_key: str) -> str:
 @dataclasses.dataclass(frozen=True)
 class _MatlabDictFormatConfig(DictFormatConfig):
     """A dict format that spells fields from their source keys."""
+
+    key_syntax: ClassVar[NewVariableNameSyntax | None] = _MATLAB_FIELD_NAME
 
     @staticmethod
     @override
@@ -190,6 +192,8 @@ class _MatlabDictFormatConfig(DictFormatConfig):
 @dataclasses.dataclass(frozen=True)
 class _MatlabOrderedMapFormatConfig(OrderedMapFormatConfig):
     """An ordered-map format that spells fields from their source keys."""
+
+    key_syntax: ClassVar[NewVariableNameSyntax | None] = _MATLAB_FIELD_NAME
 
     @staticmethod
     @override

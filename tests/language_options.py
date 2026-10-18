@@ -427,7 +427,28 @@ OPTIONS: Mapping[str, Option] = {
     ),
 }
 
+
+@beartype
+def _default_allows_empty_dict_keys(
+    lang_cls: literalizer.LanguageCls,
+) -> bool:
+    """Read the declared default policy for empty string mapping keys."""
+    syntax = lang_cls().dict_format_config.key_syntax
+    if syntax is not None and not syntax.accepts(name=""):
+        return False
+    if lang_cls.supports_empty_dict_key:
+        member = OPTIONS["empty_dict_key"].get_default(lang_cls())
+        if not isinstance(member, enum.Enum):
+            raise NotImplementedError
+        return member.name == "ALLOW"
+    return "ALLOW" in lang_cls.EmptyDictKey.__members__
+
+
 CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
+    "default_allows_empty_dict_keys": _default_allows_empty_dict_keys,
+    "default_rejects_empty_dict_keys": (
+        lambda lang_cls: not _default_allows_empty_dict_keys(lang_cls=lang_cls)
+    ),
     "supports_typed_dict_open": (
         lambda lang_cls: lang_cls.supports_typed_dict_open
     ),

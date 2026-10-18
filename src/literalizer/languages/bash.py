@@ -576,7 +576,7 @@ class Bash(metaclass=LanguageCls):
     class EmptyDictKey(enum.Enum):
         """Empty dict key options."""
 
-        ALLOW = enum.auto()
+        ERROR = enum.auto()
 
     class FloatFormats(
         FloatSpecialsMixin,

@@ -556,6 +556,11 @@ class DictFormatConfig:
     expression.
     """
 
+    key_syntax: ClassVar[NewVariableNameSyntax | None] = None
+    """Lexical restriction on string keys, when the format uses field
+    names.
+    """
+
     dict_open: Callable[[dict[Scalar, Value]], str]
     close: str
     format_entry: Callable[[str, Value, str], str]
@@ -617,6 +622,11 @@ class OrderedMapFormatConfig:
     is_object_literal: ClassVar[bool] = False
     """Whether this format emits an ECMAScript object-literal
     expression.
+    """
+
+    key_syntax: ClassVar[NewVariableNameSyntax | None] = None
+    """Lexical restriction on string keys, when the format uses field
+    names.
     """
 
     ordered_map_open: Callable[[dict[Scalar, Value]], str]
