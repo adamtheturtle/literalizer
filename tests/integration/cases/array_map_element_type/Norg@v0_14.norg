@@ -1,0 +1,6 @@
+* my_data
+@code javascript
+{
+    "d": [{"a": [{"b": [1, [2.5, ["x", [true]]]]}]}]
+}
+@end
