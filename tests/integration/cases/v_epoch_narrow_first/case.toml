@@ -1,7 +1,0 @@
-schema_version = 1
-owner = "variant"
-languages = ["V"]
-languages_reason = "V epoch arrays need one integer width in either sibling order."
-
-[[variants]]
-axis = "sequence_array_epoch"
