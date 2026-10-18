@@ -435,6 +435,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "supports_json_call_result_binding": (
         lambda lang_cls: lang_cls.supports_json_call_result_binding
     ),
+    "declares_type_name_call_target": (
+        lambda lang_cls: lang_cls.declares_type_name_call_target
+    ),
     "rejects_heterogeneous_dict_values": (
         lambda lang_cls: not lang_cls.dict_supports_heterogeneous_values
     ),

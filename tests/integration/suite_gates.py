@@ -126,18 +126,6 @@ SPEC_FIELDS = frozenset(
 )
 
 
-class ConstructorDeclarationSyntaxGate(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Require constructor spelling that a generated file can declare."""
-
-    kind: Literal["constructor_declaration_syntax"]
-    class_name: Annotated[str, Field(min_length=1)]
-
-
 class RecordVariantGate(
     BaseModel,
     extra="forbid",
@@ -209,7 +197,6 @@ class BehaviorFlagGate(
 
 type SuiteGate = Annotated[
     CapabilityFlagGate
-    | ConstructorDeclarationSyntaxGate
     | RecordVariantGate
     | NonDefaultKwargGate
     | SpecFieldPresentGate
@@ -288,12 +275,6 @@ def gate_admits(
                 gate=gate,
                 lang_cls=lang_cls,
                 spec=spec,
-            )
-        case ConstructorDeclarationSyntaxGate():
-            target = spec.format_constructor_target(gate.class_name)
-            admits = spec.declares_type_name_call_target or all(
-                spec.new_variable_name_syntax.accepts(name=part)
-                for part in target.split(sep=".")
             )
         case RecordVariantGate():
             admits = gate.variant in metadata.record_variants
