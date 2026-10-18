@@ -2,4 +2,4 @@ schema_version = 1
 owner = "variant"
 
 [[variants]]
-axis = "occam_epoch_datetime_list"
+axis = "epoch_datetime_list"
