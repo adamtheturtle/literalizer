@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "a": {"k": "07:30:00"},
+    "b": {"k": "string"}
+}
+@end
