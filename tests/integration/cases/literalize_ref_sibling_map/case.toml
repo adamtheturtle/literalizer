@@ -6,11 +6,6 @@ owner = "literalize-ref"
 # "accepts anything" value type even though both maps agree once the
 # reference resolves (issue #4753).
 [ref]
-languages = ["Cpp", "Kotlin"]
-languages_reason = """
-Sampled: these two narrow a map's value type in the element position
-and so showed the widening; the fix is in the shared inference layer.
-"""
 
 [ref.value_sources]
 sibling_map = '{"k": 2}'

@@ -1,0 +1,13 @@
+* sibling_map
+@code javascript
+{
+    "k": 2
+}
+@end
+* my_data
+@code javascript
+[
+    {"k": 1},
+    sibling_map
+]
+@end
