@@ -13,6 +13,7 @@ from beartype import beartype
 
 from literalizer._formatters.collection_openers import (
     fixed_open,
+    typed_collection_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -45,6 +46,11 @@ from literalizer._formatters.format_integers import (
 from literalizer._formatters.format_strings import (
     bidi_escape_replacements,
     make_backslash_string_formatter,
+)
+from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
+    MixedNumeric,
 )
 from literalizer._language import (
     NO_CALL_PARAMETER_LIMIT,
@@ -115,6 +121,17 @@ _format_string = make_backslash_string_formatter(
         *bidi_escape_replacements(template="\\u{:04X}"),
     ],
 )
+
+
+@beartype
+def _mixed_numeric_set_opener(
+    element_type: type | ListType | DictType,
+    /,
+) -> str | None:
+    """Keep Julia's array constructor from promoting integers to
+    floats.
+    """
+    return "Set(Any[" if element_type is MixedNumeric else None
 
 
 @beartype
@@ -452,7 +469,10 @@ class Julia(metaclass=LanguageCls):
         """Set type options for Julia."""
 
         SET = SetFormatConfig(
-            set_open=fixed_open(open_str="Set(["),
+            set_open=typed_collection_open(
+                type_to_opener=_mixed_numeric_set_opener,
+                fallback="Set([",
+            ),
             close="])",
             empty_set="Set()",
             preamble_lines=(),
