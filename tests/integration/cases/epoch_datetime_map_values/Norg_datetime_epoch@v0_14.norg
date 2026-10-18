@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "within_i32": 1705320000,
+    "beyond_i32": 4085195400
+}
+@end
