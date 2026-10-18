@@ -1,7 +1,0 @@
-schema_version = 1
-owner = "variant"
-languages = ["Rust"]
-languages_reason = "Rust epoch expressions must compile without an explicit integer type constraint."
-
-[[variants]]
-axis = "datetime"
