@@ -1118,7 +1118,7 @@ class VisualBasic(metaclass=LanguageCls):
         """Shared element-to-type mapping used by collection openers."""
         datetime_type = "String"
         if self.datetime_format.value.type_produced is int:
-            datetime_type = "Integer"
+            datetime_type = "Long"
         date_type = "String"
         if self.date_format.value.type_produced is dt.date:
             date_type = "DateOnly"
