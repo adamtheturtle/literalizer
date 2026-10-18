@@ -1,0 +1,9 @@
+local my_data = {
+    ["i32_below"] = -0x80000001,
+    ["i32_minimum"] = -0x80000000,
+    ["i32_above"] = -0x7fffffff,
+    ["i32_maximum"] = 0x7fffffff,
+    ["i32_over"] = 0x80000000,
+    ["i64_minimum"] = math.mininteger,
+    ["i64_maximum"] = 0x7fffffffffffffff,
+}
