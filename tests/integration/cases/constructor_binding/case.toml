@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "declares_type_name_call_target"}]
+
+[constructor]
+class_name = "Playlist"
+variable_name = "created"

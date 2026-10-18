@@ -1,8 +1,0 @@
-schema_version = 1
-owner = "constructor-binding"
-languages = ["JavaScript"]
-languages_reason = "A generated JavaScript stub supplies a complete constructor call binding."
-
-[constructor]
-class_name = "Playlist"
-variable_name = "p"

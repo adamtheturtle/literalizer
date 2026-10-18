@@ -1,8 +1,0 @@
-schema_version = 1
-owner = "constructor-binding"
-languages = ["Bash"]
-languages_reason = "A generated Bash stub supplies a complete constructor call binding."
-
-[constructor]
-class_name = "Playlist"
-variable_name = "p"

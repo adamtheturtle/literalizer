@@ -1,2 +1,0 @@
-Playlist() { :; }
-declare p="$(Playlist)"

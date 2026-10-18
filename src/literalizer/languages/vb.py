@@ -238,6 +238,16 @@ def _vb_call_stub(
         f"{indent}Return Nothing\n"
         "End Function"
     )
+    if len(parts) == 1 and parts[0].startswith("New "):
+        class_name = parts[0].removeprefix("New ")
+        return (
+            (
+                f"Class {class_name}\n"
+                f"{indent}Public Sub New({param_list})\n"
+                f"{indent}End Sub\n"
+                "End Class"
+            ),
+        )
     if len(parts) == 1:
         return (
             (

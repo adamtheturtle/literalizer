@@ -366,6 +366,9 @@ def _scala_call_stub(
 ) -> tuple[str, ...]:
     """Return Scala stub declarations for a call name."""
     param_list = ", ".join(_scala_parameter_declaration(p) for p in params)
+    if len(parts) == 1 and parts[0].startswith("new "):
+        class_name = parts[0].removeprefix("new ")
+        return (f"class {class_name}({param_list})",)
     if len(parts) == 1:
         return (f"def {parts[0]}({param_list}): Any = null",)
     root = parts[0]

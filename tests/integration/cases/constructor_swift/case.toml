@@ -1,8 +1,0 @@
-schema_version = 1
-owner = "constructor-binding"
-languages = ["Swift"]
-languages_reason = "A generated Swift stub supplies a complete constructor call binding."
-
-[constructor]
-class_name = "Playlist"
-variable_name = "p"

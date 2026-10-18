@@ -1,8 +1,0 @@
-schema_version = 1
-owner = "constructor-binding"
-languages = ["Python"]
-languages_reason = "A generated Python stub supplies a complete zero-argument call binding."
-
-[constructor]
-class_name = "Playlist"
-variable_name = "p"
