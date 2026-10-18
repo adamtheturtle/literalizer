@@ -1,11 +1,9 @@
 schema_version = 1
 owner = "literalize-call"
 
-# Slot 0 holds lists whose Mojo element type disagrees across calls
-# (``List[Int]`` vs ``List[String]``), forcing
-# ``_mojo_typed_param_list`` to fall back to the generic
-# ``[*Ts: AnyType](*args: *Ts)`` stub so the typed list-slot path stays
-# the only producer of ``data: List[T]`` signatures.
+# Separately declared list references retain their own element types.
+# The VARIANT control accepts moved List[Int]/List[String] values through
+# the Variant alias, rather than changing the parameter to List[Value].
 [call]
 target_function = "process"
 parameter_names = ["data", "count"]

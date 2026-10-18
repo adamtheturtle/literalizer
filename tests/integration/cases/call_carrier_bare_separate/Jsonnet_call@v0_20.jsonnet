@@ -1,0 +1,4 @@
+local make_widget(first_value, second_value) = null;
+[
+    make_widget(first_value=[1], second_value=["text"]),
+]

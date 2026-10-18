@@ -268,6 +268,8 @@ def _value_to_mojo_type(
     effective_element_type: type | ListType | DictType
     match value:
         case list():
+            if heterogeneous_value_type is not None and id(value) in wrap_ids:
+                return f"List[{heterogeneous_value_type}]"
             element_type = infer_element_type(items=[value])
             effective_element_type = list
             if element_type is not None:
@@ -390,12 +392,7 @@ def _mojo_compute_slot_signatures(
     if len(slots) != len(params):
         return _MojoSlotInfo(typed_params=None, slots=())
     if heterogeneous_value_type is not None:
-        wrap_ids = frozenset[int]().union(
-            *(
-                collect_heterogeneous_container_ids(data=slot_values)
-                for slot_values in slots
-            )
-        )
+        wrap_ids = collect_heterogeneous_container_ids(data=list(arg_values))
     else:
         wrap_ids = frozenset[int]()
     typed: list[str] = []

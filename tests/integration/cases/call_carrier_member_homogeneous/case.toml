@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "capability_flag", flag = "supports_dotted_calls"}]
+target_function = "app.go"
+parameter_names = ["first_value", "second_value"]
+per_element = true
+wrap_in_file = true
+
+[[call.variants]]
+axis = "heterogeneous_strategy"
