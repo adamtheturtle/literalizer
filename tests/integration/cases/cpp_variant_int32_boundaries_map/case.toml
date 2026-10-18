@@ -1,7 +1,5 @@
 schema_version = 1
 suites = ["base"]
-languages = ["Cpp"]
-languages_reason = "C++ variant converting constructors require compatible integer expression types."
 
 [[variants]]
 axis = "integer_format"

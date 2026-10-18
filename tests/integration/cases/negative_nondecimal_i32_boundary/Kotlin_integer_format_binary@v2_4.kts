@@ -1,0 +1,4 @@
+val my_data = mapOf<String, Long>(
+    "minimum" to -0b10000000000000000000000000000000L,
+    "below" to -0b10110010110100000101111000000000L,
+)

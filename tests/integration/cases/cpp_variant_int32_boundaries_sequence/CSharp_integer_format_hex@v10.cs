@@ -1,0 +1,7 @@
+using System;
+var my_data = (
+    -0x80000000,
+    -0x7fffffff,
+    ValueTuple.Create(0x0)
+);
+    _ = my_data;
