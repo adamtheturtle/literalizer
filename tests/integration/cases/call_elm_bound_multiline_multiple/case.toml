@@ -2,8 +2,6 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Elm"]
-languages_reason = "Elm preserves boundaries between multiple multiline calls with bound references."
 target_function = "f"
 parameter_names = ["value"]
 per_element = true
