@@ -2,7 +2,7 @@
 package main
 
 main :: proc() {
-my_data := map[string]struct{}{
+my_data := map[int]struct{}{
 	4085195400 = {},
 }
 _ = my_data
