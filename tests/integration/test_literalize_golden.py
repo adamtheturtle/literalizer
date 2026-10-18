@@ -21,7 +21,6 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer.exceptions import VariableNameNotSupportedError
 
 from .case_inputs import CaseInput
 from .case_manifests import load_case_manifest
@@ -114,22 +113,17 @@ def _check_rendering(
         prefix=rendering.lang_cls.__name__,
         config=file_regression.request.config,
     ):
-        try:
-            result = _literalize(
-                rendering=rendering,
-                spec=spec,
-                input_info=input_info,
-                source_text=source_text,
-                variable_form=rendering.render.variable_form,
-            )
-        except VariableNameNotSupportedError:
-            result = _literalize(
-                rendering=rendering,
-                spec=spec,
-                input_info=input_info,
-                source_text=source_text,
-                variable_form=None,
-            )
+        result = _literalize(
+            rendering=rendering,
+            spec=spec,
+            input_info=input_info,
+            source_text=source_text,
+            variable_form=(
+                rendering.render.variable_form
+                if spec.supports_variable_names
+                else None
+            ),
+        )
     if rendering.initialize_variable or len(rendering.extra_preamble) > 0:
         declarations: list[literalizer.LiteralizeResult] = []
         if rendering.initialize_variable:

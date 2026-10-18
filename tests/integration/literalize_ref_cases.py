@@ -29,6 +29,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     HeterogeneousCollectionError,
     InvalidDictKeyError,
+    NullInCollectionError,
     UnrepresentableInputError,
     VariableNameNotSupportedError,
 )
@@ -64,6 +65,11 @@ CASES_DIR = Path(__file__).parent / "cases"
 # skips rather than fails.
 _REF_SKIPS: SkipPolicy = SkipPolicy(
     reasons=(
+        SkipReason(
+            error=NullInCollectionError,
+            reason="cannot represent null in this collection",
+            unlink=True,
+        ),
         SkipReason(
             error=HeterogeneousCollectionError,
             reason="cannot represent this heterogeneous input",
