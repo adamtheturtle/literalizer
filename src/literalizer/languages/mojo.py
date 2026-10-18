@@ -392,14 +392,7 @@ def _mojo_compute_slot_signatures(
     if len(slots) != len(params):
         return _MojoSlotInfo(typed_params=None, slots=())
     if heterogeneous_value_type is not None:
-        wrap_ids = collect_heterogeneous_container_ids(
-            data=list(arg_values)
-        ).union(
-            *(
-                collect_heterogeneous_container_ids(data=slot_values)
-                for slot_values in slots
-            )
-        )
+        wrap_ids = collect_heterogeneous_container_ids(data=list(arg_values))
     else:
         wrap_ids = frozenset[int]()
     typed: list[str] = []
