@@ -1,0 +1,10 @@
+* my_time
+@code javascript
+"01:02:03"
+@end
+* my_data
+@code javascript
+{
+    "x": my_time
+}
+@end
