@@ -1,0 +1,11 @@
+(define my_data (list
+    (cons "before_date" "1582-10-04")
+    (cons "gap_date" "1582-10-10")
+    (cons "transition_date" "1582-10-15")
+    (cons "after_date" "1582-10-16")
+    (cons "before_naive" "1582-10-04T12:30:00.000001")
+    (cons "gap_naive" "1582-10-10T12:30:00.500000")
+    (cons "transition_positive" "1582-10-15T00:30:00+18:00")
+    (cons "transition_negative" "1582-10-15T23:30:00-18:00")
+    (cons "after_positive" "1582-10-16T00:30:00+18:00")
+))

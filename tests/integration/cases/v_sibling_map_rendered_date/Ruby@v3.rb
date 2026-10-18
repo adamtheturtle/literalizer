@@ -1,5 +1,5 @@
 require 'date'
 my_data = {
-  "a" => {"k" => Date.new(2020, 1, 1)},
+  "a" => {"k" => Date.new(2020, 1, 1, Date::GREGORIAN)},
   "b" => {"k" => "string"},
 }

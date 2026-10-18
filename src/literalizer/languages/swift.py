@@ -231,9 +231,20 @@ def _format_string_multiline(value: str) -> str:
     return f'{hashes}"""\n{value}\n"""{hashes}'
 
 
+# Foundation uses a hybrid Julian/Gregorian calendar. Epoch construction
+# preserves proleptic Gregorian dates through the reform day, including
+# datetime offsets that cross its transition.
+_SWIFT_GREGORIAN_REFORM_END = dt.date(year=1582, month=10, day=15).toordinal()
+
+
 @beartype
 def _format_date_swift(value: dt.date) -> str:
-    """Format a date as a Swift ``DateComponents`` expression."""
+    """Format a date as a Swift ``Date`` at Gregorian UTC midnight."""
+    if value.toordinal() <= _SWIFT_GREGORIAN_REFORM_END:
+        seconds = (
+            value.toordinal() - dt.date(year=1970, month=1, day=1).toordinal()
+        ) * 86_400
+        return f"Date(timeIntervalSince1970: {seconds})"
     return (
         "DateComponents("
         "calendar: Calendar(identifier: .gregorian), "
@@ -245,7 +256,7 @@ def _format_date_swift(value: dt.date) -> str:
 
 @beartype
 def _format_datetime_swift(value: dt.datetime) -> str:
-    """Format a datetime as a Swift ``DateComponents`` expression."""
+    """Format a datetime as a native Swift ``Date`` expression."""
     offset = value.utcoffset()
     if offset is None or offset == dt.timedelta():
         offset = dt.timedelta()
@@ -257,6 +268,12 @@ def _format_datetime_swift(value: dt.datetime) -> str:
         f"year: {value.year}, month: {value.month}, day: {value.day}, "
         f"hour: {value.hour}, minute: {value.minute}, second: {value.second}"
     )
+    if value.toordinal() <= _SWIFT_GREGORIAN_REFORM_END:
+        wall_time = value.replace(tzinfo=dt.UTC)
+        seconds = (
+            wall_time - dt.datetime(year=1970, month=1, day=1, tzinfo=dt.UTC)
+        ).total_seconds()
+        return f"Date(timeIntervalSince1970: {seconds - offset_seconds!r})"
     if value.microsecond != 0:
         nanosecond = value.microsecond * 1000
         parts += f", nanosecond: {nanosecond}"

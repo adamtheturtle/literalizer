@@ -1,0 +1,10 @@
+-module(fixture_millisecond_datetime_erlang).
+-export([x/0]).
+x() ->
+    My_data = #{
+        "half" => "1979-05-27T07:32:00.500000",
+        "milli" => "1979-05-27T07:32:00.100000",
+        "max_milli" => "1979-05-27T07:32:00.999000",
+        "whole" => "1979-05-27T07:32:00"
+    },
+    My_data.
