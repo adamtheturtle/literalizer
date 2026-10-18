@@ -1,7 +1,5 @@
 schema_version = 1
 owner = "variant"
-languages = ["Cobol", "Perl", "R"]
-languages_reason = "Extreme fixed decimal tokens must fit COBOL and Perl lexer limits and preserve R rounding and range."
 
 [[variants]]
 axis = "float_format"
