@@ -1,0 +1,28 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "before_date"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-04")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "gap_date"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-10")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "transition_date"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-15")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "after_date"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-16")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "before_naive"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-04T12:30:00.000001")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "gap_naive"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-10T12:30:00.500000")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "transition_positive"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-15T00:30:00+18:00")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "transition_negative"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-15T23:30:00-18:00")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "after_positive"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-16T00:30:00+18:00"))
+    ]):
+    SEQ
+        SKIP
+:

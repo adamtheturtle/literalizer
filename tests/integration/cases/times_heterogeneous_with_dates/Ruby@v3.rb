@@ -1,4 +1,4 @@
 require 'date'
 my_data = {
-  "vals" => [Date.new(2024, 1, 15), "09:30:00"],
+  "vals" => [Date.new(2024, 1, 15, Date::GREGORIAN), "09:30:00"],
 }

@@ -267,7 +267,7 @@ class Ruby(metaclass=LanguageCls):
         date_format: How to format :class:`datetime.date` values.
 
             * ``date_formats.RUBY`` — ``Date.new(...)`` call,
-              e.g. ``Date.new(2024, 1, 15)``.
+              e.g. ``Date.new(2024, 1, 15, Date::GREGORIAN)``.
             * ``date_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15"``.
 
@@ -446,7 +446,7 @@ class Ruby(metaclass=LanguageCls):
 
         RUBY = DateFormatConfig(
             formatter=date_ymd_formatter(
-                template="Date.new({year}, {month}, {day})",
+                template="Date.new({year}, {month}, {day}, Date::GREGORIAN)",
             ),
             preamble_lines=("require 'date'",),
             type_produced=dt.date,
