@@ -902,13 +902,12 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 
-[axes.scala3_record_keyword_fields]
-# Scala 3 soft-keyword field syntax is a language-specific grammar case,
-# rather than a cross-language rendering capability.
+[axes.native_record_keyword_fields]
 plan = "fixed_overrides"
-name_template = "{lang}_scala3_record_keyword_fields"
+record_language_version = true
+name_template = "{lang}_record_keyword_fields"
 gates = [
-  { kind = "metadata_field", field = "language_id", value = "scala" },
+  { kind = "record_variant", variant = "keyword_field" },
 ]
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
@@ -1085,7 +1084,7 @@ overrides = [
 plan = "fixed_overrides"
 name_template = "{lang}_record_sequence_{format}"
 primary_axis = "sequence"
-gates = [{ kind = "metadata_field", field = "language_id", value = "rust" }]
+gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD" }]
 overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
@@ -1410,18 +1409,6 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
 secondaries = [{ tag = "integer", option = "integer_format" }]
-
-[axes.csharp_fallback_map_non_scalar]
-# This locks in C#'s System.Text.Json fallback syntax for nested non-scalars;
-# no cross-language capability denotes that language-specific spelling.
-plan = "fixed_overrides"
-name_template = "{lang}_fallback_map_non_scalar"
-gates = [
-  { kind = "metadata_field", field = "language_id", value = "csharp" },
-]
-overrides = [
-  { kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" },
-]
 
 [axes.special_float_dict_key]
 plan = "fixed_overrides"
