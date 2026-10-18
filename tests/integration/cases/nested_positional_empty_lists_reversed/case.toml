@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["Rust"]
-languages_reason = "Rust vectors infer nested empty element types from an earlier populated cousin."
 suites = ["base", "combined"]
 
 [base_context]

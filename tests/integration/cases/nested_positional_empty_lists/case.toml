@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["Cpp", "Rust"]
-languages_reason = "C++ content-derived nested vector types must agree with literals whose empty lists borrow a populated positional cousin type. Rust vectors infer these empty element types from their populated siblings."
 suites = ["base", "combined"]
 
 [base_context]
