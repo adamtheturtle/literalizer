@@ -182,7 +182,7 @@ def _haxe_constructor_stub(
     _args: Sequence[Value],
     /,
 ) -> tuple[str, ...]:
-    """Declare constructor types outside the generated entrypoint."""
+    """Declare constructor types outside the generated entry point."""
     if len(parts) == 1 and parts[0].startswith("new "):
         class_name = parts[0].removeprefix("new ")
         param_list = _haxe_params(params=params)
@@ -952,7 +952,7 @@ class Haxe(metaclass=LanguageCls):
         [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
         tuple[str, ...],
     ]:
-        """Return constructor declarations outside the entrypoint."""
+        """Return constructor declarations outside the entry point."""
         return _haxe_constructor_stub
 
     format_call_target = default_format_call_target
