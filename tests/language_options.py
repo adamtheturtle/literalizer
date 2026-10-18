@@ -444,22 +444,8 @@ def _default_allows_empty_dict_keys(
     return "ALLOW" in lang_cls.EmptyDictKey.__members__
 
 
-@beartype
-def _default_allows_empty_ordered_map_keys(
-    lang_cls: literalizer.LanguageCls,
-) -> bool:
-    """Read the default ordered-map key grammar and empty-key policy."""
-    syntax = lang_cls().ordered_map_format_config.key_syntax
-    return (syntax is None or syntax.accepts(name="")) and (
-        _default_allows_empty_dict_keys(lang_cls=lang_cls)
-    )
-
-
 CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "default_allows_empty_dict_keys": _default_allows_empty_dict_keys,
-    "default_allows_empty_ordered_map_keys": (
-        _default_allows_empty_ordered_map_keys
-    ),
     "default_rejects_empty_dict_keys": (
         lambda lang_cls: not _default_allows_empty_dict_keys(lang_cls=lang_cls)
     ),
