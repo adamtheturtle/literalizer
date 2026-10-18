@@ -1,0 +1,15 @@
+* floating_value
+@code javascript
+1.5
+@end
+* integer_value
+@code javascript
+2.0
+@end
+* my_data
+@code javascript
+[
+    floating_value,
+    integer_value
+]
+@end
