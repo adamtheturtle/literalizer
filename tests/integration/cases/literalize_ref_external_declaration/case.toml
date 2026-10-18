@@ -2,7 +2,7 @@ schema_version = 1
 owner = "literalize-ref-default"
 
 [ref]
-languages = ["Python"]
-languages_reason = "A Python control composes a caller's external binding without needing a consumer or an executable value check."
+languages = ["Go", "Python", "Rust"]
+languages_reason = "External declarations retain inference while the generated root is consumed; Go and strict Rust require that use."
 external_declarations = {shared = "[1, 2]"}
 explicit_ref_value_sources = {shared = "[1, 2]"}

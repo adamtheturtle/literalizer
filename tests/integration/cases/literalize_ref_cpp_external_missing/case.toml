@@ -2,8 +2,8 @@ schema_version = 1
 owner = "literalize-ref-default"
 
 [ref]
-languages = ["Cpp"]
-languages_reason = "C++ external assignment distinguishes absent inference, native nullptr, and owning JSON null without materializing bound_refs."
+languages = ["Cpp", "Rust"]
+languages_reason = "Regression controls for external-reference inference, mutable destinations, and portable generated consumer parameters; preserve the caller-owned value and before/after reads."
 variable_form = "existing"
 external_declarations = {item = "[1, 2]", my_data = "[1, 2]"}
 

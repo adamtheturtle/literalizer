@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+languages = ["Fortran", "Nim"]
+languages_reason = "Scalar controls for the Nim/Fortran generated-consumer parameter regression in issue #5769; the collection control remains in literalize_ref_cpp_external_empty."
+external_declarations = {shared = "1"}
+explicit_ref_value_sources = {shared = "1"}

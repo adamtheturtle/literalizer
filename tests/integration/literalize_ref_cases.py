@@ -51,6 +51,7 @@ from .golden_checks import (
     check_golden,
 )
 from .language_specs import (
+    find_redefinition_styles,
     make_golden_path,
     sorted_languages,
     with_per_fixture_module_name,
@@ -335,7 +336,7 @@ def _compose_ref_consumer(
     """Compose a generated consumer around an external-reference
     result.
     """
-    parameters = ("_arg",)
+    parameters = ("arg_value",)
     target = tuple(consumer.target_function.split(sep="."))
     call = literalizer.literalize_call(
         source='{"$ref": "my_data"}',
@@ -378,6 +379,17 @@ def _compose_external_ref_fixture(
     for name, source in config.external_declarations.items():
         declaration_spec = spec
         style = config.external_declaration_styles.get(name)
+        if config.variable_form == "existing" and name == "my_data":
+            styles = find_redefinition_styles(spec=spec)
+            if len(styles) == 0 and spec.call_assignment_declares_binding:
+                msg = (
+                    "the external destination needs a reassignable declaration"
+                )
+                raise UnrepresentableInputError(msg)
+            if len(styles) > 0 and style is None:
+                declaration_spec = dataclasses.replace(
+                    spec, declaration_style=styles[0]
+                )
         if style is not None:
             declaration_spec = dataclasses.replace(
                 spec,
@@ -402,17 +414,14 @@ def _compose_external_ref_fixture(
             declarations=declarations,
             result=result,
         )
-    if config.consumer is not None:
-        return _compose_ref_consumer(
-            consumer=config.consumer,
-            spec=spec,
-            declarations=declarations,
-            result=result,
-        )
-    return literalizer.literalize_call_with_declarations(
-        language=spec,
+    consumer = config.consumer
+    if consumer is None:
+        consumer = RefConsumerSpec(target_function="consume_widget")
+    return _compose_ref_consumer(
+        consumer=consumer,
+        spec=spec,
         declarations=declarations,
-        call=result,
+        result=result,
     )
 
 
@@ -509,13 +518,13 @@ def run_literalize_ref_golden_case(
                 value=config.collection_layout
             ),
         )
-    if len(config.external_declarations) > 0:
-        result = _compose_external_ref_fixture(
-            config=config,
-            lang_cls=lang_cls,
-            spec=spec,
-            result=result,
-        )
+        if len(config.external_declarations) > 0:
+            result = _compose_external_ref_fixture(
+                config=config,
+                lang_cls=lang_cls,
+                spec=spec,
+                result=result,
+            )
     check_golden(
         contents=result.code + "\n",
         extension=lang_cls.extension,
