@@ -77,6 +77,9 @@ from literalizer._formatters.record_strategy import (
     identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import (
+    DictType,
+    ListType,
+    MixedNumeric,
     record_shape_for_dict,
     single_concrete_type,
 )
@@ -339,6 +342,7 @@ def _csharp_common_element_type(
     datetime_hint: str,
     dict_value_type: str,
     tuple_sequences: bool,
+    preserve_numeric_kinds: bool,
 ) -> str:
     """Return the common C# type for a list of elements."""
     if len(items) == 0:
@@ -356,7 +360,7 @@ def _csharp_common_element_type(
     if len(types) == 1:
         return next(iter(types))
     if types == {"int", "double"}:
-        return "double"
+        return "object" if preserve_numeric_kinds else "double"
     return "object?"
 
 
@@ -378,6 +382,7 @@ def _csharp_type_hint(
                 datetime_hint=datetime_hint,
                 dict_value_type=dict_value_type,
                 tuple_sequences=tuple_sequences,
+                preserve_numeric_kinds=False,
             )
             return f"Dictionary<string, {val_type}>"
         case set():
@@ -387,6 +392,7 @@ def _csharp_type_hint(
                 datetime_hint=datetime_hint,
                 dict_value_type=dict_value_type,
                 tuple_sequences=tuple_sequences,
+                preserve_numeric_kinds=True,
             )
             return f"HashSet<{elem}>"
         case list() if tuple_sequences:
@@ -415,6 +421,7 @@ def _csharp_type_hint(
                 datetime_hint=datetime_hint,
                 dict_value_type=dict_value_type,
                 tuple_sequences=tuple_sequences,
+                preserve_numeric_kinds=False,
             )
             return f"{elem}[]"
         case _:
@@ -2238,8 +2245,22 @@ class CSharp(metaclass=LanguageCls):
                 supports_trailing_comma=True,
             )
         base = self._base_set_format_config
+        type_to_opener = self._openers.set
+        if base.supports_heterogeneity:
+
+            @beartype
+            def _heterogeneous_set_open(
+                element_type: type | ListType | DictType,
+                /,
+            ) -> str | None:
+                """Keep integer values without coercing them to double."""
+                if element_type is MixedNumeric:
+                    return "new HashSet<object> {"
+                return self._openers.set(element_type)
+
+            type_to_opener = _heterogeneous_set_open
         typed = base.with_typed_opener(
-            type_to_opener=self._openers.set,
+            type_to_opener=type_to_opener,
             fallback=base.set_open([]),
         )
         if self._dt_tp is not int:

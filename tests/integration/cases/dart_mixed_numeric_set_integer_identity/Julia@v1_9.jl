@@ -1,4 +1,4 @@
-my_data = Set([
+my_data = Set(Any[
     1.5,
     9007199254740993,
 ])
