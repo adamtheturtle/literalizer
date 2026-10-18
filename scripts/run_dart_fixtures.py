@@ -13,6 +13,10 @@ from literalizer import VariableForm
 from literalizer.languages import Dart
 from tests.integration.call_cases import discover_call_cases
 from tests.integration.call_variant_cases import build_call_variant_cases
+from tests.integration.constructor_cases import (
+    constructor_binding_cases,
+    constructor_golden_path,
+)
 from tests.integration.golden_scenarios import golden_groups
 from tests.integration.language_specs import make_golden_path
 from tests.integration.literalize_ref_cases import (
@@ -117,9 +121,31 @@ def _ref_bindings() -> dict[Path, str]:
 
 
 @beartype
+def _constructor_bindings() -> dict[Path, str]:
+    """Read constructor roots from their owning manifest metadata."""
+    bindings: dict[Path, str] = {}
+    for case in constructor_binding_cases():
+        if case.lang_cls is not Dart or case.manifest is None:
+            continue
+        config = case.manifest.constructor
+        if config is None:
+            msg = f"Missing constructor metadata for {case.name}."
+            raise ValueError(msg)
+        for version in Dart.VersionFormats:
+            golden = constructor_golden_path(case=case, version=version)
+            bindings[golden.resolve()] = config.variable_name
+    return bindings
+
+
+@beartype
 def dart_fixture_bindings() -> dict[Path, str]:
     """Read bindings from the same registries that own golden files."""
-    return _literalize_bindings() | _call_bindings() | _ref_bindings()
+    return (
+        _literalize_bindings()
+        | _call_bindings()
+        | _ref_bindings()
+        | _constructor_bindings()
+    )
 
 
 @beartype
