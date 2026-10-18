@@ -55,11 +55,11 @@ from literalizer._formatters.format_strings import (
     make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
     RecordDeclarationField,
     RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
-    RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
 )
@@ -1471,7 +1471,8 @@ class Crystal(metaclass=LanguageCls):
         formatter emits -- of :attr:`default_dict_value_type`.  The
         union is built to match the compiler's own canonical ordering
         so the invariant ``Array`` / ``Hash`` field type accepts the
-        inferred literal.
+        inferred literal. Generated record names are retained at every
+        nesting level, including records within heterogeneous lists.
         """
         if (
             isinstance(value, dt.datetime)
@@ -1508,10 +1509,13 @@ class Crystal(metaclass=LanguageCls):
                     value_type = self.default_dict_value_type
                 return f"Hash({self.default_dict_key_type}, {value_type})"
             case _:
-                # A set or non-empty non-record dict field is out of scope for
-                # the base ``RECORD`` port (#2317) and is not reached
-                # by any record golden; the ``or`` widens it to ``Nil``.
-                return self._crystal_scalar_type(value=value)
+                record_name = self._record_strategy.record_name_for_value(
+                    value
+                )
+                return nonempty_or_default(
+                    value=record_name,
+                    default=self._crystal_scalar_type(value=value),
+                )
 
     def _crystal_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the Crystal ``record`` field type for a record field.
@@ -1559,13 +1563,13 @@ class Crystal(metaclass=LanguageCls):
             field_type=self._crystal_record_field_type,
             render_declaration=_crystal_render_record_declaration,
             render_literal=_crystal_record_literal,
-            field_type_names_nested_records=False,
+            field_type_names_nested_records=True,
             suppress_custom_name_declarations=False,
         )
 
     @cached_property
     @beartype
-    def _record_strategy(self) -> RecordStrategy:
+    def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``record``-declaration preamble for ``RECORD``."""
         return build_record_strategy(
             renderer=self._record_renderer,
