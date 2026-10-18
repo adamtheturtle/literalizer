@@ -1532,7 +1532,11 @@ class Odin(metaclass=LanguageCls):
             mixed_numeric_type="f64",
             bytes_type="string",
             date_type="string",
-            datetime_type="string",
+            datetime_type=(
+                "int"
+                if self.datetime_format.value.type_produced is int
+                else "string"
+            ),
             time_type="string",
             list_template="[dynamic]{inner}",
             enable_list_type=True,
