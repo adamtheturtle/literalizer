@@ -1,7 +1,0 @@
-schema_version = 1
-languages = ["SystemVerilog"]
-languages_reason = "SystemVerilog sizes signed carrier payloads at integer magnitude boundaries."
-suites = ["base"]
-
-[[variants]]
-axis = "integer_format"
