@@ -1,7 +1,0 @@
-schema_version = 1
-languages = ["Rust"]
-languages_reason = "Rust fixed-size sequences retain rectangular shapes through map boundaries."
-suites = ["base"]
-
-[[variants]]
-axis = "sequence"
