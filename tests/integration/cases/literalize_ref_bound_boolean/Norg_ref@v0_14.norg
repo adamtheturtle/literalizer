@@ -1,0 +1,8 @@
+* ref_flag
+@code javascript
+true
+@end
+* my_data
+@code javascript
+ref_flag
+@end
