@@ -1,0 +1,4 @@
+datatype val_t =
+    SInt of LargeInt.int
+val my_data : val_t = SInt 4085195400
+val _ = my_data

@@ -1,7 +1,5 @@
 schema_version = 1
 owner = "variant"
-languages = ["PureScript", "Sml"]
-languages_reason = "These epoch scalar constructors require language-specific handling of negative integers."
 
 [[variants]]
 axis = "datetime"
