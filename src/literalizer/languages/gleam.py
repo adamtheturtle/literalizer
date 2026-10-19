@@ -358,10 +358,50 @@ def _build_gleam_bytes_base64(
     return _format
 
 
+_GLEAM_ERLANG_NONCHARACTERS = re.compile(pattern="[\ufffe\uffff]")
+
+
+@beartype
+def _format_gleam_raw_string(value: str) -> str:
+    """Avoid code points that Erlang rejects in Gleam's generated
+    source.
+    """
+    if _GLEAM_ERLANG_NONCHARACTERS.search(string=value) is not None:
+        byte_values = ", ".join(
+            str(object=byte) for byte in value.encode(encoding="utf-8")
+        )
+        return (
+            "{ let assert Ok(literalizer_decoded) = "
+            f"literalizer_bit_array.to_string(<<{byte_values}>>) "
+            "literalizer_decoded }"
+        )
+    return format_string_backslash_nul_braced_unicode(value=value)
+
+
+@beartype
+def _gleam_needs_bit_array(data: Value) -> bool:
+    """Find strings requiring the UTF-8 decoder, including mapping
+    keys.
+    """
+    match data:
+        case str():
+            return _GLEAM_ERLANG_NONCHARACTERS.search(string=data) is not None
+        case list() | set():
+            return any(_gleam_needs_bit_array(data=item) for item in data)
+        case dict():
+            return any(
+                _gleam_needs_bit_array(data=item)
+                for pair in data.items()
+                for item in pair
+            )
+        case _:
+            return False
+
+
 @beartype
 def _apply_gleam_string(value: str, prefix: str) -> str:
     """Format a string with a constructor prefix."""
-    escaped = format_string_backslash_nul_braced_unicode(value=value)
+    escaped = _format_gleam_raw_string(value=value)
     return f"{prefix}Str({escaped})"
 
 
@@ -649,7 +689,7 @@ _GLEAM_JSON_STRING_OPEN: str = "json.string("
 @beartype
 def _format_gleam_json_string(value: str) -> str:
     """Format a string as a ``json.string("...")`` builder call."""
-    escaped = format_string_backslash_nul_braced_unicode(value=value)
+    escaped = _format_gleam_raw_string(value=value)
     return f"{_GLEAM_JSON_STRING_OPEN}{escaped})"
 
 
@@ -1414,18 +1454,34 @@ class Gleam(metaclass=LanguageCls):
         """Return the ``pub type`` declaration tailored to *data*.
 
         Under :attr:`json_type` the rendered values flow through the
-        ``gleam_json`` builder API and no ``GVal`` ADT is needed, so the
-        preamble is empty.
+        ``gleam_json`` builder API and no ``GVal`` ADT is needed. Strings
+        that need UTF-8 decoding add its import in every output mode.
         """
+        base: Callable[[Value], tuple[str, ...]]
         if self._json_type_active:
-            return no_data_preamble
-        if self.dict_format is type(self.dict_format).RECORD:
-            return self._native_record_strategy.preamble
-        return _build_gleam_data_dependent_preamble(
-            type_name=self.type_name,
-            constructor_prefix=self.constructor_prefix,
-            datetime_type_produced=self.datetime_format.value.type_produced,
-        )
+            base = no_data_preamble
+        elif self.dict_format is type(self.dict_format).RECORD:
+            base = self._native_record_strategy.preamble
+        else:
+            base = _build_gleam_data_dependent_preamble(
+                type_name=self.type_name,
+                constructor_prefix=self.constructor_prefix,
+                datetime_type_produced=self.datetime_format.value.type_produced,
+            )
+
+        @beartype
+        def _compute(data: Value, /) -> tuple[str, ...]:
+            """Import the UTF-8 decoder only when emitted strings need
+            it.
+            """
+            imports = (
+                ("import gleam/bit_array as literalizer_bit_array",)
+                if _gleam_needs_bit_array(data=data)
+                else ()
+            )
+            return imports + base(data)
+
+        return _compute
 
     @cached_property
     @beartype
@@ -1790,7 +1846,7 @@ class Gleam(metaclass=LanguageCls):
     @beartype
     def format_dict_key(self) -> Callable[[str], str]:
         """Render a string key without a value constructor."""
-        return format_string_backslash_nul_braced_unicode
+        return _format_gleam_raw_string
 
     @cached_property
     @beartype
@@ -1799,7 +1855,7 @@ class Gleam(metaclass=LanguageCls):
         if self._json_type_active:
             return _format_gleam_json_string
         if self.dict_format is type(self.dict_format).RECORD:
-            return format_string_backslash_nul_braced_unicode
+            return _format_gleam_raw_string
         if self.constructor_prefix == "G":
             return _format_gleam_string
         return _build_gleam_str_formatter(prefix=self.constructor_prefix)
