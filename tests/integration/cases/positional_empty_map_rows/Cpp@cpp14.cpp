@@ -43,7 +43,7 @@ struct Value {
   } // get const
 };
 int main() {
-auto my_data = std::map<std::string, std::vector<std::vector<Value>>>{
+auto my_data = std::map<std::string, std::vector<Value>>{
     {"first", std::vector<Value>{Value{std::vector<Value>{Value{1}, Value{"value"}}}, Value{std::vector<Value>{}}}},
     {"second", std::vector<Value>{Value{std::vector<Value>{}}, Value{std::vector<Value>{Value{2}, Value{"other"}}}}},
 };

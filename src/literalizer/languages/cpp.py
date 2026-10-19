@@ -1250,6 +1250,21 @@ def _compute_element_type_for_items(
     common_type = _infer_cpp_collection_type(items=items, type_ctx=type_ctx)
     if common_type is not None:
         return common_type
+    variant_int_type = type_ctx.int_resolver(
+        _collect_direct_ints(items=items),
+    )
+    variant_element_to_type = type_ctx.element_to_type(
+        int_type=variant_int_type,
+    )
+    types = _collect_unique_cpp_types(
+        items=items,
+        element_to_type=variant_element_to_type,
+        type_ctx=type_ctx,
+    )
+    if len(types) == 1:
+        # Positional exemplars must not change an already agreed rendered
+        # type. A heterogeneous row can already be a vector of carriers.
+        return types[0]
     sibling_lists = [item for item in items if isinstance(item, list)]
     if not type_ctx.tuple_strategy and len(sibling_lists) == len(items):
         normalized_lists = replace_positional_empty_lists(lists=sibling_lists)
@@ -1257,22 +1272,7 @@ def _compute_element_type_for_items(
             return _compute_element_type_for_items(
                 items=list(normalized_lists), type_ctx=type_ctx
             )
-    variant_int_type = type_ctx.int_resolver(
-        _collect_direct_ints(items=items),
-    )
-    variant_element_to_type = type_ctx.element_to_type(
-        int_type=variant_int_type,
-    )
-    match _collect_unique_cpp_types(
-        items=items,
-        element_to_type=variant_element_to_type,
-        type_ctx=type_ctx,
-    ):
-        case [single]:
-            result = single
-        case types:
-            result = type_ctx.variant_type(types)
-    return result
+    return type_ctx.variant_type(types)
 
 
 @beartype
@@ -1796,6 +1796,19 @@ def _cpp14_variant_parent_ids(
             )
         ):
             ids.add(id(value))
+        # A row narrowed from its own values can be widened by its
+        # siblings to a vector of carriers. Its children need the same
+        # explicit construction as children of an independently mixed row.
+        if _compute_element_type_for_items(
+            items=type_children, type_ctx=type_ctx
+        ) == type_ctx.sequence_type(
+            inner=type_ctx.variant_type_name, length=0
+        ):
+            ids.update(
+                id(child)
+                for child in children
+                if isinstance(child, list) and id(child) not in excluded_ids
+            )
         for child in children:
             _collect(value=child)
 

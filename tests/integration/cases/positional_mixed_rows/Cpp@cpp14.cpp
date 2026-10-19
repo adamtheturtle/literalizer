@@ -44,7 +44,7 @@ struct Value {
 int main() {
 auto my_data = std::vector<std::vector<Value>>{
     std::vector<Value>{Value{std::vector<Value>{Value{1}, Value{"value"}}}, Value{std::vector<int>{1, 2}}, Value{std::vector<int>{}}},
-    std::vector<Value>{std::vector<int>{}, std::vector<int>{}, std::vector<int>{3, 4}},
+    std::vector<Value>{Value{std::vector<int>{}}, Value{std::vector<int>{}}, Value{std::vector<int>{3, 4}}},
 };
     (void)my_data;
     return 0;

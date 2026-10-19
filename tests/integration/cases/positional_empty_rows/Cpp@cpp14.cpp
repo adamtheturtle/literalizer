@@ -42,7 +42,7 @@ struct Value {
   } // get const
 };
 int main() {
-auto my_data = std::vector<std::vector<std::vector<Value>>>{
+auto my_data = std::vector<std::vector<Value>>{
     std::vector<Value>{Value{std::vector<Value>{Value{1}, Value{"value"}}}, Value{std::vector<Value>{}}},
     std::vector<Value>{Value{std::vector<Value>{}}, Value{std::vector<Value>{Value{2}, Value{"other"}}}},
 };
