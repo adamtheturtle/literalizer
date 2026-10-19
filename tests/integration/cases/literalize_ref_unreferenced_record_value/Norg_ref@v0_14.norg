@@ -1,0 +1,6 @@
+* my_data
+@code javascript
+{
+    "main": {"x": 1, "y": "s"}
+}
+@end

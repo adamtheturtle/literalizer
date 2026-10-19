@@ -1,7 +1,5 @@
 schema_version = 1
 owner = "variant"
-languages = ["Swift", "V"]
-languages_reason = "Native record names must remain precise inside ordered-map fields."
 
 [[variants]]
 axis = "record_nested_map_fallback"

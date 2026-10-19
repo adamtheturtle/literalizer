@@ -1,0 +1,30 @@
+const Record2 = struct { x: i64 };
+const Record1 = struct { values: []const struct { key: []const u8, val: []const struct { key: []const u8, val: Record2 } }, flag: bool };
+const Record4 = struct { y: []const u8 };
+const Record3 = struct { values: []const struct { key: []const u8, val: []const struct { key: []const u8, val: Record4 } }, flag: bool };
+const Record0 = struct { first: Record1, second: Record3 };
+pub fn main() void {
+    const my_data = Record0{
+        .first = Record1{
+            .values = &.{
+                .{ .key = "outer", .val = &.{
+                    .{ .key = "inner", .val = Record2{
+                        .x = 1,
+                    } },
+                } },
+            },
+            .flag = true,
+        },
+        .second = Record3{
+            .values = &.{
+                .{ .key = "outer", .val = &.{
+                    .{ .key = "inner", .val = Record4{
+                        .y = "s",
+                    } },
+                } },
+            },
+            .flag = false,
+        },
+    };
+    _ = my_data;
+}

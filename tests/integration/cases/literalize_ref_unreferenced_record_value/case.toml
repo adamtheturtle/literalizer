@@ -1,11 +1,7 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Erlang", "Go", "Kotlin", "Roc", "Zig"]
-languages_reason = "Unused bound references must not generate declarations rejected by target toolchains."
 
 [ref]
-languages = ["Erlang", "Go", "Kotlin", "Roc", "Zig"]
-languages_reason = "Unused bound references must not generate declarations rejected by target toolchains."
 
 [ref.extra_ref_value_sources]
 other = '"true"'
