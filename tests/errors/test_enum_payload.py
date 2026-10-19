@@ -1,39 +1,59 @@
-"""Reject enum payloads that do not meet their consumer's contract."""
+"""TOML-driven errors for enum payload consumer contracts."""
 
 import enum
-from collections.abc import Callable
+from typing import Literal, assert_never
 
 import pytest
+from pydantic import BaseModel, TypeAdapter
 
 from literalizer._enums import enum_payload
 from literalizer._language import redefinition_config, scalar_format_config
+from tests.toml_cases import load_toml_cases
 
 
-class _WrongPayload(enum.Enum):
-    """An option whose payload cannot be consumed as text."""
+class _PayloadCase(BaseModel, extra="forbid", frozen=True):
+    """One invalid payload and the exact error its consumer raises."""
 
-    INTEGER = 1
+    name: str
+    consumer: Literal["text", "scalar_format", "redefinition"]
+    payload: int
+    message: str
+
+    def read(self, *, member: enum.Enum) -> object:
+        """Apply the consumer named by this case."""
+        match self.consumer:
+            case "text":
+                return enum_payload(member=member, payload_type=str)
+            case "scalar_format":
+                return scalar_format_config(member)
+            case "redefinition":
+                return redefinition_config(member)
+            case _ as unreachable:
+                assert_never(unreachable)
 
 
-def test_enum_payload_rejects_wrong_type() -> None:
-    """Reject a payload that does not match the required type."""
-    with pytest.raises(
-        expected_exception=TypeError,
-        match=r"_WrongPayload\.INTEGER requires a str payload; got int",
-    ):
-        _ = enum_payload(member=_WrongPayload.INTEGER, payload_type=str)
+class _PayloadCases(BaseModel, extra="forbid", frozen=True):
+    """The manifest-owned enum payload rejection corpus."""
+
+    cases: tuple[_PayloadCase, ...]
+
+
+_CASES = TypeAdapter(type=_PayloadCases).validate_python(
+    load_toml_cases(name="enum_payload_errors")
+)
 
 
 @pytest.mark.parametrize(
-    argnames=("reader", "message"),
-    argvalues=[
-        (scalar_format_config, "requires scalar format metadata"),
-        (redefinition_config, "requires declaration redefinition metadata"),
-    ],
+    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
 )
-def test_enum_payload_rejects_missing_metadata(
-    *, reader: Callable[[enum.Enum], object], message: str
-) -> None:
-    """Require the structural metadata consumed by scalar and binding code."""
-    with pytest.raises(expected_exception=TypeError, match=message):
-        _ = reader(_WrongPayload.INTEGER)
+def test_enum_payload_error(case: _PayloadCase) -> None:
+    """Each consumer rejects the manifest's invalid enum payload."""
+
+    class _WrongPayload(enum.Enum):
+        """An option carrying the manifest's invalid payload."""
+
+        VALUE = case.payload
+
+    with pytest.raises(expected_exception=TypeError) as error:
+        _ = case.read(member=_WrongPayload.VALUE)
+    assert str(object=error.value) == case.message
