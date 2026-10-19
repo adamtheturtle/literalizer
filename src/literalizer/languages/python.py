@@ -74,6 +74,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -416,12 +417,14 @@ class _PythonTypeDependencies(str):
 
     _requires_union: bool
 
-    @classmethod
-    def create(cls, code: str, /, *, requires_union: bool) -> Self:
+    def __new__(cls, code: str, /, *, requires_union: bool) -> Self:
+        """Allocate text; the initializer retains producer metadata."""
+        del requires_union
+        return super().__new__(cls, object=code)
+
+    def __init__(self, _code: str, /, *, requires_union: bool) -> None:
         """Keep the union import decision alongside the emitted type."""
-        result = cls(object=code)
-        result._requires_union = requires_union
-        return result
+        self._requires_union = requires_union
 
     @property
     def requires_union(self) -> bool:
@@ -1177,8 +1180,6 @@ class Python(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date formatting options for Python."""
 
-        _value_: DateFormatConfig
-
         PYTHON = DateFormatConfig(
             formatter=date_ymd_formatter(
                 template="datetime.date("
@@ -1201,8 +1202,6 @@ class Python(metaclass=LanguageCls):
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime formatting options for Python."""
 
-        _value_: DatetimeFormatConfig
-
         PYTHON = DatetimeFormatConfig(
             formatter=functools.partial(
                 _format_datetime_python,
@@ -1224,10 +1223,8 @@ class Python(metaclass=LanguageCls):
                 return "datetime.datetime"
             return "int"
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options for Python."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
@@ -1235,7 +1232,7 @@ class Python(metaclass=LanguageCls):
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
         @property
         def type_hint(self) -> str:
@@ -1520,10 +1517,8 @@ class Python(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=_format_string_single)
@@ -1532,7 +1527,7 @@ class Python(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1811,7 +1806,7 @@ class Python(metaclass=LanguageCls):
             f"{self.indent}{field.identifier}: {field.type_name}"
             for field in fields
         ]
-        return _PythonTypeDependencies.create(
+        return _PythonTypeDependencies(
             "\n".join(lines),
             requires_union=any(
                 isinstance(field.type_name, _PythonTypeDependencies)
@@ -1855,9 +1850,7 @@ class Python(metaclass=LanguageCls):
             join_union=_join_types,
             record_name_for_value=self._record_strategy.record_name_for_value,
         )
-        return _PythonTypeDependencies.create(
-            code, requires_union=requires_union
-        )
+        return _PythonTypeDependencies(code, requires_union=requires_union)
 
     @cached_property
     @beartype

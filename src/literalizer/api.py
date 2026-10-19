@@ -17,6 +17,7 @@ from literalizer._language import (
     Language,
     RenderedCallStub,
     is_reserved_identifier,
+    redefinition_config,
 )
 from literalizer._literalize import (
     BothVariableForms,
@@ -552,7 +553,9 @@ def literalize(
         if not wrap_in_file:
             msg = "BothVariableForms requires wrap_in_file=True"
             raise ValueError(msg)
-        if not language.declaration_style.value.supports_redefinition:
+        if not redefinition_config(
+            language.declaration_style
+        ).supports_redefinition:
             msg = (
                 "BothVariableForms requires a declaration_style that "
                 "supports redefinition; "

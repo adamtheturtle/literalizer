@@ -621,6 +621,7 @@ The members below are the contract each built-in language implements.
 
 .. autoclass:: LanguageCls
    :members:
+   :inherited-members: type
 
 Built-in languages
 ------------------

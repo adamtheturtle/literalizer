@@ -5,6 +5,7 @@ forms.
 import pytest
 
 from literalizer import FileWrapperContext, LanguageCls
+from literalizer._language import redefinition_config
 from literalizer.exceptions import WrapCombinedInFileNotSupportedError
 from literalizer.languages import ALL_LANGUAGES
 
@@ -20,7 +21,7 @@ def _language_class_name(language_cls: LanguageCls, /) -> str:
         cls
         for cls in sorted(ALL_LANGUAGES, key=_language_class_name)
         if not any(
-            style.value.supports_redefinition
+            redefinition_config(style).supports_redefinition
             for style in cls.DeclarationStyles
         )
     ],

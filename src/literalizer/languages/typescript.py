@@ -68,6 +68,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -762,8 +763,6 @@ class TypeScript(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date formatting options for TypeScript."""
 
-        _value_: DateFormatConfig
-
         JS = DateFormatConfig(
             formatter=format_date_javascript,
             preamble_lines=(),
@@ -775,8 +774,6 @@ class TypeScript(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime formatting options for TypeScript."""
-
-        _value_: DatetimeFormatConfig
 
         JS = DatetimeFormatConfig(
             formatter=format_datetime_javascript,
@@ -795,17 +792,15 @@ class TypeScript(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for TypeScript."""
@@ -1027,10 +1022,8 @@ class TypeScript(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = _StringEnumMember(value=_format_string_double)
         SINGLE = _StringEnumMember(value=_format_string_single)
@@ -1038,7 +1031,7 @@ class TypeScript(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

@@ -66,6 +66,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -598,8 +599,6 @@ class VisualBasic(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for VisualBasic."""
 
-        _value_: DateFormatConfig
-
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
@@ -614,8 +613,6 @@ class VisualBasic(metaclass=LanguageCls):
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for VisualBasic."""
 
-        _value_: DatetimeFormatConfig
-
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -628,27 +625,25 @@ class VisualBasic(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Visual Basic."""
 
         ARRAY = enum.auto()
 
-    class SetFormats(enum.Enum):
+    class SetFormats(
+        FormatValueMixin[Callable[[str], SetFormatConfig]], enum.Enum
+    ):
         """Set type options for Visual Basic."""
-
-        _value_: Callable[[str], SetFormatConfig]
 
         HASH_SET = enum.member(
             value=set_format_factory(
@@ -664,7 +659,7 @@ class VisualBasic(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self._value_(default_type)
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -687,10 +682,8 @@ class VisualBasic(metaclass=LanguageCls):
 
         DEFAULT = enum.auto()
 
-    class DictFormats(enum.Enum):
+    class DictFormats(FormatValueMixin[DictFormatBuilder], enum.Enum):
         """Dict/map format options."""
-
-        _value_: DictFormatBuilder
 
         DEFAULT = enum.member(
             value=dict_format_factory(
@@ -715,7 +708,7 @@ class VisualBasic(metaclass=LanguageCls):
             default_key_type: str = "String",
         ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self._value_(
+            return self.value(
                 default_type=default_type,
                 default_key_type=default_key_type,
             )

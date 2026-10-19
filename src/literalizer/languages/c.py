@@ -89,6 +89,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -533,13 +534,19 @@ class _CArrayType(str):
     _base: str
     _dimension: int | None
 
-    @classmethod
-    def create(cls, code: str, /, *, base: str, dimension: int | None) -> Self:
+    def __new__(
+        cls, code: str, /, *, base: str, dimension: int | None
+    ) -> Self:
+        """Allocate text; the initializer retains producer metadata."""
+        del base, dimension
+        return super().__new__(cls, object=code)
+
+    def __init__(
+        self, _code: str, /, *, base: str, dimension: int | None
+    ) -> None:
         """Retain identifier placement before spelling the declaration."""
-        result = cls(object=code)
-        result._base = base
-        result._dimension = dimension
-        return result
+        self._base = base
+        self._dimension = dimension
 
     @property
     def base(self) -> str:
@@ -1178,16 +1185,12 @@ class C(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for C."""
 
-        _value_: DateFormatConfig
-
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for C."""
-
-        _value_: DatetimeFormatConfig
 
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1201,17 +1204,15 @@ class C(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for C."""
@@ -1298,10 +1299,8 @@ class C(metaclass=LanguageCls):
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
 
-    class IntegerFormats(enum.Enum):
+    class IntegerFormats(FormatValueMixin[Callable[[int], str]], enum.Enum):
         """Integer format options."""
-
-        _value_: Callable[[int], str]
 
         DECIMAL = _IntegerEnumMember(value=str)
         HEX = _IntegerEnumMember(value=format_integer_hex)
@@ -1681,7 +1680,7 @@ class C(metaclass=LanguageCls):
             value,
             list,
         ):
-            return _CArrayType.create(
+            return _CArrayType(
                 f"struct {request.element_record_name} [{len(value)}]",
                 base=f"struct {request.element_record_name}",
                 dimension=len(value),
@@ -2186,7 +2185,7 @@ class C(metaclass=LanguageCls):
         if record_name is not None:
             return f"struct {record_name}"
         if isinstance(data, list) and _all_record_shaped(data):
-            return _CArrayType.create(f"{root}[]", base=root, dimension=None)
+            return _CArrayType(f"{root}[]", base=root, dimension=None)
         return None
 
     @staticmethod

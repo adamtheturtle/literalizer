@@ -55,6 +55,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -481,8 +482,6 @@ class Groovy(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Groovy."""
 
-        _value_: DateFormatConfig
-
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
@@ -497,8 +496,6 @@ class Groovy(metaclass=LanguageCls):
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Groovy."""
 
-        _value_: DatetimeFormatConfig
-
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -511,17 +508,15 @@ class Groovy(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Groovy."""
@@ -543,10 +538,10 @@ class Groovy(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
 
-    class SetFormats(enum.Enum):
+    class SetFormats(
+        FormatValueMixin[Callable[[str], SetFormatConfig]], enum.Enum
+    ):
         """Set type options for Groovy."""
-
-        _value_: Callable[[str], SetFormatConfig]
 
         SET = enum.member(
             value=set_format_factory(
@@ -562,7 +557,7 @@ class Groovy(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self._value_(default_type)
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -634,17 +629,15 @@ class Groovy(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=format_string_backslash_dollar_nul_unicode)
         MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

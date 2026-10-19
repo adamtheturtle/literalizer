@@ -20,12 +20,14 @@ class _PreambleBlock(str):
 
     _entries: tuple[str, ...]
 
-    @classmethod
-    def create(cls, code: str, /, *, entries: tuple[str, ...]) -> Self:
+    def __new__(cls, code: str, /, *, entries: tuple[str, ...]) -> Self:
+        """Allocate text; the initializer retains producer metadata."""
+        del entries
+        return super().__new__(cls, object=code)
+
+    def __init__(self, _code: str, /, *, entries: tuple[str, ...]) -> None:
         """Retain components when a producer joins a supporting block."""
-        result = cls(object=code)
-        result._entries = entries
-        return result
+        self._entries = entries
 
     @property
     def entries(self) -> tuple[str, ...]:
@@ -42,7 +44,7 @@ def import_preamble(*, code: str) -> str:
 @beartype
 def join_preamble(*, entries: Sequence[str]) -> str:
     """Join supporting source without losing constituent import roles."""
-    return _PreambleBlock.create("\n".join(entries), entries=tuple(entries))
+    return _PreambleBlock("\n".join(entries), entries=tuple(entries))
 
 
 @beartype
