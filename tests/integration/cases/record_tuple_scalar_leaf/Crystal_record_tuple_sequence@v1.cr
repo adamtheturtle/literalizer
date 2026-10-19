@@ -1,0 +1,4 @@
+module Fixture_record_tuple_scalar_leaf_Crystal_record_tuple_sequence
+extend self
+my_data = 1
+end
