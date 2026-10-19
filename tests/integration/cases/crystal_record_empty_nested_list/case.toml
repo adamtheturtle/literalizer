@@ -1,7 +1,0 @@
-schema_version = 1
-languages = ["CSharp", "Crystal", "Kotlin"]
-languages_reason = "Typed record fields and nested empty sequence literals must agree with their non-empty sibling element types."
-suites = ["base"]
-
-[[variants]]
-axis = "heterogeneous_strategy"
