@@ -1625,6 +1625,20 @@ class Crystal(metaclass=LanguageCls):
         default_consumable_ref_value_inhibits_consuming_form
     )
 
+    @beartype
+    def _crystal_record_empty_sequence(
+        self, siblings: Sequence[list[Value]], /
+    ) -> str:
+        """Type an empty array using its siblings' rendered record
+        types.
+        """
+        parts = {
+            self._crystal_type_for_value(item)
+            for sibling in siblings
+            for item in sibling
+        }
+        return f"[] of {_crystal_union(parts)}"
+
     @cached_property
     @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
@@ -1654,7 +1668,11 @@ class Crystal(metaclass=LanguageCls):
             )
         return dataclasses.replace(
             self.sequence_format.value,
-            narrowed_empty_form=_crystal_narrowed_empty_form,
+            narrowed_empty_form=(
+                self._crystal_record_empty_sequence
+                if self._record_strategy_active
+                else _crystal_narrowed_empty_form
+            ),
         )
 
     @cached_property

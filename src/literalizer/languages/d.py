@@ -51,15 +51,16 @@ from literalizer._formatters.format_strings import (
     make_backslash_string_formatter,
 )
 from literalizer._formatters.record_strategy import (
+    ActiveRecordStrategy,
     RecordDeclarationField,
     RecordFieldType,
     RecordLiteralField,
     RecordRenderer,
-    RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
 )
 from literalizer._formatters.type_inference import (
+    ListType,
     infer_element_type,
     record_shape_for_dict,
 )
@@ -1312,9 +1313,8 @@ class D(metaclass=LanguageCls):
         formatted literal): scalars map to their D type, a homogeneous
         list to ``<elem>[]``, and an empty list to ``long[]`` (its
         ``[]`` literal coerces to any element type).  A nested
-        record-shaped dict never reaches here -- the shared strategy
-        resolves it to its generated name in
-        :meth:`_d_record_field_type`.  A heterogeneous scalar list, a
+        record-shaped dict resolves to its generated name, including
+        records inside nested arrays. A heterogeneous scalar list, a
         set, an ordered map or a non-record dict never reaches here
         either: its collection opener
         (:func:`_d_record_sequence_open` / :func:`_d_record_reject_open`
@@ -1324,6 +1324,9 @@ class D(metaclass=LanguageCls):
         #2317), so a value reaching the final branch is a string or
         bytes.
         """
+        record_name = self._record_strategy.record_name_for_value(value)
+        if record_name is not None:
+            return record_name
         match value:
             case bool():
                 value_type = "bool"
@@ -1354,13 +1357,23 @@ class D(metaclass=LanguageCls):
 
         An empty list has no element type to infer, so it is typed
         ``long[]`` (its ``[]`` literal coerces to any element type); a
-        non-empty list is a ``<elem>[]`` array over its first element's
-        type.  A heterogeneous list never reaches here --
+        non-empty list is a ``<elem>[]`` array. Nested arrays use all
+        populated descendants to infer their element type, so empty
+        siblings cannot hide a generated record type. Other arrays use
+        their first element's type. A heterogeneous list never reaches here --
         :func:`_d_record_sequence_open` rejects it while the literal is
         formatted, before the preamble derives this field type.
         """
         if len(items) == 0:
             return "long[]"
+        if isinstance(infer_element_type(items=items), ListType):
+            nested_items = [
+                child
+                for item in items
+                if isinstance(item, list)
+                for child in item
+            ]
+            return f"{self._d_list_type(items=nested_items)}[]"
         return f"{self._d_value_type(items[0])}[]"
 
     def _d_record_field_type(self, request: RecordFieldType, /) -> str:
@@ -1405,7 +1418,7 @@ class D(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def _record_strategy(self) -> RecordStrategy:
+    def _record_strategy(self) -> ActiveRecordStrategy:
         """Behavior + ``struct``-declaration preamble for ``RECORD``."""
         strategy = build_record_strategy(
             renderer=self._record_renderer,
