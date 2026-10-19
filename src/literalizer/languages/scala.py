@@ -68,7 +68,6 @@ from literalizer._formatters.record_strategy import (
     RecordStrategy,
     build_record_strategy,
     identity_field_identifier_key,
-    nested_record_sequence_type,
 )
 from literalizer._formatters.tuple_strategy import (
     TupleRenderer,
@@ -1912,8 +1911,8 @@ class Scala(metaclass=LanguageCls):
         """Callable that returns the opening delimiter for a sequence.
 
         Under the ``RECORD`` strategy (and ``TUPLE``, which composes
-        it) a list whose elements are record-shaped dicts is opened
-        with the format's plain, element-type-free opener (``List(``)
+        it) a list containing record-shaped dicts at any list depth is
+        opened with the format's plain, element-type-free opener (``List(``)
         so the elements render as ``RecordN(...)`` literals and Scala
         infers ``List[RecordN]``; the typed opener would otherwise
         infer a ``Map[String, ...]`` element type that the struct
@@ -1936,40 +1935,29 @@ class Scala(metaclass=LanguageCls):
             return base
 
         @beartype
+        def _contains_record_dict(items: list[Value], /) -> bool:
+            """Find record dicts nested in lists with empty siblings."""
+            return any(
+                (isinstance(item, dict) and not isinstance(item, OrderedMap))
+                or (isinstance(item, list) and _contains_record_dict(item))
+                for item in items
+            )
+
+        @beartype
         def _open(items: list[Value], /) -> str:
             """Use the plain opener for lists of record-shaped dicts.
 
             ``OrderedMap`` is never record-eligible, so an omap element
             keeps the typed opener.
             """
-            if (
-                any(
-                    isinstance(item, dict) and not isinstance(item, OrderedMap)
-                    for item in items
-                )
-                or nested_record_sequence_type(
-                    value=items,
-                    record_name_for_value=record_name_for_value,
-                )
-                is not None
-            ):
+            if _contains_record_dict(items):
                 return plain_open(items)
             return base(items)
 
         @beartype
         def _signature(items: list[Value], /) -> CollectionSignature:
             """Retain the record or ordinary producer's selected type."""
-            if (
-                any(
-                    isinstance(item, dict) and not isinstance(item, OrderedMap)
-                    for item in items
-                )
-                or nested_record_sequence_type(
-                    value=items,
-                    record_name_for_value=record_name_for_value,
-                )
-                is not None
-            ):
+            if _contains_record_dict(items):
                 return collection_signature(plain_open, items)
             return collection_signature(base, items)
 

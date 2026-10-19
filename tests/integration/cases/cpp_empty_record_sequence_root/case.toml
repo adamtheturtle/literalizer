@@ -1,7 +1,0 @@
-schema_version = 1
-owner = "variant"
-languages = ["Cpp"]
-languages_reason = "C++ empty vectors must retain populated sibling record types."
-
-[[variants]]
-axis = "heterogeneous_strategy_record"
