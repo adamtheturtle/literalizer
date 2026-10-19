@@ -1785,30 +1785,24 @@ def _cpp14_variant_parent_ids(
                 )
             case _:
                 return
-        if (
-            id(value) not in excluded_ids
-            and len(type_children) > 0
-            and (
-                _compute_element_type_for_items(
-                    items=type_children, type_ctx=type_ctx
+        if id(value) not in excluded_ids and len(type_children) > 0:
+            element_type = _compute_element_type_for_items(
+                items=type_children, type_ctx=type_ctx
+            )
+            if element_type == type_ctx.variant_type_name:
+                ids.add(id(value))
+            # A row narrowed from its own values can be widened by its
+            # siblings to a vector of carriers. Its children need the same
+            # explicit construction as children of an independently mixed row.
+            if element_type == type_ctx.sequence_type(
+                inner=type_ctx.variant_type_name, length=0
+            ):
+                ids.update(
+                    id(child)
+                    for child in children
+                    if isinstance(child, list)
+                    and id(child) not in excluded_ids
                 )
-                == type_ctx.variant_type_name
-            )
-        ):
-            ids.add(id(value))
-        # A row narrowed from its own values can be widened by its
-        # siblings to a vector of carriers. Its children need the same
-        # explicit construction as children of an independently mixed row.
-        if _compute_element_type_for_items(
-            items=type_children, type_ctx=type_ctx
-        ) == type_ctx.sequence_type(
-            inner=type_ctx.variant_type_name, length=0
-        ):
-            ids.update(
-                id(child)
-                for child in children
-                if isinstance(child, list) and id(child) not in excluded_ids
-            )
         for child in children:
             _collect(value=child)
 
