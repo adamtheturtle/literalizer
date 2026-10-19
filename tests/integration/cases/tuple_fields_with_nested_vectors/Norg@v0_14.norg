@@ -1,0 +1,8 @@
+* my_data
+@code javascript
+{
+    "lint": [2, []],
+    "test": [5, ["compile"]],
+    "package": [7, ["link", "test"]]
+}
+@end
