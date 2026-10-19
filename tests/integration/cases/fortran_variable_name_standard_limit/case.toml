@@ -1,7 +1,0 @@
-schema_version = 1
-languages = ["Dart", "Elm", "Fortran"]
-languages_reason = "Fortran accepts variable names up to its 63-character standard limit; Dart consumers use the manifest's custom root name."
-suites = ["base"]
-
-[base_context]
-variable_name = "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"

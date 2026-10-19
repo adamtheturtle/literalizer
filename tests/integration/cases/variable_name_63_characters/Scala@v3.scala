@@ -1,0 +1,3 @@
+object Fixture_variable_name_63_characters_Scala {
+val vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = 1
+}
