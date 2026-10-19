@@ -105,8 +105,8 @@ from literalizer.exceptions import (
 # ``#!r6rs`` or ``(read-enable 'r6rs-hex-escapes)``, neither of which
 # the emitted code turns on, so a trailing semicolon would be read as a
 # literal character (issue #4509).
-# A literal BOM confuses the Guile reader even inside a string. Its
-# fixed-width Unicode escape preserves the character without changing modes.
+# A literal byte order mark confuses the Guile reader inside a string.
+# A fixed-width Unicode escape preserves it without changing reader modes.
 _format_string = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=[("\0", "\\x00"), ("\ufeff", "\\ufeff")],
