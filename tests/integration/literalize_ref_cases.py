@@ -470,7 +470,7 @@ def run_literalize_ref_golden_case(
     if (
         config.variable_form == "both"
         and config.declaration_style is None
-        and not spec.declaration_style.value.supports_redefinition
+        and spec.declaration_style not in find_redefinition_styles(spec=spec)
     ):
         spec = dataclasses.replace(
             spec, declaration_style=find_redefinition_styles(spec=spec)[0]
