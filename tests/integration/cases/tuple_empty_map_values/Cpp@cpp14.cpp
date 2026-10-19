@@ -43,9 +43,9 @@ struct Value {
   } // get const
 };
 int main() {
-auto my_data = std::map<std::string, std::vector<Value>>{
-    {"alpha", std::vector<Value>{Value{2}, Value{std::vector<std::string>{}}}},
-    {"beta", std::vector<Value>{Value{5}, Value{std::vector<std::string>{"x"}}}},
+auto my_data = std::map<std::string, Value>{
+    {"filled", Value{std::vector<Value>{Value{1}, Value{"value"}}}},
+    {"empty", Value{std::vector<Value>{}}},
 };
     (void)my_data;
     return 0;
