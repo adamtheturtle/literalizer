@@ -1,0 +1,9 @@
+class Check {
+    public static void Main() {
+var my_data = new object?[] {
+    new object?[] {1, "value"},
+    new object?[] {}
+};
+    _ = my_data;
+    }
+}
