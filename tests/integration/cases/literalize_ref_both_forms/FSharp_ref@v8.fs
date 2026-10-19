@@ -16,6 +16,13 @@ let private _mainDeclaration () =
     ignore my_data
 
 let private _mainAssignment () =
+    let mutable sharedValues: Val = FList [
+        FInt 1L;
+        FInt 2L
+    ]
+    let mutable my_data: Val = FMap [
+        ("a", sharedValues)
+    ]
     let my_data: Val = FMap [
         ("a", sharedValues)
     ]

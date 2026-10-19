@@ -908,7 +908,10 @@ class VisualBasic(metaclass=LanguageCls):
         assignment: str,
         context: FileWrapperContext,
     ) -> str:
-        """Wrap VB.NET declaration + assignment in separate Subs."""
+        """Wrap declaration and assignment in separate VB.NET procedures.
+
+        Bound references need declarations in each procedure's scope.
+        """
         variable_name = context.variable_name
         body_preamble = context.body_preamble
         declaration = prepend_body_preamble(
@@ -917,6 +920,13 @@ class VisualBasic(metaclass=LanguageCls):
         )
         decl_indented = textwrap.indent(
             text=declaration, prefix=self.indent * 2
+        )
+        assignment_preamble = f"Dim {variable_name} As Object"
+        if len(context.bound_variable_names) > 0:
+            assignment_preamble = declaration
+        assignment = prepend_body_preamble(
+            content=assignment,
+            body_preamble=(assignment_preamble,),
         )
         assign_indented = textwrap.indent(
             text=assignment, prefix=self.indent * 2
@@ -927,7 +937,6 @@ class VisualBasic(metaclass=LanguageCls):
             f"{decl_indented}\n"
             f"{self.indent}End Sub\n"
             f"{self.indent}Sub _assignment()\n"
-            f"{self.indent * 2}Dim {variable_name} As Object\n"
             f"{assign_indented}\n"
             f"{self.indent}End Sub\n"
             "End Module"

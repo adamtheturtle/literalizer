@@ -1172,6 +1172,8 @@ class FSharp(metaclass=LanguageCls):
         functions.
         """
         body_preamble = context.body_preamble
+        if len(context.bound_variable_names) > 0:
+            assignment = f"{declaration}\n{assignment}"
         decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
         assign_indented = textwrap.indent(text=assignment, prefix=self.indent)
         preamble = "\n".join((*body_preamble, ""))

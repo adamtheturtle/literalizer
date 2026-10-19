@@ -10,7 +10,13 @@ Module Check
         }
     End Sub
     Sub _assignment()
-        Dim my_data As Object
+        Dim SharedValues = New Integer() {
+            1,
+            2
+        }
+        Dim my_data = New Dictionary(Of String, Object) From {
+            {"a", SharedValues}
+        }
         my_data = New Dictionary(Of String, Object) From {
             {"a", SharedValues}
         }
