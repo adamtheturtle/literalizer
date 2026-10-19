@@ -1,0 +1,9 @@
+import json
+var my_data: JsonNode = %*([
+    -42,
+    0,
+    42,
+    -1.25,
+    0.0,
+    1.25
+])
