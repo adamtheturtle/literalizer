@@ -895,9 +895,9 @@ class FloatSpecialsMixin:
     member's formatter.
     """
 
-    _positive_infinity: str
-    _negative_infinity: str
-    _nan: str
+    _positive_infinity: ClassVar[str]
+    _negative_infinity: ClassVar[str]
+    _nan: ClassVar[str]
     _formatter: Callable[[float], str]
 
     def __init_subclass__(

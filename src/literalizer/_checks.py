@@ -1113,7 +1113,7 @@ def _has_mixed_dict_values(
 def _has_unwrappable_value_mix(
     *,
     data: Value,
-    container_type: type,
+    container_type: type[object],
     excluded_container_ids: frozenset[int],
 ) -> bool:
     """Find mixed value families including a container that scalar-only
