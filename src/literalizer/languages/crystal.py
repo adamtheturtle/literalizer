@@ -1411,6 +1411,8 @@ class Crystal(metaclass=LanguageCls):
                 self._crystal_type_for_value(item) for item in value
             )
             return f"Tuple({item_types})"
+        if len(value) == 0:
+            return "Array(Nil)"
         narrowed_kinds: tuple[type, ...] = tuple(
             kind
             for kind in (list, dict, set)
@@ -1455,8 +1457,8 @@ class Crystal(metaclass=LanguageCls):
         ``Int64`` / the ``_i128``-suffixed ``Int128``; an ``EPOCH``
         datetime renders as its epoch integer and is sized the same
         way, while every other date/datetime/time/bytes format renders
-        a string).  A list compiles to ``Array`` of the union of its
-        items' types (empty -> ``[] of Nil`` -> ``Array(Nil)``); an
+        a string). A list compiles to the selected ``Tuple`` or an ``Array``
+        of the union of its items' types (empty arrays use ``Array(Nil)``); an
         ordered map compiles to ``Hash`` keyed by
         :attr:`default_dict_key_type` of the union of its value types,
         or -- when empty, matching the ``{} of K => V`` literal the
@@ -1476,8 +1478,6 @@ class Crystal(metaclass=LanguageCls):
                 return "Bool"
             case int():
                 return _crystal_int_field_type(value=value)
-            case list() if len(value) == 0:
-                return "Array(Nil)"
             case list():
                 # An empty nested list renders with the element type a
                 # non-empty sibling gives it, so the field type reads
