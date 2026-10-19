@@ -1,0 +1,9 @@
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := AMap'[
+        AEntry ("text", AStr ("Record0(")),
+        AEntry ("number", AInt (1))
+    ];
+begin
+    null;
+end Main;
