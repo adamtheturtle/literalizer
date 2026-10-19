@@ -1486,6 +1486,13 @@ class Crystal(metaclass=LanguageCls):
                 # among scalars still renders ``[] of Nil``, so its own
                 # type has to stay in the union.
                 return self._crystal_list_type(value=value)
+            case set():
+                parts = {self._crystal_type_for_value(item) for item in value}
+                element_type = nonempty_or_default(
+                    value=_crystal_union(parts),
+                    default=self.default_set_element_type,
+                )
+                return f"Set({element_type})"
             case dict() if len(value) == 0 or isinstance(value, OrderedMap):
                 parts = {
                     self._crystal_type_for_value(item)

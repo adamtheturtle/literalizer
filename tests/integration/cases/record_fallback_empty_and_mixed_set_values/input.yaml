@@ -1,0 +1,10 @@
+- name: one
+  payload:
+    scalar: 1
+    empty: !!set {}
+    mixed: !!set
+      2: null
+      word: null
+- name: two
+  payload:
+    other: 2
