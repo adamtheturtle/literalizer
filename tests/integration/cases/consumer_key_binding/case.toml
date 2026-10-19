@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "type_hints"
+
+[variants.context]
+variable_name = "k"
