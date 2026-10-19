@@ -1549,6 +1549,17 @@ overrides = [
   { kind = "enum_member", option = "heterogeneous_strategy", member = "TUPLE" },
 ]
 
+[axes.heterogeneous_tuple_versions]
+plan = "fixed_overrides"
+name_template = "{lang}_tuple"
+per_version = true
+gates = [
+  { kind = "enum_member_present", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+overrides = [
+  { kind = "enum_member", option = "heterogeneous_strategy", member = "TUPLE" },
+]
+
 [axes.epoch_hash_set_boundaries]
 plan = "fixed_overrides"
 name_template = "{lang}_epoch_hash_set_boundaries"
