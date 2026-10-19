@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "a": 1,  // tab	here and bidi <U+202E>after
+    "b": 2
+}
+@end
