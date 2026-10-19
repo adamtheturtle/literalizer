@@ -86,9 +86,9 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
-        fentry('v', &
-    & fstr('a­​‍‎‮⁠﻿' // achar(226) // achar(128) // achar(168) // achar(226) // achar(128) // achar(169) // 'b')), &
-        fentry('a­​‍‎‮⁠﻿' // achar(226) // achar(128) // achar(168) // achar(226) // achar(128) // achar(169) &
-    & // 'b', fint(1_int64)) &
+        fentry('v', fstr('a­​‍‎‮⁠﻿' // achar(226) // achar(128) // achar(168) // &
+    & achar(226) // achar(128) // achar(169) // 'b')), &
+        fentry('a­​‍‎‮⁠﻿' // achar(226) // achar(128) // achar(168) // &
+    & achar(226) // achar(128) // achar(169) // 'b', fint(1_int64)) &
     ])
 end program main

@@ -125,6 +125,12 @@ until its innermost level (issue #4473).
 
 
 @beartype
+def _fortran_source_width(value: str) -> int:
+    """Measure physical source columns conservatively as UTF-8 bytes."""
+    return len(value.encode(encoding="utf-8"))
+
+
+@beartype
 def _format_fortran_string_unwrapped(value: str) -> str:
     """Format one string fragment without source-line wrapping."""
     return format_string_concat_control(
@@ -140,7 +146,7 @@ def _format_fortran_string_unwrapped(value: str) -> str:
 def _format_fortran_string(value: str) -> str:
     """Format a string with Fortran quoting and control escapes."""
     formatted = _format_fortran_string_unwrapped(value=value)
-    if len(formatted) <= _FORTRAN_STRING_CHUNK_LENGTH:
+    if _fortran_source_width(value=formatted) <= _FORTRAN_STRING_CHUNK_LENGTH:
         return formatted
 
     chunks: list[str] = []
@@ -149,7 +155,9 @@ def _format_fortran_string(value: str) -> str:
         candidate = chunk + character
         if (
             chunk != ""
-            and len(_format_fortran_string_unwrapped(value=candidate))
+            and _fortran_source_width(
+                value=_format_fortran_string_unwrapped(value=candidate)
+            )
             > _FORTRAN_STRING_CHUNK_LENGTH
         ):
             chunks.append(_format_fortran_string_unwrapped(value=chunk))
@@ -305,7 +313,13 @@ def _fortran_break_position(*, line: str, break_after: str) -> int | None:
     """
     in_single_quote = False
     break_at: int | None = None
-    scan = line[:_FORTRAN_WRAP_COLUMN].replace("''", "  ")
+    # Discard only a partial final character from the byte-limited scan.
+    # Break offsets still index the original, unmodified string.
+    scan = (
+        line.encode(encoding="utf-8")[:_FORTRAN_WRAP_COLUMN]
+        .decode(encoding="utf-8", errors="ignore")
+        .replace("''", "  ")
+    )
     for index, character in enumerate(iterable=scan):
         if character == "'":
             in_single_quote = not in_single_quote
@@ -330,7 +344,7 @@ def _wrap_fortran_expression_line(line: str, /) -> list[str]:
     stripped = line.rstrip()
     if not stripped.endswith("&"):
         return _split_fortran_line(line=line)
-    if len(line) <= _FORTRAN_SAFE_COLUMN:
+    if _fortran_source_width(value=line) <= _FORTRAN_SAFE_COLUMN:
         return [line]
     pieces = _split_fortran_line(line=stripped[:-1].rstrip())
     return [*pieces[:-1], f"{pieces[-1]} &"]
@@ -347,12 +361,15 @@ def _split_fortran_line(*, line: str) -> list[str]:
     """
     remaining = line
     wrapped: list[str] = []
-    while len(remaining) > _FORTRAN_WRAP_COLUMN:
+    while _fortran_source_width(value=remaining) > _FORTRAN_WRAP_COLUMN:
         break_at = _fortran_break_position(
             line=remaining,
             break_after=_FORTRAN_ELEMENT_BREAK,
         )
-        if break_at is None and len(remaining) > _FORTRAN_SAFE_COLUMN:
+        if (
+            break_at is None
+            and _fortran_source_width(value=remaining) > _FORTRAN_SAFE_COLUMN
+        ):
             break_at = _fortran_break_position(
                 line=remaining,
                 break_after=_FORTRAN_FALLBACK_BREAK,
