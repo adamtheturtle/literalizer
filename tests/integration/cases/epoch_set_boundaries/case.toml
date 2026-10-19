@@ -1,7 +1,5 @@
 schema_version = 1
 owner = "variant"
-languages = ["CSharp"]
-languages_reason = "C# HashSet and SortedSet carriers must represent epoch boundaries."
 
 [[variants]]
 axis = "epoch_hash_set_boundaries"
