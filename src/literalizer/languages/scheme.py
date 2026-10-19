@@ -106,9 +106,11 @@ from literalizer.exceptions import (
 # ``#!r6rs`` or ``(read-enable 'r6rs-hex-escapes)``, neither of which
 # the emitted code turns on, so a trailing semicolon would be read as a
 # literal character (issue #4509).
+# A literal byte order mark confuses the Guile reader inside a string.
+# A fixed-width Unicode escape preserves it without changing reader modes.
 _format_string = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("\0", "\\x00")],
+    extra_replacements=[("\0", "\\x00"), ("\ufeff", "\\ufeff")],
 )
 
 # Format definitions used while ``json_type=GUILE_JSON`` is active.
