@@ -1,0 +1,12 @@
+* actual
+@code javascript
+42
+@end
+* my_data
+@code javascript
+[
+    {"$ref": 1},
+    {"$ref": null},
+    actual
+]
+@end
