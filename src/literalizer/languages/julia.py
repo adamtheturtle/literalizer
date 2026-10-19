@@ -68,6 +68,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -374,8 +375,6 @@ class Julia(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date formatting options for Julia."""
 
-        _value_: DateFormatConfig
-
         JULIA = DateFormatConfig(
             formatter=date_ymd_formatter(
                 template="Date({year}, {month}, {day})",
@@ -389,8 +388,6 @@ class Julia(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime formatting options for Julia."""
-
-        _value_: DatetimeFormatConfig
 
         JULIA = DatetimeFormatConfig(
             formatter=datetime_ymdhms_formatter(
@@ -417,17 +414,15 @@ class Julia(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Julia."""

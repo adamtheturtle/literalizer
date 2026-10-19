@@ -85,6 +85,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -977,8 +978,6 @@ class Zig(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Zig."""
 
-        _value_: DateFormatConfig
-
         ZIG = DateFormatConfig(
             formatter=_format_date_zig,
             type_produced=int,
@@ -990,8 +989,6 @@ class Zig(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Zig."""
-
-        _value_: DatetimeFormatConfig
 
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -1005,17 +1002,15 @@ class Zig(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Zig."""
@@ -1681,10 +1676,23 @@ class Zig(metaclass=LanguageCls):
                 self._zig_resolved_value_type(element) for element in items
             )
             return f"struct {{ {members} }}"
-        element_type = _ZIG_INFERRED_ELEMENT_TYPES.get(
-            inferred,
-            self._zig_resolved_value_type(max(items, key=_zig_int_sort_key)),
-        )
+        if isinstance(inferred, ListType):
+            # Empty siblings provide no element-type evidence. Resolve all
+            # populated descendants before assigning the enclosing slice type.
+            nested_items = [
+                child
+                for item in items
+                if isinstance(item, list)
+                for child in item
+            ]
+            element_type = self._zig_list_type(items=nested_items)
+        else:
+            element_type = _ZIG_INFERRED_ELEMENT_TYPES.get(
+                inferred,
+                self._zig_resolved_value_type(
+                    max(items, key=_zig_int_sort_key)
+                ),
+            )
         return f"[]const {element_type}"
 
     def _zig_record_field_type(self, request: RecordFieldType, /) -> str:

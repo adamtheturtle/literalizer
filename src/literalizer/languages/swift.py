@@ -82,6 +82,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -910,8 +911,6 @@ class Swift(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Swift."""
 
-        _value_: DateFormatConfig
-
         SWIFT = DateFormatConfig(
             formatter=_format_date_swift,
             preamble_lines=("import Foundation",),
@@ -923,8 +922,6 @@ class Swift(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Swift."""
-
-        _value_: DatetimeFormatConfig
 
         SWIFT = DatetimeFormatConfig(
             formatter=_format_datetime_swift,
@@ -943,22 +940,20 @@ class Swift(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(
+        FormatValueMixin[Callable[[str], SequenceFormatConfig]], enum.Enum
+    ):
         """Sequence type options for Swift."""
-
-        _value_: Callable[[str], SequenceFormatConfig]
 
         ARRAY = enum.member(
             value=sequence_format_factory(
@@ -991,7 +986,7 @@ class Swift(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SequenceFormatConfig:
             """Create a sequence format config for the given type."""
-            return self._value_(default_type)
+            return self.value(default_type)
 
     class ArrayInferencePolicies(enum.Enum):
         """Whether array literals use independent inference scopes."""
@@ -1001,10 +996,10 @@ class Swift(metaclass=LanguageCls):
 
     array_inference_policies = ArrayInferencePolicies
 
-    class SetFormats(enum.Enum):
+    class SetFormats(
+        FormatValueMixin[Callable[[str], SetFormatConfig]], enum.Enum
+    ):
         """Set type options for Swift."""
-
-        _value_: Callable[[str], SetFormatConfig]
 
         SET = enum.member(
             value=set_format_factory(
@@ -1020,7 +1015,7 @@ class Swift(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self._value_(default_type)
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -1055,10 +1050,8 @@ class Swift(metaclass=LanguageCls):
 
         DEFAULT = enum.auto()
 
-    class DictFormats(enum.Enum):
+    class DictFormats(FormatValueMixin[DictFormatBuilder], enum.Enum):
         """Dict/map format options."""
-
-        _value_: DictFormatBuilder
 
         DEFAULT = enum.member(
             value=dict_format_factory(
@@ -1082,7 +1075,7 @@ class Swift(metaclass=LanguageCls):
             default_key_type: str = "String",
         ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self._value_(
+            return self.value(
                 default_type=default_type,
                 default_key_type=default_key_type,
             )
@@ -1159,17 +1152,15 @@ class Swift(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = _StringEnumMember(value=_format_string_escaped)
         MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

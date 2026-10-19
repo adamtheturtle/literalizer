@@ -1,0 +1,6 @@
+module Fixture_bom_string_Crystal_string_format_multiline
+extend self
+my_data = {
+     %q|x| => %q|﻿|,
+}
+end

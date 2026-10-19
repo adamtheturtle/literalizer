@@ -21,6 +21,7 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
+from literalizer._enums import enum_payload
 from literalizer._language import (
     RenderedCallStub,
     is_reserved_identifier,
@@ -419,7 +420,10 @@ def expected_call_shape_exception(
         style = next(
             style
             for style in lang_cls.CallStyles
-            if isinstance(style.value, config.call_style_type)
+            if isinstance(
+                enum_payload(member=style, payload_type=object),
+                config.call_style_type,
+            )
         )
         spec = dataclasses.replace(spec, call_style=style)
     effective_style = spec.call_style_config
@@ -521,12 +525,18 @@ def discover_call_cases() -> list[CallCase]:
                 matching = [
                     s
                     for s in styles
-                    if isinstance(s.value, config.call_style_type)
+                    if isinstance(
+                        enum_payload(member=s, payload_type=object),
+                        config.call_style_type,
+                    )
                 ]
                 if len(matching) == 0:
                     continue
                 default_style = styles[0]
-                if isinstance(default_style.value, config.call_style_type):
+                if isinstance(
+                    enum_payload(member=default_style, payload_type=object),
+                    config.call_style_type,
+                ):
                     continue
             expected_exception = expected_call_shape_exception(
                 lang_cls=lang_cls,
@@ -893,7 +903,10 @@ def run_call_golden_case(
         style = next(
             member
             for member in lang_cls.CallStyles
-            if isinstance(member.value, config.call_style_type)
+            if isinstance(
+                enum_payload(member=member, payload_type=object),
+                config.call_style_type,
+            )
         )
         spec = dataclasses.replace(spec, call_style=style)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)

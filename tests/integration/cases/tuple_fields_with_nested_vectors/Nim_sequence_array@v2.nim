@@ -1,0 +1,6 @@
+import json
+var my_data = %* {
+    "lint": [2, []],
+    "test": [5, ["compile"]],
+    "package": [7, ["link", "test"]]
+}

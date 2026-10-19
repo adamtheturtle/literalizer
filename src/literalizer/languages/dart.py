@@ -72,6 +72,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -761,8 +762,6 @@ class Dart(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date formatting options for Dart."""
 
-        _value_: DateFormatConfig
-
         DART = DateFormatConfig(
             formatter=_format_date_dart,
             preamble_lines=(),
@@ -774,8 +773,6 @@ class Dart(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime formatting options for Dart."""
-
-        _value_: DatetimeFormatConfig
 
         DART = DatetimeFormatConfig(
             formatter=_format_datetime_dart,
@@ -794,17 +791,15 @@ class Dart(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Dart."""
@@ -842,10 +837,10 @@ class Dart(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
 
-    class SetFormats(enum.Enum):
+    class SetFormats(
+        FormatValueMixin[Callable[[str], SetFormatConfig]], enum.Enum
+    ):
         """Set type options for Dart."""
-
-        _value_: Callable[[str], SetFormatConfig]
 
         SET = enum.member(
             value=set_format_factory(
@@ -861,7 +856,7 @@ class Dart(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self._value_(default_type)
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -925,10 +920,8 @@ class Dart(metaclass=LanguageCls):
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
 
-    class IntegerFormats(enum.Enum):
+    class IntegerFormats(FormatValueMixin[Callable[[int], str]], enum.Enum):
         """Integer format options."""
-
-        _value_: Callable[[int], str]
 
         DECIMAL = _IntegerEnumMember(value=str)
         HEX = _IntegerEnumMember(value=format_integer_hex)
@@ -953,10 +946,8 @@ class Dart(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=_format_string_double)
         SINGLE = enum.member(value=_format_string_single)
@@ -964,7 +955,7 @@ class Dart(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

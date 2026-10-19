@@ -72,6 +72,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -931,8 +932,6 @@ class Gleam(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Gleam."""
 
-        _value_: DateFormatConfig
-
         ISO = DateFormatConfig(
             formatter=_format_gleam_date_iso,
             type_produced=str,
@@ -941,8 +940,6 @@ class Gleam(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Gleam."""
-
-        _value_: DatetimeFormatConfig
 
         ISO = DatetimeFormatConfig(
             formatter=_format_gleam_datetime_iso,
@@ -956,17 +953,15 @@ class Gleam(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = enum.member(value=_format_gleam_bytes_hex)
         BASE64 = enum.member(value=_format_gleam_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Gleam."""

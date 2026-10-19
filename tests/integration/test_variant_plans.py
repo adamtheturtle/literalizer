@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from literalizer import CollectionLayout, CommentConfig
+from literalizer._enums import enum_payload
 from literalizer.languages import ALL_LANGUAGES, Cpp, Java
 from tests.enum_members import enum_member_by_name, find_enum_member
 
@@ -388,8 +389,10 @@ def test_member_flags_select_terminated_comment_formats() -> None:
     for lang_cls in ALL_LANGUAGES:
         spec = make_spec(lang_cls=lang_cls)
         for member in spec.comment_formats:
-            assert isinstance(member.value, CommentConfig), lang_cls.__name__
-            if member.value.suffix != "":
+            if (
+                enum_payload(member=member, payload_type=CommentConfig).suffix
+                != ""
+            ):
                 expected.add((lang_cls.__name__, member.name))
                 if member is spec.comment_format:
                     defaults.add((lang_cls.__name__, member.name))

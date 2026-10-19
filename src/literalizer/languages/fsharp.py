@@ -71,6 +71,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -810,8 +811,6 @@ class FSharp(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for FSharp."""
 
-        _value_: DateFormatConfig
-
         FSHARP = DateFormatConfig(
             formatter=date_ymd_formatter(
                 template="System.DateOnly({year}, {month}, {day})",
@@ -825,8 +824,6 @@ class FSharp(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for FSharp."""
-
-        _value_: DatetimeFormatConfig
 
         FSHARP = DatetimeFormatConfig(
             formatter=datetime_ymdhms_formatter(
@@ -849,17 +846,15 @@ class FSharp(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for F#."""
@@ -967,14 +962,12 @@ class FSharp(metaclass=LanguageCls):
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
 
-    class IntegerFormats(enum.Enum):
+    class IntegerFormats(FormatValueMixin[Callable[[int], str]], enum.Enum):
         """Integer format options.
 
         Values outside the signed 64-bit range require decimal ``bigint``
         literals; non-decimal formats reject those values.
         """
-
-        _value_: Callable[[int], str]
 
         DECIMAL = _IntegerEnumMember(value=str)
         HEX = _IntegerEnumMember(value=format_integer_hex)

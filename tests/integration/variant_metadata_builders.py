@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 import literalizer
+from literalizer._language import redefinition_config
 from tests.enum_members import enum_member_by_name
 
 from .case_manifests import RenderContext
@@ -84,7 +85,9 @@ def build_modifier_variant_cases(
                 for case_dir_name, context in case_contexts.items()
                 if context.variable_form != "both"
                 or (
-                    spec.declaration_style.value.supports_redefinition
+                    redefinition_config(
+                        spec.declaration_style
+                    ).supports_redefinition
                     and modifiers.isdisjoint(
                         lang_cls.immutable_variable_modifiers
                     )

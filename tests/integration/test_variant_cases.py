@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 import literalizer.languages
+from literalizer._language import redefinition_config
 from literalizer.languages import Kotlin, Python
 from tests.enum_members import enum_member_by_name
 
@@ -204,10 +205,12 @@ def test_multiline_string_variants_follow_capability(
             for lang_cls in expected
             if manifest.selection.admits_language(lang_cls=lang_cls)
         }
+        # The same manifest can also own non-multiline string variants.
         actual = {
             case.variant.lang_cls
             for case in build_variant_cases()
             if case.case_dir_name == case_dir_name
+            and case.variant.spec.string_format.name == "MULTILINE"
             and not isinstance(
                 case.variable_form,
                 literalizer.BothVariableForms,
@@ -227,6 +230,7 @@ def test_multiline_string_variants_follow_capability(
         case
         for case in build_variant_cases()
         if case.case_dir_name in set(case_dir_names)
+        and case.variant.spec.string_format.name == "MULTILINE"
     ]
     assert {case.variant.lang_cls for case in context_cases} == expected
     incapable = [
@@ -280,7 +284,7 @@ def test_multiline_context_cases_follow_capabilities(
         for lang_cls in literalizer.languages.ALL_LANGUAGES
         if lang_cls.supports_multiline_string_literals
         and any(
-            style.value.supports_redefinition
+            redefinition_config(style).supports_redefinition
             for style in lang_cls.DeclarationStyles
         )
     }

@@ -53,6 +53,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -105,9 +106,11 @@ from literalizer.exceptions import (
 # ``#!r6rs`` or ``(read-enable 'r6rs-hex-escapes)``, neither of which
 # the emitted code turns on, so a trailing semicolon would be read as a
 # literal character (issue #4509).
+# A literal byte order mark confuses the Guile reader inside a string.
+# A fixed-width Unicode escape preserves it without changing reader modes.
 _format_string = make_backslash_string_formatter(
     quote_char='"',
-    extra_replacements=[("\0", "\\x00")],
+    extra_replacements=[("\0", "\\x00"), ("\ufeff", "\\ufeff")],
 )
 
 # Format definitions used while ``json_type=GUILE_JSON`` is active.
@@ -317,16 +320,12 @@ class Scheme(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Scheme."""
 
-        _value_: DateFormatConfig
-
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Scheme."""
-
-        _value_: DatetimeFormatConfig
 
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -340,17 +339,15 @@ class Scheme(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Scheme."""

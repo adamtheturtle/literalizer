@@ -39,6 +39,7 @@ from beartype import beartype
 from pydantic import BaseModel, Field, ValidationError
 
 import literalizer
+from literalizer._enums import enum_payload
 from literalizer.exceptions import IncompatibleFormatsError
 from tests.enum_members import enum_member_by_name
 from tests.language_options import OPTIONS
@@ -91,7 +92,7 @@ class _EscapesNullByte(Protocol):
 @beartype
 def _comment_suffix(member: enum.Enum) -> bool:
     """Return whether a comment format closes with a terminator."""
-    config: object = member.value
+    config = enum_payload(member=member, payload_type=object)
     if not isinstance(config, literalizer.CommentConfig):
         raise NotImplementedError
     return bool(config.suffix)

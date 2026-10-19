@@ -14,6 +14,7 @@ from pathlib import Path
 from beartype import beartype
 
 import literalizer
+from literalizer._language import redefinition_config
 from literalizer.languages import ALL_LANGUAGES
 
 from .language_metadata import language_metadata
@@ -60,7 +61,7 @@ def find_redefinition_styles(
     return [
         style
         for style in spec.declaration_styles
-        if style.value.supports_redefinition
+        if redefinition_config(style).supports_redefinition
     ]
 
 

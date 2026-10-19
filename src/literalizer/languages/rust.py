@@ -93,6 +93,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -3400,8 +3401,6 @@ class Rust(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Rust."""
 
-        _value_: DateFormatConfig
-
         RUST = DateFormatConfig(
             formatter=_format_date_rust,
             preamble_lines=("use chrono::NaiveDate;",),
@@ -3413,8 +3412,6 @@ class Rust(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Rust."""
-
-        _value_: DatetimeFormatConfig
 
         RUST = DatetimeFormatConfig(
             formatter=_format_datetime_rust,
@@ -3437,22 +3434,20 @@ class Rust(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(
+        FormatValueMixin[Callable[[str], SequenceFormatConfig]], enum.Enum
+    ):
         """Sequence type options for Rust."""
-
-        _value_: Callable[[str], SequenceFormatConfig]
 
         VEC = _SequenceEnumMember(
             value=sequence_format_factory(
@@ -3528,10 +3523,10 @@ class Rust(metaclass=LanguageCls):
             """
             return self(default_type="String").supports_heterogeneity
 
-    class SetFormats(enum.Enum):
+    class SetFormats(
+        FormatValueMixin[Callable[[str], SetFormatConfig]], enum.Enum
+    ):
         """Set type options for Rust."""
-
-        _value_: Callable[[str], SetFormatConfig]
 
         HASH_SET = enum.member(
             value=set_format_factory(
@@ -3558,7 +3553,7 @@ class Rust(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self._value_(default_type)
+            return self.value(default_type)
 
         def format_type_annotation(self, element_type: str) -> str:
             """Return the Rust type annotation for this set format."""
@@ -3761,10 +3756,8 @@ class Rust(metaclass=LanguageCls):
 
         DEFAULT = enum.auto()
 
-    class DictFormats(enum.Enum):
+    class DictFormats(FormatValueMixin[DictFormatBuilder], enum.Enum):
         """Dict/map format options."""
-
-        _value_: DictFormatBuilder
 
         HASH_MAP = enum.member(
             value=dict_format_factory(
@@ -3800,7 +3793,7 @@ class Rust(metaclass=LanguageCls):
             default_key_type: str = "&str",
         ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self._value_(
+            return self.value(
                 default_type=default_type,
                 default_key_type=default_key_type,
             )
@@ -3888,10 +3881,8 @@ class Rust(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=_format_string_backslash_nul)
         RAW = _StringEnumMember(value=_format_string_raw)
@@ -3899,7 +3890,7 @@ class Rust(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

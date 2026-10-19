@@ -93,6 +93,7 @@ from literalizer._language import (
     decode_file_sections,
     empty_container_code,
     is_reserved_identifier,
+    scalar_format_config,
     validate_call_parameter_names,
     validate_new_variable_name,
 )
@@ -233,14 +234,18 @@ class _RootMappingLiteral(str):
 
     _table_entries: tuple[str, ...]
 
-    @classmethod
-    def create(cls, code: str, /, *, table_entries: tuple[str, ...]) -> Self:
+    def __new__(cls, code: str, /, *, table_entries: tuple[str, ...]) -> Self:
+        """Allocate text; the initializer retains producer metadata."""
+        del table_entries
+        return super().__new__(cls, object=code)
+
+    def __init__(
+        self, _code: str, /, *, table_entries: tuple[str, ...]
+    ) -> None:
         """Retain the selected table entries alongside the inline
         value.
         """
-        result = cls(object=code)
-        result._table_entries = table_entries
-        return result
+        self._table_entries = table_entries
 
     @property
     def table_entries(self) -> tuple[str, ...]:
@@ -551,7 +556,7 @@ def _format_scalar_datetime(
     """Format a datetime with the selected epoch override."""
     if (
         int_formatter is not None
-        and spec.datetime_format.value.type_produced is int
+        and scalar_format_config(spec.datetime_format).type_produced is int
     ):
         return int_formatter(datetime_epoch_seconds(value=value))
     return spec.format_datetime(value)
@@ -643,7 +648,7 @@ def _widened_int_formatter(
     widened = spec.format_integer_widened
     if beyond is None and widened is None:
         return None
-    if spec.datetime_format.value.type_produced is int:
+    if scalar_format_config(spec.datetime_format).type_produced is int:
         items = [
             datetime_epoch_seconds(value=value)
             if isinstance(value, dt.datetime)
@@ -4225,7 +4230,7 @@ def _format_root_collection(
         sequence_open_override=ctx.sequence_open_overrides.get(id(data)),
     )
     if root_mapping_entries is not None:
-        return _RootMappingLiteral.create(
+        return _RootMappingLiteral(
             literal,
             table_entries=tuple(
                 line.removeprefix(body_prefix)

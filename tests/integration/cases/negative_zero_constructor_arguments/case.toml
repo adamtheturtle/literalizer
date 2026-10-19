@@ -1,0 +1,8 @@
+schema_version = 1
+suites = ["base"]
+
+[[variants]]
+axis = "float_format"
+
+[[variants]]
+axis = "constructor_prefix"

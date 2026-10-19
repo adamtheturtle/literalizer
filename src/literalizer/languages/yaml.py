@@ -55,6 +55,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -238,8 +239,6 @@ class Yaml(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Yaml."""
 
-        _value_: DateFormatConfig
-
         YAML = DateFormatConfig(
             formatter=date_iso_formatter(template="{iso}"),
             preamble_lines=(),
@@ -251,8 +250,6 @@ class Yaml(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Yaml."""
-
-        _value_: DatetimeFormatConfig
 
         YAML = DatetimeFormatConfig(
             formatter=datetime_iso_formatter(template="{iso}"),
@@ -271,17 +268,15 @@ class Yaml(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for YAML."""

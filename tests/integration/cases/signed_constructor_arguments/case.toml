@@ -1,0 +1,11 @@
+schema_version = 1
+suites = ["base"]
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "float_format"
+
+[[variants]]
+axis = "constructor_prefix"

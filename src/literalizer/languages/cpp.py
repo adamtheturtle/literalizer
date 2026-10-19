@@ -10,7 +10,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, ClassVar, Self, TypeGuard
+from typing import TYPE_CHECKING, ClassVar, Protocol, Self, TypeGuard
 
 from beartype import beartype
 
@@ -112,6 +112,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -310,7 +311,7 @@ def _format_string_cpp_escaped(value: str) -> str:
     r"""Format *value* without embedding a null byte in a C++ literal."""
     if has_bidi_formatting_character(value=value):
         entries = format_string_c_utf8_characters(value=value)
-        return TypedInitializer.create(
+        return TypedInitializer(
             f"std::string{{{entries}}}", declared_type="std::string"
         )
     segments = value.split(sep="\0")
@@ -522,9 +523,7 @@ def _format_date_cpp(value: dt.date) -> str:
         f"std::chrono::month{{{value.month}}}, "
         f"std::chrono::day{{{value.day}}}}}"
     )
-    return TypedInitializer.create(
-        code, declared_type="std::chrono::year_month_day"
-    )
+    return TypedInitializer(code, declared_type="std::chrono::year_month_day")
 
 
 @beartype
@@ -540,7 +539,7 @@ def _format_datetime_cpp(value: dt.datetime) -> str:
         parts.append(f"std::chrono::seconds{{{value.second}}}")
     if value.microsecond != 0:
         parts.append(f"std::chrono::microseconds{{{value.microsecond}}}")
-    return TypedInitializer.create(
+    return TypedInitializer(
         f"std::chrono::system_clock::time_point{{{' + '.join(parts)}}}",
         declared_type="std::chrono::system_clock::time_point",
     )
@@ -607,7 +606,7 @@ def _make_cpp_element_to_type(
         if type_name is None:
             return None
         if isinstance(element_type, (ListType, DictType)):
-            return _CppTypeDependencies.create(type_name, headers=headers)
+            return _CppTypeDependencies(type_name, headers=headers)
         return _cpp_owned_atomic_type(type_name)
 
     return _resolve
@@ -641,12 +640,14 @@ class _CppTypeDependencies(str):
 
     _headers: frozenset[str]
 
-    @classmethod
-    def create(cls, code: str, /, *, headers: frozenset[str]) -> Self:
+    def __new__(cls, code: str, /, *, headers: frozenset[str]) -> Self:
+        """Allocate text; the initializer retains producer metadata."""
+        del headers
+        return super().__new__(cls, object=code)
+
+    def __init__(self, _code: str, /, *, headers: frozenset[str]) -> None:
         """Keep required headers alongside the generated type spelling."""
-        result = cls(object=code)
-        result._headers = headers
-        return result
+        self._headers = headers
 
     @property
     def headers(self) -> frozenset[str]:
@@ -698,15 +699,19 @@ class _CppArrayType(_CppTypeDependencies):
 
     _scalar_leaves: bool
 
-    @classmethod
-    def create_array(
+    def __new__(
         cls, code: str, /, *, scalar_leaves: bool, headers: frozenset[str]
     ) -> Self:
+        """Allocate text; the initializer retains producer metadata."""
+        del scalar_leaves
+        return super().__new__(cls, code, headers=headers)
+
+    def __init__(
+        self, code: str, /, *, scalar_leaves: bool, headers: frozenset[str]
+    ) -> None:
         """Retain the leaf policy before the type is written as source."""
-        result = cls(object=code)
-        result._scalar_leaves = scalar_leaves
-        result._headers = headers
-        return result
+        super().__init__(code, headers=headers)
+        self._scalar_leaves = scalar_leaves
 
     @property
     def scalar_leaves(self) -> bool:
@@ -735,9 +740,9 @@ def _cpp_owned_atomic_type(type_name: str, /) -> str:
     """Retain initialization policy for the producer's native type
     choice.
     """
-    factory = _CppTypeDependencies.create
+    factory = _CppTypeDependencies
     if type_name in _CPP_SCALAR_FIELD_TYPES:
-        factory = _CppScalarFieldType.create
+        factory = _CppScalarFieldType
     return factory(type_name, headers=_cpp_native_atomic_headers(type_name))
 
 
@@ -784,7 +789,7 @@ class _CppTypeCtx:
     def sequence_type(self, *, inner: str, length: int) -> str:
         """Return the type the active sequence format renders."""
         if self.sequence_is_array:
-            return _CppArrayType.create_array(
+            return _CppArrayType(
                 f"std::array<{inner}, {length}>",
                 scalar_leaves=_cpp_record_field_needs_value_initialization(
                     inner
@@ -792,7 +797,7 @@ class _CppTypeCtx:
                 headers=frozenset({"#include <array>"})
                 | _cpp_type_headers(inner),
             )
-        return _CppTypeDependencies.create(
+        return _CppTypeDependencies(
             f"std::vector<{inner}>",
             headers=frozenset({"#include <vector>"})
             | _cpp_type_headers(inner),
@@ -800,7 +805,7 @@ class _CppTypeCtx:
 
     def dict_type(self, value_type: str, /) -> str:
         """Return the active string-keyed mapping type."""
-        return _CppTypeDependencies.create(
+        return _CppTypeDependencies(
             f"{self.dict_type_name}<std::string, {value_type}>",
             headers=frozenset(
                 {"#include <string>", _CPP_MAP_HEADERS[self.dict_type_name]}
@@ -811,10 +816,8 @@ class _CppTypeCtx:
     def variant_type(self, types: Sequence[str], /) -> str:
         """Return the active heterogeneous-value carrier type."""
         if self.variant_type_name != "std::variant":
-            return _CppVariantType.create(
-                self.variant_type_name, headers=frozenset()
-            )
-        return _CppVariantType.create(
+            return _CppVariantType(self.variant_type_name, headers=frozenset())
+        return _CppVariantType(
             f"{self.variant_type_name}<{', '.join(types)}>",
             headers=frozenset({"#include <variant>"}).union(
                 *(_cpp_type_headers(type_name) for type_name in types)
@@ -844,7 +847,7 @@ def _cpp_array_type(
 ) -> str | None:
     """Return the recursive ``std::array`` type for *items*."""
     if len(items) == 0:
-        return _CppArrayType.create_array(
+        return _CppArrayType(
             "std::array<std::nullptr_t, 0>",
             scalar_leaves=True,
             headers=frozenset({"#include <array>", "#include <cstddef>"}),
@@ -896,9 +899,7 @@ def _build_cpp_array_open(
         type_name = _cpp_array_type(items=items, type_ctx=type_ctx)
         if type_name is None:
             return "{"
-        return TypedCollectionOpen.create(
-            f"{type_name}{{", declared_type=type_name
-        )
+        return TypedCollectionOpen(f"{type_name}{{", declared_type=type_name)
 
     @beartype
     def _signature(items: list[Value], /) -> CollectionSignature:
@@ -914,6 +915,14 @@ def _build_cpp_array_open(
         )
 
     return signature_open(render=_open, infer=_signature)
+
+
+class _SequenceConfigBuilder(Protocol):
+    """Build a sequence format using the selected C++ type context."""
+
+    def __call__(self, *, type_ctx: _CppTypeCtx) -> SequenceFormatConfig:
+        """Resolve the collection representation."""
+        ...
 
 
 @beartype
@@ -1044,7 +1053,7 @@ def _cpp_tuple_type(
         _cpp_tuple_element_type(value=element, type_ctx=type_ctx)
         for element in items
     ]
-    return _CppTypeDependencies.create(
+    return _CppTypeDependencies(
         f"std::tuple<{', '.join(element_types)}>",
         headers=frozenset({"#include <tuple>"}).union(
             *(_cpp_type_headers(type_name) for type_name in element_types)
@@ -1078,7 +1087,7 @@ def _compute_cpp_type(
                 type_ctx=type_ctx,
                 in_mapping_value=True,
             )
-            return _CppTypeDependencies.create(
+            return _CppTypeDependencies(
                 f"std::vector<std::pair<std::string, {value_type}>>",
                 headers=frozenset(
                     {
@@ -2030,7 +2039,7 @@ def _cpp_record_literal(
     trailing-comma config applies unchanged.
     """
     return RenderedRecordLiteral(
-        head=TypedCollectionOpen.create(f"{name}{{", declared_type=name),
+        head=TypedCollectionOpen(f"{name}{{", declared_type=name),
         entries=tuple(
             f".{field.identifier} = {_cpp_record_member_value(field)}"
             for field in fields
@@ -2053,7 +2062,7 @@ def _cpp_record_literal_positional(
     literals, so positional aggregate initialization remains well-formed.
     """
     return RenderedRecordLiteral(
-        head=TypedCollectionOpen.create(f"{name}{{", declared_type=name),
+        head=TypedCollectionOpen(f"{name}{{", declared_type=name),
         entries=tuple(_cpp_record_member_value(field) for field in fields),
         closer="}",
         compact_pad="",
@@ -2114,7 +2123,7 @@ def _cpp_render_record_declaration(
             f"{effective_value};"
         )
     members = " ".join(collected_members)
-    return _CppTypeDependencies.create(
+    return _CppTypeDependencies(
         f"struct {name} {{ {members} }};",
         headers=frozenset[str]().union(
             *(_cpp_type_headers(field.type_name) for field in fields)
@@ -2217,9 +2226,7 @@ def _cpp14_record_list_open(
     )
     if type_name is None:
         return None
-    return TypedCollectionOpen.create(
-        f"{type_name}{{", declared_type=type_name
-    )
+    return TypedCollectionOpen(f"{type_name}{{", declared_type=type_name)
 
 
 @beartype
@@ -2228,9 +2235,7 @@ def _cpp14_nested_record_list_open(*, depth: int, name: str) -> str:
     element_type = name
     for _ in range(depth):
         element_type = f"std::vector<{element_type}>"
-    return TypedCollectionOpen.create(
-        f"{element_type}{{", declared_type=element_type
-    )
+    return TypedCollectionOpen(f"{element_type}{{", declared_type=element_type)
 
 
 @beartype
@@ -2462,9 +2467,7 @@ def _apply_cpp_variant_sequence_open(
         in_mapping_value=False,
     )
     type_name = f"std::vector<{inner}>"
-    return TypedCollectionOpen.create(
-        f"{type_name}{{", declared_type=type_name
-    )
+    return TypedCollectionOpen(f"{type_name}{{", declared_type=type_name)
 
 
 @beartype
@@ -2480,9 +2483,7 @@ def _apply_cpp_variant_dict_open(
         in_mapping_value=True,
     )
     type_name = type_ctx.dict_type(value_type)
-    return TypedCollectionOpen.create(
-        f"{type_name}{{", declared_type=type_name
-    )
+    return TypedCollectionOpen(f"{type_name}{{", declared_type=type_name)
 
 
 @beartype
@@ -2499,9 +2500,7 @@ def _apply_cpp_variant_ordered_map_open(
         in_mapping_value=True,
     )
     type_name = f"std::vector<std::pair<std::string, {value_type}>>"
-    return TypedCollectionOpen.create(
-        f"{type_name}{{", declared_type=type_name
-    )
+    return TypedCollectionOpen(f"{type_name}{{", declared_type=type_name)
 
 
 @beartype
@@ -3275,8 +3274,6 @@ class Cpp(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for C++."""
 
-        _value_: DateFormatConfig
-
         CPP = DateFormatConfig(
             formatter=_format_date_cpp,
             preamble_lines=(import_preamble(code="#include <chrono>"),),
@@ -3299,8 +3296,6 @@ class Cpp(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for C++."""
-
-        _value_: DatetimeFormatConfig
 
         CPP = DatetimeFormatConfig(
             formatter=_format_datetime_cpp,
@@ -3330,19 +3325,17 @@ class Cpp(metaclass=LanguageCls):
                 case _:
                     return "std::chrono::system_clock::time_point"
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
-    class SequenceFormats(enum.Enum):
+    class SequenceFormats(FormatValueMixin[_SequenceConfigBuilder], enum.Enum):
         """Sequence type options for C++."""
 
         INITIALIZER_LIST = enum.member(value=_make_initializer_list_config)
@@ -3527,17 +3520,15 @@ class Cpp(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = _StringEnumMember(value=_format_string_cpp_escaped)
         MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -4484,7 +4475,7 @@ class Cpp(metaclass=LanguageCls):
         if request.record_name is not None:
             return request.record_name
         if request.element_record_name is not None:
-            return _CppTypeDependencies.create(
+            return _CppTypeDependencies(
                 f"std::vector<{request.element_record_name}>",
                 headers=frozenset({"#include <vector>"}),
             )
@@ -4496,12 +4487,12 @@ class Cpp(metaclass=LanguageCls):
         ):
             narrow_value_type = self._record_map_narrowing.value_type
             if narrow_value_type is not None:
-                return _CppTypeDependencies.create(
+                return _CppTypeDependencies(
                     f"std::map<std::string, {narrow_value_type}>",
                     headers=frozenset({"#include <map>", "#include <string>"})
                     | _cpp_type_headers(narrow_value_type),
                 )
-            return _CppTypeDependencies.create(
+            return _CppTypeDependencies(
                 _CPP_RECORD_MAP_TYPE,
                 headers=frozenset({"#include <map>", "#include <string>"}),
             )
@@ -4589,10 +4580,10 @@ class Cpp(metaclass=LanguageCls):
             """Return the widened-map opener for the current pass."""
             if narrowing.value_type is not None:
                 type_name = f"std::map<std::string, {narrowing.value_type}>"
-                return TypedCollectionOpen.create(
+                return TypedCollectionOpen(
                     f"{type_name}{{", declared_type=type_name
                 )
-            return TypedCollectionOpen.create(
+            return TypedCollectionOpen(
                 f"{_CPP_RECORD_MAP_TYPE}{{", declared_type=_CPP_RECORD_MAP_TYPE
             )
 

@@ -85,6 +85,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -754,8 +755,6 @@ class Crystal(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Crystal."""
 
-        _value_: DateFormatConfig
-
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
@@ -770,8 +769,6 @@ class Crystal(metaclass=LanguageCls):
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Crystal."""
 
-        _value_: DatetimeFormatConfig
-
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
             type_produced=str,
@@ -784,17 +781,15 @@ class Crystal(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Crystal."""
@@ -832,10 +827,10 @@ class Crystal(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
 
-    class SetFormats(enum.Enum):
+    class SetFormats(
+        FormatValueMixin[Callable[[str], SetFormatConfig]], enum.Enum
+    ):
         """Set type options for Crystal."""
-
-        _value_: Callable[[str], SetFormatConfig]
 
         SET = enum.member(
             value=set_format_factory(
@@ -851,7 +846,7 @@ class Crystal(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self._value_(default_type)
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -876,10 +871,8 @@ class Crystal(metaclass=LanguageCls):
 
         DEFAULT = enum.auto()
 
-    class DictFormats(enum.Enum):
+    class DictFormats(FormatValueMixin[DictFormatBuilder], enum.Enum):
         """Dict/map format options."""
-
-        _value_: DictFormatBuilder
 
         DEFAULT = enum.member(
             value=dict_format_factory(
@@ -903,7 +896,7 @@ class Crystal(metaclass=LanguageCls):
             default_key_type: str = "String",
         ) -> DictFormatConfig:
             """Create a dict format config for the given type."""
-            return self._value_(
+            return self.value(
                 default_type=default_type,
                 default_key_type=default_key_type,
             )
@@ -926,12 +919,13 @@ class Crystal(metaclass=LanguageCls):
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
 
-    class IntegerFormats(enum.Enum):
+    class IntegerFormats(
+        FormatValueMixin[MappingProxyType[str, Callable[[int], str]]],
+        enum.Enum,
+    ):
         """Integer format options."""
 
-        _value_: Mapping[str, Callable[[int], str]]
-
-        DECIMAL = MappingProxyType(
+        DECIMAL = MappingProxyType[str, Callable[[int], str]](
             mapping={
                 "NONE": _format_integer_decimal,
                 "UNDERSCORE": format_integer_underscore,
@@ -943,7 +937,7 @@ class Crystal(metaclass=LanguageCls):
             numeric_separator: enum.Enum,
         ) -> Callable[[int], str]:
             """Return the integer formatter for the given separator."""
-            return self._value_[numeric_separator.name]
+            return self.value[numeric_separator.name]
 
     class NumericLiteralSuffixes(enum.Enum):
         """Numeric literal suffix options."""
@@ -961,17 +955,15 @@ class Crystal(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=_format_string)
         MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1633,6 +1625,20 @@ class Crystal(metaclass=LanguageCls):
         default_consumable_ref_value_inhibits_consuming_form
     )
 
+    @beartype
+    def _crystal_record_empty_sequence(
+        self, siblings: Sequence[list[Value]], /
+    ) -> str:
+        """Type an empty array using its siblings' rendered record
+        types.
+        """
+        parts = {
+            self._crystal_type_for_value(item)
+            for sibling in siblings
+            for item in sibling
+        }
+        return f"[] of {_crystal_union(parts)}"
+
     @cached_property
     @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
@@ -1662,7 +1668,11 @@ class Crystal(metaclass=LanguageCls):
             )
         return dataclasses.replace(
             self.sequence_format.value,
-            narrowed_empty_form=_crystal_narrowed_empty_form,
+            narrowed_empty_form=(
+                self._crystal_record_empty_sequence
+                if self._record_strategy_active
+                else _crystal_narrowed_empty_form
+            ),
         )
 
     @cached_property
