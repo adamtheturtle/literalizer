@@ -3,4 +3,4 @@ input = "input.json"
 owner = "variant"
 
 [[variants]]
-axis = "swift_del_string"
+axis = "del_string"

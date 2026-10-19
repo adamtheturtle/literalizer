@@ -1259,7 +1259,7 @@ overrides = [
   { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
 ]
 
-[axes.swift_del_string]
+[axes.del_string]
 plan = "every_non_default_member"
 name_template = "{lang}_del_{format}"
 option = "string_format"
