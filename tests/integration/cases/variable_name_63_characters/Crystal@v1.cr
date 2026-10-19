@@ -1,0 +1,4 @@
+module Fixture_variable_name_63_characters_Crystal
+extend self
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv = 1
+end
