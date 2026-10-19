@@ -1681,10 +1681,23 @@ class Zig(metaclass=LanguageCls):
                 self._zig_resolved_value_type(element) for element in items
             )
             return f"struct {{ {members} }}"
-        element_type = _ZIG_INFERRED_ELEMENT_TYPES.get(
-            inferred,
-            self._zig_resolved_value_type(max(items, key=_zig_int_sort_key)),
-        )
+        if isinstance(inferred, ListType):
+            # Empty siblings provide no element-type evidence. Resolve all
+            # populated descendants before assigning the enclosing slice type.
+            nested_items = [
+                child
+                for item in items
+                if isinstance(item, list)
+                for child in item
+            ]
+            element_type = self._zig_list_type(items=nested_items)
+        else:
+            element_type = _ZIG_INFERRED_ELEMENT_TYPES.get(
+                inferred,
+                self._zig_resolved_value_type(
+                    max(items, key=_zig_int_sort_key)
+                ),
+            )
         return f"[]const {element_type}"
 
     def _zig_record_field_type(self, request: RecordFieldType, /) -> str:

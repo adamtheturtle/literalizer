@@ -1,7 +1,0 @@
-schema_version = 1
-owner = "variant"
-languages = ["CSharp", "Cpp", "V"]
-languages_reason = "Native record arrays require explicit record types for empty siblings."
-
-[[variants]]
-axis = "heterogeneous_strategy_record"
