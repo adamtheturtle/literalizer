@@ -1,4 +1,5 @@
 schema_version = 1
+roles = ["no-variable-form-input"]
 suites = ["base", "combined"]
 
 [[variants]]

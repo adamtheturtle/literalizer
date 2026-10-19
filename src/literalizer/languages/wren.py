@@ -93,12 +93,30 @@ from literalizer._language import (
     no_format_integer_widened,
     no_leading_preamble,
     no_validate_spec_for_data,
+    parenthesize_bare_object,
     requires_declared_binding,
     wrap_combined_in_file_noop_static,
-    wrap_in_file_noop_static,
+    wrap_in_file_noop,
 )
 from literalizer._types import Value
 from literalizer.exceptions import UnrepresentableInputError
+
+
+@beartype
+@dataclasses.dataclass(frozen=True)
+class _WrenDictFormatConfig(DictFormatConfig):
+    """Map literals need expression context at statement scope."""
+
+    is_object_literal: ClassVar[bool] = True
+
+
+@beartype
+@dataclasses.dataclass(frozen=True)
+class _WrenOrderedMapFormatConfig(OrderedMapFormatConfig):
+    """Ordered map literals share the map expression grammar."""
+
+    is_object_literal: ClassVar[bool] = True
+
 
 # Prevent Wren from interpreting ``%(…)`` as string interpolation.
 _format_string = make_backslash_string_formatter(
@@ -630,9 +648,16 @@ class Wren(metaclass=LanguageCls):
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
-    wrap_in_file: ClassVar["staticmethod[[str, FileWrapperContext], str]"] = (
-        wrap_in_file_noop_static
-    )
+    @staticmethod
+    def wrap_in_file(
+        content: str,
+        context: FileWrapperContext,
+    ) -> str:
+        """Keep an unbound map from being parsed as a statement block."""
+        return wrap_in_file_noop(
+            content=parenthesize_bare_object(content=content, context=context),
+            context=context,
+        )
 
     wrap_combined_in_file: ClassVar[
         "staticmethod[[str, str, FileWrapperContext], str]"
@@ -799,7 +824,7 @@ class Wren(metaclass=LanguageCls):
     @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        return DictFormatConfig(
+        return _WrenDictFormatConfig(
             dict_open=fixed_open(open_str="{"),
             close="}",
             format_entry=self._dict_entry,
@@ -881,7 +906,7 @@ class Wren(metaclass=LanguageCls):
     @beartype
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
-        return OrderedMapFormatConfig(
+        return _WrenOrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="{"),
             close="}",
             preamble_lines=(),
