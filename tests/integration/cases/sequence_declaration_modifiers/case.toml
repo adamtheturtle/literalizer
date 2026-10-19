@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "modifiers"
+
+[[variants]]
+axis = "modifier_sequence_format"
+suffix = "_tuple_field_array"
