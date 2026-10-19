@@ -483,6 +483,7 @@ def _java_common_element_type(
     seq_is_array: bool,
     dict_outer: str,
     set_outer: str,
+    record_name_for_value: Callable[[Value], str | None] | None,
 ) -> str:
     """Find the common Java type for a collection's elements.
 
@@ -498,6 +499,7 @@ def _java_common_element_type(
         seq_is_array=seq_is_array,
         dict_outer=dict_outer,
         set_outer=set_outer,
+        record_name_for_value=record_name_for_value,
     )
     types: list[str] = [recurse(data=e) for e in elements]
     unique = set(types)
@@ -579,8 +581,13 @@ def _java_type_hint(
     seq_is_array: bool,
     dict_outer: str,
     set_outer: str,
+    record_name_for_value: Callable[[Value], str | None] | None,
 ) -> str:
     """Derive a Java type from *data*."""
+    if record_name_for_value is not None:
+        record_name = record_name_for_value(data)
+        if record_name is not None:
+            return record_name
     common = functools.partial(
         _java_common_element_type,
         int_type=int_type,
@@ -589,6 +596,7 @@ def _java_type_hint(
         seq_is_array=seq_is_array,
         dict_outer=dict_outer,
         set_outer=set_outer,
+        record_name_for_value=record_name_for_value,
     )
     match data:
         case OrderedMap():
@@ -739,6 +747,7 @@ def _format_java_typed_declaration(
     seq_is_array: bool,
     dict_outer: str,
     set_outer: str,
+    record_name_for_value: Callable[[Value], str | None] | None,
 ) -> str:
     """Format a Java variable declaration with an explicit type."""
     hint = _java_type_hint(
@@ -749,6 +758,7 @@ def _format_java_typed_declaration(
         seq_is_array=seq_is_array,
         dict_outer=dict_outer,
         set_outer=set_outer,
+        record_name_for_value=record_name_for_value,
     )
     prefix = _java_modifier_prefix(modifiers=modifiers)
     terminated = _java_split_trailing_line_comments(value=value)
@@ -1843,6 +1853,7 @@ class Java(metaclass=LanguageCls):
             seq_is_array: bool,
             dict_outer: str,
             set_outer: str,
+            record_name_for_value: Callable[[Value], str | None] | None,
         ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
             """Return the variable declaration formatter."""
 
@@ -1867,6 +1878,7 @@ class Java(metaclass=LanguageCls):
                     seq_is_array=seq_is_array,
                     dict_outer=dict_outer,
                     set_outer=set_outer,
+                    record_name_for_value=record_name_for_value,
                 )
 
             cls = type(self)
@@ -2654,6 +2666,7 @@ class Java(metaclass=LanguageCls):
             ),
             dict_outer=(effective_dict_outer),
             set_outer=(effective_set_outer),
+            record_name_for_value=self._record_strategy.record_name_for_value,
         )
 
         return self._record_declaration_formatter(base=base)
