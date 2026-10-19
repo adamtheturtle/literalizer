@@ -363,6 +363,9 @@ def _format_gleam_raw_string(value: str) -> str:
     """Avoid code points that Erlang rejects in Gleam's generated
     source.
     """
+    # ASCII identifiers contain no characters that need escaping.
+    if value.isascii() and value.isidentifier():
+        return f'"{value}"'
     if "\ufffe" in value or "\uffff" in value:
         byte_values = ", ".join(
             str(object=byte) for byte in value.encode(encoding="utf-8")
