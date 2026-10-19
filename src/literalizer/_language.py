@@ -552,8 +552,8 @@ class DictFormatConfig:
     """Configuration for dict formatting."""
 
     is_object_literal: ClassVar[bool] = False
-    """Whether this format emits an ECMAScript object-literal
-    expression.
+    """Whether this format emits a brace-delimited mapping literal
+    that needs expression context at statement scope.
     """
 
     key_syntax: ClassVar[NewVariableNameSyntax | None] = None
@@ -620,8 +620,8 @@ class OrderedMapFormatConfig:
     """Configuration for ordered-map formatting."""
 
     is_object_literal: ClassVar[bool] = False
-    """Whether this format emits an ECMAScript object-literal
-    expression.
+    """Whether this format emits a brace-delimited mapping literal
+    that needs expression context at statement scope.
     """
 
     key_syntax: ClassVar[NewVariableNameSyntax | None] = None
@@ -3979,9 +3979,9 @@ def parenthesize_bare_object(
     """Return *content* readable as an expression at statement scope.
 
     A file that binds no name holds the value on its own, and in the
-    ECMAScript grammar a statement opening with ``{`` is a block, so an
-    object literal there does not parse.  Parentheses force the
-    expression reading; every other value already is one, and a name to
+    ECMAScript and Wren grammars a statement opening with ``{`` is a
+    block, so a mapping literal there does not parse. Parentheses force
+    the expression reading; every other value already is one, and a name to
     bind to makes the question moot (issue #4774).
     """
     if context.variable_name != "" or not context.root_is_object_literal:
