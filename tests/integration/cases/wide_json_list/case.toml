@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+
+[[variants]]
+axis = "json_type"
+suffix = "_wide_list"
