@@ -1,15 +1,15 @@
 package main
 
 func main() {
-Shared := []int{
+SharedValues := []int{
 	1,
 	2,
 }
 my_data := map[string][]int{
-	"a": Shared,
+	"a": SharedValues,
 }
 my_data = map[string][]int{
-	"a": Shared,
+	"a": SharedValues,
 }
 _ = my_data
 }

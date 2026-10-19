@@ -3,16 +3,16 @@
 #include <string>
 #include <map>
 int main() {
-auto shared = std::vector<int>{
+auto shared_values = std::vector<int>{
     1,
     2,
 };
 auto my_data = std::map<std::string, std::vector<int>>{
-    {"a", shared},
+    {"a", shared_values},
 };
 (void)my_data;
 my_data = std::map<std::string, std::vector<int>>{
-    {"a", shared},
+    {"a", shared_values},
 };
     (void)my_data;
     return 0;

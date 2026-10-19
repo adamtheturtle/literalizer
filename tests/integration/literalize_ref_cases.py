@@ -54,6 +54,7 @@ from .golden_checks import (
 from .language_specs import (
     find_redefinition_styles,
     make_golden_path,
+    make_spec,
     sorted_languages,
     with_per_fixture_module_name,
 )
@@ -119,6 +120,8 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
         for config in ref_case_specs(cases_dir=CASES_DIR, owner=REF_OWNER)
         for lang_cls in sorted_languages()
         if config.admits_language(lang_cls=lang_cls)
+        if config.variable_form != "both"
+        or bool(find_redefinition_styles(spec=make_spec(lang_cls=lang_cls)))
         if config.ref_case_for(lang_cls=lang_cls) is None
         or config.ref_case_for(lang_cls=lang_cls)
         in lang_cls.supported_ref_cases
@@ -464,6 +467,14 @@ def run_literalize_ref_golden_case(
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     spec = _ref_language_options(config=config, lang_cls=lang_cls, spec=spec)
+    if (
+        config.variable_form == "both"
+        and config.declaration_style is None
+        and not spec.declaration_style.value.supports_redefinition
+    ):
+        spec = dataclasses.replace(
+            spec, declaration_style=find_redefinition_styles(spec=spec)[0]
+        )
     variable_form_obj: literalizer.VariableForm | None = (
         config.resolved_variable_form()
     )
