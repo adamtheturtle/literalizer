@@ -11,6 +11,7 @@ from .language_specs import make_spec
 from .literalize_ref_cases import (
     LiteralizeRefCase,
     discover_literalize_ref_cases,
+    ref_language_versions,
     run_literalize_ref_golden_case,
 )
 
@@ -30,7 +31,9 @@ def test_literalize_ref_golden_file(
     languages.
     """
     lang_cls = ref_case.lang_cls
-    for version_format in lang_cls.VersionFormats:
+    for version_format in ref_language_versions(
+        config=ref_case.config, lang_cls=lang_cls
+    ):
         with subtests.test(version=version_format.name):
             spec = make_spec(
                 lang_cls=lang_cls,

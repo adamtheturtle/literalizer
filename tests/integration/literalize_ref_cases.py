@@ -295,6 +295,25 @@ def _ref_language_options(
 
 
 @beartype
+def ref_language_versions(
+    *, config: RefCaseSpec, lang_cls: literalizer.LanguageCls
+) -> tuple[enum.Enum, ...]:
+    """Return each effective target version once after applying
+    options.
+    """
+    return tuple(
+        dict.fromkeys(
+            _ref_language_options(
+                config=config,
+                lang_cls=lang_cls,
+                spec=make_spec(lang_cls=lang_cls, language_version=version),
+            ).language_version
+            for version in lang_cls.VersionFormats
+        )
+    )
+
+
+@beartype
 def _compose_ref_value_check(
     *,
     source: str,
@@ -455,6 +474,7 @@ def run_literalize_ref_golden_case(
     complete unit that compiles, with per-language declaration
     sequencing.
     """
+    spec = _ref_language_options(config=config, lang_cls=lang_cls, spec=spec)
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
     input_path = input_info.path
     input_source = input_path.read_text(encoding="utf-8")
@@ -466,7 +486,6 @@ def run_literalize_ref_golden_case(
         version=version,
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
-    spec = _ref_language_options(config=config, lang_cls=lang_cls, spec=spec)
     if (
         config.variable_form == "both"
         and config.declaration_style is None

@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}, {kind = "enum_member_present", option = "variable_type_hints", member = "NEVER"}]
+heterogeneous_strategy = "RECORD"
+variable_type_hints = "NEVER"
+
+[ref.value_sources]
+value = '{"x":1,"y":null}'

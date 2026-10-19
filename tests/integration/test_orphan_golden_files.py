@@ -7,6 +7,8 @@ import pytest
 from beartype import beartype
 
 import literalizer
+from literalizer.languages import Cpp, Java
+from tests.enum_members import enum_member_by_name
 
 from .call_cases import discover_call_cases
 from .call_variant_cases import build_call_variant_cases
@@ -23,6 +25,7 @@ from .case_discovery import (
 from .case_manifests import (
     KEBAB_NEW_VARIABLE_OWNER,
     PRIMED_NEW_VARIABLE_OWNER,
+    RefCaseSpec,
     case_dir_name_for_owner,
     load_case_manifests,
 )
@@ -35,6 +38,7 @@ from .language_specs import make_golden_path, make_spec
 from .literalize_ref_cases import (
     discover_literalize_default_ref_cases,
     discover_literalize_ref_cases,
+    ref_language_versions,
 )
 from .variant_cases import build_variant_cases
 
@@ -269,20 +273,30 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
 
     for literalize_ref_case in discover_literalize_ref_cases():
         expected.update(
-            _paths_for_versions(
+            make_golden_path(
                 parent=cases_dir / literalize_ref_case.config.case_dir_name,
                 name=f"{literalize_ref_case.lang_cls.__name__}_ref",
                 extension=literalize_ref_case.lang_cls.extension,
+                lang_cls=literalize_ref_case.lang_cls,
+                version=version,
+            )
+            for version in ref_language_versions(
+                config=literalize_ref_case.config,
                 lang_cls=literalize_ref_case.lang_cls,
             )
         )
 
     for default_ref_case in discover_literalize_default_ref_cases():
         expected.update(
-            _paths_for_versions(
+            make_golden_path(
                 parent=cases_dir / default_ref_case.config.case_dir_name,
                 name=f"{default_ref_case.lang_cls.__name__}_ref_default",
                 extension=default_ref_case.lang_cls.extension,
+                lang_cls=default_ref_case.lang_cls,
+                version=version,
+            )
+            for version in ref_language_versions(
+                config=default_ref_case.config,
                 lang_cls=default_ref_case.lang_cls,
             )
         )
@@ -394,3 +408,17 @@ def test_variant_version_inventory_preserves_coverage_and_rejects_phantoms(
         match="Cpp_version_cpp14@cpp20",
     ):
         _check_golden_inventory(cases_dir=cases_dir, expected=expected)
+
+
+def test_reference_versions_follow_selected_options() -> None:
+    """Java records own JDK16 once; C++ keeps each supported standard."""
+    config = RefCaseSpec.model_validate(
+        obj={"heterogeneous_strategy": "RECORD"},
+        context={"case_dir_name": "record_reference"},
+    )
+    assert ref_language_versions(config=config, lang_cls=Java) == (
+        enum_member_by_name(enum_cls=Java.VersionFormats, name="JDK_16"),
+    )
+    assert ref_language_versions(config=config, lang_cls=Cpp) == tuple(
+        Cpp.VersionFormats
+    )
