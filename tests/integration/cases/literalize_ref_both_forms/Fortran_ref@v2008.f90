@@ -83,31 +83,31 @@ end module fval_m
 subroutine main_declaration()
     use fval_m
     implicit none
-    type(fval_t) :: shared
+    type(fval_t) :: shared_values
     type(fval_t) :: my_data
-    shared = flist([fval_t :: &
+    shared_values = flist([fval_t :: &
         fint(1_int64), &
         fint(2_int64) &
     ])
     my_data = fmap([fval_t :: &
-        fentry('a', shared) &
+        fentry('a', shared_values) &
     ])
 end subroutine main_declaration
 
 subroutine main_assignment()
     use fval_m
     implicit none
-    type(fval_t) :: shared
+    type(fval_t) :: shared_values
     type(fval_t) :: my_data
-    shared = flist([fval_t :: &
+    shared_values = flist([fval_t :: &
         fint(1_int64), &
         fint(2_int64) &
     ])
     my_data = fmap([fval_t :: &
-        fentry('a', shared) &
+        fentry('a', shared_values) &
     ])
     my_data = fmap([fval_t :: &
-        fentry('a', shared) &
+        fentry('a', shared_values) &
     ])
 end subroutine main_assignment
 
