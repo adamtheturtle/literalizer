@@ -1587,9 +1587,21 @@ class Zig(metaclass=LanguageCls):
 
     @beartype
     def _zig_ordered_map_type(self, *, value: OrderedMap) -> str:
-        """Infer the value type of an ordered map field."""
-        value_for_type = next(iter(value.values()), 0)
-        val_type = self._zig_resolved_value_type(value_for_type)
+        """Infer a slice for uniform entries or a tuple for mixed
+        entries.
+        """
+        value_types = [
+            self._zig_resolved_value_type(item) for item in value.values()
+        ]
+        if len(set(value_types)) > 1:
+            # Like heterogeneous sequence fields, ordered entries retain
+            # each value's concrete type and their original position.
+            entries = ", ".join(
+                f"struct {{ key: []const u8, val: {value_type} }}"
+                for value_type in value_types
+            )
+            return f"*const struct {{ {entries} }}"
+        val_type = next(iter(value_types), "i64")
         return f"[]const struct {{ key: []const u8, val: {val_type} }}"
 
     def _zig_resolved_value_type(self, value: Value, /) -> str:
@@ -1632,14 +1644,6 @@ class Zig(metaclass=LanguageCls):
                     "[]const u8",
                 )
             case OrderedMap():
-                # An ordered-map field is out of scope for the base RECORD
-                # port (the cross-language decision is tracked in #2317); it
-                # is typed imprecisely from the first value's type, like the
-                # other ports' non-record-dict fallback.  ``... or [0]``
-                # keeps an empty ordered map from raising ``StopIteration``
-                # (its ``&.{}`` literal coerces to any slice element type);
-                # ``or`` is not a coverage branch, so no unreachable arm is
-                # added for a corpus that has no empty ordered-map field.
                 value_type = self._zig_ordered_map_type(value=value)
             case list():
                 value_type = self._zig_list_type(items=value)
@@ -2089,10 +2093,10 @@ class Zig(metaclass=LanguageCls):
 
         Under :attr:`json_type` ordered maps retain their entry order in a
         JSON object. An ordered map is never record-eligible, so under
-        ``RECORD`` it stays a map but as a raw
-        ``&.{ .{ .key = ..., .val = ... }, ... }`` slice of
-        ``key``/``val`` ``struct`` values rather than the ``ZVal``
-        ``.{ .map = &.{ ... }}`` form.
+        ``RECORD`` it stays a raw
+        ``&.{ .{ .key = ..., .val = ... }, ... }`` collection. Its field
+        type is a slice for uniform values or a tuple retaining each mixed
+        entry's type, rather than the ``ZVal`` ``.{ .map = &.{ ... }}`` form.
         """
         if self._json_type_active:
             return _STD_JSON_ORDERED_MAP_CONFIG
