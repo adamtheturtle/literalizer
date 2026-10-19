@@ -358,15 +358,12 @@ def _build_gleam_bytes_base64(
     return _format
 
 
-_GLEAM_ERLANG_NONCHARACTERS = re.compile(pattern="[\ufffe\uffff]")
-
-
 @beartype
 def _format_gleam_raw_string(value: str) -> str:
     """Avoid code points that Erlang rejects in Gleam's generated
     source.
     """
-    if _GLEAM_ERLANG_NONCHARACTERS.search(string=value) is not None:
+    if "\ufffe" in value or "\uffff" in value:
         byte_values = ", ".join(
             str(object=byte) for byte in value.encode(encoding="utf-8")
         )
@@ -383,19 +380,21 @@ def _gleam_needs_bit_array(data: Value) -> bool:
     """Find strings requiring the UTF-8 decoder, including mapping
     keys.
     """
-    match data:
-        case str():
-            return _GLEAM_ERLANG_NONCHARACTERS.search(string=data) is not None
-        case list() | set():
-            return any(_gleam_needs_bit_array(data=item) for item in data)
-        case dict():
-            return any(
-                _gleam_needs_bit_array(data=item)
-                for pair in data.items()
-                for item in pair
-            )
-        case _:
-            return False
+    pending: list[Value] = [data]
+    while len(pending) > 0:
+        item = pending.pop()
+        match item:
+            case str():
+                if "\ufffe" in item or "\uffff" in item:
+                    return True
+            case list() | set():
+                pending.extend(item)
+            case dict():
+                pending.extend(item)
+                pending.extend(item.values())
+            case _:
+                pass
+    return False
 
 
 @beartype
