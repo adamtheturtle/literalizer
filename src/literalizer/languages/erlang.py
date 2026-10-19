@@ -60,6 +60,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -495,8 +496,6 @@ class Erlang(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Erlang."""
 
-        _value_: DateFormatConfig
-
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
         )
@@ -508,8 +507,6 @@ class Erlang(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Erlang."""
-
-        _value_: DatetimeFormatConfig
 
         ISO = DatetimeFormatConfig(
             formatter=format_datetime_iso,
@@ -528,17 +525,15 @@ class Erlang(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         BINARY = _BytesEnumMember(value=_format_bytes)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Erlang."""
@@ -633,10 +628,8 @@ class Erlang(metaclass=LanguageCls):
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
 
-    class IntegerFormats(enum.Enum):
+    class IntegerFormats(FormatValueMixin[Callable[[int], str]], enum.Enum):
         """Integer format options."""
-
-        _value_: Callable[[int], str]
 
         DECIMAL = _IntegerEnumMember(value=str)
         HEX = _IntegerEnumMember(value=format_integer_hex_erlang)

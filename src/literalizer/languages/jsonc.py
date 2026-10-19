@@ -52,6 +52,7 @@ from literalizer._language import (
     DeclarationStyleConfig,
     DictFormatConfig,
     FileWrapperContext,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -268,17 +269,15 @@ class Jsonc(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for JSONC."""
@@ -344,10 +343,8 @@ class Jsonc(metaclass=LanguageCls):
 
         ALLOW = enum.auto()
 
-    class FloatFormats(enum.Enum):
+    class FloatFormats(FormatValueMixin[Callable[[float], str]], enum.Enum):
         """Float format options."""
-
-        _value_: Callable[[float], str]
 
         REPR = _FloatEnumMember(value=format_float_repr)
         SCIENTIFIC = _FloatEnumMember(value=format_float_scientific)
@@ -356,7 +353,7 @@ class Jsonc(metaclass=LanguageCls):
         def __call__(self, value: float, /) -> str:
             """Format a finite JSONC number."""
             return reject_special_floats(
-                formatter=self._value_,
+                formatter=self.value,
                 language_name="Jsonc",
             )(value)
 

@@ -235,6 +235,7 @@ pragma
 pre
 prepended
 proc
+proleptic
 pyjson5
 pyrefly
 pyright
@@ -289,5 +290,6 @@ unterminated
 unzoned
 uv
 val_t
+variadic
 whitespace
 yaml

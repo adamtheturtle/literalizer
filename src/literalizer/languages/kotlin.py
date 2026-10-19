@@ -106,6 +106,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -492,7 +493,7 @@ def _kotlin_record_literal(
     structured pieces for the shared compact/multiline layout code.
     """
     return RenderedRecordLiteral(
-        head=TypedCollectionOpen.create(f"{name}(", declared_type=name),
+        head=TypedCollectionOpen(f"{name}(", declared_type=name),
         entries=tuple(
             f"{field.identifier} = {field.formatted}" for field in fields
         ),
@@ -539,9 +540,7 @@ def _kotlin_tuple_literal(
     """
     head = {2: "Pair(", 3: "Triple("}[len(value)]
     return RenderedTupleLiteral(
-        head=TypedCollectionOpen.create(
-            head, declared_type=declared_type(value)
-        ),
+        head=TypedCollectionOpen(head, declared_type=declared_type(value)),
         entries=tuple(elements),
         closer=")",
         compact_pad="",
@@ -953,8 +952,6 @@ class Kotlin(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Kotlin."""
 
-        _value_: DateFormatConfig
-
         KOTLIN = DateFormatConfig(
             formatter=date_ymd_formatter(
                 template="LocalDate.of({year}, {month}, {day})",
@@ -968,8 +965,6 @@ class Kotlin(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Kotlin."""
-
-        _value_: DatetimeFormatConfig
 
         KOTLIN = DatetimeFormatConfig(
             formatter=datetime_ymdhms_formatter(
@@ -992,17 +987,15 @@ class Kotlin(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Kotlin."""
@@ -1059,10 +1052,10 @@ class Kotlin(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
 
-    class SetFormats(enum.Enum):
+    class SetFormats(
+        FormatValueMixin[Callable[[str], SetFormatConfig]], enum.Enum
+    ):
         """Set type options for Kotlin."""
-
-        _value_: Callable[[str], SetFormatConfig]
 
         SET = enum.member(
             value=set_format_factory(
@@ -1089,7 +1082,7 @@ class Kotlin(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self._value_(default_type)
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -1202,17 +1195,15 @@ class Kotlin(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=_format_string_backslash_dollar_nul)
         MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -1867,11 +1858,11 @@ class Kotlin(metaclass=LanguageCls):
                 pass.
                 """
                 if narrowing.value_type is not None:
-                    return TypedCollectionOpen.create(
+                    return TypedCollectionOpen(
                         f"mapOf<String, {narrowing.value_type}>(",
                         declared_type=f"Map<String, {narrowing.value_type}>",
                     )
-                return TypedCollectionOpen.create(
+                return TypedCollectionOpen(
                     "mapOf<String, Any?>(", declared_type="Map<String, Any?>"
                 )
 
@@ -2129,7 +2120,7 @@ class Kotlin(metaclass=LanguageCls):
             assembly.
             """
             selected = self._kotlin_sequence_type(items)
-            return TypedCollectionOpen.create(
+            return TypedCollectionOpen(
                 selected.opener, declared_type=selected.declared_type
             )
 
@@ -2236,7 +2227,7 @@ class Kotlin(metaclass=LanguageCls):
                 declared_type_template=f"{set_outer}<{{type_name}}>",
                 fallback=fallback,
             )
-            return TypedCollectionOpen.create(
+            return TypedCollectionOpen(
                 selected.opener, declared_type=selected.declared_type
             )
 
@@ -2343,7 +2334,7 @@ class Kotlin(metaclass=LanguageCls):
                 declared_type_template=type_template,
                 fallback=fallback,
             )
-            return TypedCollectionOpen.create(
+            return TypedCollectionOpen(
                 selected.opener, declared_type=selected.declared_type
             )
 
@@ -2488,7 +2479,7 @@ class Kotlin(metaclass=LanguageCls):
             return _JSON_NODE_ORDERED_MAP_CONFIG
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(
-                open_str=TypedCollectionOpen.create(
+                open_str=TypedCollectionOpen(
                     (
                         f"linkedMapOf<{self.default_dict_key_type}, "
                         f"{self.default_dict_value_type}>("

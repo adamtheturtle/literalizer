@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 import literalizer.languages
+from literalizer._language import redefinition_config
 from literalizer.languages import Kotlin, Python
 from tests.enum_members import enum_member_by_name
 
@@ -280,7 +281,7 @@ def test_multiline_context_cases_follow_capabilities(
         for lang_cls in literalizer.languages.ALL_LANGUAGES
         if lang_cls.supports_multiline_string_literals
         and any(
-            style.value.supports_redefinition
+            redefinition_config(style).supports_redefinition
             for style in lang_cls.DeclarationStyles
         )
     }

@@ -67,6 +67,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -1016,8 +1017,6 @@ class Elm(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Elm."""
 
-        _value_: DateFormatConfig
-
         ISO = DateFormatConfig(
             formatter=_format_elm_date_iso,
             type_produced=str,
@@ -1026,8 +1025,6 @@ class Elm(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Elm."""
-
-        _value_: DatetimeFormatConfig
 
         ISO = DatetimeFormatConfig(
             formatter=_format_elm_datetime_iso,
@@ -1041,17 +1038,15 @@ class Elm(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = enum.member(value=_format_elm_bytes_hex)
         BASE64 = enum.member(value=_format_elm_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Elm."""
@@ -1137,7 +1132,7 @@ class Elm(metaclass=LanguageCls):
         SCIENTIFIC = enum.member(value=_format_elm_float_scientific)
         FIXED = enum.member(value=_format_elm_float_fixed)
 
-    class IntegerFormats(enum.Enum):
+    class IntegerFormats(FormatValueMixin[Callable[[int], str]], enum.Enum):
         """Integer format options."""
 
         DECIMAL = enum.member(value=_format_elm_integer_decimal)

@@ -9,6 +9,7 @@ from beartype import beartype
 
 import literalizer
 from literalizer import NewVariable
+from literalizer._enums import enum_payload
 from literalizer.exceptions import IncompatibleFormatsError
 
 from .case_manifests import CaseManifest, load_case_manifests
@@ -128,7 +129,8 @@ def _call_style_binding_cases() -> list[ConstructorBindingCase]:
                 manifest=None,
             )
             for call_style in call_styles
-            if call_style.value != default_call_style_config
+            if enum_payload(member=call_style, payload_type=object)
+            != default_call_style_config
         )
     return cases
 

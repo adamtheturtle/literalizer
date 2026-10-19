@@ -196,13 +196,17 @@ class CollectionOverride(str):
     _signature: CollectionSignature
     _original: str
 
-    @classmethod
-    def create(cls, code: str, /, *, signature: CollectionSignature) -> Self:
+    def __new__(cls, code: str, /, *, signature: CollectionSignature) -> Self:
+        """Allocate text; the initializer retains producer metadata."""
+        del signature
+        return super().__new__(cls, object=code)
+
+    def __init__(
+        self, code: str, /, *, signature: CollectionSignature
+    ) -> None:
         """Keep a chosen opener and its original type-bearing value."""
-        result = cls(object=code)
-        result._signature = signature
-        result._original = code
-        return result
+        self._signature = signature
+        self._original = code
 
     @property
     def signature(self) -> CollectionSignature:
@@ -225,7 +229,7 @@ def selected_collection_open(
     decision.
     """
     signature = collection_signature(opener, items)
-    return CollectionOverride.create(opener(items), signature=signature)
+    return CollectionOverride(opener(items), signature=signature)
 
 
 @beartype

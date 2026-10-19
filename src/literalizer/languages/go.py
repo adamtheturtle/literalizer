@@ -90,6 +90,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -687,8 +688,6 @@ class Go(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Go."""
 
-        _value_: DateFormatConfig
-
         GO = DateFormatConfig(
             formatter=_format_date_go,
             preamble_lines=('import "time"',),
@@ -700,8 +699,6 @@ class Go(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Go."""
-
-        _value_: DatetimeFormatConfig
 
         GO = DatetimeFormatConfig(
             formatter=_format_datetime_go,
@@ -720,17 +717,15 @@ class Go(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Go."""
@@ -752,10 +747,10 @@ class Go(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
 
-    class SetFormats(enum.Enum):
+    class SetFormats(
+        FormatValueMixin[Callable[[str], SetFormatConfig]], enum.Enum
+    ):
         """Set type options for Go."""
-
-        _value_: Callable[[str], SetFormatConfig]
 
         SET = enum.member(
             value=set_format_factory(
@@ -771,7 +766,7 @@ class Go(metaclass=LanguageCls):
 
         def __call__(self, default_type: str) -> SetFormatConfig:
             """Create a set format config for the given type."""
-            return self._value_(default_type)
+            return self.value(default_type)
 
     class CommentFormats(enum.Enum):
         """Comment style options."""
@@ -884,17 +879,15 @@ class Go(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=_format_string_go)
         MULTILINE = _StringEnumMember(value=_format_string_multiline)
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""
@@ -929,17 +922,15 @@ class Go(metaclass=LanguageCls):
     string_formats = StringFormats
     trailing_commas = TrailingCommas
 
-    class StatementTerminatorStyles(enum.Enum):
+    class StatementTerminatorStyles(FormatValueMixin[str], enum.Enum):
         """Statement terminator options."""
-
-        _value_: str
 
         NONE = ""
 
         @property
         def statement_terminator(self) -> str:
             """Terminator appended to complete call statements."""
-            return self._value_
+            return self.value
 
     statement_terminator_styles = StatementTerminatorStyles
 

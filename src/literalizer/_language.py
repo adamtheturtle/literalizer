@@ -6,6 +6,7 @@ import enum
 import math
 import re
 import sys
+import typing
 from collections.abc import Callable, Mapping, Sequence
 from functools import partial
 from types import MappingProxyType
@@ -16,7 +17,6 @@ from typing import (
     Final,
     Generic,
     Literal,
-    Protocol,
     assert_never,
     override,
     runtime_checkable,
@@ -26,6 +26,7 @@ import humps
 from beartype import beartype
 from typing_extensions import TypeVar
 
+from literalizer._enums import enum_payload
 from literalizer._formatters.collection_openers import (
     SequenceSurrogateSetOpen,
     typed_collection_open,
@@ -336,8 +337,8 @@ def validate_call_parameter_names(
                     reason="it is a reserved identifier",
                 )
         if not language_cls.new_variable_name_syntax.accepts(name=name) or (
-            language_cls.max_variable_identifier_length is not None
-            and len(name) > language_cls.max_variable_identifier_length
+            language.max_variable_identifier_length is not None
+            and len(name) > language.max_variable_identifier_length
         ):
             raise InvalidCallParameterNameError(
                 language_name=language_name,
@@ -427,32 +428,65 @@ class DatetimeFormatConfig:
     type_produced: type
 
 
-@beartype
-class DateFormatEnum(enum.Enum):
-    """Date format options with a statically checked config payload."""
+@runtime_checkable
+class ScalarFormatConfig(typing.Protocol):
+    """Metadata shared by date and datetime format configurations."""
 
-    _value_: DateFormatConfig
+    @property
+    def preamble_lines(self) -> tuple[str, ...]:
+        """Supporting declarations required by the selected format."""
+        ...
+
+    @property
+    def type_produced(self) -> type:
+        """The scalar type represented by the emitted literal."""
+        ...
+
+
+@beartype
+def scalar_format_config(member: enum.Enum, /) -> ScalarFormatConfig:
+    """Read the shared scalar metadata without requiring a concrete
+    payload.
+    """
+    config = enum_payload(member=member, payload_type=object)
+    if not isinstance(config, ScalarFormatConfig):
+        msg = f"{member!r} requires scalar format metadata"
+        raise TypeError(msg)
+    return config
+
+
+@beartype
+class FormatValueMixin[T]:
+    """Initialize and expose an enum member's typed format payload."""
+
+    def __init__(self, value: T, /) -> None:
+        """Retain the payload supplied by Enum member construction."""
+        self._value_ = value
+
+    @property
+    def value(self) -> T:
+        """The configuration or formatter selected by this member."""
+        return self._value_
+
+
+@beartype
+class DateFormatEnum(FormatValueMixin[DateFormatConfig], enum.Enum):
+    """Date format options with a statically checked config payload."""
 
     def __call__(self, date_value: dt.date, /) -> str:
         """Format a date with this member's configuration."""
-        # Pylint does not yet infer the standardized Enum _value_ annotation:
-        # https://github.com/pylint-dev/pylint/issues/11413
-        return self._value_.formatter(date_value)  # pylint: disable=no-member
+        return self.value.formatter(date_value)
 
 
 @beartype
-class DatetimeFormatEnum(enum.Enum):
+class DatetimeFormatEnum(FormatValueMixin[DatetimeFormatConfig], enum.Enum):
     """Datetime format options with a statically checked config
     payload.
     """
 
-    _value_: DatetimeFormatConfig
-
     def __call__(self, dt_value: dt.datetime, /) -> str:
         """Format a datetime with this member's configuration."""
-        # Pylint does not yet infer the standardized Enum _value_ annotation:
-        # https://github.com/pylint-dev/pylint/issues/11413
-        return self._value_.formatter(dt_value)  # pylint: disable=no-member
+        return self.value.formatter(dt_value)
 
 
 @beartype
@@ -486,10 +520,16 @@ def date_scalar_preamble(
         **{
             t: p
             for t, p in (
-                (dt.date, date_format.value.preamble_lines),
-                (dt.datetime, datetime_format.value.preamble_lines),
+                (
+                    dt.date,
+                    scalar_format_config(date_format).preamble_lines,
+                ),
+                (
+                    dt.datetime,
+                    scalar_format_config(datetime_format).preamble_lines,
+                ),
             )
-            if p
+            if len(p) > 0
         },
     }
 
@@ -599,7 +639,7 @@ class DictFormatConfig:
 
 
 @runtime_checkable
-class DictFormatBuilder(Protocol):
+class DictFormatBuilder(typing.Protocol):
     """Callable that builds a dict format for given value and key
     types.
     """
@@ -696,6 +736,30 @@ class DeclarationStyleConfig:
 
     formatter: Callable[[str, str, Value, frozenset[enum.Enum]], str]
     supports_redefinition: bool
+
+
+@runtime_checkable
+class RedefinitionConfig(typing.Protocol):
+    """The redefinition capability shared by declaration-style
+    payloads.
+    """
+
+    @property
+    def supports_redefinition(self) -> bool:
+        """Whether a name can be assigned after its declaration."""
+        ...
+
+
+@beartype
+def redefinition_config(member: enum.Enum, /) -> RedefinitionConfig:
+    """Read the capability shared by ordinary and custom declaration
+    styles.
+    """
+    config = enum_payload(member=member, payload_type=object)
+    if not isinstance(config, RedefinitionConfig):
+        msg = f"{member!r} requires declaration redefinition metadata"
+        raise TypeError(msg)
+    return config
 
 
 @beartype
@@ -809,7 +873,7 @@ type FormatCallArg = Callable[[Value, str], str]
 
 
 @runtime_checkable
-class LeadingPreamble(Protocol):
+class LeadingPreamble(typing.Protocol):
     """Callable returning preamble lines that must precede every other
     preamble line (see :attr:`Language.leading_preamble`).
 
@@ -1443,61 +1507,18 @@ new_constructor_target: Callable[[str], str] = _new_constructor_target
 """
 
 
-@beartype
-class LanguageCls(type):
-    """Meta-class that declares the nested format Enum class attributes.
+if TYPE_CHECKING:
+    from typing import Protocol as _LanguageMetadataBase
+else:
+    # Keep runtime instance checks on LanguageCls owned by type.
+    _LanguageMetadataBase = object
 
-    Language classes use ``metaclass=LanguageCls`` so that downstream
-    code can write ``dict[str, LanguageCls]`` and access
-    ``cls.DateFormats``, ``cls.SequenceFormats``, etc. without ``cast``
-    or ``type: ignore``.
-    """
 
-    explicit_language_attributes: ClassVar[frozenset[str]] = frozenset(
-        {
-            "accepts_type_name_call_target",
-            "call_data_dependent_preamble",
-            "call_parameter_shadowing",
-            "call_target_name_syntax",
-            "consumable_ref_value_inhibits_consuming_form",
-            "contextual_call_target_identifiers",
-            "declares_call_parameter_names",
-            "declares_type_name_call_target",
-            "dotted_call_root_shares_entrypoint_namespace",
-            "format_call_arg_ref_identifier",
-            "format_call_arg_ref_identifier_consumable",
-            "format_call_preamble_stub",
-            "format_call_class_scope_stub",
-            "format_call_ref_identifier",
-            "format_call_statement",
-            "format_call_stub",
-            "format_call_target",
-            "immutable_variable_modifiers",
-            "max_variable_identifier_length",
-            "module_name_must_start_uppercase",
-            "module_name_shares_variable_scope",
-            "new_variable_name_syntax",
-            "pools_map_integer_width",
-            "reserved_bare_call_target_identifiers",
-            "reserved_call_parameter_identifier_pattern",
-            "reserved_call_parameter_identifiers",
-            "reserved_call_target_head_identifiers",
-            "reserved_call_target_keywords_case_sensitive",
-            "reserved_module_identifiers",
-            "reserved_variable_identifier_pattern",
-            "supports_multiline_dict_layout",
-            "type_hint_collection_preamble_lines",
-            "validate_call_arg",
-            "wrap_combined_in_file",
-            "wrap_in_file_tolerates_pre_indent",
-        }
-    )
-    """What every language says for itself rather than inheriting.
+class _LanguageMetadata(_LanguageMetadataBase):
+    """Contract supplied by language class bodies and dataclass decoration.
 
-    Each of these once carried a default here, which let a language
-    take a behavior nobody had considered for it.  A language now
-    declares each one, and a test holds every language to the list
-    (issue #4655).
+    These are attributes of the created language class, rather than state
+    allocated when creating the type object.
     """
 
     stringifies_nested_collections: bool
@@ -1770,6 +1791,65 @@ class LanguageCls(type):
     the mapped type is not declared by literalizer.
     """
     dict_supports_heterogeneous_values: bool
+
+
+@beartype
+class LanguageCls(type, _LanguageMetadata):
+    """Meta-class that declares the nested format Enum class attributes.
+
+    Language classes use ``metaclass=LanguageCls`` so that downstream
+    code can write ``dict[str, LanguageCls]`` and access
+    ``cls.DateFormats``, ``cls.SequenceFormats``, etc. without ``cast``
+    or ``type: ignore``.
+    """
+
+    explicit_language_attributes: ClassVar[frozenset[str]] = frozenset(
+        {
+            "accepts_type_name_call_target",
+            "call_data_dependent_preamble",
+            "call_parameter_shadowing",
+            "call_target_name_syntax",
+            "consumable_ref_value_inhibits_consuming_form",
+            "contextual_call_target_identifiers",
+            "declares_call_parameter_names",
+            "declares_type_name_call_target",
+            "dotted_call_root_shares_entrypoint_namespace",
+            "format_call_arg_ref_identifier",
+            "format_call_arg_ref_identifier_consumable",
+            "format_call_preamble_stub",
+            "format_call_class_scope_stub",
+            "format_call_ref_identifier",
+            "format_call_statement",
+            "format_call_stub",
+            "format_call_target",
+            "immutable_variable_modifiers",
+            "max_variable_identifier_length",
+            "module_name_must_start_uppercase",
+            "module_name_shares_variable_scope",
+            "new_variable_name_syntax",
+            "pools_map_integer_width",
+            "reserved_bare_call_target_identifiers",
+            "reserved_call_parameter_identifier_pattern",
+            "reserved_call_parameter_identifiers",
+            "reserved_call_target_head_identifiers",
+            "reserved_call_target_keywords_case_sensitive",
+            "reserved_module_identifiers",
+            "reserved_variable_identifier_pattern",
+            "supports_multiline_dict_layout",
+            "type_hint_collection_preamble_lines",
+            "validate_call_arg",
+            "wrap_combined_in_file",
+            "wrap_in_file_tolerates_pre_indent",
+        }
+    )
+    """What every language says for itself rather than inheriting.
+
+    Each of these once carried a default here, which let a language
+    take a behavior nobody had considered for it.  A language now
+    declares each one, and a test holds every language to the list
+    (issue #4655).
+    """
+
     _language_classes: ClassVar[list["LanguageCls"]] = []
 
     def __new__(
@@ -1847,7 +1927,7 @@ class LanguageCls(type):
 
 
 @runtime_checkable
-class Language(Protocol):
+class Language(typing.Protocol):
     """Protocol describing how a language formats scalar literals and
     sequences.
 

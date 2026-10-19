@@ -15,12 +15,14 @@ class TypedCollectionOpen(str):
 
     _declared_type: str
 
-    @classmethod
-    def create(cls, code: str, /, *, declared_type: str) -> Self:
+    def __new__(cls, code: str, /, *, declared_type: str) -> Self:
+        """Allocate text; the initializer retains producer metadata."""
+        del declared_type
+        return super().__new__(cls, object=code)
+
+    def __init__(self, _code: str, /, *, declared_type: str) -> None:
         """Retain the selected type alongside the string value."""
-        result = cls(object=code)
-        result._declared_type = declared_type
-        return result
+        self._declared_type = declared_type
 
     @property
     def declared_type(self) -> str:
@@ -36,12 +38,14 @@ class TypedInitializer(str):
 
     _declared_type: str
 
-    @classmethod
-    def create(cls, code: str, /, *, declared_type: str) -> Self:
+    def __new__(cls, code: str, /, *, declared_type: str) -> Self:
+        """Allocate text; the initializer retains producer metadata."""
+        del declared_type
+        return super().__new__(cls, object=code)
+
+    def __init__(self, _code: str, /, *, declared_type: str) -> None:
         """Retain the selected type alongside the string value."""
-        result = cls(object=code)
-        result._declared_type = declared_type
-        return result
+        self._declared_type = declared_type
 
     @property
     def declared_type(self) -> str:
@@ -55,9 +59,7 @@ def finish_collection_initializer(*, opener: str, code: str) -> str:
     if isinstance(opener, CollectionOverride):
         opener = opener.original
     if isinstance(opener, TypedCollectionOpen):
-        return TypedInitializer.create(
-            code, declared_type=opener.declared_type
-        )
+        return TypedInitializer(code, declared_type=opener.declared_type)
     return code
 
 
@@ -66,9 +68,7 @@ def prefix_initializer(*, code: str, prefix: str) -> str:
     """Add layout indentation without losing the initializer type."""
     result = f"{prefix}{code}"
     if isinstance(code, TypedInitializer):
-        return TypedInitializer.create(
-            result, declared_type=code.declared_type
-        )
+        return TypedInitializer(result, declared_type=code.declared_type)
     return result
 
 

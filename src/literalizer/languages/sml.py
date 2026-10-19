@@ -69,6 +69,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -758,8 +759,6 @@ class Sml(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Standard ML."""
 
-        _value_: DateFormatConfig
-
         SML = DateFormatConfig(
             formatter=date_ymd_formatter(
                 template="SDate ({year}, {month}, {day})",
@@ -773,8 +772,6 @@ class Sml(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Standard ML."""
-
-        _value_: DatetimeFormatConfig
 
         SML = DatetimeFormatConfig(
             formatter=datetime_ymdhms_formatter(
@@ -797,17 +794,15 @@ class Sml(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Standard ML."""

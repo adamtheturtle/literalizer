@@ -20,7 +20,10 @@ from literalizer._formatters.type_inference import (
     WideInt,
     infer_element_type,
 )
-from literalizer._language import Language
+from literalizer._language import (
+    Language,
+    scalar_format_config,
+)
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ExcessiveNestingError,
@@ -1477,8 +1480,10 @@ def _sibling_map_type_family(
             scalar_families: dict[object, object] = {
                 WideInt: int,
                 BeyondI64: int,
-                dt.date: spec.date_format.value.type_produced,
-                dt.datetime: spec.datetime_format.value.type_produced,
+                dt.date: scalar_format_config(spec.date_format).type_produced,
+                dt.datetime: scalar_format_config(
+                    spec.datetime_format
+                ).type_produced,
                 dt.time: str,
             }
             return scalar_families.get(inferred, inferred)

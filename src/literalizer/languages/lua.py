@@ -62,6 +62,7 @@ from literalizer._language import (
     DictFormatConfig,
     FileWrapperContext,
     FloatSpecialsMixin,
+    FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
@@ -367,8 +368,6 @@ class Lua(metaclass=LanguageCls):
     class DateFormats(DateFormatEnum):
         """Date format options for Lua."""
 
-        _value_: DateFormatConfig
-
         LUA = DateFormatConfig(
             formatter=_format_date_lua,
             preamble_lines=(),
@@ -380,8 +379,6 @@ class Lua(metaclass=LanguageCls):
 
     class DatetimeFormats(DatetimeFormatEnum):
         """Datetime format options for Lua."""
-
-        _value_: DatetimeFormatConfig
 
         LUA = DatetimeFormatConfig(
             formatter=_format_datetime_lua,
@@ -400,17 +397,15 @@ class Lua(metaclass=LanguageCls):
             preamble_lines=(),
         )
 
-    class BytesFormats(enum.Enum):
+    class BytesFormats(FormatValueMixin[Callable[[bytes], str]], enum.Enum):
         """Bytes formatting options."""
-
-        _value_: Callable[[bytes], str]
 
         HEX = _BytesEnumMember(value=format_bytes_hex)
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
             """Format bytes."""
-            return self._value_(data)
+            return self.value(data)
 
     class SequenceFormats(enum.Enum):
         """Sequence type options for Lua."""
@@ -495,10 +490,8 @@ class Lua(metaclass=LanguageCls):
         SCIENTIFIC = enum.member(value=format_float_scientific)
         FIXED = enum.member(value=format_float_fixed)
 
-    class IntegerFormats(enum.Enum):
+    class IntegerFormats(FormatValueMixin[Callable[[int], str]], enum.Enum):
         """Integer format options."""
-
-        _value_: Callable[[int], str]
 
         DECIMAL = _IntegerEnumMember(value=str)
         HEX = _IntegerEnumMember(value=format_integer_hex)
@@ -523,10 +516,8 @@ class Lua(metaclass=LanguageCls):
 
         OVERLOADED = enum.auto()
 
-    class StringFormats(enum.Enum):
+    class StringFormats(FormatValueMixin[Callable[[str], str]], enum.Enum):
         """String format options."""
-
-        _value_: Callable[[str], str]
 
         DOUBLE = enum.member(value=_format_string_lua_escaped)
         SINGLE = enum.member(value=format_string_backslash_single_nul_hex)
@@ -534,7 +525,7 @@ class Lua(metaclass=LanguageCls):
 
         def __call__(self, value: str, /) -> str:
             """Format a string."""
-            return self._value_(value)
+            return self.value(value)
 
     class TrailingCommas(enum.Enum):
         """Trailing comma options."""

@@ -1,0 +1,17 @@
+[[cases]]
+name = "wrong_payload_type"
+consumer = "text"
+payload = 1
+message = "_WrongPayload.VALUE requires a str payload; got int"
+
+[[cases]]
+name = "missing_scalar_format_metadata"
+consumer = "scalar_format"
+payload = 1
+message = "<_WrongPayload.VALUE: 1> requires scalar format metadata"
+
+[[cases]]
+name = "missing_redefinition_metadata"
+consumer = "redefinition"
+payload = 1
+message = "<_WrongPayload.VALUE: 1> requires declaration redefinition metadata"
