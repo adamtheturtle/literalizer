@@ -1,0 +1,11 @@
+* my_null
+@code javascript
+null
+@end
+* my_data
+@code javascript
+[
+    my_null,
+    null
+]
+@end
