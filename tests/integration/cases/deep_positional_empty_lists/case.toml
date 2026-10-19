@@ -1,6 +1,4 @@
 schema_version = 1
-languages = ["Cpp", "V", "Rust"]
-languages_reason = "C++ and V nested array types must agree with empty literals that borrow a populated positional cousin type. Rust vectors infer these empty element types from their populated siblings."
 suites = ["base", "combined"]
 
 [base_context]
