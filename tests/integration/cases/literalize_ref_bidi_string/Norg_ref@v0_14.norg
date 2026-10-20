@@ -1,0 +1,10 @@
+* text
+@code javascript
+"a‪b"
+@end
+* my_data
+@code javascript
+{
+    "value": text
+}
+@end
