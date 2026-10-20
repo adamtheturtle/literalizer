@@ -1,0 +1,6 @@
+class Fixture_call_string_result_binding_Haxe_call {
+    public static function main() {
+        function make_widget(text:Dynamic):Dynamic return null;
+        final my_data = make_widget("text");
+    }
+}
