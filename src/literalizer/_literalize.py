@@ -2684,6 +2684,18 @@ def _known_null_reference_names(
 
 
 @beartype
+def _reference_binding_values(
+    ref_values: Mapping[str, Value] | None, /
+) -> Mapping[str, Value]:
+    """Select actual binding representations for copy and move
+    operations.
+    """
+    if isinstance(ref_values, _ReferenceValues):
+        return ref_values.binding_values
+    return reference_values_or_empty(values=ref_values)
+
+
+@beartype
 def _format_literal_ref_identifier(
     *,
     raw_ref_name: str,
@@ -2739,9 +2751,7 @@ def _format_ref_value(*, raw_ref_name: str, ctx: _RenderContext) -> str:
         ref_case=ctx.ref_case,
         language=ctx.spec,
     )
-    ref_value = None
-    if ctx.ref_values is not None:
-        ref_value = ctx.ref_values.get(raw_ref_name)
+    ref_value = _reference_binding_values(ctx.ref_values).get(raw_ref_name)
     if not ctx.expand_refs:
         return _format_literal_ref_identifier(
             raw_ref_name=raw_ref_name,
@@ -6318,15 +6328,11 @@ def _reference_value_inhibits_consuming_form(
     name: str,
     ref_values: Mapping[str, Value],
     inhibits: Callable[[Value], bool],
-    language: Language,
 ) -> bool:
-    """Classify known null bindings without replacing inference hints."""
-    if isinstance(language, _NullReferenceLanguage):
-        if name in _known_null_reference_names(ref_values):
-            return inhibits(None)
-        if ref_values[name] is None:
-            return False
-    return inhibits(ref_values[name])
+    """Classify binding representations without replacing inference
+    hints.
+    """
+    return inhibits(_reference_binding_values(ref_values)[name])
 
 
 @beartype
@@ -6385,7 +6391,6 @@ def _compute_call_arg_ref_consume_inhibited_names(
             name=name,
             ref_values=ref_values,
             inhibits=inhibits,
-            language=language,
         )
     )
 
@@ -6618,9 +6623,7 @@ def _format_single_call_arg(
             ref_case=ref_case,
             language=language,
         )
-        ref_value = reference_values_or_empty(values=ref_values).get(
-            raw_ref_name
-        )
+        ref_value = _reference_binding_values(ref_values).get(raw_ref_name)
         return _format_call_arg_ref_identifier(
             raw_ref_name=raw_ref_name,
             ref_name=ref_name,
@@ -8299,15 +8302,19 @@ def _wrap_call_result_in_file(
 
 @beartype
 class _ReferenceValues(dict[str, Value]):
-    """Inference hints with separate knowledge of actual null bindings."""
+    """Inference hints with separate actual binding representations."""
 
     def __init__(
-        self, values: Mapping[str, Value], known_null_names: frozenset[str]
+        self,
+        values: Mapping[str, Value],
+        binding_values: Mapping[str, Value],
+        known_null_names: frozenset[str],
     ) -> None:
         """Retain mapping behavior and the definite null reference
         names.
         """
         super().__init__(values)
+        self.binding_values = binding_values
         self.known_null_names = known_null_names
 
 
@@ -8327,6 +8334,7 @@ def merged_reference_values(
     actual_values = {**explicit_ref_values, **bound_refs}
     return _ReferenceValues(
         values=values,
+        binding_values=actual_values,
         known_null_names=frozenset(
             name for name, value in actual_values.items() if value is None
         ),
