@@ -22,7 +22,7 @@ struct Record0 record_data = (struct Record0){
         ((CVal){.i = 2}),
     },
 };
-CVal my_data = record_data;
+struct Record0 my_data = record_data;
     (void)my_data;
     return 0;
 }

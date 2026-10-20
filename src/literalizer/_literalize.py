@@ -2708,6 +2708,17 @@ def _format_literal_ref_identifier(
     hints.
     """
     ref_value = _reference_binding_values(ref_values).get(raw_ref_name)
+    hint_value = reference_values_or_empty(values=ref_values).get(raw_ref_name)
+    alias_record_ids = language.heterogeneous_behavior.alias_record_ids
+    if alias_record_ids is not None and ref_value is not hint_value:
+        alias_record_ids(
+            _inference_to_source_container_ids(
+                source=ref_value,
+                inferred=hint_value,
+                ref_values=None,
+                ref_key=_DISABLED_REF_KEY,
+            )
+        )
     if reused and isinstance(language, _ReusableLiteralReferenceLanguage):
         return language.format_reused_literal_ref_identifier(
             ref_name, ref_value
@@ -4330,9 +4341,7 @@ def _literalize_impl(
             )
             ref_value = None
             if ref_values is not None:
-                ref_value = _reference_binding_values(ref_values).get(
-                    raw_ref_name
-                )
+                ref_value = ref_values.get(raw_ref_name)
             if ref_value is not None:
                 compute_record_shapes = (
                     language.heterogeneous_behavior.compute_record_shapes
@@ -5505,7 +5514,7 @@ def _bound_ref_parent_contexts(
     root_name = _extract_call_arg_ref_name(value=source, ref_key=ref_key)
     if root_name is not None:
         root_value = bound_refs[root_name]
-        if isinstance(root_value, dict):
+        if isinstance(root_value, (dict, list)) and len(root_value) > 0:
             return {root_name: root_value}
     contexts: dict[str, Value] = {}
 
