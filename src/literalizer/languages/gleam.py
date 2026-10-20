@@ -371,9 +371,9 @@ def _format_gleam_raw_string(value: str) -> str:
             str(object=byte) for byte in value.encode(encoding="utf-8")
         )
         return (
-            "{ let assert Ok(literalizer_decoded) = "
-            f"literalizer_bit_array.to_string(<<{byte_values}>>) "
-            "literalizer_decoded }"
+            "{ let assert Ok(decoded) = "
+            f"bit_array.to_string(<<{byte_values}>>) "
+            "decoded }"
         )
     return format_string_backslash_nul_braced_unicode(value=value)
 
@@ -1477,7 +1477,7 @@ class Gleam(metaclass=LanguageCls):
             it.
             """
             imports = (
-                ("import gleam/bit_array as literalizer_bit_array",)
+                ("import gleam/bit_array",)
                 if _gleam_needs_bit_array(data=data)
                 else ()
             )
@@ -1505,7 +1505,12 @@ class Gleam(metaclass=LanguageCls):
             types = frozenset[type]()
             for value in values:
                 types |= _collect_gleam_types(value=value)
-            return _gleam_preamble_for_types(
+            imports = (
+                ("import gleam/bit_array",)
+                if any(_gleam_needs_bit_array(data=value) for value in values)
+                else ()
+            )
+            return imports + _gleam_preamble_for_types(
                 types=types,
                 type_name=self.type_name,
                 constructor_prefix=self.constructor_prefix,
