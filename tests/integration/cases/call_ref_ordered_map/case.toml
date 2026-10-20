@@ -2,8 +2,6 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Cpp"]
-languages_reason = "C++ ordered-map argument types must follow the referenced list rather than the reference marker's mapping shape."
 target_function = "process"
 parameter_names = ["a"]
 per_element = true
