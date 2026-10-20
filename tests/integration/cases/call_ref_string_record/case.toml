@@ -2,8 +2,6 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Cpp", "C"]
-languages_reason = "Native record references with string fields retain their generated struct type at call sites."
 target_function = "consume"
 parameter_names = ["value"]
 per_element = true
