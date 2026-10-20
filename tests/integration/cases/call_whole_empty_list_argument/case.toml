@@ -1,9 +1,10 @@
 schema_version = 1
 owner = "literalize-call"
+# Regression provenance: Mojo.
+# Whole lists remain one typed argument in a complete Mojo call wrapper.
 
 [call]
-languages = ["Mojo"]
-languages_reason = "Whole lists remain one typed argument in a complete Mojo call wrapper."
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "f"
 parameter_names = ["a"]
 per_element = false
