@@ -1,9 +1,10 @@
 schema_version = 1
 owner = "literalize-call"
+# Regression provenance: Nim.
+# Nim empty argument overloads preserve void templates and the declared types of empty bound references.
 
 [call]
-languages = ["Nim"]
-languages_reason = "Nim empty argument overloads preserve void templates and the declared types of empty bound references."
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
