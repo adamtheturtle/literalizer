@@ -8,7 +8,7 @@ import re
 import sys
 import textwrap
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
@@ -277,6 +277,21 @@ def _format_ada_call_assignment(name: str, value: str, _data: Value) -> str:
     ``"my_data := Make_Widget (AInt (42));"``
     """
     return f"{name} := {value};"
+
+
+@beartype
+def _ada_discard_call_result(call: str, /, *, indent: str) -> str:
+    """Evaluate a function result once in a local declaration block."""
+    return "\n".join(
+        (
+            "declare",
+            f"{indent}Discarded_Value : constant A_Val := {call};",
+            f"{indent}pragma Unreferenced (Discarded_Value);",
+            "begin",
+            f"{indent}null;",
+            "end",
+        )
+    )
 
 
 @beartype
@@ -752,6 +767,16 @@ class Ada(metaclass=LanguageCls):
     validate_call_arg = default_validate_call_arg
 
     format_call_statement = default_format_call_statement
+
+    @cached_property
+    @beartype
+    def format_identity_transformed_call_statement(
+        self,
+    ) -> Callable[[str], str]:
+        """Evaluate an unchanged transformed function and discard its
+        value.
+        """
+        return partial(_ada_discard_call_result, indent=self.indent)
 
     def wrap_calls_with_declarations(
         self,
