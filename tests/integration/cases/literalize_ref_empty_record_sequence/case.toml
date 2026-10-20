@@ -1,11 +1,10 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Nim", "Cpp", "V"]
-languages_reason = "Empty sequence declarations must retain the generated record element type inferred from their use."
+# Regression provenance: Nim, Cpp, V.
+# Empty sequence declarations must retain the generated record element type inferred from their use.
 
 [ref]
-languages = ["Nim", "Cpp", "V"]
-languages_reason = "Empty sequence declarations must retain the generated record element type inferred from their use."
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}]
 heterogeneous_strategy = "RECORD"
 
 [ref.value_sources]
