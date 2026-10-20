@@ -1,4 +1,4 @@
-object Fixture_literalize_ref_single_line_record_declarations_Scala_ref {
+object Fixture_literalize_ref_record_type_context_Scala_ref {
 case class Record1(x: String)
 case class Record2(x: Int)
 case class Record0(direct: Record1, bound: Record2)
