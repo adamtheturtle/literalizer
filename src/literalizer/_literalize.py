@@ -2684,6 +2684,18 @@ def _known_null_reference_names(
 
 
 @beartype
+def _reference_binding_values(
+    ref_values: Mapping[str, Value] | None, /
+) -> Mapping[str, Value]:
+    """Select actual binding representations for copy and move
+    operations.
+    """
+    if isinstance(ref_values, _ReferenceValues):
+        return ref_values.binding_values
+    return reference_values_or_empty(values=ref_values)
+
+
+@beartype
 def _format_literal_ref_identifier(
     *,
     raw_ref_name: str,
@@ -2739,9 +2751,7 @@ def _format_ref_value(*, raw_ref_name: str, ctx: _RenderContext) -> str:
         ref_case=ctx.ref_case,
         language=ctx.spec,
     )
-    ref_value = None
-    if ctx.ref_values is not None:
-        ref_value = ctx.ref_values.get(raw_ref_name)
+    ref_value = _reference_binding_values(ctx.ref_values).get(raw_ref_name)
     if not ctx.expand_refs:
         return _format_literal_ref_identifier(
             raw_ref_name=raw_ref_name,
@@ -6318,15 +6328,11 @@ def _reference_value_inhibits_consuming_form(
     name: str,
     ref_values: Mapping[str, Value],
     inhibits: Callable[[Value], bool],
-    language: Language,
 ) -> bool:
-    """Classify known null bindings without replacing inference hints."""
-    if isinstance(language, _NullReferenceLanguage):
-        if name in _known_null_reference_names(ref_values):
-            return inhibits(None)
-        if ref_values[name] is None:
-            return False
-    return inhibits(ref_values[name])
+    """Classify binding representations without replacing inference
+    hints.
+    """
+    return inhibits(_reference_binding_values(ref_values)[name])
 
 
 @beartype
@@ -6385,7 +6391,6 @@ def _compute_call_arg_ref_consume_inhibited_names(
             name=name,
             ref_values=ref_values,
             inhibits=inhibits,
-            language=language,
         )
     )
 
@@ -6618,9 +6623,7 @@ def _format_single_call_arg(
             ref_case=ref_case,
             language=language,
         )
-        ref_value = reference_values_or_empty(values=ref_values).get(
-            raw_ref_name
-        )
+        ref_value = _reference_binding_values(ref_values).get(raw_ref_name)
         return _format_call_arg_ref_identifier(
             raw_ref_name=raw_ref_name,
             ref_name=ref_name,
@@ -8105,6 +8108,7 @@ def _compose_call_with_bound_ref_declarations(
     types_present: frozenset[type],
     contains_standalone_comments: bool,
     data_for_preamble: Value,
+    data_for_stub: Value,
     per_element: bool,
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
@@ -8122,9 +8126,9 @@ def _compose_call_with_bound_ref_declarations(
     reconciliation is shared with every other call/declaration caller.
 
     The refs are now real declarations, so the target stub's parameter
-    types are inferred from the ref-substituted values
-    (*data_for_preamble*), not from the raw ``$ref`` markers a call's
-    own ``arg_values`` still carries.  ``variable_form`` is rejected
+    types are inferred from the actual bound values
+    (*data_for_stub*), independently of explicit inference hints and
+    the raw ``$ref`` markers in ``arg_values``. ``variable_form`` is rejected
     upstream for the ``bound_refs`` path, so the call result is never
     consumed here: a value stub is emitted only for a ``call_transform``
     wrapper; otherwise a void stub suffices.
@@ -8141,9 +8145,9 @@ def _compose_call_with_bound_ref_declarations(
         sections=(),
         data_dependent_preamble=data_dependent_preamble,
     )
-    stub_arg_values: Sequence[Value] = [[data_for_preamble]]
-    if per_element and isinstance(data_for_preamble, list):
-        stub_arg_values = data_for_preamble
+    stub_arg_values: Sequence[Value] = [[data_for_stub]]
+    if per_element and isinstance(data_for_stub, list):
+        stub_arg_values = data_for_stub
     collected_decl_results: list[LiteralizeResult] = []
     for entry_entry_name, entry_entry_value in bound_refs.items():
         effective_name = entry_entry_name
@@ -8190,6 +8194,8 @@ def _wrap_call_result_in_file(
     *,
     language: Language,
     materialized_bound_refs: Mapping[str, Value],
+    source_data: Value,
+    ref_key: str,
     ref_case: IdentifierCase | None,
     result: str,
     preamble: tuple[str, ...],
@@ -8249,6 +8255,11 @@ def _wrap_call_result_in_file(
             types_present=types_present,
             contains_standalone_comments=contains_standalone_comments,
             data_for_preamble=data_for_preamble,
+            data_for_stub=_resolve_refs_for_inference(
+                value=source_data,
+                ref_values=materialized_bound_refs,
+                ref_key=ref_key,
+            ),
             per_element=per_element,
             target_function_parts=target_function_parts,
             parameter_names=parameter_names,
@@ -8291,15 +8302,19 @@ def _wrap_call_result_in_file(
 
 @beartype
 class _ReferenceValues(dict[str, Value]):
-    """Inference hints with separate knowledge of actual null bindings."""
+    """Inference hints with separate actual binding representations."""
 
     def __init__(
-        self, values: Mapping[str, Value], known_null_names: frozenset[str]
+        self,
+        values: Mapping[str, Value],
+        binding_values: Mapping[str, Value],
+        known_null_names: frozenset[str],
     ) -> None:
         """Retain mapping behavior and the definite null reference
         names.
         """
         super().__init__(values)
+        self.binding_values = binding_values
         self.known_null_names = known_null_names
 
 
@@ -8319,6 +8334,7 @@ def merged_reference_values(
     actual_values = {**explicit_ref_values, **bound_refs}
     return _ReferenceValues(
         values=values,
+        binding_values=actual_values,
         known_null_names=frozenset(
             name for name, value in actual_values.items() if value is None
         ),
@@ -8927,6 +8943,8 @@ def literalize_call_parsed(
         return _wrap_call_result_in_file(
             language=language,
             materialized_bound_refs=materialized_bound_refs,
+            source_data=data,
+            ref_key=ref_key,
             ref_case=ref_case,
             result=result,
             preamble=preamble,

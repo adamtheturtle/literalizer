@@ -2,8 +2,6 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Cpp"]
-languages_reason = "C++ consumption follows the actual bound value even when the inference hint disagrees about null ownership."
 target_function = "consume"
 parameter_names = ["value"]
 per_element = false
