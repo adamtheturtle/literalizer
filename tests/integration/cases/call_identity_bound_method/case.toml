@@ -2,8 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Cpp", "TypeScript"]
-languages_reason = "Identity bound-method transforms preserve reference declarations, including names used by compiler consumer probes."
+gates = [{kind = "capability_flag", flag = "supports_dotted_calls"}]
 target_function = "thing.go"
 parameter_names = ["value"]
 per_element = true
