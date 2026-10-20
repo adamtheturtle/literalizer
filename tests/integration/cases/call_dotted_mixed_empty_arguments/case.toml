@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "literalize-call"
+# Regression provenance: Nim, V.
+# Nim value stubs constrain empty native arrays; V method stubs must accept interface-backed lists with mixed and empty arguments on the pinned compiler.
+
+[call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "capability_flag", flag = "supports_dotted_calls"}]
+target_function = "thing.go"
+parameter_names = ["before", "populated", "after"]
+per_element = true
+wrap_in_file = true
+call_transform = "{call}"
+
+[[call.variants]]
+axis = "json_type"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"
