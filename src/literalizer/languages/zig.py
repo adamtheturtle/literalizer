@@ -2230,12 +2230,20 @@ class Zig(metaclass=LanguageCls):
             The default ``ZVal`` model declares an explicit ``: ZVal``
             type; under ``RECORD`` the value is a raw Zig literal
             (a ``Record0{ ... }`` struct, slice, tuple or scalar) whose
-            type is inferred. Compatible mutable nested lists carry their
+            type is inferred. Mutable numeric scalars carry their runtime
+            type. Compatible mutable nested lists carry their
             slice type so reassignment avoids inferred pointers to tuples
             of pointers in the pinned LLVM backend (issue #5469).
             """
             wrapped = format_entry(data, value)
             if record_mode:
+                if (
+                    keyword == "var"
+                    and isinstance(data, int | float)
+                    and not isinstance(data, bool)
+                ):
+                    value_type = self._zig_value_type(data)
+                    return f"{keyword} {name}: {value_type} = {wrapped};"
                 if keyword == "var" and isinstance(data, list):
                     nested = [item for item in data if isinstance(item, list)]
                     if len(nested) > 0 and len(nested) == len(data):
