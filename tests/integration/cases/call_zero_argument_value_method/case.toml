@@ -2,10 +2,9 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
+gates = [{kind = "capability_flag", flag = "supports_dotted_calls"}]
 target_function = "thing.go"
 parameter_names = []
 per_element = true
 call_transform = "{call}"
 wrap_in_file = true
-languages = ["Cpp", "Nim", "SystemVerilog"]
-languages_reason = "C++ and SystemVerilog must explicitly discard non-void returns; Nim methods must retain self."
