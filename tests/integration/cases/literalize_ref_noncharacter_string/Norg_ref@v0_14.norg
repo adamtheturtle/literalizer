@@ -1,0 +1,8 @@
+* source_value
+@code javascript
+"￾￿"
+@end
+* my_data
+@code javascript
+source_value
+@end

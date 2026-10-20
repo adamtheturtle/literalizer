@@ -1,4 +1,4 @@
--module(fixture_erlang_noncharacter_string_erlang_otp_json_noncharacter_string).
+-module(fixture_noncharacter_string_erlang_otp_json_noncharacter_string).
 -export([x/0]).
 x() ->
     My_data = #{

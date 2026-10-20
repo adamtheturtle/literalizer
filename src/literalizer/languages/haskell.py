@@ -560,10 +560,11 @@ def _is_haskell_hex_control(character: str) -> bool:
     ) or _is_haskell_hex_escaped(character=character)
 
 
-_HASKELL_NON_GRAPHIC_CATEGORIES = frozenset({"Cf", "Zl", "Zp"})
+_HASKELL_NON_GRAPHIC_CATEGORIES = frozenset({"Cf", "Cn", "Zl", "Zp"})
 """Unicode categories GHC refuses to lex inside a string literal.
 
-The format characters (``Cf``) and the line and paragraph separators
+The format characters (``Cf``), unassigned code points and noncharacters
+(``Cn``), and the line and paragraph separators
 (``Zl``/``Zp``) all produce "lexical error at character", while an
 ordinary space separator such as U+00A0 is accepted (issue #3953).
 """
