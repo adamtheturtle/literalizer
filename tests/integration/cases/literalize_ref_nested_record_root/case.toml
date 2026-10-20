@@ -2,8 +2,7 @@ schema_version = 1
 owner = "literalize-ref"
 
 [ref]
-languages = ["C", "Cpp"]
-languages_reason = "C root references need the native record type; C++ must avoid ineffective moves."
+gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}]
 heterogeneous_strategy = "RECORD"
 
 [ref.value_sources]
