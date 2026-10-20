@@ -1,9 +1,0 @@
-schema_version = 1
-owner = "literalize-ref"
-
-[ref]
-languages = ["Cpp"]
-languages_reason = "C++ maps with non-string reference markers must match their enclosing variant beside a bound scalar."
-
-[ref.value_sources]
-actual = "42"
