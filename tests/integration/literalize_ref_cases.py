@@ -27,9 +27,11 @@ import literalizer
 from literalizer import ValueInput
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
     InvalidDictKeyError,
     NullInCollectionError,
+    ReservedVariableNameError,
     UnrepresentableInputError,
     VariableNameNotSupportedError,
 )
@@ -66,6 +68,23 @@ CASES_DIR = Path(__file__).parent / "cases"
 # skips rather than fails.
 _REF_SKIPS: SkipPolicy = SkipPolicy(
     reasons=(
+        SkipReason(
+            error=ReservedVariableNameError,
+            reason="rejects a declared reference identifier",
+            unlink=True,
+        ),
+        SkipReason(
+            error=VariableNameNotSupportedError,
+            reason="cannot declare the reference binding",
+            unlink=True,
+        ),
+        SkipReason(
+            error=ExistingVariableNotSelfContainedError,
+            reason=(
+                "cannot wrap an assignment without its destination declaration"
+            ),
+            unlink=True,
+        ),
         SkipReason(
             error=NullInCollectionError,
             reason="cannot represent null in this collection",
@@ -505,31 +524,31 @@ def run_literalize_ref_golden_case(
                 for name in config.variable_modifiers
             ),
         )
-    try:
-        _ = literalizer.literalize(
-            source='{"key": "value"}',
-            input_format=literalizer.InputFormat.JSON,
-            language=spec,
-            variable_form=variable_form_obj,
-            wrap_in_file=len(config.external_declarations) == 0,
-        )
-    except VariableNameNotSupportedError:
-        variable_form_obj = None
-    raw_data = _parse_ref_input(
-        input_format=input_info.input_format,
-        input_source=input_source,
-    )
-    bound_refs_input = _bound_ref_inputs(
-        config=config,
-        raw_data=raw_data,
-        lang_cls=lang_cls,
-    )
     with GoldenSkips(
         policy=_REF_SKIPS,
         golden_path=golden_path,
         prefix=lang_cls.__name__,
         config=file_regression.request.config,
     ):
+        try:
+            _ = literalizer.literalize(
+                source='{"key": "value"}',
+                input_format=literalizer.InputFormat.JSON,
+                language=spec,
+                variable_form=variable_form_obj,
+                wrap_in_file=len(config.external_declarations) == 0,
+            )
+        except VariableNameNotSupportedError:
+            variable_form_obj = None
+        raw_data = _parse_ref_input(
+            input_format=input_info.input_format,
+            input_source=input_source,
+        )
+        bound_refs_input = _bound_ref_inputs(
+            config=config,
+            raw_data=raw_data,
+            lang_cls=lang_cls,
+        )
         effective_bound_refs = None
         if len(bound_refs_input) > 0 and config.external_declarations == {}:
             effective_bound_refs = bound_refs_input
