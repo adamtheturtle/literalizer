@@ -8105,6 +8105,7 @@ def _compose_call_with_bound_ref_declarations(
     types_present: frozenset[type],
     contains_standalone_comments: bool,
     data_for_preamble: Value,
+    data_for_stub: Value,
     per_element: bool,
     target_function_parts: tuple[str, ...],
     parameter_names: Sequence[str],
@@ -8122,9 +8123,9 @@ def _compose_call_with_bound_ref_declarations(
     reconciliation is shared with every other call/declaration caller.
 
     The refs are now real declarations, so the target stub's parameter
-    types are inferred from the ref-substituted values
-    (*data_for_preamble*), not from the raw ``$ref`` markers a call's
-    own ``arg_values`` still carries.  ``variable_form`` is rejected
+    types are inferred from the actual bound values
+    (*data_for_stub*), independently of explicit inference hints and
+    the raw ``$ref`` markers in ``arg_values``. ``variable_form`` is rejected
     upstream for the ``bound_refs`` path, so the call result is never
     consumed here: a value stub is emitted only for a ``call_transform``
     wrapper; otherwise a void stub suffices.
@@ -8141,9 +8142,9 @@ def _compose_call_with_bound_ref_declarations(
         sections=(),
         data_dependent_preamble=data_dependent_preamble,
     )
-    stub_arg_values: Sequence[Value] = [[data_for_preamble]]
-    if per_element and isinstance(data_for_preamble, list):
-        stub_arg_values = data_for_preamble
+    stub_arg_values: Sequence[Value] = [[data_for_stub]]
+    if per_element and isinstance(data_for_stub, list):
+        stub_arg_values = data_for_stub
     collected_decl_results: list[LiteralizeResult] = []
     for entry_entry_name, entry_entry_value in bound_refs.items():
         effective_name = entry_entry_name
@@ -8190,6 +8191,8 @@ def _wrap_call_result_in_file(
     *,
     language: Language,
     materialized_bound_refs: Mapping[str, Value],
+    source_data: Value,
+    ref_key: str,
     ref_case: IdentifierCase | None,
     result: str,
     preamble: tuple[str, ...],
@@ -8249,6 +8252,11 @@ def _wrap_call_result_in_file(
             types_present=types_present,
             contains_standalone_comments=contains_standalone_comments,
             data_for_preamble=data_for_preamble,
+            data_for_stub=_resolve_refs_for_inference(
+                value=source_data,
+                ref_values=materialized_bound_refs,
+                ref_key=ref_key,
+            ),
             per_element=per_element,
             target_function_parts=target_function_parts,
             parameter_names=parameter_names,
@@ -8927,6 +8935,8 @@ def literalize_call_parsed(
         return _wrap_call_result_in_file(
             language=language,
             materialized_bound_refs=materialized_bound_refs,
+            source_data=data,
+            ref_key=ref_key,
             ref_case=ref_case,
             result=result,
             preamble=preamble,
