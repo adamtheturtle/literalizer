@@ -1330,9 +1330,22 @@ class Dhall(metaclass=LanguageCls):
     @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
         """Configuration for the chosen sequence format."""
+
+        @beartype
+        def _narrowed_empty_form(siblings: Sequence[list[Value]]) -> str:
+            """Keep the scalar union type used by populated siblings."""
+            if (
+                self.heterogeneous_strategy
+                is self.heterogeneous_strategies.UNION_TYPE
+                and id(siblings[0])
+                in self.heterogeneous_behavior.compute_wrap_ids(list(siblings))
+            ):
+                return f"[] : List {self.heterogeneous_value_union_name}"
+            return _dhall_narrowed_empty_form(siblings)
+
         return dataclasses.replace(
             self.sequence_format.value,
-            narrowed_empty_form=_dhall_narrowed_empty_form,
+            narrowed_empty_form=_narrowed_empty_form,
         )
 
     @cached_property
