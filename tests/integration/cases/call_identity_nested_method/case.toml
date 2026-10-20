@@ -2,8 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Cpp"]
-languages_reason = "C++ nested methods explicitly discard unchanged transformed return values."
+gates = [{kind = "capability_flag", flag = "supports_dotted_calls"}]
 target_function = "outer.thing.go"
 parameter_names = []
 per_element = true

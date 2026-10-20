@@ -561,7 +561,16 @@ def _fortran_call_statement(call: str, /) -> str:
     free-form Fortran continues a logical line only where a ``&`` says
     so, exactly as a multiline value binding already does (issue #4527).
     """
+    if call.startswith("associate ("):
+        return call
     return _add_continuation(value=f"call {call}")
+
+
+@beartype
+def _fortran_identity_call_statement(call: str, /) -> str:
+    """Evaluate a function result in a local association scope."""
+    header = _add_continuation(value=f"associate (discarded_value => {call})")
+    return f"{header}\nend associate"
 
 
 @beartype
@@ -1325,6 +1334,14 @@ class Fortran(metaclass=LanguageCls):
     ]:
         """Return stub declarations for a call expression."""
         return partial(_fortran_call_stub, indent=self.indent)
+
+    @cached_property
+    @beartype
+    def format_identity_transformed_call_statement(
+        self,
+    ) -> Callable[[str], str]:
+        """Evaluate an identity-transformed function without CALL."""
+        return _fortran_identity_call_statement
 
     format_call_preamble_stub = default_format_call_stub
 

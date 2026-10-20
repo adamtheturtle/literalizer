@@ -139,6 +139,12 @@ from literalizer.exceptions import (
 
 
 @beartype
+def _zig_discard_call_result(call: str, /) -> str:
+    """Explicitly discard a value-returning call result."""
+    return f"_ = {call}"
+
+
+@beartype
 def _format_date_zig(value: dt.date) -> str:
     """Format a date as epoch seconds (midnight UTC)."""
     midnight = dt.datetime(
@@ -1282,6 +1288,14 @@ class Zig(metaclass=LanguageCls):
     validate_call_arg = default_validate_call_arg
 
     format_call_statement = default_format_call_statement
+
+    @cached_property
+    @beartype
+    def format_identity_transformed_call_statement(
+        self,
+    ) -> Callable[[str], str]:
+        """Explicitly discard an unchanged transformed call's return value."""
+        return _zig_discard_call_result
 
     wrap_calls_with_declarations = default_wrap_calls_with_declarations
 
