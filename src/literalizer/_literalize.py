@@ -2707,7 +2707,7 @@ def _format_literal_ref_identifier(
     """Preserve known null bindings separately from optional type
     hints.
     """
-    ref_value = reference_values_or_empty(values=ref_values).get(raw_ref_name)
+    ref_value = _reference_binding_values(ref_values).get(raw_ref_name)
     if reused and isinstance(language, _ReusableLiteralReferenceLanguage):
         return language.format_reused_literal_ref_identifier(
             ref_name, ref_value
@@ -4330,7 +4330,9 @@ def _literalize_impl(
             )
             ref_value = None
             if ref_values is not None:
-                ref_value = ref_values.get(raw_ref_name)
+                ref_value = _reference_binding_values(ref_values).get(
+                    raw_ref_name
+                )
             if ref_value is not None:
                 compute_record_shapes = (
                     language.heterogeneous_behavior.compute_record_shapes
@@ -5500,6 +5502,11 @@ def _bound_ref_parent_contexts(
     """Return each bound ref inside the resolved container that uses
     it.
     """
+    root_name = _extract_call_arg_ref_name(value=source, ref_key=ref_key)
+    if root_name is not None:
+        root_value = bound_refs[root_name]
+        if isinstance(root_value, dict):
+            return {root_name: root_value}
     contexts: dict[str, Value] = {}
 
     @beartype

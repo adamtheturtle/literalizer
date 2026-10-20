@@ -3,5 +3,5 @@ def main():
         1,
         2,
     ])
-    var my_data = my_value^
+    var my_data = my_value.copy()
     _ = my_data
