@@ -1,8 +1,8 @@
 defmodule Check do
   def x do
-    k = %{
+    key_binding = %{
         "a" => 1,
     }
-    _ = k
+    _ = key_binding
   end
 end

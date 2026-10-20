@@ -1,6 +1,6 @@
 import std.json;
 void main() {
-auto k = JSONValue([
+auto key_binding = JSONValue([
     "a": JSONValue(1),
 ]);
 }

@@ -1,4 +1,4 @@
 import json
-var k = %* {
+var key_binding = %* {
     "a": 1
 }

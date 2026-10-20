@@ -1,3 +1,3 @@
-my $k = {
+my $key_binding = {
     'a' => 1,
 };

@@ -4,7 +4,7 @@ type val_t =
   | OInt of int
   | OStr of string
   | OMap of (string * val_t) list
-let k : val_t = OMap [
+let key_binding : val_t = OMap [
     ("a", OInt 1)
 ]
 

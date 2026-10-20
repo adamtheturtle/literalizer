@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var k = new Dictionary<string, int> {
+var key_binding = new Dictionary<string, int> {
     ["a"] = 1
 };
-    _ = k;
+    _ = key_binding;

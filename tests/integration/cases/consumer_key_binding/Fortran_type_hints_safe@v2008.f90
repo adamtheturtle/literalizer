@@ -83,8 +83,8 @@ end module fval_m
 program main
     use fval_m
     implicit none
-    type(fval_t) :: k
-    k = fmap([fval_t :: &
+    type(fval_t) :: key_binding
+    key_binding = fmap([fval_t :: &
         fentry('a', fint(1_int64)) &
     ])
 end program main

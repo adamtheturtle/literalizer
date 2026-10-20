@@ -2,8 +2,8 @@
 package main
 
 main :: proc() {
-k := map[string]any{
+key_binding := map[string]any{
 	"a" = 1,
 }
-_ = k
+_ = key_binding
 }

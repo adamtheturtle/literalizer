@@ -1,3 +1,3 @@
-final k = <String, int>{
+final key_binding = <String, int>{
     "a": 1,
 };

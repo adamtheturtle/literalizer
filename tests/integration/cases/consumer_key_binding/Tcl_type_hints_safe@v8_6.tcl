@@ -1,3 +1,3 @@
-set k [dict create \
+set key_binding [dict create \
     "a" 1 \
 ]

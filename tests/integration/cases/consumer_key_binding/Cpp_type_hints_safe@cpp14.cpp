@@ -2,9 +2,9 @@
 #include <string>
 #include <map>
 int main() {
-auto k = std::map<std::string, int>{
+auto key_binding = std::map<std::string, int>{
     {"a", 1},
 };
-    (void)k;
+    (void)key_binding;
     return 0;
 }

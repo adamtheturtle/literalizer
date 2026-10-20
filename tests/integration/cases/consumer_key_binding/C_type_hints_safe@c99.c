@@ -15,9 +15,9 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 int main(void) {
-CVal k = ((CVal){.m = (CKV[]){
+CVal key_binding = ((CVal){.m = (CKV[]){
     {"a", ((CVal){.i = 1})},
 }});
-    (void)k;
+    (void)key_binding;
     return 0;
 }

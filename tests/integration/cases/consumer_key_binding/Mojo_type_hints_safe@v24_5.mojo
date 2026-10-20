@@ -1,5 +1,5 @@
 def main():
-    var k = {
+    var key_binding = {
         "a": 1,
     }
-    _ = k
+    _ = key_binding

@@ -1,3 +1,3 @@
-val k = mapOf<String, Int>(
+val key_binding = mapOf<String, Int>(
     "a" to 1,
 )

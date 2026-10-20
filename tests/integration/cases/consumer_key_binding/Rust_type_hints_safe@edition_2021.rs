@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 fn main() {
-    let k = HashMap::from([
+    let key_binding = HashMap::from([
         ("a", 1),
     ]);
-    let _ = &k;
+    let _ = &key_binding;
 }

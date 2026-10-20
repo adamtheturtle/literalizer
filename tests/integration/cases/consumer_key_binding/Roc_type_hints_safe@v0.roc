@@ -1,4 +1,4 @@
-module [k]
+module [key_binding]
 
 Val : [
     RInt I128,
@@ -6,7 +6,7 @@ Val : [
     RDict (List (Str, Val)),
 ]
 
-k : Val
-k = RDict [
+key_binding : Val
+key_binding = RDict [
     ("a", RInt 1i128),
 ]

@@ -1,10 +1,10 @@
 #import <Foundation/Foundation.h>
 int main(void) {
 @autoreleasepool {
-id k = @{
+id key_binding = @{
     @"a": @1,
 };
-    (void)k;
+    (void)key_binding;
 }
     return 0;
 }

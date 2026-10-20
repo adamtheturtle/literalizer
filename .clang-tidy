@@ -20,7 +20,3 @@ Checks: >
   -readability-magic-numbers,
   -readability-named-parameter,
 WarningsAsErrors: '*'
-
-# A caller-supplied one-letter name is intentional in binding goldens.
-CheckOptions:
-  readability-identifier-length.IgnoredVariableNames: ^k$

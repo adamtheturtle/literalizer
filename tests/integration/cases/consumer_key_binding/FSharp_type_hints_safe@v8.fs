@@ -4,6 +4,6 @@ type Val =
     | FInt of int64
     | FStr of string
     | FMap of (string * Val) list
-let k: Val = FMap [
+let key_binding: Val = FMap [
     ("a", FInt 1L)
 ]

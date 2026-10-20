@@ -1,3 +1,3 @@
-let k = {
+let key_binding = {
   a = 1;
-}; in k
+}; in key_binding

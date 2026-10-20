@@ -11,7 +11,7 @@ typedef struct {
 } _VKV;
 module main;
 initial begin
-static _VKV k[] = '{
+static _VKV key_binding[] = '{
     _VKV'{k: "a", v: _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}}
 };
 end

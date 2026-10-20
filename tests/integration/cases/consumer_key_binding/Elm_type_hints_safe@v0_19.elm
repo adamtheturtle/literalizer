@@ -7,7 +7,7 @@ type Val
     | EDict (List ( String, Val ))
 
 
-k : Val
-k = EDict [
+key_binding : Val
+key_binding = EDict [
     ("a", EInt 1)
     ]

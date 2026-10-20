@@ -8,9 +8,9 @@ instance Num Val where
     signum _ = error "not implemented"
     negate (HInt n) = HInt (negate n)
     negate _ = error "not implemented"
-k :: Val
-k = HMap [
+key_binding :: Val
+key_binding = HMap [
     ("a", 1)
     ]
 main :: IO ()
-main = seq k (return ())
+main = seq key_binding (return ())

@@ -1,3 +1,3 @@
-def k = [
+def key_binding = [
     "a": 1,
 ]

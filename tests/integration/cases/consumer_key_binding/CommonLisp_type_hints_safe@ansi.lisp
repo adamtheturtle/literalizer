@@ -1,3 +1,3 @@
-(defparameter *k* (list
+(defparameter *key_binding* (list
     (cons "a" 1)
 ))

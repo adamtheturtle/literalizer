@@ -1,8 +1,8 @@
 package main
 
 func main() {
-k := map[string]int{
+key_binding := map[string]int{
 	"a": 1,
 }
-_ = k
+_ = key_binding
 }

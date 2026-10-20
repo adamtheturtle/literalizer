@@ -1,3 +1,3 @@
-let k: [String: Int] = [
+let key_binding: [String: Int] = [
     "a": 1,
 ]

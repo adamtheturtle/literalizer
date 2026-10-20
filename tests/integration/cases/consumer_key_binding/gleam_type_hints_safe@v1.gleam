@@ -4,8 +4,8 @@ pub type GVal {
 }
 
 pub fn main() {
-  let k = GDict([
+  let key_binding = GDict([
     #("a", GInt(1)),
   ])
-  let _ = k
+  let _ = key_binding
 }

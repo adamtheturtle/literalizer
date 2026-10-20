@@ -1,4 +1,4 @@
 #lang racket
-(define k (hash
+(define key_binding (hash
     "a" 1
 ))

@@ -1,3 +1,3 @@
-declare -A k=(
+declare -A key_binding=(
     ["a"]=1
 )

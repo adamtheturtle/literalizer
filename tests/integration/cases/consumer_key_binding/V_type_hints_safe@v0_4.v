@@ -1,7 +1,7 @@
 
 fn main() {
-	k := {
+	key_binding := {
 		'a': 1,
 	}
-	_ = k
+	_ = key_binding
 }

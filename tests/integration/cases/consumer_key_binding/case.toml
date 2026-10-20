@@ -5,4 +5,4 @@ owner = "variant"
 axis = "type_hints"
 
 [variants.context]
-variable_name = "k"
+variable_name = "key_binding"

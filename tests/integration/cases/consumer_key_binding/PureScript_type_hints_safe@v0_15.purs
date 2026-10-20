@@ -8,7 +8,7 @@ data Val
     | PDict (Array (Tuple String Val))
 
 
-k :: Val
-k = PDict [
+key_binding :: Val
+key_binding = PDict [
     (Tuple "a" (PInt 1))
 ]
