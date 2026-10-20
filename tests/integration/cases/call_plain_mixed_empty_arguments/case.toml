@@ -1,9 +1,10 @@
 schema_version = 1
 owner = "literalize-call"
+# Regression provenance: Nim, V.
+# Nim value stubs constrain empty native arrays; V bare-call stubs provide a control for mixed and empty interface-backed list arguments.
 
 [call]
-languages = ["Nim", "V"]
-languages_reason = "Nim value stubs constrain empty native arrays; V bare-call stubs provide a control for mixed and empty interface-backed list arguments."
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "make_widget"
 parameter_names = ["before", "populated", "after"]
 per_element = true
