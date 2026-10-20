@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+# Regression provenance: Rust.
+# Rust ownership distinguishes reusable owned bindings from Copy values.
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+
+[ref.value_sources]
+shared = '[1,2]'
