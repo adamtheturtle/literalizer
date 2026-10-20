@@ -1,12 +1,13 @@
 schema_version = 1
 owner = "literalize-call"
+# Regression provenance: Cpp, Mojo, C.
+# Mojo null references are register-trivial; C++ null references preserve ownership semantics; C cJSON bindings allocate distinct helper nodes.
 
 [call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "consume"
 parameter_names = ["value"]
 per_element = true
-languages = ["Cpp", "Mojo", "C"]
-languages_reason = "Mojo null references are register-trivial; C++ null references preserve ownership semantics; C cJSON bindings allocate distinct helper nodes."
 ref_declarations = { my_null = "null", regular_null = "null" }
 consumable_refs = ["my_null"]
 
