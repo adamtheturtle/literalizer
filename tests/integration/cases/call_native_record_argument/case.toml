@@ -1,9 +1,10 @@
 schema_version = 1
 owner = "literalize-call"
+# Regression provenance: Elm, FSharp.
+# These native-record call arguments use record expressions instead of tagged values.
 
 [call]
-languages = ["Elm", "FSharp"]
-languages_reason = "These native-record call arguments use record expressions instead of tagged values."
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "consume"
 parameter_names = ["item"]
 per_element = true
