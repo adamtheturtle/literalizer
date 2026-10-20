@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+# Regression provenance: C.
+# C reference bindings must retain their resolved RECORD representation.
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}]
+heterogeneous_strategy = "RECORD"
+
+[ref.value_sources]
+first = '42'
