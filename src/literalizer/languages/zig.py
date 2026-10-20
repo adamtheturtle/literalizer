@@ -8,7 +8,7 @@ import textwrap
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, override
 
 from beartype import beartype
 
@@ -771,6 +771,21 @@ _STD_JSON_DICT_CONFIG = DictFormatConfig(
     supports_trailing_comma=True,
     narrowed_empty_form=None,
 )
+
+
+@beartype
+@dataclasses.dataclass(frozen=True)
+class _ZigRecordOrderedMapConfig(OrderedMapFormatConfig):
+    """Keep empty ordered maps as slices in native-record fields."""
+
+    @property
+    @override
+    def empty_ordered_map(self) -> str:
+        """Return an empty slice rather than the plain-record empty
+        form.
+        """
+        return "&.{}"
+
 
 _STD_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
     ordered_map_open=fixed_open(open_str=_STD_JSON_OBJECT_OPEN),
@@ -2101,7 +2116,7 @@ class Zig(metaclass=LanguageCls):
         if self._json_type_active:
             return _STD_JSON_ORDERED_MAP_CONFIG
         if self._record_strategy_active:
-            return OrderedMapFormatConfig(
+            return _ZigRecordOrderedMapConfig(
                 ordered_map_open=fixed_open(open_str="&.{"),
                 close="}",
                 preamble_lines=(),
