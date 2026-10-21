@@ -1,8 +1,8 @@
 schema_version = 1
 owner = "literalize-ref"
+# Shared coverage retains the original Python regression.
 
 [ref]
-languages = ["Python"]
-languages_reason = "Python native record declarations retain nominal types under explicit annotations."
+gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}, {kind = "enum_member_present", option = "variable_type_hints", member = "ALWAYS"}]
 heterogeneous_strategy = "RECORD"
 variable_type_hints = "ALWAYS"
