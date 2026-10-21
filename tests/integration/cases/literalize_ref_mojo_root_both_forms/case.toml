@@ -1,11 +1,8 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Mojo"]
-languages_reason = "Mojo bound lists must remain available to both variable forms."
+# Shared coverage retains the original Mojo regression.
 
 [ref]
-languages = ["Mojo"]
-languages_reason = "Mojo owned-list references must survive both variable forms."
 variable_form = "both"
 
 [ref.value_sources]
