@@ -1,0 +1,19 @@
+schema_version = 1
+owner = "literalize-call"
+# Regression provenance: Nim.
+# Nim generic result stubs need concrete types for empty array arguments; populated arrays and JsonNode arguments retain their representation.
+
+[call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "capability_flag", flag = "supports_dotted_calls"}]
+target_function = "thing.go"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "{call}"
+
+[[call.variants]]
+axis = "json_type_call_result"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"
