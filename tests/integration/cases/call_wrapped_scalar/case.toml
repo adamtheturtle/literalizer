@@ -1,9 +1,10 @@
 schema_version = 1
 owner = "literalize-call"
+# Regression provenance: Elm.
+# Elm call wrappers must place JSON encoder imports before generated stub declarations.
 
 [call]
-languages = ["Elm"]
-languages_reason = "Elm call wrappers must place JSON encoder imports before generated stub declarations."
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
