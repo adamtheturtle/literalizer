@@ -9,3 +9,9 @@ axis = "float_format"
 
 [[variants]]
 axis = "constructor_prefix"
+
+[[variants]]
+axis = "numeric_style"
+
+[[variants]]
+axis = "numeric_literal_suffix"
