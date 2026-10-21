@@ -1,9 +1,10 @@
 schema_version = 1
 owner = "literalize-call"
+# Regression provenance: PureScript.
+# PureScript native-record stubs need independent polymorphic parameter types across calls.
 
 [call]
-languages = ["PureScript"]
-languages_reason = "PureScript native-record stubs need independent polymorphic parameter types across calls."
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "consume"
 parameter_names = ["item", "count", "label"]
 per_element = true
