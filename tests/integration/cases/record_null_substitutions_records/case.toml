@@ -8,3 +8,15 @@ axis = "record_null_substitutions_record"
 due_date = -1
 parent_id = -1
 assignee = ""
+
+[[variants]]
+axis = "record_null_substitutions_record"
+suffix = "_multiline"
+
+[variants.context]
+collection_layout = "multiline"
+
+[variants.context.record_null_substitutions]
+due_date = -1
+parent_id = -1
+assignee = ""
