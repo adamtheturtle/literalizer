@@ -1,9 +1,10 @@
 schema_version = 1
 owner = "literalize-call"
+# Regression provenance: PureScript, Sml.
+# Curried calls must accept parenthesized native record arguments.
 
 [call]
-languages = ["PureScript", "Sml"]
-languages_reason = "Curried calls must accept parenthesized native record arguments."
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "consume"
 parameter_names = ["item"]
 per_element = true
