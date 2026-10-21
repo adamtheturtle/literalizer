@@ -1,0 +1,2 @@
+process() { :; }
+process 1
