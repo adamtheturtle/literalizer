@@ -13,8 +13,11 @@ module main;
 function _VVal make_widget(input _VVal count);
     make_widget = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""};
 endfunction
+task consume_widget(input _VVal count); endtask
 initial begin
 static _VVal my_data = make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""});
+void'(consume_widget(my_data));
 my_data = make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}); // note
+void'(consume_widget(my_data));
 end
 endmodule
