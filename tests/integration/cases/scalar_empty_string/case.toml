@@ -2,3 +2,6 @@ schema_version = 1
 suites = ["base", "combined"]
 
 # Empty text stays representable even in languages that reject null.
+
+[[variants]]
+axis = "string_format"
