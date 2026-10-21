@@ -1,10 +1,11 @@
 schema_version = 1
 owner = "literalize-call"
+# Regression provenance: V.
+# V null pointer bindings remain usable as whole call arguments.
 
 [call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "consume"
 parameter_names = ["value"]
 per_element = false
-languages = ["V"]
-languages_reason = "V null pointer bindings remain usable as whole call arguments."
 ref_declarations = { value = "null" }
