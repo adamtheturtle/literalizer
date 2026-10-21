@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+# Regression provenance: Cpp, Rust.
+# C++ and Rust owned references must preserve every generated use.
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+variable_form = "new"
+
+[ref.value_sources]
+shared = "[1, 2]"
