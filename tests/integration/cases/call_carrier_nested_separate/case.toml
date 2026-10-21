@@ -1,6 +1,7 @@
 schema_version = 1
 owner = "literalize-call"
 
+# Also retains the pinned V regression for heterogeneous method-stub arguments.
 [call]
 gates = [{kind = "capability_flag", flag = "supports_dotted_calls"}]
 target_function = "app.client.go"
