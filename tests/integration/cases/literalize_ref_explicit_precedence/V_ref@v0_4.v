@@ -4,6 +4,6 @@ fn main() {
 		1,
 		2,
 	]
-	my_data := ref_data
+	my_data := ref_data.clone()
 	_ = my_data
 }
