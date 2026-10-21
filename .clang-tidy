@@ -1,4 +1,6 @@
 ---
+# Fixtures deliberately cover mutable declarations and alternate comma layouts.
+# Those output options are validated by the renderer tests.
 Checks: >
   *,
   -altera-struct-pack-align,
@@ -11,6 +13,7 @@ Checks: >
   -llvmlibc-callee-namespace,
   -llvmlibc-implementation-in-namespace,
   -llvmlibc-restrict-system-libc-headers,
+  -misc-const-correctness,
   -misc-include-cleaner,
   -misc-use-internal-linkage,
   -modernize-raw-string-literal,
@@ -19,4 +22,5 @@ Checks: >
   -readability-implicit-bool-conversion,
   -readability-magic-numbers,
   -readability-named-parameter,
+  -readability-trailing-comma,
 WarningsAsErrors: '*'
