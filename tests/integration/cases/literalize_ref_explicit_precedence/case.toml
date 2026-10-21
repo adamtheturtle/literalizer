@@ -1,9 +1,10 @@
 schema_version = 1
 owner = "literalize-ref"
+# Regression provenance: C, Cpp, Gleam, Nim, ObjectiveC, V.
+# Gleam must share one carrier across hints and bindings; Nim must infer imports from the emitted declaration; V represents reference hint precedence.
 
 [ref]
-languages = ["C", "Cpp", "Gleam", "Nim", "ObjectiveC", "V"]
-languages_reason = "Gleam must share one carrier across hints and bindings; Nim must infer imports from the emitted declaration; V represents reference hint precedence."
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
 
 [ref.value_sources]
 ref_data = "[1, 2]"
