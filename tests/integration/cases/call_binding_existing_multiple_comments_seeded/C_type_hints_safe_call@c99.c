@@ -15,11 +15,12 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 static CVal make_widget(CVal _a0) { (void)_a0; return (CVal){0}; }
+static void consume_widget(CVal _a0) { (void)_a0; }
 int main(void) {
 CVal my_data = make_widget(((CVal){.i = 42}));
-make_widget(my_data);
+consume_widget(my_data);
 my_data = make_widget(my_data); // note
 // extra
-make_widget(my_data);
+consume_widget(my_data);
     return 0;
 }
