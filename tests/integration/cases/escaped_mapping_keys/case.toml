@@ -3,3 +3,6 @@ suites = ["base", "combined"]
 
 [[variants]]
 axis = "constructor_prefix"
+
+[[variants]]
+axis = "dict_entry_style"
