@@ -1,0 +1,3 @@
+def process(*_args: object, **_kwargs: object) -> object: ...
+value = 1
+process(value=value)
