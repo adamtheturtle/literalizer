@@ -1,0 +1,8 @@
+-module(fixture_set_mixed_int_widths_erlang_integer_format_hex).
+-export([x/0]).
+x() ->
+    My_data = sets:from_list([
+        16#1,
+        16#10000000000
+    ]),
+    My_data.
