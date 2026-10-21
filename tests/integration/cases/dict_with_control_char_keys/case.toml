@@ -6,3 +6,6 @@ axis = "empty_dict_key"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "dict_entry_style"
