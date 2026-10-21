@@ -1,14 +1,15 @@
 schema_version = 1
 owner = "literalize-call"
+# Regression provenance: Kotlin, Nim.
+# Call results are inferred independently of ragged collection arguments; unsupported fixed arrays are rejected.
 
 [call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "make_widget"
 parameter_names = ["items"]
 per_element = false
 wrap_in_file = true
 variable_form = "new"
-languages = ["Kotlin", "Nim"]
-languages_reason = "Call results are inferred independently of ragged collection arguments; unsupported fixed arrays are rejected."
 
 [[call.variants]]
 axis = "type_hints"
