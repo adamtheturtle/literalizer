@@ -1,5 +1,8 @@
 schema_version = 1
 
+[golden]
+call_seed_declaration_style = "VAR"
+
 [variants.non_default_kwargs]
 default_set_element_type = "String"
 default_dict_value_type = "Object?"

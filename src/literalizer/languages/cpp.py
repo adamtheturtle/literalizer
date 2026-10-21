@@ -3106,6 +3106,7 @@ class Cpp(metaclass=LanguageCls):
             raw_string_prefixes=(),
             verbatim_strings=False,
             interpolation_syntax=None,
+            character_literals=False,
         )
     )
     sequence_binding_declarations = default_sequence_binding_declarations
@@ -5123,6 +5124,7 @@ class Cpp(metaclass=LanguageCls):
             raw_string_prefixes=(),
             verbatim_strings=False,
             interpolation_syntax=None,
+            character_literals=False,
         )
         prefix = _cpp_modifier_prefix(modifiers=modifiers)
         return (

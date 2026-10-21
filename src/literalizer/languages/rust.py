@@ -120,13 +120,13 @@ from literalizer._language import (
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
     empty_record_shape_names,
     identity_call_arg,
+    line_comment_call_variable_assignment,
+    line_comment_call_variable_declaration,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_compute_call_slot_wrap_ids,
@@ -3268,8 +3268,24 @@ class Rust(metaclass=LanguageCls):
     pools_map_integer_width = True
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_declaration: ClassVar[property] = (
+        line_comment_call_variable_declaration(
+            regex_literals=False,
+            raw_string_prefixes=("r", "br", "cr"),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+            character_literals=True,
+        )
+    )
+    format_call_variable_assignment: ClassVar[property] = (
+        line_comment_call_variable_assignment(
+            regex_literals=False,
+            raw_string_prefixes=("r", "br", "cr"),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+            character_literals=True,
+        )
+    )
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(_constructor_target)
     )

@@ -15,6 +15,7 @@ class _CommentCase(BaseModel, extra="forbid", frozen=True):  # noqa: NOD001
     expected_code: str
     expected_trailing: str
     regex_literals: bool = False
+    character_literals: bool = False
     backtick_strings: bool = False
     raw_string_prefixes: tuple[str, ...] = ()
     verbatim_strings: bool = False
@@ -41,6 +42,7 @@ def test_trailing_line_comments(case: _CommentCase) -> None:
         statement=case.statement,
         prefix="//",
         regex_literals=case.regex_literals,
+        character_literals=case.character_literals,
         backtick_strings=case.backtick_strings,
         raw_string_prefixes=case.raw_string_prefixes,
         verbatim_strings=case.verbatim_strings,

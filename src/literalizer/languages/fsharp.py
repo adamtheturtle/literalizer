@@ -1148,6 +1148,9 @@ class FSharp(metaclass=LanguageCls):
         context: FileWrapperContext,
     ) -> str:
         """Wrap an F# let declaration in a module."""
+        if context.has_existing_bindings:
+            scoped_content = textwrap.indent(text=content, prefix=self.indent)
+            content = f"do\n{scoped_content}\n{self.indent}()"
         body_preamble = context.body_preamble
         content = prepend_body_preamble(
             content=content,
