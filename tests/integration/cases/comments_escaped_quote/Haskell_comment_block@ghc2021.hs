@@ -1,0 +1,8 @@
+module Fixture_comments_escaped_quote_Haskell_comment_block where
+data Val = HStr String | HMap [(String, Val)]
+my_data :: Val
+my_data = HMap [
+    ("key", HStr "value \" # not a comment")  {- real -}
+    ]
+main :: IO ()
+main = seq my_data (return ())
