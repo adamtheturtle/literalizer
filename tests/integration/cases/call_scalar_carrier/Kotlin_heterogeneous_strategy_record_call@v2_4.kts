@@ -1,0 +1,5 @@
+fun process(value: Any? = null): Any? = listOf<Any?>(value)
+process(value = "hello")
+process(value = 42)
+process(value = true)
+process(value = null)
