@@ -6,3 +6,9 @@ axis = "language_version"
 
 [[variants]]
 axis = "language_version_cross_dict_type"
+
+[[variants]]
+axis = "default_ordered_map_value_type"
+
+[[variants]]
+axis = "type_hints"
