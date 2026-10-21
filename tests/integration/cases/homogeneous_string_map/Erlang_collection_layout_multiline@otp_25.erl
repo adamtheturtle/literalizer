@@ -1,0 +1,8 @@
+-module(fixture_homogeneous_string_map_erlang_collection_layout_multiline).
+-export([x/0]).
+x() ->
+    My_data = #{
+        "a" => "x",
+        "b" => "y"
+    },
+    My_data.
