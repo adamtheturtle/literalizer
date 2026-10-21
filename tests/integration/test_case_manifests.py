@@ -995,3 +995,23 @@ def test_invalid_reference_time_source(
         expected_exception=CaseManifestError, match=r"bound_ref_times\.value"
     ):
         _ = load_case_manifest(case_dir=case_dir)
+
+
+def test_modifier_gate_selects_supported_declarations(tmp_path: Path) -> None:
+    """A declarative modifier requirement admits only supporting specs."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            "schema_version = 1\n"
+            'suites = ["base"]\n'
+            'gates = [{kind = "modifier_present", modifier = "PUBLIC"}]\n'
+        ),
+        input_name="input.yaml",
+    )
+    manifest = load_case_manifest(case_dir=case_dir)
+    assert manifest_admits_language(
+        manifest=manifest, lang_cls=literalizer.languages.Java
+    )
+    assert not manifest_admits_language(
+        manifest=manifest, lang_cls=literalizer.languages.Python
+    )

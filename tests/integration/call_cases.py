@@ -31,8 +31,10 @@ from literalizer.exceptions import (
     DottedCallTargetNotSupportedError,
     ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
+    IncompatibleFormatsError,
     InvalidCallParameterNameError,
     InvalidCallTargetError,
+    ReservedVariableNameError,
     UnrepresentableInputError,
     UnsupportedCallShapeError,
     VariableNameNotSupportedError,
@@ -64,6 +66,26 @@ CASES_DIR = Path(__file__).parent / "cases"
 _WRAP_IN_FILE_SKIPS: SkipPolicy = SkipPolicy(
     reasons=(
         SkipReason(
+            error=HeterogeneousCollectionError,
+            reason="cannot represent this heterogeneous input",
+            unlink=True,
+        ),
+        SkipReason(
+            error=UnrepresentableInputError,
+            reason="cannot represent these call arguments",
+            unlink=True,
+        ),
+        SkipReason(
+            error=IncompatibleFormatsError,
+            reason="cannot combine these call and representation options",
+            unlink=True,
+        ),
+        SkipReason(
+            error=ReservedVariableNameError,
+            reason="rejects a declared reference identifier",
+            unlink=True,
+        ),
+        SkipReason(
             error=CallArgNotSupportedError,
             reason="rejected call arg",
             unlink=True,
@@ -85,6 +107,16 @@ _WRAP_IN_FILE_SKIPS: SkipPolicy = SkipPolicy(
 # their values, and spell whatever target the case calls.
 _DECLARATION_SKIPS: SkipPolicy = SkipPolicy(
     reasons=(
+        SkipReason(
+            error=IncompatibleFormatsError,
+            reason="cannot combine these call and representation options",
+            unlink=True,
+        ),
+        SkipReason(
+            error=ReservedVariableNameError,
+            reason="rejects a declared reference identifier",
+            unlink=True,
+        ),
         SkipReason(
             error=VariableNameNotSupportedError,
             reason=(

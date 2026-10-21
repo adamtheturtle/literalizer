@@ -22,6 +22,7 @@ import literalizer
 from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
+    ModifierPresentGate,
     SpecFieldPresentGate,
     language_gate_admits,
 )
@@ -201,6 +202,7 @@ type SuiteGate = Annotated[
     | NonDefaultKwargGate
     | SpecFieldPresentGate
     | EnumMemberPresentGate
+    | ModifierPresentGate
     | MetadataFieldGate
     | SpecConfigFieldPresentGate
     | BehaviorFlagGate,
@@ -270,6 +272,7 @@ def gate_admits(
             CapabilityFlagGate()
             | SpecFieldPresentGate()
             | EnumMemberPresentGate()
+            | ModifierPresentGate()
         ):
             admits = language_gate_admits(
                 gate=gate,
