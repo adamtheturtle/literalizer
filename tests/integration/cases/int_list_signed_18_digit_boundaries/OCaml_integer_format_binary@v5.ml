@@ -1,0 +1,11 @@
+module Check = struct
+
+type val_t =
+  | OInt of int
+  | OList of val_t list
+let my_data : val_t = OList [
+    OInt 0b110111100000101101101011001110100111011000111111111111111111;
+    OInt (-0b110111100000101101101011001110100111011000111111111111111111)
+]
+
+end
