@@ -1,0 +1,7 @@
+class Fixture_int_list_single_Haxe_type_hints_always {
+    public static function main() {
+        final my_data:Array<Dynamic> = ([
+            1,
+        ] : Array<Dynamic>);
+    }
+}
