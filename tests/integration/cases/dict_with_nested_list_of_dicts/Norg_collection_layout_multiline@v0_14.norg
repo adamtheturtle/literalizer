@@ -1,0 +1,12 @@
+* my_data
+@code javascript
+{
+    "a": [
+        [
+            {
+                "b": 1
+            }
+        ]
+    ]
+}
+@end
