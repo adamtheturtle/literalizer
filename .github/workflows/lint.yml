@@ -2334,8 +2334,9 @@ jobs:
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
       # `scripts/run_swift_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Swift roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_swift_roundtrip
 
   lint-ocaml:
