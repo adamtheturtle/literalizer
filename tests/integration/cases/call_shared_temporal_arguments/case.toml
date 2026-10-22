@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+# Shared companion to call_wrap_in_file_temporal; the original control remains unchanged.
+
+# The argument values need a preamble import, which the wrapped file
+# assembles alongside the target-function stub.
+[call]
+target_function = "check"
+parameter_names = ["timestamp", "date_value"]
+per_element = true
+wrap_in_file = true
+
+[[call.variants]]
+axis = "sequence"
