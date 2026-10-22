@@ -17,3 +17,6 @@ axis = "language_version"
 [[variants]]
 axis = "json_rendering"
 suffix = "_null"
+
+[[variants]]
+axis = "type_hints"
