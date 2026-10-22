@@ -35,3 +35,6 @@ axis = "numeric_style"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "trailing_comma"
