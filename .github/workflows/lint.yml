@@ -875,8 +875,9 @@ jobs:
       # practical CI substitute) already installed; `uv run` (project
       # mode, not `--no-project`) is required so `import literalizer`
       # resolves. See `scripts/run_matlab_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: MATLAB roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_matlab_roundtrip
 
   lint-perl:
