@@ -6,11 +6,13 @@ on:
     branches: [main]
   pull_request: {}
 
-# We often have a long CI queue, so cancel superseded runs for a PR as soon
-# as a new commit is pushed. Non-PR runs (push on main) fall back to the
-# unique run ID so they never cancel each other.
+# Cancel superseded main pushes and updates to each PR.
+# Other invocations keep their own group.
 concurrency:
-  group: deploy-docs-pr-${{ github.event.pull_request.number || github.run_id }}
+  group: >-
+    deploy-docs-${{ github.event_name == 'push' && github.ref == 'refs/heads/main'
+    && 'push-main' || format('pr-{0}', github.event.pull_request.number || github.run_id)
+    }}
   cancel-in-progress: true
 
 jobs:
