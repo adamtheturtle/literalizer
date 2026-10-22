@@ -7,3 +7,6 @@ axis = "erlang_noncharacter_string"
 
 [[variants]]
 axis = "erlang_otp_json_noncharacter_string"
+
+[[variants]]
+axis = "string_format"
