@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-call"
+# Shared companion to call_parameter_leading_underscore; the original control remains unchanged.
+
+[call]
+target_function = "process"
+parameter_names = ["_value"]
+per_element = true
+wrap_in_file = true
