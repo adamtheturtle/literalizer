@@ -1,9 +1,8 @@
 schema_version = 1
 owner = "literalize-call"
+# Shared coverage retains the original FSharp regression.
 
 [call]
-languages = ["FSharp"]
-languages_reason = "FSharp requires quotes around future reserved words in dotted targets."
 target_function = "process.api.fetch"
 parameter_names = ["data"]
 per_element = true
