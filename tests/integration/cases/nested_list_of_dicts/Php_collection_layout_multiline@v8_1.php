@@ -1,0 +1,19 @@
+<?php
+$my_data = [
+    [
+        [
+            "name" => "Alice",
+        ],
+        [
+            "name" => "Bob",
+        ],
+    ],
+    [
+        [
+            "name" => "Charlie",
+        ],
+        [
+            "name" => "Dave",
+        ],
+    ],
+];
