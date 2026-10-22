@@ -4,3 +4,6 @@ roles = ["pre-indent-comment-scalar-input"]
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "comment"
