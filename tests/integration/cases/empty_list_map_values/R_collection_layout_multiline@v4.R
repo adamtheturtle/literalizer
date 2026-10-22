@@ -1,0 +1,6 @@
+my_data <- list(
+    "a" = list(
+        1
+    ),
+    "b" = list()
+)
