@@ -3,3 +3,6 @@ suites = ["base"]
 
 [[variants]]
 axis = "collection_layout"
+
+[[variants]]
+axis = "sequence"
