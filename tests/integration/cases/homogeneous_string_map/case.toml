@@ -9,3 +9,9 @@ axis = "dict_format"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "collection_layout"
+
+[[variants]]
+axis = "trailing_comma"
