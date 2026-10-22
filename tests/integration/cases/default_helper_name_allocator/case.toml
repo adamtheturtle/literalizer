@@ -3,3 +3,6 @@ suites = ["base"]
 
 [base_context]
 variable_name = "allocator"
+
+[[variants]]
+axis = "type_hints"
