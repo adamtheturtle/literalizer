@@ -15,3 +15,9 @@ axis = "set_decl"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "numeric_separator"
+
+[[variants]]
+axis = "integer_format"
