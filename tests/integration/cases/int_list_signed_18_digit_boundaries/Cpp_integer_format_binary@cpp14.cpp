@@ -1,0 +1,10 @@
+#include <initializer_list>
+#include <vector>
+int main() {
+auto my_data = std::vector<long long>{
+    0b110111100000101101101011001110100111011000111111111111111111,
+    -0b110111100000101101101011001110100111011000111111111111111111LL,
+};
+    (void)my_data;
+    return 0;
+}
