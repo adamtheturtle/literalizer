@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-call"
+# Shared companion to cobol_call_wrapper_target_collision; the original control remains unchanged.
+
+[call]
+target_function = "check"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
