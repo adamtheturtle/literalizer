@@ -4,3 +4,10 @@ statement = "`// payload` // note"
 expected_code = "`// payload`"
 expected_trailing = " // note"
 backtick_strings = true
+
+[[cases]]
+name = "raw_prefix_in_identifier"
+statement = "raw_value() // note"
+expected_code = "raw_value()"
+expected_trailing = " // note"
+raw_string_prefixes = ["raw"]
