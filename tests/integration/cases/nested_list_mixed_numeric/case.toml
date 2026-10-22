@@ -3,3 +3,6 @@ gates = [
   { kind = "metadata_field", field = "nested_list_widening", value = "integer_width" },
 ]
 suites = ["base"]
+
+[[variants]]
+axis = "sequence"
