@@ -155,6 +155,37 @@ _format_string_backslash_nul = make_backslash_string_formatter(
 
 
 @beartype
+def _call_literal_span_end(*, statement: str, cursor: int) -> int | None:
+    """Skip Rust characters and raw strings while retaining lifetimes."""
+    if statement[cursor] == "'":
+        end = cursor + 2
+        if statement[cursor + 1 : cursor + 2] == "\\":
+            end += 1
+            if statement[cursor + 2 : cursor + 4] == "u{":
+                closing_brace = statement.find("}", cursor + 4)
+                end = (
+                    len(statement)
+                    if closing_brace == -1
+                    else closing_brace + 1
+                )
+            elif statement[cursor + 2 : cursor + 3] == "x":
+                end += 2
+        return end + 1 if statement[end : end + 1] == "'" else None
+    for marker in ("r", "br", "cr"):
+        if not statement.startswith(marker, cursor):
+            continue
+        quote_start = cursor + len(marker)
+        while statement[quote_start : quote_start + 1] == "#":
+            quote_start += 1
+        if statement[quote_start : quote_start + 1] == '"':
+            hashes = statement[cursor + len(marker) : quote_start]
+            delimiter = '"' + hashes
+            end = statement.find(delimiter, quote_start + 1)
+            return len(statement) if end == -1 else end + len(delimiter)
+    return None
+
+
+@beartype
 def _rust_native_type_shape(value: Value, /) -> Hashable:
     """Return the concrete Rust collection-type shape of *value*."""
     if isinstance(value, list):
@@ -3271,19 +3302,21 @@ class Rust(metaclass=LanguageCls):
     format_call_variable_declaration: ClassVar[property] = (
         line_comment_call_variable_declaration(
             regex_literals=False,
-            raw_string_prefixes=("r", "br", "cr"),
+            raw_string_prefixes=(),
             verbatim_strings=False,
             interpolation_syntax=None,
-            character_literals=True,
+            quotes='"',
+            literal_span_end=_call_literal_span_end,
         )
     )
     format_call_variable_assignment: ClassVar[property] = (
         line_comment_call_variable_assignment(
             regex_literals=False,
-            raw_string_prefixes=("r", "br", "cr"),
+            raw_string_prefixes=(),
             verbatim_strings=False,
             interpolation_syntax=None,
-            character_literals=True,
+            quotes='"',
+            literal_span_end=_call_literal_span_end,
         )
     )
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (

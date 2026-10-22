@@ -11,11 +11,23 @@ each *part* of a statement instead of on the statement (issue #4548).
 import dataclasses
 import functools
 import re
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
 _OPENING_BRACKETS = "([{"
 _CLOSING_BRACKETS = ")]}"
+
+
+@runtime_checkable
+class LiteralSpanEnd(Protocol):
+    """Recognize an additional literal at the scanner's current
+    position.
+    """
+
+    def __call__(self, *, statement: str, cursor: int) -> int | None:
+        """Return the position after a literal, or no match."""
+        ...
 
 
 @beartype
@@ -42,7 +54,7 @@ class _CommentScanner:
     raw_string_prefixes: tuple[str, ...]
     verbatim_strings: bool
     interpolation_syntax: tuple[str, str] | None
-    character_literals: bool
+    literal_span_end: LiteralSpanEnd | None
 
     @beartype
     def split(self) -> _TrailingLineComments:
@@ -91,9 +103,13 @@ class _CommentScanner:
             )
         if self.backtick_strings and self.statement.startswith("`", cursor):
             return self._end_after(delimiter="`", cursor=cursor + 1)
-        if self.character_literals and self.statement[cursor] == "'":
-            end = self._character_end(cursor=cursor)
-        elif self.statement[cursor] in self.quotes:
+        if self.literal_span_end is not None:
+            end = self.literal_span_end(
+                statement=self.statement, cursor=cursor
+            )
+            if end is not None:
+                return end
+        if self.statement[cursor] in self.quotes:
             end = self._quoted_end(cursor=cursor, raw=False, verbatim=False)
         else:
             end = self._prefixed_string_end(cursor=cursor)
@@ -113,15 +129,7 @@ class _CommentScanner:
             quote_start = cursor + len(marker)
             if not self.statement.startswith(marker, cursor):
                 continue
-            while self.statement[quote_start : quote_start + 1] == "#":
-                quote_start += 1
             if self.statement[quote_start : quote_start + 1] in self.quotes:
-                hashes = self.statement[cursor + len(marker) : quote_start]
-                if hashes != "":
-                    return self._end_after(
-                        delimiter=self.statement[quote_start] + hashes,
-                        cursor=quote_start + 1,
-                    )
                 return self._quoted_end(
                     cursor=quote_start, raw=True, verbatim=False
                 )
@@ -135,20 +143,6 @@ class _CommentScanner:
                     verbatim=True,
                 )
         return None
-
-    @beartype
-    def _character_end(self, *, cursor: int) -> int | None:
-        """Skip a Rust character without treating a lifetime as a
-        quote.
-        """
-        end = cursor + 2
-        if self.statement[cursor + 1 : cursor + 2] == "\\":
-            end += 1
-            if self.statement[cursor + 2 : cursor + 4] == "u{":
-                end = self._end_after(delimiter="}", cursor=cursor + 4)
-            elif self.statement[cursor + 2 : cursor + 3] == "x":
-                end += 2
-        return end + 1 if self.statement[end : end + 1] == "'" else None
 
     @beartype
     def _quoted_end(self, *, cursor: int, raw: bool, verbatim: bool) -> int:
@@ -249,7 +243,8 @@ def split_trailing_line_comments(
     raw_string_prefixes: tuple[str, ...],
     verbatim_strings: bool,
     interpolation_syntax: tuple[str, str] | None,
-    character_literals: bool,
+    quotes: str,
+    literal_span_end: LiteralSpanEnd | None,
 ) -> _TrailingLineComments:
     """Separate trailing line comments from a C-style expression."""
     if prefix not in statement:
@@ -257,15 +252,13 @@ def split_trailing_line_comments(
     return _CommentScanner(
         statement=statement,
         prefix=prefix,
-        quotes=frozenset({'"'})
-        if character_literals
-        else frozenset({'"', "'"}),
+        quotes=frozenset(quotes),
         regex_literals=regex_literals,
         backtick_strings=backtick_strings,
         raw_string_prefixes=raw_string_prefixes,
         verbatim_strings=verbatim_strings,
         interpolation_syntax=interpolation_syntax,
-        character_literals=character_literals,
+        literal_span_end=literal_span_end,
     ).split()
 
 
@@ -283,7 +276,7 @@ def split_double_quoted_line_comments(
         raw_string_prefixes=(),
         verbatim_strings=False,
         interpolation_syntax=None,
-        character_literals=False,
+        literal_span_end=None,
     ).split()
 
 

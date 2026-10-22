@@ -564,7 +564,8 @@ class Dart(metaclass=LanguageCls):
             raw_string_prefixes=("r",),
             verbatim_strings=False,
             interpolation_syntax=("${", "\"'"),
-            character_literals=False,
+            quotes="\"'",
+            literal_span_end=None,
         )
     )
     sequence_binding_declarations = default_sequence_binding_declarations
@@ -1555,7 +1556,8 @@ class Dart(metaclass=LanguageCls):
                 raw_string_prefixes=("r",),
                 verbatim_strings=False,
                 interpolation_syntax=("${", "\"'"),
-                character_literals=False,
+                quotes="\"'",
+                literal_span_end=None,
             )
             return (
                 self.declaration_style.value.formatter(

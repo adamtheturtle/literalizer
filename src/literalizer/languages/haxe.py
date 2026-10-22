@@ -322,7 +322,8 @@ class Haxe(metaclass=LanguageCls):
             raw_string_prefixes=(),
             verbatim_strings=False,
             interpolation_syntax=("${", "'"),
-            character_literals=False,
+            quotes="\"'",
+            literal_span_end=None,
         )
     )
     format_call_variable_assignment: ClassVar[property] = (
@@ -331,7 +332,8 @@ class Haxe(metaclass=LanguageCls):
             raw_string_prefixes=(),
             verbatim_strings=False,
             interpolation_syntax=("${", "'"),
-            character_literals=False,
+            quotes="\"'",
+            literal_span_end=None,
         )
     )
     sequence_binding_declarations = default_sequence_binding_declarations

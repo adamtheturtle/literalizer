@@ -852,7 +852,8 @@ class CSharp(metaclass=LanguageCls):
             raw_string_prefixes=(),
             verbatim_strings=True,
             interpolation_syntax=("{", '"'),
-            character_literals=False,
+            quotes="\"'",
+            literal_span_end=None,
         )
         prefix = _csharp_modifier_prefix(modifiers=modifiers)
         if prefix == "":
@@ -870,7 +871,8 @@ class CSharp(metaclass=LanguageCls):
             raw_string_prefixes=(),
             verbatim_strings=True,
             interpolation_syntax=("{", '"'),
-            character_literals=False,
+            quotes="\"'",
+            literal_span_end=None,
         )
     )
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
