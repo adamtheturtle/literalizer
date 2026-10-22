@@ -957,8 +957,9 @@ jobs:
       # `go install` above) already on PATH; `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_jsonnet_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Jsonnet roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_jsonnet_roundtrip
 
       - name: Lint Hcl
@@ -2276,8 +2277,9 @@ jobs:
       # `uv run` (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
       # `scripts/run_kotlin_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Kotlin roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
         run: uv run python -m scripts.run_kotlin_roundtrip
