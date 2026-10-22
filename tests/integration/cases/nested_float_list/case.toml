@@ -15,3 +15,9 @@ suffix = "_float_n"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "type_hints"
