@@ -2047,6 +2047,10 @@ jobs:
       # fails to compile with "runtime is not configured to support
       # JSON". Install cJSON first so ``configure`` detects it (via its
       # ``libcjson`` pkg-config file) and enables JSON I/O.
+      # Use the primary archive to avoid slow Azure mirror downloads,
+      # as in lint-r, before installing the compiler dependencies.
+      - name: Use Ubuntu archive for GnuCOBOL dependencies
+        run: printf '%s\n' 'https://archive.ubuntu.com/ubuntu' | sudo tee /etc/apt/apt-mirrors.txt
       - name: Install cJSON for GnuCOBOL JSON I/O
         timeout-minutes: 10
         run: |-
@@ -2357,6 +2361,10 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.ml' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      # setup-ocaml installs apt dependencies before creating the switch.
+      # Use the same archive as lint-r to avoid Azure mirror timeouts.
+      - name: Use Ubuntu archive for OCaml dependencies
+        run: printf '%s\n' 'https://archive.ubuntu.com/ubuntu' | sudo tee /etc/apt/apt-mirrors.txt
       - name: Install OCaml
         timeout-minutes: 10
         uses: ocaml/setup-ocaml@v3
