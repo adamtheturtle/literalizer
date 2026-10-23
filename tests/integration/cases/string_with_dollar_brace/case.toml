@@ -9,3 +9,6 @@ axis = "string_format"
 
 [[variants]]
 axis = "json_type"
+
+[[variants]]
+axis = "sequence"
