@@ -1,2 +1,5 @@
 schema_version = 1
 suites = ["base"]
+
+[[variants]]
+axis = "float_format"
