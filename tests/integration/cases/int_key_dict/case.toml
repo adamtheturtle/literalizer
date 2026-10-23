@@ -12,3 +12,6 @@ axis = "heterogeneous_strategy"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "integer_format"

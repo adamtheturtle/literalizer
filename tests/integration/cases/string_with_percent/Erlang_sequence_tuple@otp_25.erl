@@ -1,0 +1,8 @@
+-module(fixture_string_with_percent_erlang_sequence_tuple).
+-export([x/0]).
+x() ->
+    My_data = {
+        "100% done",
+        "%(name) is here"
+    },
+    My_data.

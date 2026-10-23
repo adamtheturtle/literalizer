@@ -1,0 +1,5 @@
+let my_data: Any = [
+    0b1: "one",
+    0b10: "two",
+    0b101010: "answer",
+]
