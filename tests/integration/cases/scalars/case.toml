@@ -6,3 +6,6 @@ axis = "numeric_style"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "integer_format"
