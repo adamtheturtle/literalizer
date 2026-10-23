@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+[
+    ["set_task", "web", "lint_web"],
+    ["merge_pipelines"]
+]
+@end
