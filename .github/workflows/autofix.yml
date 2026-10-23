@@ -23,13 +23,13 @@ jobs:
         uses: astral-sh/setup-uv@v10.3.0
 
       - name: Run fixers
-        uses: j178/prek-action@v3.0.1
+        uses: j178/prek-action@v3.0.2
         with:
           # Matches the ``prek`` pin in ``pyproject.toml``; keep them in
           # sync. prek reimplements the ``pre-commit-hooks`` checks
           # natively, so a version difference changes their verdicts and
           # not merely their scheduling (issue 4013).
-          prek-version: 0.5.5
+          prek-version: 0.5.6
           extra-args: >-
             --all-files --hook-stage pre-commit --no-fail-fast --verbose
         env:
