@@ -8,3 +8,9 @@ suffix = "_time"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "type_hints"

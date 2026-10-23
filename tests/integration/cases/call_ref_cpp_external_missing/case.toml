@@ -1,9 +1,8 @@
 schema_version = 1
 owner = "literalize-call"
+# Shared coverage retains the original Cpp regression.
 
 [call]
-languages = ["Cpp"]
-languages_reason = "C++ consumes externally declared owning references with std::move, while a known nullptr reference stays bare."
 target_function = "consume"
 parameter_names = ["value"]
 per_element = false

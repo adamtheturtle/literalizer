@@ -1,0 +1,6 @@
+package main
+
+func main() {
+my_data := -0b10000000000000000000000000000001
+_ = my_data
+}

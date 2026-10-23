@@ -3,3 +3,8 @@ owner = "variant"
 
 [[variants]]
 axis = "record_keyword_field"
+
+[[variants]]
+axis = "record_keyword_field"
+suffix = "_multiline"
+context = { collection_layout = "multiline" }

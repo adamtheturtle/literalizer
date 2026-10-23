@@ -1,0 +1,12 @@
+module Fixture_signed_integer_carrier_boundaries_Crystal_numeric_separator_underscore
+extend self
+my_data = {
+    "i32_below" => -2_147_483_649,
+    "i32_minimum" => -2_147_483_648,
+    "i32_above" => -2_147_483_647,
+    "i32_maximum" => 2_147_483_647,
+    "i32_over" => 2_147_483_648,
+    "i64_minimum" => -9_223_372_036_854_775_808,
+    "i64_maximum" => 9_223_372_036_854_775_807,
+}
+end

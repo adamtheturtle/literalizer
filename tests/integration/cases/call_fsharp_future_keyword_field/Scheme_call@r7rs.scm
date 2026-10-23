@@ -1,0 +1,6 @@
+(define app (lambda args (if #f #f)))
+(define app.process (lambda args (if #f #f)))
+(define app.process.fetch (lambda args (if #f #f)))
+(app.process.fetch (list (cons "data" "hello")))
+(app.process.fetch (list (cons "data" 42)))
+(app.process.fetch (list (cons "data" #t)))
