@@ -15,3 +15,6 @@ axis = "numeric_style"
 
 [[variants]]
 axis = "numeric_literal_suffix"
+
+[[variants]]
+axis = "integer_format"
