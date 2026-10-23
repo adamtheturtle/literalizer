@@ -1,9 +1,9 @@
 schema_version = 1
 owner = "literalize-ref"
+# Shared coverage retains the original Python, Swift regression.
 
 [ref]
-languages = ["Python", "Swift"]
-languages_reason = "Native record bindings retain their generated types in explicit annotations, including nullable fields."
+gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}, {kind = "enum_member_present", option = "variable_type_hints", member = "ALWAYS"}]
 heterogeneous_strategy = "RECORD"
 variable_type_hints = "ALWAYS"
 

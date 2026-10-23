@@ -7,3 +7,6 @@ suffix = "_binary"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "collection_layout"

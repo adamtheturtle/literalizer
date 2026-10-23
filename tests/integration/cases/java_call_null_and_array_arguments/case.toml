@@ -1,9 +1,8 @@
 schema_version = 1
 owner = "literalize-call"
+# Shared coverage retains the original Java regression.
 
 [call]
-languages = ["Java"]
-languages_reason = "Java fixed-arity stubs must keep null and array values in one argument slot."
 target_function = "process"
 parameter_names = ["value"]
 per_element = true

@@ -16,3 +16,8 @@ context = { collection_layout = "multiline" }
 axis = "anonymous_record"
 suffix = "_multiline"
 context = { collection_layout = "multiline" }
+
+[[variants]]
+axis = "anonymous_record_mutable"
+suffix = "_both"
+context = { variable_form = "both" }

@@ -1,0 +1,5 @@
+module Fixture_call_shared_long_parameter_Crystal_call
+extend self
+def process(parameter_name_parameter_name_parameter_name_parameter_name_para = nil); 0; end
+process(parameter_name_parameter_name_parameter_name_parameter_name_para: 1);
+end

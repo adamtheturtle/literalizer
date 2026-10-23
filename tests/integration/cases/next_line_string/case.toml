@@ -6,3 +6,6 @@ axis = "string_format"
 
 [[variants]]
 axis = "multiline_string"
+
+[[variants]]
+axis = "json_type"

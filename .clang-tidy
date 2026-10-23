@@ -1,4 +1,7 @@
 ---
+# Fixtures cover mutable declarations, alternate comma layouts, comment
+# grouping parentheses, and copies of referenced values. Renderer tests
+# validate these deliberate output choices.
 Checks: >
   *,
   -altera-struct-pack-align,
@@ -11,12 +14,16 @@ Checks: >
   -llvmlibc-callee-namespace,
   -llvmlibc-implementation-in-namespace,
   -llvmlibc-restrict-system-libc-headers,
+  -misc-const-correctness,
   -misc-include-cleaner,
   -misc-use-internal-linkage,
   -modernize-raw-string-literal,
   -modernize-use-trailing-return-type,
+  -performance-use-std-move,
   -performance-unnecessary-value-param,
   -readability-implicit-bool-conversion,
   -readability-magic-numbers,
   -readability-named-parameter,
+  -readability-redundant-parentheses,
+  -readability-trailing-comma,
 WarningsAsErrors: '*'

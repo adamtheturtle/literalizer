@@ -12,3 +12,6 @@ axis = "annotation_evaluation"
 
 [[variants]]
 axis = "union_format"
+
+[[variants]]
+axis = "collection_layout"

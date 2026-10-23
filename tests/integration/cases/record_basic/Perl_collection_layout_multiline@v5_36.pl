@@ -1,0 +1,11 @@
+use JSON::PP;
+my $my_data = {
+    "id" => 1,
+    "label" => "She said \"hello\", then waved",
+    "enabled" => JSON::PP::false,
+    "related_ids" => [
+        1,
+        2,
+        3,
+    ],
+};

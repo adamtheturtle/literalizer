@@ -1,0 +1,6 @@
+* my_data
+@code javascript
+[
+    {"key": "hello   world", "value": 1}
+]
+@end

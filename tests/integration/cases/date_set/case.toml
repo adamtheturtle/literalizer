@@ -10,3 +10,9 @@ suffix = "_date_set"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "set"
+
+[[variants]]
+axis = "type_hints"

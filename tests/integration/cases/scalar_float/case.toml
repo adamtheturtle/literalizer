@@ -21,3 +21,6 @@ suffix = "_float_scalar"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "type_hints"

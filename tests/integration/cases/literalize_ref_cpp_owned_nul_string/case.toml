@@ -1,9 +1,8 @@
 schema_version = 1
 owner = "literalize-ref"
+# Shared coverage retains the original Cpp regression.
 
 [ref]
-languages = ["Cpp"]
-languages_reason = "C++ embedded null strings retain owning reference moves."
 variable_form = "new"
 
 [ref.value_sources]

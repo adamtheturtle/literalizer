@@ -20,3 +20,6 @@ axis = "language_version"
 
 [[variants]]
 axis = "modifiers"
+
+[[variants]]
+axis = "type_hints"

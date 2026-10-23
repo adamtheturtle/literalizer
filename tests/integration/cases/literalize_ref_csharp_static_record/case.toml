@@ -1,9 +1,9 @@
 schema_version = 1
 owner = "literalize-ref"
+# Shared coverage retains the original CSharp regression.
 
 [ref]
-languages = ["CSharp"]
-languages_reason = "C# bound values must use legal fields when the root requires class-member scope."
+gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}, {kind = "modifier_present", modifier = "STATIC"}]
 variable_modifiers = ["STATIC"]
 heterogeneous_strategy = "RECORD"
 

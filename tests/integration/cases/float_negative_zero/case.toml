@@ -3,3 +3,9 @@ suites = ["base", "combined"]
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "float_format"
+
+[[variants]]
+axis = "numeric_literal_suffix"

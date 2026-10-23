@@ -1,11 +1,9 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Nim", "Zig"]
-languages_reason = "Native collection reassignment must retain the element type of empty bound sequences."
+# Shared coverage retains the original Nim, Zig regression.
 
 [ref]
-languages = ["Nim", "Zig"]
-languages_reason = "Native collection reassignment must retain the element type of empty bound sequences."
+gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}, {kind = "enum_member_present", option = "declaration_style", member = "VAR"}]
 declaration_style = "VAR"
 heterogeneous_strategy = "RECORD"
 variable_form = "both"

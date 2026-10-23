@@ -1,0 +1,8 @@
+-module(fixture_nested_float_list_erlang_type_hints_safe).
+-export([x/0]).
+x() ->
+    My_data = [
+        [1.5, 2.5],
+        [3.5, 4.5]
+    ],
+    My_data.

@@ -30,3 +30,6 @@ axis = "integer_width_strategy"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "trailing_comma"
