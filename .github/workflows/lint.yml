@@ -755,8 +755,9 @@ jobs:
       # (project mode, not `--no-project`) is required so `import
       # literalizer` resolves.
       # See `scripts/run_odin_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Odin roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_odin_roundtrip
 
   lint-roc:
@@ -1873,8 +1874,9 @@ jobs:
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
       # `scripts/run_haskell_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Haskell roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_haskell_roundtrip
 
       - name: Lint PureScript
@@ -2531,8 +2533,9 @@ jobs:
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves.  See
       # `scripts/run_scala_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Scala roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_scala_roundtrip
 
   lint-haxe:
@@ -2589,8 +2592,9 @@ jobs:
       # (project mode, not `--no-project`) is required so `import
       # literalizer` resolves. See
       # `scripts/run_haxe_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Haxe roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_haxe_roundtrip
 
   lint-dart:
@@ -3045,9 +3049,10 @@ jobs:
       # literalizer` resolves *and* so uv's managed CPython is on PATH for
       # the script's `std.python` JSON interop. See
       # `scripts/run_mojo_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Mojo roundtrip
         if: ${{ !cancelled() }}
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_mojo_roundtrip
 
   lint-nim:
@@ -3389,8 +3394,9 @@ jobs:
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
       # `scripts/run_zig_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Zig roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_zig_roundtrip
 
   lint-systemverilog:
