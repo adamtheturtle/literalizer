@@ -1,11 +1,9 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Zig"]
-languages_reason = "Zig mutable bound references require an address use in generated wrappers."
+# Shared coverage retains the original Zig regression.
 
 [ref]
-languages = ["Zig"]
-languages_reason = "Zig mutable bound references require an address use in generated wrappers."
+gates = [{kind = "enum_member_present", option = "declaration_style", member = "VAR"}]
 declaration_style = "VAR"
 
 [ref.value_sources]

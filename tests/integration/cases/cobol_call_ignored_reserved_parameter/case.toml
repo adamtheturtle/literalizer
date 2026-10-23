@@ -1,10 +1,9 @@
 schema_version = 1
 owner = "literalize-call"
+# Shared coverage retains the original Cobol regression.
 
 [call]
 target_function = "process"
 parameter_names = ["count"]
 per_element = false
 wrap_in_file = true
-languages = ["Cobol"]
-languages_reason = "COBOL accepts reserved parameter labels because its call stub does not declare named parameters."

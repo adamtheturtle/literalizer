@@ -1,9 +1,9 @@
 schema_version = 1
 owner = "literalize-ref"
+# Shared coverage retains the original Kotlin regression.
 
 [ref]
-languages = ["Kotlin"]
-languages_reason = "Kotlin explicit annotations must retain the constructor type of compact native records."
+gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}, {kind = "enum_member_present", option = "variable_type_hints", member = "ALWAYS"}]
 heterogeneous_strategy = "RECORD"
 variable_type_hints = "ALWAYS"
 collection_layout = "compact"

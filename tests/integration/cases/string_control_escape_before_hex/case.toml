@@ -7,3 +7,6 @@ axis = "string_format"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "json_type"

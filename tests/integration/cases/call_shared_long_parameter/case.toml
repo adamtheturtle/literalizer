@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-call"
+# Shared companion to call_parameter_identifier_length_64; the original control remains unchanged.
+
+[call]
+target_function = "process"
+parameter_names = ["parameter_name_parameter_name_parameter_name_parameter_name_para"]
+per_element = true
+wrap_in_file = true

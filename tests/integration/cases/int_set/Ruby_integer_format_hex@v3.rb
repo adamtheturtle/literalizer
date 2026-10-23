@@ -1,0 +1,6 @@
+require 'set'
+my_data = Set.new([
+  0x1,
+  0x2,
+  0x3,
+])

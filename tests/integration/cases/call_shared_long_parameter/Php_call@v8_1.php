@@ -1,0 +1,3 @@
+<?php
+function process($parameter_name_parameter_name_parameter_name_parameter_name_para) {}
+process(parameter_name_parameter_name_parameter_name_parameter_name_para: 1);

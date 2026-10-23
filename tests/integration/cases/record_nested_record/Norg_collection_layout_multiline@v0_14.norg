@@ -1,0 +1,10 @@
+* my_data
+@code javascript
+{
+    "id": 1,
+    "owner": {
+        "name": "Alice",
+        "age": 30
+    }
+}
+@end

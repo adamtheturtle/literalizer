@@ -1,0 +1,6 @@
+(define process (lambda args (if #f #f)))
+(define process.api (lambda args (if #f #f)))
+(define process.api.fetch (lambda args (if #f #f)))
+(process.api.fetch (list (cons "data" "hello")))
+(process.api.fetch (list (cons "data" 42)))
+(process.api.fetch (list (cons "data" #t)))

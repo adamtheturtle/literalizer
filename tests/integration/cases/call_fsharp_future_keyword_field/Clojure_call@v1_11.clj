@@ -1,0 +1,5 @@
+(create-ns 'app.process)
+(intern 'app.process 'fetch (fn [& _args] nil))
+(app.process/fetch :data {"data" "hello"})
+(app.process/fetch :data {"data" 42})
+(app.process/fetch :data {"data" true})

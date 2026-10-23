@@ -6,3 +6,9 @@ axis = "language_version"
 
 [[variants]]
 axis = "bool_format"
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "type_hints"

@@ -1,11 +1,9 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Zig"]
-languages_reason = "Zig native nested bound arrays must compile when both declared and reassigned."
+# Shared coverage retains the original Zig regression.
 
 [ref]
-languages = ["Zig"]
-languages_reason = "Zig native nested bound arrays must compile when both declared and reassigned."
+gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}, {kind = "enum_member_present", option = "declaration_style", member = "VAR"}]
 declaration_style = "VAR"
 heterogeneous_strategy = "RECORD"
 variable_form = "both"

@@ -15,3 +15,6 @@ suffix = "_float_s"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "type_hints"

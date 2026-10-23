@@ -1,0 +1,6 @@
+from __future__ import annotations
+import datetime
+my_data: list[dict[str, datetime.datetime]] = [
+    {"timestamp": datetime.datetime(year=2040, month=1, day=1, hour=3, minute=0, second=0, tzinfo=datetime.timezone(offset=datetime.timedelta(hours=3)))},
+    {},
+]

@@ -1,0 +1,6 @@
+(defun app (&rest args) (declare (ignore args)) nil)
+(defun app.process (&rest args) (declare (ignore args)) nil)
+(defun app.process.fetch (&rest args) (declare (ignore args)) nil)
+(app.process.fetch :data (list (cons "data" "hello")))
+(app.process.fetch :data (list (cons "data" 42)))
+(app.process.fetch :data (list (cons "data" t)))

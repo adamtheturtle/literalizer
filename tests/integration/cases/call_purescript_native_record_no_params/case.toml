@@ -1,9 +1,8 @@
 schema_version = 1
 owner = "literalize-call"
+# Shared coverage retains the original PureScript regression.
 
 [call]
-languages = ["PureScript"]
-languages_reason = "PureScript native-record stubs quantify argument types only when parameters are present."
 target_function = "consume"
 parameter_names = []
 per_element = true

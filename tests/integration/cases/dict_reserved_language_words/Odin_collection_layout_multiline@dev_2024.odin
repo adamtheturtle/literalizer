@@ -1,0 +1,27 @@
+#+feature dynamic-literals
+package main
+
+main :: proc() {
+my_data := map[string]any{
+	"assert" = 1,
+	"else" = 1,
+	"error" = 1,
+	"false" = 1,
+	"for" = 1,
+	"function" = 1,
+	"if" = 1,
+	"import" = 1,
+	"importbin" = 1,
+	"importstr" = 1,
+	"in" = 1,
+	"local" = 1,
+	"null" = 1,
+	"self" = 1,
+	"super" = 1,
+	"tailstrict" = 1,
+	"then" = 1,
+	"true" = 1,
+	"ordinary" = 1,
+}
+_ = my_data
+}

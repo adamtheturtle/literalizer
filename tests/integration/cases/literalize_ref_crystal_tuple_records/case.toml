@@ -1,13 +1,11 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Crystal"]
-languages_reason = "Crystal tuple entries distinguish record constructors, map literals and references before choosing macro-safe spacing."
+# Shared coverage retains the original Crystal regression.
 
 [ref]
+gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}, {kind = "enum_member_present", option = "sequence_format", member = "TUPLE"}]
 sequence_format = "TUPLE"
 heterogeneous_strategy = "RECORD"
-languages = ["Crystal"]
-languages_reason = "Crystal tuple entries distinguish record constructors, map literals and references before choosing macro-safe spacing."
 
 [ref.value_sources]
 value = "{\"field\": 2}"

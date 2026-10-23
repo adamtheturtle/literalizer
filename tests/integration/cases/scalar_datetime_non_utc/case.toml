@@ -7,3 +7,6 @@ suffix = "_non_utc"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "type_hints"

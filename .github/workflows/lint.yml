@@ -77,13 +77,13 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint
-        uses: j178/prek-action@v3.0.1
+        uses: j178/prek-action@v3.0.2
         with:
           # Matches the ``prek`` pin in ``pyproject.toml``; keep them in
           # sync. prek reimplements the ``pre-commit-hooks`` checks
           # natively, so a version difference changes their verdicts and
           # not merely their scheduling (issue 4013).
-          prek-version: 0.5.5
+          prek-version: 0.5.6
           extra-args: >-
             --all-files --group ${{ matrix.group }} --verbose
         env:
@@ -95,7 +95,8 @@ jobs:
   # enough that splitting them into separate runners would spend more
   # time on runner startup than on linting.
   lint-fast:
-    runs-on: ubuntu-latest
+    # The pinned Tcl/tcllib apt packages target Noble (#6320).
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       JACKSON_VERSION: 2.18.2
@@ -755,8 +756,9 @@ jobs:
       # (project mode, not `--no-project`) is required so `import
       # literalizer` resolves.
       # See `scripts/run_odin_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Odin roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_odin_roundtrip
 
   lint-roc:
@@ -875,8 +877,9 @@ jobs:
       # practical CI substitute) already installed; `uv run` (project
       # mode, not `--no-project`) is required so `import literalizer`
       # resolves. See `scripts/run_matlab_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: MATLAB roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_matlab_roundtrip
 
   lint-perl:
@@ -957,8 +960,9 @@ jobs:
       # `go install` above) already on PATH; `uv run` (project mode, not
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_jsonnet_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Jsonnet roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_jsonnet_roundtrip
 
       - name: Lint Hcl
@@ -1871,8 +1875,9 @@ jobs:
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
       # `scripts/run_haskell_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Haskell roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_haskell_roundtrip
 
       - name: Lint PureScript
@@ -2015,7 +2020,8 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 uv run --group=dev bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
 
   lint-cobol:
-    runs-on: ubuntu-latest
+    # GnuCOBOL 3.2 fails to build with the newer runner toolchain (#6297).
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       # Pin the GnuCOBOL toolchain so the implicitly installed compiler
@@ -2276,8 +2282,9 @@ jobs:
       # `uv run` (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
       # `scripts/run_kotlin_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Kotlin roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
         run: uv run python -m scripts.run_kotlin_roundtrip
@@ -2332,8 +2339,9 @@ jobs:
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
       # `scripts/run_swift_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Swift roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_swift_roundtrip
 
   lint-ocaml:
@@ -2527,8 +2535,9 @@ jobs:
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves.  See
       # `scripts/run_scala_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Scala roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_scala_roundtrip
 
   lint-haxe:
@@ -2585,8 +2594,9 @@ jobs:
       # (project mode, not `--no-project`) is required so `import
       # literalizer` resolves. See
       # `scripts/run_haxe_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Haxe roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_haxe_roundtrip
 
   lint-dart:
@@ -2632,7 +2642,8 @@ jobs:
         run: uv run python -m scripts.run_dart_roundtrip
 
   lint-julia:
-    runs-on: ubuntu-latest
+    # Julia 1.9 cannot load libopenlibm on Ubuntu 26.04 (#6321).
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -3041,9 +3052,10 @@ jobs:
       # literalizer` resolves *and* so uv's managed CPython is on PATH for
       # the script's `std.python` JSON interop. See
       # `scripts/run_mojo_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Mojo roundtrip
         if: ${{ !cancelled() }}
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_mojo_roundtrip
 
   lint-nim:
@@ -3385,12 +3397,14 @@ jobs:
       # (project mode, not `--no-project`) is required so
       # `import literalizer` resolves. See
       # `scripts/run_zig_roundtrip.py`.
+      # Include cold project-environment setup in this step's budget.
       - name: Zig roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_zig_roundtrip
 
   lint-systemverilog:
-    runs-on: ubuntu-latest
+    # The pinned Verilator 5.046 installer has no Ubuntu 26.04 asset (#6323).
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
