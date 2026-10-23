@@ -1,0 +1,4 @@
+module Fixture_scalar_int_negative_large_Crystal_type_hints_safe
+extend self
+my_data = -2147483649
+end
