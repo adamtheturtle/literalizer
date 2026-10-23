@@ -6,3 +6,6 @@ axis = "language_version"
 
 [[variants]]
 axis = "comment"
+
+[[variants]]
+axis = "integer_format"
