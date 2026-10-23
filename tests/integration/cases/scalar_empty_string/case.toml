@@ -5,3 +5,6 @@ suites = ["base", "combined"]
 
 [[variants]]
 axis = "string_format"
+
+[[variants]]
+axis = "type_hints"
