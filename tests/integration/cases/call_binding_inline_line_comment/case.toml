@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Consolidates original regressions: call_binding_inline_comment_c, call_binding_inline_comment_cpp, call_binding_inline_comment_csharp, call_binding_inline_comment_d, call_binding_inline_comment_dart, call_binding_inline_comment_haxe, call_binding_inline_comment_java, call_binding_inline_comment_objective_c, call_binding_inline_comment_systemverilog, call_binding_inline_comment_zig.
+[call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "enum_member_present", option = "comment_format", member = "DOUBLE_SLASH"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "{call} // note"
+wrap_in_file = true
+variable_form = "new"
+
+[[call.variants]]
+axis = "type_hints"

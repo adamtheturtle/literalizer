@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Scalar input comments are hoisted before Java declarations. A call
+# transform can leave a comment after the expression being bound, so
+# this public API path exercises placement of the statement terminator.
+# Consolidates original regressions: java_call_binding_trailing_comment, java_call_binding_trailing_comment_c, java_call_binding_trailing_comment_cpp, java_call_binding_trailing_comment_csharp, java_call_binding_trailing_comment_d, java_call_binding_trailing_comment_dart, java_call_binding_trailing_comment_haxe, java_call_binding_trailing_comment_objective_c, java_call_binding_trailing_comment_systemverilog, java_call_binding_trailing_comment_zig.
+[call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "enum_member_present", option = "comment_format", member = "DOUBLE_SLASH"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "{call}\n// note"
+wrap_in_file = true
+variable_form = "new"
+
+[[call.variants]]
+axis = "type_hints"
