@@ -1,1 +1,1 @@
-Escape bidirectional formatting characters in Haskell Aeson JSON literals.
+Escape bidirectional formatting characters in Haskell JSON literals.
