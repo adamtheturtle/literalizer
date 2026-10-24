@@ -942,7 +942,8 @@ class Scala(metaclass=LanguageCls):
             empty_sequence="Array.empty[Any]",
             preamble_lines=(),
             format_entry=passthrough_sequence_entry,
-            typed_opener_fallback="Array(",
+            # Existential sibling-map types cannot provide a ClassTag.
+            typed_opener_fallback="Array[Any](",
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
