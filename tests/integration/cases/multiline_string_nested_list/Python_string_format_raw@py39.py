@@ -1,0 +1,8 @@
+my_data = (
+    (r'''
+first line
+  indented
+
+last line
+''',),
+)
