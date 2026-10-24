@@ -2,8 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["JavaScript", "TypeScript"]
-languages_reason = "ECMAScript permits reserved variable keywords as property call targets."
+# Original regression: ECMAScript permits reserved variable keywords as property call targets.
 target_function = "foo.class"
 parameter_names = ["value"]
 per_element = true

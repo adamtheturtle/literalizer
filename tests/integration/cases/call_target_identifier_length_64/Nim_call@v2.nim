@@ -1,0 +1,2 @@
+template ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(args: varargs[untyped]) = discard
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(1)

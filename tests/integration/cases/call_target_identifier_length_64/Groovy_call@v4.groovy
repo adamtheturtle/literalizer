@@ -1,0 +1,2 @@
+def ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(Map _args) { null }
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(x: 1)

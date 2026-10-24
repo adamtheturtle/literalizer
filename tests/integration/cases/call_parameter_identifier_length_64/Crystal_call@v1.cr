@@ -1,0 +1,5 @@
+module Fixture_call_parameter_identifier_length_64_Crystal_call
+extend self
+def f(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx = nil); 0; end
+f(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx: 1);
+end

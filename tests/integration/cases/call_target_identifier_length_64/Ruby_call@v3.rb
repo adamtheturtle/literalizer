@@ -1,0 +1,2 @@
+def ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(*a); end
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(x: 1)
