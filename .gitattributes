@@ -3,5 +3,5 @@
 # These goldens assert that a carriage return inside a string value
 # survives.  Check-in normalization would rewrite it, so the files are
 # exempt from any end-of-line conversion (issue #4514).
-tests/integration/cases/string_carriage_return_line_feed/** -text
+tests/integration/cases/string_carriage_return_line_feed/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 tests/integration/cases/crlf_string_formats/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
