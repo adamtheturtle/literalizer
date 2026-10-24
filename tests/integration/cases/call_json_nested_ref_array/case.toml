@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+# Original regression (call_zig_json_nested_ref_array): Zig JSON container arguments preserve rendered reference expressions.
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+ref_declarations = { shared = "[1, 2]" }
+variant_only = true
+
+[[call.variants]]
+axis = "json_type"

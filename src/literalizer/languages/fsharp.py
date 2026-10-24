@@ -438,11 +438,21 @@ def _fsharp_json_wrap(original: Value, formatted: str) -> str:
     return f"(JsonValue.Create({formatted}) :> JsonNode)"
 
 
+class _JsonNodeReference(str):
+    """A nested reference already typed as a parent-independent
+    JsonNode.
+    """
+
+    __slots__ = ()
+
+
 @beartype
 def _format_fsharp_json_entry(original: Value, formatted: str) -> str:
     """Wrap a sequence / set / dict entry for ``JsonArray`` /
     ``JsonObject``.
     """
+    if isinstance(formatted, _JsonNodeReference):
+        return formatted
     return _fsharp_json_wrap(original=original, formatted=formatted)
 
 
@@ -1346,6 +1356,23 @@ class FSharp(metaclass=LanguageCls):
     format_call_arg_ref_identifier_consumable = (
         default_format_call_arg_ref_identifier_consumable
     )
+
+    def format_nested_ref_identifier(
+        self, identifier: str, value: Value | None, /
+    ) -> str:
+        """Embed native arrays in Val and give JSON nodes fresh
+        parents.
+        """
+        if self._json_type_active:
+            return _JsonNodeReference(
+                object=f"(if isNull {identifier} then null "
+                f"else ({identifier}).DeepClone())"
+            )
+        if self.sequence_format is type(
+            self.sequence_format
+        ).ARRAY and isinstance(value, list):
+            return self.format_sequence_entry(value, identifier)
+        return identifier
 
     consumable_ref_value_inhibits_consuming_form = (
         default_consumable_ref_value_inhibits_consuming_form

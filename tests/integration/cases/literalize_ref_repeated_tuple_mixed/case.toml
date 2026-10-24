@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "enum_member_present", option = "sequence_format", member = "TUPLE"}]
+# Original regression (literalize_ref_rust_repeated_tuple_copy): Rust ownership distinguishes reusable owned bindings from Copy values.
+sequence_format = "TUPLE"
+
+[ref.value_sources]
+shared = '[1,"x"]'

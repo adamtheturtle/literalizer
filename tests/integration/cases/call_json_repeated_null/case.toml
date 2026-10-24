@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+# Original regression (call_csharp_json_repeated_null): JsonNode references require independent parent ownership.
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+requires_inline_multiline_dict_args = true
+wrap_in_file = true
+ref_declarations = { shared = 'null' }
+variant_only = true
+
+[[call.variants]]
+axis = "json_type"

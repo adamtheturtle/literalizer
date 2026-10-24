@@ -29,6 +29,7 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
+    IncompatibleFormatsError,
     InvalidDictKeyError,
     NullInCollectionError,
     ReservedVariableNameError,
@@ -68,6 +69,11 @@ CASES_DIR = Path(__file__).parent / "cases"
 # skips rather than fails.
 _REF_SKIPS: SkipPolicy = SkipPolicy(
     reasons=(
+        SkipReason(
+            error=IncompatibleFormatsError,
+            reason="reference input is incompatible with the selected formats",
+            unlink=True,
+        ),
         SkipReason(
             error=ReservedVariableNameError,
             reason="rejects a declared reference identifier",

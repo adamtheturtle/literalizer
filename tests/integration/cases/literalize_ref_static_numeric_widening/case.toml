@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{kind = "modifier_present", modifier = "STATIC"}]
+variable_modifiers = ["STATIC"]
+value_sources = {seed = "1"}
+explicit_ref_value_sources = {seed = "1.5"}

@@ -1628,6 +1628,14 @@ class Crystal(metaclass=LanguageCls):
         default_format_call_arg_ref_identifier_consumable
     )
 
+    def format_nested_ref_identifier(
+        self, identifier: str, _value: Value | None, /
+    ) -> str:
+        """Serialize JSON bindings inside their enclosing JSON text."""
+        if self._uses_json_any:
+            return "#{" + identifier + ".to_json}"
+        return identifier
+
     consumable_ref_value_inhibits_consuming_form = (
         default_consumable_ref_value_inhibits_consuming_form
     )

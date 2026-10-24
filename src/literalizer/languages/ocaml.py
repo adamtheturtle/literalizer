@@ -1238,6 +1238,16 @@ class OCaml(metaclass=LanguageCls):
         default_format_call_arg_ref_identifier_consumable
     )
 
+    def format_nested_ref_identifier(
+        self, identifier: str, value: Value | None, /
+    ) -> str:
+        """Box native arrays when embedding their bindings in val_t."""
+        if self.sequence_format is type(
+            self.sequence_format
+        ).ARRAY and isinstance(value, list):
+            return self.format_sequence_entry(value, identifier)
+        return identifier
+
     consumable_ref_value_inhibits_consuming_form = (
         default_consumable_ref_value_inhibits_consuming_form
     )

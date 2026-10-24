@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}]
+# Original regression (literalize_ref_v_record_empty_map): An empty map remains a collection under V RECORD mode and still requires clone().
+heterogeneous_strategy = "RECORD"
+
+[ref.value_sources]
+empty_map = "{}"

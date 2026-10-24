@@ -1039,6 +1039,7 @@ class Java(metaclass=LanguageCls):
     """
 
     wrap_in_file_tolerates_pre_indent = True
+    uses_resolved_ref_declaration_data = True
     module_name_shares_variable_scope = False
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
         None
@@ -2661,6 +2662,33 @@ class Java(metaclass=LanguageCls):
         )
 
         return self._record_declaration_formatter(base=base)
+
+    @staticmethod
+    def bound_reference_modifiers(
+        modifiers: frozenset[enum.Enum], /
+    ) -> frozenset[enum.Enum]:
+        """Class-field roots require typed static bound fields."""
+        if _is_java_class_field(modifiers):
+            return frozenset({_JavaModifiers.STATIC})
+        return frozenset[enum.Enum]()
+
+    def validate_reference_binding_hint(
+        self, value: Value, hint: Value, /
+    ) -> None:
+        """Keep an explicit hint compatible with the actual bound type."""
+        if type(value) is int and isinstance(hint, float):
+            # An integral binding can initialize a double field directly.
+            return
+        modifiers = frozenset[enum.Enum]({_JavaModifiers.STATIC})
+        formatter = self.format_variable_declaration
+        actual = formatter("bound", "value", value, modifiers)
+        hinted = formatter("bound", "value", hint, modifiers)
+        if actual != hinted:
+            msg = (
+                "Java reference hints must have the same declaration type "
+                "as their bound values"
+            )
+            raise UnrepresentableInputError(msg)
 
     def _record_declaration_formatter(
         self,
