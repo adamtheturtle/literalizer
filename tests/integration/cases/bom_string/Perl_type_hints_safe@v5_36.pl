@@ -1,0 +1,3 @@
+my $my_data = {
+    "x" => "\x{feff}",
+};

@@ -49,6 +49,7 @@ from literalizer._formatters.format_integers import (
 )
 from literalizer._formatters.format_json_value import format_json_value_text
 from literalizer._formatters.format_strings import (
+    bidi_escape_replacements,
     format_string_backslash_control,
 )
 from literalizer._formatters.preamble_roles import (
@@ -1348,6 +1349,8 @@ def _aeson_quasi_expression(data: Value) -> str:
         )
         raise UnrepresentableSpecialFloatError(msg)
     json_text = format_json_value_text(data=data)
+    for character, escape in bidi_escape_replacements(template="\\u{:04X}"):
+        json_text = json_text.replace(character, escape)
     if _AESON_QQ_CLOSE in json_text:
         msg = (
             "Haskell(json_type=AESON_VALUE) cannot represent a value whose "
