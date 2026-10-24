@@ -83,7 +83,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint
-        uses: j178/prek-action@v3.0.2
+        uses: j178/prek-action@v3.1.0
         with:
           # Matches the ``prek`` pin in ``pyproject.toml``; keep them in
           # sync. prek reimplements the ``pre-commit-hooks`` checks
@@ -284,7 +284,7 @@ jobs:
       # 21 is the current LTS and also accepts `--release 11`.
       - name: Set up JDK
         timeout-minutes: 10
-        uses: actions/setup-java@v6.0.1
+        uses: actions/setup-java@v6.1.0
         with:
           distribution: temurin
           java-version: '21'
