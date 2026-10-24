@@ -90,7 +90,6 @@ from literalizer._language import (
     default_format_call_ref_identifier,
     default_format_call_statement,
     default_format_call_stub,
-    default_format_call_target,
     default_format_call_variable_assignment,
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
@@ -197,6 +196,167 @@ def _format_string_vb(value: str) -> str:
     return " & ".join(parts)
 
 
+_VB_RESERVED_IDENTIFIERS = frozenset(
+    {
+        "addhandler",
+        "and",
+        "andalso",
+        "as",
+        "boolean",
+        "byref",
+        "byte",
+        "byval",
+        "case",
+        "catch",
+        "cbool",
+        "cbyte",
+        "cchar",
+        "cdate",
+        "cdbl",
+        "cdec",
+        "char",
+        "cint",
+        "class",
+        "clng",
+        "cobj",
+        "const",
+        "continue",
+        "csbyte",
+        "cshort",
+        "csng",
+        "cstr",
+        "ctype",
+        "cuint",
+        "culng",
+        "cushort",
+        "date",
+        "decimal",
+        "declare",
+        "default",
+        "delegate",
+        "dim",
+        "directcast",
+        "do",
+        "double",
+        "each",
+        "else",
+        "elseif",
+        "end",
+        "endif",
+        "enum",
+        "erase",
+        "error",
+        "event",
+        "exit",
+        "false",
+        "finally",
+        "for",
+        "friend",
+        "function",
+        "get",
+        "global",
+        "goto",
+        "handles",
+        "if",
+        "implements",
+        "imports",
+        "in",
+        "inherits",
+        "integer",
+        "interface",
+        "is",
+        "isnot",
+        "let",
+        "lib",
+        "like",
+        "long",
+        "loop",
+        "me",
+        "mod",
+        "module",
+        "mustinherit",
+        "mustoverride",
+        "mybase",
+        "myclass",
+        "namespace",
+        "narrowing",
+        "new",
+        "next",
+        "not",
+        "nothing",
+        "notinheritable",
+        "notoverridable",
+        "object",
+        "of",
+        "on",
+        "operator",
+        "option",
+        "or",
+        "orelse",
+        "overloads",
+        "overridable",
+        "overrides",
+        "paramarray",
+        "partial",
+        "private",
+        "property",
+        "protected",
+        "public",
+        "raiseevent",
+        "readonly",
+        "redim",
+        "removehandler",
+        "resume",
+        "return",
+        "select",
+        "set",
+        "shadows",
+        "shared",
+        "short",
+        "single",
+        "static",
+        "step",
+        "stop",
+        "string",
+        "structure",
+        "sub",
+        "synclock",
+        "then",
+        "throw",
+        "to",
+        "true",
+        "try",
+        "trycast",
+        "typeof",
+        "uinteger",
+        "ulong",
+        "ushort",
+        "using",
+        "variant",
+        "wend",
+        "when",
+        "while",
+        "widening",
+        "with",
+        "withevents",
+        "writeonly",
+        "xor",
+    }
+)
+
+
+@beartype
+def _vb_call_identifier(name: str, /) -> str:
+    """Escape reserved words in call member and parameter declarations."""
+    return f"[{name}]" if name.casefold() in _VB_RESERVED_IDENTIFIERS else name
+
+
+@beartype
+def _vb_format_call_target(parts: Sequence[str], /) -> str:
+    """Preserve native constructor targets and escape keyword members."""
+    return ".".join(_vb_call_identifier(part) for part in parts)
+
+
 @beartype
 def _vb_unique_class_name(*, segment: str, position: int) -> str:
     """Build a stub class name unique to a segment's path position.
@@ -233,7 +393,9 @@ def _vb_call_stub(
     ``End Class`` or ``End Function`` that legitimately appear in
     every block.
     """
-    param_list = ", ".join(f"{p} As Object" for p in params)
+    param_list = ", ".join(
+        f"{_vb_call_identifier(p)} As Object" for p in params
+    )
     method_block = (
         f"Public Function {{method}}({param_list}) As Object\n"
         f"{indent}Return Nothing\n"
@@ -252,7 +414,8 @@ def _vb_call_stub(
     if len(parts) == 1:
         return (
             (
-                f"Function {parts[0]}({param_list}) As Object\n"
+                f"Function {_vb_call_identifier(parts[0])}"
+                f"({param_list}) As Object\n"
                 f"{indent}Return Nothing\n"
                 "End Function"
             ),
@@ -261,7 +424,7 @@ def _vb_call_stub(
     method = parts[-1]
     fields = parts[1:-1]
     method_body = textwrap.indent(
-        text=method_block.format(method=method),
+        text=method_block.format(method=_vb_call_identifier(method)),
         prefix=indent,
     )
     if len(fields) == 0:
@@ -281,14 +444,15 @@ def _vb_call_stub(
         curr_type = _vb_unique_class_name(segment=fields[i], position=i + 1)
         blocks.append(
             f"Class {curr_type}\n"
-            f"    Public {fields[i + 1]} As New {prev_type}()\n"
+            f"    Public {_vb_call_identifier(fields[i + 1])}"
+            f" As New {prev_type}()\n"
             "End Class"
         )
         prev_type = curr_type
     root_type = _vb_unique_class_name(segment=root, position=0)
     blocks.append(
         f"Class {root_type}\n"
-        f"    Public {fields[0]} As New {prev_type}()\n"
+        f"    Public {_vb_call_identifier(fields[0])} As New {prev_type}()\n"
         "End Class"
     )
     blocks.append(f"Dim {root} As New {root_type}()")
@@ -344,7 +508,9 @@ class VisualBasic(metaclass=LanguageCls):
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
         None
     )
-    reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset(
+        {"_"}
+    )
     reserved_call_parameter_identifier_pattern: ClassVar[
         re.Pattern[str] | None
     ] = None
@@ -395,153 +561,7 @@ class VisualBasic(metaclass=LanguageCls):
     )
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = False
-    reserved_variable_identifiers: frozenset[str] = frozenset(
-        {
-            "addhandler",
-            "and",
-            "andalso",
-            "as",
-            "boolean",
-            "byref",
-            "byte",
-            "byval",
-            "case",
-            "catch",
-            "cbool",
-            "cbyte",
-            "cchar",
-            "cdate",
-            "cdbl",
-            "cdec",
-            "char",
-            "cint",
-            "class",
-            "clng",
-            "cobj",
-            "const",
-            "continue",
-            "csbyte",
-            "cshort",
-            "csng",
-            "cstr",
-            "ctype",
-            "cuint",
-            "culng",
-            "cushort",
-            "date",
-            "decimal",
-            "declare",
-            "default",
-            "delegate",
-            "dim",
-            "directcast",
-            "do",
-            "double",
-            "each",
-            "else",
-            "elseif",
-            "end",
-            "endif",
-            "enum",
-            "erase",
-            "error",
-            "event",
-            "exit",
-            "false",
-            "finally",
-            "for",
-            "friend",
-            "function",
-            "get",
-            "global",
-            "goto",
-            "handles",
-            "if",
-            "implements",
-            "imports",
-            "in",
-            "inherits",
-            "integer",
-            "interface",
-            "is",
-            "isnot",
-            "let",
-            "lib",
-            "like",
-            "long",
-            "loop",
-            "me",
-            "mod",
-            "module",
-            "mustinherit",
-            "mustoverride",
-            "mybase",
-            "myclass",
-            "namespace",
-            "narrowing",
-            "new",
-            "next",
-            "not",
-            "nothing",
-            "notinheritable",
-            "notoverridable",
-            "object",
-            "of",
-            "on",
-            "operator",
-            "option",
-            "or",
-            "orelse",
-            "overloads",
-            "overridable",
-            "overrides",
-            "paramarray",
-            "partial",
-            "private",
-            "property",
-            "protected",
-            "public",
-            "raiseevent",
-            "readonly",
-            "redim",
-            "removehandler",
-            "resume",
-            "return",
-            "select",
-            "set",
-            "shadows",
-            "shared",
-            "short",
-            "single",
-            "static",
-            "step",
-            "stop",
-            "string",
-            "structure",
-            "sub",
-            "syncLock",
-            "then",
-            "throw",
-            "to",
-            "true",
-            "try",
-            "trycast",
-            "typeof",
-            "uinteger",
-            "ulong",
-            "ushort",
-            "using",
-            "variant",
-            "wend",
-            "when",
-            "while",
-            "widening",
-            "with",
-            "withevents",
-            "writeonly",
-            "xor",
-        }
-    )
+    reserved_variable_identifiers: frozenset[str] = _VB_RESERVED_IDENTIFIERS
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
@@ -1098,7 +1118,11 @@ class VisualBasic(metaclass=LanguageCls):
 
     format_call_preamble_stub = default_format_call_stub
 
-    format_call_target = default_format_call_target
+    @cached_property
+    @beartype
+    def format_call_target(self) -> Callable[[Sequence[str]], str]:
+        """Format call targets with Visual Basic keyword escaping."""
+        return _vb_format_call_target
 
     format_call_ref_identifier = default_format_call_ref_identifier
 
