@@ -1162,11 +1162,13 @@ class Cobol(metaclass=LanguageCls):
     reserved_call_target_head_identifiers: ClassVar[frozenset[str]] = (
         frozenset()
     )
-    contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset()
+    contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset(
+        {"before"}
+    )
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
-    max_variable_identifier_length: ClassVar[int | None] = None
+    max_variable_identifier_length: ClassVar[int | None] = 63
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
@@ -1221,6 +1223,7 @@ class Cobol(metaclass=LanguageCls):
             "add",
             "all",
             "alter",
+            "before",
             "call",
             "cancel",
             "close",

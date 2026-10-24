@@ -1,0 +1,6 @@
+package main
+
+func main() {
+i12345 := 1
+_ = i12345
+}

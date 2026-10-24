@@ -3,6 +3,7 @@
 import dataclasses
 import datetime as dt
 import enum
+import hashlib
 import re
 import sys
 from collections.abc import Callable, Sequence
@@ -135,6 +136,45 @@ def _format_constructor_target(class_name: str, /) -> str:
 _constructor_target: Callable[[str], str] = _format_constructor_target
 
 
+_WREN_MAX_IDENTIFIER_LENGTH = 64
+
+_WREN_RESERVED_IDENTIFIERS = frozenset(
+    {
+        "break",
+        "class",
+        "construct",
+        "continue",
+        "else",
+        "false",
+        "for",
+        "foreign",
+        "if",
+        "import",
+        "in",
+        "is",
+        "loop",
+        "null",
+        "return",
+        "static",
+        "super",
+        "this",
+        "true",
+        "var",
+        "while",
+    }
+)
+
+
+@beartype
+def _wren_stub_class_name(parts: Sequence[str], /) -> str:
+    """Bound a generated class name without shortening the call target."""
+    candidate = "".join(part.capitalize() for part in parts) + "_"
+    if len(candidate) <= _WREN_MAX_IDENTIFIER_LENGTH:
+        return candidate
+    digest = hashlib.sha256(string=".".join(parts).encode()).hexdigest()[:16]
+    return f"WrenCall{digest}_"
+
+
 @beartype
 def _wren_call_stub(
     indent: str,
@@ -159,7 +199,7 @@ def _wren_call_stub(
     param_list = ", ".join(collected_param_list)
 
     if len(parts) == 1:
-        cls_name = parts[0].capitalize() + "_"
+        cls_name = _wren_stub_class_name(parts[:1])
         return (
             f"class {cls_name} {{",
             f"{indent}construct new() {{}}",
@@ -173,9 +213,7 @@ def _wren_call_stub(
     intermediates = list(parts[1:-1])
 
     lines: list[str] = []
-    inner_cls_name = (
-        "".join(p.capitalize() for p in [root, *intermediates]) + "_"
-    )
+    inner_cls_name = _wren_stub_class_name([root, *intermediates])
     lines.append(f"class {inner_cls_name} {{")
     lines.append(f"{indent}construct new() {{}}")
     lines.append(f"{indent}{method}({param_list}) {{}}")
@@ -184,13 +222,7 @@ def _wren_call_stub(
     prev_cls_name = inner_cls_name
     for i in range(len(intermediates) - 1, -1, -1):
         field = intermediates[i]
-        if i == 0:
-            outer_cls_name = root.capitalize() + "_"
-        else:
-            outer_cls_name = (
-                "".join(p.capitalize() for p in [root, *intermediates[:i]])
-                + "_"
-            )
+        outer_cls_name = _wren_stub_class_name([root, *intermediates[:i]])
         lines.append(f"class {outer_cls_name} {{")
         lines.append(f"{indent}{field} {{ _{field} }}")
         lines.append(f"{indent}construct new() {{")
@@ -286,7 +318,9 @@ class Wren(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
-    max_variable_identifier_length: ClassVar[int | None] = None
+    max_variable_identifier_length: ClassVar[int | None] = (
+        _WREN_MAX_IDENTIFIER_LENGTH
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
@@ -313,37 +347,13 @@ class Wren(metaclass=LanguageCls):
     dict_supports_heterogeneous_values = True
     supports_dotted_calls = True
     has_free_function_calls = False
-    reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
+    reserved_identifiers: ClassVar[frozenset[str]] = _WREN_RESERVED_IDENTIFIERS
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str]] = (
         re.compile(pattern=r"_.*")
     )
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
-    reserved_variable_identifiers: frozenset[str] = frozenset(
-        {
-            "break",
-            "class",
-            "construct",
-            "continue",
-            "else",
-            "false",
-            "for",
-            "foreign",
-            "if",
-            "import",
-            "in",
-            "is",
-            "loop",
-            "null",
-            "return",
-            "static",
-            "super",
-            "this",
-            "true",
-            "var",
-            "while",
-        }
-    )
+    reserved_variable_identifiers: frozenset[str] = _WREN_RESERVED_IDENTIFIERS
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
     call_returns_expression = True
