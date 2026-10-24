@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    null: "null value",
+    "None": "string value"
+}
+@end

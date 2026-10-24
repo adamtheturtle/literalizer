@@ -6,3 +6,10 @@ axis = "constructor_prefix"
 
 [[variants]]
 axis = "dict_entry_style"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"
+expected_errors = ["InvalidDictKeyError"]

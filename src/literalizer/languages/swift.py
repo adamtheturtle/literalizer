@@ -460,6 +460,24 @@ def _swift_collapse(types: list[_SwiftTypeHint]) -> _SwiftTypeHint:
 
 
 @beartype
+def _swift_mapping_key_hint(
+    *, data: Mapping[Scalar, Value], date_hint: str, datetime_hint: str
+) -> str:
+    """Infer a dictionary key type from the rendered scalar types."""
+    key_types = {
+        _swift_scalar_hint(
+            data=key, date_hint=date_hint, datetime_hint=datetime_hint
+        )
+        for key in data
+    }
+    if "Any?" in key_types:
+        return "AnyHashable?"
+    if len(key_types) > 1:
+        return "AnyHashable"
+    return next(iter(key_types), "String")
+
+
+@beartype
 def _swift_type_hint(
     *,
     data: Value,
@@ -494,6 +512,9 @@ def _swift_type_hint(
     )
     match data:
         case dict():
+            key_hint = _swift_mapping_key_hint(
+                data=data, date_hint=date_hint, datetime_hint=datetime_hint
+            )
             value_hint = (
                 _swift_collapse(types=[recurse(data=v) for v in data.values()])
                 if len(data) > 0
@@ -501,7 +522,7 @@ def _swift_type_hint(
             )
             return dataclasses.replace(
                 value_hint,
-                code=f"[String: {value_hint.code}]",
+                code=f"[{key_hint}: {value_hint.code}]",
                 kind=_SwiftTypeKind.NAMED,
                 array_element_is_any=False,
             )
