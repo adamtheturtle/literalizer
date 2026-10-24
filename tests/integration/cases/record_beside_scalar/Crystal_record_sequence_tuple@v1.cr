@@ -1,0 +1,8 @@
+module Fixture_record_beside_scalar_Crystal_record_sequence_tuple
+extend self
+record Record0, a : Int32
+my_data = {
+    Record0.new(1),
+    5,
+}
+end

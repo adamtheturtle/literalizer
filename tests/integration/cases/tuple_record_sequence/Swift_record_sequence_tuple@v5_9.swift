@@ -1,0 +1,5 @@
+struct Record0 { let call: String; let args: (Int, String, String, Int) }
+let my_data = (
+    Record0(call: "send", args: (1, "email", "a@gmail.com", 100)),
+    Record0(call: "recv", args: (2, "sms", "b@example.com", 200)),
+)
