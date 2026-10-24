@@ -11,6 +11,6 @@ instance Fractional Val where
     fromRational r = HFloat (realToFrac r)
     _ / _ = error "not implemented"
 std :: Val
-std = (0/0)
+std = HFloat ((0/0))
 main :: IO ()
 main = seq std (return ())
