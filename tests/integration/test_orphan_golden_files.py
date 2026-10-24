@@ -330,6 +330,17 @@ def test_no_dead_golden_files(cases_dir: Path) -> None:
     )
 
 
+def test_base_cases_own_effective_golden(cases_dir: Path) -> None:
+    """A declared success case must not silently skip every target."""
+    empty = [
+        manifest.case_dir.name
+        for manifest in load_case_manifests(cases_dir=cases_dir)
+        if "base" in manifest.suites
+        and not any(manifest.case_dir.glob(pattern="*@*"))
+    ]
+    assert empty == [], f"Base cases without effective goldens: {empty}"
+
+
 def test_effective_language_version_owns_golden(tmp_path: Path) -> None:
     """Pinned Java RECORD covers JDK16; C++ retains all actual
     versions.
