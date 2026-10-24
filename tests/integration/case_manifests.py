@@ -118,6 +118,11 @@ def _empty_capabilities() -> list[VariantCapabilityName]:
     return []
 
 
+def _empty_expected_errors() -> list[VariantExpectedError]:
+    """Return an empty list of expected variant errors."""
+    return []
+
+
 def _empty_roles() -> list[CaseRoleName]:
     """Return a typed empty role list for the validation model."""
     return []
@@ -364,7 +369,7 @@ class ManifestVariant(  # noqa: NOD001
         default_factory=_empty_capabilities,
     )
     expected_errors: list[VariantExpectedError] = Field(
-        default_factory=list,
+        default_factory=_empty_expected_errors,
     )
 
     @model_validator(mode="after")
