@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "test": [5, ["compile", "test"]],
+    "package": [7, ["link", "test"]]
+}
+@end

@@ -6,3 +6,12 @@ collection_layout = "multiline"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"
