@@ -1,0 +1,22 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT std IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "nan"; MOBILE LIT(lit.float; nan(REAL64))),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "positive"; MOBILE LIT(lit.float; inf(REAL64))),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "negative"; MOBILE LIT(lit.float; -inf(REAL64)))
+    ]):
+    SEQ
+        SKIP
+:

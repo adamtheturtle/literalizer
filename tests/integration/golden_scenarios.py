@@ -80,6 +80,11 @@ _COMBINED_VARIABLE_FORM = literalizer.BothVariableForms(
 
 LANGUAGE_SKIP_REASONS: SkipReasons = (
     SkipReason(
+        error=ExistingVariableNotSelfContainedError,
+        reason="complete file cannot contain an undeclared existing variable",
+        unlink=True,
+    ),
+    SkipReason(
         error=UnrepresentableIntegerError,
         reason="cannot represent integer in this input",
         unlink=True,
