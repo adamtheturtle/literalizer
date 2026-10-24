@@ -489,6 +489,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
         )
     ),
     "supports_module_name": lambda lang_cls: lang_cls.supports_module_name,
+    "wrap_in_file_tolerates_pre_indent": (
+        lambda lang_cls: lang_cls.wrap_in_file_tolerates_pre_indent
+    ),
     "supports_variable_names": (
         lambda lang_cls: lang_cls.supports_variable_names
     ),

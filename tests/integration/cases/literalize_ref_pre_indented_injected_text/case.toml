@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref"
+# Original regression (roc_bound_refs_pre_indented): Roc top-level annotations and their definitions must retain the same pre-indentation margin.
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "capability_flag", flag = "wrap_in_file_tolerates_pre_indent"}]
+pre_indent_level = 3
+# Original regression (roc_bound_refs_pre_indented): Roc top-level annotations and their definitions must retain the same pre-indentation margin.
+
+[ref.value_sources]
+shared = "[1, 2]"
+other = "3"
+payload = '"\n    shared : Val\nshared = RInt 99"'

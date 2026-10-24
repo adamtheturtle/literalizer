@@ -35,6 +35,7 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidCallParameterNameError,
     InvalidCallTargetError,
+    InvalidNewVariableNameError,
     ReservedVariableNameError,
     UnrepresentableInputError,
     UnsupportedCallShapeError,
@@ -526,7 +527,19 @@ def expected_call_shape_exception(
         return UnsupportedCallShapeError
     if len(target_parts) > 1 and not spec.supports_dotted_calls:
         return DottedCallTargetNotSupportedError
-    return None
+    return (
+        InvalidNewVariableNameError
+        if not config.ref_case_per_language
+        and any(
+            not lang_cls.new_variable_name_syntax.accepts(name=name)
+            or (
+                lang_cls.max_variable_identifier_length is not None
+                and len(name) > lang_cls.max_variable_identifier_length
+            )
+            for name in config.ref_declarations
+        )
+        else None
+    )
 
 
 @beartype
@@ -671,7 +684,15 @@ def _call_fixture_contents(
     *, code: str, spec: literalizer.Language, config: CallCaseSpec
 ) -> str:
     """Keep intentional identifier spellings in compiler fixtures."""
-    names = (*config.target_function.split(sep="."), *config.parameter_names)
+    names = (
+        *config.target_function.split(sep="."),
+        *config.parameter_names,
+        *(
+            name
+            for name in config.ref_declarations
+            if not config.ref_case_per_language
+        ),
+    )
     preamble = (
         language_metadata(
             language_id=spec.language_id

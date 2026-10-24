@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "capability_flag", flag = "wrap_in_file_tolerates_pre_indent"}]
+variable_form = "both"
+pre_indent_level = 2
+
+[ref.value_sources]
+shared = "[1, 2]"

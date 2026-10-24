@@ -501,6 +501,7 @@ VariableForm = NewVariable | ExistingVariable | BothVariableForms
 def _file_wrapper_context(
     *,
     variable_form: VariableForm | None,
+    line_prefix: str,
     body_preamble: tuple[str | RenderedCallStub, ...],
     class_preamble: tuple[str, ...],
     has_literal_declarations: bool,
@@ -515,6 +516,7 @@ def _file_wrapper_context(
     return FileWrapperContext(
         variable_name="" if variable_form is None else variable_form.name,
         bound_variable_names=(),
+        line_prefix=line_prefix,
         modifiers=modifiers,
         body_preamble=tuple(
             stub.code if isinstance(stub, RenderedCallStub) else stub
@@ -5305,6 +5307,7 @@ def literalize_apply_form(
             content=content,
             context=_file_wrapper_context(
                 variable_form=variable_form,
+                line_prefix=pre_form.line_prefix,
                 body_preamble=scoped.body + computed.body,
                 class_preamble=(),
                 has_literal_declarations=(
@@ -5422,6 +5425,7 @@ def literalize_both_forms(
         assignment=assignment.bare_code,
         context=_file_wrapper_context(
             variable_form=variable_form,
+            line_prefix=pre_form.line_prefix,
             body_preamble=decl_preamble,
             class_preamble=(),
             has_literal_declarations=True,
@@ -5716,6 +5720,7 @@ def literalize_bound_refs(
     return _compose_bound_refs(
         language=language,
         composition=composition,
+        line_prefix=pre_form.line_prefix,
     )
 
 
@@ -5824,6 +5829,7 @@ def _compose_bound_refs(
     *,
     language: Language,
     composition: _BoundRefComposition,
+    line_prefix: str,
 ) -> LiteralizeResult:
     """Compose per-ref declarations and the main binding into a file.
 
@@ -5954,6 +5960,7 @@ def _compose_bound_refs(
     body_preamble = scoped.body + unified_body_preamble
     context = _file_wrapper_context(
         variable_form=composition.variable_form,
+        line_prefix=line_prefix,
         body_preamble=body_preamble,
         class_preamble=(),
         has_literal_declarations=(
@@ -8112,6 +8119,7 @@ def _wrap_call_in_file(
         content=result,
         context=_file_wrapper_context(
             variable_form=variable_form,
+            line_prefix="",
             body_preamble=call_binding_body_preamble
             + body_stubs
             + computed_body,
@@ -9203,6 +9211,7 @@ def literalize_call_with_declarations(
         context=dataclasses.replace(
             _file_wrapper_context(
                 variable_form=None,
+                line_prefix="",
                 body_preamble=scoped.body
                 + unified_body_preamble
                 + extra_body_preamble,

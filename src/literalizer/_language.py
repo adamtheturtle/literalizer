@@ -108,6 +108,9 @@ class FileWrapperContext:
     root_mapping_entries: tuple[str, ...] | None
     """Formatted root table entries retained by the mapping producer."""
 
+    line_prefix: str
+    """Caller indentation retained for preambles beside bindings."""
+
 
 @beartype
 class NewVariableNameSyntax(enum.Enum):

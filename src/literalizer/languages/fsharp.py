@@ -1174,8 +1174,14 @@ class FSharp(metaclass=LanguageCls):
         """Wrap an F# let declaration in a module."""
         if context.has_existing_bindings:
             scoped_content = textwrap.indent(text=content, prefix=self.indent)
-            content = f"do\n{scoped_content}\n{self.indent}()"
-        body_preamble = context.body_preamble
+            content = (
+                f"{context.line_prefix}do\n{scoped_content}\n"
+                f"{context.line_prefix}{self.indent}()"
+            )
+        body_preamble = tuple(
+            textwrap.indent(text=entry, prefix=context.line_prefix)
+            for entry in context.body_preamble
+        )
         content = prepend_body_preamble(
             content=content,
             body_preamble=body_preamble,
@@ -1191,7 +1197,10 @@ class FSharp(metaclass=LanguageCls):
         """Wrap F# declaration + assignment in separate private
         functions.
         """
-        body_preamble = context.body_preamble
+        body_preamble = tuple(
+            textwrap.indent(text=entry, prefix=context.line_prefix)
+            for entry in context.body_preamble
+        )
         if len(context.bound_variable_names) > 0:
             assignment = f"{declaration}\n{assignment}"
         decl_indented = textwrap.indent(text=declaration, prefix=self.indent)
@@ -1200,12 +1209,13 @@ class FSharp(metaclass=LanguageCls):
         camel_name = IdentifierCase.CAMEL.convert(name=self.module_name)
         body = f"module {self.module_name}\n\n" + preamble
         body += (
-            f"let private _{camel_name}Declaration () =\n"
+            f"{context.line_prefix}let private _{camel_name}Declaration () =\n"
             + decl_indented
-            + f"\n{self.indent}ignore my_data\n\n"
+            + f"\n{context.line_prefix}{self.indent}ignore my_data\n\n"
+            + context.line_prefix
             + f"let private _{camel_name}Assignment () =\n"
             + assign_indented
-            + f"\n{self.indent}ignore my_data"
+            + f"\n{context.line_prefix}{self.indent}ignore my_data"
         )
         return body
 

@@ -1,0 +1,6 @@
+schema_version = 1
+# Original regression (erlang_lowercase_keyword_variable): Erlang capitalizes variable names, so a lowercase keyword remains a valid variable.
+suites = ["base"]
+
+[base_context]
+variable_name = "if"
