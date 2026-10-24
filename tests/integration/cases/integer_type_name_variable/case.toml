@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+
+# Zig integer type names are reserved for arbitrary supported bit widths.
+# Other languages retain the same caller-selected spelling.
+[base_context]
+variable_name = "i12345"
