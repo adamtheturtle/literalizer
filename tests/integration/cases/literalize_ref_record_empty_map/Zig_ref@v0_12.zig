@@ -1,4 +1,4 @@
-const Record0 = struct { bound: []const u8 };
+const Record0 = struct { bound: @TypeOf(.{}) };
 pub fn main() void {
     const empty_map = .{};
     const my_data = Record0{
