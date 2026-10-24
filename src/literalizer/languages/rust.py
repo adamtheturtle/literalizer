@@ -1372,13 +1372,36 @@ def _rust_empty_container_literal_override_hook(
 
 
 @beartype
+def _rust_empty_vec_value_groups(
+    *,
+    data: Value,
+    sequences: Sequence[list[Value]],
+    tuple_ids: frozenset[int],
+) -> list[list[Value]]:
+    """Group values by tuple position or shared vector element type."""
+    value_groups = [
+        [sequence[position] for sequence in sequences]
+        for position in range(len(sequences[0]))
+    ]
+    if (
+        isinstance(data, list)
+        and id(data) not in tuple_ids
+        and all(id(sequence) not in tuple_ids for sequence in sequences)
+    ):
+        # Vector rows share an element type across every position.
+        value_groups.append([value for row in sequences for value in row])
+    return value_groups
+
+
+@beartype
 def _rust_infer_tuple_empty_vecs(
     *,
     data: Value,
     params: _StrategyParams,
     overrides: dict[int, str],
+    tuple_ids: frozenset[int],
 ) -> None:
-    """Add inferred empty ``Vec`` literals found at tuple positions."""
+    """Infer empty vector types from tuple positions and uniform rows."""
     children: list[Value]
     match data:
         case dict():
@@ -1389,8 +1412,11 @@ def _rust_infer_tuple_empty_vecs(
             return
     sequences = [child for child in children if isinstance(child, list)]
     if len(sequences) > 1 and len({len(item) for item in sequences}) == 1:
-        for position in range(len(sequences[0])):
-            values = [sequence[position] for sequence in sequences]
+        for values in _rust_empty_vec_value_groups(
+            data=data,
+            sequences=sequences,
+            tuple_ids=tuple_ids,
+        ):
             empty = [value for value in values if value == []]
             non_empty = [value for value in values if value != []]
             populated = [
@@ -1420,12 +1446,15 @@ def _rust_infer_tuple_empty_vecs(
             ):
                 element_type = next(iter(scalar_types))
                 for value in empty:
-                    overrides[id(value)] = f"Vec::<{element_type}>::new()"
+                    _ = overrides.setdefault(
+                        id(value), f"Vec::<{element_type}>::new()"
+                    )
     for child in children:
         _rust_infer_tuple_empty_vecs(
             data=child,
             params=params,
             overrides=overrides,
+            tuple_ids=tuple_ids,
         )
 
 
@@ -1449,6 +1478,7 @@ def _rust_tuple_nested_vec_empty_override_hook(
             data=data,
             params=params,
             overrides=overrides,
+            tuple_ids=_rust_tuple_list_ids(data),
         )
         return overrides
 

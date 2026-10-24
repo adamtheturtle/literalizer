@@ -1,3 +1,9 @@
 schema_version = 1
 # A typed empty list falls back when its non-empty sibling has mixed element types.
 suites = ["base", "combined"]
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "type_hints"
