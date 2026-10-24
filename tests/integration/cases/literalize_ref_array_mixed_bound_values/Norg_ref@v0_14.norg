@@ -1,0 +1,18 @@
+* array_value
+@code javascript
+[
+    1,
+    2
+]
+@end
+* scalar_value
+@code javascript
+3
+@end
+* my_data
+@code javascript
+[
+    array_value,
+    scalar_value
+]
+@end

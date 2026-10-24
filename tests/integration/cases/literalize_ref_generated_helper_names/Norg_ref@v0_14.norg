@@ -1,0 +1,26 @@
+* std
+@code javascript
+{
+    "a": 1
+}
+@end
+* arena
+@code javascript
+{
+    "a": 1
+}
+@end
+* allocator
+@code javascript
+{
+    "a": 1
+}
+@end
+* my_data
+@code javascript
+[
+    std,
+    arena,
+    allocator
+]
+@end

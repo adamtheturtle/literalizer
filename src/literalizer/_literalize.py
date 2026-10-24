@@ -2761,6 +2761,17 @@ class _ReusableLiteralReferenceLanguage(Protocol):
         ...
 
 
+@runtime_checkable
+class _NestedReferenceLanguage(Protocol):
+    """A producer that embeds a bound value into a container carrier."""
+
+    def format_nested_ref_identifier(
+        self, identifier: str, value: Value | None, /
+    ) -> str:
+        """Adapt a nested reference while retaining direct aliases."""
+        ...
+
+
 @beartype
 def _format_ref_value(*, raw_ref_name: str, ctx: _RenderContext) -> str:
     """Format a reference marker found in a nested value."""
@@ -2771,22 +2782,26 @@ def _format_ref_value(*, raw_ref_name: str, ctx: _RenderContext) -> str:
     )
     ref_value = _reference_binding_values(ctx.ref_values).get(raw_ref_name)
     if not ctx.expand_refs:
-        return _format_literal_ref_identifier(
+        formatted = _format_literal_ref_identifier(
             raw_ref_name=raw_ref_name,
             ref_name=ref_name,
             language=ctx.spec,
             ref_values=ctx.ref_values,
             reused=raw_ref_name not in ctx.single_use_ref_names,
         )
-    return _format_call_arg_ref_identifier(
-        raw_ref_name=raw_ref_name,
-        ref_name=ref_name,
-        ref_value=ref_value,
-        language=ctx.spec,
-        consumable_ref_names=ctx.consumable_ref_names,
-        single_use_ref_names=ctx.single_use_ref_names,
-        consume_inhibited_ref_names=ctx.consume_inhibited_ref_names,
-    )
+    else:
+        formatted = _format_call_arg_ref_identifier(
+            raw_ref_name=raw_ref_name,
+            ref_name=ref_name,
+            ref_value=ref_value,
+            language=ctx.spec,
+            consumable_ref_names=ctx.consumable_ref_names,
+            single_use_ref_names=ctx.single_use_ref_names,
+            consume_inhibited_ref_names=ctx.consume_inhibited_ref_names,
+        )
+    if isinstance(ctx.spec, _NestedReferenceLanguage):
+        return ctx.spec.format_nested_ref_identifier(formatted, ref_value)
+    return formatted
 
 
 @beartype

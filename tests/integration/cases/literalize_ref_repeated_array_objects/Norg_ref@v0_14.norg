@@ -1,0 +1,13 @@
+* shared
+@code javascript
+[
+    {"value": 1}
+]
+@end
+* my_data
+@code javascript
+[
+    shared,
+    shared
+]
+@end

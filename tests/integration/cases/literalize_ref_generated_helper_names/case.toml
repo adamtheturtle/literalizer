@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+# Original regression (literalize_ref_zig_helper_names_default): Zig reserves only the carrier and parser names occupied by the selected output mode.
+
+[ref.value_sources]
+std = '{"a":1}'
+arena = '{"a":1}'
+allocator = '{"a":1}'
