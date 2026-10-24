@@ -2677,7 +2677,8 @@ class Java(metaclass=LanguageCls):
     ) -> None:
         """Keep an explicit hint compatible with the actual bound type."""
         if (
-            type(value) is int
+            isinstance(value, int)
+            and not isinstance(value, bool)
             and isinstance(hint, float)
             and I64_MIN <= value <= I64_MAX
         ):
