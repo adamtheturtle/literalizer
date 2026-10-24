@@ -254,6 +254,10 @@ lint.per-file-ignores."tests/integration/test_*.py" = [
     # Allow 'assert' as we use it for tests.
     "S101",
 ]
+lint.per-file-ignores."tests/integration/test_golden_git_attributes.py" = [
+    # Exercise Git's index using a resolved executable and temporary files.
+    "S603",
+]
 # Do not automatically remove commented out code.
 # We comment out code during development, and with VSCode auto-save, this code
 # is sometimes annoyingly removed.
