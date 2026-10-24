@@ -9,3 +9,6 @@ axis = "type_hints"
 
 [[variants]]
 axis = "datetime"
+
+[[variants]]
+axis = "dict_format"

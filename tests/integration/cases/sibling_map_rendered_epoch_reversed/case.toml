@@ -3,3 +3,9 @@ owner = "variant"
 
 [[variants]]
 axis = "datetime"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "type_hints"
