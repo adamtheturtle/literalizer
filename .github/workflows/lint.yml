@@ -2533,7 +2533,17 @@ jobs:
           printf '}\n' >> "$main"
           scala-cli run "$workspace" --server=false -S 3 --scalac-option -deprecation --scalac-option -Werror \
             --dep io.circe::circe-core:0.14.10 \
-            --main-class __run
+            --main-class __run --command > "$workspace/java-command"
+          # Scala CLI includes every source path in a single Java property.
+          # Launch through a Java argument file to avoid Linux's per-argument
+          # size limit as the fixture set grows, preserving all source mappings.
+          mapfile -t java_command < "$workspace/java-command"
+          for arg in "${java_command[@]:1}"; do
+            arg="${arg//\\/\\\\}"
+            arg="${arg//\"/\\\"}"
+            printf '"%s"\n' "$arg"
+          done > "$workspace/java-args"
+          "${java_command[0]}" @"$workspace/java-args"
       # `uv` is needed by the `Scala roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
