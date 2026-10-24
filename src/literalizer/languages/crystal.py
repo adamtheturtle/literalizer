@@ -1681,10 +1681,11 @@ class Crystal(metaclass=LanguageCls):
                 declared_type=None,
                 narrowed_empty_form=None,
             )
+        config: SequenceFormatConfig = self.sequence_format.value
         if self.sequence_format is self.sequence_formats.TUPLE:
-            return self.sequence_format.value
+            return config
         return dataclasses.replace(
-            self.sequence_format.value,
+            config,
             narrowed_empty_form=(
                 self._crystal_record_empty_sequence
                 if self._record_strategy_active
