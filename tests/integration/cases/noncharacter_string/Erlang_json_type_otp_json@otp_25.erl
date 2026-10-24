@@ -1,0 +1,8 @@
+-module(fixture_noncharacter_string_erlang_json_type_otp_json).
+-export([x/0]).
+x() ->
+    My_data = #{
+        <<"fffe"/utf8>> => <<65534/utf8>>,
+        <<"ffff"/utf8>> => <<65535/utf8>>
+    },
+    My_data.

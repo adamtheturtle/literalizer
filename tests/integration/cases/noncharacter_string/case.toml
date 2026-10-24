@@ -10,3 +10,9 @@ axis = "erlang_otp_json_noncharacter_string"
 
 [[variants]]
 axis = "string_format"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"
