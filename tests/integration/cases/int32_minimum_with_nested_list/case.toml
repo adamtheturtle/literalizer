@@ -6,3 +6,6 @@ axis = "integer_format"
 
 [[variants]]
 axis = "native_record"
+
+[[variants]]
+axis = "numeric_separator"

@@ -6,3 +6,6 @@ axis = "heterogeneous_strategy_record"
 
 [[variants]]
 axis = "nested_tuple_strategy"
+
+[[variants]]
+axis = "sequence"

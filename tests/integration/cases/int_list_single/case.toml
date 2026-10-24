@@ -12,3 +12,6 @@ axis = "sequence"
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "integer_format"

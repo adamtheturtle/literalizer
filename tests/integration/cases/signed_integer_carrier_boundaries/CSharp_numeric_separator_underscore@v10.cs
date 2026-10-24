@@ -1,0 +1,11 @@
+using System.Collections.Generic;
+var my_data = new Dictionary<string, long> {
+    ["i32_below"] = -2_147_483_649,
+    ["i32_minimum"] = -2_147_483_648,
+    ["i32_above"] = -2_147_483_647,
+    ["i32_maximum"] = 2_147_483_647,
+    ["i32_over"] = 2_147_483_648,
+    ["i64_minimum"] = -9_223_372_036_854_775_808,
+    ["i64_maximum"] = 9_223_372_036_854_775_807
+};
+    _ = my_data;

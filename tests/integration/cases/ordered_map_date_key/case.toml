@@ -6,3 +6,6 @@ axis = "date"
 
 [[variants]]
 axis = "collection_layout"
+
+[[variants]]
+axis = "string_format"

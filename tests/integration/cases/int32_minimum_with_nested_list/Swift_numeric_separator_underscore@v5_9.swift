@@ -1,0 +1,6 @@
+let my_data: [String: Any] = [
+    "minimum": -2_147_483_648,
+    "neighbor": -2_147_483_647,
+    "maximum": 2_147_483_647,
+    "nested": [-2_147_483_648],
+]

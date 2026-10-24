@@ -1,3 +1,6 @@
 schema_version = 1
 suites = ["base"]
 gates = [{kind = "capability_flag", flag = "default_allows_empty_dict_keys"}]
+
+[[variants]]
+axis = "string_format"

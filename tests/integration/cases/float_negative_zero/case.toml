@@ -9,3 +9,6 @@ axis = "float_format"
 
 [[variants]]
 axis = "numeric_literal_suffix"
+
+[[variants]]
+axis = "sequence"

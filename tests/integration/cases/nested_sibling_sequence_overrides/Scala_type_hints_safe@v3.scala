@@ -1,0 +1,6 @@
+object Fixture_nested_sibling_sequence_overrides_Scala_type_hints_safe {
+val my_data = Map(
+    "a" -> List(List(1), List(2)),
+    "b" -> List(List("x"), List("y")),
+)
+}
