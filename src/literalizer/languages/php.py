@@ -90,13 +90,13 @@ from literalizer._language import (
     default_format_call_arg_ref_identifier_consumable,
     default_format_call_statement,
     default_format_call_stub,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
     identity_call_arg,
+    line_comment_call_variable_assignment,
+    line_comment_call_variable_declaration,
     new_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -944,8 +944,26 @@ class Php(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(new_constructor_target)
     )
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_declaration: ClassVar[property] = (
+        line_comment_call_variable_declaration(
+            regex_literals=False,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+            quotes="\"'",
+            literal_span_end=None,
+        )
+    )
+    format_call_variable_assignment: ClassVar[property] = (
+        line_comment_call_variable_assignment(
+            regex_literals=False,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+            quotes="\"'",
+            literal_span_end=None,
+        )
+    )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas

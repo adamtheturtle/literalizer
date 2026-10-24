@@ -3,3 +3,6 @@ suites = ["base"]
 
 [[variants]]
 axis = "nested_tuple_strategy"
+
+[[variants]]
+axis = "type_hints"

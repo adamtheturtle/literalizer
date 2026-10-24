@@ -1,0 +1,8 @@
+* my_data
+@code javascript
+{
+    "name": "Ada",
+    "active": true,
+    "scores": [1, 2, 3]
+}
+@end

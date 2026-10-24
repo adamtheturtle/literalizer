@@ -26,6 +26,7 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    assignment_formatter_from_declaration,
     declaration_formatter_ignoring_modifiers,
     format_bytes_base64,
     format_bytes_hex,
@@ -94,7 +95,6 @@ from literalizer._language import (
     default_format_call_ref_identifier,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
@@ -644,7 +644,6 @@ class Sml(metaclass=LanguageCls):
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(identity_constructor_target)
     )
-    format_call_variable_assignment = default_format_call_variable_assignment
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
@@ -1499,6 +1498,18 @@ class Sml(metaclass=LanguageCls):
         the call's return type instead.
         """
         return self.declaration_style.value.formatter
+
+    @cached_property
+    @beartype
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Bind a call result without a literal constructor or type
+        tag.
+        """
+        return assignment_formatter_from_declaration(
+            formatter=self.format_call_variable_declaration
+        )
 
     @cached_property
     @beartype

@@ -3,3 +3,6 @@ suites = ["base"]
 
 [base_context]
 collection_layout = "multiline"
+
+[[variants]]
+axis = "numeric_separator"

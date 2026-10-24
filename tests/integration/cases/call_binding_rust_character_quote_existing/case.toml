@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Rust"]
+languages_reason = "Rust character literals and their escapes must not hide trailing line comments."
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = '''
+make_widget('"') // note'''
+ref_declarations = {my_data = "42"}
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"

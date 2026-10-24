@@ -1,0 +1,4 @@
+declare -A my_data=(
+    ["filled"]="(1 \"value\")"
+    ["empty"]="()"
+)

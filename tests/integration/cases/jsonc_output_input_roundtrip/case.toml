@@ -4,3 +4,6 @@ suites = ["base"]
 [input_roundtrip]
 language = "Jsonc"
 input_format = "jsonc"
+
+[[variants]]
+axis = "type_hints"

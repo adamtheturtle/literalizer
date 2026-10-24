@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, TypeAdapter
 from literalizer import (
     ExistingVariable,
     LiteralizeResult,
+    NewVariable,
     ValueInput,
     VariableForm,
     literalize,
@@ -43,10 +44,12 @@ class _FragmentCase(  # noqa: NOD001
     input_format: CallInputFormat
     expected: dict[_ResultView, str] = Field(min_length=1)
     ref_values: dict[str, ValueInput] | None = None
-    variable_form: Literal["existing"] | None = None
+    variable_form: Literal["new", "existing"] | None = None
 
     def resolved_variable_form(self) -> VariableForm | None:
-        """Select the caller-owned binding used by this fragment."""
+        """Select the declared binding form used by this fragment."""
+        if self.variable_form == "new":
+            return NewVariable(name="my_data", modifiers=frozenset())
         if self.variable_form == "existing":
             return ExistingVariable(name="my_data")
         return None

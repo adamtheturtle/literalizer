@@ -6,3 +6,6 @@ axis = "integer_format"
 
 [[variants]]
 axis = "collection_layout"
+
+[[variants]]
+axis = "numeric_separator"

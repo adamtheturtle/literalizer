@@ -9,3 +9,6 @@ axis = "i64_min_integer_format"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "numeric_separator"

@@ -120,13 +120,13 @@ from literalizer._language import (
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
     empty_record_shape_names,
     identity_call_arg,
+    line_comment_call_variable_assignment,
+    line_comment_call_variable_declaration,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_compute_call_slot_wrap_ids,
@@ -152,6 +152,37 @@ _format_string_backslash_nul = make_backslash_string_formatter(
         *bidi_escape_replacements(template="\\u{{{:04X}}}"),
     ],
 )
+
+
+@beartype
+def _call_literal_span_end(*, statement: str, cursor: int) -> int | None:
+    """Skip Rust characters and raw strings while retaining lifetimes."""
+    if statement[cursor] == "'":
+        end = cursor + 2
+        if statement[cursor + 1 : cursor + 2] == "\\":
+            end += 1
+            if statement[cursor + 2 : cursor + 4] == "u{":
+                closing_brace = statement.find("}", cursor + 4)
+                end = (
+                    len(statement)
+                    if closing_brace == -1
+                    else closing_brace + 1
+                )
+            elif statement[cursor + 2 : cursor + 3] == "x":
+                end += 2
+        return end + 1 if statement[end : end + 1] == "'" else None
+    for marker in ("r", "br", "cr"):
+        if not statement.startswith(marker, cursor):
+            continue
+        quote_start = cursor + len(marker)
+        while statement[quote_start : quote_start + 1] == "#":
+            quote_start += 1
+        if statement[quote_start : quote_start + 1] == '"':
+            hashes = statement[cursor + len(marker) : quote_start]
+            delimiter = '"' + hashes
+            end = statement.find(delimiter, quote_start + 1)
+            return len(statement) if end == -1 else end + len(delimiter)
+    return None
 
 
 @beartype
@@ -3268,8 +3299,26 @@ class Rust(metaclass=LanguageCls):
     pools_map_integer_width = True
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
+    format_call_variable_declaration: ClassVar[property] = (
+        line_comment_call_variable_declaration(
+            regex_literals=False,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+            quotes='"',
+            literal_span_end=_call_literal_span_end,
+        )
+    )
+    format_call_variable_assignment: ClassVar[property] = (
+        line_comment_call_variable_assignment(
+            regex_literals=False,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+            quotes='"',
+            literal_span_end=_call_literal_span_end,
+        )
+    )
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(_constructor_target)
     )

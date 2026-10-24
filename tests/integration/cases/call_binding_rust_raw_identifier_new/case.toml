@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+languages = ["Rust"]
+languages_reason = "Rust raw identifiers must not be mistaken for raw string prefixes."
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "new"
+call_transform = '''
+{{
+    {call};
+    fn r#type() {{}}
+    r#type()
+}} // note'''
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"

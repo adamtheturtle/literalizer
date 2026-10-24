@@ -1,0 +1,13 @@
+package main
+
+func main() {
+my_data := []float64{
+	-0b101010,
+	0b0,
+	0b101010,
+	-1.25,
+	0.0,
+	1.25,
+}
+_ = my_data
+}

@@ -3,3 +3,6 @@ suites = ["base"]
 
 [[variants]]
 axis = "integer_format"
+
+[[variants]]
+axis = "numeric_separator"

@@ -1,0 +1,85 @@
+literals = []
+
+[[calls]]
+name = "rust_incomplete_character_new"
+language = "Rust"
+source = "42"
+input_format = "yaml"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "new"
+call_transform = "make_widget(' // note"
+
+[calls.expected]
+code = "let my_data = make_widget('; // note"
+
+[[calls]]
+name = "rust_incomplete_character_existing"
+language = "Rust"
+source = "42"
+input_format = "yaml"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "make_widget(' // note"
+
+[calls.expected]
+code = "my_data = make_widget('; // note"
+
+[[calls]]
+name = "rust_incomplete_unicode_new"
+language = "Rust"
+source = "42"
+input_format = "yaml"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "new"
+call_transform = "make_widget('\\u{{2f // note"
+
+[calls.expected]
+code = "let my_data = make_widget('\\u{2f; // note"
+
+[[calls]]
+name = "rust_incomplete_unicode_existing"
+language = "Rust"
+source = "42"
+input_format = "yaml"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "make_widget('\\u{{2f // note"
+
+[calls.expected]
+code = "my_data = make_widget('\\u{2f; // note"
+
+[[calls]]
+name = "rust_incomplete_raw_string_new"
+language = "Rust"
+source = "42"
+input_format = "yaml"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "new"
+call_transform = "make_widget(cr#\"// payload"
+
+[calls.expected]
+code = "let my_data = make_widget(cr#\"// payload;"
+
+[[calls]]
+name = "rust_incomplete_raw_string_existing"
+language = "Rust"
+source = "42"
+input_format = "yaml"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "make_widget(cr#\"// payload"
+
+[calls.expected]
+code = "my_data = make_widget(cr#\"// payload;"

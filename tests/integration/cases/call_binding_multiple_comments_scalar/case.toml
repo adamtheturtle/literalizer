@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Consolidates original regressions: call_shared_comments_cpp_existing_comment_2_new, call_shared_comments_csharp_existing_comment_2_new, call_shared_comments_dart_existing_comment_2_new, call_shared_comments_haxe_existing_comment_2_new.
+[call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "enum_member_present", option = "comment_format", member = "DOUBLE_SLASH"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "{call} // note\n// extra"

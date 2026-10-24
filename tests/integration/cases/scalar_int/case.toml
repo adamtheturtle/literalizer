@@ -25,3 +25,6 @@ axis = "modifiers"
 
 [[variants]]
 axis = "json_type_modifiers"
+
+[[variants]]
+axis = "type_hints"

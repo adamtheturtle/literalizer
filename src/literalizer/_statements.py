@@ -11,11 +11,23 @@ each *part* of a statement instead of on the statement (issue #4548).
 import dataclasses
 import functools
 import re
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
 _OPENING_BRACKETS = "([{"
 _CLOSING_BRACKETS = ")]}"
+
+
+@runtime_checkable
+class LiteralSpanEnd(Protocol):
+    """Recognize an additional literal at the scanner's current
+    position.
+    """
+
+    def __call__(self, *, statement: str, cursor: int) -> int | None:
+        """Return the position after a literal, or no match."""
+        ...
 
 
 @beartype
@@ -42,6 +54,7 @@ class _CommentScanner:
     raw_string_prefixes: tuple[str, ...]
     verbatim_strings: bool
     interpolation_syntax: tuple[str, str] | None
+    literal_span_end: LiteralSpanEnd | None
 
     @beartype
     def split(self) -> _TrailingLineComments:
@@ -90,9 +103,17 @@ class _CommentScanner:
             )
         if self.backtick_strings and self.statement.startswith("`", cursor):
             return self._end_after(delimiter="`", cursor=cursor + 1)
+        if self.literal_span_end is not None:
+            end = self.literal_span_end(
+                statement=self.statement, cursor=cursor
+            )
+            if end is not None:
+                return end
         if self.statement[cursor] in self.quotes:
-            return self._quoted_end(cursor=cursor, raw=False, verbatim=False)
-        return self._prefixed_string_end(cursor=cursor)
+            end = self._quoted_end(cursor=cursor, raw=False, verbatim=False)
+        else:
+            end = self._prefixed_string_end(cursor=cursor)
+        return end
 
     @beartype
     def _prefixed_string_end(self, *, cursor: int) -> int | None:
@@ -106,11 +127,9 @@ class _CommentScanner:
             )
         for marker in self.raw_string_prefixes:
             quote_start = cursor + len(marker)
-            if (
-                self.statement.startswith(marker, cursor)
-                and self.statement[quote_start : quote_start + 1]
-                in self.quotes
-            ):
+            if not self.statement.startswith(marker, cursor):
+                continue
+            if self.statement[quote_start : quote_start + 1] in self.quotes:
                 return self._quoted_end(
                     cursor=quote_start, raw=True, verbatim=False
                 )
@@ -224,6 +243,8 @@ def split_trailing_line_comments(
     raw_string_prefixes: tuple[str, ...],
     verbatim_strings: bool,
     interpolation_syntax: tuple[str, str] | None,
+    quotes: str,
+    literal_span_end: LiteralSpanEnd | None,
 ) -> _TrailingLineComments:
     """Separate trailing line comments from a C-style expression."""
     if prefix not in statement:
@@ -231,12 +252,13 @@ def split_trailing_line_comments(
     return _CommentScanner(
         statement=statement,
         prefix=prefix,
-        quotes=frozenset({'"', "'"}),
+        quotes=frozenset(quotes),
         regex_literals=regex_literals,
         backtick_strings=backtick_strings,
         raw_string_prefixes=raw_string_prefixes,
         verbatim_strings=verbatim_strings,
         interpolation_syntax=interpolation_syntax,
+        literal_span_end=literal_span_end,
     ).split()
 
 
@@ -254,6 +276,7 @@ def split_double_quoted_line_comments(
         raw_string_prefixes=(),
         verbatim_strings=False,
         interpolation_syntax=None,
+        literal_span_end=None,
     ).split()
 
 
