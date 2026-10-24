@@ -12,6 +12,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._checks import reject_negative_zero
+from literalizer._comments import TabFreeCommentPrefix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -1089,7 +1090,7 @@ class Elm(metaclass=LanguageCls):
             suffix="",
         )
         BLOCK = CommentConfig(
-            prefix="{-",
+            prefix=TabFreeCommentPrefix(object="{-"),
             suffix=" -}",
         )
 
