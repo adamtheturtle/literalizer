@@ -13,9 +13,9 @@ instance Fractional Val where
     _ / _ = error "not implemented"
 std :: Val
 std = HMap [
-    ("nan", (0/0)),
-    ("positive", (1/0)),
-    ("negative", (-1/0))
+    ("nan", HFloat ((0/0))),
+    ("positive", HFloat ((1/0))),
+    ("negative", HFloat ((-1/0)))
     ]
 main :: IO ()
 main = seq std (return ())

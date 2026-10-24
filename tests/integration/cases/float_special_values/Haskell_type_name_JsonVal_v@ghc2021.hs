@@ -13,9 +13,9 @@ instance Fractional JsonVal where
     _ / _ = error "not implemented"
 my_data :: JsonVal
 my_data = HList [
-    (1/0),
-    (-1/0),
-    (0/0)
+    HFloat ((1/0)),
+    HFloat ((-1/0)),
+    HFloat ((0/0))
     ]
 main :: IO ()
 main = seq my_data (return ())
