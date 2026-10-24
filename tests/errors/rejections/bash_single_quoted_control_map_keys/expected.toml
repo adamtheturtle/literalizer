@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidDictKeyError]
+Bash = "Bash does not support the dict key ''. Associative-array keys must be non-empty printable ASCII."

@@ -41,6 +41,14 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
 @pytest.mark.parametrize(
     argnames=("manifest", "message"),
     argvalues=[
+        (
+            (
+                'schema_version = 1\nsuites = ["base"]\n'
+                '[[variants]]\naxis = "string_format"\n'
+                'expected_errors = ["RuntimeError"]\n'
+            ),
+            "InvalidDictKeyError",
+        ),
         ('schema_version = 2\nsuites = ["base"]\n', "schema_version"),
         ('schema_version = "1"\nsuites = ["base"]\n', "Input should be 1"),
         (

@@ -32,6 +32,7 @@ from .language_metadata import language_metadata
 from .language_specs import make_spec
 from .suite_gates import SuiteGate, gates_admit, no_gates, validate_gate_names
 from .variant_axis_names import KNOWN_VARIANT_AXES
+from .variant_types import VariantExpectedError
 
 MANIFEST_NAME = "case.toml"
 
@@ -114,6 +115,11 @@ def _empty_suites() -> list[SuiteName]:
 
 def _empty_capabilities() -> list[VariantCapabilityName]:
     """Return a typed empty capability list for the validation model."""
+    return []
+
+
+def _empty_expected_errors() -> list[VariantExpectedError]:
+    """Return an empty list of expected variant errors."""
     return []
 
 
@@ -361,6 +367,9 @@ class ManifestVariant(  # noqa: NOD001
     # golden) rather than emitting output the language cannot express.
     requires: list[VariantCapabilityName] = Field(
         default_factory=_empty_capabilities,
+    )
+    expected_errors: list[VariantExpectedError] = Field(
+        default_factory=_empty_expected_errors,
     )
 
     @model_validator(mode="after")
