@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Java = "Java reference hints must have the same declaration type as their bound values"

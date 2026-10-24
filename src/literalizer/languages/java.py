@@ -2676,8 +2676,12 @@ class Java(metaclass=LanguageCls):
         self, value: Value, hint: Value, /
     ) -> None:
         """Keep an explicit hint compatible with the actual bound type."""
-        if type(value) is int and isinstance(hint, float):
-            # An integral binding can initialize a double field directly.
+        if (
+            type(value) is int
+            and isinstance(hint, float)
+            and I64_MIN <= value <= I64_MAX
+        ):
+            # Primitive integer bindings can initialize double fields.
             return
         modifiers = frozenset[enum.Enum]({_JavaModifiers.STATIC})
         formatter = self.format_variable_declaration
