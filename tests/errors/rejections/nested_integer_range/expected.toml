@@ -1,0 +1,7 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Nim['[[1], [1180591620717411303424]]']" = "Nim cannot represent integer 1180591620717411303424 without external arbitrary-precision integer support."
+"Nim['[[1180591620717411303424], [1]]']" = "Nim cannot represent integer 1180591620717411303424 without external arbitrary-precision integer support."
+"V['[[1], [1180591620717411303424]]']" = "V cannot represent integer 1180591620717411303424 above the unsigned 64-bit range."
+"V['[[1180591620717411303424], [1]]']" = "V cannot represent integer 1180591620717411303424 above the unsigned 64-bit range."
