@@ -1,5 +1,6 @@
 """Git preserves intentional CRLF bytes in string-format goldens."""
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -44,7 +45,9 @@ def test_staged_crlf_goldens_preserve_bytes(
         data=(project / ".gitattributes").read_bytes()
     )
     goldens = {
-        path.relative_to(project).as_posix(): path.read_bytes()
+        Path(os.path.relpath(path=path, start=project)).as_posix(): (
+            path.read_bytes()
+        )
         for path in (cases_dir / case_name).glob(pattern="*@*")
         if b"\r\n" in path.read_bytes()
     }
