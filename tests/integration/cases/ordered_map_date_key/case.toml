@@ -9,3 +9,12 @@ axis = "collection_layout"
 
 [[variants]]
 axis = "string_format"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"

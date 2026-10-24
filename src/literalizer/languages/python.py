@@ -642,9 +642,14 @@ def _python_type_hint(
                     if dict_hint == "Dict"
                     else "OrderedDict"
                 )
-            key_hint = "str"
-            if len(data) == 0:
-                key_hint = default_dict_key_type
+            key_hint = _collection_element_union(
+                elements=list(data),
+                recurse=recurse,
+                sort=False,
+                merge_dicts=False,
+                default_type=default_dict_key_type,
+                join_union=join_union,
+            )
             val_union = _collection_element_union(
                 elements=list(data.values()),
                 recurse=recurse,

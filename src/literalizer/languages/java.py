@@ -562,6 +562,33 @@ def _java_scalar_hint(
 
 
 @beartype
+def _java_mapping_key_type(
+    *,
+    data: Mapping[Scalar, Value],
+    int_type: str,
+    date_hint: str,
+    datetime_hint: str,
+) -> str:
+    """Preserve concrete key types without widening numeric literals."""
+    types = {
+        _java_box(
+            type_name=_java_scalar_hint(
+                data=key,
+                int_type=int_type,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
+        )
+        for key in data
+    }
+    if len(types) == 0:
+        return "String"
+    if len(types) == 1:
+        return types.pop()
+    return "Object"
+
+
+@beartype
 def _java_type_hint(
     *,
     data: Value,
@@ -589,12 +616,20 @@ def _java_type_hint(
         record_name_for_value=record_name_for_value,
     )
     match data:
-        case OrderedMap():
+        case OrderedMap() | dict():
+            key_type = _java_mapping_key_type(
+                data=data,
+                int_type=int_type,
+                date_hint=date_hint,
+                datetime_hint=datetime_hint,
+            )
             val_type = common(elements=list(data.values()))
-            hint = f"java.util.ArrayList<Map.Entry<String, {val_type}>>"
-        case dict():
-            val_type = common(elements=list(data.values()))
-            hint = f"{dict_outer}<String, {val_type}>"
+            if isinstance(data, OrderedMap):
+                hint = (
+                    f"java.util.ArrayList<Map.Entry<{key_type}, {val_type}>>"
+                )
+            else:
+                hint = f"{dict_outer}<{key_type}, {val_type}>"
         case set():
             elem_type = common(elements=list(data))
             hint = f"{set_outer}<{elem_type}>"
