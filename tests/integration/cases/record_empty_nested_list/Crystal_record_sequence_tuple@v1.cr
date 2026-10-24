@@ -12,7 +12,7 @@ my_data = Record0.new(
         },
     },
     {
-        [] of Int32,
+        Tuple.new,
          {
             1,
         },
