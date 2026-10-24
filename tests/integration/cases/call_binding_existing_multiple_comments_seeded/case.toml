@@ -1,0 +1,19 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Consolidates original regressions: call_binding_existing_comment_multiple_c, call_binding_existing_comment_multiple_objective_c.
+[call]
+followup_target_function = "consume_widget"
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "enum_member_present", option = "comment_format", member = "DOUBLE_SLASH"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+followup_source = '{"$ref": "my_data"}'
+call_transform = "{call} // note\n// extra"
+
+[call.ref_declarations]
+my_data = "42"
+
+[[call.variants]]
+axis = "type_hints"
