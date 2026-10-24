@@ -1,0 +1,7 @@
+schema_version = 1
+# Positive control for #6200: corresponding map-valued tuple fields share
+# their type, while the integer and map positions remain independent.
+suites = ["base"]
+
+[[variants]]
+axis = "sequence"

@@ -1495,6 +1495,7 @@ def _sibling_maps_diverge(
     pool: list[Value],
     spec: Language,
     record_dict_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
 ) -> bool:
     """Return whether two or more maps sharing one declared value slot
     infer different dict openers.
@@ -1516,6 +1517,29 @@ def _sibling_maps_diverge(
     min_maps_for_divergence = 2
     if len(maps) < min_maps_for_divergence:
         return False
+    # Corresponding tuple fields still share one type when their tuples
+    # occupy a common map-value slot. Pool those fields independently;
+    # pooling every tuple element together would reject valid mixed tuples.
+    tuples = [
+        value
+        for owner in maps
+        for value in owner.values()
+        if isinstance(value, list)
+        and (
+            spec.sequence_format_config.supports_heterogeneity
+            or id(value) in tuple_list_ids
+        )
+    ]
+    if len(tuples) >= min_maps_for_divergence and any(
+        _sibling_maps_diverge(
+            pool=list(position),
+            spec=spec,
+            record_dict_ids=record_dict_ids,
+            tuple_list_ids=tuple_list_ids,
+        )
+        for position in zip(*tuples, strict=False)
+    ):
+        return True
     filtered = copy.deepcopy(
         x=[
             {
@@ -1579,6 +1603,7 @@ def _has_unrepresentable_sibling_maps(
                 pool=list(data.values()),
                 spec=spec,
                 record_dict_ids=record_dict_ids,
+                tuple_list_ids=tuple_list_ids,
             ):
                 return True
             return any(
@@ -1608,6 +1633,7 @@ def _has_unrepresentable_sibling_maps(
                     ),
                     spec=spec,
                     record_dict_ids=record_dict_ids,
+                    tuple_list_ids=tuple_list_ids,
                 )
             ):
                 return True
