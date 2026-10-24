@@ -171,7 +171,9 @@ def _wren_stub_class_name(parts: Sequence[str], /) -> str:
     candidate = "".join(part.capitalize() for part in parts) + "_"
     if len(candidate) <= _WREN_MAX_IDENTIFIER_LENGTH:
         return candidate
-    digest = hashlib.sha256(string=".".join(parts).encode()).hexdigest()[:16]
+    name_hash = hashlib.sha256()
+    name_hash.update(".".join(parts).encode())
+    digest = name_hash.hexdigest()[:16]
     return f"WrenCall{digest}_"
 
 
