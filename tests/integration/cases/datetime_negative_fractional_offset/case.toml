@@ -3,3 +3,6 @@ suites = ["base"]
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "datetime"

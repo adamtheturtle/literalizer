@@ -6,3 +6,9 @@ axis = "language_version"
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "datetime"
+
+[[variants]]
+axis = "date"

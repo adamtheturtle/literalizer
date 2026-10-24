@@ -1,0 +1,4 @@
+module Fixture_datetime_negative_fractional_offset_Crystal_datetime_epoch
+extend self
+my_data = 946704600
+end
