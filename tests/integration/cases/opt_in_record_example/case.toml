@@ -3,3 +3,6 @@ suites = ["base"]
 
 [[variants]]
 axis = "dict_format"
+
+[[variants]]
+axis = "type_hints"

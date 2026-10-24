@@ -23,3 +23,6 @@ axis = "modifiers"
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "string_format"

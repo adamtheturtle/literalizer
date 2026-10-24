@@ -32,3 +32,6 @@ suffix = "_empty"
 
 [[variants]]
 axis = "native_record"
+
+[[variants]]
+axis = "type_hints"

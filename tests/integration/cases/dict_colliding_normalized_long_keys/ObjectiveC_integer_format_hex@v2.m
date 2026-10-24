@@ -1,0 +1,13 @@
+#import <Foundation/Foundation.h>
+int main(void) {
+@autoreleasepool {
+id my_data = @{
+    @"a_b": @0x1,
+    @"a-b": @0x2,
+    @"averyveryverylongkeynamethatgoesonandonandon": @0x3,
+    @"averyveryverylongkeynamethatgoesonandmore": @0x4,
+};
+    (void)my_data;
+}
+    return 0;
+}

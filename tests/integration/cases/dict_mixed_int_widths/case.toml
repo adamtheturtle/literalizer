@@ -15,3 +15,6 @@ axis = "heterogeneous_value_variant_name"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "numeric_separator"

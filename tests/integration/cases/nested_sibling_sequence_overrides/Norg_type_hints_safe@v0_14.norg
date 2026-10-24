@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "a": [[1], [2]],
+    "b": [["x"], ["y"]]
+}
+@end

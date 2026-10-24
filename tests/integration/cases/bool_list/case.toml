@@ -14,3 +14,6 @@ axis = "language_version"
 
 [[variants]]
 axis = "bool_format"
+
+[[variants]]
+axis = "sequence"

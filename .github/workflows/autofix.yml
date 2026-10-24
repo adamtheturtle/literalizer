@@ -9,6 +9,14 @@ on:
 permissions:
   contents: read
 
+# Only the latest main push needs fixes; other invocations stay independent.
+concurrency:
+  group: >-
+    autofix-${{ github.event_name == 'push' && github.ref == 'refs/heads/main'
+    && 'push-main' || format('run-{0}', github.run_id)
+    }}
+  cancel-in-progress: true
+
 jobs:
   autofix:
     runs-on: ubuntu-latest
@@ -23,7 +31,7 @@ jobs:
         uses: astral-sh/setup-uv@v10.3.0
 
       - name: Run fixers
-        uses: j178/prek-action@v3.0.2
+        uses: j178/prek-action@v3.1.0
         with:
           # Matches the ``prek`` pin in ``pyproject.toml``; keep them in
           # sync. prek reimplements the ``pre-commit-hooks`` checks

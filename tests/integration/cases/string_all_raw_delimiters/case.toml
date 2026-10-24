@@ -3,3 +3,6 @@ suites = ["base"]
 
 [[variants]]
 axis = "multiline_string"
+
+[[variants]]
+axis = "string_format"

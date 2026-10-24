@@ -1,0 +1,9 @@
+module [my_data]
+
+Val : [
+    RInt I128,
+]
+
+my_data : Val
+my_data = RInt 0o52i128
+# after

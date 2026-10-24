@@ -34,6 +34,12 @@ env:
       "$ARTIFACT_URL" --output "$temporary"
     mv "$temporary" "$ARTIFACT_DESTINATION"
 
+# Toolchain installers and apt package versions below target Ubuntu 24.04.
+# Keep the runner image explicit: ubuntu-latest can move to a new release
+# before these pinned toolchains support it. Upgrade the image and toolchains
+# together after validating every language job.
+# Round-trip budgets include uv's cold project-environment setup. Allow at
+# least three minutes even when executing the generated program is quick.
 jobs:
   pre-commit:
     strategy:
@@ -62,7 +68,7 @@ jobs:
         # queueing.
         group: [fast, typecheck, pylint, docs]
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
@@ -77,7 +83,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint
-        uses: j178/prek-action@v3.0.2
+        uses: j178/prek-action@v3.1.0
         with:
           # Matches the ``prek`` pin in ``pyproject.toml``; keep them in
           # sync. prek reimplements the ``pre-commit-hooks`` checks
@@ -91,11 +97,10 @@ jobs:
           UV_PYTHON: ${{ matrix.python-version }}
 
   # Fixture languages whose lint is a handful of seconds — either the
-  # toolchain is preinstalled on ubuntu-latest, or the install is quick
+  # toolchain is preinstalled on ubuntu-24.04, or the install is quick
   # enough that splitting them into separate runners would spend more
   # time on runner startup than on linting.
   lint-fast:
-    # The pinned Tcl/tcllib apt packages target Noble (#6320).
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -241,7 +246,7 @@ jobs:
         run: |-
           unzip -o /tmp/wren.zip -d /tmp/wren
           sudo install /tmp/wren/wren-cli-linux-0.4.0/wren_cli /usr/local/bin/wren_cli
-      # ``ubuntu-latest`` preinstalls a ``pwsh``, but that runner default
+      # ``ubuntu-24.04`` preinstalls a ``pwsh``, but that runner default
       # drifts, so install an explicit release and put it first on
       # ``PATH`` for the ``Lint PowerShell`` / ``Run PowerShell files``
       # steps. The pinned PowerShell ``7.4.6`` (LTS) is ``>=`` the ``V7``
@@ -279,7 +284,7 @@ jobs:
       # 21 is the current LTS and also accepts `--release 11`.
       - name: Set up JDK
         timeout-minutes: 10
-        uses: actions/setup-java@v6.0.1
+        uses: actions/setup-java@v6.1.0
         with:
           distribution: temurin
           java-version: '21'
@@ -303,14 +308,14 @@ jobs:
       # in ``src/literalizer/languages/php.py``; keep them in sync. PHP
       # has no ``--langversion``-style flag, so the pinned interpreter is
       # the only mechanism for pinning the language version. Without this
-      # step `php` is whatever `ubuntu-latest` ships and drifts.
+      # step `php` is whatever `ubuntu-24.04` ships and drifts.
       - name: Set up PHP
         timeout-minutes: 10
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
 
-      # ``ubuntu-latest`` preinstalls the ``bash`` that both runs this job
+      # ``ubuntu-24.04`` preinstalls the ``bash`` that both runs this job
       # and lints/executes the ``.sh`` fixtures. That runner default (the
       # 5.x series) is ``>=`` the ``V5_1`` default of
       # ``Bash.language_version`` in ``src/literalizer/languages/bash.py``;
@@ -335,13 +340,13 @@ jobs:
       # ``import literalizer`` resolves. See
       # ``scripts/run_bash_roundtrip.py``.
       - name: Bash roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_bash_roundtrip
 
       # ``ruby-version: '3.4'`` is ``>=`` the ``V3`` (Ruby 3.x) default of
       # ``Ruby.language_version`` in ``src/literalizer/languages/ruby.py``;
       # keep them in sync. Without this setup step the ``ruby`` binary is
-      # whatever ``ubuntu-latest`` ships and drifts.
+      # whatever ``ubuntu-24.04`` ships and drifts.
       - name: Set up Ruby
         timeout-minutes: 10
         uses: ruby/setup-ruby@v1
@@ -360,7 +365,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_ruby_roundtrip.py`.
       - name: Ruby roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_ruby_roundtrip
 
       - name: Lint JavaScript
@@ -375,7 +380,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_javascript_roundtrip.py`.
       - name: JavaScript roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_javascript_roundtrip
 
       # The host compiles each fixture into an in-memory assembly, then
@@ -461,7 +466,7 @@ jobs:
       # mode, not `--no-project`) is required so `import literalizer`
       # resolves. See `scripts/run_php_roundtrip.py`.
       - name: Php roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_php_roundtrip
 
       # Parse every fixture inside a single pwsh invocation so the .NET
@@ -483,7 +488,7 @@ jobs:
       # literalizer` resolves. See
       # `scripts/run_powershell_roundtrip.py`.
       - name: PowerShell roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_powershell_roundtrip
 
       # Every fixture defines its own `fval_m` module, and the syntax
@@ -540,7 +545,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_lua_roundtrip.py`.
       - name: Lua roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_lua_roundtrip
 
       - name: Lint Nix
@@ -554,7 +559,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_nix_roundtrip.py`.
       - name: Nix roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_nix_roundtrip
 
       - name: Lint Tcl
@@ -568,7 +573,7 @@ jobs:
       # so `import literalizer` resolves.
       # See `scripts/run_tcl_roundtrip.py`.
       - name: Tcl roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_tcl_roundtrip
 
       # The literalized `*.fth` fixtures are visitor streams that call
@@ -590,7 +595,7 @@ jobs:
       # `import literalizer` resolves.
       # See `scripts/run_forth_roundtrip.py`.
       - name: Forth roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_forth_roundtrip
 
       # Invoke ``guile-3.0`` directly rather than ``guile`` because
@@ -612,7 +617,7 @@ jobs:
       # `import literalizer` resolves.
       # See `scripts/run_scheme_roundtrip.py`.
       - name: Scheme roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_scheme_roundtrip
 
       - name: Lint Dhall
@@ -629,7 +634,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_dhall_roundtrip.py`.
       - name: Dhall roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_dhall_roundtrip
 
       - name: Lint Wren
@@ -643,7 +648,7 @@ jobs:
       # required so `import literalizer` resolves.
       # See `scripts/run_wren_roundtrip.py`.
       - name: Wren roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_wren_roundtrip
 
       # cJSON provides the ``cJSON *`` value type for the
@@ -706,7 +711,7 @@ jobs:
   # Files are run serially in a single job so no two odin processes
   # share a kernel.
   lint-odin:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Normal runs finish in minutes.  If the compiler, setup action, or
     # cleanup hangs, stop this job promptly instead of leaving the
     # completion gate blocked until the workflow-wide timeout.
@@ -762,7 +767,7 @@ jobs:
         run: uv run python -m scripts.run_odin_roundtrip
 
   lint-roc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Roc has no stable release, and the upstream ``nightly`` GitHub
     # release only ever retains the moving
@@ -839,7 +844,7 @@ jobs:
   # escaped quotes and the ``datetime`` builtin) are documented in
   # scripts/lint-matlab-fixture.sh.
   lint-matlab:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Use a prebuilt Octave image instead of `apt-get install octave`, which
     # is slow (the Ubuntu package pulls a large dependency tree) and which
@@ -883,7 +888,7 @@ jobs:
         run: uv run python -m scripts.run_matlab_roundtrip
 
   lint-perl:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -892,7 +897,7 @@ jobs:
       # ``perl-version: '5.36'`` is ``>=`` the ``V5_36``
       # ``Perl.language_version`` default in
       # ``src/literalizer/languages/perl.py``; keep them in sync. Without
-      # this setup step the ``perl`` binary is whatever ``ubuntu-latest``
+      # this setup step the ``perl`` binary is whatever ``ubuntu-24.04``
       # ships and drifts. The action also bundles ``cpanm`` for the
       # pinned interpreter, so ``DateTime`` installs against it (no
       # ``sudo``, which would target the system Perl instead).
@@ -924,12 +929,12 @@ jobs:
       # are core in the pinned 5.36 interpreter so no extra ``cpanm``
       # step is needed. See `scripts/run_perl_roundtrip.py`.
       - name: Perl roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_perl_roundtrip
 
   # Fixture languages linted by small tools fetched via `go install`.
   lint-go-installed:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -975,7 +980,7 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_hcl_roundtrip.py`.
       - name: Hcl roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_hcl_roundtrip
 
   # Json5 + Norg + TypeScript strict type-check. The Run-TypeScript and
@@ -983,7 +988,7 @@ jobs:
   # `lint-elm`) so each long-running per-fixture loop fans out instead of
   # serializing.
   lint-npm-installed:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -1072,7 +1077,7 @@ jobs:
   # so the per-fixture tsx startups run in parallel with the tsc syntax
   # check instead of after it.
   lint-typescript-run:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -1113,7 +1118,7 @@ jobs:
       # `import literalizer` resolves.  See
       # `scripts/run_typescript_roundtrip.py`.
       - name: TypeScript roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_typescript_roundtrip
 
   # Elm format + syntax check. Split from `lint-elm-run` so the two
@@ -1122,7 +1127,7 @@ jobs:
   # combined step taking 1:30-3:50, so the parallel split saves
   # meaningful wall-clock for ~10-15s of extra setup.
   lint-elm:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -1162,7 +1167,7 @@ jobs:
   # Elm runtime check. Sibling to `lint-elm` so the compile + Node
   # execute pass runs in parallel with the format + compile-only pass.
   lint-elm-run:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -1205,7 +1210,7 @@ jobs:
 
   # Fixture languages whose check is a small `uv run python ...` helper.
   lint-uv-scripts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -1327,7 +1332,7 @@ jobs:
   # .NET-hosted linters. Run host builds in parallel-looking sequential
   # steps so the .NET runtime startup is paid once for the whole job.
   lint-dotnet:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -1375,7 +1380,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_csharp_roundtrip.py`.
       - name: CSharp roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_csharp_roundtrip
 
       - name: Lint VisualBasic
@@ -1389,7 +1394,7 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_vb_roundtrip.py`.
       - name: VisualBasic roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_vb_roundtrip
 
       # Generate an FSX driver that `#load`s every fixture, then
@@ -1416,11 +1421,11 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_fsharp_roundtrip.py`.
       - name: FSharp roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_fsharp_roundtrip
 
   lint-sml:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -1471,7 +1476,7 @@ jobs:
         run: uv run python -m scripts.run_sml_roundtrip
 
   lint-elixir:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Elixir fixture on disk carries the tag from
     # ``Elixir.VersionFormats`` (e.g. `Elixir@v1_14.ex`); bumping the
@@ -1518,11 +1523,11 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_elixir_roundtrip.py`.
       - name: Elixir roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_elixir_roundtrip
 
   lint-erlang:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Erlang fixture on disk carries the tag from
     # ``Erlang.VersionFormats`` (e.g. `Erlang@otp_25.erl`); bumping the
@@ -1596,11 +1601,11 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_erlang_roundtrip.py`.
       - name: Erlang roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_erlang_roundtrip
 
   lint-gleam:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Gleam fixture on disk carries the tag from
     # ``Gleam.VersionFormats`` (e.g. `gleam_combined@v1.gleam`);
@@ -1669,14 +1674,14 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_gleam_roundtrip.py`.
       - name: Gleam roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: uv run python -m scripts.run_gleam_roundtrip
 
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -1754,7 +1759,7 @@ jobs:
       # `import literalizer` resolves.
       # See `scripts/run_clojure_roundtrip.py`.
       - name: Clojure roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_clojure_roundtrip
 
       # Basic JSON -> Groovy -> JSON round-trip (issue 1867). Runs here
@@ -1763,12 +1768,12 @@ jobs:
       # `--no-project`) is required so `import literalizer` resolves.
       # See `scripts/run_groovy_roundtrip.py`.
       - name: Groovy roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_groovy_roundtrip
 
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -1902,7 +1907,7 @@ jobs:
   # Pass compile flags after `--` so clang-tidy treats them as the full
   # compile command and skips searching for a compile_commands.json.
   lint-c-tidy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       # Upstream cJSON release whose header the ``CJSON`` fixtures are
@@ -1956,7 +1961,7 @@ jobs:
     strategy:
       matrix:
         shard: [0, 1, 2]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       # Upstream ``nlohmann/json`` release whose single header the
@@ -2020,7 +2025,6 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 uv run --group=dev bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
 
   lint-cobol:
-    # GnuCOBOL 3.2 fails to build with the newer runner toolchain (#6297).
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -2045,6 +2049,10 @@ jobs:
       # fails to compile with "runtime is not configured to support
       # JSON". Install cJSON first so ``configure`` detects it (via its
       # ``libcjson`` pkg-config file) and enables JSON I/O.
+      # Use the primary archive to avoid slow Azure mirror downloads,
+      # as in lint-r, before installing the compiler dependencies.
+      - name: Use Ubuntu archive for GnuCOBOL dependencies
+        run: printf '%s\n' 'https://archive.ubuntu.com/ubuntu' | sudo tee /etc/apt/apt-mirrors.txt
       - name: Install cJSON for GnuCOBOL JSON I/O
         timeout-minutes: 10
         run: |-
@@ -2101,7 +2109,7 @@ jobs:
     strategy:
       matrix:
         shard: [0, 1, 2]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       # Upstream ``nlohmann/json`` release whose single header the
@@ -2202,7 +2210,7 @@ jobs:
         run: uv run python -m scripts.run_cpp_shared_record
 
   lint-kotlin:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # The host uses the compiler bundled with this distribution.
     # Kotlin 1.9 support is retired; compile the v2_4 fixtures in 2.4 mode.
@@ -2290,7 +2298,7 @@ jobs:
         run: uv run python -m scripts.run_kotlin_roundtrip
 
   lint-swift:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2345,7 +2353,7 @@ jobs:
         run: uv run python -m scripts.run_swift_roundtrip
 
   lint-ocaml:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2355,6 +2363,10 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.ml' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      # setup-ocaml installs apt dependencies before creating the switch.
+      # Use the same archive as lint-r to avoid Azure mirror timeouts.
+      - name: Use Ubuntu archive for OCaml dependencies
+        run: printf '%s\n' 'https://archive.ubuntu.com/ubuntu' | sudo tee /etc/apt/apt-mirrors.txt
       - name: Install OCaml
         timeout-minutes: 10
         uses: ocaml/setup-ocaml@v3
@@ -2413,7 +2425,7 @@ jobs:
         run: opam exec -- uv run python -m scripts.run_ocaml_roundtrip
 
   lint-commonlisp:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # The ``LISP`` environment variable pins the SBCL build that
     # 40ants/setup-lisp installs to ``sbcl-bin/2.6.4`` (without the
@@ -2472,11 +2484,11 @@ jobs:
       # resolves.
       # See ``scripts/run_common_lisp_roundtrip.py``.
       - name: Common Lisp roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_common_lisp_roundtrip
 
   lint-scala:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2521,7 +2533,17 @@ jobs:
           printf '}\n' >> "$main"
           scala-cli run "$workspace" --server=false -S 3 --scalac-option -deprecation --scalac-option -Werror \
             --dep io.circe::circe-core:0.14.10 \
-            --main-class __run
+            --main-class __run --command > "$workspace/java-command"
+          # Scala CLI includes every source path in a single Java property.
+          # Launch through a Java argument file to avoid Linux's per-argument
+          # size limit as the fixture set grows, preserving all source mappings.
+          mapfile -t java_command < "$workspace/java-command"
+          for arg in "${java_command[@]:1}"; do
+            arg="${arg//\\/\\\\}"
+            arg="${arg//\"/\\\"}"
+            printf '"%s"\n' "$arg"
+          done > "$workspace/java-args"
+          "${java_command[0]}" @"$workspace/java-args"
       # `uv` is needed by the `Scala roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       - name: Install uv
@@ -2541,7 +2563,7 @@ jobs:
         run: uv run python -m scripts.run_scala_roundtrip
 
   lint-haxe:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2600,7 +2622,7 @@ jobs:
         run: uv run python -m scripts.run_haxe_roundtrip
 
   lint-dart:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2638,11 +2660,10 @@ jobs:
       # literalizer` resolves. See
       # `scripts/run_dart_roundtrip.py`.
       - name: Dart roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_dart_roundtrip
 
   lint-julia:
-    # Julia 1.9 cannot load libopenlibm on Ubuntu 26.04 (#6321).
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2688,13 +2709,13 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_julia_roundtrip.py`.
       - name: Julia roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         env:
           JULIA_PROJECT: /tmp/julia-lint
         run: uv run python -m scripts.run_julia_roundtrip
 
   lint-go:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2734,7 +2755,7 @@ jobs:
       # mode, not `--no-project`) is required so `import literalizer`
       # resolves. See `scripts/run_go_roundtrip.py`.
       - name: Go roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_go_roundtrip
       # Two documents sharing one record shape, rendered under
       # `record_map_value_typing=WIDE` and compiled as one program, so
@@ -2744,7 +2765,7 @@ jobs:
         run: uv run python -m scripts.run_go_shared_record
 
   lint-rust:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2817,7 +2838,7 @@ jobs:
         run: uv run python -m scripts.run_rust_shared_record
 
   lint-r:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2870,13 +2891,13 @@ jobs:
       # `import literalizer` resolves. See
       # `scripts/run_r_roundtrip.py`.
       - name: R roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         env:
           R_LIBS_USER: /tmp/r-lint-libs
         run: uv run python -m scripts.run_r_roundtrip
 
   lint-d:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2937,7 +2958,7 @@ jobs:
         run: uv run python -m scripts.run_d_roundtrip
 
   lint-crystal:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2994,7 +3015,7 @@ jobs:
       # literalizer` resolves. See
       # `scripts/run_crystal_roundtrip.py`.
       - name: Crystal roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_crystal_roundtrip
 
   # Keep compiler concurrency bounded even when nproc grows: the expanded
@@ -3005,7 +3026,7 @@ jobs:
   # also tries the latest stable release as a non-blocking canary.
   lint-mojo:
     name: lint-mojo (${{ matrix.mojo-version }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     continue-on-error: ${{ matrix.mojo-version == 'latest' }}
     strategy:
@@ -3059,7 +3080,7 @@ jobs:
         run: uv run python -m scripts.run_mojo_roundtrip
 
   lint-nim:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Promote every Nim warning to a CI failure. Nim's
     # ``--warningAsError`` rejects ``all:on`` and bare ``on``, so list
@@ -3189,7 +3210,7 @@ jobs:
       # ``--no-project``) is required so ``import literalizer`` resolves.
       # See ``scripts/run_nim_roundtrip.py``.
       - name: Nim roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_nim_roundtrip
 
   # Check py38 fixtures on Python 3.8 and both typing-alias formats on
@@ -3205,7 +3226,7 @@ jobs:
             fixture-tag: py38
           - python-version: '3.12'
             fixture-tag: py39
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
@@ -3237,7 +3258,7 @@ jobs:
           python < /tmp/files-python
 
   lint-racket:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -3275,11 +3296,11 @@ jobs:
       # mode, not `--no-project`) is required so `import literalizer`
       # resolves. See `scripts/run_racket_roundtrip.py`.
       - name: Racket roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_racket_roundtrip
 
   lint-raku:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # The pinned Rakudo ``2026.04`` release implements Raku language
     # version 6.d, the ``V6D`` default of ``Raku.language_version`` in
@@ -3332,7 +3353,7 @@ jobs:
         run: uv run python -m scripts.run_raku_roundtrip
 
   lint-zig:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Zig fixture on disk carries the tag from
     # ``Zig.VersionFormats`` (e.g. `Zig@v0_12.zig`); bumping the
@@ -3403,7 +3424,6 @@ jobs:
         run: uv run python -m scripts.run_zig_roundtrip
 
   lint-systemverilog:
-    # The pinned Verilator 5.046 installer has no Ubuntu 26.04 asset (#6323).
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3451,7 +3471,7 @@ jobs:
         run: uv run python -m scripts.run_systemverilog_roundtrip
 
   lint-v:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -3516,7 +3536,7 @@ jobs:
       # so `import literalizer` resolves.
       # See `scripts/run_v_roundtrip.py`.
       - name: V roundtrip
-        timeout-minutes: 1
+        timeout-minutes: 3
         run: uv run python -m scripts.run_v_roundtrip
 
   lint-objectivec:
@@ -3662,7 +3682,7 @@ jobs:
       - lint-v
       - lint-objectivec
       - lint-objectivec-tidy
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     if: ${{ !cancelled() }}
     steps:

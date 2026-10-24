@@ -3,3 +3,6 @@ suites = ["base"]
 
 [[variants]]
 axis = "sequence"
+
+[[variants]]
+axis = "type_hints"

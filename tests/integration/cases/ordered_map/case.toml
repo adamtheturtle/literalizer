@@ -27,3 +27,6 @@ axis = "language_version"
 [[variants]]
 axis = "json_rendering"
 suffix = "_ordered_map"
+
+[[variants]]
+axis = "integer_format"
