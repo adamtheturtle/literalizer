@@ -32,6 +32,7 @@ from .language_metadata import language_metadata
 from .language_specs import make_spec
 from .suite_gates import SuiteGate, gates_admit, no_gates, validate_gate_names
 from .variant_axis_names import KNOWN_VARIANT_AXES
+from .variant_types import VariantExpectedError
 
 MANIFEST_NAME = "case.toml"
 
@@ -361,6 +362,9 @@ class ManifestVariant(  # noqa: NOD001
     # golden) rather than emitting output the language cannot express.
     requires: list[VariantCapabilityName] = Field(
         default_factory=_empty_capabilities,
+    )
+    expected_errors: list[VariantExpectedError] = Field(
+        default_factory=list,
     )
 
     @model_validator(mode="after")

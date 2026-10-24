@@ -28,6 +28,7 @@ from literalizer.exceptions import (
     ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
+    InvalidDictKeyError,
     NullInCollectionError,
     UnrepresentableEmptyDictError,
     UnrepresentableInputError,
@@ -563,7 +564,21 @@ def _variant_renderings(
             extra_preamble=variant_case.variant.extra_preamble,
             initialize_variable=variant_case.variant.initialize_variable,
             apply_fixture_module_name=True,
-            skip=VARIANT_SKIPS,
+            skip=(
+                SkipPolicy(
+                    reasons=(
+                        *VARIANT_SKIP_REASONS,
+                        SkipReason(
+                            error=InvalidDictKeyError,
+                            reason="cannot represent a mapping key",
+                            unlink=True,
+                        ),
+                    ),
+                    suffix=VARIANT_SKIPS.suffix,
+                )
+                if "InvalidDictKeyError" in variant_case.expected_errors
+                else VARIANT_SKIPS
+            ),
         )
         for variant_case in grouped.get(lang_cls, [])
     )

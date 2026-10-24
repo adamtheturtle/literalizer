@@ -1,0 +1,6 @@
+* my_data
+@code javascript
+{
+    "_": {"a": 1, "b": 2}
+}
+@end

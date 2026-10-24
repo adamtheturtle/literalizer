@@ -92,6 +92,7 @@ def build_json_type_variable_form_cases(
                 name = f"{json_variant.name}_final"
                 cases.append(
                     VariantCase(
+                        expected_errors=(),
                         variant_name=name,
                         variant=dataclasses.replace(json_variant, name=name),
                         case_dir_name=case_dir_name,
@@ -107,6 +108,7 @@ def build_json_type_variable_form_cases(
             name = f"{json_variant.name}_existing"
             cases.append(
                 VariantCase(
+                    expected_errors=(),
                     variant_name=name,
                     variant=compact_variant(
                         name=name,
@@ -148,6 +150,7 @@ def build_json_type_variable_form_cases(
             )
             cases.append(
                 VariantCase(
+                    expected_errors=(),
                     variant_name=name,
                     variant=variant,
                     case_dir_name=case_dir_name,
@@ -194,6 +197,7 @@ def build_multiline_string_context_cases(
             name = f"{base_variant.name}{combined_suffix}"
             cases.append(
                 VariantCase(
+                    expected_errors=(),
                     variant_name=name,
                     variant=dataclasses.replace(
                         base_variant,
@@ -218,6 +222,7 @@ def build_multiline_string_context_cases(
             )
             cases.append(
                 VariantCase(
+                    expected_errors=(),
                     variant_name=name,
                     variant=dataclasses.replace(base_variant, name=name),
                     case_dir_name=pre_indent_case_dir_name,
@@ -315,6 +320,7 @@ def case_for_manifest_variant(
         case_dir_name=case_dir_name,
         variable_form=variable_form_for_context(context=context),
         pre_indent_level=context.pre_indent_level,
+        expected_errors=tuple(manifest_variant.expected_errors),
     )
 
 
