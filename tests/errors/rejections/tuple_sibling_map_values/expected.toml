@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[HeterogeneousSiblingMapsError]
+"Rust['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"Rust['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"Rust['TUPLE_NESTED_VEC']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+"Rust['TUPLE_NESTED_VEC']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
