@@ -1678,6 +1678,8 @@ class Zig(metaclass=LanguageCls):
                 value_type = self._zig_ordered_map_type(value=value)
             case list():
                 value_type = self._zig_list_type(items=value)
+            case dict() if len(value) == 0:
+                value_type = "@TypeOf(.{})"
             case _:
                 value_type = "[]const u8"
         return value_type
