@@ -42,6 +42,7 @@ struct Value {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
+#include <vector>
 struct Record0 { std::map<std::string, std::nullptr_t> input; };
 int main() {
 auto my_data = std::vector<Record0>{

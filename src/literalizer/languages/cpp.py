@@ -2345,6 +2345,22 @@ def _cpp_record_field_headers(
 
 
 @beartype
+def _contains_record_sequence(data: Value, /) -> bool:
+    """Find record lists whose sequence opener renders a vector."""
+    match data:
+        case list():
+            return _all_record_shaped(data) or any(
+                _contains_record_sequence(value) for value in data
+            )
+        case dict():
+            return any(
+                _contains_record_sequence(value) for value in data.values()
+            )
+        case _:
+            return False
+
+
+@beartype
 def _build_cpp_record_preamble(
     *,
     type_ctx: _CppTypeCtx,
@@ -2451,6 +2467,8 @@ def _build_cpp_record_preamble(
                 )
             value_alias = (f"using {_CPP_RECORD_MAP_VALUE} = {value_type};",)
         declarations = record_preamble(data)
+        if type_ctx.sequence_is_array and _contains_record_sequence(data):
+            headers.append(import_preamble(code="#include <vector>"))
         return (
             *_cpp_record_field_headers(declarations=declarations),
             *headers,

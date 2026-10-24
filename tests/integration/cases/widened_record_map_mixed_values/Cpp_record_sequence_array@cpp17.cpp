@@ -3,6 +3,7 @@
 #include <map>
 #include <array>
 #include <variant>
+#include <vector>
 using LiteralizerRecordValue = std::variant<int, std::string>;
 struct Record0 { std::map<std::string, LiteralizerRecordValue> input; };
 int main() {

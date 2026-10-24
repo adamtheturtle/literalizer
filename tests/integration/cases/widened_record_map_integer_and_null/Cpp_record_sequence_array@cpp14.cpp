@@ -42,6 +42,7 @@ struct Value {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
+#include <vector>
 using LiteralizerRecordValue = Value;
 struct Record0 { std::map<std::string, LiteralizerRecordValue> input; };
 int main() {
