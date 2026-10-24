@@ -12,3 +12,6 @@ axis = "datetime"
 
 [[variants]]
 axis = "date"
+
+[[variants]]
+axis = "dict_format"

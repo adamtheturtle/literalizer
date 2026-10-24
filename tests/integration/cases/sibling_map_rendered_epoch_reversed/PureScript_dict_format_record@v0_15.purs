@@ -1,0 +1,14 @@
+module Check where
+
+
+import Prelude
+
+
+my_data = {
+    b: {
+        k: 1
+    },
+    a: {
+        k: "2040-01-01T00:00:00+00:00"
+    }
+}

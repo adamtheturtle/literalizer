@@ -6,3 +6,6 @@ axis = "datetime"
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "set"

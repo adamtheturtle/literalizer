@@ -6,3 +6,6 @@ axis = "type_hints"
 
 [[variants]]
 axis = "datetime"
+
+[[variants]]
+axis = "string_format_datetime_cross"
