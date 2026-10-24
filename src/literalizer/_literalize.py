@@ -1103,8 +1103,11 @@ def _accumulate_sibling_list_empty_overrides(
         )
         sibling_opener = widened_opener
         if len(sibling_signatures) == 1:
-            sibling_opener = selected_collection_open(
-                spec.sequence_open, non_empty[0]
+            (signature,) = sibling_signatures
+            sibling_opener = (
+                None
+                if signature.arity_dependent
+                else selected_collection_open(spec.sequence_open, non_empty[0])
             )
         if len(empty) > 0 and sibling_opener is not None:
             narrowed = spec.sequence_format_config.narrowed_empty_form
@@ -2388,6 +2391,9 @@ def _empty_child_sibling_opener(
         for sibling in non_empty_siblings
     }
     if len(signatures) != 1:
+        return None
+    (signature,) = signatures
+    if signature.arity_dependent:
         return None
     return selected_collection_open(spec.sequence_open, non_empty_siblings[0])
 

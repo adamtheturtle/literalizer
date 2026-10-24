@@ -4,5 +4,5 @@ let my_data = {|
     a = [
         1L
     ];
-    b = []
+    b = ([] : obj list)
 |}

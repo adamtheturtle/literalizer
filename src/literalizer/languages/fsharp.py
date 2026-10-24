@@ -6,7 +6,7 @@ import enum
 import re
 import textwrap
 from collections.abc import Callable, Mapping, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
@@ -249,13 +249,21 @@ _FSHARP_JSON_EMPTY_ARRAY = "JsonArray()"
 
 @beartype
 def _fsharp_anonymous_record_literal(
-    _value: dict[Scalar, Value], formatted_fields: Mapping[str, str]
+    original: dict[Scalar, Value],
+    formatted_fields: Mapping[str, str],
+    *,
+    empty_sequence_type: str,
 ) -> RenderedRecordLiteral:
     """Render a dictionary as a native anonymous record."""
     return RenderedRecordLiteral(
         head="{|",
         entries=tuple(
-            f"{key} = {value}" for key, value in formatted_fields.items()
+            (
+                f"{key} = ({value} : obj {empty_sequence_type})"
+                if original[key] == []
+                else f"{key} = {value}"
+            )
+            for key, value in formatted_fields.items()
         ),
         closer="|}",
         compact_pad=" ",
@@ -1263,7 +1271,10 @@ class FSharp(metaclass=LanguageCls):
             return dataclasses.replace(
                 NO_HETEROGENEOUS_BEHAVIOR,
                 compute_record_shapes=_fsharp_anonymous_record_shapes,
-                render_record_literal=_fsharp_anonymous_record_literal,
+                render_record_literal=partial(
+                    _fsharp_anonymous_record_literal,
+                    empty_sequence_type=self.sequence_format.name.lower(),
+                ),
             )
         return self.heterogeneous_strategy.value
 
