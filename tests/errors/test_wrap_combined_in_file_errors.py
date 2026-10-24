@@ -47,5 +47,6 @@ def test_wrap_combined_in_file_unsupported_raises(
                 call_stub_names=frozenset(),
                 root_is_object_literal=False,
                 root_mapping_entries=None,
+                has_existing_bindings=False,
             ),
         )

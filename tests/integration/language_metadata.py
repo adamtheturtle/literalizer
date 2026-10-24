@@ -88,6 +88,11 @@ class GoldenPolicy(  # noqa: NOD001
     fixture_module_name_template: str | None = None
     """Per-fixture module name, formatted with ``parent`` and ``stem``."""
 
+    call_seed_declaration_style: Annotated[str, Field(min_length=1)] | None = (
+        None
+    )
+    """Mutable declaration style for a caller-owned call-result seed."""
+
     fixture_module_name_lowercase: bool = False
     """Whether a formatted per-fixture module name is lower-cased."""
 

@@ -631,6 +631,8 @@ def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
         raw_string_prefixes=(),
         verbatim_strings=False,
         interpolation_syntax=None,
+        quotes="\"'",
+        literal_span_end=None,
     )
     return f"{name} = {comments.code};" + comments.trailing_comments
 
@@ -2302,6 +2304,8 @@ class Zig(metaclass=LanguageCls):
                 raw_string_prefixes=(),
                 verbatim_strings=False,
                 interpolation_syntax=None,
+                quotes="\"'",
+                literal_span_end=None,
             )
             return (
                 f"{keyword} {name} = {comments.code};"

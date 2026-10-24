@@ -531,6 +531,7 @@ def _file_wrapper_context(
         generated_body_preamble=generated_body_preamble,
         root_is_object_literal=root_is_object_literal,
         root_mapping_entries=root_mapping_entries,
+        has_existing_bindings=False,
     )
 
 
@@ -9178,16 +9179,23 @@ def literalize_call_with_declarations(
             for d in declarations
         ),
         calls=call.bare_code,
-        context=_file_wrapper_context(
-            variable_form=None,
-            body_preamble=scoped.body
-            + unified_body_preamble
-            + extra_body_preamble,
-            class_preamble=extra_class_preamble,
-            has_literal_declarations=len(declarations) > 0,
-            generated_body_preamble=unified_body_preamble,
-            root_is_object_literal=False,
-            root_mapping_entries=None,
+        context=dataclasses.replace(
+            _file_wrapper_context(
+                variable_form=None,
+                body_preamble=scoped.body
+                + unified_body_preamble
+                + extra_body_preamble,
+                class_preamble=extra_class_preamble,
+                has_literal_declarations=len(declarations) > 0,
+                generated_body_preamble=unified_body_preamble,
+                root_is_object_literal=False,
+                root_mapping_entries=None,
+            ),
+            has_existing_bindings=len(declarations) > 0
+            and any(
+                result.uses_existing_variable
+                for result in (*declarations, call)
+            ),
         ),
     )
     if len(scoped.file_scope) > 0:

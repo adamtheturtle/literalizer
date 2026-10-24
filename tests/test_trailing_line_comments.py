@@ -41,6 +41,8 @@ def test_trailing_line_comments(case: _CommentCase) -> None:
         statement=case.statement,
         prefix="//",
         regex_literals=case.regex_literals,
+        quotes="\"'",
+        literal_span_end=None,
         backtick_strings=case.backtick_strings,
         raw_string_prefixes=case.raw_string_prefixes,
         verbatim_strings=case.verbatim_strings,

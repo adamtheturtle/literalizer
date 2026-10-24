@@ -36,7 +36,10 @@ from literalizer._formatters.type_inference import (
     ListType,
     RecordShape,
 )
-from literalizer._statements import split_trailing_line_comments
+from literalizer._statements import (
+    LiteralSpanEnd,
+    split_trailing_line_comments,
+)
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     InvalidCallParameterNameError,
@@ -85,6 +88,9 @@ class FileWrapperContext:
 
     class_preamble: tuple[str, ...]
     """Supporting declarations placed directly in the wrapper class."""
+
+    has_existing_bindings: bool
+    """Whether a composition reuses a name declared in its bindings."""
 
     has_literal_declarations: bool
     """Whether the wrapper contains a literal-binding declaration."""
@@ -3847,6 +3853,8 @@ def _line_comment_call_variable_declaration(
     raw_string_prefixes: tuple[str, ...],
     verbatim_strings: bool,
     interpolation_syntax: tuple[str, str] | None,
+    quotes: str,
+    literal_span_end: LiteralSpanEnd | None,
 ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
     """Terminate C-style call bindings before trailing line comments."""
 
@@ -3863,6 +3871,8 @@ def _line_comment_call_variable_declaration(
             raw_string_prefixes=raw_string_prefixes,
             verbatim_strings=verbatim_strings,
             interpolation_syntax=interpolation_syntax,
+            quotes=quotes,
+            literal_span_end=literal_span_end,
         )
         return (
             self.format_variable_declaration(
@@ -3881,6 +3891,8 @@ def line_comment_call_variable_declaration(
     raw_string_prefixes: tuple[str, ...],
     verbatim_strings: bool,
     interpolation_syntax: tuple[str, str] | None,
+    quotes: str,
+    literal_span_end: LiteralSpanEnd | None,
 ) -> property:
     """Build a call binding descriptor with its literal syntax."""
 
@@ -3895,6 +3907,8 @@ def line_comment_call_variable_declaration(
             raw_string_prefixes=raw_string_prefixes,
             verbatim_strings=verbatim_strings,
             interpolation_syntax=interpolation_syntax,
+            quotes=quotes,
+            literal_span_end=literal_span_end,
         )
 
     return property(fget=_get)
@@ -3908,6 +3922,8 @@ def _line_comment_call_variable_assignment(
     raw_string_prefixes: tuple[str, ...],
     verbatim_strings: bool,
     interpolation_syntax: tuple[str, str] | None,
+    quotes: str,
+    literal_span_end: LiteralSpanEnd | None,
 ) -> Callable[[str, str, Value], str]:
     """Terminate C-style call assignments before trailing line
     comments.
@@ -3924,6 +3940,8 @@ def _line_comment_call_variable_assignment(
             raw_string_prefixes=raw_string_prefixes,
             verbatim_strings=verbatim_strings,
             interpolation_syntax=interpolation_syntax,
+            quotes=quotes,
+            literal_span_end=literal_span_end,
         )
         return (
             self.format_variable_assignment(name, comments.code, data)
@@ -3940,6 +3958,8 @@ def line_comment_call_variable_assignment(
     raw_string_prefixes: tuple[str, ...],
     verbatim_strings: bool,
     interpolation_syntax: tuple[str, str] | None,
+    quotes: str,
+    literal_span_end: LiteralSpanEnd | None,
 ) -> property:
     """Build a call assignment descriptor with its literal syntax."""
 
@@ -3952,6 +3972,8 @@ def line_comment_call_variable_assignment(
             raw_string_prefixes=raw_string_prefixes,
             verbatim_strings=verbatim_strings,
             interpolation_syntax=interpolation_syntax,
+            quotes=quotes,
+            literal_span_end=literal_span_end,
         )
 
     return property(fget=_get)

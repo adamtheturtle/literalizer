@@ -50,6 +50,7 @@ from .golden_checks import (
     check_golden,
     skip_golden,
 )
+from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
     make_golden_path,
@@ -726,7 +727,17 @@ def _render_ref_declaration(
     ):
         styles = find_redefinition_styles(spec=spec)
         seed_spec = spec
-        if len(styles) > 0:
+        seed_style = language_metadata(
+            language_id=spec.language_id
+        ).golden.call_seed_declaration_style
+        if seed_style is not None:
+            seed_spec = dataclasses.replace(
+                spec,
+                declaration_style=enum_member_by_name(
+                    enum_cls=spec.declaration_styles, name=seed_style
+                ),
+            )
+        elif len(styles) > 0:
             seed_spec = dataclasses.replace(spec, declaration_style=styles[0])
         return literalizer.literalize_call(
             source=ref_source,
