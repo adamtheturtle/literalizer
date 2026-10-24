@@ -6,3 +6,6 @@ axis = "heterogeneous_strategy"
 
 [[variants]]
 axis = "sequence_tuple_nested_vec"
+
+[[variants]]
+axis = "type_hints"

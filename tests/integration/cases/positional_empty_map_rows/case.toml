@@ -3,3 +3,6 @@ suites = ["base"]
 
 [[variants]]
 axis = "heterogeneous_tuple_versions"
+
+[[variants]]
+axis = "type_hints"

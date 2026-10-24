@@ -476,18 +476,18 @@ def _java_box(type_name: str) -> str:
 def _java_common_element_type(
     *,
     elements: list[Value],
-    boxed: bool,
     int_type: str,
     date_hint: str,
     datetime_hint: str,
-    seq_is_array: bool,
+    array_type: Callable[[list[Value]], CollectionType] | None,
     dict_outer: str,
     set_outer: str,
     record_name_for_value: Callable[[Value], str | None] | None,
 ) -> str:
     """Find the common Java type for a collection's elements.
 
-    Returns ``"Object"`` when elements are empty or have mixed types.
+    Box scalar elements for generic type arguments, retaining array types.
+    Return ``"Object"`` when elements are empty or have mixed types.
     """
     if len(elements) == 0:
         return "Object"
@@ -496,7 +496,7 @@ def _java_common_element_type(
         int_type=int_type,
         date_hint=date_hint,
         datetime_hint=datetime_hint,
-        seq_is_array=seq_is_array,
+        array_type=array_type,
         dict_outer=dict_outer,
         set_outer=set_outer,
         record_name_for_value=record_name_for_value,
@@ -504,26 +504,16 @@ def _java_common_element_type(
     types: list[str] = [recurse(data=e) for e in elements]
     unique = set(types)
     if len(unique) == 1:
-        result = unique.pop()
-        resolved_result_1: str = result
-        if boxed:
-            resolved_result_1 = _java_box(type_name=result)
-        return resolved_result_1
-    # Primitive arrays widen int + double to double. Generic collections
-    # retain the boxed Integer/Long and Double values, which share Number.
+        return _java_box(type_name=unique.pop())
+    # Generic collections retain boxed Integer/Long and Double values,
+    # which share Number. Array types come from the literal's resolver.
     double_t = "double"
     if unique == {int_type, double_t}:
-        resolved_result_2: str = "double"
-        if boxed:
-            resolved_result_2 = "Number"
-        return resolved_result_2
+        return "Number"
     # int + long → long (integer-width widening for mixed-magnitude
     # int collections, e.g. ``{1, 1099511627776}``)
     if unique == {"int", "long"}:
-        resolved_result_3: str = "long"
-        if boxed:
-            resolved_result_3 = "Long"
-        return resolved_result_3
+        return "Long"
     return "Object"
 
 
@@ -578,7 +568,7 @@ def _java_type_hint(
     int_type: str,
     date_hint: str,
     datetime_hint: str,
-    seq_is_array: bool,
+    array_type: Callable[[list[Value]], CollectionType] | None,
     dict_outer: str,
     set_outer: str,
     record_name_for_value: Callable[[Value], str | None] | None,
@@ -593,30 +583,25 @@ def _java_type_hint(
         int_type=int_type,
         date_hint=date_hint,
         datetime_hint=datetime_hint,
-        seq_is_array=seq_is_array,
+        array_type=array_type,
         dict_outer=dict_outer,
         set_outer=set_outer,
         record_name_for_value=record_name_for_value,
     )
     match data:
         case OrderedMap():
-            val_type = common(elements=list(data.values()), boxed=True)
+            val_type = common(elements=list(data.values()))
             hint = f"java.util.ArrayList<Map.Entry<String, {val_type}>>"
         case dict():
-            val_type = common(elements=list(data.values()), boxed=True)
+            val_type = common(elements=list(data.values()))
             hint = f"{dict_outer}<String, {val_type}>"
         case set():
-            elem_type = common(elements=list(data), boxed=True)
+            elem_type = common(elements=list(data))
             hint = f"{set_outer}<{elem_type}>"
-        case list() if seq_is_array:
-            elem_type = common(elements=data, boxed=False)
-            # Java cannot create arrays of generic types, so fall back
-            # to Object[] when the element type is generic.
-            if "<" in elem_type:
-                elem_type = "Object"
-            hint = f"{elem_type}[]"
+        case list() if array_type is not None:
+            hint = array_type(data).declared_type
         case list():
-            elem_type = common(elements=data, boxed=True)
+            elem_type = common(elements=data)
             hint = f"List<{elem_type}>"
         case _:
             hint = _java_scalar_hint(
@@ -746,7 +731,7 @@ def _format_java_typed_declaration(
     int_type: str,
     date_hint: str,
     datetime_hint: str,
-    seq_is_array: bool,
+    array_type: Callable[[list[Value]], CollectionType] | None,
     dict_outer: str,
     set_outer: str,
     record_name_for_value: Callable[[Value], str | None] | None,
@@ -757,7 +742,7 @@ def _format_java_typed_declaration(
         int_type=int_type,
         date_hint=date_hint,
         datetime_hint=datetime_hint,
-        seq_is_array=seq_is_array,
+        array_type=array_type,
         dict_outer=dict_outer,
         set_outer=set_outer,
         record_name_for_value=record_name_for_value,
@@ -1852,7 +1837,7 @@ class Java(metaclass=LanguageCls):
             int_type: str,
             date_hint: str,
             datetime_hint: str,
-            seq_is_array: bool,
+            array_type: Callable[[list[Value]], CollectionType] | None,
             dict_outer: str,
             set_outer: str,
             record_name_for_value: Callable[[Value], str | None] | None,
@@ -1877,7 +1862,7 @@ class Java(metaclass=LanguageCls):
                     int_type=int_type,
                     date_hint=date_hint,
                     datetime_hint=datetime_hint,
-                    seq_is_array=seq_is_array,
+                    array_type=array_type,
                     dict_outer=dict_outer,
                     set_outer=set_outer,
                     record_name_for_value=record_name_for_value,
@@ -2428,7 +2413,9 @@ class Java(metaclass=LanguageCls):
     @cached_property
     @beartype
     def _array_type(self) -> Callable[[list[Value]], CollectionType]:
-        """Keep array literal and record-component type decisions together."""
+        """Share array literal, variable and record-component type
+        decisions.
+        """
         if self._suffix_is_auto:
             cfg = self._opener_config_long
         else:
@@ -2663,8 +2650,10 @@ class Java(metaclass=LanguageCls):
             int_type=effective_int_type,
             date_hint=(effective_date_hint),
             datetime_hint=datetime_hint,
-            seq_is_array=(
-                self.sequence_format is type(self.sequence_format).ARRAY
+            array_type=(
+                self._array_type
+                if self.sequence_format is type(self.sequence_format).ARRAY
+                else None
             ),
             dict_outer=(effective_dict_outer),
             set_outer=(effective_set_outer),

@@ -12,3 +12,6 @@ axis = "cpp_tuple_versions"
 
 [[variants]]
 axis = "heterogeneous_value_union_name"
+
+[[variants]]
+axis = "type_hints"
