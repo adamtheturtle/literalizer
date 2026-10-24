@@ -9,6 +9,14 @@ on:
 permissions:
   contents: read
 
+# Only the latest main push needs fixes; other invocations stay independent.
+concurrency:
+  group: >-
+    autofix-${{ github.event_name == 'push' && github.ref == 'refs/heads/main'
+    && 'push-main' || format('run-{0}', github.run_id)
+    }}
+  cancel-in-progress: true
+
 jobs:
   autofix:
     runs-on: ubuntu-latest
