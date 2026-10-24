@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+# Original regression (call_ref_zig_json_helper_names): JSON call arguments preserve distinct bound objects and their helper declarations.
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+variant_only = true
+
+[[call.variants]]
+axis = "json_type"
+
+[call.ref_declarations]
+arena = '{"a":1}'
+ZVal = '{"a":1}'
+ZKV = '{"a":1}'

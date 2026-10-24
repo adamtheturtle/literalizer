@@ -1,0 +1,8 @@
+* my_data
+@code javascript
+{
+    "a-b": 1,
+    "a b": 2,
+    "a-b-2": 3
+}
+@end

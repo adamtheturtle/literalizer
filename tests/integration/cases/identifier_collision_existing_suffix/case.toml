@@ -1,0 +1,3 @@
+schema_version = 1
+# Original regression (cobol_collision_existing_suffix): COBOL-specific: source data names and generated collision suffixes must not shadow each other.
+suites = ["base"]
