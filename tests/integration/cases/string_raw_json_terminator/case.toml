@@ -3,3 +3,6 @@ suites = ["base", "combined"]
 
 [[variants]]
 axis = "json_type"
+
+[[variants]]
+axis = "string_format"

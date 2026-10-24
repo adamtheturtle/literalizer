@@ -7,3 +7,6 @@ suffix = "_dates"
 
 [[variants]]
 axis = "language_version"
+
+[[variants]]
+axis = "string_format"

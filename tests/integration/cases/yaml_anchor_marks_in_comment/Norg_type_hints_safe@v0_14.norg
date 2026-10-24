@@ -1,0 +1,5 @@
+* my_data
+@code javascript
+// An anchor and an alias marker, written only inside this comment: &a *a
+null
+@end
