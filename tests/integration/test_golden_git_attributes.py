@@ -1,4 +1,4 @@
-"""Git preserves intentional CRLF bytes in string-format goldens."""
+"""Git preserves intentional CRLF bytes in string-format golden files."""
 
 import os
 import shutil
@@ -38,7 +38,7 @@ def _git(
 def test_staged_crlf_goldens_preserve_bytes(
     case_name: str, cases_dir: Path, tmp_path: Path
 ) -> None:
-    """Stage real goldens without normalization or a whitespace error."""
+    """Stage real golden files without normalization or a whitespace error."""
     project = cases_dir.parents[2]
     _ = _git(repo=tmp_path, args=["init", "--quiet"], check=True)
     _ = (tmp_path / ".gitattributes").write_bytes(
