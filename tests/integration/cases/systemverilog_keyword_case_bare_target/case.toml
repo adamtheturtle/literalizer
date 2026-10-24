@@ -2,8 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["SystemVerilog"]
-languages_reason = "SystemVerilog keyword validation preserves permitted names and case (issue #5725)."
+# Original regression: SystemVerilog keyword validation preserves permitted names and case (issue #5725).
 target_function = "Before"
 parameter_names = ["value"]
 per_element = false

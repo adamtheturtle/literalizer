@@ -6,5 +6,4 @@ target_function = "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 parameter_names = ["x"]
 per_element = true
 wrap_in_file = true
-languages = ["Fortran", "Python"]
-languages_reason = "Fortran rejects target names beyond 63 characters; Python preserves the complete identifier."
+# Original regression: Fortran rejects target names beyond 63 characters; Python preserves the complete identifier.

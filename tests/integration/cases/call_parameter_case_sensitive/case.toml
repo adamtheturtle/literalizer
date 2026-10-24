@@ -6,5 +6,4 @@ target_function = "process"
 parameter_names = ["IF"]
 per_element = false
 wrap_in_file = true
-languages = ["Ada", "Python"]
-languages_reason = "Ada reserves IF irrespective of case, whereas Python accepts the uppercase keyword spelling as a parameter label."
+# Original regression: Ada reserves IF irrespective of case, whereas Python accepts the uppercase keyword spelling as a parameter label.

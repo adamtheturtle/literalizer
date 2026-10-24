@@ -114,6 +114,77 @@ from literalizer.exceptions import (
     UnrepresentableIntegerError,
 )
 
+_FSHARP_RESERVED_IDENTIFIERS = frozenset(
+    {
+        "abstract",
+        "and",
+        "as",
+        "assert",
+        "atomic",
+        "base",
+        "begin",
+        "class",
+        "default",
+        "delegate",
+        "do",
+        "done",
+        "downcast",
+        "downto",
+        "elif",
+        "else",
+        "end",
+        "exception",
+        "extern",
+        "false",
+        "finally",
+        "for",
+        "fun",
+        "function",
+        "global",
+        "if",
+        "in",
+        "inherit",
+        "inline",
+        "interface",
+        "internal",
+        "lazy",
+        "let",
+        "match",
+        "member",
+        "module",
+        "mutable",
+        "namespace",
+        "new",
+        "null",
+        "of",
+        "open",
+        "or",
+        "override",
+        "private",
+        "public",
+        "rec",
+        "return",
+        "sig",
+        "static",
+        "struct",
+        "then",
+        "this",
+        "throw",
+        "to",
+        "true",
+        "try",
+        "type",
+        "upcast",
+        "use",
+        "val",
+        "void",
+        "when",
+        "while",
+        "with",
+        "yield",
+    }
+)
+
 
 @beartype
 def _fsharp_discard_call(call: str, /) -> str:
@@ -123,10 +194,12 @@ def _fsharp_discard_call(call: str, /) -> str:
 
 @beartype
 def _fsharp_call_identifier(*, name: str) -> str:
-    """Quote the future reserved word used by the synthetic call
-    fixtures.
-    """
-    return f"``{name}``" if name == "process" else name
+    """Quote keywords in call targets and their generated stubs."""
+    return (
+        f"``{name}``"
+        if name == "process" or name in _FSHARP_RESERVED_IDENTIFIERS
+        else name
+    )
 
 
 @beartype
@@ -704,75 +777,8 @@ class FSharp(metaclass=LanguageCls):
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
     declares_call_parameter_names = True
     reserved_variable_identifiers_case_sensitive: bool = True
-    reserved_variable_identifiers: frozenset[str] = frozenset(
-        {
-            "abstract",
-            "and",
-            "as",
-            "assert",
-            "atomic",
-            "base",
-            "begin",
-            "class",
-            "default",
-            "delegate",
-            "do",
-            "done",
-            "downcast",
-            "downto",
-            "elif",
-            "else",
-            "end",
-            "exception",
-            "extern",
-            "false",
-            "finally",
-            "for",
-            "fun",
-            "function",
-            "global",
-            "if",
-            "in",
-            "inherit",
-            "inline",
-            "interface",
-            "internal",
-            "lazy",
-            "let",
-            "match",
-            "member",
-            "module",
-            "mutable",
-            "namespace",
-            "new",
-            "null",
-            "of",
-            "open",
-            "or",
-            "override",
-            "private",
-            "public",
-            "rec",
-            "return",
-            "sig",
-            "static",
-            "struct",
-            "then",
-            "this",
-            "throw",
-            "to",
-            "true",
-            "try",
-            "type",
-            "upcast",
-            "use",
-            "val",
-            "void",
-            "when",
-            "while",
-            "with",
-            "yield",
-        }
+    reserved_variable_identifiers: frozenset[str] = (
+        _FSHARP_RESERVED_IDENTIFIERS
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True

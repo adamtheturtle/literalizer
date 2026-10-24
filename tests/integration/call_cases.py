@@ -23,6 +23,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 import literalizer
 from literalizer._enums import enum_payload
 from literalizer._language import (
+    CallParameterShadowing,
     RenderedCallStub,
     is_reserved_identifier,
 )
@@ -466,19 +467,39 @@ def expected_call_shape_exception(
         or bound_refs_wrap
         or isinstance(effective_style, literalizer.KeywordCallStyle)
     )
-    if any(
-        _invalid_parameter_grammar(lang_cls=lang_cls, name=name)
-        for name in config.parameter_names
-    ):
-        return InvalidCallParameterNameError
-    if (
+    target_parts = config.target_function.split(sep=".")
+    shadowing = spec.call_parameter_shadowing
+    declared_parts = (
+        target_parts
+        if shadowing is CallParameterShadowing.ANY_DECLARATION
+        else target_parts[-1:]
+        if shadowing is CallParameterShadowing.TARGET_NAME
+        else []
+    )
+    case_sensitive = spec.reserved_variable_identifiers_case_sensitive
+    invalid_parameter_signals = (
+        any(
+            _invalid_parameter_grammar(lang_cls=lang_cls, name=name)
+            for name in config.parameter_names
+        ),
         rejects_reserved_parameters
         and lang_cls.declares_call_parameter_names
         and any(
             _is_reserved_parameter_name(lang_cls=lang_cls, name=name)
             for name in config.parameter_names
-        )
-    ):
+        ),
+        (config.wrap_in_file or bound_refs_wrap)
+        and any(
+            (
+                parameter == declared
+                if case_sensitive
+                else parameter.casefold() == declared.casefold()
+            )
+            for parameter in config.parameter_names
+            for declared in declared_parts
+        ),
+    )
+    if any(invalid_parameter_signals):
         return InvalidCallParameterNameError
     # Every golden declares a stub, including the manual wrapper path.
     if _invalid_target_grammar(
@@ -503,6 +524,8 @@ def expected_call_shape_exception(
     )
     if any(unsupported_signals):
         return UnsupportedCallShapeError
+    if len(target_parts) > 1 and not spec.supports_dotted_calls:
+        return DottedCallTargetNotSupportedError
     return None
 
 
@@ -644,6 +667,22 @@ def _literalize_call_case(
 
 
 @beartype
+def _call_fixture_contents(
+    *, code: str, spec: literalizer.Language, config: CallCaseSpec
+) -> str:
+    """Keep intentional identifier spellings in compiler fixtures."""
+    names = (*config.target_function.split(sep="."), *config.parameter_names)
+    preamble = (
+        language_metadata(
+            language_id=spec.language_id
+        ).golden.intentional_identifier_preamble
+        if any(name != name.lower() for name in names)
+        else ()
+    )
+    return "\n".join((*preamble, code, ""))
+
+
+@beartype
 def run_wrap_in_file_case(
     *,
     config: CallCaseSpec,
@@ -690,7 +729,9 @@ def run_wrap_in_file_case(
             },
         )
     check_golden(
-        contents=wrap_result.code + "\n",
+        contents=_call_fixture_contents(
+            code=wrap_result.code, spec=spec, config=config
+        ),
         extension=lang_extension,
         golden_path=golden_path,
         file_regression=file_regression,
@@ -1005,7 +1046,9 @@ def run_call_golden_case(
                 },
             )
         check_golden(
-            contents=bound.code + "\n",
+            contents=_call_fixture_contents(
+                code=bound.code, spec=spec, config=config
+            ),
             extension=lang_cls.extension,
             golden_path=golden_path,
             file_regression=file_regression,
@@ -1146,7 +1189,9 @@ def run_call_golden_case(
         extra_preamble=tuple(preamble_stubs),
     )
     check_golden(
-        contents=composed.code + "\n",
+        contents=_call_fixture_contents(
+            code=composed.code, spec=spec, config=config
+        ),
         extension=lang_cls.extension,
         golden_path=golden_path,
         file_regression=file_regression,

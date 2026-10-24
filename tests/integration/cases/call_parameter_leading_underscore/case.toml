@@ -6,5 +6,4 @@ target_function = "f"
 parameter_names = ["_x"]
 per_element = true
 wrap_in_file = true
-languages = ["Dart", "Python", "Wren"]
-languages_reason = "Dart and Wren reject this parameter pattern; Python renders the same identifier."
+# Original regression: Dart and Wren reject this parameter pattern; Python renders the same identifier.

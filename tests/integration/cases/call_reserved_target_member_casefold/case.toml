@@ -6,5 +6,4 @@ target_function = "obj.BEGIN"
 parameter_names = ["a"]
 per_element = false
 wrap_in_file = true
-languages = ["Ada"]
-languages_reason = "Ada also reserves uppercase keyword spellings in member call targets."
+# Original regression: Ada also reserves uppercase keyword spellings in member call targets.
