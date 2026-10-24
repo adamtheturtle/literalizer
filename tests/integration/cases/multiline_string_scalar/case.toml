@@ -18,3 +18,12 @@ axis = "multiline_string_pre_indent"
 
 [variants.context]
 pre_indent_level = 1
+
+[[variants]]
+axis = "string_format"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"

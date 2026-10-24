@@ -1,0 +1,8 @@
+module Fixture_long_string_literal_Crystal_string_format_multiline
+extend self
+my_data = {
+     %q|long_str| => %q|xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx|,
+     %q|quoted| => %q|a"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"ba"b|,
+     %q|wide| => %q|中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中中|,
+}
+end

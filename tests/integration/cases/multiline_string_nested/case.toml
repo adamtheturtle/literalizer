@@ -5,3 +5,12 @@ owner = "variant"
 [[variants]]
 axis = "multiline_string"
 suffix = "_nested"
+
+[[variants]]
+axis = "string_format"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"

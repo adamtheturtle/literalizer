@@ -1,0 +1,21 @@
+my_data = {
+    sprintf('%s%s%s%s%s%s', "first line", char(10), "  indented", char(10), char(10), "last line"),
+    sprintf('%s%s', char(10), "leading newline"),
+    sprintf('%s%s%s%s', " ", char(9), char(10), "leading whitespace"),
+    sprintf('%s%s', "trailing newline", char(10)),
+    sprintf('%s%s%s', char(10), "leading and trailing", char(10)),
+    sprintf('%s%s', "quotes: """""" ''' ` and backslash: ", char(92)),
+    "interpolation: ${value} #{value} #@value #$value $value",
+    sprintf('%s%s%s%s', "backslash before newline: ", char(92), char(10), "next line"),
+    sprintf('%s%s%s', "trailing spaces  ", char(10), "next"),
+    sprintf('%s%s%s', "C++ empty delimiter collision: )""", char(10), "value"),
+    sprintf('%s%s%s', "C++ first fallback collision: )"" and )x""", char(10), "value"),
+    sprintf('%s%s%s', "C++ second fallback collision: )"" and )x"" and )x0""", char(10), "value"),
+    sprintf('%s%s%s', "Rust delimiter collision: ""#", char(10), "value"),
+    sprintf('%s%s%s', "Lua delimiter collision: ]]", char(10), "value"),
+    sprintf('%s%s%s', "Swift delimiter collision: """"""#", char(10), "value"),
+    sprintf('%s%s%s%s%s', "Swift interpolation collision: ", char(92), "#(value)", char(10), "value"),
+    sprintf('%s%s%s', "Ruby fallback interpolation  ", char(10), "#{expression} #@instance #$global"),
+    ['NUL followed by a digit: ', char(0), '7'],
+    sprintf('%s%s%s', "carriage", char(13), "return")
+};

@@ -163,8 +163,8 @@ def _format_string_raw(value: str) -> str:
     ``r'''…'''`` is used so that the quotes need no escaping.
 
     Falls back to a regular escaped literal when the value contains a
-    null byte or a carriage return, ends with an odd number of
-    backslashes, or contains both ``"`` and ``'''``.
+    null byte, a carriage return, or trailing line whitespace, ends
+    with an odd number of backslashes, or contains both ``"`` and ``'''``.
 
     A raw literal cannot spell a carriage return: ``\r`` is not an
     escape there, and Python normalizes a literal one while reading
@@ -175,6 +175,7 @@ def _format_string_raw(value: str) -> str:
         "\0" in value
         or "\r" in value
         or has_bidi_formatting_character(value=value)
+        or _TRAILING_LINE_WHITESPACE.search(string=value) is not None
     ):
         return _format_string_double(value=value)
     stripped = value.rstrip("\\")
