@@ -1,5 +1,10 @@
 schema_version = 1
 
+[golden]
+# Collision regressions intentionally preserve caller-supplied spelling.
+# Keep the compiler's other warnings fatal for these fixtures.
+intentional_identifier_preamble = ["// Preserve intentional caller identifier spelling.", "#![allow(non_snake_case)]"]
+
 [variants]
 supports_special_float_dict_keys = false
 record = ["field_type_split", "keyword_field", "unify_optional_fields"]

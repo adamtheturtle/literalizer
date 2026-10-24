@@ -1,7 +1,6 @@
 schema_version = 1
 owner = "variant"
-languages = ["Zig"]
-languages_reason = "Zig native record fallback carriers have internal names that cannot shadow caller bindings."
+# Original regression: Zig native record fallback carriers have internal names that cannot shadow caller bindings.
 
 [[variants]]
 axis = "record_nested_map_fallback"

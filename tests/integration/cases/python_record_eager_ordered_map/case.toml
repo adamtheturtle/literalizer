@@ -1,7 +1,6 @@
 schema_version = 1
 owner = "variant"
-languages = ["Python"]
-languages_reason = "Python eager ordered-map annotations use target-compatible collection aliases."
+# Original regression: Python eager ordered-map annotations use target-compatible collection aliases.
 
 [[variants]]
 axis = "python_record_eager_annotations"

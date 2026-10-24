@@ -1,7 +1,6 @@
 schema_version = 1
 owner = "variant"
-languages = ["Python"]
-languages_reason = "Python multiline round-trip tests execute ordered-map constructor assignments with their imports."
+# Original regression: Python multiline round-trip tests execute ordered-map constructor assignments with their imports.
 
 [[variants]]
 axis = "multiline_string"
