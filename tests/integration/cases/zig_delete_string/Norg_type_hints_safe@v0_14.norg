@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "v": "ab",
+    "ab": 1
+}
+@end

@@ -6,3 +6,9 @@ axis = "string_format"
 
 [[variants]]
 axis = "collection_layout"
+
+[[variants]]
+axis = "multiline_string"
+
+[[variants]]
+axis = "type_hints"
