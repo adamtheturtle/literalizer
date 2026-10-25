@@ -2180,7 +2180,8 @@ class CSharp(metaclass=LanguageCls):
         empty form, so prefer it whenever an empty inner list sits
         beside non-empty siblings.  The array empty form is a plain
         language-level array literal, never ``Array.Empty<T>()``, so the
-        array path needs no ``using System;``.
+        array literal itself needs no ``using System;``. A configured
+        ``String`` element name contributes that import separately.
         """
         if self.json_type is not None:
             effective_declared_type = self.json_type.value
@@ -2222,6 +2223,11 @@ class CSharp(metaclass=LanguageCls):
             base,
             length_is_part_of_type=self.sequence_format
             is self.sequence_formats.TUPLE,
+            preamble_lines=(
+                (*base.preamble_lines, "using System;")
+                if element_type == "String"
+                else base.preamble_lines
+            ),
             narrowed_empty_form=_narrowed_empty_form,
         )
 
@@ -2310,6 +2316,26 @@ class CSharp(metaclass=LanguageCls):
                         opener="new[] {", declared_type=name + "[]" * depth
                     )
             fallback_type = self.default_sequence_element_type
+            # Object carriers can box arrays of any rank. A typed leaf
+            # fallback must retain the native array dimensions instead.
+            if (
+                fallback_type.removeprefix("global::")
+                .removeprefix("System.")
+                .removesuffix("?")
+                not in {"object", "Object", "dynamic"}
+                and len(items) > 0
+                and all(isinstance(item, list) for item in items)
+            ):
+                nested_types = {
+                    _infer(items=item).declared_type
+                    for item in items
+                    if isinstance(item, list)
+                }
+                fallback_type = (
+                    next(iter(nested_types))
+                    if len(nested_types) == 1
+                    else "object?"
+                )
             if self._dt_tp is int:
                 items = [_csharp_epoch_array_item(item) for item in items]
             return infer_collection_type(
