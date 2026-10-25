@@ -59,7 +59,7 @@ def _check_array_inference(swift: str) -> None:
     """Round-trip both policies and assert exact nested array types."""
     case_dir = (
         Path(__file__).resolve().parent.parent
-        / "tests/integration/cases/swift_singleton_array_inference"
+        / "tests/integration/cases/singleton_array_inference_policy"
     )
     json_text = (case_dir / "input.json").read_text(encoding="utf-8")
     checks = "\n".join(

@@ -136,7 +136,10 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
-from literalizer._statements import CallLiteralSyntax
+from literalizer._statements import (
+    CallLiteralSyntax,
+    CharacterAndHashRawLiterals,
+)
 from literalizer._types import CallPreambleData, OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -153,37 +156,6 @@ _format_string_backslash_nul = make_backslash_string_formatter(
         *bidi_escape_replacements(template="\\u{{{:04X}}}"),
     ],
 )
-
-
-@beartype
-def _call_literal_span_end(*, statement: str, cursor: int) -> int | None:
-    """Skip Rust characters and raw strings while retaining lifetimes."""
-    if statement[cursor] == "'":
-        end = cursor + 2
-        if statement[cursor + 1 : cursor + 2] == "\\":
-            end += 1
-            if statement[cursor + 2 : cursor + 4] == "u{":
-                closing_brace = statement.find("}", cursor + 4)
-                end = (
-                    len(statement)
-                    if closing_brace == -1
-                    else closing_brace + 1
-                )
-            elif statement[cursor + 2 : cursor + 3] == "x":
-                end += 2
-        return end + 1 if statement[end : end + 1] == "'" else None
-    for marker in ("r", "br", "cr"):
-        if not statement.startswith(marker, cursor):
-            continue
-        quote_start = cursor + len(marker)
-        while statement[quote_start : quote_start + 1] == "#":
-            quote_start += 1
-        if statement[quote_start : quote_start + 1] == '"':
-            hashes = statement[cursor + len(marker) : quote_start]
-            delimiter = '"' + hashes
-            end = statement.find(delimiter, quote_start + 1)
-            return len(statement) if end == -1 else end + len(delimiter)
-    return None
 
 
 @beartype
@@ -3241,7 +3213,11 @@ _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
     verbatim_strings=False,
     interpolation_syntax=None,
     quotes='"',
-    literal_span_end=_call_literal_span_end,
+    literal_span_end=CharacterAndHashRawLiterals(
+        character_quote="'",
+        raw_string_prefixes=("r", "br", "cr"),
+        hash_marker="#",
+    ),
     backtick_strings=False,
 )
 

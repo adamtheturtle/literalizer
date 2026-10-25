@@ -6991,67 +6991,17 @@ def _format_prefix_call_args(
 
 
 @beartype
-def _format_call_args(
+def format_rendered_call_arguments(
     *,
-    values: Sequence[Value],
+    formatted: list[str],
     params: Sequence[str],
-    language: Language,
-    wrap_ids: frozenset[int],
-    tuple_list_ids: frozenset[int],
-    scalar_wrap_ids: frozenset[int],
     style: CallStyle,
-    dict_open_overrides: Sequence[str | None],
-    ref_case: IdentifierCase | None,
-    ref_values: Mapping[str, Value] | None,
-    consumable_ref_names: frozenset[str],
-    single_use_ref_names: frozenset[str],
-    consume_inhibited_ref_names: frozenset[str],
-    ref_key: str,
-    collection_layout: CollectionLayout,
+    allows_empty_call_parens: bool,
 ) -> str:
-    """Format argument values for a single function call.
-
-    For infix styles returns the parenthesized argument list
-    ``(arg1, arg2)``.  A positional style can instead parenthesize
-    each argument separately for curried application forms such as
-    Dhall's ``target (arg1) (arg2)``. For :class:`PostfixCallStyle`
-    returns the unwrapped, space-separated argument list so the caller
-    can assemble ``args target`` directly.
-
-    A value shaped like ``{"$ref": "name"}`` renders as the bare
-    identifier ``name`` instead of being formatted as a literal, so
-    callers can refer to a variable declared elsewhere (e.g. via
-    :class:`NewVariable`).
-
-    *dict_open_overrides* supplies a per-positional dict opener so that
-    dict arguments at the same slot across sibling calls share a
-    widened type.  ``None`` at a given position means "no override".
-
-    *ref_case*, when not ``None``, converts each ``{"$ref": "name"}``
-    identifier to that :class:`IdentifierCase` before emitting it.
+    """Apply the call convention to already rendered native argument
+    tokens.
     """
-    wrap_arg = language.format_call_arg
-    formatted = [
-        _format_single_call_arg(
-            value=arg_value,
-            language=language,
-            wrap_ids=wrap_ids,
-            tuple_list_ids=tuple_list_ids,
-            scalar_wrap_ids=scalar_wrap_ids,
-            wrap_arg=wrap_arg,
-            dict_open_override=dict_open_overrides[slot_index],
-            ref_case=ref_case,
-            ref_values=ref_values,
-            consumable_ref_names=consumable_ref_names,
-            single_use_ref_names=single_use_ref_names,
-            consume_inhibited_ref_names=consume_inhibited_ref_names,
-            ref_key=ref_key,
-            collection_layout=collection_layout,
-        )
-        for slot_index, arg_value in enumerate(iterable=values)
-    ]
-
-    if len(formatted) == 0 and not language.allows_empty_call_parens:
+    if len(formatted) == 0 and not allows_empty_call_parens:
         return ""
 
     match style:
@@ -7126,7 +7076,76 @@ def _format_call_args(
 
 
 @beartype
-def _assemble_bare_call_expr(
+def _format_call_args(
+    *,
+    values: Sequence[Value],
+    params: Sequence[str],
+    language: Language,
+    wrap_ids: frozenset[int],
+    tuple_list_ids: frozenset[int],
+    scalar_wrap_ids: frozenset[int],
+    style: CallStyle,
+    dict_open_overrides: Sequence[str | None],
+    ref_case: IdentifierCase | None,
+    ref_values: Mapping[str, Value] | None,
+    consumable_ref_names: frozenset[str],
+    single_use_ref_names: frozenset[str],
+    consume_inhibited_ref_names: frozenset[str],
+    ref_key: str,
+    collection_layout: CollectionLayout,
+) -> str:
+    """Format argument values for a single function call.
+
+    For infix styles returns the parenthesized argument list
+    ``(arg1, arg2)``.  A positional style can instead parenthesize
+    each argument separately for curried application forms such as
+    Dhall's ``target (arg1) (arg2)``. For :class:`PostfixCallStyle`
+    returns the unwrapped, space-separated argument list so the caller
+    can assemble ``args target`` directly.
+
+    A value shaped like ``{"$ref": "name"}`` renders as the bare
+    identifier ``name`` instead of being formatted as a literal, so
+    callers can refer to a variable declared elsewhere (e.g. via
+    :class:`NewVariable`).
+
+    *dict_open_overrides* supplies a per-positional dict opener so that
+    dict arguments at the same slot across sibling calls share a
+    widened type.  ``None`` at a given position means "no override".
+
+    *ref_case*, when not ``None``, converts each ``{"$ref": "name"}``
+    identifier to that :class:`IdentifierCase` before emitting it.
+    """
+    wrap_arg = language.format_call_arg
+    formatted = [
+        _format_single_call_arg(
+            value=arg_value,
+            language=language,
+            wrap_ids=wrap_ids,
+            tuple_list_ids=tuple_list_ids,
+            scalar_wrap_ids=scalar_wrap_ids,
+            wrap_arg=wrap_arg,
+            dict_open_override=dict_open_overrides[slot_index],
+            ref_case=ref_case,
+            ref_values=ref_values,
+            consumable_ref_names=consumable_ref_names,
+            single_use_ref_names=single_use_ref_names,
+            consume_inhibited_ref_names=consume_inhibited_ref_names,
+            ref_key=ref_key,
+            collection_layout=collection_layout,
+        )
+        for slot_index, arg_value in enumerate(iterable=values)
+    ]
+
+    return format_rendered_call_arguments(
+        formatted=formatted,
+        params=params,
+        style=style,
+        allows_empty_call_parens=language.allows_empty_call_parens,
+    )
+
+
+@beartype
+def assemble_call_expression(
     *,
     target_function: str,
     args_str: str,
@@ -7209,7 +7228,7 @@ def _assemble_call(
     can pair the call with per-row data.  The language's statement
     terminator is appended last.
     """
-    call_expr = _assemble_bare_call_expr(
+    call_expr = assemble_call_expression(
         target_function=target_function,
         args_str=args_str,
         style=style,

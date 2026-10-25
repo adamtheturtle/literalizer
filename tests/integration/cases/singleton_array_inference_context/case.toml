@@ -1,0 +1,7 @@
+# Regression provenance: Swift. Swift inference boundaries require scalar-ended singleton chains; nil, empty and multi-element leaves keep their enclosing context.
+schema_version = 1
+gates = [{kind = "spec_field_present", field = "array_inference_policy"}]
+suites = ["base"]
+
+[[variants]]
+axis = "array_inference_policy"

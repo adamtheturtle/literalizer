@@ -94,7 +94,7 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
-from literalizer._statements import split_double_quoted_line_comments
+from literalizer._statements import CallLiteralSyntax, PrefixedIdentifierSyntax
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -333,6 +333,20 @@ def _sv_call_stub(
     return tuple(lines)
 
 
+_CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    prefix="//",
+    quotes='"',
+    regex_literals=False,
+    backtick_strings=False,
+    raw_string_prefixes=(),
+    verbatim_strings=False,
+    interpolation_syntax=None,
+    literal_span_end=PrefixedIdentifierSyntax(
+        prefix="`", identifier=r"[A-Za-z_][A-Za-z0-9_$]*"
+    ),
+)
+
+
 @beartype
 def _format_systemverilog_call_declaration(
     name: str,
@@ -358,10 +372,7 @@ def _format_systemverilog_call_declaration(
     struct literal, so the call result is bound directly with a plain
     ``static _VVal`` declaration regardless of the source data type.
     """
-    comments = split_double_quoted_line_comments(
-        statement=value,
-        prefix="//",
-    )
+    comments = _CALL_LITERAL_SYNTAX.split(value)
     return (
         f"static _VVal {name} = {comments.code};" + comments.trailing_comments
     )
@@ -380,10 +391,7 @@ def _format_systemverilog_call_assignment(
     already declared ``_VVal``, so the call result is assigned directly
     with no ``_VVal`` struct-literal wrapping.
     """
-    comments = split_double_quoted_line_comments(
-        statement=value,
-        prefix="//",
-    )
+    comments = _CALL_LITERAL_SYNTAX.split(value)
     return f"{name} = {comments.code};" + comments.trailing_comments
 
 
@@ -427,7 +435,9 @@ class SystemVerilog(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_literal_syntax: ClassVar[None] = None
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
+        _CALL_LITERAL_SYNTAX
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True

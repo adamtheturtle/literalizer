@@ -43,6 +43,20 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
     argvalues=[
         (
             (
+                'schema_version = 1\nowner = "literalize-call"\n[call]\n'
+                'target_function = "target"\nparameter_names = ["value"]\n'
+                "per_element = false\n"
+                'call_transform_group = {body = "{call}", suffix = ""}\n'
+                "call_transform_arguments = "
+                '{arguments = ["token"], suffix = ""}\n'
+            ),
+            (
+                "call_transform_group and call_transform_arguments "
+                "are mutually exclusive"
+            ),
+        ),
+        (
+            (
                 'schema_version = 1\nsuites = ["base"]\n'
                 '[[variants]]\naxis = "string_format"\n'
                 'expected_errors = ["RuntimeError"]\n'
@@ -1042,6 +1056,9 @@ def test_modifier_gate_selects_supported_declarations(tmp_path: Path) -> None:
     argnames="grammar_gate",
     argvalues=[
         '{kind = "call_literal_flag", flag = "verbatim_strings"}',
+        '{kind = "call_character_quote", quote = "\'"}',
+        '{kind = "call_hash_raw_prefix", prefix = "r", marker = "#"}',
+        '{kind = "call_identifier_prefix", prefix = "`"}',
         '{kind = "call_raw_string_prefix", prefix = "r"}',
         '{kind = "call_interpolation", opener = "${", quotes = "\'"}',
     ],
@@ -1085,3 +1102,33 @@ def test_literal_grammar_gates_compose_with_call_capabilities(
     }
     assert len(admitted) > 0
     assert admitted == combined_admitted
+
+
+@pytest.mark.parametrize(
+    argnames="grammar_gate",
+    argvalues=[
+        '{kind = "call_character_quote", quote = "~"}',
+        '{kind = "call_hash_raw_prefix", prefix = "r", marker = "@"}',
+        '{kind = "call_hash_raw_prefix", prefix = "unknown", marker = "#"}',
+        '{kind = "call_identifier_prefix", prefix = "#"}',
+    ],
+)
+def test_unsupported_token_grammars_admit_no_producers(
+    tmp_path: Path, grammar_gate: str
+) -> None:
+    """A similar token family does not admit an incompatible delimiter."""
+    text = (
+        'schema_version = 1\nsuites = ["base"]\ngates = ['
+        + grammar_gate
+        + "]\n"
+    )
+    case_dir = _write_case(
+        tmp_path=tmp_path, manifest=text, input_name="input.yaml"
+    )
+    manifest = load_case_manifest(case_dir=case_dir)
+    admitted = [
+        lang_cls
+        for lang_cls in literalizer.languages.ALL_LANGUAGES
+        if manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
+    ]
+    assert len(admitted) == 0

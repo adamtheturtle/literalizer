@@ -28,6 +28,10 @@ from literalizer._language import (
     RenderedCallStub,
     is_reserved_identifier,
 )
+from literalizer._literalize import (
+    assemble_call_expression,
+    format_rendered_call_arguments,
+)
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
@@ -687,6 +691,72 @@ class GroupedCallTransform:
         return self.outer(dataclasses.replace(context, call=expression))
 
 
+@dataclasses.dataclass(frozen=True)
+class LiteralArgumentsTransform:
+    """An expression with native operands and a real call convention."""
+
+    call: str
+    suffix: str
+    outer: CallTransform | None
+
+    @property
+    def uses_zipped(self) -> bool:
+        """Retain operand metadata from the optional outer transform."""
+        return self.outer is not None and self.outer.uses_zipped
+
+    def __call__(self, context: literalizer.CallContext, /) -> str:
+        """Insert native operands before applying the outer transform."""
+        expression = self.call + self.suffix
+        if self.outer is None:
+            return expression
+        return self.outer(dataclasses.replace(context, call=expression))
+
+
+@beartype
+def call_transform_for_case(
+    *, spec: literalizer.Language, config: CallCaseSpec
+) -> Callable[[literalizer.CallContext], str] | None:
+    """Compose the declared expression recipe with the actual call
+    syntax.
+    """
+    style = spec.call_style_config
+    if config.call_transform_arguments is not None and not isinstance(
+        style, CallSupport
+    ):
+        native_arguments = config.call_transform_arguments
+        args = format_rendered_call_arguments(
+            formatted=list(native_arguments.arguments),
+            params=config.parameter_names,
+            style=style,
+            allows_empty_call_parens=spec.allows_empty_call_parens,
+        )
+        target = spec.format_call_target(
+            tuple(config.target_function.split(sep="."))
+        )
+        return LiteralArgumentsTransform(
+            call=assemble_call_expression(
+                target_function=target,
+                args_str=args,
+                style=style,
+            ),
+            suffix=native_arguments.suffix,
+            outer=config.call_transform,
+        )
+    if config.call_transform_group is not None:
+        group = (
+            spec.group_call_expression
+            if isinstance(spec, _CallExpressionGroupLanguage)
+            else _parenthesized_call_group
+        )
+        return GroupedCallTransform(
+            body=config.call_transform_group.body,
+            suffix=config.call_transform_group.suffix,
+            outer=config.call_transform,
+            group=group,
+        )
+    return config.call_transform
+
+
 @beartype
 def _literalize_call_case(
     *,
@@ -711,21 +781,7 @@ def _literalize_call_case(
                 for name in config.variable_modifiers
             ),
         )
-    call_transform: Callable[[literalizer.CallContext], str] | None = (
-        config.call_transform
-    )
-    if config.call_transform_group is not None:
-        group = (
-            spec.group_call_expression
-            if isinstance(spec, _CallExpressionGroupLanguage)
-            else _parenthesized_call_group
-        )
-        call_transform = GroupedCallTransform(
-            body=config.call_transform_group.body,
-            suffix=config.call_transform_group.suffix,
-            outer=config.call_transform,
-            group=group,
-        )
+    call_transform = call_transform_for_case(spec=spec, config=config)
     if (
         call_transform is not None
         and not config.call_transform_reports_zip_usage

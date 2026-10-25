@@ -32,6 +32,74 @@ class LiteralSpanEnd(Protocol):
 
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class CharacterAndHashRawLiterals:
+    """Characters with brace Unicode escapes and hash-delimited raw
+    strings.
+    """
+
+    character_quote: str
+    raw_string_prefixes: tuple[str, ...]
+    hash_marker: str
+
+    @beartype
+    def __call__(self, *, statement: str, cursor: int) -> int | None:
+        """Skip literals while leaving lifetime and raw identifier tokens
+        visible.
+        """
+        if statement[cursor] == self.character_quote:
+            end = cursor + 2
+            if statement[cursor + 1 : cursor + 2] == "\\":
+                end += 1
+                if statement[cursor + 2 : cursor + 4] == "u{":
+                    closing_brace = statement.find("}", cursor + 4)
+                    end = (
+                        len(statement)
+                        if closing_brace == -1
+                        else closing_brace + 1
+                    )
+                elif statement[cursor + 2 : cursor + 3] == "x":
+                    end += 2
+            return (
+                end + 1
+                if statement[end : end + 1] == self.character_quote
+                else None
+            )
+        for marker in self.raw_string_prefixes:
+            if not statement.startswith(marker, cursor):
+                continue
+            quote_start = cursor + len(marker)
+            while statement[quote_start : quote_start + 1] == self.hash_marker:
+                quote_start += 1
+            if statement[quote_start : quote_start + 1] == '"':
+                hashes = statement[cursor + len(marker) : quote_start]
+                delimiter = '"' + hashes
+                end = statement.find(delimiter, quote_start + 1)
+                return len(statement) if end == -1 else end + len(delimiter)
+        return None
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class PrefixedIdentifierSyntax:
+    """A directive or macro identifier with a leading syntax marker."""
+
+    prefix: str
+    identifier: str
+
+    @beartype
+    def __call__(self, *, statement: str, cursor: int) -> int | None:
+        """Skip a complete prefixed name without opening a quoted
+        string.
+        """
+        if not statement.startswith(self.prefix, cursor):
+            return None
+        start = cursor + len(self.prefix)
+        match = re.match(pattern=self.identifier, string=statement[start:])
+        return None if match is None else start + match.end()
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class _TrailingLineComments:
     """An expression and its preserved trailing whitespace and
     comments.
@@ -291,24 +359,6 @@ def split_trailing_line_comments(
         verbatim_strings=verbatim_strings,
         interpolation_syntax=interpolation_syntax,
         literal_span_end=literal_span_end,
-    ).split()
-
-
-@beartype
-def split_double_quoted_line_comments(
-    *, statement: str, prefix: str
-) -> _TrailingLineComments:
-    """Separate trailing comments where only double quotes delimit strings."""
-    return _CommentScanner(
-        statement=statement,
-        prefix=prefix,
-        quotes=frozenset({'"'}),
-        regex_literals=False,
-        backtick_strings=False,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=None,
-        literal_span_end=None,
     ).split()
 
 
