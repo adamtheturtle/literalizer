@@ -25,8 +25,12 @@ from ruamel.yaml import YAML
 
 import literalizer
 from literalizer import ValueInput
+from literalizer._literalize import materialize_value_input
+from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    CallsNotSupportedByLanguageError,
+    CallsNotSupportedByToolError,
     ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
@@ -73,6 +77,16 @@ CASES_DIR = Path(__file__).parent / "cases"
 # skips rather than fails.
 _REF_SKIPS: SkipPolicy = SkipPolicy(
     reasons=(
+        SkipReason(
+            error=CallsNotSupportedByLanguageError,
+            reason="has no generated consumer call syntax",
+            unlink=True,
+        ),
+        SkipReason(
+            error=CallsNotSupportedByToolError,
+            reason="cannot generate consumer calls",
+            unlink=True,
+        ),
         SkipReason(
             error=IncompatibleFormatsError,
             reason="reference input is incompatible with the selected formats",
@@ -474,10 +488,14 @@ def _compose_ref_consumer(
     spec: literalizer.Language,
     declarations: list[literalizer.LiteralizeResult],
     result: literalizer.LiteralizeResult,
+    argument_data: ValueInput,
 ) -> literalizer.LiteralizeResult:
     """Compose a generated consumer around an external-reference
     result.
     """
+    stub_data = materialize_value_input(
+        value=argument_data, argument_name="consumer value"
+    )
     parameters = ("arg_value",)
     target = tuple(consumer.target_function.split(sep="."))
     call = literalizer.literalize_call(
@@ -497,48 +515,61 @@ def _compose_ref_consumer(
         declarations=declarations,
         call=call,
         extra_body_preamble=spec.format_call_stub(
-            target, parameters, literalizer.StubReturn.VOID, ()
+            target, parameters, literalizer.StubReturn.VOID, ([stub_data],)
         ),
         extra_class_preamble=spec.format_call_class_scope_stub(
-            target, parameters, literalizer.StubReturn.VOID, ()
+            target, parameters, literalizer.StubReturn.VOID, ([stub_data],)
         ),
         extra_preamble=spec.format_call_preamble_stub(
-            target, parameters, literalizer.StubReturn.VOID, ()
+            target, parameters, literalizer.StubReturn.VOID, ([stub_data],)
         ),
     )
+
+
+@beartype
+def _external_result_value(*, source: Value, config: RefCaseSpec) -> Value:
+    """Resolve caller values only for the independent consumer's signature."""
+    if isinstance(source, dict):
+        name = source.get(config.ref_key)
+        if len(source) == 1 and isinstance(name, str):
+            return TypeAdapter[Value](type=Value).validate_python(
+                json.loads(s=config.external_declarations[name])
+            )
+        return {
+            key: _external_result_value(source=value, config=config)
+            for key, value in source.items()
+        }
+    if isinstance(source, list):
+        return [
+            _external_result_value(source=value, config=config)
+            for value in source
+        ]
+    return source
 
 
 @beartype
 def _compose_external_ref_fixture(
     *,
     config: RefCaseSpec,
-    lang_cls: literalizer.LanguageCls,
     spec: literalizer.Language,
     result: literalizer.LiteralizeResult,
+    raw_data: _RefData,
 ) -> literalizer.LiteralizeResult:
     """Compose caller declarations and optional generated checks."""
     declarations: list[literalizer.LiteralizeResult] = []
     for name, source in config.external_declarations.items():
         declaration_spec = spec
-        style = config.external_declaration_styles.get(name)
         if config.variable_form == "existing" and name == "my_data":
             styles = find_redefinition_styles(spec=spec)
-            if len(styles) == 0 and spec.call_assignment_declares_binding:
+            if len(styles) == 0:
                 msg = (
                     "the external destination needs a reassignable declaration"
                 )
                 raise UnrepresentableInputError(msg)
-            if len(styles) > 0 and style is None:
+            if styles[0] is not spec.declaration_style:
                 declaration_spec = dataclasses.replace(
                     spec, declaration_style=styles[0]
                 )
-        if style is not None:
-            declaration_spec = dataclasses.replace(
-                spec,
-                declaration_style=enum_member_by_name(
-                    enum_cls=lang_cls.DeclarationStyles, name=style
-                ),
-            )
         declarations.append(
             literalizer.literalize(
                 source=source,
@@ -549,7 +580,10 @@ def _compose_external_ref_fixture(
                 ),
             )
         )
-    if config.expected_value_source is not None:
+    assertion_helper = (
+        Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
+    )
+    if config.expected_value_source is not None and assertion_helper.is_file():
         return _compose_ref_value_check(
             source=config.expected_value_source,
             spec=spec,
@@ -564,6 +598,10 @@ def _compose_external_ref_fixture(
         spec=spec,
         declarations=declarations,
         result=result,
+        argument_data=_external_result_value(
+            source=TypeAdapter[Value](type=Value).validate_python(raw_data),
+            config=config,
+        ),
     )
 
 
@@ -695,9 +733,9 @@ def run_literalize_ref_golden_case(
         if len(config.external_declarations) > 0:
             result = _compose_external_ref_fixture(
                 config=config,
-                lang_cls=lang_cls,
                 spec=spec,
                 result=result,
+                raw_data=raw_data,
             )
     check_golden(
         contents=_ref_fixture_contents(

@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+# Shared coverage retains literalize_ref_rust_unresolved_unrelated_values.
+# Compose the caller's declaration after rendering so a remains unresolved
+# during public API inference, while the resulting fixture compiles.
+external_declarations = {a = "0"}
+expected_value_source = "[0, 1]"
+explicit_ref_value_sources = {zzz = "5"}

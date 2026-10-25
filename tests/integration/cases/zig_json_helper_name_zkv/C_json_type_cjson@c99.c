@@ -1,9 +1,9 @@
 #include <cjson/cJSON.h>
 int main(void) {
-cJSON *_n0 = cJSON_CreateObject();
-cJSON *_n1 = cJSON_CreateNumber((double)1);
-cJSON_AddItemToObject(_n0, "a", _n1);
-cJSON *ZKV = _n0;
+cJSON *literalizer_ZKV_n0 = cJSON_CreateObject();
+cJSON *literalizer_ZKV_n1 = cJSON_CreateNumber((double)1);
+cJSON_AddItemToObject(literalizer_ZKV_n0, "a", literalizer_ZKV_n1);
+cJSON *ZKV = literalizer_ZKV_n0;
     (void)ZKV;
     return 0;
 }

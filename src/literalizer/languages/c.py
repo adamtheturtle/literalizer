@@ -2335,7 +2335,7 @@ class C(metaclass=LanguageCls):
         Under ``json_type=CJSON`` the rendered ``CVal`` value is
         discarded: the data is built as a ``cJSON_Create*(...)`` node
         tree (one statement per node) and the binding declares the root
-        ``cJSON *my_data = _n0;``.
+        ``cJSON *my_data = literalizer_my_data_n0;``.
         """
         if self._json_type_active:
             format_integer = self.format_integer
@@ -2352,7 +2352,7 @@ class C(metaclass=LanguageCls):
                 source = _cjson_binding_source(value=value, data=data)
                 build = _c_cjson_build(
                     source.data,
-                    prefix="_n",
+                    prefix=f"literalizer_{name}_n",
                     node_indices=self._cjson_node_indices,
                     format_integer=format_integer,
                     format_float=format_float,
@@ -2402,8 +2402,8 @@ class C(metaclass=LanguageCls):
         Under ``json_type=CJSON`` the value is rebuilt as a fresh
         ``cJSON`` node tree and the existing binding is reassigned to its
         root.
-        A distinct ``_m`` node prefix (the declaration build uses
-        ``_n``) keeps the combined declaration+assignment form free of
+        A binding-specific ``_m`` prefix (declarations use ``_n``)
+        keeps separately rendered declarations and assignments free of
         duplicate ``cJSON *`` definitions in one scope.
         """
         if self._json_type_active:
@@ -2420,7 +2420,7 @@ class C(metaclass=LanguageCls):
                 source = _cjson_binding_source(value=value, data=data)
                 build = _c_cjson_build(
                     source.data,
-                    prefix="_m",
+                    prefix=f"literalizer_{name}_m",
                     node_indices=self._cjson_node_indices,
                     format_integer=format_integer,
                     format_float=format_float,

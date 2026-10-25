@@ -1,0 +1,14 @@
+Imports System.Collections.Generic
+Module Check
+    Function consume_widget(arg_value As Object) As Object
+        Return Nothing
+    End Function
+    Sub _calls()
+        Dim missing = New Integer() {
+            1,
+            2
+        }
+        Dim my_data = missing
+        consume_widget(my_data)
+    End Sub
+End Module

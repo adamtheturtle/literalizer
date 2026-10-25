@@ -838,7 +838,7 @@ class V(metaclass=LanguageCls):
         frozenset()
     )
     reserved_call_target_head_identifiers: ClassVar[frozenset[str]] = (
-        frozenset()
+        frozenset({"literalizer_ref_value"})
     )
     contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset()
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
@@ -880,6 +880,7 @@ class V(metaclass=LanguageCls):
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
             "__global",
+            "literalizer_ref_value",
             "as",
             "asm",
             "assert",
@@ -1383,6 +1384,17 @@ class V(metaclass=LanguageCls):
     supports_scalar_inline_comments: ClassVar[bool] = True
     statement_terminator: ClassVar[str] = ";"
     static_preamble: ClassVar[Sequence[str]] = ()
+    unresolved_reference_preamble: ClassVar[tuple[str, ...]] = (
+        (
+            "fn literalizer_ref_value[T](value T) T {\n"
+            "    $if T is $array_dynamic || T is $map {\n"
+            "        return value.clone()\n"
+            "    } $else {\n"
+            "        return value\n"
+            "    }\n"
+            "}"
+        ),
+    )
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ("import math",)
 
@@ -1693,8 +1705,8 @@ class V(metaclass=LanguageCls):
         hard error - so we emit the bare identifier and let V's
         automatic primitive copy do the right thing.  When the caller
         did not supply ``ref_values`` we cannot tell which case applies
-        and fall back to ``.clone()``, which is correct for V's
-        original use case (map/array refs).
+        and use a generic helper to preserve array/map ownership while
+        copying primitive values.
         """
 
         @beartype
@@ -1702,6 +1714,8 @@ class V(metaclass=LanguageCls):
             """Return *name* with ``.clone()`` appended unless *value*
             is a scalar or native record that V auto-copies.
             """
+            if value is None:
+                return f"literalizer_ref_value({name})"
             if isinstance(value, bool | int | float) or (
                 isinstance(value, dict)
                 and self.heterogeneous_strategy.name == "RECORD"

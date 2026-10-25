@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+variant_only = true
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+# Shared coverage retains literalize_ref_cpp_external_json_null.
+variable_form = "existing"
+external_declarations = {item = "null", my_data = "null"}
+explicit_ref_value_sources = {item = "null"}
+
+[ref.consumer]
+target_function = "consume_widget"
+before_assignment = true
+
+[[ref.variants]]
+axis = "json_type"

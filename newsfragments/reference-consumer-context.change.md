@@ -1,0 +1,1 @@
+Generated reference consumers retain argument metadata for null values, singleton layout counts unresolved references, and mutable Odin and Haxe declarations support complete declaration/assignment fixtures.

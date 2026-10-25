@@ -2976,8 +2976,9 @@ def _wrap_body(
     line_prefix: str,
     dict_open_override: str | None,
     sequence_open_override: str | None,
+    source_length: int,
 ) -> str:
-    """Wrap ``body`` in the language's open/close delimiters."""
+    """Wrap ``body`` using source arity and inferred collection types."""
     ci = ""
     if spec.indent_closing_delimiter:
         ci = spec.indent
@@ -3013,7 +3014,7 @@ def _wrap_body(
             if sequence_open_override is not None:
                 open_str = sequence_open_override
                 close_str = sequence_cfg.close
-            elif template is not None and len(data) == 1:
+            elif template is not None and source_length == 1:
                 open_str, _, close_str = template.partition("{items}")
             else:
                 open_str = spec.sequence_open(data)
@@ -4311,6 +4312,7 @@ def _format_root_collection(
         data=inference_data,
         spec=language,
         line_prefix=line_prefix,
+        source_length=len(data),
         dict_open_override=ctx.dict_open_overrides.get(id(data)),
         sequence_open_override=ctx.sequence_open_overrides.get(id(data)),
     )
@@ -4823,6 +4825,39 @@ def _apply_variable_wrapper(
     return line_prefix + wrapped
 
 
+@runtime_checkable
+class _UnresolvedReferencePreambleLanguage(Protocol):
+    """A language with a typed operation for unresolved reference
+    values.
+    """
+
+    @property
+    def unresolved_reference_preamble(self) -> tuple[str, ...]:
+        """Return helpers used only when a reference has no value hint."""
+        ...
+
+
+@beartype
+def _reference_preamble(
+    *,
+    data: Value,
+    ref_key: str,
+    ref_values: Mapping[str, Value] | None,
+    language: Language,
+) -> tuple[str, ...]:
+    """Retain required reference helpers without mutable renderer
+    state.
+    """
+    if ref_key is _DISABLED_REF_KEY or not isinstance(
+        language, _UnresolvedReferencePreambleLanguage
+    ):
+        return ()
+    names = _collect_ref_names(value=data, ref_key=ref_key)
+    if names.issubset(reference_values_or_empty(values=ref_values)):
+        return ()
+    return language.unresolved_reference_preamble
+
+
 @beartype
 @dataclasses.dataclass(frozen=True)
 class _PreFormState:
@@ -4851,6 +4886,7 @@ class _PreFormState:
     ref_case: IdentifierCase | None
     """The case a ref identifier was converted to, if any."""
     root_mapping_entries: tuple[str, ...] | None
+    reference_preamble: tuple[str, ...]
     initializer_type: str | None
     """Declaration type retained before comments or binding."""
     root_is_object_literal: bool
@@ -5069,6 +5105,12 @@ def _literalize_pre_form_impl(
             include_delimiters=include_delimiters,
         ),
         root_mapping_entries=root_mapping_entries,
+        reference_preamble=_reference_preamble(
+            data=data,
+            ref_key=active_ref_key,
+            ref_values=ref_values,
+            language=language,
+        ),
     )
 
 
@@ -5384,6 +5426,7 @@ def literalize_apply_form(
             computed.leading
             + tuple(language.static_preamble)
             + computed.header
+            + pre_form.reference_preamble
             + data_dependent_preamble
         )
     )
