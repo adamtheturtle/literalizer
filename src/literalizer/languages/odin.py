@@ -140,7 +140,8 @@ _NULL_OBJECT_STUB = NullableObjectCallStubResult(
     value="nil",
     conditional_template=(
         "({call} != {null} ?\n"
-        "{call}{inner_comment}\n"
+        "{call} \\\n"
+        "{inner_comment}\n"
         ": {null}){trailing_comment}"
     ),
     comment_prefix="//",

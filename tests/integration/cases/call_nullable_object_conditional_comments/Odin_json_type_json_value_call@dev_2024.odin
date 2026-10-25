@@ -9,7 +9,8 @@ make_widget :: proc(args: ..any) -> any { return nil }
 
 main :: proc() {
 my_data := (make_widget(_json_parse(`42`)) != nil ?
-make_widget(_json_parse(`42`)) // inner
+make_widget(_json_parse(`42`)) \
+ // inner
 : nil) // trailing
 _ = my_data
 }

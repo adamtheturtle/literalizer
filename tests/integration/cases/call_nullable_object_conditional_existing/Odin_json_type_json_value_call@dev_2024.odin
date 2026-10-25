@@ -12,7 +12,8 @@ main :: proc() {
 my_data := make_widget(_json_parse(`7`))
 consume(my_data);
 my_data = (make_widget(_json_parse(`13`)) != nil ?
-make_widget(_json_parse(`13`)) // inner
+make_widget(_json_parse(`13`)) \
+ // inner
 : nil) // trailing
 consume(my_data);
 }
