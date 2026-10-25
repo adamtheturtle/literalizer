@@ -130,7 +130,9 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
-from literalizer._statements import split_trailing_line_comments
+from literalizer._statements import (
+    CallLiteralSyntax,
+)
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     ConflictingVariableModifiersError,
@@ -698,20 +700,22 @@ class _JavaTerminatedValue:
     trailing: str
 
 
+_CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    prefix="//",
+    regex_literals=False,
+    backtick_strings=False,
+    raw_string_prefixes=(),
+    verbatim_strings=False,
+    interpolation_syntax=None,
+    quotes="\"'",
+    literal_span_end=None,
+)
+
+
 @beartype
 def _java_split_trailing_line_comments(value: str) -> _JavaTerminatedValue:
     """Keep a statement terminator ahead of trailing ``//`` comments."""
-    comments = split_trailing_line_comments(
-        statement=value,
-        prefix="//",
-        regex_literals=False,
-        backtick_strings=False,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=None,
-        quotes="\"'",
-        literal_span_end=None,
-    )
+    comments = _CALL_LITERAL_SYNTAX.split(value)
     return _JavaTerminatedValue(
         code=comments.code, trailing=comments.trailing_comments
     )
@@ -1098,6 +1102,9 @@ class Java(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
+        _CALL_LITERAL_SYNTAX
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True

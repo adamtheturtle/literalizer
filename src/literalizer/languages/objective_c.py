@@ -97,7 +97,9 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
-from literalizer._statements import split_trailing_line_comments
+from literalizer._statements import (
+    CallLiteralSyntax,
+)
 from literalizer._types import Value
 
 
@@ -218,6 +220,18 @@ def _build_objc_assignment(
 _format_objc_entry_iso = _build_objc_entry_formatter(datetime_as_number=False)
 
 
+_CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    prefix="//",
+    regex_literals=False,
+    backtick_strings=False,
+    raw_string_prefixes=(),
+    verbatim_strings=False,
+    interpolation_syntax=None,
+    quotes="\"'",
+    literal_span_end=None,
+)
+
+
 @beartype
 def _format_objc_call_declaration(
     name: str,
@@ -232,17 +246,7 @@ def _format_objc_call_declaration(
     A call expression already evaluates to an object pointer, so the
     ``@(...)`` boxing is dropped and the call result is bound directly.
     """
-    comments = split_trailing_line_comments(
-        statement=value,
-        prefix="//",
-        regex_literals=False,
-        backtick_strings=False,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=None,
-        quotes="\"'",
-        literal_span_end=None,
-    )
+    comments = _CALL_LITERAL_SYNTAX.split(value)
     return f"id {name} = {comments.code};" + comments.trailing_comments
 
 
@@ -253,17 +257,7 @@ def _format_objc_call_assignment(name: str, value: str, _data: Value) -> str:
     The call-expression counterpart of the literal assignment formatter;
     no ``@(...)`` boxing since a call already yields an object pointer.
     """
-    comments = split_trailing_line_comments(
-        statement=value,
-        prefix="//",
-        regex_literals=False,
-        backtick_strings=False,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=None,
-        quotes="\"'",
-        literal_span_end=None,
-    )
+    comments = _CALL_LITERAL_SYNTAX.split(value)
     return f"{name} = {comments.code};" + comments.trailing_comments
 
 
@@ -659,6 +653,9 @@ class ObjectiveC(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
+        _CALL_LITERAL_SYNTAX
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True

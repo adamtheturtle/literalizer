@@ -136,6 +136,7 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._statements import CallLiteralSyntax
 from literalizer._types import CallPreambleData, OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -3233,6 +3234,18 @@ def _empty_container_type_hints() -> MappingProxyType[EmptyContainerPath, str]:
     return MappingProxyType[EmptyContainerPath, str](mapping={})
 
 
+_CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    prefix="//",
+    regex_literals=False,
+    raw_string_prefixes=(),
+    verbatim_strings=False,
+    interpolation_syntax=None,
+    quotes='"',
+    literal_span_end=_call_literal_span_end,
+    backtick_strings=False,
+)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Rust(metaclass=LanguageCls):
@@ -3324,30 +3337,19 @@ class Rust(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
+        _CALL_LITERAL_SYNTAX
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
     format_integer_widened = no_format_integer_widened
     format_call_variable_declaration: ClassVar[property] = (
-        line_comment_call_variable_declaration(
-            regex_literals=False,
-            raw_string_prefixes=(),
-            verbatim_strings=False,
-            interpolation_syntax=None,
-            quotes='"',
-            literal_span_end=_call_literal_span_end,
-        )
+        line_comment_call_variable_declaration(syntax=_CALL_LITERAL_SYNTAX)
     )
     format_call_variable_assignment: ClassVar[property] = (
-        line_comment_call_variable_assignment(
-            regex_literals=False,
-            raw_string_prefixes=(),
-            verbatim_strings=False,
-            interpolation_syntax=None,
-            quotes='"',
-            literal_span_end=_call_literal_span_end,
-        )
+        line_comment_call_variable_assignment(syntax=_CALL_LITERAL_SYNTAX)
     )
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(_constructor_target)

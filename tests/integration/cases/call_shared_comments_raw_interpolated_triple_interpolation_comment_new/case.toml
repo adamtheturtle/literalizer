@@ -1,0 +1,12 @@
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "call_raw_string_prefix", prefix = "r"}, {kind = "call_interpolation", opener = "${", quotes = "\"'"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "('''prefix ${{'// payload'}}''').length >= 0 ? {call} : {call} // trailing\n// extra"

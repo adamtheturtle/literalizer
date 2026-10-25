@@ -112,7 +112,9 @@ from literalizer._language import (
     value_contains,
     wrap_in_file_noop,
 )
-from literalizer._statements import split_trailing_line_comments
+from literalizer._statements import (
+    CallLiteralSyntax,
+)
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -504,6 +506,18 @@ def _dart_is_datetime(value: Value, /) -> bool:
     return isinstance(value, dt.datetime)
 
 
+_CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    prefix="//",
+    regex_literals=False,
+    raw_string_prefixes=("r",),
+    verbatim_strings=False,
+    interpolation_syntax=("${", "\"'"),
+    quotes="\"'",
+    literal_span_end=None,
+    backtick_strings=False,
+)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Dart(metaclass=LanguageCls):
@@ -550,6 +564,9 @@ class Dart(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
+        _CALL_LITERAL_SYNTAX
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
@@ -559,14 +576,7 @@ class Dart(metaclass=LanguageCls):
         staticmethod(identity_constructor_target)
     )
     format_call_variable_assignment: ClassVar[property] = (
-        line_comment_call_variable_assignment(
-            regex_literals=False,
-            raw_string_prefixes=("r",),
-            verbatim_strings=False,
-            interpolation_syntax=("${", "\"'"),
-            quotes="\"'",
-            literal_span_end=None,
-        )
+        line_comment_call_variable_assignment(syntax=_CALL_LITERAL_SYNTAX)
     )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
@@ -1550,17 +1560,7 @@ class Dart(metaclass=LanguageCls):
             modifiers: frozenset[enum.Enum],
         ) -> str:
             """Bind the call result before its trailing comments."""
-            comments = split_trailing_line_comments(
-                statement=value,
-                prefix="//",
-                regex_literals=False,
-                backtick_strings=False,
-                raw_string_prefixes=("r",),
-                verbatim_strings=False,
-                interpolation_syntax=("${", "\"'"),
-                quotes="\"'",
-                literal_span_end=None,
-            )
+            comments = _CALL_LITERAL_SYNTAX.split(value)
             return (
                 self.declaration_style.value.formatter(
                     name, comments.code, data, modifiers

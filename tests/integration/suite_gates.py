@@ -196,6 +196,32 @@ class BehaviorFlagGate(
     flag: Annotated[str, Field(min_length=1)]
 
 
+class CallLiteralFlagGate(BaseModel, extra="forbid", frozen=True, strict=True):
+    """Require a literal grammar handled by the actual comment scanner."""
+
+    kind: Literal["call_literal_flag"]
+    flag: Literal["regex_literals", "verbatim_strings"]
+
+
+class CallRawStringPrefixGate(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Require a raw-string prefix recognized by the call scanner."""
+
+    kind: Literal["call_raw_string_prefix"]
+    prefix: Annotated[str, Field(min_length=1)]
+
+
+class CallInterpolationGate(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Require the scanner's interpolation opener and participating quotes."""
+
+    kind: Literal["call_interpolation"]
+    opener: Annotated[str, Field(min_length=1)]
+    quotes: Annotated[str, Field(min_length=1)]
+
+
 type SuiteGate = Annotated[
     CapabilityFlagGate
     | RecordVariantGate
@@ -205,7 +231,10 @@ type SuiteGate = Annotated[
     | ModifierPresentGate
     | MetadataFieldGate
     | SpecConfigFieldPresentGate
-    | BehaviorFlagGate,
+    | BehaviorFlagGate
+    | CallLiteralFlagGate
+    | CallRawStringPrefixGate
+    | CallInterpolationGate,
     Field(discriminator="kind"),
 ]
 
@@ -289,6 +318,25 @@ def gate_admits(
             admits = SPEC_CONFIG_FIELDS[gate.field](spec) is not None
         case BehaviorFlagGate():
             admits = BEHAVIOR_FLAGS[gate.flag](spec)
+        case CallLiteralFlagGate():
+            syntax = spec.call_literal_syntax
+            admits = syntax is not None and (
+                syntax.regex_literals
+                if gate.flag == "regex_literals"
+                else syntax.verbatim_strings
+            )
+        case CallRawStringPrefixGate():
+            syntax = spec.call_literal_syntax
+            admits = (
+                syntax is not None
+                and gate.prefix in syntax.raw_string_prefixes
+            )
+        case CallInterpolationGate():
+            syntax = spec.call_literal_syntax
+            admits = syntax is not None and syntax.interpolation_syntax == (
+                gate.opener,
+                gate.quotes,
+            )
         case _ as unreachable:
             assert_never(unreachable)
     return admits

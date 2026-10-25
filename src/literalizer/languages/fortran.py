@@ -663,6 +663,7 @@ class Fortran(metaclass=LanguageCls):
     contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset()
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
+    call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
