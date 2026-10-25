@@ -1,0 +1,18 @@
+# Also preserves literalize_ref_zig_json_mutable_root_new through the
+# selected mutable declaration variant, with the same input and bound value.
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+variant_only = true
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+# Original regression (literalize_ref_zig_json_root_array): Zig JSON root bindings must retain the referenced value.
+
+[ref.value_sources]
+shared = '[1,2]'
+
+[[ref.variants]]
+axis = "json_type"
+
+[[ref.variants]]
+axis = "json_type_declaration_cross"

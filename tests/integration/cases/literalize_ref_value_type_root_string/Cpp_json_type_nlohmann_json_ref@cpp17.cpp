@@ -1,0 +1,12 @@
+#include <nlohmann/json.hpp>
+#include <utility>
+int main() {
+    try {
+auto shared = nlohmann::json("value");
+auto&& my_data = std::move(shared);
+    (void)my_data;
+        return 0;
+    } catch (...) {
+        return 1;
+    }
+}

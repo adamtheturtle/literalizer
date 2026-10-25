@@ -4,6 +4,7 @@ fn main() {
                 1,
                 2,
             ];
+            let _ = &mut shared;
             let mut my_data = HashMap::from([
                 ("a", shared.clone()),
             ]);
@@ -12,5 +13,4 @@ fn main() {
                 ("a", shared.clone()),
             ]);
     let _ = &mut my_data;
-    let _ = &mut shared;
 }

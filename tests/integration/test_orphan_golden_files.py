@@ -36,6 +36,7 @@ from .constructor_cases import (
 from .golden_scenarios import golden_groups
 from .language_specs import make_golden_path, make_spec
 from .literalize_ref_cases import (
+    build_literalize_ref_variant_cases,
     discover_literalize_default_ref_cases,
     discover_literalize_ref_cases,
     ref_language_versions,
@@ -283,6 +284,17 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
             for version in ref_language_versions(
                 config=literalize_ref_case.config,
                 lang_cls=literalize_ref_case.lang_cls,
+            )
+        )
+
+    for variant_case in build_literalize_ref_variant_cases():
+        expected.add(
+            make_golden_path(
+                parent=cases_dir / variant_case.config.case_dir_name,
+                name=f"{variant_case.variant.name}_ref",
+                extension=variant_case.variant.spec.extension,
+                lang_cls=variant_case.variant.lang_cls,
+                version=variant_case.variant.spec.language_version,
             )
         )
 

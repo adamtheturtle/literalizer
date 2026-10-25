@@ -57,6 +57,7 @@ from .language_specs import (
     find_redefinition_styles,
     make_golden_path,
     make_spec,
+    reference_case_for_declaration_style,
     sorted_languages,
     with_per_fixture_module_name,
 )
@@ -1020,7 +1021,9 @@ def run_call_golden_case(
         # First element of ``identifier_cases`` is the language's
         # default — convert declaration names to that case so the
         # ref-site and declaration-site spellings agree.
-        default_case = spec.identifier_cases[0]
+        default_case = reference_case_for_declaration_style(
+            lang_cls=lang_cls, spec=spec
+        )
         effective_ref_case = default_case
         declaration_names = {
             ref_name: default_case.convert(name=ref_name)

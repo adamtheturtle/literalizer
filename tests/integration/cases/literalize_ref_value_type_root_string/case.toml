@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+variant_only = true
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+# Original regression (literalize_ref_zig_json_root_string): Zig JSON root bindings must retain the referenced value.
+
+[ref.value_sources]
+shared = '"value"'
+
+[[ref.variants]]
+axis = "json_type"
+
+[[ref.variants]]
+axis = "json_type_declaration_cross"

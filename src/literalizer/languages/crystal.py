@@ -1628,6 +1628,41 @@ class Crystal(metaclass=LanguageCls):
         default_format_call_arg_ref_identifier_consumable
     )
 
+    def reference_binding_data_dependent_preamble(
+        self, data: Value, /
+    ) -> tuple[str, ...]:
+        """Retain the selected representation's supporting imports."""
+        return self.data_dependent_preamble(data)
+
+    @staticmethod
+    def reference_declaration_imports(
+        entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Keep imports required by the bound value declarations."""
+        return tuple(entries)
+
+    def format_reference_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Bind the existing value without parsing its identifier as
+        JSON.
+        """
+        return self.declaration_style.value.formatter(
+            name, value, data, modifiers
+        )
+
+    @staticmethod
+    def format_reference_variable_assignment(
+        name: str, value: str, _data: Value, /
+    ) -> str:
+        """Assign the existing reference value directly."""
+        return f"{name} = {value}"
+
     def format_nested_ref_identifier(
         self, identifier: str, _value: Value | None, /
     ) -> str:

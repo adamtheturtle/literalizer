@@ -488,6 +488,47 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
             ),
             "Extra inputs are not permitted",
         ),
+        (
+            (
+                "schema_version = 1\n"
+                'owner = "literalize-ref"\n'
+                "[ref]\n"
+                "variant_only = true\n"
+            ),
+            "variant_only requires at least one ref variant axis",
+        ),
+        (
+            (
+                "schema_version = 1\n"
+                'owner = "literalize-ref"\n'
+                "[ref]\n"
+                "[[ref.variants]]\n"
+                'axis = "json_type"\n'
+                "[[ref.variants]]\n"
+                'axis = "json_type"\n'
+            ),
+            "duplicate ref variant axis",
+        ),
+        (
+            (
+                "schema_version = 1\n"
+                'owner = "literalize-ref"\n'
+                "[ref]\n"
+                "[[ref.variants]]\n"
+                'axis = "imaginary"\n'
+            ),
+            "unknown variant axis 'imaginary'",
+        ),
+        (
+            (
+                "schema_version = 1\n"
+                'owner = "literalize-ref-default"\n'
+                "[ref]\n"
+                "[[ref.variants]]\n"
+                'axis = "json_type"\n'
+            ),
+            "ref variants require owner = 'literalize-ref'",
+        ),
     ],
 )
 def test_invalid_manifest_is_actionable(

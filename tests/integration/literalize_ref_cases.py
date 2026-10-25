@@ -54,13 +54,16 @@ from .golden_checks import (
     SkipReason,
     check_golden,
 )
+from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
     make_golden_path,
     make_spec,
+    reference_case_for_declaration_style,
     sorted_languages,
     with_per_fixture_module_name,
 )
+from .variant_cases import Variant, variants_for_axis
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -143,6 +146,7 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
     return [
         LiteralizeRefCase(config=config, lang_cls=lang_cls)
         for config in ref_case_specs(cases_dir=CASES_DIR, owner=REF_OWNER)
+        if not config.variant_only
         for lang_cls in sorted_languages()
         if config.admits_language(lang_cls=lang_cls)
         if config.variable_form != "both"
@@ -150,6 +154,74 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
         if config.ref_case_for(lang_cls=lang_cls) is None
         or config.ref_case_for(lang_cls=lang_cls)
         in lang_cls.supported_ref_cases
+    ]
+
+
+@dataclasses.dataclass(frozen=True)
+class LiteralizeRefVariantCase:
+    """A reference scenario paired with an effective language variant."""
+
+    config: RefCaseSpec
+    variant: Variant
+
+
+@beartype
+def _reference_variant_case(
+    *, config: RefCaseSpec, variant: Variant
+) -> LiteralizeRefVariantCase | None:
+    """Retain selected options and reject unsupported reference styles."""
+    lang_cls = variant.lang_cls
+    if not config.admits_language(lang_cls=lang_cls):
+        return None
+    ref_case = config.ref_case_for(lang_cls=lang_cls)
+    if ref_case is not None and ref_case not in lang_cls.supported_ref_cases:
+        return None
+    spec = _ref_language_options(
+        config=config, lang_cls=lang_cls, spec=variant.spec
+    )
+    if (
+        config.variable_form == "both"
+        and spec.declaration_style not in find_redefinition_styles(spec=spec)
+    ):
+        return None
+    # A selected declaration variant is an explicit choice. The base
+    # suite's automatic mutable-style fallback must not relabel it.
+    names = language_metadata(
+        language_id=lang_cls.language_id
+    ).variants.declaration_style_variable_names
+    reference_case = config.ref_case_for(lang_cls=lang_cls)
+    if reference_case is None:
+        reference_case = reference_case_for_declaration_style(
+            lang_cls=lang_cls, spec=spec
+        )
+    selected_config = config.model_copy(
+        update={
+            "declaration_style": spec.declaration_style.name,
+            "variable_name": names.get(
+                spec.declaration_style.name, config.variable_name
+            ),
+            "ref_case_override": reference_case,
+        }
+    )
+    return LiteralizeRefVariantCase(
+        config=selected_config,
+        variant=dataclasses.replace(variant, spec=spec),
+    )
+
+
+@functools.cache
+@beartype
+def build_literalize_ref_variant_cases() -> list[LiteralizeRefVariantCase]:
+    """Discover reference variants through the existing typed axis
+    plans.
+    """
+    return [
+        case
+        for config in ref_case_specs(cases_dir=CASES_DIR, owner=REF_OWNER)
+        for entry in config.variants
+        for variant in variants_for_axis(axis_key=entry.axis)
+        if (case := _reference_variant_case(config=config, variant=variant))
+        is not None
     ]
 
 
@@ -479,6 +551,30 @@ def _compose_external_ref_fixture(
 
 
 @beartype
+def _ref_fixture_contents(
+    *,
+    code: str,
+    spec: literalizer.Language,
+    lang_cls: literalizer.LanguageCls,
+    ref_case: literalizer.IdentifierCase | None,
+) -> str:
+    """Keep explicitly requested reference spelling in compiler
+    fixtures.
+    """
+    native_case = reference_case_for_declaration_style(
+        lang_cls=lang_cls, spec=spec
+    )
+    preamble = (
+        language_metadata(
+            language_id=lang_cls.language_id
+        ).golden.intentional_identifier_preamble
+        if ref_case is not None and ref_case is not native_case
+        else ()
+    )
+    return "\n".join((*preamble, code, ""))
+
+
+@beartype
 def run_literalize_ref_golden_case(
     *,
     config: RefCaseSpec,
@@ -587,7 +683,12 @@ def run_literalize_ref_golden_case(
                 result=result,
             )
     check_golden(
-        contents=result.code + "\n",
+        contents=_ref_fixture_contents(
+            code=result.code,
+            spec=spec,
+            lang_cls=lang_cls,
+            ref_case=ref_case,
+        ),
         extension=lang_cls.extension,
         golden_path=golden_path,
         file_regression=file_regression,

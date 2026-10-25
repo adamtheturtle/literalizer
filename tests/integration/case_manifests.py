@@ -440,23 +440,22 @@ def _empty_variants() -> list[ManifestVariant]:
     return []
 
 
-class CallManifestVariant(
+class ApiManifestVariant(
     BaseModel,
     arbitrary_types_allowed=True,
     extra="forbid",
     frozen=True,
     strict=True,
 ):
-    """One call case's participation in a named, typed variant axis.
+    """An API case's participation in a named, typed variant axis.
 
-    A call golden is named by the language variant alone, so a call
-    case names an axis and nothing else.
+    The language variant names its golden, so a case names only an axis.
     """
 
     axis: Annotated[str, Field(min_length=1)]
 
     @model_validator(mode="after")
-    def _validate_known_axis(self) -> CallManifestVariant:
+    def _validate_known_axis(self) -> ApiManifestVariant:
         """Reject an axis name no expansion answers to."""
         if self.axis not in KNOWN_VARIANT_AXES:
             msg = f"unknown variant axis {self.axis!r}"
@@ -464,8 +463,8 @@ class CallManifestVariant(
         return self
 
 
-def _empty_call_variants() -> list[CallManifestVariant]:
-    """Return a typed empty call-variant list for the validation
+def _empty_api_variants() -> list[ApiManifestVariant]:
+    """Return a typed empty API-variant list for the validation
     model.
     """
     return []
@@ -596,6 +595,7 @@ class RefCaseSpec(  # noqa: NOD001
 
     ref_key: str = "$ref"
     variable_form: VariableFormName = "new"
+    variable_name: str = "my_data"
     variable_modifiers: StringTuple = Field(default_factory=_empty_names)
     collection_layout: CollectionLayoutName = "compact"
     pre_indent_level: int = 0
@@ -630,6 +630,22 @@ class RefCaseSpec(  # noqa: NOD001
     explicit_ref_value_sources: dict[str, str] | None = None
     expected_value_source: str | None = None
     consumer: RefConsumerSpec | None = None
+    variants: list[ApiManifestVariant] = Field(
+        default_factory=_empty_api_variants,
+    )
+    variant_only: bool = False
+
+    @model_validator(mode="after")
+    def _validate_ref_variants(self) -> RefCaseSpec:
+        """Require distinct axes and an exercised variant-only case."""
+        axes = [entry.axis for entry in self.variants]
+        if len(axes) != len(set(axes)):
+            msg = "duplicate ref variant axis"
+            raise ValueError(msg)
+        if self.variant_only and len(self.variants) == 0:
+            msg = "variant_only requires at least one ref variant axis"
+            raise ValueError(msg)
+        return self
 
     @model_validator(mode="after")
     def _validate_expected_value(self) -> RefCaseSpec:
@@ -677,7 +693,10 @@ class RefCaseSpec(  # noqa: NOD001
         """Return the public API variable form selected by the
         manifest.
         """
-        return _VARIABLE_FORMS_BY_NAME[self.variable_form]
+        return dataclasses.replace(
+            _VARIABLE_FORMS_BY_NAME[self.variable_form],
+            name=self.variable_name,
+        )
 
 
 class CallCaseSpec(  # noqa: NOD001
@@ -697,9 +716,10 @@ class CallCaseSpec(  # noqa: NOD001
     :func:`literalizer.literalize`, emitted before the call so the
     resulting file is self-contained.
 
-    With ``ref_case_per_language``, the harness picks each language's
-    first-listed ``IdentifierCases`` member as the ``ref_case``,
-    converts every ``ref_declarations`` key to that case, and passes the
+    With ``ref_case_per_language``, the harness picks the native case
+    for the selected declaration style, falling back to the language's
+    first-listed ``IdentifierCases`` member. It converts every
+    ``ref_declarations`` key to that case and passes the
     same case to :func:`literalize_call` so the declaration site and the
     call site agree on identifier spelling.
     """
@@ -815,8 +835,8 @@ class CallCaseSpec(  # noqa: NOD001
     # matrix.  Each axis expands to the specs the case is rendered
     # with, so a case that the default spec rejects names the axis whose
     # specs can represent its input.
-    variants: list[CallManifestVariant] = Field(
-        default_factory=_empty_call_variants,
+    variants: list[ApiManifestVariant] = Field(
+        default_factory=_empty_api_variants,
     )
     # When ``True`` the case is driven only by the call *variant*
     # suite, so the default per-language call matrix needs no
@@ -908,6 +928,16 @@ class _CaseManifestData(  # noqa: NOD001
             msg = f"a [{table_name}] table requires owner = {accepted}"
             raise ValueError(msg)
 
+    def _validate_ref_variant_owner(self) -> None:
+        """Keep reference variants with the owner that renders them."""
+        if (
+            self.ref is not None
+            and self.owner != REF_OWNER
+            and len(self.ref.variants) > 0
+        ):
+            msg = "ref variants require owner = 'literalize-ref'"
+            raise ValueError(msg)
+
     @model_validator(mode="after")
     def _validate_consistency(self) -> _CaseManifestData:
         """Validate relationships that span manifest fields."""
@@ -929,6 +959,7 @@ class _CaseManifestData(  # noqa: NOD001
             table=self.ref,
             owners=_REF_OWNERS,
         )
+        self._validate_ref_variant_owner()
         if len(self.suites) != len(set(self.suites)):
             msg = "suites contains a duplicate entry"
             raise ValueError(msg)
