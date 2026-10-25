@@ -896,9 +896,12 @@ class _CJsonReferenceLiteral(str):
 
     def __new__(cls, value: str, /, *, source: _CJsonBindingSource) -> Self:
         """Attach source metadata after generic indentation is removed."""
-        instance = super().__new__(cls, object=value)
-        instance.source = source
-        return instance
+        del source
+        return super().__new__(cls, object=value)
+
+    def __init__(self, _value: str, /, *, source: _CJsonBindingSource) -> None:
+        """Initialize the retained source after allocating the string."""
+        self.source = source
 
 
 @beartype

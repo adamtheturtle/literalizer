@@ -1380,11 +1380,22 @@ class _AesonReferenceLiteral(str):
         ref_case: IdentifierCase | None,
     ) -> Self:
         """Keep source identity alongside the ordinary formatted text."""
-        instance = super().__new__(cls, object=value)
-        instance.data = data
-        instance.ref_key = ref_key
-        instance.ref_case = ref_case
-        return instance
+        del data, ref_key, ref_case
+        return super().__new__(cls, object=value)
+
+    def __init__(
+        self,
+        _value: str,
+        /,
+        *,
+        data: Value,
+        ref_key: str,
+        ref_case: IdentifierCase | None,
+    ) -> None:
+        """Initialize retained references alongside the string value."""
+        self.data = data
+        self.ref_key = ref_key
+        self.ref_case = ref_case
 
 
 @beartype
