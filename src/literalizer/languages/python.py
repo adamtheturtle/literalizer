@@ -642,9 +642,14 @@ def _python_type_hint(
                     if dict_hint == "Dict"
                     else "OrderedDict"
                 )
-            key_hint = "str"
-            if len(data) == 0:
-                key_hint = default_dict_key_type
+            key_hint = _collection_element_union(
+                elements=list(data),
+                recurse=recurse,
+                sort=False,
+                merge_dicts=False,
+                default_type=default_dict_key_type,
+                join_union=join_union,
+            )
             val_union = _collection_element_union(
                 elements=list(data.values()),
                 recurse=recurse,
@@ -1246,6 +1251,7 @@ class Python(metaclass=LanguageCls):
         """Sequence type options for Python."""
 
         TUPLE = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="("),
             close=")",
             supports_heterogeneity=True,
@@ -1262,6 +1268,7 @@ class Python(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,

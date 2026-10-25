@@ -65,7 +65,7 @@ from literalizer._language import (
     ModifierCombination,
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
-    RenderedExistingBinding,
+    RenderedStatement,
     SequenceFormatConfig,
     SetFormatConfig,
     StubReturn,
@@ -562,6 +562,7 @@ class Ada(metaclass=LanguageCls):
         """Sequence type options for Ada."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="AList'["),
             close="]",
             supports_heterogeneity=True,
@@ -793,7 +794,7 @@ class Ada(metaclass=LanguageCls):
         object_declarations: list[str] = []
         statements: list[str] = []
         for fragment in declarations:
-            if isinstance(fragment, RenderedExistingBinding):
+            if isinstance(fragment, RenderedStatement):
                 statements.append(fragment)
             elif len(statements) > 0:
                 raise UnsupportedCallShapeError(

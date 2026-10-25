@@ -8,8 +8,8 @@ procedure Main is
     my_data : A_Val := AList'[
         AInt (0)
     ];
-    Consume_Widget(arg_value => my_data);
 begin
+    Consume_Widget(arg_value => my_data);
     my_data := shared;
     Consume_Widget(arg_value => my_data);
 end Main;

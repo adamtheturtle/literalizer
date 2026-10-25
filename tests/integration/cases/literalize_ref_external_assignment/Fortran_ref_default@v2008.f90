@@ -85,7 +85,6 @@ program main
     implicit none
     type(fval_t) :: ref_data
     type(fval_t) :: my_data
-    call consume_widget(my_data)
     ref_data = flist([fval_t :: &
         fint(1_int64), &
         fint(2_int64) &
@@ -93,6 +92,7 @@ program main
     my_data = flist([fval_t :: &
         fint(0_int64) &
     ])
+    call consume_widget(my_data)
     my_data = ref_data
     call consume_widget(my_data)
 contains

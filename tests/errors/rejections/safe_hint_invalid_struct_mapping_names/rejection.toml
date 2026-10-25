@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "MATLAB SAFE struct fields reject prototype, numeric-looking, and quoted field names."
+exceptions = ["InvalidDictKeyError"]
+languages = ["Matlab"]
+
+[call]
+api = "literalize"
+sources = ["{\"__proto__\": 1}", "{\"08\": 1}", "{\"a\\\"b\": 1}"]
+input_format = "json"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "variable_type_hints"
+member = "SAFE"

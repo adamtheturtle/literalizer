@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+{
+    "__proto__": {"x": 1},
+    "ordinary": 2
+}
+@end

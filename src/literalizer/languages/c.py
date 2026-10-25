@@ -1282,6 +1282,7 @@ class C(metaclass=LanguageCls):
         """Sequence type options for C."""
 
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(
                 open_str="((CVal){.a = (CVal[]){",
             ),
@@ -2058,6 +2059,7 @@ class C(metaclass=LanguageCls):
         fmt = self.sequence_format.value
         if self._record_strategy_active:
             return SequenceFormatConfig(
+                length_is_part_of_type=False,
                 sequence_open=self._record_sequence_open,
                 close="}",
                 supports_heterogeneity=fmt.supports_heterogeneity,
@@ -2080,6 +2082,7 @@ class C(metaclass=LanguageCls):
                 narrowed_empty_form=None,
             )
         return SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str=self._seq_open_str),
             close="}})",
             supports_heterogeneity=fmt.supports_heterogeneity,

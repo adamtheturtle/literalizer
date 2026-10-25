@@ -4767,6 +4767,7 @@ class Rust(metaclass=LanguageCls):
         if self.json_type is not None:
             effective_declared_type = self.json_type.value
             return SequenceFormatConfig(
+                length_is_part_of_type=False,
                 sequence_open=fixed_open(open_str=f"{_SERDE_JSON_MACRO}(["),
                 close="])",
                 supports_heterogeneity=True,
@@ -4784,6 +4785,11 @@ class Rust(metaclass=LanguageCls):
             )
         config = self.sequence_format(
             default_type=self.default_sequence_element_type,
+        )
+        config = dataclasses.replace(
+            config,
+            length_is_part_of_type=self.sequence_format
+            in {self.sequence_formats.ARRAY, self.sequence_formats.TUPLE},
         )
         if self.sequence_format is type(self.sequence_format).VEC:
             return dataclasses.replace(

@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "SAFE hints retain declared key constraints for control characters and struct field names."
+exceptions = ["InvalidDictKeyError"]
+languages = ["Bash", "Dhall", "Matlab", "Nix"]
+
+[call]
+api = "literalize"
+sources = ["{\"line\\nbreak\": 1}"]
+input_format = "json"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "variable_type_hints"
+member = "SAFE"

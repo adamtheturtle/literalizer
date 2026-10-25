@@ -54,6 +54,7 @@ from literalizer._formatters.format_json_value import (
     to_jsonable,
 )
 from literalizer._formatters.format_strings import (
+    bidi_escape_replacements,
     format_string_backslash_control,
 )
 from literalizer._formatters.preamble_roles import (
@@ -1289,6 +1290,7 @@ def _aeson_value_body_preamble(
 # definitions only need to be permissive enough that the formatting pass
 # does not error on heterogeneous data or nulls inside containers.
 _AESON_VALUE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    length_is_part_of_type=False,
     sequence_open=fixed_open(open_str="["),
     close="]",
     supports_heterogeneity=True,
@@ -1353,6 +1355,8 @@ def _aeson_quasi_expression(data: Value) -> str:
         )
         raise UnrepresentableSpecialFloatError(msg)
     json_text = format_json_value_text(data=data)
+    for character, escape in bidi_escape_replacements(template="\\u{:04X}"):
+        json_text = json_text.replace(character, escape)
     if _AESON_QQ_CLOSE in json_text:
         msg = (
             "Haskell(json_type=AESON_VALUE) cannot represent a value whose "
@@ -1987,6 +1991,7 @@ class Haskell(metaclass=LanguageCls):
         """Sequence type options for Haskell."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="HList ["),
             close="]",
             supports_heterogeneity=True,
@@ -2003,6 +2008,7 @@ class Haskell(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
+            length_is_part_of_type=True,
             sequence_open=fixed_open(open_str="("),
             close=")",
             supports_heterogeneity=True,

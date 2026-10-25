@@ -386,6 +386,7 @@ class Tcl(metaclass=LanguageCls):
         """Sequence type options."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="[list "),
             close="]",
             supports_heterogeneity=True,

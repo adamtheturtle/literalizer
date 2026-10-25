@@ -966,6 +966,7 @@ _ARGONAUT_JSON_BODY_PREAMBLE: tuple[str, ...] = (
 # format definitions only need to be permissive enough that the format
 # pass does not error on heterogeneous data or nulls inside containers.
 _ARGONAUT_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
+    length_is_part_of_type=False,
     sequence_open=fixed_open(open_str="["),
     close="]",
     supports_heterogeneity=True,
@@ -1317,6 +1318,7 @@ class PureScript(metaclass=LanguageCls):
         """Sequence type options for PureScript."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="PList ["),
             close="]",
             supports_heterogeneity=True,

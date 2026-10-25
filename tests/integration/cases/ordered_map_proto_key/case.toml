@@ -3,3 +3,14 @@ suites = ["base"]
 
 [[variants]]
 axis = "string_format"
+
+[[variants]]
+axis = "dict_format"
+expected_errors = ["InvalidDictKeyError"]
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"
+expected_errors = ["InvalidDictKeyError"]

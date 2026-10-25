@@ -88,7 +88,7 @@ from literalizer._language import (
     PrefixCallStyle,
     RenderedCallStub,
     RenderedEmptySequence,
-    RenderedExistingBinding,
+    RenderedStatement,
     StubReturn,
     decode_file_sections,
     empty_container_code,
@@ -419,6 +419,13 @@ class LiteralizeResult:
 
     Wrappers retain its place in the sequence and interpret its binding
     syntax according to the language's declaration and statement regions.
+    """
+
+    is_call_statement: bool
+    """Whether this unwrapped fragment contains unbound call statements.
+
+    Composition keeps these calls in the executable region alongside
+    assignments, after the declarations they consume.
     """
 
     @property
@@ -5471,6 +5478,7 @@ def literalize_apply_form(
         if len(scoped.file_scope) > 0:
             wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
         return LiteralizeResult(
+            is_call_statement=False,
             uses_existing_variable=False,
             declaration_code=wrapped,
             preamble=(),
@@ -5484,6 +5492,7 @@ def literalize_apply_form(
         )
 
     return LiteralizeResult(
+        is_call_statement=False,
         uses_existing_variable=isinstance(variable_form, ExistingVariable),
         declaration_code=result,
         preamble=preamble,
@@ -5587,6 +5596,7 @@ def literalize_both_forms(
     if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
+        is_call_statement=False,
         uses_existing_variable=False,
         declaration_code=wrapped,
         preamble=(),
@@ -5965,6 +5975,7 @@ def _literalize_value_binding(
         )
     )
     return LiteralizeResult(
+        is_call_statement=False,
         uses_existing_variable=False,
         declaration_code=wrapped,
         preamble=preamble,
@@ -6156,6 +6167,7 @@ def _compose_bound_refs(
     if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
+        is_call_statement=False,
         uses_existing_variable=False,
         declaration_code=wrapped,
         preamble=(),
@@ -8365,6 +8377,7 @@ def _compose_call_with_bound_ref_declarations(
     wrapper; otherwise a void stub suffices.
     """
     call_result = LiteralizeResult(
+        is_call_statement=False,
         uses_existing_variable=False,
         declaration_code=result,
         preamble=preamble,
@@ -8518,6 +8531,7 @@ def _wrap_call_result_in_file(
         computed_body=scoped.body + computed_body,
     )
     return LiteralizeResult(
+        is_call_statement=False,
         uses_existing_variable=False,
         declaration_code=wrapped,
         preamble=(),
@@ -9207,6 +9221,7 @@ def literalize_call_parsed(
         pre_declaration_comments=(),
         sections=(),
         data_dependent_preamble=data_dependent_preamble,
+        is_call_statement=variable_form is None and len(arg_values) > 0,
     )
 
 
@@ -9249,8 +9264,9 @@ def literalize_call_with_declarations(
         language: The :class:`Language` to render with.  Must be the
             same instance used to produce *declarations* and *call*.
         declarations: Earlier literal or call-binding results in use
-            order. Their retained binding roles keep object declarations
-            separate from executable assignments.
+            order. Earlier unbound calls may also appear here. Retained
+            roles keep object declarations separate from assignments and
+            call statements.
         call: The :func:`literalize_call` result.  Refs represented by
             *declarations* may be omitted from its ``ref_values``;
             declaration-only types are included when the composed
@@ -9390,8 +9406,8 @@ def literalize_call_with_declarations(
     )
     wrapped = language.wrap_calls_with_declarations(
         declarations=tuple(
-            RenderedExistingBinding(object=d.bare_code)
-            if d.uses_existing_variable
+            RenderedStatement(object=d.bare_code)
+            if d.uses_existing_variable or d.is_call_statement
             else d.bare_code
             for d in declarations
         ),
@@ -9419,6 +9435,7 @@ def literalize_call_with_declarations(
     if len(scoped.file_scope) > 0:
         wrapped = "\n".join(scoped.file_scope) + "\n" + wrapped
     return LiteralizeResult(
+        is_call_statement=False,
         uses_existing_variable=False,
         declaration_code=wrapped,
         preamble=(),

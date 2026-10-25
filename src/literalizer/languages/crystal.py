@@ -803,6 +803,7 @@ class Crystal(metaclass=LanguageCls):
         """Sequence type options for Crystal."""
 
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="["),
             close="]",
             empty_sequence="[] of Nil",
@@ -819,6 +820,7 @@ class Crystal(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
+            length_is_part_of_type=True,
             sequence_open=fixed_open(open_str="{"),
             close="}",
             supports_heterogeneity=True,
@@ -1709,6 +1711,7 @@ class Crystal(metaclass=LanguageCls):
         """
         if self._uses_json_any:
             return SequenceFormatConfig(
+                length_is_part_of_type=False,
                 sequence_open=fixed_open(open_str="["),
                 close="]",
                 empty_sequence="[]",

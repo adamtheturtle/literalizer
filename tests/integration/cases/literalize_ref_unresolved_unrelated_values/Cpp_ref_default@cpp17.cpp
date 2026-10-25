@@ -10,7 +10,7 @@ void assert_equal(const Actual& actual, const Expected& expected) {
 int main() {
 auto a = 0;
 auto my_data = std::vector<int>{
-    std::move(a),
+    std::move_if_noexcept(a),
     1,
 };
 auto expected_data = std::vector<int>{

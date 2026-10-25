@@ -12,7 +12,7 @@ auto my_data = std::vector<int>{
     2,
 };
 consume_widget(my_data);
-my_data = std::move(item);
+my_data = std::move_if_noexcept(item);
 consume_widget(my_data);
     return 0;
 }

@@ -520,6 +520,7 @@ class Haxe(metaclass=LanguageCls):
         """Sequence type options for Haxe."""
 
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="(["),
             close="] : Array<Dynamic>)",
             supports_heterogeneity=True,

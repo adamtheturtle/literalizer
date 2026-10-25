@@ -86,9 +86,9 @@ program main
     implicit none
     type(fval_t) :: item
     type(fval_t) :: my_data
-    call consume_widget(my_data)
     item = fnull()
     my_data = fnull()
+    call consume_widget(my_data)
     my_data = item
     call consume_widget(my_data)
 contains

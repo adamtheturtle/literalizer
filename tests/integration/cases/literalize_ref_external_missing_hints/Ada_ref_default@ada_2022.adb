@@ -9,8 +9,8 @@ procedure Main is
         AInt (1),
         AInt (2)
     ];
-    Consume_Widget(arg_value => my_data);
 begin
+    Consume_Widget(arg_value => my_data);
     my_data := item;
     Consume_Widget(arg_value => my_data);
 end Main;

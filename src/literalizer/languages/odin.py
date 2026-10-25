@@ -433,6 +433,7 @@ _JSON_VALUE_STATIC_PREAMBLE: tuple[str, ...] = (
 # the formatting pass does not error on heterogeneous data or nulls
 # inside containers.
 _JSON_VALUE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    length_is_part_of_type=False,
     sequence_open=fixed_open(open_str="["),
     close="]",
     supports_heterogeneity=True,
@@ -727,6 +728,7 @@ class Odin(metaclass=LanguageCls):
         """Sequence type options for Odin."""
 
         DYNAMIC_ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="[dynamic]any{"),
             close="}",
             supports_heterogeneity=True,

@@ -1048,6 +1048,7 @@ def _mojo_element_renders_as_string(
 def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
     """Build a Mojo LIST ``SequenceFormatConfig`` for the given type."""
     return SequenceFormatConfig(
+        length_is_part_of_type=False,
         sequence_open=validated_fixed_open(render=_mojo_list_open),
         close="])",
         supports_heterogeneity=False,

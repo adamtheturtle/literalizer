@@ -940,6 +940,7 @@ def _make_initializer_list_config(
         )
 
     return SequenceFormatConfig(
+        length_is_part_of_type=False,
         sequence_open=_build_variant_sequence_open(type_ctx=type_ctx),
         close="}",
         supports_heterogeneity=True,
@@ -964,6 +965,7 @@ def _make_array_config(
 ) -> SequenceFormatConfig:
     """Return the ARRAY sequence config."""
     return SequenceFormatConfig(
+        length_is_part_of_type=True,
         sequence_open=_build_cpp_array_open(type_ctx=type_ctx),
         close="}",
         supports_heterogeneity=False,
@@ -2815,6 +2817,7 @@ _NLOHMANN_JSON_STATIC_PREAMBLE: tuple[str, ...] = (
 )
 
 _NLOHMANN_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
+    length_is_part_of_type=False,
     sequence_open=fixed_open(open_str="nlohmann::json::array({"),
     close="})",
     supports_heterogeneity=True,
@@ -2897,6 +2900,7 @@ _NLOHMANN_JSON_PARSE_TERMINATOR = f'){_NLOHMANN_JSON_PARSE_DELIMITER}"'
 
 
 _NLOHMANN_INLINE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    length_is_part_of_type=False,
     sequence_open=fixed_open(open_str="["),
     close="]",
     supports_heterogeneity=True,
@@ -4297,8 +4301,8 @@ class Cpp(metaclass=LanguageCls):
         warning ("has no effect; remove std::move()"), so we drop the
         wrapper when the caller's ``ref_values`` identifies the ref as
         one of those types or a record containing only trivial fields.
-        When the value is unknown we keep the
-        historical ``std::move`` form.
+        When the value is unknown, ``std::move_if_noexcept`` selects a
+        type-correct transfer without an unconditional scalar move.
         """
 
         @beartype
@@ -4312,6 +4316,8 @@ class Cpp(metaclass=LanguageCls):
                 value, (bool, int, float)
             ) or self._native_ref_value_is_trivial(value):
                 return name
+            if value is None:
+                return f"std::move_if_noexcept({name})"
             return f"std::move({name})"
 
         return _format_cpp_ref_identifier

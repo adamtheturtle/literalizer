@@ -12,6 +12,7 @@ from typing import ClassVar
 from beartype import beartype
 
 from literalizer._checks import reject_negative_zero
+from literalizer._comments import TabFreeCommentPrefix
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -1052,6 +1053,7 @@ class Elm(metaclass=LanguageCls):
         """Sequence type options for Elm."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="EList ["),
             close="]",
             supports_heterogeneity=True,
@@ -1089,7 +1091,7 @@ class Elm(metaclass=LanguageCls):
             suffix="",
         )
         BLOCK = CommentConfig(
-            prefix="{-",
+            prefix=TabFreeCommentPrefix(object="{-"),
             suffix=" -}",
         )
 

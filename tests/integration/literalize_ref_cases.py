@@ -548,6 +548,46 @@ def _external_result_value(*, source: Value, config: RefCaseSpec) -> Value:
 
 
 @beartype
+def _external_assignment_spec(
+    *, spec: literalizer.Language, config: RefCaseSpec, raw_data: _RefData
+) -> literalizer.Language:
+    """Use a length-independent sequence for a caller's changing-size
+    binding.
+
+    The source and destination values remain unchanged. A fixed-arity
+    tuple cannot model reassignment between their different native types.
+    """
+    if (
+        config.variable_form != "existing"
+        or "my_data" not in config.external_declarations
+    ):
+        return spec
+    initial = TypeAdapter[Value](type=Value).validate_python(
+        json.loads(s=config.external_declarations["my_data"])
+    )
+    assigned = _external_result_value(
+        source=TypeAdapter[Value](type=Value).validate_python(raw_data),
+        config=config,
+    )
+    if not (
+        isinstance(initial, list)
+        and isinstance(assigned, list)
+        and len(initial) != len(assigned)
+        and spec.sequence_format_config.length_is_part_of_type
+    ):
+        return spec
+    if config.sequence_format is None:
+        for sequence_format in spec.sequence_formats:
+            candidate = dataclasses.replace(
+                spec, sequence_format=sequence_format
+            )
+            if not candidate.sequence_format_config.length_is_part_of_type:
+                return candidate
+    msg = "the selected sequence type cannot change length on reassignment"
+    raise UnrepresentableInputError(msg)
+
+
+@beartype
 def _compose_external_ref_fixture(
     *,
     config: RefCaseSpec,
@@ -700,6 +740,9 @@ def run_literalize_ref_golden_case(
         raw_data = _parse_ref_input(
             input_format=input_info.input_format,
             input_source=input_source,
+        )
+        spec = _external_assignment_spec(
+            spec=spec, config=config, raw_data=raw_data
         )
         bound_refs_input = _bound_ref_inputs(
             config=config,

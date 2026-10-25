@@ -13,7 +13,7 @@ auto missing = std::vector<int>{
     1,
     2,
 };
-auto&& my_data = std::move(missing);
+auto&& my_data = std::move_if_noexcept(missing);
 auto expected_data = std::vector<int>{
     1,
     2,
