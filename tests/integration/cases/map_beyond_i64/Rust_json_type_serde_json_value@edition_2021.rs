@@ -1,0 +1,9 @@
+// Permit serde_json::json! to expand wide values.
+#![recursion_limit = "4096"]
+fn main() {
+    let my_data: serde_json::Value = serde_json::json!({
+        "a": 9223372036854775807i128,
+        "b": 9223372036854775808i128,
+    });
+    let _ = &my_data;
+}
