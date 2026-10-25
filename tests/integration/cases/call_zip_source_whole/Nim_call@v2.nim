@@ -1,3 +1,3 @@
 proc process[T0](value: T0): int {.discardable.} = 0
-template emit(args: varargs[untyped]) = discard
+proc emit[T1](argument0: int; argument1: T1) = discard
 emit(process(42), true)

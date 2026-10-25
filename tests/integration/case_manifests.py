@@ -735,6 +735,13 @@ class CallArgumentsSpec(BaseModel, extra="forbid", frozen=True):
     suffix: str
 
 
+class CallWrapperSpec(BaseModel, extra="forbid", frozen=True):
+    """Native wrapper calls retaining the roles of their operands."""
+
+    target: Annotated[str, Field(min_length=1)]
+    arguments: tuple[Literal["call", "zipped"], ...]
+
+
 class CallCaseSpec(  # noqa: NOD001
     _OwnedCaseSpec,
     LanguageSelection,
@@ -768,6 +775,7 @@ class CallCaseSpec(  # noqa: NOD001
     call_transform: CallTransformTemplate | None = None
     call_transform_group: CallGroupSpec | None = None
     call_transform_arguments: CallArgumentsSpec | None = None
+    call_transform_wrapper: CallWrapperSpec | None = None
     call_transform_sequence: bool = False
     # Ordinary callbacks omit the template producer's zip-usage metadata.
     call_transform_reports_zip_usage: bool = True
@@ -891,6 +899,7 @@ class CallCaseSpec(  # noqa: NOD001
             self.call_transform is not None
             or self.call_transform_group is not None
             or self.call_transform_arguments is not None
+            or self.call_transform_wrapper is not None
             or self.call_transform_sequence
         )
 
@@ -907,6 +916,10 @@ class CallCaseSpec(  # noqa: NOD001
                     "call_transform_arguments",
                     self.call_transform_arguments is not None,
                 ),
+                (
+                    "call_transform_wrapper",
+                    self.call_transform_wrapper is not None,
+                ),
                 ("call_transform_sequence", self.call_transform_sequence),
             )
             if present
@@ -914,6 +927,19 @@ class CallCaseSpec(  # noqa: NOD001
         if len(recipes) > 1:
             msg = " and ".join(recipes) + " are mutually exclusive"
             raise ValueError(msg)
+        wrapper = self.call_transform_wrapper
+        if wrapper is not None:
+            if wrapper.target not in self.transform_stub_names:
+                msg = (
+                    "call_transform_wrapper requires a declared transform stub"
+                )
+                raise ValueError(msg)
+            if len(wrapper.arguments) != len(self.transform_stub_param_names):
+                msg = "wrapper operands must match transform_stub_param_names"
+                raise ValueError(msg)
+            if "zipped" in wrapper.arguments and self.zip_source is None:
+                msg = "a zipped wrapper operand requires zip_source"
+                raise ValueError(msg)
 
     def _validate_followup_target(self) -> None:
         """Require a separate follow-up target to have a source."""

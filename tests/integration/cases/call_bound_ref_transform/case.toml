@@ -1,3 +1,4 @@
+# Regression provenance: Python. Python's built-in repr consumes the transformed call's return value.
 schema_version = 1
 owner = "literalize-call"
 
@@ -5,10 +6,9 @@ owner = "literalize-call"
 target_function = "f"
 parameter_names = ["a"]
 per_element = true
-call_transform = "repr({call})"
+call_transform_wrapper = {target = "repr", arguments = ["call"]}
+transform_stub_names = ["repr"]
 wrap_in_file = true
-languages = ["Python"]
-languages_reason = "Python's built-in repr consumes the transformed call's return value."
 
 [call.ref_declarations]
 ref_data = "1"

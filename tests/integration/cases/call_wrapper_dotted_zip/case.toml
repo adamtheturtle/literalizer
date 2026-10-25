@@ -1,0 +1,15 @@
+# Native wrapper helpers retain class, file, and body declaration scopes.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+call_transform = "{call}"
+call_transform_wrapper = {target = "helpers.emit", arguments = ["call", "zipped"]}
+transform_stub_names = ["helpers.emit"]
+transform_stub_param_names = ["_call", "_zip"]
+zip_source = "42"
+zip_input_format = "yaml"

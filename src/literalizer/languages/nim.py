@@ -134,7 +134,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop_static,
 )
-from literalizer._types import OrderedMap, Scalar, Value
+from literalizer._types import CallStubData, OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     IncompatibleFormatsError,
@@ -1034,8 +1034,9 @@ def _nim_record_literal(
 
 
 @beartype
-def _nim_value_call_stubs(
+def _nim_call_procedure_stubs(
     *,
+    stub_return: StubReturn,
     method: str,
     params: Sequence[str],
     args: Sequence[Value],
@@ -1048,6 +1049,16 @@ def _nim_value_call_stubs(
     concrete overload gives that expression an element type while the
     generic signature still accepts populated arrays and bound refs.
     """
+    # VALUE stubs return int. Concrete result slots keep prelude overloads
+    # such as repr from bypassing the wrapper's declaration.
+    call_slots = (
+        args.call_result_slots
+        if isinstance(args, CallStubData)
+        else frozenset()
+    )
+    parameter_names = params
+    if stub_return is StubReturn.VOID:
+        parameter_names = tuple(f"argument{i}" for i in range(len(params)))
     patterns: list[frozenset[int]] = [frozenset()]
     if not uses_json_node:
         for row in args:
@@ -1062,22 +1073,29 @@ def _nim_value_call_stubs(
     lines: list[str] = []
     for empty_slots in patterns:
         type_params = [
-            f"T{i}" for i in range(len(params)) if i not in empty_slots
+            f"T{i}"
+            for i in range(len(params))
+            if i not in empty_slots and i not in call_slots
         ]
         type_clause = ""
         if len(type_params) > 0:
             type_clause = f"[{', '.join(type_params)}]"
         declarations = [
-            f"{name}: array[0, int]" if i in empty_slots else f"{name}: T{i}"
-            for i, name in enumerate(iterable=params)
+            f"{name}: array[0, int]"
+            if i in empty_slots
+            else f"{name}: int"
+            if i in call_slots
+            else f"{name}: T{i}"
+            for i, name in enumerate(iterable=parameter_names)
         ]
         if self_type is not None:
             declarations.insert(0, f"self: {self_type}")
         params_str = "; ".join(declarations)
-        lines.append(
-            f"proc {method}{type_clause}"
-            f"({params_str}): int {{.discardable.}} = 0"
-        )
+        signature = f"proc {method}{type_clause}({params_str})"
+        if stub_return is StubReturn.VALUE:
+            lines.append(f"{signature}: int {{.discardable.}} = 0")
+        else:
+            lines.append(f"{signature} = discard")
     return tuple(lines)
 
 
@@ -1094,7 +1112,9 @@ def _nim_call_stub(
 ) -> tuple[str, ...]:
     """Return Nim stub declarations for a call name.
 
-    VOID stubs use templates with ``varargs[untyped]``.  VALUE stubs use
+    Unstructured VOID stubs use ``varargs[untyped]`` templates. Native
+    wrapper operands retain fixed arity and the actual result carrier.
+    VALUE stubs use
     generic ``proc`` definitions with ``{.discardable.}`` because the
     ``{.discardable.}`` pragma is not valid on templates in Nim 2.x, and
     calling a value-returning template at statement level raises a
@@ -1107,7 +1127,7 @@ def _nim_call_stub(
     """
     method = parts[-1]
 
-    if stub_return is StubReturn.VOID:
+    if stub_return is StubReturn.VOID and not isinstance(_args, CallStubData):
         if len(parts) == 1:
             return (f"template {method}(args: varargs[untyped]) = discard",)
         chain = list(parts[:-1])
@@ -1135,7 +1155,8 @@ def _nim_call_stub(
         return tuple(lines)
 
     if len(parts) == 1:
-        return _nim_value_call_stubs(
+        return _nim_call_procedure_stubs(
+            stub_return=stub_return,
             method=method,
             params=_params,
             args=_args,
@@ -1158,7 +1179,8 @@ def _nim_call_stub(
             ]
         )
     lines.extend(
-        _nim_value_call_stubs(
+        _nim_call_procedure_stubs(
+            stub_return=stub_return,
             method=method,
             params=_params,
             args=_args,

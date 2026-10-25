@@ -70,6 +70,18 @@ class RenderedCallStub:
 
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class CallStubDeclarations:
+    """Declarations supplied by a transform's native expression
+    producer.
+    """
+
+    body: tuple[str | RenderedCallStub, ...]
+    class_scope: tuple[str, ...]
+    file_scope: tuple[str, ...]
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class FileWrapperContext:
     """Declaration metadata and explicitly placed wrapper preambles."""
 

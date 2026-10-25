@@ -1,0 +1,8 @@
+import java.time.Instant;
+class Main {
+static Object process(Object arg0) { return null; }
+static Object emit(Object arg0, Object arg1) { return null; }
+    public static void main() {
+emit(process(1), Instant.parse("2024-01-15T12:00:00Z"));
+    }
+}

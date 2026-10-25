@@ -14,6 +14,25 @@ type CollectionValue = list[Value] | dict[Scalar, Value] | set[Scalar]
 
 
 @beartype
+class CallStubData(list[Value]):
+    """Native operands and the calling convention of their stub
+    declarations.
+    """
+
+    def __init__(
+        self,
+        data: Sequence[Value],
+        *,
+        keyword_arguments: bool,
+        call_result_slots: frozenset[int],
+    ) -> None:
+        """Retain call-result slots and keyword conventions."""
+        super().__init__(data)
+        self.keyword_arguments = keyword_arguments
+        self.call_result_slots = call_result_slots
+
+
+@beartype
 class CallPreambleData(list[Value]):
     """Call-rendering preamble input with its rendered arguments.
 

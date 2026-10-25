@@ -24,15 +24,21 @@ import literalizer
 from literalizer._enums import enum_payload
 from literalizer._language import (
     CallParameterShadowing,
+    CallStubDeclarations,
     CallSupport,
+    KeywordCallStyle,
+    PositionalCallStyle,
     RenderedCallStub,
     is_reserved_identifier,
+    validate_call_parameter_names,
 )
 from literalizer._literalize import (
     assemble_call_expression,
     call_result_discard_formatter,
     format_rendered_call_arguments,
 )
+from literalizer._parsing import parse_input
+from literalizer._types import CallStubData
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
@@ -55,6 +61,7 @@ from .case_inputs import CaseInput
 from .case_manifests import (
     CallCaseSpec,
     CallTransform,
+    CallWrapperSpec,
     call_case_specs,
     case_input,
 )
@@ -702,6 +709,162 @@ class LiteralArgumentsTransform:
         return self.outer(dataclasses.replace(context, call=expression))
 
 
+@beartype
+def _wrapper_call_spec(*, spec: literalizer.Language) -> literalizer.Language:
+    """Use a positional wrapper convention where the producer exposes
+    it.
+    """
+    for member in spec.call_styles:
+        if isinstance(
+            enum_payload(member=member, payload_type=object),
+            PositionalCallStyle,
+        ):
+            return dataclasses.replace(spec, call_style=member)
+    return spec
+
+
+@beartype
+def _wrapper_parameter_names(
+    *, spec: literalizer.Language, params: tuple[str, ...]
+) -> tuple[str, ...]:
+    """Retain scratch names unless the producer rejects their declarations."""
+    try:
+        validate_call_parameter_names(
+            language=spec, names=params, reject_reserved=True
+        )
+    except InvalidCallParameterNameError:
+        names = tuple(f"argument{index}" for index in range(len(params)))
+        validate_call_parameter_names(
+            language=spec, names=names, reject_reserved=True
+        )
+        return names
+    return params
+
+
+@beartype
+def _wrapper_declarations(
+    *, spec: literalizer.Language, config: CallCaseSpec
+) -> CallStubDeclarations:
+    """Keep actual operand representations and wrapper calling conventions."""
+    body: list[str | RenderedCallStub] = []
+    class_scope: list[str] = []
+    file_scope: list[str] = []
+    wrapper = config.call_transform_wrapper
+    for name, parameter_names in _statement_stub_targets(config=config):
+        params = parameter_names
+        wrapper_spec = spec
+        arguments: Sequence[ParsedValue] = ()
+        if wrapper is not None and name == wrapper.target:
+            wrapper_spec = _wrapper_call_spec(spec=spec)
+            params = _wrapper_parameter_names(spec=wrapper_spec, params=params)
+            arguments = CallStubData(
+                data=(),
+                keyword_arguments=isinstance(
+                    wrapper_spec.call_style_config, KeywordCallStyle
+                ),
+                call_result_slots=frozenset(
+                    index
+                    for index, role in enumerate(iterable=wrapper.arguments)
+                    if role == "call"
+                ),
+            )
+        parts = tuple(name.split(sep="."))
+        body.extend(
+            wrapper_spec.format_call_stub(
+                parts, params, literalizer.StubReturn.VOID, arguments
+            )
+        )
+        class_scope.extend(
+            wrapper_spec.format_call_class_scope_stub(
+                parts, params, literalizer.StubReturn.VOID, arguments
+            )
+        )
+        file_scope.extend(
+            wrapper_spec.format_call_preamble_stub(
+                parts, params, literalizer.StubReturn.VOID, arguments
+            )
+        )
+    return CallStubDeclarations(
+        body=tuple(body),
+        class_scope=tuple(class_scope),
+        file_scope=tuple(file_scope),
+    )
+
+
+@dataclasses.dataclass(frozen=True)
+class WrapperCallTransform:
+    """A call producer retaining wrapper operands and declaration
+    scopes.
+    """
+
+    spec: literalizer.Language
+    config: CallCaseSpec
+    wrapper: CallWrapperSpec
+    zip_data: ParsedValue
+
+    @property
+    def uses_zipped(self) -> bool:
+        """Report only the operand roles declared by the recipe."""
+        outer = self.config.call_transform
+        return "zipped" in self.wrapper.arguments or (
+            outer is not None and outer.uses_zipped
+        )
+
+    @functools.cached_property
+    def call_stub_declarations(self) -> CallStubDeclarations:
+        """Supply the same native wrappers to the production file
+        builder.
+        """
+        return _wrapper_declarations(spec=self.spec, config=self.config)
+
+    def __call__(self, context: literalizer.CallContext, /) -> str:
+        """Apply the real wrapper convention to rendered native
+        operands.
+        """
+        wrapper = self.wrapper
+        spec = _wrapper_call_spec(spec=self.spec)
+        style = spec.call_style_config
+        if isinstance(style, CallSupport):
+            msg = "Native call wrapper requires a supported call convention"
+            raise TypeError(msg)
+        operands = []
+        for role in wrapper.arguments:
+            if role == "call":
+                operands.append(context.call)
+                continue
+            operand = context.zipped
+            if operand is None:
+                msg = "Native call wrapper requires a zipped operand"
+                raise ValueError(msg)
+            value = self.zip_data
+            if self.config.per_element:
+                if not isinstance(value, list):
+                    msg = "Per-element call wrapper requires a zipped list"
+                    raise TypeError(msg)
+                value = value[context.index]
+            operands.append(spec.format_call_arg(value, operand))
+        args = format_rendered_call_arguments(
+            formatted=operands,
+            params=_wrapper_parameter_names(
+                spec=spec, params=self.config.transform_stub_param_names
+            ),
+            style=style,
+            allows_empty_call_parens=spec.allows_empty_call_parens,
+        )
+        expression = assemble_call_expression(
+            target_function=spec.format_call_target(
+                tuple(wrapper.target.split(sep="."))
+            ),
+            args_str=args,
+            style=style,
+        )
+        if self.config.call_transform is not None:
+            return self.config.call_transform(
+                dataclasses.replace(context, call=expression)
+            )
+        return expression
+
+
 @runtime_checkable
 class _NativeSequenceExpressionLanguage(Protocol):
     """A producer of native lists independent of literal value
@@ -752,6 +915,21 @@ def call_transform_for_case(
     """Compose the declared expression recipe with the actual call
     syntax.
     """
+    if config.call_transform_wrapper is not None:
+        zip_data: ParsedValue = None
+        if (
+            config.zip_source is not None
+            and config.zip_input_format is not None
+        ):
+            zip_data = parse_input(
+                source=config.zip_source, input_format=config.zip_input_format
+            ).data
+        return WrapperCallTransform(
+            spec=spec,
+            config=config,
+            wrapper=config.call_transform_wrapper,
+            zip_data=zip_data,
+        )
     if config.call_transform_sequence:
         return SequenceCallTransform(spec=spec, outer=config.call_transform)
     style = spec.call_style_config
@@ -1362,34 +1540,10 @@ def run_call_golden_case(
     # Statement stubs cover transform wrappers and a separate follow-up
     # consumer. Keep each target's parameter names so their argument
     # counts remain valid in languages with fixed parameter counts.
-    for wrapper_name, parameter_names in _statement_stub_targets(
-        config=config
-    ):
-        wrapper_name_parts = tuple(wrapper_name.split(sep="."))
-        body_stubs.extend(
-            spec.format_call_stub(
-                wrapper_name_parts,
-                parameter_names,
-                literalizer.StubReturn.VOID,
-                (),
-            ),
-        )
-        class_stubs.extend(
-            spec.format_call_class_scope_stub(
-                wrapper_name_parts,
-                parameter_names,
-                literalizer.StubReturn.VOID,
-                (),
-            ),
-        )
-        preamble_stubs.extend(
-            spec.format_call_preamble_stub(
-                wrapper_name_parts,
-                parameter_names,
-                literalizer.StubReturn.VOID,
-                (),
-            ),
-        )
+    wrapper_stubs = _wrapper_declarations(spec=spec, config=config)
+    body_stubs.extend(wrapper_stubs.body)
+    class_stubs.extend(wrapper_stubs.class_scope)
+    preamble_stubs.extend(wrapper_stubs.file_scope)
     # One library entry point assembles the declarations and the call
     # into a single coherent file: it recomputes the body preamble
     # across the union of types in every declaration *and* the call,

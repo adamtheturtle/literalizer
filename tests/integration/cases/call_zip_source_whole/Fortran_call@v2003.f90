@@ -92,8 +92,8 @@ contains
         type(fval_t) :: r
         r = fnull()
     end function process
-    subroutine emit(call, zip)
+    subroutine emit(argument0, argument1)
         implicit none
-        type(fval_t), intent(in) :: call, zip
+        type(fval_t), intent(in) :: argument0, argument1
     end subroutine emit
 end program main
