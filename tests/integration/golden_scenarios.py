@@ -25,6 +25,7 @@ from beartype import beartype
 import literalizer
 from literalizer import ValueInput
 from literalizer.exceptions import (
+    ExcessiveNestingError,
     ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
@@ -80,6 +81,11 @@ _COMBINED_VARIABLE_FORM = literalizer.BothVariableForms(
 
 LANGUAGE_SKIP_REASONS: SkipReasons = (
     SkipReason(
+        error=ExcessiveNestingError,
+        reason="exceeds the target's safe collection nesting limit",
+        unlink=True,
+    ),
+    SkipReason(
         error=ExistingVariableNotSelfContainedError,
         reason="complete file cannot contain an undeclared existing variable",
         unlink=True,
@@ -112,6 +118,11 @@ LANGUAGE_SKIP_REASONS: SkipReasons = (
 )
 
 VARIANT_SKIP_REASONS: SkipReasons = (
+    SkipReason(
+        error=ExcessiveNestingError,
+        reason="exceeds the target's safe collection nesting limit",
+        unlink=True,
+    ),
     SkipReason(
         error=ExistingVariableNotSelfContainedError,
         reason="complete file cannot contain an undeclared existing variable",
