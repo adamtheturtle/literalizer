@@ -65,6 +65,11 @@ def _empty_string_mapping() -> dict[str, str]:
     return {}
 
 
+def _empty_preamble() -> list[str]:
+    """Return fixture directives without sharing a mutable default."""
+    return []
+
+
 # A field default here is what a language file means by leaving the
 # key out, rather than a value a caller may lean on: a file supplies
 # only what it has an opinion about, and TOML cannot spell the
@@ -79,6 +84,11 @@ class GoldenPolicy(  # noqa: NOD001
 
     filename_lowercase: bool = False
     """Whether a whole golden filename is lower-cased on disk."""
+
+    intentional_identifier_preamble: list[str] = Field(
+        default_factory=_empty_preamble
+    )
+    """Fixture directives for caller-selected identifier spellings."""
 
     collection_layout_category: Annotated[str, Field(min_length=1)] = (
         "collection_layout"

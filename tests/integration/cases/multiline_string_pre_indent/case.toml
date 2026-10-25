@@ -1,8 +1,7 @@
 schema_version = 1
 input = "input.json"
 owner = "variant"
-languages = ["Python"]
-languages_reason = "Python's pre-indented assignment is intentionally checked as an unwrapped text fragment."
+# Original regression: Python's pre-indented assignment is intentionally checked as an unwrapped text fragment.
 
 [[variants]]
 axis = "multiline_string"

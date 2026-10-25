@@ -1,0 +1,10 @@
+// Preserve intentional caller identifier spelling.
+#![allow(non_snake_case)]
+// Permit serde_json::json! to expand wide values.
+#![recursion_limit = "4096"]
+fn main() {
+    let ZVal: serde_json::Value = serde_json::json!({
+        "a": 1,
+    });
+    let _ = &ZVal;
+}

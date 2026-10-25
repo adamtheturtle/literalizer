@@ -21,15 +21,18 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
+from literalizer._language import redefinition_config
+from literalizer.exceptions import InvalidNewVariableNameError
 
 from .case_inputs import CaseInput
 from .case_manifests import load_case_manifest
-from .golden_checks import GoldenSkips, check_golden
+from .golden_checks import GoldenSkips, check_golden, cleanup_stale_golden
 from .golden_scenarios import (
     GoldenGroup,
     GoldenRendering,
     golden_groups,
 )
+from .language_metadata import language_metadata
 from .language_specs import make_golden_path, with_per_fixture_module_name
 from .yaml_warnings import expected_yaml_warnings
 
@@ -107,6 +110,38 @@ def _check_rendering(
     )
     if rendering.apply_fixture_module_name:
         spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
+    variable_form = (
+        rendering.render.variable_form
+        if spec.supports_variable_names
+        else None
+    )
+    expected_error: type[Exception] | None = None
+    expected_message = ""
+    if isinstance(variable_form, literalizer.BothVariableForms) and not (
+        redefinition_config(spec.declaration_style).supports_redefinition
+    ):
+        expected_error = ValueError
+        expected_message = "BothVariableForms requires a declaration_style"
+    elif variable_form is not None and not (
+        spec.new_variable_name_syntax.accepts(name=variable_form.name)
+    ):
+        expected_error = InvalidNewVariableNameError
+        expected_message = "it is not a valid identifier"
+    if expected_error is not None:
+        with pytest.raises(
+            expected_exception=expected_error, match=expected_message
+        ):
+            _ = _literalize(
+                rendering=rendering,
+                spec=spec,
+                input_info=input_info,
+                source_text=source_text,
+                variable_form=variable_form,
+            )
+        cleanup_stale_golden(
+            golden_path=golden_path, config=file_regression.request.config
+        )
+        return
     with GoldenSkips(
         policy=rendering.skip,
         golden_path=golden_path,
@@ -118,11 +153,7 @@ def _check_rendering(
             spec=spec,
             input_info=input_info,
             source_text=source_text,
-            variable_form=(
-                rendering.render.variable_form
-                if spec.supports_variable_names
-                else None
-            ),
+            variable_form=variable_form,
         )
     if rendering.initialize_variable or len(rendering.extra_preamble) > 0:
         declarations: list[literalizer.LiteralizeResult] = []
@@ -151,8 +182,19 @@ def _check_rendering(
             declarations=declarations,
             call=result,
         )
+    metadata = language_metadata(language_id=spec.language_id)
+    identifier_preamble = (
+        metadata.golden.intentional_identifier_preamble
+        if variable_form is not None
+        and variable_form.name != variable_form.name.lower()
+        and variable_form.name
+        != metadata.variants.declaration_style_variable_names.get(
+            spec.declaration_style.name, "my_data"
+        )
+        else ()
+    )
     check_golden(
-        contents=result.code + "\n",
+        contents="\n".join((*identifier_preamble, result.code, "")),
         extension=rendering.extension,
         golden_path=golden_path,
         file_regression=file_regression,
