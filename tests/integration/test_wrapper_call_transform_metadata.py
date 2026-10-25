@@ -77,7 +77,9 @@ def test_wrapper_preserves_operand_usage(case: _UsageCase) -> None:
                 f"argument{index}" for index in range(len(case.arguments))
             ),
             "call_transform": (
-                CallTransform(template=case.outer) if case.outer else None
+                CallTransform(template=case.outer)
+                if len(case.outer) > 0
+                else None
             ),
             "zip_source": "1",
             "zip_input_format": InputFormat.JSON,

@@ -827,7 +827,7 @@ class WrapperCallTransform:
         if isinstance(style, CallSupport):
             msg = "Native call wrapper requires a supported call convention"
             raise TypeError(msg)
-        operands = []
+        operands: list[str] = []
         for role in wrapper.arguments:
             if role == "call":
                 operands.append(context.call)

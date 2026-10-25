@@ -1054,7 +1054,7 @@ def _nim_call_procedure_stubs(
     call_slots = (
         args.call_result_slots
         if isinstance(args, CallStubData)
-        else frozenset()
+        else frozenset[int]()
     )
     parameter_names = params
     if stub_return is StubReturn.VOID:
