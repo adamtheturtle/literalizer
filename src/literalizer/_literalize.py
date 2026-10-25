@@ -4877,6 +4877,8 @@ class _PreFormState:
 
     data: Value
     data_for_preamble: Value
+    has_preamble_value: bool
+    """Whether reference resolution retained a value for inference."""
     data_for_declaration: Value
     result: str
     resolved: ResolvedComments | None
@@ -5065,6 +5067,7 @@ def _literalize_pre_form_impl(
             pass
 
     data_for_preamble: Value = data
+    has_preamble_value = True
     data_for_declaration: Value = data
     effective_ref_values_3: Mapping[str, Value]
     effective_ref_values_4: Mapping[str, Value]
@@ -5086,11 +5089,13 @@ def _literalize_pre_form_impl(
             ref_key=active_ref_key,
         )
         data_for_preamble = resolution.inference_value()
+        has_preamble_value = resolution.include
         language.validate_spec_for_data(data=data_for_preamble)
 
     return _PreFormState(
         data=data,
         data_for_preamble=data_for_preamble,
+        has_preamble_value=has_preamble_value,
         data_for_declaration=data_for_declaration,
         result=result,
         resolved=resolved,
@@ -5408,7 +5413,11 @@ def literalize_apply_form(
     computed = compute_preamble(
         data=pre_form.data_for_preamble,
         language=language,
-        has_variable_declaration=variable_name is not None and is_declaration,
+        has_variable_declaration=(
+            variable_name is not None
+            and is_declaration
+            and pre_form.has_preamble_value
+        ),
     )
     data_dependent_preamble = language.data_dependent_preamble(
         pre_form.data_for_preamble
