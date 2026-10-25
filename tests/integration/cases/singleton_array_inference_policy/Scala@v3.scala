@@ -1,0 +1,10 @@
+object Fixture_singleton_array_inference_policy_Scala {
+val my_data = Map(
+    "below" -> List(List(List[List[List[List[List[List[Int]]]]]](List[List[List[List[List[Int]]]]](List[List[List[List[Int]]]](List[List[List[Int]]](List[List[Int]](List[Int](1)))))))),
+    "boundary" -> List(List(List[List[List[List[List[List[List[Int]]]]]]](List[List[List[List[List[List[Int]]]]]](List[List[List[List[List[Int]]]]](List[List[List[List[Int]]]](List[List[List[Int]]](List[List[Int]](List[Int](2))))))))),
+    "multiple" -> List(List(List[List[List[List[List[List[List[List[List[List[List[List[List[List[List[Int]]]]]]]]]]]]]]](List[List[List[List[List[List[List[List[List[List[List[List[List[List[Int]]]]]]]]]]]]]](List[List[List[List[List[List[List[List[List[List[List[List[List[Int]]]]]]]]]]]]](List[List[List[List[List[List[List[List[List[List[List[List[Int]]]]]]]]]]]](List[List[List[List[List[List[List[List[List[List[List[Int]]]]]]]]]]](List[List[List[List[List[List[List[List[List[List[Int]]]]]]]]]](List[List[List[List[List[List[List[List[List[Int]]]]]]]]](List[List[List[List[List[List[List[List[Int]]]]]]]](List[List[List[List[List[List[List[Int]]]]]]](List[List[List[List[List[List[Int]]]]]](List[List[List[List[List[Int]]]]](List[List[List[List[Int]]]](List[List[List[Int]]](List[List[Int]](List[Int](3))))))))))))))))),
+    "text" -> List(List(List[List[List[List[List[List[List[String]]]]]]](List[List[List[List[List[List[String]]]]]](List[List[List[List[List[String]]]]](List[List[List[List[String]]]](List[List[List[String]]](List[List[String]](List[String]("value"))))))))),
+    "boolean" -> List(List(List[List[List[List[List[List[List[Boolean]]]]]]](List[List[List[List[List[List[Boolean]]]]]](List[List[List[List[List[Boolean]]]]](List[List[List[List[Boolean]]]](List[List[List[Boolean]]](List[List[Boolean]](List[Boolean](true))))))))),
+    "float" -> List(List(List[List[List[List[List[List[List[Double]]]]]]](List[List[List[List[List[List[Double]]]]]](List[List[List[List[List[Double]]]]](List[List[List[List[Double]]]](List[List[List[Double]]](List[List[Double]](List[Double](1.5))))))))),
+)
+}

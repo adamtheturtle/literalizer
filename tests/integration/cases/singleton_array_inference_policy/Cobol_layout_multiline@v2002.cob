@@ -1,0 +1,187 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. CHECK.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 MY-DATA.
+    05 F-BELOW.
+
+            10 FILLER.
+
+                    15 FILLER.
+
+                            20 FILLER.
+
+                                    25 FILLER.
+
+                                            30 FILLER.
+
+                                                    35 FILLER.
+
+                                                            40 FILLER.
+
+                                                                    45 FILLER PIC S9(18) COMP-5 VALUE 1.
+
+
+
+
+
+
+
+
+    05 F-BOUNDARY.
+
+            10 FILLER.
+
+                    15 FILLER.
+
+                            20 FILLER.
+
+                                    25 FILLER.
+
+                                            30 FILLER.
+
+                                                    35 FILLER.
+
+                                                            40 FILLER.
+
+                                                                    45 FILLER.
+
+                                                                            49 FILLER PIC S9(18) COMP-5 VALUE 2.
+
+
+
+
+
+
+
+
+
+    05 F-MULTIPLE.
+
+            10 FILLER.
+
+                    15 FILLER.
+
+                            20 FILLER.
+
+                                    25 FILLER.
+
+                                            30 FILLER.
+
+                                                    35 FILLER.
+
+                                                            40 FILLER.
+
+                                                                    45 FILLER.
+
+                                                                            49 FILLER.
+
+                                                                                    49 FILLER.
+
+                                                                                            49 FILLER.
+
+                                                                                                    49 FILLER.
+
+                                                                                                            49 FILLER.
+
+                                                                                                                    49 FILLER.
+
+                                                                                                                            49 FILLER.
+
+                                                                                                                                    49 FILLER.
+
+                                                                                                                                            49 FILLER PIC S9(18) COMP-5 VALUE 3.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    05 F-TEXT.
+
+            10 FILLER.
+
+                    15 FILLER.
+
+                            20 FILLER.
+
+                                    25 FILLER.
+
+                                            30 FILLER.
+
+                                                    35 FILLER.
+
+                                                            40 FILLER.
+
+                                                                    45 FILLER.
+
+                                                                            49 FILLER PIC X(5) VALUE "value".
+
+
+
+
+
+
+
+
+
+    05 F-BOOLEAN.
+
+            10 FILLER.
+
+                    15 FILLER.
+
+                            20 FILLER.
+
+                                    25 FILLER.
+
+                                            30 FILLER.
+
+                                                    35 FILLER.
+
+                                                            40 FILLER.
+
+                                                                    45 FILLER.
+
+                                                                            49 FILLER PIC S9(18) COMP-5 VALUE 1.
+
+
+
+
+
+
+
+
+
+    05 F-FLOAT.
+
+            10 FILLER.
+
+                    15 FILLER.
+
+                            20 FILLER.
+
+                                    25 FILLER.
+
+                                            30 FILLER.
+
+                                                    35 FILLER.
+
+                                                            40 FILLER.
+
+                                                                    45 FILLER.
+
+                                                                            49 FILLER COMP-2 VALUE 1.5.
+PROCEDURE DIVISION.
+    STOP RUN.

@@ -1,7 +1,5 @@
 schema_version = 1
-gates = [
-  { kind = "metadata_field", field = "nested_list_widening", value = "integer_width" },
-]
+# Regression provenance: Nim array inference must retain mixed numeric values.
 suites = ["base"]
 
 [[variants]]

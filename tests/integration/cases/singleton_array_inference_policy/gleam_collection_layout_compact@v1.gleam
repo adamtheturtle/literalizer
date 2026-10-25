@@ -1,0 +1,20 @@
+pub type GVal {
+  GBool(Bool)
+  GInt(Int)
+  GFloat(Float)
+  GStr(String)
+  GList(List(GVal))
+  GDict(List(#(String, GVal)))
+}
+
+pub fn main() {
+  let my_data = GDict([
+    #("below", GList([GList([GList([GList([GList([GList([GList([GList([GInt(1)])])])])])])])])),
+    #("boundary", GList([GList([GList([GList([GList([GList([GList([GList([GList([GInt(2)])])])])])])])])])),
+    #("multiple", GList([GList([GList([GList([GList([GList([GList([GList([GList([GList([GList([GList([GList([GList([GList([GList([GList([GInt(3)])])])])])])])])])])])])])])])])])),
+    #("text", GList([GList([GList([GList([GList([GList([GList([GList([GList([GStr("value")])])])])])])])])])),
+    #("boolean", GList([GList([GList([GList([GList([GList([GList([GList([GList([GBool(True)])])])])])])])])])),
+    #("float", GList([GList([GList([GList([GList([GList([GList([GList([GList([GFloat(1.5)])])])])])])])])])),
+  ])
+  let _ = my_data
+}

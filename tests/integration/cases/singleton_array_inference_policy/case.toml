@@ -1,6 +1,5 @@
 # Regression provenance: Swift. Swift independently infers scalar-ended singleton arrays at chunk boundaries. Other compilers have separate deep-nesting cost tracked in issue 5264.
 schema_version = 1
-gates = [{kind = "spec_field_present", field = "array_inference_policy"}]
 suites = ["base", "combined"]
 
 [[variants]]
