@@ -1669,6 +1669,12 @@ class Gleam(metaclass=LanguageCls):
         """Shared dict-entry formatter used by dict and ordered-map."""
         return _gleam_dict_entry
 
+    @staticmethod
+    @beartype
+    def format_sequence_expression(expressions: Sequence[str], /) -> str:
+        """Construct a native list of arbitrary result expressions."""
+        return "[" + ", ".join(expressions) + "]"
+
     @cached_property
     @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:

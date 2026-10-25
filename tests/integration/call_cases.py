@@ -702,6 +702,49 @@ class LiteralArgumentsTransform:
         return self.outer(dataclasses.replace(context, call=expression))
 
 
+@runtime_checkable
+class _NativeSequenceExpressionLanguage(Protocol):
+    """A producer of native lists independent of literal value
+    carriers.
+    """
+
+    def format_sequence_expression(self, expressions: Sequence[str], /) -> str:
+        """Build a sequence from arbitrary native expressions."""
+        ...
+
+
+@dataclasses.dataclass(frozen=True)
+class SequenceCallTransform:
+    """A one-element native sequence containing the call's actual
+    result.
+    """
+
+    spec: literalizer.Language
+    outer: CallTransform | None
+
+    @property
+    def uses_zipped(self) -> bool:
+        """Preserve any operand use declared by an outer transform."""
+        return self.outer is not None and self.outer.uses_zipped
+
+    def __call__(self, context: literalizer.CallContext, /) -> str:
+        """Let the literal producer choose its real sequence
+        construction.
+        """
+        if isinstance(self.spec, _NativeSequenceExpressionLanguage):
+            expression = self.spec.format_sequence_expression((context.call,))
+        else:
+            expression = self._literal_sequence(context.call)
+        if self.outer is not None:
+            return self.outer(dataclasses.replace(context, call=expression))
+        return expression
+
+    def _literal_sequence(self, call: str, /) -> str:
+        """Use the native sequence delimiters for a result expression."""
+        config = self.spec.sequence_format_config
+        return self.spec.sequence_open([]) + call + config.close
+
+
 @beartype
 def call_transform_for_case(
     *, spec: literalizer.Language, config: CallCaseSpec
@@ -709,6 +752,8 @@ def call_transform_for_case(
     """Compose the declared expression recipe with the actual call
     syntax.
     """
+    if config.call_transform_sequence:
+        return SequenceCallTransform(spec=spec, outer=config.call_transform)
     style = spec.call_style_config
     if config.call_transform_arguments is not None and not isinstance(
         style, CallSupport
