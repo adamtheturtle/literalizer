@@ -1324,6 +1324,12 @@ class OCaml(metaclass=LanguageCls):
 
         return _format
 
+    @staticmethod
+    @beartype
+    def format_sequence_expression(expressions: Sequence[str], /) -> str:
+        """Construct a native list of arbitrary result expressions."""
+        return "[" + "; ".join(expressions) + "]"
+
     @cached_property
     @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
