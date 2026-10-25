@@ -1,0 +1,4 @@
+from __future__ import annotations
+my_data: dict[str, str] = {
+    "v": "a\u202A\u202B\u202C\u202D\u202E\u2066\u2067\u2068\u2069b",
+}

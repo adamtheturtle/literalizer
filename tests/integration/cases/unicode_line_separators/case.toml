@@ -9,3 +9,9 @@ axis = "string_format"
 
 [[variants]]
 axis = "json_type"
+
+[[variants]]
+axis = "multiline_string"
+
+[[variants]]
+axis = "type_hints"
