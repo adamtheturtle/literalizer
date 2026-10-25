@@ -1745,6 +1745,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     module_name_must_start_uppercase: bool
     new_variable_name_syntax: NewVariableNameSyntax
     max_variable_identifier_length: int | None
+    call_literal_syntax: CallLiteralSyntax | None
     call_target_name_syntax: NewVariableNameSyntax | None
     """The grammar each component of a ``target_function`` follows.
 
@@ -2699,8 +2700,12 @@ class Language(typing.Protocol):
         """
         ...
 
-    call_literal_syntax: CallLiteralSyntax | None
-    """The configured literal grammar for call binding terminators, if any."""
+    @property
+    def call_literal_syntax(self) -> CallLiteralSyntax | None:
+        """The immutable literal grammar used by call binding
+        terminators.
+        """
+        ...
 
     @property
     def format_call_variable_declaration(

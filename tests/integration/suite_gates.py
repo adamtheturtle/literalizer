@@ -19,6 +19,7 @@ from beartype import beartype
 from pydantic import BaseModel, Field
 
 import literalizer
+from literalizer._statements import CallLiteralSyntax
 from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
@@ -222,6 +223,35 @@ class CallInterpolationGate(
     quotes: Annotated[str, Field(min_length=1)]
 
 
+type CallLiteralGate = (
+    CallLiteralFlagGate | CallRawStringPrefixGate | CallInterpolationGate
+)
+
+
+@beartype
+def call_literal_gate_admits(
+    *, gate: CallLiteralGate, syntax: CallLiteralSyntax | None
+) -> bool:
+    """Read scanner grammar directly without constructing a language
+    spec.
+    """
+    if syntax is None:
+        return False
+    match gate:
+        case CallLiteralFlagGate():
+            return (
+                syntax.regex_literals
+                if gate.flag == "regex_literals"
+                else syntax.verbatim_strings
+            )
+        case CallRawStringPrefixGate():
+            return gate.prefix in syntax.raw_string_prefixes
+        case CallInterpolationGate():
+            return syntax.interpolation_syntax == (gate.opener, gate.quotes)
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
 type SuiteGate = Annotated[
     CapabilityFlagGate
     | RecordVariantGate
@@ -318,24 +348,13 @@ def gate_admits(
             admits = SPEC_CONFIG_FIELDS[gate.field](spec) is not None
         case BehaviorFlagGate():
             admits = BEHAVIOR_FLAGS[gate.flag](spec)
-        case CallLiteralFlagGate():
-            syntax = spec.call_literal_syntax
-            admits = syntax is not None and (
-                syntax.regex_literals
-                if gate.flag == "regex_literals"
-                else syntax.verbatim_strings
-            )
-        case CallRawStringPrefixGate():
-            syntax = spec.call_literal_syntax
-            admits = (
-                syntax is not None
-                and gate.prefix in syntax.raw_string_prefixes
-            )
-        case CallInterpolationGate():
-            syntax = spec.call_literal_syntax
-            admits = syntax is not None and syntax.interpolation_syntax == (
-                gate.opener,
-                gate.quotes,
+        case (
+            CallLiteralFlagGate()
+            | CallRawStringPrefixGate()
+            | CallInterpolationGate()
+        ):
+            admits = call_literal_gate_admits(
+                gate=gate, syntax=lang_cls.call_literal_syntax
             )
         case _ as unreachable:
             assert_never(unreachable)
