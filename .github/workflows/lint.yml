@@ -1775,10 +1775,21 @@ jobs:
   lint-haskell-family:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      CABAL_CONFIG: /tmp/literalizer-cabal.config
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Configure Hackage over HTTPS
+        run: |-
+          cat > "$CABAL_CONFIG" <<EOF
+          repository hackage.haskell.org
+            url: https://hackage.haskell.org/
+            secure: true
+          remote-repo-cache: ${HOME}/.cabal/packages
+          store-dir: ${HOME}/.cabal/store
+          EOF
       - uses: haskell-actions/setup@v2.12.1
         id: setup-haskell
         with:
@@ -1786,6 +1797,8 @@ jobs:
           # Keep the Cabal toolchain stable when updating the setup action.
           # A cold 3.18.1.0 store takes longer than the install retry budget.
           cabal-version: 3.16.1.0
+          # Update once, after restoring the index cache, using the bounded retry.
+          cabal-update: false
 
       # Cache the cabal store (compiled aeson and its deps) used by the
       # `Haskell roundtrip` step's cabal-script. Keyed on the resolved
