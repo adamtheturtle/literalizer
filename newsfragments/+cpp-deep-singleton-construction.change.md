@@ -1,0 +1,1 @@
+C++ renders deep singleton sequences through independent vector constructors, preserving their native types and values while avoiding repeated traversal of nested initializer lists by compiler tooling.

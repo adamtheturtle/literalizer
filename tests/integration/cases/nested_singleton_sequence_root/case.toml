@@ -1,0 +1,7 @@
+# Regression provenance: C++ constructor scopes must retain native root types.
+schema_version = 1
+suites = ["base"]
+
+[[variants]]
+axis = "collection_layout"
+context = { variable_form = "both" }

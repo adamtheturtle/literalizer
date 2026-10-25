@@ -31,6 +31,48 @@ class TypedCollectionOpen(str):
 
 
 @beartype
+class SingleElementCollectionOpen(TypedCollectionOpen):
+    """A native constructor with separate delimiters around its one
+    child.
+    """
+
+    __slots__ = ("_delimiters",)
+
+    _delimiters: tuple[str, str]
+
+    def __new__(
+        cls,
+        code: str,
+        /,
+        *,
+        declared_type: str,
+        delimiters: tuple[str, str],
+    ) -> Self:
+        """Allocate the opener while retaining the original native
+        type.
+        """
+        del delimiters
+        return super().__new__(cls, code, declared_type=declared_type)
+
+    def __init__(
+        self,
+        code: str,
+        /,
+        *,
+        declared_type: str,
+        delimiters: tuple[str, str],
+    ) -> None:
+        """Retain the constructor separately from its selected type."""
+        super().__init__(code, declared_type=declared_type)
+        self._delimiters = delimiters
+
+    @property
+    def delimiters(self) -> tuple[str, str]:
+        """The constructor's opening and closing source text."""
+        return self._delimiters
+
+
+@beartype
 class TypedInitializer(str):
     """A literal whose declaration type is already known."""
 
@@ -51,6 +93,20 @@ class TypedInitializer(str):
     def declared_type(self) -> str:
         """The literal's selected declaration type."""
         return self._declared_type
+
+
+@beartype
+def single_element_initializer_delimiters(
+    opener: str, /
+) -> tuple[str, str] | None:
+    """Read a native singleton constructor without losing its type."""
+    if not isinstance(opener, SingleElementCollectionOpen):
+        return None
+    opening, closing = opener.delimiters
+    return (
+        TypedCollectionOpen(opening, declared_type=opener.declared_type),
+        closing,
+    )
 
 
 @beartype

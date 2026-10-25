@@ -53,6 +53,7 @@ from literalizer._formatters.format_dates import datetime_epoch_seconds
 from literalizer._formatters.initializer_types import (
     finish_collection_initializer,
     prefix_initializer,
+    single_element_initializer_delimiters,
 )
 from literalizer._formatters.initializer_types import (
     initializer_type as retained_initializer_type,
@@ -2656,6 +2657,13 @@ def _format_list_value(
     opener = _sequence_open_for_ref_inference(
         data=value, explicit_override=sequence_open_override, ctx=ctx
     )
+    if len(items) == 1:
+        delimiters = single_element_initializer_delimiters(opener)
+        if delimiters is not None:
+            opening, closing = delimiters
+            return finish_collection_initializer(
+                opener=opening, code=f"{opening}{joined}{closing}"
+            )
     return finish_collection_initializer(
         opener=opener, code=f"{opener}{joined}{sequence_cfg.close}"
     )
@@ -3040,6 +3048,12 @@ def _wrap_body(
             else:
                 open_str = spec.sequence_open(data)
                 close_str = sequence_cfg.close
+                if source_length == 1:
+                    delimiters = single_element_initializer_delimiters(
+                        open_str
+                    )
+                    if delimiters is not None:
+                        open_str, close_str = delimiters
             opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{close_str}"
     return finish_collection_initializer(
@@ -3272,14 +3286,18 @@ def _single_element_sequence_delimiters(
     around its element; a multiline layout needs the two halves apart
     so the element can sit on its own line (issue #3928).
     """
-    template = ctx.spec.sequence_format_config.single_element_template
     if (
-        template is None
-        or sequence_open_override is not None
+        sequence_open_override is not None
         or not isinstance(data, list)
         or len(data) != 1
     ):
         return None
+    template = ctx.spec.sequence_format_config.single_element_template
+    if template is None:
+        opener = _sequence_open_for_ref_inference(
+            data=data, explicit_override=None, ctx=ctx
+        )
+        return single_element_initializer_delimiters(opener)
     opening, _, close = template.partition("{items}")
     return (opening, close)
 
@@ -3748,6 +3766,14 @@ def _format_collection_lines(
                 trailing_comma
                 and spec.sequence_format_config.supports_trailing_comma
             )
+            if len(list_data) == 1:
+                opener = _sequence_open_for_ref_inference(
+                    data=list_data,
+                    explicit_override=sequence_open_override,
+                    ctx=ctx,
+                )
+                if single_element_initializer_delimiters(opener) is not None:
+                    seq_trailing = False
             inferred_list_data = _opener_inference_value(
                 data=list_data, ctx=ctx
             )

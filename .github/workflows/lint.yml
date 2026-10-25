@@ -1970,7 +1970,47 @@ jobs:
           find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy && test -s /tmp/files-c-tidy
           xargs -0 -P "$(nproc)" -n1 -I{} uv run --group=dev clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
+  build-cpp-toolchain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Cache the patched C++ toolchain
+        id: cpp-toolchain
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/literalizer-clang
+          key: >-
+            clang-23.1.4-${{ runner.os }}-${{ runner.arch }}-${{
+            hashFiles('ci/clang/**', 'scripts/build_cpp_toolchain.py') }}
+      - name: Install build dependencies
+        if: steps.cpp-toolchain.outputs.cache-hit != 'true'
+        timeout-minutes: 10
+        run: |-
+          scripts/retry.sh sudo apt-get update
+          scripts/retry.sh sudo apt-get install -y --no-install-recommends \
+            zstd zlib1g-dev libzstd-dev libxml2-dev
+      - name: Build and verify the C++ toolchain
+        if: steps.cpp-toolchain.outputs.cache-hit != 'true'
+        run: |-
+          python3 scripts/build_cpp_toolchain.py \
+            --work-directory "$RUNNER_TEMP/clang-build" \
+            --output-directory "$RUNNER_TEMP/literalizer-clang"
+      # Preserve executable modes and resource-header symlinks in the artifact.
+      - name: Package the C++ toolchain
+        run: tar -C "$RUNNER_TEMP/literalizer-clang" -czf "$RUNNER_TEMP/cpp-toolchain.tar.gz"
+          .
+      - name: Upload the C++ toolchain
+        uses: actions/upload-artifact@v7
+        with:
+          name: cpp-toolchain
+          path: ${{ runner.temp }}/cpp-toolchain.tar.gz
+          retention-days: 1
+
   lint-cpp-tidy:
+    needs: [build-cpp-toolchain]
     strategy:
       matrix:
         shard: [0, 1, 2]
@@ -1985,12 +2025,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.0
+      - name: Download the C++ toolchain
+        uses: actions/download-artifact@v8
         with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
+          name: cpp-toolchain
+          path: ${{ runner.temp }}
+      - name: Install the C++ toolchain
+        run: |-
+          mkdir -p "$RUNNER_TEMP/literalizer-clang"
+          tar -C "$RUNNER_TEMP/literalizer-clang" -xzf "$RUNNER_TEMP/cpp-toolchain.tar.gz"
+          echo "$RUNNER_TEMP/literalizer-clang/bin" >> "$GITHUB_PATH"
       # ``nlohmann::json`` fixtures (``Cpp(json_type=NLOHMANN_JSON)``)
       # need the single-header library.  The ``nlohmann-json3-dev`` apt
       # install this replaces hung for the whole job budget often
@@ -2035,7 +2079,7 @@ jobs:
           done < <(find tests/integration/cases -name '*.cpp' -print0 | sort -z) \
             > /tmp/files-cpp-tidy
           test -s /tmp/files-cpp-tidy
-          xargs -0 -P "$(nproc)" -n1 uv run --group=dev bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
+          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
 
   lint-cobol:
     runs-on: ubuntu-24.04
@@ -2119,6 +2163,7 @@ jobs:
         run: uv run python -m scripts.run_cobol_roundtrip
 
   lint-cpp:
+    needs: [build-cpp-toolchain]
     strategy:
       matrix:
         shard: [0, 1, 2]
@@ -2133,6 +2178,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Download the C++ toolchain
+        uses: actions/download-artifact@v8
+        with:
+          name: cpp-toolchain
+          path: ${{ runner.temp }}
+      - name: Install the C++ toolchain
+        run: |-
+          mkdir -p "$RUNNER_TEMP/literalizer-clang"
+          tar -C "$RUNNER_TEMP/literalizer-clang" -xzf "$RUNNER_TEMP/cpp-toolchain.tar.gz"
+          echo "$RUNNER_TEMP/literalizer-clang/bin" >> "$GITHUB_PATH"
       - name: Find files to lint
         env:
           SHARD_COUNT: 3
@@ -2175,19 +2230,9 @@ jobs:
       - name: Put nlohmann/json on the include path
         run: echo "CPLUS_INCLUDE_PATH=${RUNNER_TEMP}/nlohmann-include${CPLUS_INCLUDE_PATH:+:${CPLUS_INCLUDE_PATH}}"
           >> "${GITHUB_ENV}"
-      # Fixtures are tiny TUs whose cost is dominated by re-parsing the
-      # same standard headers hundreds of times. Build a precompiled header once
-      # covering every header any fixture includes, then preload it in
-      # each compile invocation so the parsed AST is reused instead of
-      # re-parsed per file.
-      # Build one precompiled header for each C++ target selected by a
-      # fixture filename (``@cpp14.cpp``, ``@cpp17.cpp``, or C++20).
-      - name: Build precompiled headers
-        run: |-
-          for standard in c++14 c++17 c++20; do
-            clang++ "-std=$standard" -Werror -x c++-header scripts/lint-cpp-pch.hpp \
-              -o "/tmp/lint-cpp-$standard.hpp.pch"
-          done
+      # Loading standard-library templates from a PCH triggers exponential
+      # TemplateArgumentHasher traversal for deep owning-vector types.
+      # Parse headers directly, as clang-tidy does, within the same deadlines.
       # Each fixture defines its own main, so compile and run directly.
       # The build-and-run step also surfaces any syntax errors, so a
       # separate `-fsyntax-only` pass would be redundant.
@@ -3671,6 +3716,7 @@ jobs:
       - lint-haskell-family
       - lint-c-tidy
       - lint-cpp-tidy
+      - build-cpp-toolchain
       - lint-cobol
       - lint-cpp
       - lint-kotlin
