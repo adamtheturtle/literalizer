@@ -167,7 +167,7 @@ def _build_program(*, json_text: str) -> str:
         "def main() raises:\n"
         f"{result.code}\n"
         f"{list_probe.code}\n"
-        f"    require_list({_LIST_PROBE_NAME}^)\n"
+        f"    require_list({_LIST_PROBE_NAME})\n"
         f"{walk_body}\n"
     )
 

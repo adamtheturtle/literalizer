@@ -1,4 +1,4 @@
-def make_widget[*Ts: AnyType](*args: *Ts) -> None:
+def make_widget[*Ts: AnyType](var *args: *Ts) -> None:
     pass
 def main():
     make_widget(List[String](), List([1]), List[String]())

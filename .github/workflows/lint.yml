@@ -3045,7 +3045,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mojo-version: ${{ fromJSON(github.event_name == 'schedule' && '["1.0.0", "latest"]' || '["1.0.0"]') }}
+        mojo-version: ${{ fromJSON(github.event_name == 'schedule' && '["1.2.0", "latest"]' || '["1.2.0"]') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -3060,7 +3060,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      # ``mojo-compiler==1.0.0`` is >= the ``VersionFormats.V24_5``
+      # Mojo 1.2 compiles the depth-30 native List regression within the
+      # existing fixture budget; Mojo 1.0 exceeds it for the same source.
+      # ``mojo-compiler==1.2.0`` is >= the ``VersionFormats.V24_5``
       # value of ``Mojo.language_version`` in
       # ``src/literalizer/languages/mojo.py``; keep them in sync.
       - name: Install Mojo

@@ -1,6 +1,6 @@
-def make_widget(count: Int) -> None:
+def make_widget(var count: Int) -> None:
     pass
-def consume_widget[*Ts: AnyType](*args: *Ts):
+def consume_widget[*Ts: AnyType](var *args: *Ts):
     pass
 def main():
     var my_data = make_widget(0)

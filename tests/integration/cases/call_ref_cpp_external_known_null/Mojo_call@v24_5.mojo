@@ -1,4 +1,4 @@
-def consume[*Ts: AnyType](*args: *Ts):
+def consume[*Ts: AnyType](var *args: *Ts):
     pass
 def main():
     var item = None

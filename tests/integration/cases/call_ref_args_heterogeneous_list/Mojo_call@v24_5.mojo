@@ -1,4 +1,4 @@
-def process[*Ts: AnyType](*args: *Ts):
+def process[*Ts: AnyType](var *args: *Ts):
     pass
 def main():
     var my_ints = List([

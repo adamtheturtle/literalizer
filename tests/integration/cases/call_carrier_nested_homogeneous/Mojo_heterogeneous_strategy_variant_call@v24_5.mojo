@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _ClientType(Copyable, Movable):
-    def go(self, first_value: List[Int], second_value: List[Int]):
+    def go(self, var first_value: List[Int], var second_value: List[Int]):
         pass
 @fieldwise_init
 struct _AppType(Copyable, Movable):

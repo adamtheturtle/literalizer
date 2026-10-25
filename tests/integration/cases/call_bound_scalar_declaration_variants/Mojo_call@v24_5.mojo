@@ -1,4 +1,4 @@
-def consume(value: Int):
+def consume(var value: Int):
     pass
 def main():
     var shared = 42

@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _ObjType(Copyable, Movable):
-    def ZKV(self, value: Int):
+    def ZKV(self, var value: Int):
         pass
 def main():
     var obj = _ObjType()

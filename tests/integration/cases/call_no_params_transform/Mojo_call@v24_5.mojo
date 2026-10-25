@@ -1,6 +1,6 @@
 def process() -> None:
     pass
-def emit[*Ts: AnyType](*args: *Ts):
+def emit[*Ts: AnyType](var *args: *Ts):
     pass
 def main():
     emit(process())

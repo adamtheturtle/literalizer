@@ -1,4 +1,4 @@
-def process(value: Dict[String, String]):
+def process(var value: Dict[String, String]):
     pass
 def main():
     # Test cases

@@ -1,6 +1,6 @@
-def f(a: Int) -> None:
+def f(var a: Int) -> None:
     pass
-def repr[*Ts: AnyType](*args: *Ts):
+def repr[*Ts: AnyType](var *args: *Ts):
     pass
 def main():
     var ref_data = 1

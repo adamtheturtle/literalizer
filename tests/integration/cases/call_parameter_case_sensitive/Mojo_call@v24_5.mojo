@@ -1,4 +1,4 @@
-def process(IF: Int):
+def process(var IF: Int):
     pass
 def main():
     process(42)

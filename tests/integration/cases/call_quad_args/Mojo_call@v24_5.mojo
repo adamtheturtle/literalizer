@@ -1,4 +1,4 @@
-def process(a: Int, b: Int, c: Int, d: Int):
+def process(var a: Int, var b: Int, var c: Int, var d: Int):
     pass
 def main():
     process(1, 2, 3, 4)

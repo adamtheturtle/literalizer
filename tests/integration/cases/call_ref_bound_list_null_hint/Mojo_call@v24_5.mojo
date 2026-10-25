@@ -1,4 +1,4 @@
-def consume(value: List[Int]):
+def consume(var value: List[Int]):
     pass
 def main():
     var item = List([
