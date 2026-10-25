@@ -2701,13 +2701,6 @@ class Language(typing.Protocol):
         ...
 
     @property
-    def call_literal_syntax(self) -> CallLiteralSyntax | None:
-        """The immutable literal grammar used by call binding
-        terminators.
-        """
-        ...
-
-    @property
     def format_call_variable_declaration(
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:

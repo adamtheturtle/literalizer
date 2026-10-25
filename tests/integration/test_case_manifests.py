@@ -1055,19 +1055,33 @@ def test_literal_grammar_gates_compose_with_call_capabilities(
         + grammar_gate
         + "]\n"
     )
+    grammar_path = tmp_path / "grammar"
+    grammar_path.mkdir()
     case_dir = _write_case(
-        tmp_path=tmp_path, manifest=text, input_name="input.yaml"
+        tmp_path=grammar_path, manifest=text, input_name="input.yaml"
     )
     grammar_only = load_case_manifest(case_dir=case_dir)
     combined = text.replace(
         "gates = [",
         'gates = [{kind = "capability_flag", flag = "declares_call_styles"}, ',
     )
-    _ = (case_dir / "case.toml").write_text(data=combined, encoding="utf-8")
-    with_capability = load_case_manifest(case_dir=case_dir)
-    for lang_cls in literalizer.languages.ALL_LANGUAGES:
-        assert manifest_admits_language(
-            manifest=grammar_only, lang_cls=lang_cls
-        ) == manifest_admits_language(
+    combined_path = tmp_path / "combined"
+    combined_path.mkdir()
+    combined_dir = _write_case(
+        tmp_path=combined_path, manifest=combined, input_name="input.yaml"
+    )
+    with_capability = load_case_manifest(case_dir=combined_dir)
+    admitted = {
+        lang_cls
+        for lang_cls in literalizer.languages.ALL_LANGUAGES
+        if manifest_admits_language(manifest=grammar_only, lang_cls=lang_cls)
+    }
+    combined_admitted = {
+        lang_cls
+        for lang_cls in literalizer.languages.ALL_LANGUAGES
+        if manifest_admits_language(
             manifest=with_capability, lang_cls=lang_cls
         )
+    }
+    assert len(admitted) > 0
+    assert admitted == combined_admitted
