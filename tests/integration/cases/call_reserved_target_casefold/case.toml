@@ -6,5 +6,4 @@ target_function = "BEGIN"
 parameter_names = ["a"]
 per_element = false
 wrap_in_file = true
-languages = ["Ada"]
-languages_reason = "Ada call target keywords are reserved irrespective of case."
+# Original regression: Ada call target keywords are reserved irrespective of case.

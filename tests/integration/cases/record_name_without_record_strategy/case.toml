@@ -1,0 +1,6 @@
+schema_version = 1
+# Original regression: Swift reserves generated record names only when the RECORD strategy is selected; Dart consumers use the manifest's custom root name.
+suites = ["base"]
+
+[base_context]
+variable_name = "Record0"

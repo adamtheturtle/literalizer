@@ -1,0 +1,1 @@
+def std = Double.NaN

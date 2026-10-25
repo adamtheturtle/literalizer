@@ -13,9 +13,9 @@ instance Fractional Val where
     _ / _ = error "not implemented"
 my_data :: (Val, Val, Val)
 my_data = (
-    (1/0),
-    (-1/0),
-    (0/0)
+    HFloat ((1/0)),
+    HFloat ((-1/0)),
+    HFloat ((0/0))
     )
 main :: IO ()
 main = seq my_data (return ())

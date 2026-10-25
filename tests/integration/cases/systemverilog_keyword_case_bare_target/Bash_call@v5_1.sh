@@ -1,0 +1,2 @@
+Before() { :; }
+Before 1

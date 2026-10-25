@@ -1,0 +1,5 @@
+module Fixture_call_target_identifier_length_64_Crystal_call
+extend self
+def ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(x = nil); 0; end
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(x: 1);
+end

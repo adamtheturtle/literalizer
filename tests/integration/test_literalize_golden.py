@@ -21,8 +21,11 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer._language import redefinition_config
-from literalizer.exceptions import InvalidNewVariableNameError
+from literalizer._language import is_reserved_identifier, redefinition_config
+from literalizer.exceptions import (
+    InvalidNewVariableNameError,
+    ReservedVariableNameError,
+)
 
 from .case_inputs import CaseInput
 from .case_manifests import load_case_manifest
@@ -122,6 +125,22 @@ def _check_rendering(
     ):
         expected_error = ValueError
         expected_message = "BothVariableForms requires a declaration_style"
+    elif variable_form is not None and (
+        is_reserved_identifier(
+            case_sensitive=spec.reserved_variable_identifiers_case_sensitive,
+            name=variable_form.name,
+            reserved_identifiers=spec.reserved_variable_identifiers,
+        )
+        or (
+            spec.reserved_variable_identifier_pattern is not None
+            and spec.reserved_variable_identifier_pattern.fullmatch(
+                string=variable_form.name
+            )
+            is not None
+        )
+    ):
+        expected_error = ReservedVariableNameError
+        expected_message = "reserved"
     elif variable_form is not None and not (
         spec.new_variable_name_syntax.accepts(name=variable_form.name)
     ):

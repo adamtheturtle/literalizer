@@ -13,9 +13,9 @@ instance Fractional Val where
     _ / _ = error "not implemented"
 my_data :: Val
 my_data = JList [
-    (1/0),
-    (-1/0),
-    (0/0)
+    JFloat ((1/0)),
+    JFloat ((-1/0)),
+    JFloat ((0/0))
     ]
 main :: IO ()
 main = seq my_data (return ())

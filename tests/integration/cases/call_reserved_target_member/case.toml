@@ -6,5 +6,4 @@ target_function = "obj.class"
 parameter_names = ["a"]
 per_element = false
 wrap_in_file = true
-languages = ["JavaScript"]
-languages_reason = "ECMAScript accepts declaration keywords as member names and wraps this call with a target stub."
+# Original regression: ECMAScript accepts declaration keywords as member names and wraps this call with a target stub.

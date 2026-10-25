@@ -1,0 +1,2 @@
+function ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(...) end
+ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff(1)

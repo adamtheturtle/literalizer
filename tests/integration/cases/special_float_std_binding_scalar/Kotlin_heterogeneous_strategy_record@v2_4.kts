@@ -1,0 +1,1 @@
+val std = Double.NaN

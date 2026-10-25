@@ -1,0 +1,6 @@
+schema_version = 1
+# Original regression: Zig reserves only the carrier and parser names occupied by the selected output mode.
+suites = ["base", "combined"]
+
+[base_context]
+variable_name = "std"

@@ -6,5 +6,4 @@ target_function = "class.member"
 parameter_names = ["a"]
 per_element = false
 wrap_in_file = true
-languages = ["JavaScript"]
-languages_reason = "ECMAScript reserves class as the declaration head of a dotted target."
+# Original regression: ECMAScript reserves class as the declaration head of a dotted target.

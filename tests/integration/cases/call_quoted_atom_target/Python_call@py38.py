@@ -1,0 +1,3 @@
+def DoThing(*_args: object, **_kwargs: object) -> object: ...
+DoThing(x=1)
+DoThing(x=2)

@@ -4,6 +4,7 @@ import dataclasses
 import datetime as dt
 import enum
 import itertools
+import math
 import re
 import unicodedata
 from collections.abc import Callable, Sequence
@@ -2767,7 +2768,21 @@ class Haskell(metaclass=LanguageCls):
                 )
 
             return _wrap_float
-        return self.float_format
+
+        @beartype
+        def _implicit_float(value: float) -> str:
+            """Evaluate special-float division inside Double, before
+            constructing the tagged value.
+            """
+            if math.isfinite(value):
+                return self.float_format(value)
+            return _wrap_float_with_constructor(
+                value=value,
+                float_prefix=f"{self.constructor_prefix}Float ",
+                base_format_float=self.float_format,
+            )
+
+        return _implicit_float
 
     @cached_property
     @beartype
