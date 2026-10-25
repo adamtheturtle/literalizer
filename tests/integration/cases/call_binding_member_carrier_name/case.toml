@@ -1,0 +1,15 @@
+# Regression provenance: Zig member named ZVal, the generated carrier type.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "capability_flag", flag = "supports_dotted_calls"}, {kind = "enum_member_present", option = "comment_format", member = "DOUBLE_SLASH"}]
+target_function = "obj.ZVal"
+parameter_names = ["_arg"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "{call} // note"
+
+[[call.variants]]
+axis = "heterogeneous_strategy"
