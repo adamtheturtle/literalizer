@@ -5,6 +5,6 @@ import Data.Aeson.QQ (aesonQQ)
 shared :: Value
 shared = [aesonQQ| 42 |]
 my_data :: Value
-my_data = [aesonQQ| [{"$ref": "shared"}, {"$ref": "shared"}] |]
+my_data = [aesonQQ| [#{shared}, #{shared}] |]
 main :: IO ()
 main = seq my_data (return ())

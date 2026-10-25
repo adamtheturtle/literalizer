@@ -4668,6 +4668,54 @@ class _ContextualVariableDeclarationLanguage(Protocol):
 
 
 @beartype
+@dataclasses.dataclass(frozen=True)
+class _VariableReferenceContext:
+    """Source reference identities retained for a declaration producer."""
+
+    data: Value
+    ref_key: str
+    ref_case: IdentifierCase | None
+
+
+@runtime_checkable
+class _ReferenceLiteralLanguage(Protocol):
+    """A declaration producer retaining reference-bearing initializer data."""
+
+    def prepare_reference_literal(
+        self,
+        value: str,
+        data: Value,
+        ref_key: str,
+        ref_case: IdentifierCase | None,
+        /,
+    ) -> str:
+        """Keep source references separate from resolved inference
+        values.
+        """
+        ...
+
+
+@beartype
+def _prepare_reference_literal(
+    *,
+    value: str,
+    language: Language,
+    context: _VariableReferenceContext | None,
+) -> str:
+    """Retain source metadata after removing the initializer margin."""
+    if (
+        context is not None
+        and context.ref_key is not _DISABLED_REF_KEY
+        and isinstance(language, _ReferenceLiteralLanguage)
+        and _contains_ref_marker(value=context.data, ref_key=context.ref_key)
+    ):
+        return language.prepare_reference_literal(
+            value, context.data, context.ref_key, context.ref_case
+        )
+    return value
+
+
+@beartype
 def _apply_variable_wrapper(
     *,
     result: str,
@@ -4679,6 +4727,7 @@ def _apply_variable_wrapper(
     is_reference_binding: bool,
     inferred_empty_sequence: bool,
     initializer_type: str | None,
+    reference_context: _VariableReferenceContext | None,
 ) -> str:
     """Optionally wrap *result* in a variable declaration or
     assignment.
@@ -4708,6 +4757,10 @@ def _apply_variable_wrapper(
         value = result[len(line_prefix) :]
     else:
         value = result
+
+    value = _prepare_reference_literal(
+        value=value, language=language, context=reference_context
+    )
 
     declaration_formatter: Callable[
         [str, str, Value, frozenset[enum.Enum]], str
@@ -5288,6 +5341,11 @@ def literalize_apply_form(
         is not None,
         inferred_empty_sequence=False,
         initializer_type=pre_form.initializer_type,
+        reference_context=_VariableReferenceContext(
+            data=pre_form.data,
+            ref_key=pre_form.active_ref_key,
+            ref_case=pre_form.ref_case,
+        ),
     )
 
     resolved = pre_form.resolved
@@ -5828,6 +5886,7 @@ def _literalize_value_binding(
             )
         ),
         initializer_type=retained_initializer_type(result_text),
+        reference_context=None,
     )
     if isinstance(language, _WrappedReferenceDeclarationLanguage):
         wrapped = language.prepare_bound_reference_declaration(
@@ -6779,14 +6838,21 @@ def _format_single_call_arg(
         toml_comments=None,
         comment_root_id=None,
     )
+    initializer = _format_value(
+        value=value,
+        dict_open_override=dict_open_override,
+        sequence_open_override=None,
+        ctx=ctx,
+        int_formatter=None,
+    )
     formatted = wrap_arg(
         value,
-        _format_value(
-            value=value,
-            dict_open_override=dict_open_override,
-            sequence_open_override=None,
-            ctx=ctx,
-            int_formatter=None,
+        _prepare_reference_literal(
+            value=initializer,
+            language=language,
+            context=_VariableReferenceContext(
+                data=value, ref_key=ref_key, ref_case=ref_case
+            ),
         ),
     )
     wrap_scalar = language.heterogeneous_behavior.wrap_scalar
@@ -7184,6 +7250,7 @@ def _render_variable_bound_call(
             is_reference_binding=False,
             inferred_empty_sequence=False,
             initializer_type=None,
+            reference_context=None,
         ),
         comment=comment,
         language=language,

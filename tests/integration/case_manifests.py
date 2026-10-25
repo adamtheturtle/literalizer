@@ -928,16 +928,6 @@ class _CaseManifestData(  # noqa: NOD001
             msg = f"a [{table_name}] table requires owner = {accepted}"
             raise ValueError(msg)
 
-    def _validate_ref_variant_owner(self) -> None:
-        """Keep reference variants with the owner that renders them."""
-        if (
-            self.ref is not None
-            and self.owner != REF_OWNER
-            and len(self.ref.variants) > 0
-        ):
-            msg = "ref variants require owner = 'literalize-ref'"
-            raise ValueError(msg)
-
     @model_validator(mode="after")
     def _validate_consistency(self) -> _CaseManifestData:
         """Validate relationships that span manifest fields."""
@@ -959,7 +949,6 @@ class _CaseManifestData(  # noqa: NOD001
             table=self.ref,
             owners=_REF_OWNERS,
         )
-        self._validate_ref_variant_owner()
         if len(self.suites) != len(set(self.suites)):
             msg = "suites contains a duplicate entry"
             raise ValueError(msg)

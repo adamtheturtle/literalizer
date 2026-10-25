@@ -519,16 +519,6 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
             ),
             "unknown variant axis 'imaginary'",
         ),
-        (
-            (
-                "schema_version = 1\n"
-                'owner = "literalize-ref-default"\n'
-                "[ref]\n"
-                "[[ref.variants]]\n"
-                'axis = "json_type"\n'
-            ),
-            "ref variants require owner = 'literalize-ref'",
-        ),
     ],
 )
 def test_invalid_manifest_is_actionable(

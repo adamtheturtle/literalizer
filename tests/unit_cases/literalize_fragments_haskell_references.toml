@@ -1,0 +1,13 @@
+calls = []
+
+[[literals]]
+name = "external_reference_equation"
+language = "Haskell"
+source = '{"$ref": "shared"}'
+input_format = "json"
+variable_form = "existing"
+pre_indent_level = 0
+include_delimiters = true
+
+[literals.expected]
+bare_code = "my_data = shared"

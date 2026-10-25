@@ -75,15 +75,13 @@ def test_literalize_ref_variant_golden_file(
     lang_cls = ref_variant_case.variant.lang_cls
     spec = ref_variant_case.variant.spec
     config = ref_variant_case.config
-    effective_ref_case = config.ref_case_for(lang_cls=lang_cls)
-    # Variant discovery fixes the spelling for its declaration style.
-    assert effective_ref_case is not None
+    effective_ref_case = ref_variant_case.ref_case
     with subtests.test(version=spec.language_version.name):
         run_literalize_ref_golden_case(
             config=config,
             lang_cls=lang_cls,
             spec=spec,
-            golden_name=f"{ref_variant_case.variant.name}_ref",
+            golden_name=ref_variant_case.golden_name,
             cases_dir=cases_dir,
             file_regression=file_regression,
             ref_case=effective_ref_case,

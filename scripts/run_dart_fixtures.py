@@ -123,7 +123,7 @@ def _ref_bindings() -> dict[Path, str]:
             continue
         golden = make_golden_path(
             parent=_CASES_DIR / variant_case.config.case_dir_name,
-            name=f"{variant_case.variant.name}_ref",
+            name=variant_case.golden_name,
             extension=Dart.extension,
             lang_cls=Dart,
             version=variant_case.variant.spec.language_version,

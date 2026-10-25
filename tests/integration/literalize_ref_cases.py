@@ -43,6 +43,7 @@ from tests.yaml_support import as_yaml_parser
 from .case_manifests import (
     REF_DEFAULT_OWNER,
     REF_OWNER,
+    OwnerName,
     RefCaseSpec,
     RefConsumerSpec,
     case_input,
@@ -163,11 +164,18 @@ class LiteralizeRefVariantCase:
 
     config: RefCaseSpec
     variant: Variant
+    ref_case: literalizer.IdentifierCase | None
+
+    @property
+    def golden_name(self) -> str:
+        """Retain whether the public API receives an explicit ref case."""
+        suffix = "ref_default" if self.ref_case is None else "ref"
+        return f"{self.variant.name}_{suffix}"
 
 
 @beartype
 def _reference_variant_case(
-    *, config: RefCaseSpec, variant: Variant
+    *, config: RefCaseSpec, variant: Variant, owner: OwnerName
 ) -> LiteralizeRefVariantCase | None:
     """Retain selected options and reject unsupported reference styles."""
     lang_cls = variant.lang_cls
@@ -190,7 +198,9 @@ def _reference_variant_case(
         language_id=lang_cls.language_id
     ).variants.declaration_style_variable_names
     reference_case = config.ref_case_for(lang_cls=lang_cls)
-    if reference_case is None:
+    if owner == REF_DEFAULT_OWNER:
+        reference_case = None
+    elif reference_case is None:
         reference_case = reference_case_for_declaration_style(
             lang_cls=lang_cls, spec=spec
         )
@@ -206,6 +216,7 @@ def _reference_variant_case(
     return LiteralizeRefVariantCase(
         config=selected_config,
         variant=dataclasses.replace(variant, spec=spec),
+        ref_case=reference_case,
     )
 
 
@@ -217,10 +228,15 @@ def build_literalize_ref_variant_cases() -> list[LiteralizeRefVariantCase]:
     """
     return [
         case
-        for config in ref_case_specs(cases_dir=CASES_DIR, owner=REF_OWNER)
+        for owner in (REF_OWNER, REF_DEFAULT_OWNER)
+        for config in ref_case_specs(cases_dir=CASES_DIR, owner=owner)
         for entry in config.variants
         for variant in variants_for_axis(axis_key=entry.axis)
-        if (case := _reference_variant_case(config=config, variant=variant))
+        if (
+            case := _reference_variant_case(
+                config=config, variant=variant, owner=owner
+            )
+        )
         is not None
     ]
 
@@ -235,6 +251,7 @@ def discover_literalize_default_ref_cases() -> list[LiteralizeRefCase]:
             cases_dir=CASES_DIR,
             owner=REF_DEFAULT_OWNER,
         )
+        if not config.variant_only
         for lang_cls in sorted_languages()
         if config.admits_language(lang_cls=lang_cls)
     ]

@@ -15,6 +15,6 @@ jsonEntries = [aesonQQ| [1, 2] |]
 jsonEntry :: Value
 jsonEntry = [aesonQQ| [1, 2] |]
 my_data :: Value
-my_data = [aesonQQ| {"field": {"$ref": "shared"}, "nested": [{"$ref": "shared"}, {}], "build": {"$ref": "build"}, "json_object": {"$ref": "json_object"}, "json_allocator": {"$ref": "json_allocator"}, "json_entries": {"$ref": "json_entries"}, "json_entry": {"$ref": "json_entry"}} |]
+my_data = [aesonQQ| {"field": #{shared}, "nested": [#{shared}, {}], "build": #{build}, "json_object": #{jsonObject}, "json_allocator": #{jsonAllocator}, "json_entries": #{jsonEntries}, "json_entry": #{jsonEntry}} |]
 main :: IO ()
 main = seq my_data (return ())

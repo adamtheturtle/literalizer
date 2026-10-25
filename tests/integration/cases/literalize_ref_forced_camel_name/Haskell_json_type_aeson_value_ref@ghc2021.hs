@@ -5,6 +5,6 @@ import Data.Aeson.QQ (aesonQQ)
 userObj :: Value
 userObj = [aesonQQ| {"_": "_"} |]
 my_data :: Value
-my_data = [aesonQQ| {"$ref": "USER_OBJ"} |]
+my_data = userObj
 main :: IO ()
 main = seq my_data (return ())

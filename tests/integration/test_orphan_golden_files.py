@@ -291,7 +291,7 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         expected.add(
             make_golden_path(
                 parent=cases_dir / variant_case.config.case_dir_name,
-                name=f"{variant_case.variant.name}_ref",
+                name=variant_case.golden_name,
                 extension=variant_case.variant.spec.extension,
                 lang_cls=variant_case.variant.lang_cls,
                 version=variant_case.variant.spec.language_version,
