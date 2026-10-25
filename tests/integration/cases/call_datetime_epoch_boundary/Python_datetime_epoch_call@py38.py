@@ -1,0 +1,3 @@
+def consume(*_args: object, **_kwargs: object) -> object: ...
+consume(value=-2147483649)
+consume(value=2147483648)

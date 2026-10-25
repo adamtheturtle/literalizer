@@ -1,0 +1,4 @@
+import java.time.LocalDate
+import java.time.LocalDateTime
+fun capture(nan_value: Any? = null, positive_infinity: Any? = null, negative_infinity: Any? = null, finite_value: Any? = null, date_value: Any? = null, datetime_value: Any? = null, text_value: Any? = null): Any? = listOf<Any?>(nan_value, positive_infinity, negative_infinity, finite_value, date_value, datetime_value, text_value)
+capture(nan_value = Double.NaN, positive_infinity = Double.POSITIVE_INFINITY, negative_infinity = Double.NEGATIVE_INFINITY, finite_value = 1.250000, date_value = LocalDate.of(2024, 1, 15), datetime_value = LocalDateTime.of(2024, 1, 15, 12, 34, 56), text_value = "[ordinary text]")

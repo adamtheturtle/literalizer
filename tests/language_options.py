@@ -456,6 +456,9 @@ def _default_allows_empty_ordered_map_keys(
 
 
 CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
+    "supports_special_floats": lambda lang_cls: (
+        lang_cls.supports_special_floats
+    ),
     "default_allows_empty_dict_keys": _default_allows_empty_dict_keys,
     "default_allows_empty_ordered_map_keys": (
         _default_allows_empty_ordered_map_keys

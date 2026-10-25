@@ -24,11 +24,14 @@ import literalizer
 from literalizer._enums import enum_payload
 from literalizer._language import (
     CallParameterShadowing,
+    CallSupport,
     RenderedCallStub,
     is_reserved_identifier,
 )
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    CallsNotSupportedByLanguageError,
+    CallsNotSupportedByToolError,
     DottedCallTargetNotSupportedError,
     ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
@@ -436,6 +439,20 @@ def _uses_bound_ref_wrapper(*, config: CallCaseSpec) -> bool:
 
 
 @beartype
+def _call_support_exception(
+    *, spec: literalizer.Language
+) -> type[Exception] | None:
+    """Preserve the API call-support error before shape checks."""
+    match spec.call_style_config:
+        case CallSupport.NOT_IN_LANGUAGE:
+            return CallsNotSupportedByLanguageError
+        case CallSupport.NOT_IMPLEMENTED_BY_TOOL:
+            return CallsNotSupportedByToolError
+        case _:
+            return None
+
+
+@beartype
 def expected_call_shape_exception(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -447,11 +464,13 @@ def expected_call_shape_exception(
     """
     parameter_count = len(config.parameter_names)
     max_params = lang_cls.max_call_parameters
-    variable_form_exc = _variable_form_expected_exception(
+    prerequisite_error = _call_support_exception(
+        spec=spec
+    ) or _variable_form_expected_exception(
         lang_cls=lang_cls, variable_form=config.variable_form
     )
-    if variable_form_exc is not None:
-        return variable_form_exc
+    if prerequisite_error is not None:
+        return prerequisite_error
     if config.call_style_type is not None:
         style = next(
             style

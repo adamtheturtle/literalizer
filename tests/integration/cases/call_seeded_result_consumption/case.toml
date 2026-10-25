@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+# Shared coverage retains call_existing_binding_fortran.
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+ref_declarations = {my_data = "0"}
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume_widget"
