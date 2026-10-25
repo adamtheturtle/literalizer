@@ -685,6 +685,15 @@ class RefCaseSpec(  # noqa: NOD001
         )
 
 
+class CallGroupSpec(BaseModel, extra="forbid", frozen=True):
+    """A transformed body grouped using the language's expression
+    syntax.
+    """
+
+    body: CallTransformTemplate
+    suffix: str
+
+
 class CallCaseSpec(  # noqa: NOD001
     _OwnedCaseSpec,
     LanguageSelection,
@@ -716,6 +725,7 @@ class CallCaseSpec(  # noqa: NOD001
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
+    call_transform_group: CallGroupSpec | None = None
     # Ordinary callbacks omit the template producer's zip-usage metadata.
     call_transform_reports_zip_usage: bool = True
     # An additional call, emitted after the primary call so a fixture
@@ -828,6 +838,16 @@ class CallCaseSpec(  # noqa: NOD001
     # suite, so the default per-language call matrix needs no
     # case-specific opt-out.
     variant_only: bool = False
+
+    @property
+    def has_call_transform(self) -> bool:
+        """Whether a template or native expression group transforms
+        calls.
+        """
+        return (
+            self.call_transform is not None
+            or self.call_transform_group is not None
+        )
 
     def _validate_followup_target(self) -> None:
         """Require a separate follow-up target to have a source."""

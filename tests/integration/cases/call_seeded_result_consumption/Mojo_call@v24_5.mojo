@@ -1,4 +1,4 @@
-def make_widget[*Ts: AnyType](*args: *Ts) -> None:
+def make_widget(count: Int) -> None:
     pass
 def consume_widget[*Ts: AnyType](*args: *Ts):
     pass

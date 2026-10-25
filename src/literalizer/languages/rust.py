@@ -4304,6 +4304,15 @@ class Rust(metaclass=LanguageCls):
             return ("use std::sync::LazyLock;",)
         return ()
 
+    @beartype
+    def call_static_preamble(
+        self, *, binds_new_variable: bool
+    ) -> tuple[str, ...]:
+        """Retain static-binding helpers only for new call bindings."""
+        if binds_new_variable:
+            return tuple(self.static_preamble)
+        return ()
+
     @cached_property
     @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
@@ -4460,6 +4469,14 @@ class Rust(metaclass=LanguageCls):
     format_call_preamble_stub = default_format_call_stub
 
     format_call_target = default_format_call_target
+
+    @beartype
+    def group_call_expression(self, expression: str, /) -> str:
+        """Retain inner comments in a native block expression."""
+        body = _indent_code_preserving_raw_strings(
+            text=expression.strip(), prefix=self.indent
+        )
+        return f"{{\n{body}\n}}"
 
     format_call_ref_identifier = default_format_call_ref_identifier
 

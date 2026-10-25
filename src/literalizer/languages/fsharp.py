@@ -1355,6 +1355,12 @@ class FSharp(metaclass=LanguageCls):
 
     format_call_preamble_stub = default_format_call_stub
 
+    @beartype
+    def group_call_expression(self, expression: str, /) -> str:
+        """Keep grouped expressions inside the binding's indentation."""
+        body = textwrap.indent(text=expression.strip(), prefix=self.indent)
+        return f"(\n{body}\n)"
+
     @cached_property
     @beartype
     def format_call_target(self) -> Callable[[Sequence[str]], str]:
