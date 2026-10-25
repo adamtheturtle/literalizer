@@ -75,7 +75,9 @@ def test_conditional_transform_preserves_operand_usage(
 def test_conditional_transform_requires_native_result(
     case: _ErrorCase,
 ) -> None:
-    """A direct invocation cannot invent a nullable type or grammar."""
+    """Unsupported result metadata cannot supply a conditional
+    expression.
+    """
     config = next(
         config
         for config in default_call_case_specs()

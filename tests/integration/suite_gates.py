@@ -262,7 +262,9 @@ class IntegerCallStubGate(BaseModel, extra="forbid", frozen=True, strict=True):
 class NullableObjectCallStubGate(
     BaseModel, extra="forbid", frozen=True, strict=True
 ):
-    """Require a typed nullable result and native conditional grammar."""
+    """Require an object result that can be null and a conditional
+    expression.
+    """
 
     kind: Literal["nullable_object_call_stub"]
 
@@ -404,6 +406,22 @@ def validate_gate_names(
 
 
 @beartype
+def _call_stub_gate_admits(
+    *,
+    gate: IntegerCallStubGate | NullableObjectCallStubGate,
+    lang_cls: literalizer.LanguageCls,
+) -> bool:
+    """Match result gates against the native producer's return type."""
+    result = lang_cls.call_stub_result
+    if isinstance(gate, IntegerCallStubGate):
+        return isinstance(result, IntegerCallStubResult)
+    return (
+        isinstance(result, NullableObjectCallStubResult)
+        and result.conditional_template is not None
+    )
+
+
+@beartype
 def gate_admits(
     *,
     gate: SuiteGate,
@@ -428,16 +446,8 @@ def gate_admits(
                 lang_cls=lang_cls,
                 spec=spec,
             )
-        case IntegerCallStubGate():
-            admits = isinstance(
-                lang_cls.call_stub_result, IntegerCallStubResult
-            )
-        case NullableObjectCallStubGate():
-            result = lang_cls.call_stub_result
-            admits = (
-                isinstance(result, NullableObjectCallStubResult)
-                and result.conditional_template is not None
-            )
+        case IntegerCallStubGate() | NullableObjectCallStubGate():
+            admits = _call_stub_gate_admits(gate=gate, lang_cls=lang_cls)
         case RecordVariantGate():
             admits = gate.variant in metadata.record_variants
         case NonDefaultKwargGate():
