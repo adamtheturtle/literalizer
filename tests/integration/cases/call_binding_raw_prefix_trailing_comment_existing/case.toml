@@ -1,15 +1,14 @@
+# Regression provenance: Rust. Rust raw and byte-raw string delimiters may contain quoted comment markers.
 schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Rust"]
-languages_reason = "Rust raw and byte-raw string delimiters may contain quoted comment markers."
+gates = [{kind = "call_raw_string_prefix", prefix = "r"}]
 target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "existing"
-call_transform = '''
-make_widget(r"a\ // payload") // note'''
+call_transform_arguments = {arguments = ['''r"a\ // payload"'''], suffix = " // note"}
 ref_declarations = {my_data = "42"}
 followup_source = '{"$ref": "my_data"}'
 followup_target_function = "consume"

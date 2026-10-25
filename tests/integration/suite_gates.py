@@ -19,7 +19,11 @@ from beartype import beartype
 from pydantic import BaseModel, Field
 
 import literalizer
-from literalizer._statements import CallLiteralSyntax
+from literalizer._statements import (
+    CallLiteralSyntax,
+    CharacterAndHashRawLiterals,
+    PrefixedIdentifierSyntax,
+)
 from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
@@ -223,8 +227,41 @@ class CallInterpolationGate(
     quotes: Annotated[str, Field(min_length=1)]
 
 
+class CallCharacterQuoteGate(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Require the character quote used by the token scanner."""
+
+    kind: Literal["call_character_quote"]
+    quote: Annotated[str, Field(min_length=1)]
+
+
+class CallHashRawPrefixGate(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Require a raw prefix and the actual hash delimiter grammar."""
+
+    kind: Literal["call_hash_raw_prefix"]
+    prefix: Annotated[str, Field(min_length=1)]
+    marker: Annotated[str, Field(min_length=1)]
+
+
+class CallIdentifierPrefixGate(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Require a prefixed identifier handled by the production scanner."""
+
+    kind: Literal["call_identifier_prefix"]
+    prefix: Annotated[str, Field(min_length=1)]
+
+
 type CallLiteralGate = (
-    CallLiteralFlagGate | CallRawStringPrefixGate | CallInterpolationGate
+    CallLiteralFlagGate
+    | CallRawStringPrefixGate
+    | CallInterpolationGate
+    | CallCharacterQuoteGate
+    | CallHashRawPrefixGate
+    | CallIdentifierPrefixGate
 )
 
 
@@ -239,17 +276,44 @@ def call_literal_gate_admits(
         return False
     match gate:
         case CallLiteralFlagGate():
-            return (
+            admitted = (
                 syntax.regex_literals
                 if gate.flag == "regex_literals"
                 else syntax.verbatim_strings
             )
         case CallRawStringPrefixGate():
-            return gate.prefix in syntax.raw_string_prefixes
+            span = syntax.literal_span_end
+            admitted = gate.prefix in syntax.raw_string_prefixes or (
+                isinstance(span, CharacterAndHashRawLiterals)
+                and gate.prefix in span.raw_string_prefixes
+            )
         case CallInterpolationGate():
-            return syntax.interpolation_syntax == (gate.opener, gate.quotes)
+            admitted = syntax.interpolation_syntax == (
+                gate.opener,
+                gate.quotes,
+            )
+        case CallCharacterQuoteGate():
+            span = syntax.literal_span_end
+            admitted = (
+                isinstance(span, CharacterAndHashRawLiterals)
+                and span.character_quote == gate.quote
+            )
+        case CallHashRawPrefixGate():
+            span = syntax.literal_span_end
+            admitted = (
+                isinstance(span, CharacterAndHashRawLiterals)
+                and span.hash_marker == gate.marker
+                and gate.prefix in span.raw_string_prefixes
+            )
+        case CallIdentifierPrefixGate():
+            span = syntax.literal_span_end
+            admitted = (
+                isinstance(span, PrefixedIdentifierSyntax)
+                and span.prefix == gate.prefix
+            )
         case _ as unreachable:
             assert_never(unreachable)
+    return admitted
 
 
 type SuiteGate = Annotated[
@@ -264,7 +328,10 @@ type SuiteGate = Annotated[
     | BehaviorFlagGate
     | CallLiteralFlagGate
     | CallRawStringPrefixGate
-    | CallInterpolationGate,
+    | CallInterpolationGate
+    | CallCharacterQuoteGate
+    | CallHashRawPrefixGate
+    | CallIdentifierPrefixGate,
     Field(discriminator="kind"),
 ]
 
@@ -352,6 +419,9 @@ def gate_admits(
             CallLiteralFlagGate()
             | CallRawStringPrefixGate()
             | CallInterpolationGate()
+            | CallCharacterQuoteGate()
+            | CallHashRawPrefixGate()
+            | CallIdentifierPrefixGate()
         ):
             admits = call_literal_gate_admits(
                 gate=gate, syntax=lang_cls.call_literal_syntax

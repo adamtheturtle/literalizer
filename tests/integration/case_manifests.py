@@ -31,6 +31,9 @@ from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
 from .language_metadata import language_metadata
 from .language_specs import make_spec
 from .suite_gates import (
+    CallCharacterQuoteGate,
+    CallHashRawPrefixGate,
+    CallIdentifierPrefixGate,
     CallInterpolationGate,
     CallLiteralFlagGate,
     CallRawStringPrefixGate,
@@ -441,6 +444,9 @@ class LanguageSelection(  # noqa: NOD001
                     CallLiteralFlagGate,
                     CallRawStringPrefixGate,
                     CallInterpolationGate,
+                    CallCharacterQuoteGate,
+                    CallHashRawPrefixGate,
+                    CallIdentifierPrefixGate,
                 ),
             )
         )
@@ -722,6 +728,13 @@ class CallGroupSpec(BaseModel, extra="forbid", frozen=True):
     suffix: str
 
 
+class CallArgumentsSpec(BaseModel, extra="forbid", frozen=True):
+    """Native lexical operands passed using the configured call convention."""
+
+    arguments: StringTuple
+    suffix: str
+
+
 class CallCaseSpec(  # noqa: NOD001
     _OwnedCaseSpec,
     LanguageSelection,
@@ -754,6 +767,7 @@ class CallCaseSpec(  # noqa: NOD001
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
     call_transform_group: CallGroupSpec | None = None
+    call_transform_arguments: CallArgumentsSpec | None = None
     # Ordinary callbacks omit the template producer's zip-usage metadata.
     call_transform_reports_zip_usage: bool = True
     # An additional call, emitted after the primary call so a fixture
@@ -875,7 +889,20 @@ class CallCaseSpec(  # noqa: NOD001
         return (
             self.call_transform is not None
             or self.call_transform_group is not None
+            or self.call_transform_arguments is not None
         )
+
+    def _validate_transform_recipe(self) -> None:
+        """Require a single recipe for the primary call expression."""
+        if (
+            self.call_transform_group is not None
+            and self.call_transform_arguments is not None
+        ):
+            msg = (
+                "call_transform_group and call_transform_arguments "
+                "are mutually exclusive"
+            )
+            raise ValueError(msg)
 
     def _validate_followup_target(self) -> None:
         """Require a separate follow-up target to have a source."""
@@ -897,6 +924,7 @@ class CallCaseSpec(  # noqa: NOD001
         default per-language matrix names at least one, so no call case
         declares itself into having no coverage at all.
         """
+        self._validate_transform_recipe()
         self._validate_followup_target()
         axes = [entry.axis for entry in self.variants]
         if len(axes) != len(set(axes)):

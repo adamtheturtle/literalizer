@@ -11,3 +11,17 @@ statement = "raw_value() // note"
 expected_code = "raw_value()"
 expected_trailing = " // note"
 raw_string_prefixes = ["raw"]
+
+[[cases]]
+name = "prefix_without_identifier"
+statement = "`+ value // note"
+expected_code = "`+ value"
+expected_trailing = " // note"
+identifier_span = {prefix = "`", identifier = "[A-Za-z_][A-Za-z0-9_$]*"}
+
+[[cases]]
+name = "prefixed_identifier_inside_incomplete_expression"
+statement = "`TOKEN + // note"
+expected_code = "`TOKEN +"
+expected_trailing = " // note"
+identifier_span = {prefix = "`", identifier = "[A-Za-z_][A-Za-z0-9_$]*"}
