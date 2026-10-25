@@ -43,6 +43,19 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
     argvalues=[
         (
             (
+                'schema_version = 1\nowner = "literalize-call"\n[call]\n'
+                'target_function = "target"\nparameter_names = ["value"]\n'
+                "per_element = false\n"
+                "call_transform_sequence = true\n"
+                "call_transform_add_one = true\n"
+            ),
+            (
+                "call_transform_sequence and call_transform_add_one "
+                "are mutually exclusive"
+            ),
+        ),
+        (
+            (
                 "schema_version = 1\n"
                 'owner = "literalize-call"\n'
                 "[call]\n"

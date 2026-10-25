@@ -1,0 +1,3 @@
+[[errors]]
+name = "requires_integer_result"
+message = "call_transform_add_one requires an integer-returning stub"

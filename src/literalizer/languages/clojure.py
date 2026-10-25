@@ -56,6 +56,7 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -97,6 +98,12 @@ from literalizer._language import (
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
+_INTEGER_CALL_STUB = IntegerCallStubResult(
+    value="0",
+    addition_template="(+ {left}{comment}\n {right})",
+    comment_prefix=";",
+)
+
 
 @beartype
 def _clojure_format_call_target(parts: Sequence[str], /) -> str:
@@ -130,7 +137,7 @@ def _clojure_call_stub(
     (issue #3957).  A ``defn`` cannot name a var outside the module it
     runs in, which is why the dotted form is spelled this way.
     """
-    body = "0"
+    body = _INTEGER_CALL_STUB.value
     if stub_return is StubReturn.VOID:
         body = "nil"
     if len(parts) == 1:
@@ -285,6 +292,9 @@ class Clojure(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_stub_result: ClassVar[IntegerCallStubResult | None] = (
+        _INTEGER_CALL_STUB
+    )
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

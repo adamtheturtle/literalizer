@@ -63,6 +63,7 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -320,6 +321,7 @@ class Haxe(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )

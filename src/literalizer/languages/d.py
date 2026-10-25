@@ -83,6 +83,7 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -128,6 +129,12 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
+)
+
+_INTEGER_CALL_STUB = IntegerCallStubResult(
+    value="0",
+    addition_template="{left}{comment}\n + {right}",
+    comment_prefix="//",
 )
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
@@ -226,7 +233,12 @@ def _d_call_stub(
 ) -> tuple[str, ...]:
     """Return D stub declarations for a call name."""
     if len(parts) == 1:
-        return (f"int {parts[0]}(T...)(T args) {{ return 0; }}",)
+        return (
+            (
+                f"int {parts[0]}(T...)(T args) "
+                f"{{ return {_INTEGER_CALL_STUB.value}; }}"
+            ),
+        )
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -235,14 +247,16 @@ def _d_call_stub(
         return (
             (
                 f"struct {type_name} {{"
-                f" int {method}(T...)(T args) {{ return 0; }} }}"
+                f" int {method}(T...)(T args) "
+                f"{{ return {_INTEGER_CALL_STUB.value}; }} }}"
             ),
             f"{type_name} {root};",
         )
     lines: list[str] = []
     inner_type = f"{fields[-1].title()}Type_"
     lines.append(
-        f"struct {inner_type} {{ int {method}(T...)(T args) {{ return 0; }} }}"
+        f"struct {inner_type} {{ int {method}(T...)(T args) "
+        f"{{ return {_INTEGER_CALL_STUB.value}; }} }}"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
@@ -606,6 +620,9 @@ class D(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_stub_result: ClassVar[IntegerCallStubResult | None] = (
+        _INTEGER_CALL_STUB
+    )
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )
