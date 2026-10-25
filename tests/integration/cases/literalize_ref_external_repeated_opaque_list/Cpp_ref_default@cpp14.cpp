@@ -10,7 +10,7 @@ void assert_equal(const Actual& actual, const Expected& expected) {
 }
 int main() {
 auto item = std::vector<std::nullptr_t>{};
-auto my_data = std::vector<typename std::common_type<decltype(item), decltype(item)>::type>{
+auto my_data = std::vector<std::common_type_t<decltype(item), decltype(item)>>{
     item,
     item,
 };
