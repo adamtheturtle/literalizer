@@ -2,8 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Mojo", "Python"]
-languages_reason = "A whole-input call receives its supplied comment and retains its argument shape."
+requires_standalone_wrapped_comments = true
 target_function = "f"
 parameter_names = ["a"]
 per_element = false
