@@ -1,5 +1,6 @@
 #include <initializer_list>
 #include <vector>
+#include <type_traits>
 #include <cstddef>
 template <typename... Args> auto consume_widget(Args...) { return 0; }
 int main() {

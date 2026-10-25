@@ -4458,6 +4458,12 @@ class Rust(metaclass=LanguageCls):
 
     format_call_ref_identifier = default_format_call_ref_identifier
 
+    @staticmethod
+    @beartype
+    def format_unknown_reused_ref_identifier(identifier: str, /) -> str:
+        """Clone bindings whose value type is unknown."""
+        return f"{identifier}.clone()"
+
     def _reference_value_is_copy(self, value: Value | None, /) -> bool:
         """Classify the emitted binding, including its container
         format.

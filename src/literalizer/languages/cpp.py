@@ -4835,6 +4835,29 @@ class Cpp(metaclass=LanguageCls):
 
         return signature_open(render=_open, infer=_signature)
 
+    @cached_property
+    @beartype
+    def unresolved_reference_preamble(self) -> tuple[str, ...]:
+        """Include the type trait used by native opaque-reference
+        sequences.
+        """
+        if self._json_type_active or self._json_inline_document_active:
+            return ()
+        return (import_preamble(code="#include <type_traits>"),)
+
+    def sequence_open_from_unknown_references(
+        self, names: Sequence[str], /
+    ) -> str:
+        """Infer opaque element types from the native C++ references."""
+        if self._json_type_active or self._json_inline_document_active:
+            return self.sequence_open([])
+        types = ", ".join(f"decltype({name})" for name in names)
+        element_type = f"typename std::common_type<{types}>::type"
+        type_name = self._type_ctx.sequence_type(
+            inner=element_type, length=len(names)
+        )
+        return TypedCollectionOpen(f"{type_name}{{", declared_type=type_name)
+
     @staticmethod
     def _record_sequence_signature(
         items: list[Value],

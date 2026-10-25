@@ -1,0 +1,20 @@
+# Repeated opaque references retain their native type and converted identifier.
+schema_version = 1
+owner = "literalize-call"
+input = "input.json"
+
+[call]
+target_function = "process"
+parameter_names = ["data"]
+per_element = false
+ref_key = "@reference"
+ref_case_per_language = true
+ref_declarations = { untyped_value = "[]" }
+unknown_ref_names = ["untyped_value"]
+extra_ref_value_sources = { known_value = "1" }
+
+[[call.variants]]
+axis = "sequence"
+
+[[call.variants]]
+axis = "json_type"

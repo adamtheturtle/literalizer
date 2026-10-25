@@ -8,5 +8,5 @@ fn main() {
             make_widget::<'static>()
         }
     }; // note
-    consume(my_data);
+    consume(my_data.clone());
 }
