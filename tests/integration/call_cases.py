@@ -30,6 +30,7 @@ from literalizer._language import (
 )
 from literalizer._literalize import (
     assemble_call_expression,
+    call_result_discard_formatter,
     format_rendered_call_arguments,
 )
 from literalizer.exceptions import (
@@ -180,17 +181,6 @@ _PREAMBLE_STUB_SKIPS: SkipPolicy = SkipPolicy(
     ),
     suffix="",
 )
-
-
-@runtime_checkable
-class _FeedbackStatementStubLanguage(Protocol):
-    """A producer needing a separate statement overload for feedback."""
-
-    def format_feedback_call_statement_stub(
-        self, parts: Sequence[str], params: Sequence[str], /
-    ) -> tuple[str, ...]:
-        """Declare the statement use of a value-returning synthetic callee."""
-        ...
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1044,6 +1034,16 @@ def _run_call_with_declarations(
                 ref_case=effective_ref_case,
                 ref_key=config.ref_key,
                 ref_values=effective_ref_values,
+                call_transform=(
+                    CallTransform(template="{call}")
+                    if followup_target == config.target_function
+                    and isinstance(
+                        config.variable_form, literalizer.ExistingVariable
+                    )
+                    and call_result_discard_formatter(language=spec)
+                    is not None
+                    else None
+                ),
             )
         result = _literalize_call_case(
             config=config,
@@ -1292,16 +1292,6 @@ def run_call_golden_case(
             call_arg_values,
         ),
     )
-    if (
-        call_outcome.seeded_feedback
-        and config.followup_target_function is None
-        and isinstance(spec, _FeedbackStatementStubLanguage)
-    ):
-        body_stubs.extend(
-            spec.format_feedback_call_statement_stub(
-                target_function_parts, config.parameter_names
-            )
-        )
     class_stubs.extend(
         spec.format_call_class_scope_stub(
             target_function_parts,
