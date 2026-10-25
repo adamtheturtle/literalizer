@@ -6,3 +6,9 @@ axis = "heterogeneous_strategy"
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"

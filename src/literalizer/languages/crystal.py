@@ -278,6 +278,14 @@ _crystal_narrowed_empty_form = make_narrowed_empty_form(
 
 
 @beartype
+def _crystal_empty_tuple(_siblings: Sequence[list[Value]], /) -> str:
+    """Preserve tuple syntax when siblings supply an empty sequence
+    type.
+    """
+    return "Tuple.new"
+
+
+@beartype
 def _format_crystal_i128_literal(value: int) -> str:
     """Format an out-of-range integer with a Crystal ``_i128`` suffix.
 
@@ -824,7 +832,7 @@ class Crystal(metaclass=LanguageCls):
             uses_typed_literal_for_scalars=False,
             requires_uniform_record_shapes=False,
             declared_type=None,
-            narrowed_empty_form=None,
+            narrowed_empty_form=_crystal_empty_tuple,
         )
 
     class SetFormats(
@@ -1329,8 +1337,8 @@ class Crystal(metaclass=LanguageCls):
         ):
             is_brace_literal = False
         if isinstance(original, list):
-            # Empty tuples use Tuple.new (or the sibling's typed array
-            # empty form), so neither can open a macro expression.
+            # Empty tuples use Tuple.new, which cannot open a macro
+            # expression.
             is_brace_literal = bool(original)
         if is_brace_literal:
             return f" {formatted}"
@@ -1673,8 +1681,11 @@ class Crystal(metaclass=LanguageCls):
                 declared_type=None,
                 narrowed_empty_form=None,
             )
+        config: SequenceFormatConfig = self.sequence_format.value
+        if self.sequence_format is self.sequence_formats.TUPLE:
+            return config
         return dataclasses.replace(
-            self.sequence_format.value,
+            config,
             narrowed_empty_form=(
                 self._crystal_record_empty_sequence
                 if self._record_strategy_active
