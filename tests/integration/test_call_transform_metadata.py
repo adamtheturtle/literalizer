@@ -35,7 +35,7 @@ _CASES = TypeAdapter(type=_GroupCases).validate_python(
 
 
 def _group_marker(expression: str, /) -> str:
-    """Use abstract markers rather than any backend's expression
+    """Use abstract markers rather than any language's expression
     syntax.
     """
     return f"<group>{expression}</group>"

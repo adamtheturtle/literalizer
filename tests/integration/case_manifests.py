@@ -686,7 +686,7 @@ class RefCaseSpec(  # noqa: NOD001
 
 
 class CallGroupSpec(BaseModel, extra="forbid", frozen=True):
-    """A transformed body grouped using the backend's expression
+    """A transformed body grouped using the language's expression
     syntax.
     """
 

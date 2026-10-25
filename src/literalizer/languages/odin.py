@@ -124,6 +124,7 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._statements import split_trailing_line_comments
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -1418,6 +1419,25 @@ class Odin(metaclass=LanguageCls):
         return _odin_call_preamble_stub
 
     format_call_target = default_format_call_target
+
+    @staticmethod
+    @beartype
+    def group_call_expression(expression: str, /) -> str:
+        """Continue a grouped expression before its inner line
+        comments.
+        """
+        comments = split_trailing_line_comments(
+            statement=expression,
+            prefix="//",
+            quotes="\"'",
+            regex_literals=False,
+            backtick_strings=True,
+            raw_string_prefixes=(),
+            verbatim_strings=False,
+            interpolation_syntax=None,
+            literal_span_end=None,
+        )
+        return f"({comments.code} \\\n{comments.trailing_comments.lstrip()})"
 
     format_call_ref_identifier = default_format_call_ref_identifier
 
