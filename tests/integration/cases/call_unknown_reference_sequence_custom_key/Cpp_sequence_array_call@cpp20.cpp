@@ -5,6 +5,6 @@
 auto process(auto...) { return 0; }
 int main() {
 auto untyped_value = std::array<std::nullptr_t, 0>{};
-process(std::array<typename std::common_type<decltype(untyped_value), decltype(untyped_value)>::type, 2>{untyped_value, untyped_value});
+process(std::array<std::common_type_t<decltype(untyped_value), decltype(untyped_value)>, 2>{untyped_value, untyped_value});
     return 0;
 }

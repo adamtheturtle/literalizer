@@ -4852,7 +4852,7 @@ class Cpp(metaclass=LanguageCls):
         if self._json_type_active or self._json_inline_document_active:
             return self.sequence_open([])
         types = ", ".join(f"decltype({name})" for name in names)
-        element_type = f"typename std::common_type<{types}>::type"
+        element_type = f"std::common_type_t<{types}>"
         type_name = self._type_ctx.sequence_type(
             inner=element_type, length=len(names)
         )
