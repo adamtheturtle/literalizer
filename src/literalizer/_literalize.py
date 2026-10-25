@@ -2996,6 +2996,18 @@ def _format_value(
 
 
 @beartype
+def _sequence_wrapper_delimiters(
+    *, opener: str, closing: str, source_length: int
+) -> tuple[str, str]:
+    """Select native sequence delimiters using the original arity."""
+    if source_length == 1:
+        delimiters = single_element_initializer_delimiters(opener)
+        if delimiters is not None:
+            return delimiters
+    return opener, closing
+
+
+@beartype
 def _wrap_body(
     *,
     body: str,
@@ -3046,14 +3058,11 @@ def _wrap_body(
             elif template is not None and source_length == 1:
                 open_str, _, close_str = template.partition("{items}")
             else:
-                open_str = spec.sequence_open(data)
-                close_str = sequence_cfg.close
-                if source_length == 1:
-                    delimiters = single_element_initializer_delimiters(
-                        open_str
-                    )
-                    if delimiters is not None:
-                        open_str, close_str = delimiters
+                open_str, close_str = _sequence_wrapper_delimiters(
+                    opener=spec.sequence_open(data),
+                    closing=sequence_cfg.close,
+                    source_length=source_length,
+                )
             opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{close_str}"
     return finish_collection_initializer(

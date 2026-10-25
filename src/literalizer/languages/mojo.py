@@ -1752,7 +1752,7 @@ class Mojo(metaclass=LanguageCls):
         """Append ``^`` to trigger move/transfer semantics in Mojo,
         except for register-trivial scalars.
 
-        Mojo ``Dict`` is not implicitly copyable, so a bare
+        Mojo ``Dict`` cannot be copied implicitly, so a bare
         variable reference fails to compile and ``^`` transfers
         ownership instead.  Applying ``^`` to a register-trivial scalar
         (``Int``, ``Bool``, ``Float64``) is a hard error under

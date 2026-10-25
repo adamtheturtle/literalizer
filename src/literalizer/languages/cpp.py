@@ -2509,11 +2509,11 @@ def _build_cpp_record_preamble(
 def _cpp_singleton_constructor(
     items: list[Value],
 ) -> tuple[str, str] | None:
-    """Keep deep vector construction out of shared initializer-list ASTs.
+    """Keep deep vector construction out of shared initializer-list trees.
 
     The innermost ordinary literals establish the native element type.
     Each outer constructor takes its child by value and returns the same
-    owning vector type, without repeatedly embedding its initializer AST.
+    owning vector type, without repeatedly embedding its initializer tree.
     """
     depth = 0
     leaf: Value = items
