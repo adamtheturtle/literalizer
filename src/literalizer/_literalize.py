@@ -8405,7 +8405,9 @@ def _wrap_call_in_file(
         call_binding_pragmas = language.format_call_binding_file_pragmas()
     # Stubs follow the language's static preamble (e.g. Go's
     # ``package main`` must come first).
-    full_preamble = preamble + call_binding_pragmas + preamble_stubs
+    full_preamble = deduplicate_preamble_entries(
+        entries=preamble + call_binding_pragmas + preamble_stubs
+    )
     if len(full_preamble) > 0:
         wrapped = "\n".join(full_preamble) + "\n" + wrapped
     return wrapped
