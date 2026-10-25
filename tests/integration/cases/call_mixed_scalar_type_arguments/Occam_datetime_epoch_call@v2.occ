@@ -1,0 +1,21 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC capture (VAL MOBILE LIT nan_value, VAL MOBILE LIT positive_infinity, VAL MOBILE LIT negative_infinity, VAL MOBILE LIT finite_value, VAL MOBILE LIT date_value, VAL MOBILE LIT datetime_value, VAL MOBILE LIT text_value)
+    SKIP
+:
+PROC main ()
+    capture(MOBILE LIT(lit.float; nan(REAL64)), MOBILE LIT(lit.float; inf(REAL64)), MOBILE LIT(lit.float; -inf(REAL64)), MOBILE LIT(lit.float; 1.25(REAL64)), MOBILE LIT(lit.str; MOBILE []BYTE "2024-01-15"), MOBILE LIT(lit.int; 1705322096), MOBILE LIT(lit.str; MOBILE []BYTE "[ordinary text]"))
+    SEQ
+        SKIP
+:

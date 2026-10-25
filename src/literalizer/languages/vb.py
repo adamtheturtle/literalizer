@@ -1176,6 +1176,7 @@ class VisualBasic(metaclass=LanguageCls):
             opener_template="New {type_name}() {{",
         )
         return SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=typed_collection_open(
                 type_to_opener=vb_type_to_opener,
                 fallback="New Object() {",

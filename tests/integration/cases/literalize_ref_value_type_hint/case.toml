@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-ref"
+[ref]
+variant_only = true
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+# Original regression (literalize_ref_gleam_json_hint): Gleam JSON and concrete record modes retain their own reference preamble policies.
+
+value_sources = { ref_data = "[1,2]" }
+explicit_ref_value_sources = { ref_data = "1" }
+
+[[ref.variants]]
+axis = "json_type"
+
+[[ref.variants]]
+axis = "json_type_declaration_cross"

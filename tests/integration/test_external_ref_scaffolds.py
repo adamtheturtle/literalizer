@@ -5,11 +5,14 @@ from pathlib import Path
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer.languages import Elm
+from literalizer import SequenceFormatConfig
+from literalizer.exceptions import UnrepresentableInputError
+from literalizer.languages import CSharp, Elm
 
 from . import literalize_ref_cases
 from .case_manifests import RefCaseSpec
 from .language_specs import make_golden_path, make_spec
+from .literalize_ref_cases import external_assignment_spec
 
 
 @pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
@@ -66,3 +69,40 @@ def test_refused_scaffold_handles_stale_fixture(
             version=version,
         )
     assert golden_path.exists() is not regenerate
+
+
+@pytest.mark.parametrize(argnames="explicit_choice", argvalues=[False, True])
+def test_fixed_length_destination_refuses_different_arity(
+    *, monkeypatch: pytest.MonkeyPatch, explicit_choice: bool
+) -> None:
+    """Neither a forced tuple nor fixed-only formats can change native
+    type.
+    """
+    spec = CSharp()
+    config = RefCaseSpec.model_validate(
+        obj={
+            "variable_form": "existing",
+            "external_declarations": {"my_data": "[0]", "shared": "[1, 2]"},
+            "sequence_format": "TUPLE" if explicit_choice else None,
+        },
+        context={"case_dir_name": "external"},
+    )
+    if not explicit_choice:
+        fixed_config = spec.sequence_format_config
+
+        def fixed_only_config(_spec: object, /) -> SequenceFormatConfig:
+            """Model a producer with no length-independent sequence option."""
+            return fixed_config
+
+        monkeypatch.setattr(
+            target=CSharp,
+            name="sequence_format_config",
+            value=property(fget=fixed_only_config),
+        )
+    with pytest.raises(
+        expected_exception=UnrepresentableInputError,
+        match="cannot change length on reassignment",
+    ):
+        _ = external_assignment_spec(
+            spec=spec, config=config, raw_data={"$ref": "shared"}
+        )

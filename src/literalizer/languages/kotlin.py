@@ -577,6 +577,7 @@ _KOTLINX_JSON_ELEMENT_PREAMBLE: tuple[str, ...] = (
 # be permissive enough that the formatting pass does not error on
 # heterogeneous data or nulls inside containers.
 _JSON_NODE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    length_is_part_of_type=False,
     sequence_open=fixed_open(open_str="["),
     close="]",
     supports_heterogeneity=True,
@@ -1001,6 +1002,7 @@ class Kotlin(metaclass=LanguageCls):
         """Sequence type options for Kotlin."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=typed_collection_open(
                 type_to_opener=_kotlin_type_to_opener,
                 fallback="listOf<Any?>(",
@@ -1020,6 +1022,7 @@ class Kotlin(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="arrayOf<Any?>("),
             close=")",
             supports_heterogeneity=True,
@@ -1036,6 +1039,7 @@ class Kotlin(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="listOf<Any?>("),
             format_entry=passthrough_sequence_entry,
             typed_opener_fallback=None,

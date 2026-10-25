@@ -740,6 +740,7 @@ _STD_JSON_EMPTY_OBJECT = (
 # Containers copy already rendered JSON values, including references.
 # Scalar entries retain the existing JSON parsing conversion semantics.
 _STD_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
+    length_is_part_of_type=False,
     sequence_open=fixed_open(open_str=_STD_JSON_ARRAY_OPEN),
     close=_STD_JSON_ARRAY_CLOSE,
     supports_heterogeneity=True,
@@ -1039,6 +1040,7 @@ class Zig(metaclass=LanguageCls):
         """Sequence type options for Zig."""
 
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str=".{ .arr = &.{"),
             close="}}",
             supports_heterogeneity=True,

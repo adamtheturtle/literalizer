@@ -1,13 +1,13 @@
 #include <cjson/cJSON.h>
 int main(void) {
-cJSON *_n0 = cJSON_CreateObject();
-cJSON *_n1 = cJSON_CreateString("Alice");
-cJSON_AddItemToObject(_n0, "name", _n1);
-cJSON *_n2 = cJSON_CreateNull();
-cJSON_AddItemToObject(_n0, "score", _n2);
-cJSON *_n3 = cJSON_CreateNumber((double)30);
-cJSON_AddItemToObject(_n0, "age", _n3);
-cJSON *my_data = _n0;
+cJSON *literalizer_my_data_n0 = cJSON_CreateObject();
+cJSON *literalizer_my_data_n1 = cJSON_CreateString("Alice");
+cJSON_AddItemToObject(literalizer_my_data_n0, "name", literalizer_my_data_n1);
+cJSON *literalizer_my_data_n2 = cJSON_CreateNull();
+cJSON_AddItemToObject(literalizer_my_data_n0, "score", literalizer_my_data_n2);
+cJSON *literalizer_my_data_n3 = cJSON_CreateNumber((double)30);
+cJSON_AddItemToObject(literalizer_my_data_n0, "age", literalizer_my_data_n3);
+cJSON *my_data = literalizer_my_data_n0;
     (void)my_data;
     return 0;
 }

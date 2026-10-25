@@ -466,6 +466,7 @@ ignore_names = [
     "_validate_known_axis",
     "_validate_language_selection",
     "_validate_pairing",
+    "_validate_ref_variants",
     "_validate_requirements",
     "_validate_selection",
     "_validate_values",

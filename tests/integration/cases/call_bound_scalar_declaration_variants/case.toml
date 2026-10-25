@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+ref_case_per_language = true
+
+[call.ref_declarations]
+shared = "42"
+
+[[call.variants]]
+axis = "declaration_style"

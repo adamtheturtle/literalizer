@@ -88,6 +88,7 @@ from literalizer._language import (
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
+    default_wrap_combined_in_file,
     identity_call_arg,
     line_comment_call_variable_assignment,
     line_comment_call_variable_declaration,
@@ -101,7 +102,6 @@ from literalizer._language import (
     no_validate_spec_for_data,
     prepend_body_preamble,
     requires_declared_binding,
-    unsupported_wrap_combined_in_file_static,
 )
 from literalizer._types import Value
 
@@ -520,6 +520,7 @@ class Haxe(metaclass=LanguageCls):
         """Sequence type options for Haxe."""
 
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="(["),
             close="] : Array<Dynamic>)",
             supports_heterogeneity=True,
@@ -586,7 +587,7 @@ class Haxe(metaclass=LanguageCls):
             formatter=variable_declaration_formatter(
                 template="var {name} = {value};"
             ),
-            supports_redefinition=False,
+            supports_redefinition=True,
         )
 
     class DictEntryStyles(enum.Enum):
@@ -816,9 +817,7 @@ class Haxe(metaclass=LanguageCls):
             ]
         )
 
-    wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, FileWrapperContext], str]"
-    ] = unsupported_wrap_combined_in_file_static
+    wrap_combined_in_file = default_wrap_combined_in_file
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO

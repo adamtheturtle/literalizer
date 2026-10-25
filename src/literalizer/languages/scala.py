@@ -901,6 +901,7 @@ class Scala(metaclass=LanguageCls):
         """Sequence type options for Scala."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="List("),
             close=")",
             supports_heterogeneity=True,
@@ -917,6 +918,7 @@ class Scala(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         SEQ = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="Seq("),
             close=")",
             supports_heterogeneity=True,
@@ -933,6 +935,7 @@ class Scala(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="Array("),
             close=")",
             supports_heterogeneity=True,
@@ -1830,6 +1833,7 @@ class Scala(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         if self._json_type_active:
             return SequenceFormatConfig(
+                length_is_part_of_type=False,
                 sequence_open=fixed_open(open_str="Json.arr("),
                 close=")",
                 supports_heterogeneity=True,

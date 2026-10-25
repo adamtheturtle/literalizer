@@ -40,7 +40,7 @@ def test_manual_scaffold_rejects_declaration_only_target_error(
     config = next(
         config
         for config in default_call_case_specs()
-        if config.case_dir_name == "call_zig_helper_member_zkv"
+        if config.case_dir_name == "call_generated_helper_member_zkv"
     )
     spec = make_spec(lang_cls=V)
     fragment = literalize_call(
@@ -280,7 +280,7 @@ def test_variant_rejection_handles_stale_fixture(
     case = next(
         case
         for case in build_call_variant_cases()
-        if case.config.case_dir_name == "call_zig_helper_member_zval"
+        if case.config.case_dir_name == "call_generated_helper_member_zval"
         and case.variant.name == "V_heterogeneous_strategy_record"
     )
     case_dir = tmp_path / case.config.case_dir_name
@@ -336,7 +336,7 @@ def test_variant_rejection_preserves_unexpected_errors(
     case = next(
         case
         for case in build_call_variant_cases()
-        if case.config.case_dir_name == "call_zig_helper_member_zval"
+        if case.config.case_dir_name == "call_generated_helper_member_zval"
         and case.variant.name == "V_heterogeneous_strategy_record"
     )
 

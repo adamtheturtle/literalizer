@@ -1009,6 +1009,7 @@ class Gleam(metaclass=LanguageCls):
         """Sequence type options for Gleam."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="GList(["),
             close="])",
             supports_heterogeneity=True,
@@ -1025,6 +1026,7 @@ class Gleam(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="#("),
             close=")",
             supports_heterogeneity=True,
@@ -1679,6 +1681,7 @@ class Gleam(metaclass=LanguageCls):
         """
         if self._json_type_active:
             return SequenceFormatConfig(
+                length_is_part_of_type=False,
                 sequence_open=fixed_open(
                     open_str="json.preprocessed_array([",
                 ),

@@ -1,0 +1,3 @@
+import datetime
+def capture(*_args: object, **_kwargs: object) -> object: ...
+capture(nan_value=float("nan"), positive_infinity=float("inf"), negative_infinity=float("-inf"), finite_value=1.250000, date_value=datetime.date(year=2024, month=1, day=15), datetime_value=datetime.datetime(year=2024, month=1, day=15, hour=12, minute=34, second=56), text_value="[ordinary text]")

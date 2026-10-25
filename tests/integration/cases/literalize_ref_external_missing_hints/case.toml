@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+# Shared coverage retains literalize_ref_cpp_external_missing.
+variable_form = "existing"
+external_declarations = {item = "[1, 2]", my_data = "[1, 2]"}
+
+[ref.consumer]
+target_function = "consume_widget"
+before_assignment = true

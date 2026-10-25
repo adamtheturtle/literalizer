@@ -1,13 +1,13 @@
 #include <cjson/cJSON.h>
 int main(void) {
-cJSON *_n0 = cJSON_CreateArray();
-cJSON *_n1 = cJSON_CreateObject();
-cJSON *_n2 = cJSON_CreateObject();
-cJSON_AddItemToObject(_n1, "mapping", _n2);
-cJSON_AddItemToArray(_n0, _n1);
-cJSON *_n3 = cJSON_CreateObject();
-cJSON_AddItemToArray(_n0, _n3);
-cJSON *my_data = _n0;
+cJSON *literalizer_my_data_n0 = cJSON_CreateArray();
+cJSON *literalizer_my_data_n1 = cJSON_CreateObject();
+cJSON *literalizer_my_data_n2 = cJSON_CreateObject();
+cJSON_AddItemToObject(literalizer_my_data_n1, "mapping", literalizer_my_data_n2);
+cJSON_AddItemToArray(literalizer_my_data_n0, literalizer_my_data_n1);
+cJSON *literalizer_my_data_n3 = cJSON_CreateObject();
+cJSON_AddItemToArray(literalizer_my_data_n0, literalizer_my_data_n3);
+cJSON *my_data = literalizer_my_data_n0;
     (void)my_data;
     return 0;
 }

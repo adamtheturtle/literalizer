@@ -1,0 +1,15 @@
+        * shared
+@code javascript
+[
+            1,
+            2
+        ]
+@end
+        * my_data
+@code javascript
+[
+            // A leading comment with { braces, "quotes", and // markers
+            "first\n{ \"quoted\" // text }",
+            shared
+        ]
+@end

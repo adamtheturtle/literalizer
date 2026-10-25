@@ -9,7 +9,7 @@ import re
 import unicodedata
 from collections.abc import Callable, Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, Self
 
 from beartype import beartype
 
@@ -48,7 +48,11 @@ from literalizer._formatters.format_integers import (
     format_integer_hex,
     format_integer_octal,
 )
-from literalizer._formatters.format_json_value import format_json_value_text
+from literalizer._formatters.format_json_value import (
+    JsonValue,
+    format_json_value_text,
+    to_jsonable,
+)
 from literalizer._formatters.format_strings import (
     bidi_escape_replacements,
     format_string_backslash_control,
@@ -1286,6 +1290,7 @@ def _aeson_value_body_preamble(
 # definitions only need to be permissive enough that the formatting pass
 # does not error on heterogeneous data or nulls inside containers.
 _AESON_VALUE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    length_is_part_of_type=False,
     sequence_open=fixed_open(open_str="["),
     close="]",
     supports_heterogeneity=True,
@@ -1361,22 +1366,93 @@ def _aeson_quasi_expression(data: Value) -> str:
     return f"[aesonQQ| {json_text} |]"
 
 
+class _AesonReferenceLiteral(str):
+    """A JSON initializer retaining structural reference holes."""
+
+    __slots__ = ("data", "ref_case", "ref_key")
+    data: Value
+    ref_key: str
+    ref_case: IdentifierCase | None
+
+    def __new__(
+        cls,
+        value: str,
+        /,
+        *,
+        data: Value,
+        ref_key: str,
+        ref_case: IdentifierCase | None,
+    ) -> Self:
+        """Keep source identity alongside the ordinary formatted text."""
+        del data, ref_key, ref_case
+        return super().__new__(cls, object=value)
+
+    def __init__(
+        self,
+        _value: str,
+        /,
+        *,
+        data: Value,
+        ref_key: str,
+        ref_case: IdentifierCase | None,
+    ) -> None:
+        """Initialize retained references alongside the string value."""
+        self.data = data
+        self.ref_key = ref_key
+        self.ref_case = ref_case
+
+
+@beartype
+def _aeson_binding_expression(*, value: str, data: Value) -> str:
+    """Interpolate structural references while quoting literal JSON
+    data.
+    """
+    ordinary = _aeson_quasi_expression(data=data)
+    if not isinstance(value, _AesonReferenceLiteral):
+        return ordinary
+
+    @beartype
+    def render(node: JsonValue, /) -> str:
+        """Serialize one JSON node or an existing dynamic value."""
+        if isinstance(node, dict):
+            name = node.get(value.ref_key)
+            if len(node) == 1 and isinstance(name, str):
+                case = value.ref_case
+                identifier = name if case is None else case.convert(name=name)
+                return "#{" + identifier + "}"
+            return (
+                "{"
+                + ", ".join(
+                    format_json_value_text(data=str(object=key))
+                    + ": "
+                    + render(child)
+                    for key, child in node.items()
+                )
+                + "}"
+            )
+        if isinstance(node, list):
+            return "[" + ", ".join(render(child) for child in node) + "]"
+        return format_json_value_text(data=node)
+
+    return f"[aesonQQ| {render(to_jsonable(data=value.data))} |]"
+
+
 @beartype
 def _format_haskell_json_declaration(
     name: str,
-    _value: str,
+    value: str,
     data: Value,
     _modifiers: frozenset[enum.Enum],
 ) -> str:
     """Format a ``Value`` declaration backed by ``aesonQQ``."""
-    expression = _aeson_quasi_expression(data=data)
+    expression = _aeson_binding_expression(value=value, data=data)
     return f"{name} :: Value\n{name} = {expression}"
 
 
 @beartype
 def _format_haskell_json_assignment(
     name: str,
-    _value: str,
+    value: str,
     data: Value,
 ) -> str:
     """Format a ``Value`` assignment backed by ``aesonQQ``.
@@ -1388,18 +1464,18 @@ def _format_haskell_json_assignment(
     (otherwise ``-Wunused-imports`` fires) and satisfies
     ``-Wmissing-signatures`` under ``-Wall -Werror``.
     """
-    expression = _aeson_quasi_expression(data=data)
+    expression = _aeson_binding_expression(value=value, data=data)
     return f"{name} :: Value\n{name} = {expression}"
 
 
 @beartype
-def _format_haskell_json_call_arg(raw_value: Value, _formatted: str) -> str:
+def _format_haskell_json_call_arg(raw_value: Value, formatted: str) -> str:
     """Format a direct call argument as a ``Value`` quasi-quote.
 
     The ``aesonQQ`` brackets are self-delimiting so no surrounding
     parentheses are needed even inside a curried call.
     """
-    return _aeson_quasi_expression(data=raw_value)
+    return _aeson_binding_expression(value=formatted, data=raw_value)
 
 
 # The value bindings ``Prelude`` exports, which every module imports
@@ -1915,6 +1991,7 @@ class Haskell(metaclass=LanguageCls):
         """Sequence type options for Haskell."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="HList ["),
             close="]",
             supports_heterogeneity=True,
@@ -1931,6 +2008,7 @@ class Haskell(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
+            length_is_part_of_type=True,
             sequence_open=fixed_open(open_str="("),
             close=")",
             supports_heterogeneity=True,
@@ -2871,6 +2949,59 @@ class Haskell(metaclass=LanguageCls):
                 f"as variable name {name!r}"
             )
             raise UnrepresentableInputError(msg)
+
+    def prepare_reference_literal(
+        self,
+        value: str,
+        data: Value,
+        ref_key: str,
+        ref_case: IdentifierCase | None,
+        /,
+    ) -> str:
+        """Retain reference holes for JSON interpolation."""
+        if not self._json_type_active:
+            return value
+        return _AesonReferenceLiteral(
+            value, data=data, ref_key=ref_key, ref_case=ref_case
+        )
+
+    def reference_binding_data_dependent_preamble(
+        self, data: Value, /
+    ) -> tuple[str, ...]:
+        """Retain imports used by the selected reference
+        representation.
+        """
+        return self.data_dependent_preamble(data)
+
+    @staticmethod
+    def reference_declaration_imports(
+        entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Preserve supporting imports for the caller's declarations."""
+        return tuple(entries)
+
+    def format_reference_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Keep a JSON alias as an existing Value rather than a
+        document.
+        """
+        if self._json_type_active:
+            return f"{name} :: Value\n{name} = {value}"
+        return self.format_variable_declaration(name, value, data, modifiers)
+
+    def format_reference_variable_assignment(
+        self, name: str, value: str, data: Value, /
+    ) -> str:
+        """Retain the representation of a reference on rebinding."""
+        if self._json_type_active:
+            return f"{name} :: Value\n{name} = {value}"
+        return self.format_variable_assignment(name, value, data)
 
     def assignment_declares_binding(self, _data: Value, /) -> bool:
         """Retain whether the configured literal assignment declares a

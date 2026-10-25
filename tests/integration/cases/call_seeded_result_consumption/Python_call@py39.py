@@ -1,0 +1,6 @@
+def make_widget(*_args: object, **_kwargs: object) -> object: ...
+def consume_widget(*_args: object, **_kwargs: object) -> object: ...
+my_data = make_widget(count=0)
+consume_widget(count=my_data)
+my_data = make_widget(count=1)
+consume_widget(count=my_data)

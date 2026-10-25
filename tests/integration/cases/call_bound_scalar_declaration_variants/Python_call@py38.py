@@ -1,0 +1,3 @@
+def consume(*_args: object, **_kwargs: object) -> object: ...
+shared = 42
+consume(value=shared)

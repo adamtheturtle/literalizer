@@ -61,6 +61,7 @@ def _build_sequence_format_config(
             )
         )
     return SequenceFormatConfig(
+        length_is_part_of_type=False,
         sequence_open=fixed_open(
             open_str=open_template.format(type=default_type),
         ),

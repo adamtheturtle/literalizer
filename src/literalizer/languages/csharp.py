@@ -2185,6 +2185,7 @@ class CSharp(metaclass=LanguageCls):
         if self.json_type is not None:
             effective_declared_type = self.json_type.value
             return SequenceFormatConfig(
+                length_is_part_of_type=False,
                 sequence_open=fixed_open(open_str=_CSHARP_JSON_ARRAY_OPEN),
                 close="}",
                 supports_heterogeneity=True,
@@ -2219,6 +2220,8 @@ class CSharp(metaclass=LanguageCls):
 
         return dataclasses.replace(
             base,
+            length_is_part_of_type=self.sequence_format
+            is self.sequence_formats.TUPLE,
             narrowed_empty_form=_narrowed_empty_form,
         )
 

@@ -1,0 +1,23 @@
+            * shared
+@code javascript
+[
+                1,
+                2
+            ]
+@end
+            * other
+@code javascript
+3
+@end
+            * payload
+@code javascript
+"\n    shared : Val\nshared = RInt 99"
+@end
+            * my_data
+@code javascript
+{
+                "a": shared,
+                "b": other,
+                "payload": payload
+            }
+@end

@@ -1,0 +1,12 @@
+module Check where
+
+
+import Data.Argonaut.Core (Json, jsonNull)
+import Data.Argonaut.Parser (jsonParser)
+import Data.Either (fromRight)
+
+
+userObj :: Json
+userObj = fromRight jsonNull (jsonParser "{\"_\": \"_\"}")
+my_data :: Json
+my_data = fromRight jsonNull (jsonParser "{\"$ref\": \"USER_OBJ\"}")
