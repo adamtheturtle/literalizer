@@ -1110,6 +1110,18 @@ def _compute_cpp_type(
             )
             return type_ctx.dict_type(value_type)
         case list():
+            if (
+                type_ctx.sequence_is_array
+                and _cpp_nested_record_sequence_type(
+                    value=item,
+                    record_name_for_value=type_ctx.record_name_for_value,
+                )
+                is not None
+            ):
+                # Record-list constructors retain vectors in ARRAY mode.
+                type_ctx = dataclasses.replace(
+                    type_ctx, sequence_is_array=False
+                )
             if type_ctx.tuple_strategy and is_tuple_eligible(value=item):
                 cpp_type = _cpp_tuple_type(items=item, type_ctx=type_ctx)
             else:

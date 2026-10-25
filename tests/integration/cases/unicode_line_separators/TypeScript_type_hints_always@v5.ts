@@ -1,0 +1,2 @@
+const my_data: string = "ab\u2028c\u2029d\r\u2028e";
+export {};

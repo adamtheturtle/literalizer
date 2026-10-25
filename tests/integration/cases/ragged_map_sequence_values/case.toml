@@ -3,3 +3,12 @@ suites = ["base"]
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "json_type"

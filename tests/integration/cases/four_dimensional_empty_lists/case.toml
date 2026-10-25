@@ -3,3 +3,12 @@ suites = ["base", "combined"]
 
 [base_context]
 collection_layout = "multiline"
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"

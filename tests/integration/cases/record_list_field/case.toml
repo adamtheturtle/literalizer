@@ -3,3 +3,6 @@ owner = "variant"
 
 [[variants]]
 axis = "record_list_sequence"
+
+[[variants]]
+axis = "record_type_hints_always"

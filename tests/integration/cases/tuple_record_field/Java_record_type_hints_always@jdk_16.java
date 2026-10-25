@@ -1,0 +1,14 @@
+record Record0(String call, Object[] args) {}
+class Main {
+    public static void main() {
+Record0 my_data = new Record0(
+    "send",
+    new Object[]{
+        1,
+        "email",
+        "a@gmail.com",
+        100
+    }
+);
+    }
+}

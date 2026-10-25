@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "MATLAB SAFE struct fields reject a delete character in a mapping key."
+exceptions = ["InvalidDictKeyError"]
+languages = ["Matlab"]
+
+[call]
+api = "literalize"
+sources = ['{"a\u007fb": 1}']
+input_format = "json"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "variable_type_hints"
+member = "SAFE"

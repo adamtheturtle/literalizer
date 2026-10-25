@@ -6,3 +6,9 @@ axis = "datetime"
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "json_type"

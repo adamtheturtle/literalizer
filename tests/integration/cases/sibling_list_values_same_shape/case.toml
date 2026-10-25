@@ -3,3 +3,12 @@ owner = "variant"
 
 [[variants]]
 axis = "sequence_tuple_nested"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"
