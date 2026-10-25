@@ -548,7 +548,7 @@ def _external_result_value(*, source: Value, config: RefCaseSpec) -> Value:
 
 
 @beartype
-def _external_assignment_spec(
+def external_assignment_spec(
     *, spec: literalizer.Language, config: RefCaseSpec, raw_data: _RefData
 ) -> literalizer.Language:
     """Use a length-independent sequence for a caller's changing-size
@@ -741,7 +741,7 @@ def run_literalize_ref_golden_case(
             input_format=input_info.input_format,
             input_source=input_source,
         )
-        spec = _external_assignment_spec(
+        spec = external_assignment_spec(
             spec=spec, config=config, raw_data=raw_data
         )
         bound_refs_input = _bound_ref_inputs(

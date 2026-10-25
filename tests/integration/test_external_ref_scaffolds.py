@@ -12,7 +12,7 @@ from literalizer.languages import CSharp, Elm
 from . import literalize_ref_cases
 from .case_manifests import RefCaseSpec
 from .language_specs import make_golden_path, make_spec
-from .literalize_ref_cases import _external_assignment_spec
+from .literalize_ref_cases import external_assignment_spec
 
 
 @pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
@@ -103,6 +103,6 @@ def test_fixed_length_destination_refuses_different_arity(
         expected_exception=UnrepresentableInputError,
         match="cannot change length on reassignment",
     ):
-        _ = _external_assignment_spec(
+        _ = external_assignment_spec(
             spec=spec, config=config, raw_data={"$ref": "shared"}
         )
