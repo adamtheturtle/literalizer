@@ -1,9 +1,8 @@
+# Regression provenance: CSharp, Odin, Cpp, Java, Kotlin, Mojo, Ada. Seeded feedback exercises the synthetic return carrier, flexible parameters, and separate declaration and statement regions.
 schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["CSharp", "Odin", "Cpp", "Java", "Kotlin", "Mojo", "Ada"]
-languages_reason = "Seeded feedback exercises the synthetic return carrier, flexible parameters, and separate declaration and statement regions."
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
