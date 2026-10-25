@@ -493,6 +493,12 @@ def _java_common_element_type(
     """
     if len(elements) == 0:
         return "Object"
+    if all(
+        isinstance(value, int) and not isinstance(value, bool)
+        for value in elements
+    ) and data_has_out_of_range_int(data=elements):
+        # Integer collections promote every sibling to BigInteger.
+        return "BigInteger"
     recurse = functools.partial(
         _java_type_hint,
         int_type=int_type,
@@ -526,6 +532,8 @@ _JAVA_I32_MAX = 2**31 - 1
 @beartype
 def _java_integer_hint(*, data: int, int_type: str) -> str:
     """Choose the Java integer type covering the value."""
+    if not I64_MIN <= data <= I64_MAX:
+        return "BigInteger"
     hint = int_type
     if hint == "int" and not _JAVA_I32_MIN <= data <= _JAVA_I32_MAX:
         hint = "long"

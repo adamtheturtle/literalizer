@@ -10,3 +10,6 @@ axis = "language_version"
 
 [[variants]]
 axis = "numeric_separator"
+
+[[variants]]
+axis = "type_hints"
