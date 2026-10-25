@@ -1048,6 +1048,7 @@ def _mojo_element_renders_as_string(
 def _mojo_list_format(default_type: str, /) -> SequenceFormatConfig:
     """Build a Mojo LIST ``SequenceFormatConfig`` for the given type."""
     return SequenceFormatConfig(
+        length_is_part_of_type=False,
         sequence_open=validated_fixed_open(render=_mojo_list_open),
         close="])",
         supports_heterogeneity=False,
@@ -1744,7 +1745,7 @@ class Mojo(metaclass=LanguageCls):
         """Append ``^`` to trigger move/transfer semantics in Mojo,
         except for register-trivial scalars.
 
-        Mojo ``Dict`` does not implement ``Copyable``, so a bare
+        Mojo ``Dict`` is not implicitly copyable, so a bare
         variable reference fails to compile and ``^`` transfers
         ownership instead.  Applying ``^`` to a register-trivial scalar
         (``Int``, ``Bool``, ``Float64``) is a hard error under
@@ -1776,17 +1777,17 @@ class Mojo(metaclass=LanguageCls):
     def format_call_ref_identifier(
         self,
     ) -> Callable[[str, Value | None], str]:
-        """Copy bound containers so repeated declarations preserve
-        them.
+        """Copy containers and unknown values without unnecessary
+        scalar transfers.
         """
         consume = self._format_consumable_ref_identifier
 
         @beartype
         def _format(name: str, value: Value | None, /) -> str:
-            """Copy containers and preserve scalar reference
+            """Copy unknown values and containers; retain known scalar
             formatting.
             """
-            if isinstance(value, (list, dict, set)):
+            if value is None or isinstance(value, (list, dict, set)):
                 return f"{name}.copy()"
             return consume(name, value)
 

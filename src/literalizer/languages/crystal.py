@@ -803,6 +803,7 @@ class Crystal(metaclass=LanguageCls):
         """Sequence type options for Crystal."""
 
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="["),
             close="]",
             empty_sequence="[] of Nil",
@@ -819,6 +820,7 @@ class Crystal(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
+            length_is_part_of_type=True,
             sequence_open=fixed_open(open_str="{"),
             close="}",
             supports_heterogeneity=True,
@@ -1636,6 +1638,49 @@ class Crystal(metaclass=LanguageCls):
         default_format_call_arg_ref_identifier_consumable
     )
 
+    def reference_binding_data_dependent_preamble(
+        self, data: Value, /
+    ) -> tuple[str, ...]:
+        """Retain the selected representation's supporting imports."""
+        return self.data_dependent_preamble(data)
+
+    @staticmethod
+    def reference_declaration_imports(
+        entries: Sequence[str], /
+    ) -> tuple[str, ...]:
+        """Keep imports required by the bound value declarations."""
+        return tuple(entries)
+
+    def format_reference_variable_declaration(
+        self,
+        name: str,
+        value: str,
+        data: Value,
+        modifiers: frozenset[enum.Enum],
+        /,
+    ) -> str:
+        """Bind the existing value without parsing its identifier as
+        JSON.
+        """
+        return self.declaration_style.value.formatter(
+            name, value, data, modifiers
+        )
+
+    @staticmethod
+    def format_reference_variable_assignment(
+        name: str, value: str, _data: Value, /
+    ) -> str:
+        """Assign the existing reference value directly."""
+        return f"{name} = {value}"
+
+    def format_nested_ref_identifier(
+        self, identifier: str, _value: Value | None, /
+    ) -> str:
+        """Serialize JSON bindings inside their enclosing JSON text."""
+        if self._uses_json_any:
+            return "#{" + identifier + ".to_json}"
+        return identifier
+
     consumable_ref_value_inhibits_consuming_form = (
         default_consumable_ref_value_inhibits_consuming_form
     )
@@ -1666,6 +1711,7 @@ class Crystal(metaclass=LanguageCls):
         """
         if self._uses_json_any:
             return SequenceFormatConfig(
+                length_is_part_of_type=False,
                 sequence_open=fixed_open(open_str="["),
                 close="]",
                 empty_sequence="[]",

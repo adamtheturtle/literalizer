@@ -300,6 +300,7 @@ class Json5(metaclass=LanguageCls):
         """Sequence type options for JSON5."""
 
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,

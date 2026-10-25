@@ -740,6 +740,7 @@ _STD_JSON_EMPTY_OBJECT = (
 # Containers copy already rendered JSON values, including references.
 # Scalar entries retain the existing JSON parsing conversion semantics.
 _STD_JSON_SEQUENCE_CONFIG = SequenceFormatConfig(
+    length_is_part_of_type=False,
     sequence_open=fixed_open(open_str=_STD_JSON_ARRAY_OPEN),
     close=_STD_JSON_ARRAY_CLOSE,
     supports_heterogeneity=True,
@@ -1039,6 +1040,7 @@ class Zig(metaclass=LanguageCls):
         """Sequence type options for Zig."""
 
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str=".{ .arr = &.{"),
             close="}}",
             supports_heterogeneity=True,
@@ -1664,23 +1666,26 @@ class Zig(metaclass=LanguageCls):
                 value_type = "f64"
             case None:
                 value_type = "?i64"
-            case dt.datetime():
-                value_type = _ZIG_EPOCH_INT_FIELD_TYPES.get(
-                    self.datetime_format.value.type_produced,
-                    "[]const u8",
-                )
             case dt.date():
-                value_type = _ZIG_EPOCH_INT_FIELD_TYPES.get(
-                    self.date_format.value.type_produced,
-                    "[]const u8",
-                )
+                value_type = self._zig_temporal_field_type(value)
             case OrderedMap():
                 value_type = self._zig_ordered_map_type(value=value)
             case list():
                 value_type = self._zig_list_type(items=value)
+            case dict() if len(value) == 0:
+                value_type = "@TypeOf(.{})"
             case _:
                 value_type = "[]const u8"
         return value_type
+
+    def _zig_temporal_field_type(self, value: dt.date, /) -> str:
+        """Use each temporal format's produced type for record fields."""
+        produced = (
+            self.datetime_format.value.type_produced
+            if isinstance(value, dt.datetime)
+            else self.date_format.value.type_produced
+        )
+        return _ZIG_EPOCH_INT_FIELD_TYPES.get(produced, "[]const u8")
 
     def _zig_list_type(self, *, items: list[Value]) -> str:
         """Return the Zig type for a list record field.

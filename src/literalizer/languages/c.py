@@ -879,6 +879,58 @@ def _check_c_json_value_keys(*, data: Value) -> None:
 
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class _CJsonBindingSource:
+    """JSON data and reference syntax retained until node construction."""
+
+    data: JsonValue
+    ref_key: str | None
+    ref_case: IdentifierCase | None
+
+
+class _CJsonReferenceLiteral(str):
+    """A rendered initializer with its original reference-bearing tree."""
+
+    __slots__ = ("source",)
+
+    source: _CJsonBindingSource
+
+    def __new__(cls, value: str, /, *, source: _CJsonBindingSource) -> Self:
+        """Attach source metadata after generic indentation is removed."""
+        del source
+        return super().__new__(cls, object=value)
+
+    def __init__(self, _value: str, /, *, source: _CJsonBindingSource) -> None:
+        """Initialize the retained source after allocating the string."""
+        self.source = source
+
+
+@beartype
+def _cjson_binding_source(*, value: str, data: Value) -> _CJsonBindingSource:
+    """Use retained references or the ordinary normalized JSON data."""
+    if isinstance(value, _CJsonReferenceLiteral):
+        return value.source
+    return _CJsonBindingSource(
+        data=to_jsonable(data=data), ref_key=None, ref_case=None
+    )
+
+
+@beartype
+def _cjson_reference_name(
+    *, node: JsonValue, ref_key: str | None, ref_case: IdentifierCase | None
+) -> str | None:
+    """Read a validated source reference without inspecting rendered
+    text.
+    """
+    if ref_key is None or not isinstance(node, dict) or len(node) != 1:
+        return None
+    name = node.get(ref_key)
+    if not isinstance(name, str):
+        return None
+    return name if ref_case is None else ref_case.convert(name=name)
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class _CJsonBuild:
     """The statements that build a cJSON node tree, plus its root name.
 
@@ -955,6 +1007,8 @@ def _c_cjson_build(
     node_indices: Iterator[int],
     format_integer: Callable[[int], str],
     format_float: Callable[[float], str],
+    ref_key: str | None,
+    ref_case: IdentifierCase | None,
 ) -> _CJsonBuild:
     """Walk a JSON-able tree and return its portable cJSON build.
 
@@ -973,6 +1027,12 @@ def _c_cjson_build(
     def _emit(node: JsonValue, /) -> str:
         """Emit the build statements for *node*; return its variable."""
         name = f"{prefix}{next(node_indices)}"
+        reference = _cjson_reference_name(
+            node=node, ref_key=ref_key, ref_case=ref_case
+        )
+        if reference is not None:
+            lines.append(f"cJSON *{name} = cJSON_Duplicate({reference}, 1);")
+            return name
         match node:
             case dict():
                 lines.append(f"cJSON *{name} = cJSON_CreateObject();")
@@ -1222,6 +1282,7 @@ class C(metaclass=LanguageCls):
         """Sequence type options for C."""
 
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(
                 open_str="((CVal){.a = (CVal[]){",
             ),
@@ -1998,6 +2059,7 @@ class C(metaclass=LanguageCls):
         fmt = self.sequence_format.value
         if self._record_strategy_active:
             return SequenceFormatConfig(
+                length_is_part_of_type=False,
                 sequence_open=self._record_sequence_open,
                 close="}",
                 supports_heterogeneity=fmt.supports_heterogeneity,
@@ -2020,6 +2082,7 @@ class C(metaclass=LanguageCls):
                 narrowed_empty_form=None,
             )
         return SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str=self._seq_open_str),
             close="}})",
             supports_heterogeneity=fmt.supports_heterogeneity,
@@ -2229,6 +2292,28 @@ class C(metaclass=LanguageCls):
         """Assign an already rendered reference directly."""
         return f"{name} = {value};"
 
+    def prepare_reference_literal(
+        self,
+        value: str,
+        data: Value,
+        ref_key: str,
+        ref_case: IdentifierCase | None,
+        /,
+    ) -> str:
+        """Retain source bindings before declaration inference expands
+        them.
+        """
+        if not self._json_type_active:
+            return value
+        return _CJsonReferenceLiteral(
+            value,
+            source=_CJsonBindingSource(
+                data=to_jsonable(data=data),
+                ref_key=ref_key,
+                ref_case=ref_case,
+            ),
+        )
+
     @cached_property
     @beartype
     def _cjson_node_indices(self) -> Iterator[int]:
@@ -2253,7 +2338,7 @@ class C(metaclass=LanguageCls):
         Under ``json_type=CJSON`` the rendered ``CVal`` value is
         discarded: the data is built as a ``cJSON_Create*(...)`` node
         tree (one statement per node) and the binding declares the root
-        ``cJSON *my_data = _n0;``.
+        ``cJSON *my_data = literalizer_my_data_n0;``.
         """
         if self._json_type_active:
             format_integer = self.format_integer
@@ -2262,17 +2347,20 @@ class C(metaclass=LanguageCls):
             @beartype
             def _format_cjson_decl(
                 name: str,
-                _value: str,
+                value: str,
                 data: Value,
                 _modifiers: frozenset[enum.Enum],
             ) -> str:
                 """Build a cJSON node tree and declare its root."""
+                source = _cjson_binding_source(value=value, data=data)
                 build = _c_cjson_build(
-                    to_jsonable(data=data),
-                    prefix="_n",
+                    source.data,
+                    prefix=f"literalizer_{name}_n",
                     node_indices=self._cjson_node_indices,
                     format_integer=format_integer,
                     format_float=format_float,
+                    ref_key=source.ref_key,
+                    ref_case=source.ref_case,
                 )
                 return join_preamble(
                     entries=(*build.lines, f"cJSON *{name} = {build.root};")
@@ -2317,8 +2405,8 @@ class C(metaclass=LanguageCls):
         Under ``json_type=CJSON`` the value is rebuilt as a fresh
         ``cJSON`` node tree and the existing binding is reassigned to its
         root.
-        A distinct ``_m`` node prefix (the declaration build uses
-        ``_n``) keeps the combined declaration+assignment form free of
+        A binding-specific ``_m`` prefix (declarations use ``_n``)
+        keeps separately rendered declarations and assignments free of
         duplicate ``cJSON *`` definitions in one scope.
         """
         if self._json_type_active:
@@ -2328,16 +2416,19 @@ class C(metaclass=LanguageCls):
             @beartype
             def _format_cjson_assign(
                 name: str,
-                _value: str,
+                value: str,
                 data: Value,
             ) -> str:
                 """Build a cJSON node tree and reassign the binding."""
+                source = _cjson_binding_source(value=value, data=data)
                 build = _c_cjson_build(
-                    to_jsonable(data=data),
-                    prefix="_m",
+                    source.data,
+                    prefix=f"literalizer_{name}_m",
                     node_indices=self._cjson_node_indices,
                     format_integer=format_integer,
                     format_float=format_float,
+                    ref_key=source.ref_key,
+                    ref_case=source.ref_case,
                 )
                 return join_preamble(
                     entries=(*build.lines, f"{name} = {build.root};")

@@ -3,5 +3,6 @@ owner = "literalize-ref"
 
 [ref]
 ref_case_override = "camel"
-# Exercise explicit case conversion while satisfying Rust's native naming lint.
-ref_case_by_language = { Rust = "snake" }
+
+[[ref.variants]]
+axis = "json_type"

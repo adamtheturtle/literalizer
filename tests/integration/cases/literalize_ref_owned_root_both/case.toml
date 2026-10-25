@@ -1,3 +1,5 @@
+# Also preserves literalize_ref_rust_root_both_owned: the default Rust
+# redefinition style is LET_MUT, matching its former explicit override.
 schema_version = 1
 owner = "literalize-ref"
 # Regression provenance: Cpp.

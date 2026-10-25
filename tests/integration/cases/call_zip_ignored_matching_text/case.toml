@@ -2,8 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Go"]
-languages_reason = "Go rejects an unused time import when omitted zipped datetime text appears only inside an ordinary string argument."
+# Shared coverage retains call_zip_ignored_matching_text.
 target_function = "process"
 parameter_names = ["value"]
 per_element = true

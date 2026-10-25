@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-ref"
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "enum_member_present", option = "dict_format", member = "RECORD"}]
+# Original regression (literalize_ref_gleam_record_unused_binding): Gleam JSON and concrete record modes retain their own reference preamble policies.
+
+dict_format = "RECORD"
+bound_refs = { unused = [1,2] }

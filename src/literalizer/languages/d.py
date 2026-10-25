@@ -842,6 +842,7 @@ class D(metaclass=LanguageCls):
         """Sequence type options for D."""
 
         ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="JSONValue(["),
             close="])",
             supports_heterogeneity=True,

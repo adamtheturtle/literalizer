@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "enum_member_present", option = "sequence_format", member = "ARRAY"}, {kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}]
+# Original regression (literalize_ref_cpp_owning_array_record): C++ native arrays of owning elements must retain their record move.
+heterogeneous_strategy = "RECORD"
+sequence_format = "ARRAY"
+
+[ref.value_sources]
+first = '{"labels":["owned"]}'

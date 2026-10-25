@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "capability_flag", flag = "supports_special_floats"}]
+# Shared coverage retains call_powershell_type_literal_arguments.
+target_function = "capture"
+parameter_names = ["nan_value", "positive_infinity", "negative_infinity", "finite_value", "date_value", "datetime_value", "text_value"]
+per_element = true
+
+[[call.variants]]
+axis = "date"
+
+[[call.variants]]
+axis = "float_format"
+
+[[call.variants]]
+axis = "datetime"

@@ -1,0 +1,12 @@
+class Fixture_dict_mixed_scalars_Haxe_combined {
+    public static function main() {
+        var my_data = ([
+            "a" => 1,
+            "b" => "x",
+        ] : Map<String, Dynamic>);
+        my_data = ([
+            "a" => 1,
+            "b" => "x",
+        ] : Map<String, Dynamic>);
+    }
+}

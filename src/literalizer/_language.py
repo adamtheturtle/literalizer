@@ -54,8 +54,8 @@ from literalizer.exceptions import (
 )
 
 
-class RenderedExistingBinding(str):
-    """A fragment emitted in the existing-variable binding form."""
+class RenderedStatement(str):
+    """Executable code retained outside declaration regions."""
 
     __slots__ = ()
 
@@ -107,6 +107,9 @@ class FileWrapperContext:
 
     root_mapping_entries: tuple[str, ...] | None
     """Formatted root table entries retained by the mapping producer."""
+
+    line_prefix: str
+    """Caller indentation retained for preambles beside bindings."""
 
 
 @beartype
@@ -411,6 +414,11 @@ class SequenceFormatConfig(Generic[_Declaration_co]):
     spelling is kept here rather than in ``sequence_open`` because the
     sibling-widening probe reads that opener as a statement about the
     element type, which arity is not.
+    """
+
+    length_is_part_of_type: bool
+    """Whether different sequence lengths produce different native
+    types.
     """
 
 

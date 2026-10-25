@@ -8,3 +8,6 @@ gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
 variable_form = "existing"
 value_sources = {item = "null"}
 explicit_ref_value_sources = {item = "null"}
+
+[[ref.variants]]
+axis = "json_type"

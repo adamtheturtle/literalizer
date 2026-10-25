@@ -1,0 +1,19 @@
+schema_version = 1
+owner = "literalize-ref"
+# Original regression (literalize_ref_zig_json_nested_var_object): Zig JSON containers preserve rendered reference expressions.
+
+[ref]
+variant_only = true
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "capability_flag", flag = "wrap_in_file_tolerates_pre_indent"}]
+# Original regression (literalize_ref_zig_json_nested_var_object): Zig JSON containers preserve rendered reference expressions.
+variable_form = "new"
+pre_indent_level = 2
+
+[ref.value_sources]
+shared = "[1, 2]"
+
+[[ref.variants]]
+axis = "json_type"
+
+[[ref.variants]]
+axis = "json_type_declaration_cross"

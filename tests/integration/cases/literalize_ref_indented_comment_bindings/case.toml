@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "literalize-ref"
+# Original regression (literalize_ref_zig_mutable_prefixed_comments): Mutable Zig bindings with comments and a caller prefix retain an outer address use.
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "capability_flag", flag = "wrap_in_file_tolerates_pre_indent"}]
+# Original regression (literalize_ref_zig_mutable_prefixed_comments): Mutable Zig bindings with comments and a caller prefix retain an outer address use.
+pre_indent_level = 2
+collection_layout = "multiline"
+
+[ref.value_sources]
+shared = "[1, 2]"
+
+[[ref.variants]]
+axis = "declaration_style"

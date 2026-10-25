@@ -20,6 +20,7 @@ from tests.integration.constructor_cases import (
 from tests.integration.golden_scenarios import golden_groups
 from tests.integration.language_specs import make_golden_path
 from tests.integration.literalize_ref_cases import (
+    build_literalize_ref_variant_cases,
     discover_literalize_default_ref_cases,
     discover_literalize_ref_cases,
 )
@@ -97,7 +98,7 @@ def _call_bindings() -> dict[Path, str]:
 
 @beartype
 def _ref_bindings() -> dict[Path, str]:
-    """Read declared roots for explicit and default references."""
+    """Read declared roots for explicit, default and option references."""
     bindings: dict[Path, str] = {}
     for cases, name in (
         (discover_literalize_ref_cases(), "Dart_ref"),
@@ -117,6 +118,19 @@ def _ref_bindings() -> dict[Path, str]:
                 bindings[golden.resolve()] = (
                     ref_case.config.resolved_variable_form().name
                 )
+    for variant_case in build_literalize_ref_variant_cases():
+        if variant_case.variant.lang_cls is not Dart:
+            continue
+        golden = make_golden_path(
+            parent=_CASES_DIR / variant_case.config.case_dir_name,
+            name=variant_case.golden_name,
+            extension=Dart.extension,
+            lang_cls=Dart,
+            version=variant_case.variant.spec.language_version,
+        )
+        bindings[golden.resolve()] = (
+            variant_case.config.resolved_variable_form().name
+        )
     return bindings
 
 

@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{kind = "enum_member_present", option = "sequence_format", member = "ARRAY"}]
+sequence_format = "ARRAY"
+value_sources = {array_value = "[1,2]", scalar_value = "3"}

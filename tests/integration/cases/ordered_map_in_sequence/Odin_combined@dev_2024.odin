@@ -1,0 +1,14 @@
+#+feature dynamic-literals
+package main
+
+main :: proc() {
+my_data := [dynamic]any{
+	map[string]any{"a" = 1},
+	"hello",
+}
+my_data = [dynamic]any{
+	map[string]any{"a" = 1},
+	"hello",
+}
+_ = my_data
+}

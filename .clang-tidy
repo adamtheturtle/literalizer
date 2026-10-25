@@ -1,7 +1,8 @@
 ---
 # Fixtures cover mutable declarations, alternate comma layouts, comment
 # grouping parentheses, and copies of referenced values. Renderer tests
-# validate these deliberate output choices.
+# validate these deliberate output choices. Caller-supplied identifiers
+# include intentional one-letter names; their length is not a C grammar rule.
 Checks: >
   *,
   -altera-struct-pack-align,
@@ -21,6 +22,7 @@ Checks: >
   -modernize-use-trailing-return-type,
   -performance-use-std-move,
   -performance-unnecessary-value-param,
+  -readability-identifier-length,
   -readability-implicit-bool-conversion,
   -readability-magic-numbers,
   -readability-named-parameter,

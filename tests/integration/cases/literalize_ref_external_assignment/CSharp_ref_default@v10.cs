@@ -1,0 +1,15 @@
+class Check {
+static object? consume_widget(object? arg_value = null) => null;
+    public static void Main() {
+var ref_data = new int[] {
+    1,
+    2
+};
+var my_data = new int[] {
+    0
+};
+consume_widget(my_data);
+my_data = ref_data;
+consume_widget(my_data);
+    }
+}

@@ -1,12 +1,11 @@
 schema_version = 1
 owner = "literalize-ref"
-languages = ["Go", "JavaScript", "Roc"]
-languages_reason = "A wrapped ref declaration has to take the same margin as the binding it precedes; Roc also aligns each annotation with its definition."
+# Original regression (literalize_ref_pre_indented): A wrapped ref declaration has to take the same margin as the binding it precedes; Roc also aligns each annotation with its definition.
 
 [ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "capability_flag", flag = "wrap_in_file_tolerates_pre_indent"}]
 pre_indent_level = 1
-languages = ["Go", "JavaScript", "Roc"]
-languages_reason = "A wrapped ref declaration has to take the same margin as the binding it precedes; Roc also aligns each annotation with its definition."
+# Original regression (literalize_ref_pre_indented): A wrapped ref declaration has to take the same margin as the binding it precedes; Roc also aligns each annotation with its definition.
 
 [ref.value_sources]
 shared = "[1, 2]"

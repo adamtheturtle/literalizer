@@ -153,24 +153,6 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
         (
             (
                 'schema_version = 1\nowner = "literalize-ref-default"\n'
-                '[ref]\nexternal_declarations = {a = "0"}\n'
-                'expected_value_source = "[0, 1]"\n'
-            ),
-            "expected_value_source requires Cpp or Rust languages",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref-default"\n'
-                '[ref]\nlanguages = ["Python"]\n'
-                'languages_reason = "Unsupported assertion backend."\n'
-                'external_declarations = {a = "0"}\n'
-                'expected_value_source = "[0, 1]"\n'
-            ),
-            "expected_value_source requires Cpp or Rust languages",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref-default"\n'
                 '[ref]\nlanguages = ["Rust"]\n'
                 'languages_reason = "Consumer and assertion conflict."\n'
                 'external_declarations = {a = "0"}\n'
@@ -487,6 +469,37 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 'category = "UserWarning"\n'
             ),
             "Extra inputs are not permitted",
+        ),
+        (
+            (
+                "schema_version = 1\n"
+                'owner = "literalize-ref"\n'
+                "[ref]\n"
+                "variant_only = true\n"
+            ),
+            "variant_only requires at least one ref variant axis",
+        ),
+        (
+            (
+                "schema_version = 1\n"
+                'owner = "literalize-ref"\n'
+                "[ref]\n"
+                "[[ref.variants]]\n"
+                'axis = "json_type"\n'
+                "[[ref.variants]]\n"
+                'axis = "json_type"\n'
+            ),
+            "duplicate ref variant axis",
+        ),
+        (
+            (
+                "schema_version = 1\n"
+                'owner = "literalize-ref"\n'
+                "[ref]\n"
+                "[[ref.variants]]\n"
+                'axis = "imaginary"\n'
+            ),
+            "unknown variant axis 'imaginary'",
         ),
     ],
 )

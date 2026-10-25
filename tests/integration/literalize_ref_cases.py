@@ -25,10 +25,15 @@ from ruamel.yaml import YAML
 
 import literalizer
 from literalizer import ValueInput
+from literalizer._literalize import materialize_value_input
+from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    CallsNotSupportedByLanguageError,
+    CallsNotSupportedByToolError,
     ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
+    IncompatibleFormatsError,
     InvalidDictKeyError,
     NullInCollectionError,
     ReservedVariableNameError,
@@ -42,6 +47,7 @@ from tests.yaml_support import as_yaml_parser
 from .case_manifests import (
     REF_DEFAULT_OWNER,
     REF_OWNER,
+    OwnerName,
     RefCaseSpec,
     RefConsumerSpec,
     case_input,
@@ -53,13 +59,16 @@ from .golden_checks import (
     SkipReason,
     check_golden,
 )
+from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
     make_golden_path,
     make_spec,
+    reference_case_for_declaration_style,
     sorted_languages,
     with_per_fixture_module_name,
 )
+from .variant_cases import Variant, variants_for_axis
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -68,6 +77,21 @@ CASES_DIR = Path(__file__).parent / "cases"
 # skips rather than fails.
 _REF_SKIPS: SkipPolicy = SkipPolicy(
     reasons=(
+        SkipReason(
+            error=CallsNotSupportedByLanguageError,
+            reason="has no generated consumer call syntax",
+            unlink=True,
+        ),
+        SkipReason(
+            error=CallsNotSupportedByToolError,
+            reason="cannot generate consumer calls",
+            unlink=True,
+        ),
+        SkipReason(
+            error=IncompatibleFormatsError,
+            reason="reference input is incompatible with the selected formats",
+            unlink=True,
+        ),
         SkipReason(
             error=ReservedVariableNameError,
             reason="rejects a declared reference identifier",
@@ -137,6 +161,7 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
     return [
         LiteralizeRefCase(config=config, lang_cls=lang_cls)
         for config in ref_case_specs(cases_dir=CASES_DIR, owner=REF_OWNER)
+        if not config.variant_only
         for lang_cls in sorted_languages()
         if config.admits_language(lang_cls=lang_cls)
         if config.variable_form != "both"
@@ -144,6 +169,89 @@ def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
         if config.ref_case_for(lang_cls=lang_cls) is None
         or config.ref_case_for(lang_cls=lang_cls)
         in lang_cls.supported_ref_cases
+    ]
+
+
+@dataclasses.dataclass(frozen=True)
+class LiteralizeRefVariantCase:
+    """A reference scenario paired with an effective language variant."""
+
+    config: RefCaseSpec
+    variant: Variant
+    ref_case: literalizer.IdentifierCase | None
+
+    @property
+    def golden_name(self) -> str:
+        """Retain whether the public API receives an explicit ref case."""
+        suffix = "ref_default" if self.ref_case is None else "ref"
+        return f"{self.variant.name}_{suffix}"
+
+
+@beartype
+def _reference_variant_case(
+    *, config: RefCaseSpec, variant: Variant, owner: OwnerName
+) -> LiteralizeRefVariantCase | None:
+    """Retain selected options and reject unsupported reference styles."""
+    lang_cls = variant.lang_cls
+    if not config.admits_language(lang_cls=lang_cls):
+        return None
+    ref_case = config.ref_case_for(lang_cls=lang_cls)
+    if ref_case is not None and ref_case not in lang_cls.supported_ref_cases:
+        return None
+    spec = _ref_language_options(
+        config=config, lang_cls=lang_cls, spec=variant.spec
+    )
+    if (
+        config.variable_form == "both"
+        and spec.declaration_style not in find_redefinition_styles(spec=spec)
+    ):
+        return None
+    # A selected declaration variant is an explicit choice. The base
+    # suite's automatic mutable-style fallback must not relabel it.
+    names = language_metadata(
+        language_id=lang_cls.language_id
+    ).variants.declaration_style_variable_names
+    reference_case = config.ref_case_for(lang_cls=lang_cls)
+    if owner == REF_DEFAULT_OWNER:
+        reference_case = None
+    elif reference_case is None:
+        reference_case = reference_case_for_declaration_style(
+            lang_cls=lang_cls, spec=spec
+        )
+    selected_config = config.model_copy(
+        update={
+            "declaration_style": spec.declaration_style.name,
+            "variable_name": names.get(
+                spec.declaration_style.name, config.variable_name
+            ),
+            "ref_case_override": reference_case,
+        }
+    )
+    return LiteralizeRefVariantCase(
+        config=selected_config,
+        variant=dataclasses.replace(variant, spec=spec),
+        ref_case=reference_case,
+    )
+
+
+@functools.cache
+@beartype
+def build_literalize_ref_variant_cases() -> list[LiteralizeRefVariantCase]:
+    """Discover reference variants through the existing typed axis
+    plans.
+    """
+    return [
+        case
+        for owner in (REF_OWNER, REF_DEFAULT_OWNER)
+        for config in ref_case_specs(cases_dir=CASES_DIR, owner=owner)
+        for entry in config.variants
+        for variant in variants_for_axis(axis_key=entry.axis)
+        if (
+            case := _reference_variant_case(
+                config=config, variant=variant, owner=owner
+            )
+        )
+        is not None
     ]
 
 
@@ -157,6 +265,7 @@ def discover_literalize_default_ref_cases() -> list[LiteralizeRefCase]:
             cases_dir=CASES_DIR,
             owner=REF_DEFAULT_OWNER,
         )
+        if not config.variant_only
         for lang_cls in sorted_languages()
         if config.admits_language(lang_cls=lang_cls)
     ]
@@ -379,10 +488,14 @@ def _compose_ref_consumer(
     spec: literalizer.Language,
     declarations: list[literalizer.LiteralizeResult],
     result: literalizer.LiteralizeResult,
+    argument_data: ValueInput,
 ) -> literalizer.LiteralizeResult:
     """Compose a generated consumer around an external-reference
     result.
     """
+    stub_data = materialize_value_input(
+        value=argument_data, argument_name="consumer value"
+    )
     parameters = ("arg_value",)
     target = tuple(consumer.target_function.split(sep="."))
     call = literalizer.literalize_call(
@@ -402,48 +515,101 @@ def _compose_ref_consumer(
         declarations=declarations,
         call=call,
         extra_body_preamble=spec.format_call_stub(
-            target, parameters, literalizer.StubReturn.VOID, ()
+            target, parameters, literalizer.StubReturn.VOID, ([stub_data],)
         ),
         extra_class_preamble=spec.format_call_class_scope_stub(
-            target, parameters, literalizer.StubReturn.VOID, ()
+            target, parameters, literalizer.StubReturn.VOID, ([stub_data],)
         ),
         extra_preamble=spec.format_call_preamble_stub(
-            target, parameters, literalizer.StubReturn.VOID, ()
+            target, parameters, literalizer.StubReturn.VOID, ([stub_data],)
         ),
     )
+
+
+@beartype
+def _external_result_value(*, source: Value, config: RefCaseSpec) -> Value:
+    """Resolve caller values only for the independent consumer's signature."""
+    if isinstance(source, dict):
+        name = source.get(config.ref_key)
+        if len(source) == 1 and isinstance(name, str):
+            return TypeAdapter[Value](type=Value).validate_python(
+                json.loads(s=config.external_declarations[name])
+            )
+        return {
+            key: _external_result_value(source=value, config=config)
+            for key, value in source.items()
+        }
+    if isinstance(source, list):
+        return [
+            _external_result_value(source=value, config=config)
+            for value in source
+        ]
+    return source
+
+
+@beartype
+def external_assignment_spec(
+    *, spec: literalizer.Language, config: RefCaseSpec, raw_data: _RefData
+) -> literalizer.Language:
+    """Use a length-independent sequence for a caller's changing-size
+    binding.
+
+    The source and destination values remain unchanged. A fixed-arity
+    tuple cannot model reassignment between their different native types.
+    """
+    if (
+        config.variable_form != "existing"
+        or "my_data" not in config.external_declarations
+    ):
+        return spec
+    initial = TypeAdapter[Value](type=Value).validate_python(
+        json.loads(s=config.external_declarations["my_data"])
+    )
+    assigned = _external_result_value(
+        source=TypeAdapter[Value](type=Value).validate_python(raw_data),
+        config=config,
+    )
+    if not (
+        isinstance(initial, list)
+        and isinstance(assigned, list)
+        and len(initial) != len(assigned)
+        and spec.sequence_format_config.length_is_part_of_type
+    ):
+        return spec
+    if config.sequence_format is None:
+        for sequence_format in spec.sequence_formats:
+            candidate = dataclasses.replace(
+                spec, sequence_format=sequence_format
+            )
+            if not candidate.sequence_format_config.length_is_part_of_type:
+                return candidate
+    msg = "the selected sequence type cannot change length on reassignment"
+    raise UnrepresentableInputError(msg)
 
 
 @beartype
 def _compose_external_ref_fixture(
     *,
     config: RefCaseSpec,
-    lang_cls: literalizer.LanguageCls,
     spec: literalizer.Language,
     result: literalizer.LiteralizeResult,
+    raw_data: _RefData,
 ) -> literalizer.LiteralizeResult:
     """Compose caller declarations and optional generated checks."""
     declarations: list[literalizer.LiteralizeResult] = []
     for name, source in config.external_declarations.items():
         declaration_spec = spec
-        style = config.external_declaration_styles.get(name)
         if config.variable_form == "existing" and name == "my_data":
             styles = find_redefinition_styles(spec=spec)
-            if len(styles) == 0 and spec.call_assignment_declares_binding:
+            if len(styles) == 0:
                 msg = (
                     "the external destination needs a reassignable declaration"
                 )
                 raise UnrepresentableInputError(msg)
-            if len(styles) > 0 and style is None:
+            if styles[0] is not spec.declaration_style:
                 declaration_spec = dataclasses.replace(
                     spec, declaration_style=styles[0]
                 )
-        if style is not None:
-            declaration_spec = dataclasses.replace(
-                spec,
-                declaration_style=enum_member_by_name(
-                    enum_cls=lang_cls.DeclarationStyles, name=style
-                ),
-            )
         declarations.append(
             literalizer.literalize(
                 source=source,
@@ -454,7 +620,10 @@ def _compose_external_ref_fixture(
                 ),
             )
         )
-    if config.expected_value_source is not None:
+    assertion_helper = (
+        Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
+    )
+    if config.expected_value_source is not None and assertion_helper.is_file():
         return _compose_ref_value_check(
             source=config.expected_value_source,
             spec=spec,
@@ -469,7 +638,35 @@ def _compose_external_ref_fixture(
         spec=spec,
         declarations=declarations,
         result=result,
+        argument_data=_external_result_value(
+            source=TypeAdapter[Value](type=Value).validate_python(raw_data),
+            config=config,
+        ),
     )
+
+
+@beartype
+def _ref_fixture_contents(
+    *,
+    code: str,
+    spec: literalizer.Language,
+    lang_cls: literalizer.LanguageCls,
+    ref_case: literalizer.IdentifierCase | None,
+) -> str:
+    """Keep explicitly requested reference spelling in compiler
+    fixtures.
+    """
+    native_case = reference_case_for_declaration_style(
+        lang_cls=lang_cls, spec=spec
+    )
+    preamble = (
+        language_metadata(
+            language_id=lang_cls.language_id
+        ).golden.intentional_identifier_preamble
+        if ref_case is not None and ref_case is not native_case
+        else ()
+    )
+    return "\n".join((*preamble, code, ""))
 
 
 @beartype
@@ -544,6 +741,9 @@ def run_literalize_ref_golden_case(
             input_format=input_info.input_format,
             input_source=input_source,
         )
+        spec = external_assignment_spec(
+            spec=spec, config=config, raw_data=raw_data
+        )
         bound_refs_input = _bound_ref_inputs(
             config=config,
             raw_data=raw_data,
@@ -576,12 +776,17 @@ def run_literalize_ref_golden_case(
         if len(config.external_declarations) > 0:
             result = _compose_external_ref_fixture(
                 config=config,
-                lang_cls=lang_cls,
                 spec=spec,
                 result=result,
+                raw_data=raw_data,
             )
     check_golden(
-        contents=result.code + "\n",
+        contents=_ref_fixture_contents(
+            code=result.code,
+            spec=spec,
+            lang_cls=lang_cls,
+            ref_case=ref_case,
+        ),
         extension=lang_cls.extension,
         golden_path=golden_path,
         file_regression=file_regression,
