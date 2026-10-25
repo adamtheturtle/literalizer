@@ -7185,7 +7185,7 @@ def assemble_call_expression(
 
 
 @beartype
-def _identity_statement_formatter(
+def call_result_discard_formatter(
     *, language: Language
 ) -> Callable[[str], str] | None:
     """Return an optional formatter for an unchanged transformed statement."""
@@ -7499,7 +7499,7 @@ def _render_call_per_element(
                 _append_trailing_comment(
                     rendered=language.format_call_statement(
                         _assemble_call(
-                            identity_statement_formatter=_identity_statement_formatter(
+                            identity_statement_formatter=call_result_discard_formatter(
                                 language=language
                             ),
                             target_function=target_function,
@@ -7602,7 +7602,7 @@ def _render_call_whole(
         return _append_trailing_comment(
             rendered=language.format_call_statement(
                 _assemble_call(
-                    identity_statement_formatter=_identity_statement_formatter(
+                    identity_statement_formatter=call_result_discard_formatter(
                         language=language
                     ),
                     target_function=target_function,
