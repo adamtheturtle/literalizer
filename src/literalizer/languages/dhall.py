@@ -5,7 +5,7 @@ import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import TYPE_CHECKING, ClassVar, assert_never
 
 from beartype import beartype
@@ -315,7 +315,9 @@ def _dhall_call_stub(
 
 
 @beartype
-def _dhall_format_call_arg(original: Value, formatted: str, /) -> str:
+def _dhall_format_call_arg(
+    original: Value, formatted: str, /, *, datetime_is_integer: bool
+) -> str:
     """Wrap a formatted scalar in the appropriate ``DVal`` constructor.
 
     Booleans, integers, floats, and strings each get their own
@@ -329,6 +331,8 @@ def _dhall_format_call_arg(original: Value, formatted: str, /) -> str:
             return f"DVal.DInteger {formatted}"
         case float():
             return f"DVal.DDouble {formatted}"
+        case dt.datetime() if datetime_is_integer:
+            return f"DVal.DInteger {formatted}"
         case str() | bytes() | dt.datetime() | dt.date() | None:
             return f"DVal.DText {formatted}"
         case _:
@@ -838,6 +842,7 @@ class Dhall(metaclass=LanguageCls):
         """Sequence type options for Dhall."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=False,
@@ -1256,7 +1261,12 @@ class Dhall(metaclass=LanguageCls):
     @beartype
     def format_call_arg(self) -> Callable[[Value, str], str]:
         """Wrap each scalar call argument in the ``DVal`` union tag."""
-        return _dhall_format_call_arg
+        return partial(
+            _dhall_format_call_arg,
+            datetime_is_integer=(
+                self.datetime_format.value.type_produced is int
+            ),
+        )
 
     @cached_property
     @beartype

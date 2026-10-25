@@ -3,3 +3,6 @@ owner = "literalize-ref"
 
 [ref.value_sources]
 my_int = "42"
+
+[[ref.variants]]
+axis = "declaration_style"

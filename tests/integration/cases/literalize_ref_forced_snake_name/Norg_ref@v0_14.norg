@@ -1,0 +1,10 @@
+* user_obj
+@code javascript
+{
+    "_": "_"
+}
+@end
+* my_data
+@code javascript
+user_obj
+@end

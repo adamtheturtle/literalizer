@@ -512,6 +512,7 @@ class Elixir(metaclass=LanguageCls):
         """Sequence type options for Elixir."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="["),
             close="]",
             supports_heterogeneity=True,
@@ -528,6 +529,7 @@ class Elixir(metaclass=LanguageCls):
             narrowed_empty_form=None,
         )
         TUPLE = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="{"),
             close="}",
             supports_heterogeneity=True,

@@ -1,4 +1,4 @@
-def consume_widget[*Ts: AnyType](*args: *Ts):
+def consume_widget(arg_value: List[Int]):
     pass
 def main():
     var shared = List([

@@ -63,7 +63,7 @@ from literalizer._language import (
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
     PositionalCallStyle,
-    RenderedExistingBinding,
+    RenderedStatement,
     RoundTripCapability,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -890,6 +890,7 @@ class Fortran(metaclass=LanguageCls):
         """Sequence type options for Fortran."""
 
         LIST = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="flist([fval_t :: "),
             close="])",
             supports_heterogeneity=True,
@@ -1425,7 +1426,7 @@ class Fortran(metaclass=LanguageCls):
         the first line and an assignment on the remaining lines.  This
         method splits them so that all type-declaration lines appear
         before any assignment or call lines, producing a valid program.
-        Existing-binding fragments contain only executable statements
+        Existing-binding and call fragments contain executable statements
         and retain their position after the seed assignment.
 
         Call stubs are placed in the ``contains`` section via
@@ -1434,7 +1435,7 @@ class Fortran(metaclass=LanguageCls):
         type_decls: list[str] = []
         exec_stmts: list[str] = []
         for bare_code in declarations:
-            if isinstance(bare_code, RenderedExistingBinding):
+            if isinstance(bare_code, RenderedStatement):
                 exec_stmts.append(bare_code)
                 continue
             lines = bare_code.splitlines()
@@ -1501,6 +1502,7 @@ class Fortran(metaclass=LanguageCls):
         """Configuration for the chosen sequence format."""
         fmt = self.sequence_format.value
         return SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(
                 open_str=f"{self.list_name}([fval_t :: ",
             ),

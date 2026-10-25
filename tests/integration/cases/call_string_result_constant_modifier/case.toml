@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "modifier_present", modifier = "CONST"}]
+# Shared coverage retains cpp_call_string_result_binding_const.
+target_function = "make_widget"
+parameter_names = ["text"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+variable_modifiers = ["CONST"]

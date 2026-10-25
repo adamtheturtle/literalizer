@@ -8,5 +8,5 @@ shared :: Value
 shared = [aesonQQ| 42 |]
 main :: IO ()
 main = do
-    _ <- consume [aesonQQ| [{"$ref": "shared"}, {"$ref": "shared"}] |]
+    _ <- consume [aesonQQ| [#{shared}, #{shared}] |]
     pure ()

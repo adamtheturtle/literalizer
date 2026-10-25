@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+variant_only = true
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+# Original regression (literalize_ref_rust_repeated_json): Rust ownership distinguishes reusable owned bindings from Copy values.
+
+[ref.value_sources]
+shared = '42'
+
+[[ref.variants]]
+axis = "json_type"
+
+[[ref.variants]]
+axis = "json_type_declaration_cross"

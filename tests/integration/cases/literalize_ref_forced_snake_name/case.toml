@@ -1,0 +1,6 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+ref_case_override = "snake"
+# Retains the original Rust snake-case control from forced_camel_name.

@@ -2,8 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Go", "Python"]
-languages_reason = "Go rejects unused time imports; Python exposes datetime imports across both supported versions."
+# Shared coverage retains call_zip_opaque_omitted.
 target_function = "process"
 parameter_names = ["value"]
 per_element = false

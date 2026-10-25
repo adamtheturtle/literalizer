@@ -3361,6 +3361,7 @@ class Rust(metaclass=LanguageCls):
     stringifies_nested_collections = False
     supports_special_floats = True
     supports_variable_names = True
+    uses_resolved_ref_declaration_data = True
     supports_no_variable_wrap_in_file = False
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = False
@@ -4181,9 +4182,6 @@ class Rust(metaclass=LanguageCls):
                 else "&"
             )
             use_line = f"\n{self.indent}let _ = {borrow}{variable_name};"
-        if self.declaration_style is self.declaration_styles.LET_MUT:
-            for name in context.bound_variable_names:
-                use_line += f"\n{self.indent}let _ = &mut {name};"
         return f"fn main() {{\n{indented}{use_line}\n}}"
 
     def wrap_combined_in_file(
@@ -4530,6 +4528,26 @@ class Rust(metaclass=LanguageCls):
             self._reference_value_is_copy(item) for item in value
         )
 
+    def prepare_bound_reference_declaration(
+        self, declaration: str, variable_name: str, line_prefix: str, /
+    ) -> str:
+        """Exercise mutability before a later expression can move the
+        value.
+        """
+        if self.declaration_style is self.declaration_styles.LET_MUT:
+            return f"{declaration}\n{line_prefix}let _ = &mut {variable_name};"
+        return declaration
+
+    def format_bound_ref_identifier(
+        self, identifier: str, value: Value | None, /
+    ) -> str | None:
+        """Read the value inside a generated LazyLock binding."""
+        if self.declaration_style is not self.declaration_styles.LAZY_STATIC:
+            return None
+        if self._reference_value_is_copy(value):
+            return f"*{identifier}"
+        return f"(*{identifier}).clone()"
+
     @cached_property
     @beartype
     def format_reused_literal_ref_identifier(
@@ -4749,6 +4767,7 @@ class Rust(metaclass=LanguageCls):
         if self.json_type is not None:
             effective_declared_type = self.json_type.value
             return SequenceFormatConfig(
+                length_is_part_of_type=False,
                 sequence_open=fixed_open(open_str=f"{_SERDE_JSON_MACRO}(["),
                 close="])",
                 supports_heterogeneity=True,
@@ -4766,6 +4785,11 @@ class Rust(metaclass=LanguageCls):
             )
         config = self.sequence_format(
             default_type=self.default_sequence_element_type,
+        )
+        config = dataclasses.replace(
+            config,
+            length_is_part_of_type=self.sequence_format
+            in {self.sequence_formats.ARRAY, self.sequence_formats.TUPLE},
         )
         if self.sequence_format is type(self.sequence_format).VEC:
             return dataclasses.replace(

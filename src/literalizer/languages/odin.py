@@ -111,6 +111,7 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_wrap_calls_with_declarations,
+    default_wrap_combined_in_file,
     identity_call_arg,
     identity_constructor_target,
     no_call_binding_body_preamble,
@@ -122,7 +123,6 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
     requires_declared_binding,
-    unsupported_wrap_combined_in_file_static,
 )
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
@@ -433,6 +433,7 @@ _JSON_VALUE_STATIC_PREAMBLE: tuple[str, ...] = (
 # the formatting pass does not error on heterogeneous data or nulls
 # inside containers.
 _JSON_VALUE_SEQUENCE_CONFIG = SequenceFormatConfig(
+    length_is_part_of_type=False,
     sequence_open=fixed_open(open_str="["),
     close="]",
     supports_heterogeneity=True,
@@ -727,6 +728,7 @@ class Odin(metaclass=LanguageCls):
         """Sequence type options for Odin."""
 
         DYNAMIC_ARRAY = SequenceFormatConfig(
+            length_is_part_of_type=False,
             sequence_open=fixed_open(open_str="[dynamic]any{"),
             close="}",
             supports_heterogeneity=True,
@@ -783,7 +785,7 @@ class Odin(metaclass=LanguageCls):
             formatter=variable_declaration_formatter(
                 template="{name} := {value}"
             ),
-            supports_redefinition=False,
+            supports_redefinition=True,
         )
 
     class DictEntryStyles(enum.Enum):
@@ -1153,9 +1155,7 @@ class Odin(metaclass=LanguageCls):
             use_line = f"\n_ = {variable_name}"
         return f"\nmain :: proc() {{\n{content}{use_line}\n}}"
 
-    wrap_combined_in_file: ClassVar[
-        "staticmethod[[str, str, FileWrapperContext], str]"
-    ] = unsupported_wrap_combined_in_file_static
+    wrap_combined_in_file = default_wrap_combined_in_file
 
     date_format: DateFormats = DateFormats.ISO
     datetime_format: DatetimeFormats = DatetimeFormats.ISO

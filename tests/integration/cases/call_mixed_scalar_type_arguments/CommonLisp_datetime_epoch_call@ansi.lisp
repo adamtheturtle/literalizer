@@ -1,0 +1,2 @@
+(defun capture (&rest args) (declare (ignore args)) nil)
+(capture :nan_value #.(sb-int:with-float-traps-masked (:invalid) (- sb-ext:double-float-positive-infinity sb-ext:double-float-positive-infinity)) :positive_infinity sb-ext:double-float-positive-infinity :negative_infinity sb-ext:double-float-negative-infinity :finite_value 1.25d0 :date_value "2024-01-15" :datetime_value 1705322096 :text_value "[ordinary text]")

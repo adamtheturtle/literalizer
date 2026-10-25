@@ -139,3 +139,23 @@ def make_spec(
         lang_cls=lang_cls,
         kwargs_items=frozenset(kwargs.items()),
     )
+
+
+@beartype
+def reference_case_for_declaration_style(
+    *, lang_cls: literalizer.LanguageCls, spec: literalizer.Language
+) -> literalizer.IdentifierCase:
+    """Follow the native naming convention of a generated declaration."""
+    names = language_metadata(
+        language_id=lang_cls.language_id
+    ).variants.declaration_style_variable_names
+    name = names.get(spec.declaration_style.name)
+    if name is None:
+        return spec.identifier_cases[0]
+    return next(
+        case
+        for case in sorted(
+            lang_cls.supported_ref_cases, key=lambda case: case.value
+        )
+        if case.convert(name="my_data") == name
+    )
