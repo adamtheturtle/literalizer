@@ -15,5 +15,5 @@ fn main() {
         1,
         2,
     ];
-    assert_equal(my_data, expected_data);
+    assert_equal(my_data.clone(), expected_data.clone());
 }

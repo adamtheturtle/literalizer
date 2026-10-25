@@ -8,7 +8,7 @@ fn main() {
         1,
         2,
     ];
-    consume_widget(my_data);
+    consume_widget(my_data.clone());
     my_data = item;
-    consume_widget(my_data);
+    consume_widget(my_data.clone());
 }
