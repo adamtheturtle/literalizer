@@ -53,7 +53,7 @@ _CASES = TypeAdapter(type=_WrapperCases).validate_python(
 
 
 def _config() -> CallCaseSpec:
-    """Use the same validated wrapper recipe as its native goldens."""
+    """Use the validated wrapper recipe from its golden fixtures."""
     return next(
         config
         for config in default_call_case_specs()
