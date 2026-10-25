@@ -2014,6 +2014,12 @@ class Python(metaclass=LanguageCls):
 
     scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
 
+    @staticmethod
+    @beartype
+    def format_sequence_expression(expressions: Sequence[str], /) -> str:
+        """Construct a native list from arbitrary result expressions."""
+        return "[" + ", ".join(expressions) + "]"
+
     @cached_property
     @beartype
     def sequence_format_config(self) -> SequenceFormatConfig:
