@@ -1,0 +1,20 @@
+# Regression provenance: Zig existing bindings with declaration-style variants.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "enum_member_present", option = "comment_format", member = "DOUBLE_SLASH"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+variant_only = true
+call_transform = "{call} // note"
+
+[call.ref_declarations]
+my_data = "42"
+
+[[call.variants]]
+axis = "declaration_style"

@@ -1,0 +1,12 @@
+# Regression provenance: C, Cpp, CSharp, D, Dart, Haxe, Java, SystemVerilog, Zig.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "enum_member_present", option = "comment_format", member = "DOUBLE_SLASH"}, {kind = "enum_member_present", option = "statement_terminator_style", member = "SEMICOLON"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform_group = {body = "\n{call} // inner\n", suffix = " // trailing"}
+wrap_in_file = true
+variable_form = "new"

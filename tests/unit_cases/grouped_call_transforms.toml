@@ -1,0 +1,23 @@
+[[cases]]
+name = "outer_zip"
+body = "{call}"
+outer = "{call} then {zipped}"
+suffix = " suffix"
+uses_zipped = true
+expected = "<group>call-value</group> suffix then zip-value"
+
+[[cases]]
+name = "body_zip"
+body = "{call} with {zipped}"
+outer = "outer {call}"
+suffix = " suffix"
+uses_zipped = true
+expected = "outer <group>call-value with zip-value</group> suffix"
+
+[[cases]]
+name = "no_zip"
+body = "{call}"
+outer = "outer {call}"
+suffix = " suffix"
+uses_zipped = false
+expected = "outer <group>call-value</group> suffix"

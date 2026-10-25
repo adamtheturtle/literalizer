@@ -1,0 +1,7 @@
+fun make_widget(count: Any? = null): Any? = listOf<Any?>(count)
+fun consume(count: Any? = null): Any? = listOf<Any?>(count)
+var my_data = make_widget(count = null)
+consume(count = my_data)
+my_data = make_widget(count = 42)
+// note
+consume(count = my_data)

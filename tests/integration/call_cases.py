@@ -47,7 +47,12 @@ from literalizer.exceptions import (
 from tests.enum_members import enum_member_by_name
 
 from .case_inputs import CaseInput
-from .case_manifests import CallCaseSpec, call_case_specs, case_input
+from .case_manifests import (
+    CallCaseSpec,
+    CallTransform,
+    call_case_specs,
+    case_input,
+)
 from .golden_checks import (
     GoldenSkips,
     SkipPolicy,
@@ -214,7 +219,7 @@ def _call_transform_style_unsupported(
     the test pins that style; otherwise the language's default
     (first-listed) style applies.
     """
-    if config.call_transform is None:
+    if not config.has_call_transform:
         return False
     if config.call_style_type is not None:
         return not issubclass(
@@ -432,7 +437,7 @@ def _uses_bound_ref_wrapper(*, config: CallCaseSpec) -> bool:
         len(config.ref_declarations) > 0
         and len(config.unknown_ref_names) == 0
         and config.explicit_ref_value_sources is None
-        and (config.call_transform is None)
+        and not config.has_call_transform
         and (len(config.transform_stub_names) == 0)
         and (config.variable_form is None)
     )
@@ -642,6 +647,46 @@ def discover_call_cases() -> list[CallCase]:
     return cases
 
 
+@runtime_checkable
+class _CallExpressionGroupLanguage(Protocol):
+    """A producer whose value grouping differs from parentheses."""
+
+    def group_call_expression(self, expression: str, /) -> str:
+        """Retain an expression's comments inside a native value group."""
+        ...
+
+
+@beartype
+def _parenthesized_call_group(expression: str, /) -> str:
+    """Group an expression in the ordinary parenthesized form."""
+    return f"({expression})"
+
+
+@dataclasses.dataclass(frozen=True)
+class GroupedCallTransform:
+    """Retain operand metadata while grouping a generated expression."""
+
+    body: CallTransform
+    suffix: str
+    outer: CallTransform | None
+    group: Callable[[str], str]
+
+    @property
+    def uses_zipped(self) -> bool:
+        """Report zip usage from both the body and its outer transform."""
+        transforms = (
+            (self.body,) if self.outer is None else (self.body, self.outer)
+        )
+        return any(transform.uses_zipped for transform in transforms)
+
+    def __call__(self, context: literalizer.CallContext, /) -> str:
+        """Apply native grouping before the optional outer transform."""
+        expression = self.group(self.body(context)) + self.suffix
+        if self.outer is None:
+            return expression
+        return self.outer(dataclasses.replace(context, call=expression))
+
+
 @beartype
 def _literalize_call_case(
     *,
@@ -669,6 +714,18 @@ def _literalize_call_case(
     call_transform: Callable[[literalizer.CallContext], str] | None = (
         config.call_transform
     )
+    if config.call_transform_group is not None:
+        group = (
+            spec.group_call_expression
+            if isinstance(spec, _CallExpressionGroupLanguage)
+            else _parenthesized_call_group
+        )
+        call_transform = GroupedCallTransform(
+            body=config.call_transform_group.body,
+            suffix=config.call_transform_group.suffix,
+            outer=config.call_transform,
+            group=group,
+        )
     if (
         call_transform is not None
         and not config.call_transform_reports_zip_usage
@@ -786,6 +843,15 @@ class _CallWithDeclarations:
     decl_results: list[literalizer.LiteralizeResult]
     result: literalizer.LiteralizeResult
     seeded_feedback: bool
+    stub_argument_values: Sequence[ParsedValue]
+
+
+@dataclasses.dataclass(frozen=True)
+class _RefDeclaration:
+    """A caller declaration and the actual calls used to seed it."""
+
+    result: literalizer.LiteralizeResult
+    seed_argument_values: Sequence[ParsedValue]
 
 
 @beartype
@@ -795,7 +861,7 @@ def _render_ref_declaration(
     spec: literalizer.Language,
     declaration_name: str,
     ref_source: str,
-) -> literalizer.LiteralizeResult:
+) -> _RefDeclaration:
     """Seed an existing binding using the synthetic function return
     carrier.
     """
@@ -821,7 +887,7 @@ def _render_ref_declaration(
             )
         elif len(styles) > 0:
             seed_spec = dataclasses.replace(spec, declaration_style=styles[0])
-        return literalizer.literalize_call(
+        result = literalizer.literalize_call(
             source=ref_source,
             input_format=literalizer.InputFormat.JSON,
             language=seed_spec,
@@ -830,7 +896,11 @@ def _render_ref_declaration(
             per_element=False,
             variable_form=variable_form,
         )
-    return literalizer.literalize(
+        return _RefDeclaration(
+            result=result,
+            seed_argument_values=([result.source_data],),
+        )
+    result = literalizer.literalize(
         source=ref_source,
         input_format=literalizer.InputFormat.JSON,
         language=spec,
@@ -839,6 +909,7 @@ def _render_ref_declaration(
             value=config.collection_layout
         ),
     )
+    return _RefDeclaration(result=result, seed_argument_values=())
 
 
 @beartype
@@ -863,7 +934,7 @@ def _run_call_with_declarations(
         prefix=lang_name,
         config=file_regression.request.config,
     ):
-        decl_results_by_ref_name: dict[str, literalizer.LiteralizeResult] = {
+        rendered_by_ref_name: dict[str, _RefDeclaration] = {
             ref_name: _render_ref_declaration(
                 config=config,
                 spec=spec,
@@ -871,6 +942,10 @@ def _run_call_with_declarations(
                 ref_source=ref_source,
             )
             for ref_name, ref_source in config.ref_declarations.items()
+        }
+        decl_results_by_ref_name = {
+            name: declaration.result
+            for name, declaration in rendered_by_ref_name.items()
         }
         decl_results = list(decl_results_by_ref_name.values())
         ref_values = {
@@ -897,16 +972,17 @@ def _run_call_with_declarations(
                 )
             }
         followup_result = None
+        followup_target = (
+            config.target_function
+            if config.followup_target_function is None
+            else config.followup_target_function
+        )
         if config.followup_source is not None:
             followup_result = literalizer.literalize_call(
                 source=config.followup_source,
                 input_format=input_info.input_format,
                 language=spec,
-                target_function=(
-                    config.target_function
-                    if config.followup_target_function is None
-                    else config.followup_target_function
-                ),
+                target_function=followup_target,
                 parameter_names=config.parameter_names,
                 per_element=config.per_element,
                 ref_case=effective_ref_case,
@@ -938,16 +1014,29 @@ def _run_call_with_declarations(
                 ),
                 pre_declaration_comments=(),
             )
+        seeded_feedback = (
+            isinstance(config.variable_form, literalizer.ExistingVariable)
+            and followup_result is not None
+            and followup_target == config.target_function
+        )
+        stub_argument_values = _arg_values_for_stub(
+            source_data=result.source_data,
+            per_element=config.per_element,
+            seeded_feedback=seeded_feedback,
+            seed_argument_values=tuple(
+                value
+                for declaration in rendered_by_ref_name.values()
+                for value in declaration.seed_argument_values
+            ),
+        )
         if followup_result is not None:
             decl_results.append(result)
             result = followup_result
     return _CallWithDeclarations(
         decl_results=decl_results,
         result=result,
-        seeded_feedback=isinstance(
-            config.variable_form, literalizer.ExistingVariable
-        )
-        and config.followup_source is not None,
+        seeded_feedback=seeded_feedback,
+        stub_argument_values=stub_argument_values,
     )
 
 
@@ -957,6 +1046,7 @@ def _arg_values_for_stub(
     source_data: ParsedValue,
     per_element: bool,
     seeded_feedback: bool,
+    seed_argument_values: Sequence[ParsedValue],
 ) -> Sequence[ParsedValue]:
     """Return argument rows for stubs, preserving a whole list as
     one argument.
@@ -969,8 +1059,8 @@ def _arg_values_for_stub(
         # Original argument metadata cannot type every use of the callee.
         return ()
     if per_element and isinstance(source_data, list):
-        return source_data
-    return [[source_data]]
+        return (*seed_argument_values, *source_data)
+    return (*seed_argument_values, [source_data])
 
 
 @beartype
@@ -1130,18 +1220,14 @@ def run_call_golden_case(
     body_stubs: list[str | RenderedCallStub] = []
     class_stubs: list[str] = []
     preamble_stubs: list[str] = []
-    if config.call_transform is not None or isinstance(
+    if config.has_call_transform or isinstance(
         config.variable_form, literalizer.ExistingVariable
     ):
         stub_return = literalizer.StubReturn.VALUE
     else:
         stub_return = literalizer.StubReturn.VOID
     target_function_parts = tuple(config.target_function.split(sep="."))
-    call_arg_values = _arg_values_for_stub(
-        source_data=result.source_data,
-        per_element=config.per_element,
-        seeded_feedback=call_outcome.seeded_feedback,
-    )
+    call_arg_values = call_outcome.stub_argument_values
     body_stubs.extend(
         spec.format_call_stub(
             target_function_parts,

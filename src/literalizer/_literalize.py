@@ -4614,6 +4614,31 @@ def _literalize(
 
 
 @runtime_checkable
+class _CallStaticPreambleLanguage(Protocol):
+    """A producer whose static imports depend on the call binding role."""
+
+    def call_static_preamble(
+        self, *, binds_new_variable: bool
+    ) -> Sequence[str]:
+        """Retain helpers used by a call's actual declaration syntax."""
+        ...
+
+
+@beartype
+def _static_call_preamble(
+    *, language: Language, variable_form: VariableForm | None
+) -> tuple[str, ...]:
+    """Keep declaration-only helpers out of ordinary call expressions."""
+    if isinstance(language, _CallStaticPreambleLanguage):
+        return tuple(
+            language.call_static_preamble(
+                binds_new_variable=isinstance(variable_form, NewVariable)
+            )
+        )
+    return tuple(language.static_preamble)
+
+
+@runtime_checkable
 class _CallPreambleRepresentationLanguage(Protocol):
     """A producer whose call preamble uses a separate representation."""
 
@@ -9181,7 +9206,9 @@ def literalize_call_parsed(
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
-            + tuple(language.static_preamble)
+            + _static_call_preamble(
+                language=language, variable_form=variable_form
+            )
             + computed.header
             + data_dependent_preamble
         )
