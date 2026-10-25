@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: object_variant_nested_tables_mixed_int_widths (Nim).
+
+[[variants]]
+axis = "object_variant_containers"

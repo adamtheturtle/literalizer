@@ -757,9 +757,55 @@ def _build_type_hint_preamble(
 
 
 @beartype
+def _contains_empty_collection(value: Value, /) -> bool:
+    """Find collection literals whose element types need context."""
+    if isinstance(value, (list, dict, set)):
+        if len(value) == 0:
+            return True
+        children = value.values() if isinstance(value, dict) else value
+        return any(_contains_empty_collection(child) for child in children)
+    return False
+
+
+@beartype
+def _python_contextual_call_parameters(
+    *,
+    params: Sequence[str],
+    args: Sequence[Value],
+    type_hint: Callable[[Value], _PythonTypeDependencies],
+) -> _PythonTypeDependencies | None:
+    """Give nested empty arguments the types of their actual call
+    slots.
+    """
+    rows = [value if isinstance(value, list) else [value] for value in args]
+    if len(rows) == 0 or any(len(row) != len(params) for row in rows):
+        return None
+    if not any(
+        _contains_empty_collection(value) for row in rows for value in row
+    ):
+        return None
+    parameters: list[str] = []
+    requires_union = False
+    for index, name in enumerate(iterable=params):
+        hints = [type_hint(row[index]) for row in rows]
+        types = list(dict.fromkeys(str(object=hint) for hint in hints))
+        hint = _element_union(types=types, join_union=_join_union_typing)
+        requires_union = (
+            requires_union
+            or len(types) > 1
+            or any(hint.requires_union for hint in hints)
+        )
+        parameters.append(f"{name}: {hint!r}")
+    return _PythonTypeDependencies(
+        ", ".join(parameters), requires_union=requires_union
+    )
+
+
+@beartype
 def _build_python_call_stub(
     *,
     indent: str,
+    type_hint: Callable[[Value], _PythonTypeDependencies],
 ) -> Callable[
     [Sequence[str], Sequence[str], StubReturn, Sequence[Value]],
     tuple[str, ...],
@@ -775,25 +821,45 @@ def _build_python_call_stub(
         /,
     ) -> tuple[str, ...]:
         """Return Python stub declarations for a call name."""
-        variadic = "*_args: object, **_kwargs: object"
+        contextual = _python_contextual_call_parameters(
+            params=_params, args=_args, type_hint=type_hint
+        )
+        arguments = (
+            "*_args: object, **_kwargs: object"
+            if contextual is None
+            else str(object=contextual)
+        )
+        imports = (
+            ("from typing import Union",)
+            if contextual is not None and contextual.requires_union
+            else ()
+        )
         if len(parts) == 1:
             if isinstance(_args, CallStubData) and parts[0] == "repr":
                 return ()
-            return (f"def {parts[0]}({variadic}) -> object: ...",)
+            return (*imports, f"def {parts[0]}({arguments}) -> object: ...")
         root = parts[0]
         method = parts[-1]
         fields = parts[1:-1]
+        receiver = "self"
+        if contextual is not None:
+            while receiver in _params:
+                receiver = f"_{receiver}"
+        method_declaration = (
+            f"{indent}def {method}({receiver}, {arguments}) -> object: ..."
+        )
         if len(fields) == 0:
             cls = f"_{IdentifierCase.PASCAL.convert(name=root)}Type"
             return (
+                *imports,
                 f"class {cls}:",
-                f"{indent}def {method}(self, {variadic}) -> object: ...",
+                method_declaration,
                 f"{root} = {cls}()",
             )
-        lines: list[str] = []
+        lines: list[str] = list(imports)
         inner_cls = f"_{IdentifierCase.PASCAL.convert(name=fields[-1])}Type"
         lines.append(f"class {inner_cls}:")
-        lines.append(f"{indent}def {method}(self, {variadic}) -> object: ...")
+        lines.append(method_declaration)
         prev_cls = inner_cls
         for i in range(len(fields) - 2, -1, -1):
             cls = f"_{IdentifierCase.PASCAL.convert(name=fields[i])}Type"
@@ -1998,7 +2064,43 @@ class Python(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return stub declarations for a call expression."""
-        return _build_python_call_stub(indent=self.indent)
+        return _build_python_call_stub(
+            indent=self.indent, type_hint=self._call_parameter_type_hint
+        )
+
+    @beartype
+    def _call_parameter_type_hint(
+        self, data: Value, /
+    ) -> _PythonTypeDependencies:
+        """Provide argument types for nested empty collection literals."""
+        requires_union = False
+
+        @beartype
+        def _join_types(types: list[str], /) -> str:
+            """Retain the import needed by a quoted parameter
+            annotation.
+            """
+            nonlocal requires_union
+            requires_union = True
+            return _join_union_typing(types=types)
+
+        code = _python_type_hint(
+            data=data,
+            bytes_hint=self.bytes_format.type_hint,
+            date_hint=self.date_format.type_hint,
+            datetime_hint=self.datetime_format.type_hint,
+            time_hint="datetime.time",
+            sequence_hint=self.sequence_format.type_hint,
+            set_hint=self.set_format.type_hint,
+            dict_hint="dict",
+            default_set_element_type="object",
+            default_sequence_element_type="object",
+            default_dict_value_type="object",
+            default_dict_key_type="object",
+            join_union=_join_types,
+            record_name_for_value=self._record_strategy.record_name_for_value,
+        )
+        return _PythonTypeDependencies(code, requires_union=requires_union)
 
     format_call_preamble_stub = default_format_call_stub
 

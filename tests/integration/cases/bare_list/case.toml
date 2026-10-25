@@ -1,3 +1,7 @@
 schema_version = 1
 owner = "variant"
 roles = ["no-variable-form-input"]
+
+# Regression provenance: Go custom typed collection callbacks.
+[[variants]]
+axis = "typed_collection_callback"

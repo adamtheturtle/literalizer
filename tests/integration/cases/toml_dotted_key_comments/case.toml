@@ -1,6 +1,7 @@
 schema_version = 1
 input = "input.toml"
-owner = "variant"
+suites = ["base"]
+# Regression provenance: toml_dotted_key_comments (Python).
 
 [[variants]]
 axis = "python_toml_dotted_key_comments"

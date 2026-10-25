@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: toml_basic_string_del (Toml).
+
+[[variants]]
+axis = "toml_basic_string"

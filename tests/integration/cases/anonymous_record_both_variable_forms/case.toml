@@ -1,6 +1,0 @@
-schema_version = 1
-owner = "variant"
-
-[[variants]]
-axis = "anonymous_record_mutable"
-context = { variable_form = "both" }

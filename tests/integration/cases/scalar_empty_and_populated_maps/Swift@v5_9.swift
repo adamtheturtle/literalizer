@@ -1,0 +1,5 @@
+let my_data: [Any] = [
+    1,
+    [String: Any](),
+    ["x": 2],
+]

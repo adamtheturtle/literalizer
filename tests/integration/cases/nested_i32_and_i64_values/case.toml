@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: object_variant_integer_widening_tiers (Nim).
+
+[[variants]]
+axis = "object_variant_containers"

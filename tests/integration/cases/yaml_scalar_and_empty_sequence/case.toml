@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: object_variant_mixed_scalar_empty_list (Nim).
+
+[[variants]]
+axis = "object_variant_containers"

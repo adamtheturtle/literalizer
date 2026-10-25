@@ -1,0 +1,7 @@
+schema_version = 1
+# Regression provenance: a custom Zig JSON policy omits null fields.
+suites = ["base"]
+# Original regression: A caller-defined Zig subclass retains its null-field policy with std.json.Value output.
+
+[[variants]]
+axis = "custom_zig_null_policy"

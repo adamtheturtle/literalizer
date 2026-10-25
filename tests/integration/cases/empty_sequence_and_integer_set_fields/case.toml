@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: python_eager_dict_value_union (Python).
+
+[[variants]]
+axis = "python_eager_dict_value_union"

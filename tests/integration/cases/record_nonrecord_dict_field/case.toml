@@ -1,5 +1,6 @@
 schema_version = 1
-owner = "variant"
+suites = ["base"]
+# Regression provenance: record_nonrecord_dict_field (CSharp).
 
 [[variants]]
 axis = "record_nonrecord_dict_field"

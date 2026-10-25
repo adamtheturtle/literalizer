@@ -1,5 +1,6 @@
 schema_version = 1
-owner = "variant"
+suites = ["base"]
+# Regression provenance: yaml_encoding_cookie_comment (Python).
 
 [[variants]]
 axis = "python_yaml_encoding_cookie_comment"

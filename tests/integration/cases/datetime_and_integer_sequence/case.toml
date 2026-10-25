@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: object_variant_native_datetime_with_iso_date (Nim).
+
+[[variants]]
+axis = "object_variant_iso_date"

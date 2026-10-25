@@ -1,0 +1,4 @@
+(defparameter *my_data* (list
+    "2000-01-01T01:02:03"
+    1
+))

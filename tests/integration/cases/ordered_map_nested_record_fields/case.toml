@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: python_record_eager_ordered_map (Python).
+# Original regression: Python eager ordered-map annotations use target-compatible collection aliases.
+
+[[variants]]
+axis = "python_record_eager_annotations"

@@ -1,0 +1,23 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.str; MOBILE []BYTE "custom base after empty collision: )\"\nvalue"),
+        MOBILE LIT(lit.str; MOBILE []BYTE "custom suffix after base collision: )\" and )x0\"\nvalue"),
+        MOBILE LIT(lit.str; MOBILE []BYTE "custom second suffix: )\" and )x0\" and )x00\"\nvalue"),
+        MOBILE LIT(lit.str; MOBILE []BYTE "long base exhaustion: )\" and )abcdefghijklmnop\"\nvalue")
+    ]):
+    SEQ
+        SKIP
+:

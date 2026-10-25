@@ -1,0 +1,8 @@
+* my_data
+@code javascript
+{
+    // first dotted key
+    // second dotted key
+    "a": {"b": 1, "c": 2}
+}
+@end

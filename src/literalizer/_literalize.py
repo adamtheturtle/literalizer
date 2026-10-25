@@ -1090,46 +1090,53 @@ def _accumulate_positional_empty_list_overrides(
 
 
 @beartype
+def _accumulate_list_group_empty_overrides(
+    *,
+    siblings: Sequence[list[Value]],
+    spec: Language,
+    out: dict[int, str | RenderedEmptySequence],
+) -> None:
+    """Type empty members from one family of corresponding lists."""
+    non_empty = [item for item in siblings if bool(item)]
+    empty = [item for item in siblings if len(item) == 0]
+    sibling_signatures = {
+        collection_signature(spec.sequence_open, item) for item in non_empty
+    }
+    widened_opener = _compute_sequence_open_override(
+        items=non_empty,
+        spec=spec,
+    )
+    sibling_opener = widened_opener
+    if len(sibling_signatures) == 1:
+        (signature,) = sibling_signatures
+        sibling_opener = (
+            None
+            if signature.arity_dependent
+            else selected_collection_open(spec.sequence_open, non_empty[0])
+        )
+    if len(empty) > 0 and sibling_opener is not None:
+        narrowed = spec.sequence_format_config.narrowed_empty_form
+        if narrowed is not None and widened_opener is None:
+            replacement = narrowed(non_empty)
+        else:
+            replacement = sibling_opener + spec.sequence_format_config.close
+        for item in empty:
+            _ = out.setdefault(id(item), replacement)
+
+
+@beartype
 def _accumulate_sibling_list_empty_overrides(
     *,
     value: Value,
     spec: Language,
     out: dict[int, str | RenderedEmptySequence],
 ) -> None:
-    """Type empty lists from homogeneous non-empty list siblings."""
+    """Type empty lists from direct siblings and matching map fields."""
     if isinstance(value, list):
-        non_empty = [
-            item for item in value if isinstance(item, list) and bool(item)
-        ]
-        empty = [
-            item for item in value if isinstance(item, list) and len(item) == 0
-        ]
-        sibling_signatures = {
-            collection_signature(spec.sequence_open, item)
-            for item in non_empty
-        }
-        widened_opener = _compute_sequence_open_override(
-            items=non_empty,
-            spec=spec,
-        )
-        sibling_opener = widened_opener
-        if len(sibling_signatures) == 1:
-            (signature,) = sibling_signatures
-            sibling_opener = (
-                None
-                if signature.arity_dependent
-                else selected_collection_open(spec.sequence_open, non_empty[0])
+        for siblings in _sibling_list_groups(data=value):
+            _accumulate_list_group_empty_overrides(
+                siblings=siblings, spec=spec, out=out
             )
-        if len(empty) > 0 and sibling_opener is not None:
-            narrowed = spec.sequence_format_config.narrowed_empty_form
-            if narrowed is not None and widened_opener is None:
-                replacement = narrowed(non_empty)
-            else:
-                replacement = (
-                    sibling_opener + spec.sequence_format_config.close
-                )
-            for item in empty:
-                _ = out.setdefault(id(item), replacement)
         for child in value:
             _accumulate_sibling_list_empty_overrides(
                 value=child, spec=spec, out=out
@@ -1706,6 +1713,9 @@ def _format_dict_entry_value(
     *int_formatter* is the map's mixed-magnitude integer widener when
     values inferred :class:`WideInt` or :class:`BeyondI64`.
     """
+    empty_override = ctx.empty_container_overrides.get(id(value))
+    if empty_override is not None:
+        return empty_container_code(empty_override)
     child_ctx = _nested_collection_context(value=value, ctx=ctx)
     if isinstance(value, list):
         if len(value) == 0 and outer_sequence_override is None:

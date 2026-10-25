@@ -5,7 +5,8 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["values", "count"]
 per_element = true
-variant_only = true
+# Original regression: Rust option-specific call rendering.
+# Also exercise this portable input with the default call configuration.
 
 [[call.variants]]
 axis = "empty_container_type_hint"

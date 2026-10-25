@@ -1,0 +1,4 @@
+let my_data = {
+  left = [1 "one"];
+  right = [2 "two"];
+}; in my_data

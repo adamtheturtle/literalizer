@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: cpp14_tuple_ordered_map_record (Cpp).
+# Original regression: C++14 tuple records and their ordered-map value type must use the same rendered record declaration.
+
+[[variants]]
+axis = "cpp14_heterogeneous_strategy_tuple"

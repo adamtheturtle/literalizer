@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: anonymous_record_both_variable_forms (FSharp).
+
+[[variants]]
+axis = "anonymous_record_mutable"
+context = { variable_form = "both" }

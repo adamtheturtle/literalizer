@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Nested empty values need argument context without changing their native types.
+[call]
+target_function = "api.worker.process"
+parameter_names = ["values", "count"]
+per_element = true

@@ -1,0 +1,21 @@
+object Fixture_reserved_map_labels_Scala {
+val my_data = Map[String, Int](
+    "if" -> 1,
+    "then" -> 2,
+    "else" -> 3,
+    "let" -> 4,
+    "in" -> 5,
+    "using" -> 6,
+    "missing" -> 7,
+    "assert" -> 8,
+    "as" -> 9,
+    "Infinity" -> 10,
+    "NaN" -> 11,
+    "merge" -> 12,
+    "Some" -> 13,
+    "toMap" -> 14,
+    "forall" -> 15,
+    "with" -> 16,
+    "ordinary" -> 17,
+)
+}
