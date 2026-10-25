@@ -88,6 +88,7 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    IntegerCallStubResult,
     JsonType,
     KeywordCallStyle,
     LanguageCls,
@@ -132,6 +133,12 @@ from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableSpecialFloatError,
+)
+
+_INTEGER_CALL_STUB = IntegerCallStubResult(
+    value="0",
+    addition_template="({left} +{comment}\n {right})",
+    comment_prefix="#",
 )
 
 # Prevent Crystal from interpreting ``#{…}`` while safely encoding a zero
@@ -454,7 +461,9 @@ def _crystal_call_stub(
 ) -> tuple[str, ...]:
     """Return Crystal stub declarations for a call name."""
     param_list = ", ".join(f"{param} = nil" for param in params)
-    method_stub = f"def {{name}}({param_list}); 0; end"
+    method_stub = (
+        f"def {{name}}({param_list}); {_INTEGER_CALL_STUB.value}; end"
+    )
     if len(parts) == 1:
         return (method_stub.format(name=parts[0]),)
     root = parts[0]
@@ -528,6 +537,9 @@ class Crystal(metaclass=LanguageCls):
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_stub_result: ClassVar[IntegerCallStubResult | None] = (
+        _INTEGER_CALL_STUB
+    )
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

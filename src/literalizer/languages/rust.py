@@ -96,6 +96,7 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     LeadingPreamble,
@@ -3313,6 +3314,7 @@ class Rust(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )

@@ -97,6 +97,7 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -139,6 +140,12 @@ from literalizer.exceptions import (
     CallArgNotSupportedError,
     IncompatibleFormatsError,
     UnrepresentableInputError,
+)
+
+_INTEGER_CALL_STUB = IntegerCallStubResult(
+    value="0",
+    addition_template="({left} +{comment}\n {right})",
+    comment_prefix="#",
 )
 
 _NIM_JSON_MACRO = "%*"
@@ -1093,7 +1100,10 @@ def _nim_call_procedure_stubs(
         params_str = "; ".join(declarations)
         signature = f"proc {method}{type_clause}({params_str})"
         if stub_return is StubReturn.VALUE:
-            lines.append(f"{signature}: int {{.discardable.}} = 0")
+            lines.append(
+                f"{signature}: int {{.discardable.}} = "
+                f"{_INTEGER_CALL_STUB.value}"
+            )
         else:
             lines.append(f"{signature} = discard")
     return tuple(lines)
@@ -1251,6 +1261,9 @@ class Nim(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_stub_result: ClassVar[IntegerCallStubResult | None] = (
+        _INTEGER_CALL_STUB
+    )
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

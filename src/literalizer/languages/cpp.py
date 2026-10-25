@@ -115,6 +115,7 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -175,6 +176,12 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableIntegerError,
     UnrepresentableSpecialFloatError,
+)
+
+_INTEGER_CALL_STUB = IntegerCallStubResult(
+    value="0",
+    addition_template="{left}{comment}\n + {right}",
+    comment_prefix="//",
 )
 
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
@@ -2768,7 +2775,7 @@ def _cpp_call_stub(
         return (
             (
                 f"{template_prefix}auto {parts[0]}({parameter_pack}) "
-                "{ return 0; }"
+                f"{{ return {_INTEGER_CALL_STUB.value}; }}"
             ),
         )
     root = parts[0]
@@ -2783,7 +2790,8 @@ def _cpp_call_stub(
         else:
             method_decl = (
                 f"{template_prefix}{nodiscard_prefix}auto {method}"
-                f"({parameter_pack}) const {{ return 0; }}"
+                f"({parameter_pack}) const "
+                f"{{ return {_INTEGER_CALL_STUB.value}; }}"
             )
         return (
             f"struct {type_name} {{ {method_decl} }};",
@@ -2796,7 +2804,7 @@ def _cpp_call_stub(
             f"struct {inner_type} {{"
             f" {template_prefix}{nodiscard_prefix}auto {method}"
             f"({parameter_pack}) const"
-            f" {{ return 0; }} }};"
+            f" {{ return {_INTEGER_CALL_STUB.value}; }} }};"
         )
     else:
         lines.append(
@@ -3139,6 +3147,9 @@ class Cpp(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_stub_result: ClassVar[IntegerCallStubResult | None] = (
+        _INTEGER_CALL_STUB
+    )
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )

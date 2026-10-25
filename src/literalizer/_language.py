@@ -70,6 +70,20 @@ class RenderedCallStub:
 
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class IntegerCallStubResult:
+    """A native integer result and the grammar for adding another value.
+
+    The stub producer emits ``value``. The expression grammar retains
+    an inner line comment when that result is used in arithmetic.
+    """
+
+    value: str
+    addition_template: str
+    comment_prefix: str
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class CallStubDeclarations:
     """Declarations supplied by a transform's native expression
     producer.
@@ -1757,6 +1771,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     module_name_must_start_uppercase: bool
     new_variable_name_syntax: NewVariableNameSyntax
     max_variable_identifier_length: int | None
+    call_stub_result: IntegerCallStubResult | None
     call_literal_syntax: CallLiteralSyntax | None
     call_target_name_syntax: NewVariableNameSyntax | None
     """The grammar each component of a ``target_function`` follows.
