@@ -28,6 +28,7 @@ from literalizer._language import (
     CallSupport,
     IntegerCallStubResult,
     KeywordCallStyle,
+    NullableObjectCallStubResult,
     PositionalCallStyle,
     RenderedCallStub,
     is_reserved_identifier,
@@ -933,6 +934,71 @@ class IntegerResultCallTransform:
         return expression
 
 
+@dataclasses.dataclass(frozen=True)
+class ConditionalCallTransform:
+    """Retain both conditional arms, comments, and outer operand use."""
+
+    template: str
+    null_value: str
+    comment_prefix: str
+    indent: str
+    outer: CallTransform | None
+
+    @property
+    def uses_zipped(self) -> bool:
+        """Preserve the outer transform's zipped-operand contract."""
+        return self.outer is not None and self.outer.uses_zipped
+
+    def __call__(self, context: literalizer.CallContext, /) -> str:
+        """Use the native conditional expression and null object value."""
+        expression = self.template.format(
+            call=context.call,
+            null=self.null_value,
+            inner_comment=" " + self.comment_prefix + " inner",
+            trailing_comment=" " + self.comment_prefix + " trailing",
+            indent=self.indent,
+        )
+        if self.outer is not None:
+            return self.outer(dataclasses.replace(context, call=expression))
+        return expression
+
+
+@beartype
+def _result_call_transform(
+    *, spec: literalizer.Language, config: CallCaseSpec
+) -> IntegerResultCallTransform | ConditionalCallTransform:
+    """Build an admitted result expression from its producer metadata."""
+    result = next(
+        cls.call_stub_result
+        for cls in sorted_languages()
+        if cls.language_id == spec.language_id
+    )
+    if config.call_transform_add_one:
+        syntax = result
+        if not isinstance(syntax, IntegerCallStubResult):
+            msg = "call_transform_add_one requires an integer-returning stub"
+            raise ValueError(msg)
+        return IntegerResultCallTransform(
+            syntax=syntax, outer=config.call_transform
+        )
+    if (
+        not isinstance(result, NullableObjectCallStubResult)
+        or result.conditional_template is None
+    ):
+        msg = (
+            "call_transform_nullable_conditional requires a nullable "
+            "object result and a native conditional expression"
+        )
+        raise ValueError(msg)
+    return ConditionalCallTransform(
+        template=result.conditional_template,
+        null_value=result.value,
+        comment_prefix=result.comment_prefix,
+        indent=spec.indent,
+        outer=config.call_transform,
+    )
+
+
 @beartype
 def call_transform_for_case(
     *, spec: literalizer.Language, config: CallCaseSpec
@@ -955,18 +1021,11 @@ def call_transform_for_case(
             wrapper=config.call_transform_wrapper,
             zip_data=zip_data,
         )
-    if config.call_transform_add_one:
-        syntax = next(
-            cls.call_stub_result
-            for cls in sorted_languages()
-            if cls.language_id == spec.language_id
-        )
-        if syntax is None:
-            msg = "call_transform_add_one requires an integer-returning stub"
-            raise ValueError(msg)
-        return IntegerResultCallTransform(
-            syntax=syntax, outer=config.call_transform
-        )
+    if (
+        config.call_transform_add_one
+        or config.call_transform_nullable_conditional
+    ):
+        return _result_call_transform(spec=spec, config=config)
     if config.call_transform_sequence:
         return SequenceCallTransform(spec=spec, outer=config.call_transform)
     style = spec.call_style_config

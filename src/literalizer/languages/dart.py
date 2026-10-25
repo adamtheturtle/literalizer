@@ -62,6 +62,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -75,12 +76,12 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     RoundTripCapability,
     SequenceFormatConfig,
@@ -120,6 +121,15 @@ from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableIntegerError,
+)
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="dynamic",
+    value="null",
+    conditional_template=(
+        "{call} != {null} ?\n{call}{inner_comment}\n: {null}{trailing_comment}"
+    ),
+    comment_prefix="//",
 )
 
 
@@ -433,6 +443,8 @@ def _dart_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Dart stub declarations for a call name."""
+    return_type = _NULL_OBJECT_STUB.type_name
+    return_value = _NULL_OBJECT_STUB.value
     # Named parameters can't start with '_' in Dart. When all names
     # start with '_' (e.g. transform stubs like ["_value"]), use required
     # positional syntax so callers can pass the value positionally.
@@ -446,20 +458,24 @@ def _dart_call_stub(
         case _:
             param_list = "{" + ", ".join(f"dynamic {p}" for p in params) + "}"
     if len(parts) == 1:
-        return (f"dynamic {parts[0]}({param_list}) => null;",)
+        return (f"{return_type} {parts[0]}({param_list}) => {return_value};",)
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     if len(fields) == 0:
         cls = f"_{root.title()}Type"
         return (
-            f"class {cls} {{ dynamic {method}({param_list}) => null; }}",
+            (
+                f"class {cls} {{ {return_type}"
+                f" {method}({param_list}) => {return_value}; }}"
+            ),
             f"final {root} = {cls}();",
         )
     lines: list[str] = []
     inner_cls = f"_{fields[-1].title()}Type"
     lines.append(
-        f"class {inner_cls} {{ dynamic {method}({param_list}) => null; }}"
+        f"class {inner_cls} {{ {return_type}"
+        f" {method}({param_list}) => {return_value}; }}"
     )
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
@@ -565,7 +581,7 @@ class Dart(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )

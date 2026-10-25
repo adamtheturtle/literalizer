@@ -80,6 +80,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -93,11 +94,11 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -142,6 +143,15 @@ from literalizer.exceptions import (
     InvalidRecordNameError,
     NullInCollectionError,
     UnrepresentableInputError,
+)
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="Object",
+    value="null",
+    conditional_template=(
+        "{call} != {null} ?\n{call}{inner_comment}\n: {null}{trailing_comment}"
+    ),
+    comment_prefix="//",
 )
 
 _JAVA_EMITTED_TYPE_NAMES: Final[frozenset[str]] = frozenset(
@@ -269,6 +279,8 @@ def _java_call_stub(
     """Return fixed-arity Java stubs preserving null and array
     arguments.
     """
+    return_type = _NULL_OBJECT_STUB.type_name
+    return_value = _NULL_OBJECT_STUB.value
     parameters = ", ".join(f"Object arg{i}" for i in range(len(params)))
     if len(parts) == 1 and parts[0].startswith("new "):
         class_name = parts[0].removeprefix("new ")
@@ -276,7 +288,12 @@ def _java_call_stub(
             f"static class {class_name} {{ {class_name}({parameters}) {{}} }}",
         )
     if len(parts) == 1:
-        return (f"static Object {parts[0]}({parameters}) {{ return null; }}",)
+        return (
+            (
+                f"static {return_type} {parts[0]}({parameters})"
+                f" {{ return {return_value}; }}"
+            ),
+        )
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -285,7 +302,8 @@ def _java_call_stub(
         return (
             (
                 f"static class {type_name} {{"
-                f" Object {method}({parameters}) {{ return null; }} }}"
+                f" {return_type} {method}({parameters})"
+                f" {{ return {return_value}; }} }}"
             ),
             f"static {type_name} {root} = new {type_name}();",
         )
@@ -293,7 +311,8 @@ def _java_call_stub(
     inner_type = f"{fields[-1].title()}Type_"
     lines.append(
         f"static class {inner_type} {{"
-        f" Object {method}({parameters}) {{ return null; }} }}"
+        f" {return_type} {method}({parameters})"
+        f" {{ return {return_value}; }} }}"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
@@ -1103,7 +1122,7 @@ class Java(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )

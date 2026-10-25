@@ -1,0 +1,29 @@
+[[cases]]
+name = "no_outer"
+outer = ""
+uses_zipped = false
+expected = "select<call-value> # inner|null-value # trailing"
+
+[[cases]]
+name = "outer_without_zip"
+outer = "outer<{call}>"
+uses_zipped = false
+expected = "outer<select<call-value> # inner|null-value # trailing>"
+
+[[cases]]
+name = "outer_zip"
+outer = "{call}|{zipped}"
+uses_zipped = true
+expected = "select<call-value> # inner|null-value # trailing|zip-value"
+
+[[errors]]
+name = "missing_result"
+language = "Python"
+
+[[errors]]
+name = "integer_result"
+language = "Cpp"
+
+[[errors]]
+name = "no_conditional_expression"
+language = "Go"

@@ -64,6 +64,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -77,7 +78,6 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     KeywordCallStyle,
     LanguageCls,
@@ -1071,7 +1071,7 @@ class Python(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = None
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

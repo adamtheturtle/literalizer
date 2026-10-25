@@ -50,6 +50,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -63,11 +64,11 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RoundTripCapability,
@@ -106,6 +107,15 @@ from literalizer._language import (
 )
 from literalizer._statements import CallLiteralSyntax
 from literalizer._types import Value
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="Dynamic",
+    value="null",
+    conditional_template=(
+        "{call} != {null} ?\n{call}{inner_comment}\n: {null}{trailing_comment}"
+    ),
+    comment_prefix="//",
+)
 
 
 @beartype
@@ -163,14 +173,21 @@ def _haxe_call_stub(
     becomes a local bound to a nested anonymous structure of closures
     (``var app = { client: { fetch: function(...) ... } };``).
     """
+    return_type = _NULL_OBJECT_STUB.type_name
+    return_value = _NULL_OBJECT_STUB.value
     if len(parts) == 1 and parts[0].startswith("new "):
         return ()
     param_list = _haxe_params(params=params)
     if len(parts) == 1:
-        return (f"function {parts[0]}({param_list}):Dynamic return null;",)
+        return (
+            (
+                f"function {parts[0]}({param_list}):{return_type}"
+                f" return {return_value};"
+            ),
+        )
     method = parts[-1]
     fields = parts[1:-1]
-    closure = f"function({param_list}):Dynamic return null"
+    closure = f"function({param_list}):{return_type} return {return_value}"
     structure = f"{{ {method}: {closure} }}"
     for field in reversed(fields):
         structure = f"{{ {field}: {structure} }}"
@@ -321,7 +338,7 @@ class Haxe(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )

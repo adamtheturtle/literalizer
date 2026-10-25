@@ -778,6 +778,7 @@ class CallCaseSpec(  # noqa: NOD001
     call_transform_wrapper: CallWrapperSpec | None = None
     call_transform_sequence: bool = False
     call_transform_add_one: bool = False
+    call_transform_nullable_conditional: bool = False
     # Ordinary callbacks omit the template producer's zip-usage metadata.
     call_transform_reports_zip_usage: bool = True
     # An additional call, emitted after the primary call so a fixture
@@ -903,6 +904,7 @@ class CallCaseSpec(  # noqa: NOD001
             or self.call_transform_wrapper is not None
             or self.call_transform_sequence
             or self.call_transform_add_one
+            or self.call_transform_nullable_conditional
         )
 
     def _validate_transform_recipe(self) -> None:
@@ -924,6 +926,10 @@ class CallCaseSpec(  # noqa: NOD001
                 ),
                 ("call_transform_sequence", self.call_transform_sequence),
                 ("call_transform_add_one", self.call_transform_add_one),
+                (
+                    "call_transform_nullable_conditional",
+                    self.call_transform_nullable_conditional,
+                ),
             )
             if present
         ]

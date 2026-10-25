@@ -57,6 +57,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -70,7 +71,6 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     KeywordCallStyle,
     LanguageCls,
@@ -286,7 +286,7 @@ class Raku(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = None
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

@@ -50,6 +50,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CommentConfig,
     DateFormatConfig,
     DateFormatEnum,
@@ -62,11 +63,11 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RoundTripCapability,
@@ -102,6 +103,15 @@ from literalizer._statements import (
     CallLiteralSyntax,
 )
 from literalizer._types import Value
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="id",
+    value="nil",
+    conditional_template=(
+        "{call} ?\n{call}{inner_comment}\n: {null}{trailing_comment}"
+    ),
+    comment_prefix="//",
+)
 
 
 @beartype
@@ -353,8 +363,8 @@ def _objc_call_stub(
     return_keyword = "void"
     return_stmt = ""
     if is_value:
-        return_keyword = "id"
-        return_stmt = " return nil;"
+        return_keyword = _NULL_OBJECT_STUB.type_name
+        return_stmt = f" return {_NULL_OBJECT_STUB.value};"
     proto = "void"
     if len(params) > 0:
         proto = ", ".join(["id"] * len(params))
@@ -654,7 +664,7 @@ class ObjectiveC(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )

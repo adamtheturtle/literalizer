@@ -74,6 +74,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -87,7 +88,6 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -873,7 +873,7 @@ class V(metaclass=LanguageCls):
     new_variable_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.LOWER_SNAKE_ASCII
     )
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = None
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.LOWER_SNAKE_OR_TYPE_ASCII

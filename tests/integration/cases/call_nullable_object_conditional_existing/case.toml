@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "nullable_object_call_stub"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform_nullable_conditional = true
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"
+
+[call.ref_declarations]
+my_data = "7"
+
+[[call.variants]]
+axis = "json_type"

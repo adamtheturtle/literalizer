@@ -65,6 +65,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommandCallStyle,
     CommentConfig,
@@ -79,7 +80,6 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -1182,7 +1182,7 @@ class PureScript(metaclass=LanguageCls):
     # A qualified target names a module, which PureScript spells
     # with an initial capital; the declaration grammar above
     # governs what a wrapped file can declare (issue #4525).
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = None
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.ASCII

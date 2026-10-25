@@ -60,6 +60,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommandCallStyle,
     CommentConfig,
@@ -74,11 +75,11 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -113,6 +114,17 @@ from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableIntegerError,
+)
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="obj",
+    value="null",
+    conditional_template=(
+        "(\n{indent}if {call} <> {null} then\n"
+        "{indent}{indent}{call}{inner_comment}\n"
+        "{indent}else {null}\n){trailing_comment}"
+    ),
+    comment_prefix="//",
 )
 
 _FSHARP_RESERVED_IDENTIFIERS = frozenset(
@@ -587,6 +599,8 @@ def _build_fsharp_call_stub_lines(
     curried: bool,
 ) -> tuple[str, ...]:
     """Return F# stub declarations for a call name."""
+    return_type = _NULL_OBJECT_STUB.type_name
+    return_value = _NULL_OBJECT_STUB.value
     if curried:
         param_list = " " + " ".join(f"(_{p}: obj)" for p in params)
     else:
@@ -596,7 +610,9 @@ def _build_fsharp_call_stub_lines(
         let_param_list = f" {param_list}"
     if len(parts) == 1:
         name = _fsharp_call_identifier(name=parts[0])
-        return (f"let {name}{let_param_list} : obj = null",)
+        return (
+            f"let {name}{let_param_list} : {return_type} = {return_value}",
+        )
     root = parts[0]
     method = _fsharp_call_identifier(name=parts[-1])
     fields = parts[1:-1]
@@ -604,13 +620,18 @@ def _build_fsharp_call_stub_lines(
         cls = f"{root.title()}Type_"
         return (
             f"type {cls}() =",
-            f"    member _.{method}{param_list} : obj = null",
+            (
+                f"    member _.{method}{param_list}"
+                f" : {return_type} = {return_value}"
+            ),
             f"let {_fsharp_call_identifier(name=root)} = {cls}()",
         )
     lines: list[str] = []
     inner_cls = f"{fields[-1].title()}Type_"
     lines.append(f"type {inner_cls}() =")
-    lines.append(f"    member _.{method}{param_list} : obj = null")
+    lines.append(
+        f"    member _.{method}{param_list} : {return_type} = {return_value}"
+    )
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
         cls = f"{fields[i].title()}Type_"
@@ -759,7 +780,7 @@ class FSharp(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

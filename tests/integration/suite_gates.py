@@ -19,6 +19,10 @@ from beartype import beartype
 from pydantic import BaseModel, Field
 
 import literalizer
+from literalizer._language import (
+    IntegerCallStubResult,
+    NullableObjectCallStubResult,
+)
 from literalizer._statements import (
     CallLiteralSyntax,
     CharacterAndHashRawLiterals,
@@ -255,6 +259,14 @@ class IntegerCallStubGate(BaseModel, extra="forbid", frozen=True, strict=True):
     kind: Literal["integer_call_stub"]
 
 
+class NullableObjectCallStubGate(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Require a typed nullable result and native conditional grammar."""
+
+    kind: Literal["nullable_object_call_stub"]
+
+
 class CallIdentifierPrefixGate(
     BaseModel, extra="forbid", frozen=True, strict=True
 ):
@@ -341,7 +353,8 @@ type SuiteGate = Annotated[
     | CallCharacterQuoteGate
     | CallHashRawPrefixGate
     | CallIdentifierPrefixGate
-    | IntegerCallStubGate,
+    | IntegerCallStubGate
+    | NullableObjectCallStubGate,
     Field(discriminator="kind"),
 ]
 
@@ -416,7 +429,15 @@ def gate_admits(
                 spec=spec,
             )
         case IntegerCallStubGate():
-            admits = lang_cls.call_stub_result is not None
+            admits = isinstance(
+                lang_cls.call_stub_result, IntegerCallStubResult
+            )
+        case NullableObjectCallStubGate():
+            result = lang_cls.call_stub_result
+            admits = (
+                isinstance(result, NullableObjectCallStubResult)
+                and result.conditional_template is not None
+            )
         case RecordVariantGate():
             admits = gate.variant in metadata.record_variants
         case NonDefaultKwargGate():

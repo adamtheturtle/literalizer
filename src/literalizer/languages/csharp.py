@@ -90,6 +90,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -103,12 +104,12 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -154,6 +155,15 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidRecordNameError,
     UnrepresentableInputError,
+)
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="object?",
+    value="null",
+    conditional_template=(
+        "{call} != {null} ?\n{call}{inner_comment}\n: {null}{trailing_comment}"
+    ),
+    comment_prefix="//",
 )
 
 _format_string_backslash_nul = make_backslash_string_formatter(
@@ -572,6 +582,8 @@ def _csharp_call_stub(
     named-argument call styles bind to real parameters instead of
     failing at runtime.
     """
+    return_type = _NULL_OBJECT_STUB.type_name
+    return_value = _NULL_OBJECT_STUB.value
     param_list = ", ".join(f"object? {p} = null" for p in params)
     if len(parts) == 1 and parts[0].startswith("new "):
         class_name = parts[0].removeprefix("new ")
@@ -579,7 +591,12 @@ def _csharp_call_stub(
             f"class {class_name} {{ public {class_name}({param_list}) {{}} }}",
         )
     if len(parts) == 1:
-        return (f"static object? {parts[0]}({param_list}) => null;",)
+        return (
+            (
+                f"static {return_type}"
+                f" {parts[0]}({param_list}) => {return_value};"
+            ),
+        )
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -588,7 +605,8 @@ def _csharp_call_stub(
         return (
             (
                 f"class {type_name} {{"
-                f" public object? {method}({param_list}) => null; }}"
+                f" public {return_type} {method}({param_list})"
+                f" => {return_value}; }}"
             ),
             f"static {type_name} {root} = new {type_name}();",
         )
@@ -596,7 +614,7 @@ def _csharp_call_stub(
     inner_type = f"{fields[-1].title()}Type_"
     lines.append(
         f"class {inner_type} {{"
-        f" public object? {method}({param_list}) => null; }}"
+        f" public {return_type} {method}({param_list}) => {return_value}; }}"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
@@ -841,7 +859,7 @@ class CSharp(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )
