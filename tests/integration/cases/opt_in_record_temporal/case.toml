@@ -3,3 +3,9 @@ owner = "variant"
 
 [[variants]]
 axis = "dict_format"
+
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"

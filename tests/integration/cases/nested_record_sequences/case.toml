@@ -9,3 +9,9 @@ axis = "nested_tuple_strategy"
 
 [[variants]]
 axis = "sequence"
+
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"
