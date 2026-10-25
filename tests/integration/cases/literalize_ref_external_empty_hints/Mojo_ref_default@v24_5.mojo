@@ -10,5 +10,5 @@ def main():
         2,
     ])
     consume_widget(my_data)
-    my_data = item^
+    my_data = item.copy()
     consume_widget(my_data)

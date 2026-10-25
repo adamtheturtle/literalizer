@@ -3,7 +3,7 @@ def consume_widget(arg_value: List[Int]):
 def main():
     var a = 0
     var my_data = List([
-        a^,
+        a.copy(),
         1,
     ])
     consume_widget(my_data)

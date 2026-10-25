@@ -5,5 +5,5 @@ def main():
         1,
         2,
     ])
-    var my_data = missing^
+    var my_data = missing.copy()
     consume_widget(my_data)
