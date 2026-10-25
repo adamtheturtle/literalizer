@@ -1181,6 +1181,7 @@ class PureScript(metaclass=LanguageCls):
     # A qualified target names a module, which PureScript spells
     # with an initial capital; the declaration grammar above
     # governs what a wrapped file can declare (issue #4525).
+    call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.ASCII
     )

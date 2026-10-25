@@ -144,7 +144,9 @@ from literalizer._language import (
     requires_declared_binding,
     wrap_in_file_noop,
 )
-from literalizer._statements import split_trailing_line_comments
+from literalizer._statements import (
+    CallLiteralSyntax,
+)
 from literalizer._types import OrderedMap, Scalar, Value, ValueInput
 from literalizer.exceptions import (
     ConflictingVariableModifiersError,
@@ -770,6 +772,18 @@ else:
     _StringEnumMember = enum.member
 
 
+_CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    prefix="//",
+    regex_literals=False,
+    raw_string_prefixes=(),
+    verbatim_strings=True,
+    interpolation_syntax=("{", '"'),
+    quotes="\"'",
+    literal_span_end=None,
+    backtick_strings=False,
+)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class CSharp(metaclass=LanguageCls):
@@ -826,6 +840,9 @@ class CSharp(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
+        _CALL_LITERAL_SYNTAX
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
@@ -844,17 +861,7 @@ class CSharp(metaclass=LanguageCls):
         if _CSharpModifiers.CONST in modifiers:
             msg = "C# 'const' cannot bind a runtime call result."
             raise IncompatibleFormatsError(msg)
-        comments = split_trailing_line_comments(
-            statement=value,
-            prefix="//",
-            regex_literals=False,
-            backtick_strings=False,
-            raw_string_prefixes=(),
-            verbatim_strings=True,
-            interpolation_syntax=("{", '"'),
-            quotes="\"'",
-            literal_span_end=None,
-        )
+        comments = _CALL_LITERAL_SYNTAX.split(value)
         prefix = _csharp_modifier_prefix(modifiers=modifiers)
         if prefix == "":
             return (
@@ -866,14 +873,7 @@ class CSharp(metaclass=LanguageCls):
         )
 
     format_call_variable_assignment: ClassVar[property] = (
-        line_comment_call_variable_assignment(
-            regex_literals=False,
-            raw_string_prefixes=(),
-            verbatim_strings=True,
-            interpolation_syntax=("{", '"'),
-            quotes="\"'",
-            literal_span_end=None,
-        )
+        line_comment_call_variable_assignment(syntax=_CALL_LITERAL_SYNTAX)
     )
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(new_constructor_target)

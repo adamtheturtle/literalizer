@@ -121,7 +121,9 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
-from literalizer._statements import split_trailing_line_comments
+from literalizer._statements import (
+    CallLiteralSyntax,
+)
 from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -514,6 +516,18 @@ def _d_narrow_reject_open(
     raise UnrepresentableInputError(_D_NARROW_UNREPRESENTABLE)
 
 
+_CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    prefix="//",
+    backtick_strings=True,
+    regex_literals=False,
+    raw_string_prefixes=(),
+    verbatim_strings=False,
+    interpolation_syntax=None,
+    quotes="\"'",
+    literal_span_end=None,
+)
+
+
 @beartype
 def _format_d_call_declaration(
     name: str,
@@ -534,17 +548,7 @@ def _format_d_call_declaration(
     return-type hint is required: the call result is bound directly with
     a plain inferred ``auto`` declaration and no value-wrapping.
     """
-    comments = split_trailing_line_comments(
-        statement=value,
-        prefix="//",
-        backtick_strings=True,
-        regex_literals=False,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=None,
-        quotes="\"'",
-        literal_span_end=None,
-    )
+    comments = _CALL_LITERAL_SYNTAX.split(value)
     return f"auto {name} = {comments.code};" + comments.trailing_comments
 
 
@@ -557,17 +561,7 @@ def _format_d_call_assignment(name: str, value: str, _data: Value) -> str:
     declared, so the call result is assigned directly with no
     ``JSONValue`` or struct-constructor wrapping.
     """
-    comments = split_trailing_line_comments(
-        statement=value,
-        prefix="//",
-        backtick_strings=True,
-        regex_literals=False,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=None,
-        quotes="\"'",
-        literal_span_end=None,
-    )
+    comments = _CALL_LITERAL_SYNTAX.split(value)
     return f"{name} = {comments.code};" + comments.trailing_comments
 
 
@@ -612,6 +606,9 @@ class D(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
+        _CALL_LITERAL_SYNTAX
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True

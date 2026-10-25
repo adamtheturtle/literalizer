@@ -19,6 +19,7 @@ from beartype import beartype
 from pydantic import BaseModel, Field
 
 import literalizer
+from literalizer._statements import CallLiteralSyntax
 from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
@@ -196,6 +197,61 @@ class BehaviorFlagGate(
     flag: Annotated[str, Field(min_length=1)]
 
 
+class CallLiteralFlagGate(BaseModel, extra="forbid", frozen=True, strict=True):
+    """Require a literal grammar handled by the actual comment scanner."""
+
+    kind: Literal["call_literal_flag"]
+    flag: Literal["regex_literals", "verbatim_strings"]
+
+
+class CallRawStringPrefixGate(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Require a raw-string prefix recognized by the call scanner."""
+
+    kind: Literal["call_raw_string_prefix"]
+    prefix: Annotated[str, Field(min_length=1)]
+
+
+class CallInterpolationGate(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Require the scanner's interpolation opener and participating quotes."""
+
+    kind: Literal["call_interpolation"]
+    opener: Annotated[str, Field(min_length=1)]
+    quotes: Annotated[str, Field(min_length=1)]
+
+
+type CallLiteralGate = (
+    CallLiteralFlagGate | CallRawStringPrefixGate | CallInterpolationGate
+)
+
+
+@beartype
+def call_literal_gate_admits(
+    *, gate: CallLiteralGate, syntax: CallLiteralSyntax | None
+) -> bool:
+    """Read scanner grammar directly without constructing a language
+    spec.
+    """
+    if syntax is None:
+        return False
+    match gate:
+        case CallLiteralFlagGate():
+            return (
+                syntax.regex_literals
+                if gate.flag == "regex_literals"
+                else syntax.verbatim_strings
+            )
+        case CallRawStringPrefixGate():
+            return gate.prefix in syntax.raw_string_prefixes
+        case CallInterpolationGate():
+            return syntax.interpolation_syntax == (gate.opener, gate.quotes)
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
 type SuiteGate = Annotated[
     CapabilityFlagGate
     | RecordVariantGate
@@ -205,7 +261,10 @@ type SuiteGate = Annotated[
     | ModifierPresentGate
     | MetadataFieldGate
     | SpecConfigFieldPresentGate
-    | BehaviorFlagGate,
+    | BehaviorFlagGate
+    | CallLiteralFlagGate
+    | CallRawStringPrefixGate
+    | CallInterpolationGate,
     Field(discriminator="kind"),
 ]
 
@@ -289,6 +348,14 @@ def gate_admits(
             admits = SPEC_CONFIG_FIELDS[gate.field](spec) is not None
         case BehaviorFlagGate():
             admits = BEHAVIOR_FLAGS[gate.flag](spec)
+        case (
+            CallLiteralFlagGate()
+            | CallRawStringPrefixGate()
+            | CallInterpolationGate()
+        ):
+            admits = call_literal_gate_admits(
+                gate=gate, syntax=lang_cls.call_literal_syntax
+            )
         case _ as unreachable:
             assert_never(unreachable)
     return admits

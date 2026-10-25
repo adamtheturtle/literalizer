@@ -43,6 +43,38 @@ class _TrailingLineComments:
 
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class CallLiteralSyntax:
+    """The literal grammar used to locate a call's trailing comments."""
+
+    prefix: str
+    quotes: str
+    regex_literals: bool
+    backtick_strings: bool
+    raw_string_prefixes: tuple[str, ...]
+    verbatim_strings: bool
+    interpolation_syntax: tuple[str, str] | None
+    literal_span_end: LiteralSpanEnd | None
+
+    @beartype
+    def split(self, statement: str, /) -> _TrailingLineComments:
+        """Separate final comments using this producer's actual
+        grammar.
+        """
+        return split_trailing_line_comments(
+            statement=statement,
+            prefix=self.prefix,
+            quotes=self.quotes,
+            regex_literals=self.regex_literals,
+            backtick_strings=self.backtick_strings,
+            raw_string_prefixes=self.raw_string_prefixes,
+            verbatim_strings=self.verbatim_strings,
+            interpolation_syntax=self.interpolation_syntax,
+            literal_span_end=self.literal_span_end,
+        )
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class _CommentScanner:
     """Locate comments outside the configured string literal syntax."""
 

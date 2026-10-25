@@ -1,0 +1,18 @@
+# Regression provenance: Haxe; The transformed call uses Haxe literal and comment syntax.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "call_literal_flag", flag = "regex_literals"}, {kind = "call_interpolation", opener = "${", quotes = "'"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+variant_only = true
+call_transform = "(~/\\//).match(\"/\") ? {call} : null // trailing"
+
+[call.ref_declarations]
+my_data = "42"
+
+[[call.variants]]
+axis = "declaration_style"

@@ -158,7 +158,9 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
-from literalizer._statements import split_trailing_line_comments
+from literalizer._statements import (
+    CallLiteralSyntax,
+)
 from literalizer._types import (
     CallPreambleData,
     OrderedMap,
@@ -3031,6 +3033,18 @@ def _cpp_discard_call_result(call: str, /) -> str:
     return f"static_cast<void>({call})"
 
 
+_CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    prefix="//",
+    regex_literals=False,
+    raw_string_prefixes=(),
+    verbatim_strings=False,
+    interpolation_syntax=None,
+    quotes="\"'",
+    literal_span_end=None,
+    backtick_strings=False,
+)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Cpp(metaclass=LanguageCls):
@@ -3125,6 +3139,9 @@ class Cpp(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
+        _CALL_LITERAL_SYNTAX
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
@@ -3135,14 +3152,7 @@ class Cpp(metaclass=LanguageCls):
         staticmethod(identity_constructor_target)
     )
     format_call_variable_assignment: ClassVar[property] = (
-        line_comment_call_variable_assignment(
-            regex_literals=False,
-            raw_string_prefixes=(),
-            verbatim_strings=False,
-            interpolation_syntax=None,
-            quotes="\"'",
-            literal_span_end=None,
-        )
+        line_comment_call_variable_assignment(syntax=_CALL_LITERAL_SYNTAX)
     )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
@@ -5153,17 +5163,7 @@ class Cpp(metaclass=LanguageCls):
         """Deduce a call's result type independently of its argument
         data.
         """
-        comments = split_trailing_line_comments(
-            statement=value,
-            prefix="//",
-            regex_literals=False,
-            backtick_strings=False,
-            raw_string_prefixes=(),
-            verbatim_strings=False,
-            interpolation_syntax=None,
-            quotes="\"'",
-            literal_span_end=None,
-        )
+        comments = _CALL_LITERAL_SYNTAX.split(value)
         prefix = _cpp_modifier_prefix(modifiers=modifiers)
         return (
             f"{prefix}auto {name} = {comments.code};"

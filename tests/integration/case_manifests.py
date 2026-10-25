@@ -30,7 +30,16 @@ from literalizer.languages import ALL_LANGUAGES
 from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
 from .language_metadata import language_metadata
 from .language_specs import make_spec
-from .suite_gates import SuiteGate, gates_admit, no_gates, validate_gate_names
+from .suite_gates import (
+    CallInterpolationGate,
+    CallLiteralFlagGate,
+    CallRawStringPrefixGate,
+    SuiteGate,
+    call_literal_gate_admits,
+    gates_admit,
+    no_gates,
+    validate_gate_names,
+)
 from .variant_axis_names import KNOWN_VARIANT_AXES
 from .variant_types import VariantExpectedError
 
@@ -423,6 +432,25 @@ class LanguageSelection(  # noqa: NOD001
         """Return whether this narrowing selects *lang_cls*."""
         if len(self.languages) > 0:
             return lang_cls in self.languages
+        literal_gates = tuple(
+            gate
+            for gate in self.gates
+            if isinstance(
+                gate,
+                (
+                    CallLiteralFlagGate,
+                    CallRawStringPrefixGate,
+                    CallInterpolationGate,
+                ),
+            )
+        )
+        if len(literal_gates) == len(self.gates):
+            return all(
+                call_literal_gate_admits(
+                    gate=gate, syntax=lang_cls.call_literal_syntax
+                )
+                for gate in literal_gates
+            )
         return gates_admit(
             gates=self.gates,
             lang_cls=lang_cls,

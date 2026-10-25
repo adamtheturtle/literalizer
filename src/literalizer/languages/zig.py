@@ -126,8 +126,8 @@ from literalizer._language import (
     requires_declared_binding,
 )
 from literalizer._statements import (
+    CallLiteralSyntax,
     split_statements,
-    split_trailing_line_comments,
 )
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
@@ -613,6 +613,18 @@ def _zig_render_record_declaration(
     return f"const {name} = struct {{ {members} }};"
 
 
+_CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    prefix="//",
+    regex_literals=False,
+    backtick_strings=False,
+    raw_string_prefixes=(),
+    verbatim_strings=False,
+    interpolation_syntax=None,
+    quotes="\"'",
+    literal_span_end=None,
+)
+
+
 @beartype
 def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
     """Format a Zig reassignment binding a call result.
@@ -623,17 +635,7 @@ def _format_zig_call_assignment(name: str, value: str, _data: Value) -> str:
     ``ZVal`` union tagging a literal-binding assignment applies (a call
     result is not a ``ZVal`` union literal).
     """
-    comments = split_trailing_line_comments(
-        statement=value,
-        prefix="//",
-        regex_literals=False,
-        backtick_strings=False,
-        raw_string_prefixes=(),
-        verbatim_strings=False,
-        interpolation_syntax=None,
-        quotes="\"'",
-        literal_span_end=None,
-    )
+    comments = _CALL_LITERAL_SYNTAX.split(value)
     return f"{name} = {comments.code};" + comments.trailing_comments
 
 
@@ -923,6 +925,9 @@ class Zig(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
+        _CALL_LITERAL_SYNTAX
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
@@ -2301,17 +2306,7 @@ class Zig(metaclass=LanguageCls):
             _modifiers: frozenset[enum.Enum],
         ) -> str:
             """Format an inferred Zig declaration binding a call."""
-            comments = split_trailing_line_comments(
-                statement=value,
-                prefix="//",
-                regex_literals=False,
-                backtick_strings=False,
-                raw_string_prefixes=(),
-                verbatim_strings=False,
-                interpolation_syntax=None,
-                quotes="\"'",
-                literal_span_end=None,
-            )
+            comments = _CALL_LITERAL_SYNTAX.split(value)
             return (
                 f"{keyword} {name} = {comments.code};"
                 + comments.trailing_comments

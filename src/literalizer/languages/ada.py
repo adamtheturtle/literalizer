@@ -381,6 +381,7 @@ class Ada(metaclass=LanguageCls):
         NewVariableNameSyntax.ASCII_SEPARATING_UNDERSCORE
     )
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True

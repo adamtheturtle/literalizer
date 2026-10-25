@@ -103,6 +103,7 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._statements import CallLiteralSyntax
 from literalizer._types import Value
 
 
@@ -263,6 +264,18 @@ else:
     _IntegerEnumMember = enum.member
 
 
+_CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    prefix="//",
+    regex_literals=True,
+    raw_string_prefixes=(),
+    verbatim_strings=False,
+    interpolation_syntax=("${", "'"),
+    quotes="\"'",
+    literal_span_end=None,
+    backtick_strings=False,
+)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Haxe(metaclass=LanguageCls):
@@ -307,6 +320,9 @@ class Haxe(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
+        _CALL_LITERAL_SYNTAX
+    )
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
@@ -317,24 +333,10 @@ class Haxe(metaclass=LanguageCls):
         staticmethod(new_constructor_target)
     )
     format_call_variable_declaration: ClassVar[property] = (
-        line_comment_call_variable_declaration(
-            regex_literals=True,
-            raw_string_prefixes=(),
-            verbatim_strings=False,
-            interpolation_syntax=("${", "'"),
-            quotes="\"'",
-            literal_span_end=None,
-        )
+        line_comment_call_variable_declaration(syntax=_CALL_LITERAL_SYNTAX)
     )
     format_call_variable_assignment: ClassVar[property] = (
-        line_comment_call_variable_assignment(
-            regex_literals=True,
-            raw_string_prefixes=(),
-            verbatim_strings=False,
-            interpolation_syntax=("${", "'"),
-            quotes="\"'",
-            literal_span_end=None,
-        )
+        line_comment_call_variable_assignment(syntax=_CALL_LITERAL_SYNTAX)
     )
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
