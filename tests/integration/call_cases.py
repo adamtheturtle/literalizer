@@ -464,11 +464,11 @@ def expected_call_shape_exception(
     """
     parameter_count = len(config.parameter_names)
     max_params = lang_cls.max_call_parameters
-    prerequisite_error = _call_support_exception(
-        spec=spec
-    ) or _variable_form_expected_exception(
-        lang_cls=lang_cls, variable_form=config.variable_form
-    )
+    prerequisite_error = _call_support_exception(spec=spec)
+    if prerequisite_error is None:
+        prerequisite_error = _variable_form_expected_exception(
+            lang_cls=lang_cls, variable_form=config.variable_form
+        )
     if prerequisite_error is not None:
         return prerequisite_error
     if config.call_style_type is not None:
