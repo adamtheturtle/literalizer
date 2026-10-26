@@ -30,6 +30,7 @@ from literalizer._language import (
 )
 from literalizer._literalize import (
     assemble_call_expression,
+    call_result_discard_formatter,
     format_rendered_call_arguments,
 )
 from literalizer.exceptions import (
@@ -180,17 +181,6 @@ _PREAMBLE_STUB_SKIPS: SkipPolicy = SkipPolicy(
     ),
     suffix="",
 )
-
-
-@runtime_checkable
-class _FeedbackStatementStubLanguage(Protocol):
-    """A producer needing a separate statement overload for feedback."""
-
-    def format_feedback_call_statement_stub(
-        self, parts: Sequence[str], params: Sequence[str], /
-    ) -> tuple[str, ...]:
-        """Declare the statement use of a value-returning synthetic callee."""
-        ...
 
 
 @dataclasses.dataclass(frozen=True)
@@ -712,6 +702,49 @@ class LiteralArgumentsTransform:
         return self.outer(dataclasses.replace(context, call=expression))
 
 
+@runtime_checkable
+class _NativeSequenceExpressionLanguage(Protocol):
+    """A producer of native lists independent of literal value
+    carriers.
+    """
+
+    def format_sequence_expression(self, expressions: Sequence[str], /) -> str:
+        """Build a sequence from arbitrary native expressions."""
+        ...
+
+
+@dataclasses.dataclass(frozen=True)
+class SequenceCallTransform:
+    """A one-element native sequence containing the call's actual
+    result.
+    """
+
+    spec: literalizer.Language
+    outer: CallTransform | None
+
+    @property
+    def uses_zipped(self) -> bool:
+        """Preserve any operand use declared by an outer transform."""
+        return self.outer is not None and self.outer.uses_zipped
+
+    def __call__(self, context: literalizer.CallContext, /) -> str:
+        """Let the literal producer choose its real sequence
+        construction.
+        """
+        if isinstance(self.spec, _NativeSequenceExpressionLanguage):
+            expression = self.spec.format_sequence_expression((context.call,))
+        else:
+            expression = self._literal_sequence(context.call)
+        if self.outer is not None:
+            return self.outer(dataclasses.replace(context, call=expression))
+        return expression
+
+    def _literal_sequence(self, call: str, /) -> str:
+        """Use the native sequence delimiters for a result expression."""
+        config = self.spec.sequence_format_config
+        return self.spec.sequence_open([]) + call + config.close
+
+
 @beartype
 def call_transform_for_case(
     *, spec: literalizer.Language, config: CallCaseSpec
@@ -719,6 +752,8 @@ def call_transform_for_case(
     """Compose the declared expression recipe with the actual call
     syntax.
     """
+    if config.call_transform_sequence:
+        return SequenceCallTransform(spec=spec, outer=config.call_transform)
     style = spec.call_style_config
     if config.call_transform_arguments is not None and not isinstance(
         style, CallSupport
@@ -1044,6 +1079,16 @@ def _run_call_with_declarations(
                 ref_case=effective_ref_case,
                 ref_key=config.ref_key,
                 ref_values=effective_ref_values,
+                call_transform=(
+                    CallTransform(template="{call}")
+                    if followup_target == config.target_function
+                    and isinstance(
+                        config.variable_form, literalizer.ExistingVariable
+                    )
+                    and call_result_discard_formatter(language=spec)
+                    is not None
+                    else None
+                ),
             )
         result = _literalize_call_case(
             config=config,
@@ -1292,16 +1337,6 @@ def run_call_golden_case(
             call_arg_values,
         ),
     )
-    if (
-        call_outcome.seeded_feedback
-        and config.followup_target_function is None
-        and isinstance(spec, _FeedbackStatementStubLanguage)
-    ):
-        body_stubs.extend(
-            spec.format_feedback_call_statement_stub(
-                target_function_parts, config.parameter_names
-            )
-        )
     class_stubs.extend(
         spec.format_call_class_scope_stub(
             target_function_parts,

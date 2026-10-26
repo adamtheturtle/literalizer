@@ -1,12 +1,11 @@
+# Regression provenance: Python. Python supports binding an array-transformed call to an existing variable in a complete file.
 schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Python"]
-languages_reason = "Python supports binding an array-transformed call to an existing variable in a complete file."
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "existing"
 wrap_in_file = true
-call_transform = "[{call}]"
+call_transform_sequence = true

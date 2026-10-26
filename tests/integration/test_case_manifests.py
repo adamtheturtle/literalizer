@@ -47,6 +47,19 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 'target_function = "target"\nparameter_names = ["value"]\n'
                 "per_element = false\n"
                 'call_transform_group = {body = "{call}", suffix = ""}\n'
+                "call_transform_sequence = true\n"
+            ),
+            (
+                "call_transform_group and call_transform_sequence "
+                "are mutually exclusive"
+            ),
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n[call]\n'
+                'target_function = "target"\nparameter_names = ["value"]\n'
+                "per_element = false\n"
+                'call_transform_group = {body = "{call}", suffix = ""}\n'
                 "call_transform_arguments = "
                 '{arguments = ["token"], suffix = ""}\n'
             ),

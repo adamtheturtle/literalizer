@@ -1049,18 +1049,6 @@ class Ada(metaclass=LanguageCls):
         """Return stub declarations for a call expression."""
         return _ada_call_stub
 
-    @staticmethod
-    def format_feedback_call_statement_stub(
-        parts: Sequence[str], params: Sequence[str], /
-    ) -> tuple[str, ...]:
-        """Overload a synthetic function for its discarded feedback use.
-
-        Ada cannot discard a function result in a call statement. A
-        procedure overload lets a scaffold use the same target both to
-        produce the seed and to consume its final value.
-        """
-        return _ada_call_stub(parts, params, StubReturn.VOID, ())
-
     format_call_class_scope_stub = default_format_call_stub
 
     format_call_preamble_stub = default_format_call_stub

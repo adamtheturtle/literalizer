@@ -768,6 +768,7 @@ class CallCaseSpec(  # noqa: NOD001
     call_transform: CallTransformTemplate | None = None
     call_transform_group: CallGroupSpec | None = None
     call_transform_arguments: CallArgumentsSpec | None = None
+    call_transform_sequence: bool = False
     # Ordinary callbacks omit the template producer's zip-usage metadata.
     call_transform_reports_zip_usage: bool = True
     # An additional call, emitted after the primary call so a fixture
@@ -890,18 +891,28 @@ class CallCaseSpec(  # noqa: NOD001
             self.call_transform is not None
             or self.call_transform_group is not None
             or self.call_transform_arguments is not None
+            or self.call_transform_sequence
         )
 
     def _validate_transform_recipe(self) -> None:
         """Require a single recipe for the primary call expression."""
-        if (
-            self.call_transform_group is not None
-            and self.call_transform_arguments is not None
-        ):
-            msg = (
-                "call_transform_group and call_transform_arguments "
-                "are mutually exclusive"
+        recipes = [
+            name
+            for name, present in (
+                (
+                    "call_transform_group",
+                    self.call_transform_group is not None,
+                ),
+                (
+                    "call_transform_arguments",
+                    self.call_transform_arguments is not None,
+                ),
+                ("call_transform_sequence", self.call_transform_sequence),
             )
+            if present
+        ]
+        if len(recipes) > 1:
+            msg = " and ".join(recipes) + " are mutually exclusive"
             raise ValueError(msg)
 
     def _validate_followup_target(self) -> None:
