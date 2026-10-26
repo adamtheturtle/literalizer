@@ -5,7 +5,7 @@ Clang 23.1.4 spends the fixture's entire time budget expanding unused SFINAE dia
 The WebKit virtual-destructor checker also expands unrelated standard-library types before checking whether their namespace can match its exemption.
 
 `scripts/build_cpp_toolchain.py` builds `performance.patch` without changing overload viability, associated namespaces, native container types, or enabled clang-tidy checks.
-The SFINAE diagnostic problem is tracked in [LLVM issue 38701](https://github.com/llvm/llvm-project/issues/38701).
+[LLVM issue 38701](https://github.com/llvm/llvm-project/issues/38701) provides related compile-time-performance context; it is not established as the same root cause as the reduced discarded-diagnostic case.
 
 Clang-tidy's exception analyzer also repeatedly follows the same constructor calls in C++20, as reported in [LLVM issue 224308](https://github.com/llvm/llvm-project/issues/224308).
 Cache complete function analyses within one traversal, preserving exception types and rebasing diagnostic call stacks at each use.
@@ -31,6 +31,9 @@ The compiler's original formatter for a failing condition remains available when
 Compile fixtures without a precompiled standard-library header.
 Loading that header makes Clang's `TemplateArgumentHasher` recursively expand the same nested types while looking up specializations in the serialized AST.
 Direct header parsing avoids this separate exponential path and retains the existing fixture deadlines.
+
+Reduced reports, five independently applicable patches, regression tests and measured commands are in the [upstream review bundle](../llvm-upstream/README.md).
+These await the human review required by LLVM before submission.
 
 Remove a patch after an upstream release contains its fix and the complete compiler-backed C and C++ corpora passes within the existing fixture budgets.
 
