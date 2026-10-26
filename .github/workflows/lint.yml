@@ -1,15 +1,11 @@
 ---
 name: Mojo thread budget measurements
-
-on:
-  workflow_dispatch: {}
-
 permissions: {}
 
 jobs:
   measure-mojo:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
         with:
@@ -24,7 +20,7 @@ jobs:
       - name: Record runner resources
         run: "nproc\nlscpu\nfree -m"
       - name: Compare compiler thread budgets
-        timeout-minutes: 30
+        timeout-minutes: 35
         run: |
           python3 - <<'PY'
           import hashlib
@@ -72,11 +68,17 @@ jobs:
           try:
               for index, mode in enumerate(order):
                   workers, threads = settings[mode]
+                  compiler_cache = Path(os.environ["RUNNER_TEMP"]) / "mojo-thread-caches" / f"{index + 1}-{mode}"
+                  compiler_cache.mkdir(parents=True)
+                  shim_prefix = (
+                      '#!/usr/bin/env bash\nset -euo pipefail\n'
+                      f'export MODULAR_CACHE_DIR={shlex.quote(str(compiler_cache))}\n'
+                  )
                   if threads is None:
-                      shim_text = f'#!/usr/bin/env bash\nset -euo pipefail\nexec {shlex.quote(real_mojo)} "$@"\n'
+                      shim_text = shim_prefix + f'exec {shlex.quote(real_mojo)} "$@"\n'
                   else:
                       shim_text = (
-                          '#!/usr/bin/env bash\nset -euo pipefail\n'
+                          shim_prefix +
                           'if [[ "$1" == run ]]; then\n  shift\n'
                           f'  exec {shlex.quote(real_mojo)} run --num-threads {threads} "$@"\n'
                           'fi\n'
@@ -107,11 +109,13 @@ jobs:
                       "exit_code": completed.returncode, "completed_fixtures": len(ends),
                       "failed_fixtures": sum(code != "0" for code in ends),
                       "pool_peak_bytes": int(peak.group(1)) if peak else None,
+                      "compiler_cache_started_empty": True,
                       "resources": json.loads(resource_path.read_text()),
                   }
                   results.append(result)
                   (results_dir / "results.json").write_text(json.dumps(results, indent=2))
                   print(json.dumps(result), flush=True)
+                  shutil.rmtree(compiler_cache)
                   if completed.returncode != 0 or len(ends) != len(sample) or any(code != "0" for code in ends):
                       print(log_text[-12000:], flush=True)
                       raise SystemExit(1)
@@ -126,3 +130,6 @@ jobs:
           name: mojo-thread-results
           path: ${{ runner.temp }}/mojo-thread-results
           retention-days: 7
+
+on:
+  workflow_dispatch: {}
