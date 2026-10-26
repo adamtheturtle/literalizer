@@ -18,6 +18,7 @@ from typing import Protocol, runtime_checkable
 
 import pytest
 from beartype import beartype
+from pydantic import TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
@@ -29,6 +30,7 @@ from literalizer._language import (
     IntegerCallStubResult,
     KeywordCallStyle,
     NullableObjectCallStubResult,
+    ObjectCallStyle,
     PositionalCallStyle,
     RenderedCallStub,
     is_reserved_identifier,
@@ -825,25 +827,22 @@ class WrapperCallTransform:
         """
         wrapper = self.wrapper
         spec = _wrapper_call_spec(spec=self.spec)
-        style = spec.call_style_config
-        if isinstance(style, CallSupport):
-            msg = "Native call wrapper requires a supported call convention"
-            raise TypeError(msg)
+        # Discovery admits only expression calls. Validate that boundary
+        # once here instead of supporting malformed internal invocations.
+        style = TypeAdapter(
+            type=PositionalCallStyle | KeywordCallStyle | ObjectCallStyle
+        ).validate_python(spec.call_style_config)
         operands: list[str] = []
         for role in wrapper.arguments:
             if role == "call":
                 operands.append(context.call)
                 continue
-            operand = context.zipped
-            if operand is None:
-                msg = "Native call wrapper requires a zipped operand"
-                raise ValueError(msg)
+            operand = TypeAdapter(type=str).validate_python(context.zipped)
             value = self.zip_data
             if self.config.per_element:
-                if not isinstance(value, list):
-                    msg = "Per-element call wrapper requires a zipped list"
-                    raise TypeError(msg)
-                value = value[context.index]
+                value = TypeAdapter(type=list[ParsedValue]).validate_python(
+                    value
+                )[context.index]
             operands.append(spec.format_call_arg(value, operand))
         args = format_rendered_call_arguments(
             formatted=operands,
@@ -973,27 +972,23 @@ def _result_call_transform(
         for cls in sorted_languages()
         if cls.language_id == spec.language_id
     )
+    # The manifest gates admit only producers of the required result type.
     if config.call_transform_add_one:
-        syntax = result
-        if not isinstance(syntax, IntegerCallStubResult):
-            msg = "call_transform_add_one requires an integer-returning stub"
-            raise ValueError(msg)
+        syntax = TypeAdapter(type=IntegerCallStubResult).validate_python(
+            result
+        )
         return IntegerResultCallTransform(
             syntax=syntax, outer=config.call_transform
         )
-    if (
-        not isinstance(result, NullableObjectCallStubResult)
-        or result.conditional_template is None
-    ):
-        msg = (
-            "call_transform_nullable_conditional requires a nullable "
-            "object result and a native conditional expression"
-        )
-        raise ValueError(msg)
+    nullable = TypeAdapter(type=NullableObjectCallStubResult).validate_python(
+        result
+    )
     return ConditionalCallTransform(
-        template=result.conditional_template,
-        null_value=result.value,
-        comment_prefix=result.comment_prefix,
+        template=TypeAdapter(type=str).validate_python(
+            nullable.conditional_template
+        ),
+        null_value=nullable.value,
+        comment_prefix=nullable.comment_prefix,
         indent=spec.indent,
         outer=config.call_transform,
     )
