@@ -33,6 +33,8 @@ Two top-level keys are excluded from the comparison:
 import shutil
 from collections.abc import Iterable
 
+from pydantic import JsonValue
+
 from literalizer.languages import Wren
 from scripts import roundtrip_common
 
@@ -46,12 +48,8 @@ _LABEL = "Wren"
 # (issue #4545).
 _WREN_SIGNIFICANT_DIGITS = 14
 
-type _JsonValue = (
-    str | int | float | bool | list[_JsonValue] | dict[str, _JsonValue] | None
-)
 
-
-def _survives_wren_num(*, value: _JsonValue) -> bool:
+def _survives_wren_num(*, value: JsonValue) -> bool:
     """Return whether ``Num`` holds and re-prints *value* exactly."""
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return True
@@ -62,7 +60,7 @@ def _survives_wren_num(*, value: _JsonValue) -> bool:
     return float(rendered) == as_double
 
 
-def _all_numbers(*, value: _JsonValue) -> Iterable[_JsonValue]:
+def _all_numbers(*, value: JsonValue) -> Iterable[JsonValue]:
     """Yield every number reachable from *value*."""
     match value:
         case dict():
