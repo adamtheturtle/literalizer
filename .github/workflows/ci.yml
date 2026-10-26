@@ -23,6 +23,7 @@ concurrency:
 
 jobs:
   build:
+    needs: [benchmark-wheel]
     strategy:
       matrix:
         python-version: ['3.12', '3.13', '3.14', '3.15']
@@ -42,17 +43,39 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
-      - name: Run tests
+      - name: Download the wheel
+        uses: actions/download-artifact@v8
+        with:
+          name: benchmark-wheel
+          path: dist
+
+      - name: Create the test environment
+        shell: bash
         run: |
-          uv run --group=dev pytest -s -vvv --ignore=tests/benchmarks . --cov --cov-config=pyproject.toml
+          uv venv --python "$UV_PYTHON"
+          uv pip install --group=test dist/*.whl
         env:
           UV_PYTHON: ${{ matrix.python-version }}
 
-  # Building the package is by far the most expensive part of preparing a
-  # benchmark environment: ``uv run`` calls the setuptools backend twice
-  # (once for metadata, once for the wheel), which costs about two minutes
-  # on a runner.  Paying that once here and handing the wheel to every
-  # shard keeps the per-shard cost down to installing pre-built wheels.
+      - name: Check the installed wheel
+        run: >-
+          uv run --no-sync python -c "from pathlib import Path; import literalizer;
+          assert Path(literalizer.__file__).resolve().is_relative_to(Path('.venv').resolve())"
+
+      - name: Run tests
+        run: >-
+          uv run --no-sync python -m pytest -v -o verbosity_test_cases=0
+          --dist=worksteal --durations=20
+          --ignore=tests/benchmarks . --cov --cov-config=pyproject.toml
+        env:
+          # Keep execution and coverage on the same checkout, as with the
+          # previous editable installation. The installed wheel is checked
+          # separately above before this source-path override is applied.
+          PYTHONPATH: src
+
+  # Build once for both the test matrix and benchmark shards. Installing
+  # this wheel avoids repeating the setuptools metadata and editable-build
+  # work in every Python/platform cell.
   benchmark-wheel:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -87,14 +110,12 @@ jobs:
       # having, and CodSpeed reports on whatever it receives.
       fail-fast: false
       matrix:
-        # Code-generation benchmarks take around eleven minutes in total, and each
-        # shard pays about a minute of fixed setup, so six shards keep
-        # every shard under about four minutes.  ``pytest-test-groups``
-        # deals the benchmarks out round-robin, which spreads the slow
-        # per-language cases evenly.
+        # Three shards balance benchmark execution against repeated profiler
+        # startup and runner demand. pytest-test-groups assigns the complete
+        # benchmark inventory round-robin without dropping any cases.
         #
         # Keep in sync with ``--test-group-count`` below.
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3]
 
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -133,7 +154,7 @@ jobs:
         with:
           mode: simulation
           run: .venv/bin/python -m pytest tests/benchmarks --codspeed -o addopts=
-            --test-group-count=6 --test-group=${{ matrix.shard }}
+            --test-group-count=3 --test-group=${{ matrix.shard }}
         env:
           # Benchmark the checkout rather than the copy of the same code
           # inside the virtual environment, so CodSpeed's call graph maps
