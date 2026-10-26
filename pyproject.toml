@@ -141,6 +141,12 @@ release = [
     "check-wheel-contents==0.6.3",
     "towncrier==26.9.0",
 ]
+# Native checks use the project dependencies plus their shared helpers,
+# without installing the Python test, lint and documentation toolchains.
+roundtrip = [
+    "pydantic==2.14.1",
+    "tenacity==9.2.1",
+]
 
 [tool.setuptools]
 packages.find.where = [
