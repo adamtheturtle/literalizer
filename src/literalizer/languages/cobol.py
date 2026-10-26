@@ -105,6 +105,9 @@ from literalizer.exceptions import (
     UnrepresentableStringError,
 )
 
+_COBOL_MAX_GROUP_LEVEL = 49
+_COBOL_LEVEL_SPACING = 5
+
 _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
 _COBOL_PIC_S9_18_MAX = 10**18 - 1
 _COBOL_PIC_S9_18_MIN = -_COBOL_PIC_S9_18_MAX
@@ -385,22 +388,40 @@ def _to_cobol_entry(
 
 @beartype
 def _bump_levels(content: str) -> str:
-    """Increment every COBOL level number in *content* by 5.
+    """Place entries below a new level-05 group.
 
-    Only lines whose first non-space token is a two-digit level number
-    are modified.
+    Keep the usual five-level spacing while it fits. For deeper groups,
+    compact the distinct levels so children remain below their parents
+    instead of clamping several generations to level 49.
     """
+    pattern = r"^(\s*)(\d{2})(\s)"
+    levels = sorted(
+        {
+            int(match.group(2))
+            for match in re.finditer(
+                pattern=pattern,
+                string=content,
+                flags=re.MULTILINE,
+            )
+        }
+    )
+    bumped = (
+        {
+            level: index + _COBOL_LEVEL_SPACING + 1
+            for index, level in enumerate(iterable=levels)
+        }
+        if max(levels, default=0)
+        > _COBOL_MAX_GROUP_LEVEL - _COBOL_LEVEL_SPACING
+        else {level: level + _COBOL_LEVEL_SPACING for level in levels}
+    )
 
     @beartype
     def _bump(m: re.Match[str]) -> str:
-        """Return the matched level-number prefix with its level
-        incremented by 5.
-        """
-        new_level = min(int(m.group(2)) + 5, 49)
-        return f"{m.group(1)}{new_level:02d}{m.group(3)}"
+        """Return an entry with its allocated child level."""
+        return f"{m.group(1)}{bumped[int(m.group(2))]:02d}{m.group(3)}"
 
     return re.sub(
-        pattern=r"^(\s*)(\d{2})(\s)",
+        pattern=pattern,
         repl=_bump,
         string=content,
         flags=re.MULTILINE,

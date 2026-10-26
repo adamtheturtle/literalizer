@@ -10,7 +10,7 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-const ApiType_ = struct { fn process(self: ApiType_, self: ZVal) void { _ = self; _ = self; } };
+const ApiType_ = struct { fn process(self_: ApiType_, self: ZVal) void { _ = self_; _ = self; } };
 const api: ApiType_ = .{};
 pub fn main() void {
     api.process(.{ .map = &.{}});

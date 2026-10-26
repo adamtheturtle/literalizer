@@ -30,23 +30,23 @@ WORKING-STORAGE SECTION.
 
     05 F-BOUNDARY.
 
-            10 FILLER.
+            06 FILLER.
 
-                    15 FILLER.
+                    07 FILLER.
 
-                            20 FILLER.
+                            08 FILLER.
 
-                                    25 FILLER.
+                                    09 FILLER.
 
-                                            30 FILLER.
+                                            10 FILLER.
 
-                                                    35 FILLER.
+                                                    11 FILLER.
 
-                                                            40 FILLER.
+                                                            12 FILLER.
 
-                                                                    45 FILLER.
+                                                                    13 FILLER.
 
-                                                                            49 FILLER PIC S9(18) COMP-5 VALUE 2.
+                                                                            14 FILLER PIC S9(18) COMP-5 VALUE 2.
 
 
 
@@ -58,39 +58,39 @@ WORKING-STORAGE SECTION.
 
     05 F-MULTIPLE.
 
-            10 FILLER.
+            06 FILLER.
 
-                    15 FILLER.
+                    07 FILLER.
 
-                            20 FILLER.
+                            08 FILLER.
 
-                                    25 FILLER.
+                                    09 FILLER.
 
-                                            30 FILLER.
+                                            10 FILLER.
 
-                                                    35 FILLER.
+                                                    11 FILLER.
 
-                                                            40 FILLER.
+                                                            12 FILLER.
 
-                                                                    45 FILLER.
+                                                                    13 FILLER.
 
-                                                                            49 FILLER.
+                                                                            14 FILLER.
 
-                                                                                    49 FILLER.
+                                                                                    15 FILLER.
 
-                                                                                            49 FILLER.
+                                                                                            16 FILLER.
 
-                                                                                                    49 FILLER.
+                                                                                                    17 FILLER.
 
-                                                                                                            49 FILLER.
+                                                                                                            18 FILLER.
 
-                                                                                                                    49 FILLER.
+                                                                                                                    19 FILLER.
 
-                                                                                                                            49 FILLER.
+                                                                                                                            20 FILLER.
 
-                                                                                                                                    49 FILLER.
+                                                                                                                                    21 FILLER.
 
-                                                                                                                                            49 FILLER PIC S9(18) COMP-5 VALUE 3.
+                                                                                                                                            22 FILLER PIC S9(18) COMP-5 VALUE 3.
 
 
 
@@ -110,23 +110,23 @@ WORKING-STORAGE SECTION.
 
     05 F-TEXT.
 
-            10 FILLER.
+            06 FILLER.
 
-                    15 FILLER.
+                    07 FILLER.
 
-                            20 FILLER.
+                            08 FILLER.
 
-                                    25 FILLER.
+                                    09 FILLER.
 
-                                            30 FILLER.
+                                            10 FILLER.
 
-                                                    35 FILLER.
+                                                    11 FILLER.
 
-                                                            40 FILLER.
+                                                            12 FILLER.
 
-                                                                    45 FILLER.
+                                                                    13 FILLER.
 
-                                                                            49 FILLER PIC X(5) VALUE "value".
+                                                                            14 FILLER PIC X(5) VALUE "value".
 
 
 
@@ -138,23 +138,23 @@ WORKING-STORAGE SECTION.
 
     05 F-BOOLEAN.
 
-            10 FILLER.
+            06 FILLER.
 
-                    15 FILLER.
+                    07 FILLER.
 
-                            20 FILLER.
+                            08 FILLER.
 
-                                    25 FILLER.
+                                    09 FILLER.
 
-                                            30 FILLER.
+                                            10 FILLER.
 
-                                                    35 FILLER.
+                                                    11 FILLER.
 
-                                                            40 FILLER.
+                                                            12 FILLER.
 
-                                                                    45 FILLER.
+                                                                    13 FILLER.
 
-                                                                            49 FILLER PIC S9(18) COMP-5 VALUE 1.
+                                                                            14 FILLER PIC S9(18) COMP-5 VALUE 1.
 
 
 
@@ -166,22 +166,22 @@ WORKING-STORAGE SECTION.
 
     05 F-FLOAT.
 
-            10 FILLER.
+            06 FILLER.
 
-                    15 FILLER.
+                    07 FILLER.
 
-                            20 FILLER.
+                            08 FILLER.
 
-                                    25 FILLER.
+                                    09 FILLER.
 
-                                            30 FILLER.
+                                            10 FILLER.
 
-                                                    35 FILLER.
+                                                    11 FILLER.
 
-                                                            40 FILLER.
+                                                            12 FILLER.
 
-                                                                    45 FILLER.
+                                                                    13 FILLER.
 
-                                                                            49 FILLER COMP-2 VALUE 1.5.
+                                                                            14 FILLER COMP-2 VALUE 1.5.
 PROCEDURE DIVISION.
     STOP RUN.
