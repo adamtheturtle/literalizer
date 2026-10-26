@@ -3,3 +3,7 @@ owner = "variant"
 
 [[variants]]
 axis = "record_tuple_sequence"
+
+# Explicit root annotations must retain the inferred record field types.
+[[variants]]
+axis = "record_type_hints_always"
