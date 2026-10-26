@@ -8950,7 +8950,8 @@ def _literal_argument_preamble_data(
     return CallPreambleData(
         data=list(values),
         argument_values=tuple(values),
-        argument_slots=argument_slots,
+        # Whole-document calls never widen a parameter across rows.
+        argument_slots=argument_slots if per_element else (),
     )
 
 

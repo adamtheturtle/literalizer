@@ -1386,13 +1386,13 @@ def _needs_variant_type(
         # do not form a C++ container or a shared heterogeneous carrier.
         return any(
             _needs_variant_type(
-                data=slot,
+                data=argument,
                 element_to_type=element_to_type,
                 type_ctx=type_ctx,
                 tuple_list_ids=tuple_list_ids,
                 record_dict_ids=record_dict_ids,
             )
-            for slot in data.argument_slots
+            for argument in (*data.argument_values, *data.argument_slots)
         )
     match data:
         case list():
@@ -5482,7 +5482,12 @@ class Cpp(metaclass=LanguageCls):
             )
         return behavior
 
-    reference_binding_data_dependent_preamble = staticmethod(no_data_preamble)
+    @staticmethod
+    def reference_binding_data_dependent_preamble(
+        _data: Value, /
+    ) -> tuple[str, ...]:
+        """Reference imports follow the emitted consuming operations."""
+        return ()
 
     @staticmethod
     def reference_declaration_imports(
