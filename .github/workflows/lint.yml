@@ -10,6 +10,10 @@ on:
         description: Exact existing commit whose benchmark baseline is missing
         required: true
         type: string
+      source_ref:
+        description: Existing refs/heads branch containing that exact commit
+        required: true
+        type: string
 
 permissions: {}
 
@@ -20,14 +24,23 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      # CodSpeed reads GITHUB_REF as the measured branch. This workflow lives
+      # on a separate operational branch; validate the real source ref and
+      # commit before giving that source identity to the benchmark process.
+      GITHUB_REF: ${{ inputs.source_ref }}
+      SOURCE_REF: ${{ inputs.source_ref }}
     steps:
       - name: Validate source commit
         env:
           SOURCE_SHA: ${{ inputs.source_sha }}
-        run: '[[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]'
+        run: |-
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$SOURCE_REF" == refs/heads/codex/* ]]
+          test "$GITHUB_REF" = "$SOURCE_REF"
       - uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.source_sha }}
+          ref: ${{ inputs.source_ref }}
           persist-credentials: false
       - name: Verify measured checkout
         env:
