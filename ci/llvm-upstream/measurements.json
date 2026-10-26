@@ -1,0 +1,212 @@
+{
+  "environment": "Ubuntu 24.04.5, Linux AArch64, GCC 13.3 standard-library headers; Docker limited to three CPUs",
+  "llvm_version": "23.1.4",
+  "release_commit": "7a941dfb2877a0b8cf30323fefa85ad019e0b0f5",
+  "upstream_main_patch_base": "fac4500420cdeed42f35537a26eea1e4e17badf0",
+  "patched_toolchain": {
+    "llvm_version": "23.1.4",
+    "source_commit": "7a941dfb2877a0b8cf30323fefa85ad019e0b0f5",
+    "patch_sha256": "fe31a6cc432e40d08ce1f0570168522bb763d4c1000793d118bbe53bda085b7c",
+    "cxx_flags": [
+      "-I/task/clang-ci-work/bootstrap/include",
+      "-std=c++17",
+      "-D_GNU_SOURCE",
+      "-D_GLIBCXX_USE_CXX11_ABI=1",
+      "-D__STDC_CONSTANT_MACROS",
+      "-D__STDC_FORMAT_MACROS",
+      "-D__STDC_LIMIT_MACROS",
+      "-fno-exceptions",
+      "-fno-rtti",
+      "-O3",
+      "-DNDEBUG",
+      "-I/task/clang-ci-work/objects-fe31a6cc432e-6304f7298d4c"
+    ],
+    "clang_sha256": "d1863683b877471a19db81ab6c9eeac6a9d12d77b68649ea2014e2bc5369a76a",
+    "clang_tidy_sha256": "238ace5a9cad3265f00773e2a68e77917eaef6db781fd1d05f68eacc9c6921e1"
+  },
+  "method": "Single sequential wall-clock samples; timeout is ten seconds; not a statistical benchmark. Current-main patches apply cleanly; compiler runtime tests use the released version.",
+  "rows": [
+    {
+      "case": "sfinae",
+      "tool": "stock",
+      "command": [
+        "/task/llvm23-release-arm64/bin/clang++",
+        "-std=c++17",
+        "-fsyntax-only",
+        "/repo/upstream/llvm/reproducers/sfinae.cpp"
+      ],
+      "source_sha256": "5c6bc146ae1ba25feb935d54bce3cbc0b6d5279b594432a4c7d0dd7cbf81deee",
+      "seconds": 10.011,
+      "status": 124,
+      "output": ""
+    },
+    {
+      "case": "sfinae",
+      "tool": "patched",
+      "command": [
+        "/task/clang-ci-runtime-c-parent/bin/clang++",
+        "-std=c++17",
+        "-fsyntax-only",
+        "/repo/upstream/llvm/reproducers/sfinae.cpp"
+      ],
+      "source_sha256": "5c6bc146ae1ba25feb935d54bce3cbc0b6d5279b594432a4c7d0dd7cbf81deee",
+      "seconds": 0.028,
+      "status": 0,
+      "output": ""
+    },
+    {
+      "case": "adl",
+      "tool": "stock",
+      "command": [
+        "/task/llvm23-release-arm64/bin/clang++",
+        "-std=c++17",
+        "-fsyntax-only",
+        "/repo/upstream/llvm/reproducers/adl.cpp"
+      ],
+      "source_sha256": "3c1da67829008f2e07110fb8471efe5f01196eaaa811930657f59c0ed189a7bc",
+      "seconds": 10.007,
+      "status": 124,
+      "output": ""
+    },
+    {
+      "case": "adl",
+      "tool": "patched",
+      "command": [
+        "/task/clang-ci-runtime-c-parent/bin/clang++",
+        "-std=c++17",
+        "-fsyntax-only",
+        "/repo/upstream/llvm/reproducers/adl.cpp"
+      ],
+      "source_sha256": "3c1da67829008f2e07110fb8471efe5f01196eaaa811930657f59c0ed189a7bc",
+      "seconds": 0.025,
+      "status": 0,
+      "output": ""
+    },
+    {
+      "case": "webkit",
+      "tool": "stock",
+      "command": [
+        "/task/llvm23-release-arm64/bin/clang-tidy",
+        "/repo/upstream/llvm/reproducers/webkit.cpp",
+        "--checks=-*,clang-analyzer-webkit.RefCntblBaseVirtualDtor",
+        "--config={}",
+        "--",
+        "-std=c++20"
+      ],
+      "source_sha256": "5b2b8e314ee84820b6b5af08cf44605a8d12a181184825c14569c1dfbba4d399",
+      "seconds": 10.01,
+      "status": 124,
+      "output": ""
+    },
+    {
+      "case": "webkit",
+      "tool": "patched",
+      "command": [
+        "/task/clang-ci-runtime-c-parent/bin/clang-tidy",
+        "/repo/upstream/llvm/reproducers/webkit.cpp",
+        "--checks=-*,clang-analyzer-webkit.RefCntblBaseVirtualDtor",
+        "--config={}",
+        "--",
+        "-std=c++20"
+      ],
+      "source_sha256": "5b2b8e314ee84820b6b5af08cf44605a8d12a181184825c14569c1dfbba4d399",
+      "seconds": 0.022,
+      "status": 0,
+      "output": ""
+    },
+    {
+      "case": "exception",
+      "tool": "stock",
+      "command": [
+        "/task/llvm23-release-arm64/bin/clang-tidy",
+        "/repo/upstream/llvm/reproducers/exception.cpp",
+        "--checks=-*,bugprone-exception-escape",
+        "--config={}",
+        "--",
+        "-std=c++20"
+      ],
+      "source_sha256": "017b188a1d9002a73d8295d63fefdf3232016c57e814d43ab657b72ef65c6642",
+      "seconds": 10.003,
+      "status": 124,
+      "output": ""
+    },
+    {
+      "case": "exception",
+      "tool": "patched",
+      "command": [
+        "/task/clang-ci-runtime-c-parent/bin/clang-tidy",
+        "/repo/upstream/llvm/reproducers/exception.cpp",
+        "--checks=-*,bugprone-exception-escape",
+        "--config={}",
+        "--",
+        "-std=c++20"
+      ],
+      "source_sha256": "017b188a1d9002a73d8295d63fefdf3232016c57e814d43ab657b72ef65c6642",
+      "seconds": 0.021,
+      "status": 0,
+      "output": "/repo/upstream/llvm/reproducers/exception.cpp:6:6: warning: an exception may be thrown in function 'test' which should not throw exceptions [bugprone-exception-escape]\n    6 | void test() noexcept { repeated<28>(); }\n      |      ^\n/repo/upstream/llvm/reproducers/exception.cpp:5:33: note: frame #0: unhandled exception of type 'int' may be thrown in function 'repeated<0>' here\n    5 | template<> void repeated<0>() { throw 1; }\n      |                                 ^\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #1: function 'repeated<1>' calls function 'repeated<0>' here\n    2 |   repeated<N - 1>();\n      |   ^\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #2: function 'repeated<2>' calls function 'repeated<1>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #3: function 'repeated<3>' calls function 'repeated<2>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #4: function 'repeated<4>' calls function 'repeated<3>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #5: function 'repeated<5>' calls function 'repeated<4>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #6: function 'repeated<6>' calls function 'repeated<5>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #7: function 'repeated<7>' calls function 'repeated<6>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #8: function 'repeated<8>' calls function 'repeated<7>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #9: function 'repeated<9>' calls function 'repeated<8>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #10: function 'repeated<10>' calls function 'repeated<9>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #11: function 'repeated<11>' calls function 'repeated<10>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #12: function 'repeated<12>' calls function 'repeated<11>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #13: function 'repeated<13>' calls function 'repeated<12>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #14: function 'repeated<14>' calls function 'repeated<13>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #15: function 'repeated<15>' calls function 'repeated<14>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #16: function 'repeated<16>' calls function 'repeated<15>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #17: function 'repeated<17>' calls function 'repeated<16>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #18: function 'repeated<18>' calls function 'repeated<17>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #19: function 'repeated<19>' calls function 'repeated<18>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #20: function 'repeated<20>' calls function 'repeated<19>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #21: function 'repeated<21>' calls function 'repeated<20>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #22: function 'repeated<22>' calls function 'repeated<21>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #23: function 'repeated<23>' calls function 'repeated<22>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #24: function 'repeated<24>' calls function 'repeated<23>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #25: function 'repeated<25>' calls function 'repeated<24>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #26: function 'repeated<26>' calls function 'repeated<25>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #27: function 'repeated<27>' calls function 'repeated<26>' here\n/repo/upstream/llvm/reproducers/exception.cpp:2:3: note: frame #28: function 'repeated<28>' calls function 'repeated<27>' here\n/repo/upstream/llvm/reproducers/exception.cpp:6:24: note: frame #29: function 'test' calls function 'repeated<28>' here\n    6 | void test() noexcept { repeated<28>(); }\n      |                        ^\n1 warning generated.\n"
+    },
+    {
+      "case": "shared-initializers",
+      "tool": "stock",
+      "command": [
+        "/task/llvm23-release-arm64/bin/clang-tidy",
+        "/repo/upstream/llvm/reproducers/shared-initializers.c",
+        "--checks=-*,bugprone-sizeof-expression",
+        "--config={}",
+        "--",
+        "-std=c99"
+      ],
+      "source_sha256": "d1c48cc6496a000acafe8021c8a22c6ed66247bec588987046981c285885682d",
+      "seconds": 10.007,
+      "status": 124,
+      "output": ""
+    },
+    {
+      "case": "shared-initializers",
+      "tool": "patched",
+      "command": [
+        "/task/clang-ci-runtime-c-parent/bin/clang-tidy",
+        "/repo/upstream/llvm/reproducers/shared-initializers.c",
+        "--checks=-*,bugprone-sizeof-expression",
+        "--config={}",
+        "--",
+        "-std=c99"
+      ],
+      "source_sha256": "d1c48cc6496a000acafe8021c8a22c6ed66247bec588987046981c285885682d",
+      "seconds": 0.019,
+      "status": 0,
+      "output": "/repo/upstream/llvm/reproducers/shared-initializers.c:5:10: warning: suspicious usage of 'sizeof(sizeof(...))' [bugprone-sizeof-expression]\n    5 |   return sizeof(sizeof(int));\n      |          ^~~~~~~~~~~~~~~~~~~\n1 warning generated.\n"
+    },
+    {
+      "case": "pch",
+      "tool": "without-pch",
+      "command": [
+        "/task/llvm23-release-arm64/bin/clang++",
+        "-std=c++20",
+        "-fsyntax-only",
+        "/repo/upstream/llvm/reproducers/pch.cpp"
+      ],
+      "source_sha256": "31a7ec2a108354c9ba458a4e345d87a0201534e56cf797215d1bca3bcb222455",
+      "seconds": 0.104,
+      "status": 0,
+      "output": ""
+    },
+    {
+      "case": "pch",
+      "tool": "with-pch",
+      "command": [
+        "/task/llvm23-release-arm64/bin/clang++",
+        "-std=c++20",
+        "-fsyntax-only",
+        "-include-pch",
+        "/task/upstream-canonical-vector.pch",
+        "/repo/upstream/llvm/reproducers/pch.cpp"
+      ],
+      "source_sha256": "31a7ec2a108354c9ba458a4e345d87a0201534e56cf797215d1bca3bcb222455",
+      "seconds": 10.006,
+      "status": 124,
+      "output": ""
+    }
+  ]
+}
