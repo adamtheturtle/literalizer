@@ -1,0 +1,7 @@
+#include <initializer_list>
+auto process(auto...) { return 0; }
+auto emit(auto...) { return 0; }
+int main() {
+emit(process(42));
+    return 0;
+}
