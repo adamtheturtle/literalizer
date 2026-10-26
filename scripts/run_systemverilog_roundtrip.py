@@ -58,20 +58,10 @@ escaped / empty strings -- round-trips losslessly.
 import json
 import shutil
 
+from pydantic import JsonValue
+
 from literalizer.languages import SystemVerilog
 from scripts import roundtrip_common
-
-# The validated input has this recursive shape, which lets
-# ``isinstance`` narrow the value helper cleanly under every type checker.
-type JsonValue = (
-    bool
-    | int
-    | float
-    | str
-    | list["JsonValue"]
-    | dict[str, "JsonValue"]
-    | None
-)
 
 _VAR_NAME = "my_data"
 _LABEL = "SystemVerilog"

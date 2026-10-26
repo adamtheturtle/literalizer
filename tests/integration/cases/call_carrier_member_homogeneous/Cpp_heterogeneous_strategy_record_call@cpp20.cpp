@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <vector>
 struct appType_ { void go(auto...) const {} };
 const appType_ app;

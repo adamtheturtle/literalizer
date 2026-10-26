@@ -1,7 +1,4 @@
-#include <initializer_list>
-#include <string>
 #include <vector>
-#include <cstddef>
 struct Record0 { std::vector<std::vector<int>> a; std::vector<std::vector<int>> b; };
 int main() {
 auto my_data = Record0{

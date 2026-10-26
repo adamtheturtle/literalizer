@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <string>
-#include <array>
+#include <vector>
 #include <cstddef>
 #include <memory>
+#include <string>
 #include <utility>
 struct Value {
  private:
@@ -41,7 +40,6 @@ struct Value {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
-#include <vector>
 struct Record0 { int a{}; };
 int main() {
 auto my_data = std::vector<std::vector<Record0>>{

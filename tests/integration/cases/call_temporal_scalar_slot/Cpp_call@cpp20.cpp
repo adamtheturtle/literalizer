@@ -1,7 +1,4 @@
-#include <initializer_list>
 #include <chrono>
-#include <vector>
-#include <variant>
 auto process(auto...) { return 0; }
 int main() {
 process("09:30:00");

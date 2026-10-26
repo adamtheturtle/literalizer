@@ -1,7 +1,7 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
 #include <cstddef>
+#include <string>
+#include <tuple>
+#include <vector>
 #include <memory>
 #include <utility>
 struct Value {
@@ -41,7 +41,6 @@ struct Value {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
-#include <tuple>
 int main() {
 auto my_data = std::vector<std::vector<Value>>{
     std::vector<Value>{Value{std::make_tuple(1, "value")}, Value{std::vector<std::nullptr_t>{}}},

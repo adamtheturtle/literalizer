@@ -1,7 +1,5 @@
 #include "../../cpp_support/include/named_type.hpp"
-#include <initializer_list>
 #include <string>
-#include <vector>
 struct Record0 { std::string collection; NamedType featured_entry; };
 int main() {
 auto my_data = Record0{

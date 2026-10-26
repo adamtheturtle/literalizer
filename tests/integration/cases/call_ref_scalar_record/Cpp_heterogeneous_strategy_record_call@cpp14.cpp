@@ -1,6 +1,3 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
 struct Record0 { int value{}; };
 template <typename... Args> auto consume(Args...) { return 0; }
 int main() {

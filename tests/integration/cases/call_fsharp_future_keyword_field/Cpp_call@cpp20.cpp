@@ -1,7 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
 struct processType_ { void fetch(auto...) const {} };
 struct appType_ { processType_ process; };

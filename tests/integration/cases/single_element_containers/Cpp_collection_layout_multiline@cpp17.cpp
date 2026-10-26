@@ -1,9 +1,8 @@
-#include <initializer_list>
-#include <string>
-#include <map>
-#include <vector>
 #include <cstddef>
+#include <map>
+#include <string>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::map<std::string, std::variant<std::vector<std::map<std::string, std::nullptr_t>>, std::vector<std::vector<int>>, std::vector<std::vector<std::vector<int>>>>>{
     {"single_map", std::vector<std::map<std::string, std::nullptr_t>>{

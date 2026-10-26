@@ -1,7 +1,6 @@
-#include <initializer_list>
 #include <string>
-#include <vector>
 #include <variant>
+#include <vector>
 struct Record1 { std::vector<bool> k; };
 struct Record0 { std::vector<std::variant<int, std::string, std::vector<std::variant<int, std::string>>, Record1>> h; };
 int main() {

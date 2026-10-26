@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <cmath>
 #include <vector>
 int main() {

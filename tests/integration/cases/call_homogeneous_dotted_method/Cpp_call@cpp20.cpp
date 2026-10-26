@@ -1,6 +1,3 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
 struct clientType_ { void fetch(auto...) const {} };
 struct appType_ { clientType_ client; };
 const appType_ app;

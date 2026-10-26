@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::map<std::string, std::variant<std::map<std::string, int>, int, std::vector<std::map<std::string, std::string>>>>{
     // About the first dotted key.

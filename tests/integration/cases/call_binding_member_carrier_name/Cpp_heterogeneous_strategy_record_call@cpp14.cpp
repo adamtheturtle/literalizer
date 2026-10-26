@@ -1,4 +1,3 @@
-#include <initializer_list>
 struct objType_ { template <typename... Args> auto ZVal(Args...) const { return 0; } };
 const objType_ obj;
 int main() {

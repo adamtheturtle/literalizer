@@ -1,5 +1,3 @@
-#include <initializer_list>
-#include <string>
 struct Record0 { long long within_i32{}; long long beyond_i32{}; };
 int main() {
 auto my_data = Record0{

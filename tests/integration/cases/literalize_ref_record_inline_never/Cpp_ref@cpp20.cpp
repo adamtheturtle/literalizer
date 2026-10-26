@@ -1,7 +1,4 @@
-#include <initializer_list>
-#include <string>
 #include <cstddef>
-#include <variant>
 struct Record0 { int x{}; std::nullptr_t y{}; };
 int main() {
 auto my_data = Record0{

@@ -1,7 +1,5 @@
-#include <initializer_list>
 #include <vector>
-#include <variant>
-#include <tuple>
+#include <utility>
 auto process(auto...) { return 0; }
 int main() {
 auto my_int = 1;

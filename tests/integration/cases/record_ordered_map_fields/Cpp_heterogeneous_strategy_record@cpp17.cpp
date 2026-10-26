@@ -1,9 +1,7 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
-#include <utility>
 #include <cstddef>
-#include <variant>
+#include <string>
+#include <utility>
+#include <vector>
 struct Record0 { std::vector<std::pair<std::string, int>> numbers; std::vector<std::pair<std::string, std::string>> words; std::vector<std::pair<std::string, std::vector<int>>> nested; std::vector<std::pair<std::string, std::nullptr_t>> empty; bool flag{}; std::vector<std::pair<std::string, std::vector<std::pair<std::string, int>>>> nested_maps; std::vector<std::pair<std::string, std::vector<std::pair<std::string, std::nullptr_t>>>> empty_nested_maps; };
 int main() {
 auto my_data = Record0{

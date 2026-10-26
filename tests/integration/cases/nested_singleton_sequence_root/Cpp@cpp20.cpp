@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <vector>
 int main() {
 auto my_data = ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(

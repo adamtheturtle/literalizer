@@ -1,4 +1,3 @@
-#include <initializer_list>
 int main() {
 // scalar inline
 // inline continuation

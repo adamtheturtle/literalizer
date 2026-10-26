@@ -1,7 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
 struct mgrType_ { template <typename... Args> void run(Args...) const {} };
 struct appType_ { mgrType_ mgr; };

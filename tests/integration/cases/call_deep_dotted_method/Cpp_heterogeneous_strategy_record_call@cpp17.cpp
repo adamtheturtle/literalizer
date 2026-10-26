@@ -1,7 +1,3 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
-#include <variant>
 struct clientType_ { template <typename... Args> void post(Args...) const {} };
 struct apiType_ { clientType_ client; };
 struct objType_ { apiType_ api; };

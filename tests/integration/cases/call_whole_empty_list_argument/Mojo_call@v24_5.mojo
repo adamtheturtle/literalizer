@@ -1,4 +1,4 @@
-def f[*Ts: AnyType](var *args: *Ts):
+def f[*Ts: Movable](var *args: *Ts):
     pass
 def main():
     f(List[String]())
