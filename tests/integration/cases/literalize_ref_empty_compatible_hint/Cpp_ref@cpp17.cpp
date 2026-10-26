@@ -1,6 +1,5 @@
-#include <initializer_list>
-#include <vector>
 #include <cstddef>
+#include <vector>
 #include <utility>
 int main() {
 auto record_data = std::vector<std::nullptr_t>{};

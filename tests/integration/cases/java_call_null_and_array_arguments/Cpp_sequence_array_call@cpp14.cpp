@@ -1,6 +1,5 @@
-#include <initializer_list>
-#include <cstddef>
 #include <array>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>

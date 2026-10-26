@@ -1,8 +1,6 @@
-#include <initializer_list>
 #include <string>
 #include <vector>
 #include <utility>
-#include <variant>
 template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 auto big_list = std::vector<std::string>{

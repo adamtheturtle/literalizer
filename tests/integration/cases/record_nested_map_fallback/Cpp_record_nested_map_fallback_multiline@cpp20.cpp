@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <string>
+#include <vector>
 #include <cstddef>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
 using LiteralizerRecordValue = std::variant<std::string, bool, std::nullptr_t>;
 struct Record0 { std::string name; std::map<std::string, LiteralizerRecordValue> input; std::map<std::string, LiteralizerRecordValue> expected; };

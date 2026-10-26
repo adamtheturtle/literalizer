@@ -12,6 +12,12 @@ class _PreambleImport(str):
     __slots__ = ()
 
 
+class _DeclarationImport(_PreambleImport):
+    """An import required only by a generated supporting declaration."""
+
+    __slots__ = ()
+
+
 @beartype
 class _PreambleBlock(str):
     """A joined block whose constituent roles remain available."""
@@ -39,6 +45,12 @@ class _PreambleBlock(str):
 def import_preamble(*, code: str) -> str:
     """Mark an owned import or include at its producer."""
     return _PreambleImport(object=code)
+
+
+@beartype
+def declaration_import_preamble(*, code: str) -> str:
+    """Keep a supporting declaration's dependencies with its role."""
+    return _DeclarationImport(object=code)
 
 
 @beartype
@@ -72,6 +84,19 @@ def preamble_imports(entries: Sequence[str], /) -> tuple[str, ...]:
         entry
         for entry in _preamble_lines(entries)
         if isinstance(entry, _PreambleImport)
+    )
+
+
+@beartype
+def independent_preamble_imports(entries: Sequence[str], /) -> tuple[str, ...]:
+    """Retain imports independently of supporting declaration
+    replacement.
+    """
+    return tuple(
+        entry
+        for entry in _preamble_lines(entries)
+        if isinstance(entry, _PreambleImport)
+        and not isinstance(entry, _DeclarationImport)
     )
 
 

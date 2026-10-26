@@ -1,8 +1,7 @@
-#include <initializer_list>
 #include <string>
 #include <unordered_map>
-#include <vector>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::unordered_map<std::string, std::vector<std::variant<int, std::vector<std::string>>>>{
     {"test", std::vector<std::variant<int, std::vector<std::string>>>{5, std::vector<std::string>{"compile", "test"}}},

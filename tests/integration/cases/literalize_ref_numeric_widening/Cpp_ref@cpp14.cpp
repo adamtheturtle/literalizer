@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <vector>
 int main() {
 auto floating_value = 1.5;

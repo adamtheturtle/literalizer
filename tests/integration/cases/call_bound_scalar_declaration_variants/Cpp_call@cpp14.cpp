@@ -1,4 +1,3 @@
-#include <initializer_list>
 template <typename... Args> auto consume(Args...) { return 0; }
 int main() {
 auto shared = 42;

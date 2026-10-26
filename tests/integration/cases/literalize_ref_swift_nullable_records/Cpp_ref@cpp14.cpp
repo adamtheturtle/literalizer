@@ -1,5 +1,3 @@
-#include <initializer_list>
-#include <string>
 #include <cstddef>
 struct Record1 { int x{}; std::nullptr_t y{}; };
 struct Record2 { std::nullptr_t x{}; std::nullptr_t y{}; };

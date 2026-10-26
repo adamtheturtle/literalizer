@@ -1,7 +1,5 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
 #include <variant>
+#include <vector>
 struct Record0 { int a{}; };
 int main() {
 auto my_data = std::vector<std::variant<Record0, int>>{

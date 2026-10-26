@@ -300,6 +300,11 @@ def case_for_manifest_variant(
         variant,
         initialize_variable=manifest_variant.initialize_variable,
         wrap_in_file=manifest_variant.wrap_in_file,
+        extra_preamble=(
+            variant.extra_preamble
+            if manifest_variant.include_extra_preamble
+            else ()
+        ),
     )
     if context.collection_layout is not None:
         variant = dataclasses.replace(
