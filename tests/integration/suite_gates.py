@@ -99,6 +99,9 @@ METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str | None]] = {
 # option member whose spec has it; the flag is named here once so
 # neither spells it itself.
 BEHAVIOR_FLAGS: Mapping[str, Callable[[literalizer.Language], bool]] = {
+    "sequence_supports_heterogeneity": (
+        lambda spec: spec.sequence_format_config.supports_heterogeneity
+    ),
     "widens_nested_maps_by_wrapping_scalars": (
         _widens_nested_maps_by_wrapping_scalars
     ),
