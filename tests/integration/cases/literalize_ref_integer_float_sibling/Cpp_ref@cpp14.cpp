@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <vector>
 int main() {
 auto integer_value = 1.0;

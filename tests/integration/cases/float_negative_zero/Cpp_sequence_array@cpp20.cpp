@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <array>
 int main() {
 auto my_data = std::array<double, 2>{

@@ -1,4 +1,3 @@
-#include <initializer_list>
 int main() {
 auto seed = 1;
 static auto my_data = seed;

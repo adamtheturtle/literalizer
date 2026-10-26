@@ -1,8 +1,6 @@
-#include <initializer_list>
-#include <string>
+#include <utility>
 #include <vector>
 struct Record0 { std::vector<int> items; };
-#include <utility>
 int main() {
 auto record_data = Record0{
     {

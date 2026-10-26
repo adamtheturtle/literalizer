@@ -1,8 +1,6 @@
-#include <initializer_list>
-#include <string>
 #include <vector>
-struct Record0 { int x{}; };
 #include <utility>
+struct Record0 { int x{}; };
 int main() {
 auto first = std::vector{
     Record0{1},

@@ -1,4 +1,3 @@
-#include <initializer_list>
 template <typename... Args> auto make_widget(Args...) { return 0; }
 template <typename... Args> auto consume_widget(Args...) { return 0; }
 int main() {

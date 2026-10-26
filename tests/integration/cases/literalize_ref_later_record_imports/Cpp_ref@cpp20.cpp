@@ -1,7 +1,4 @@
-#include <initializer_list>
-#include <string>
 #include <chrono>
-#include <variant>
 struct Record1 { int x{}; };
 struct Record2 { std::chrono::year_month_day day; std::chrono::system_clock::time_point stamp; };
 struct Record0 { Record1 plain; Record2 timed; };

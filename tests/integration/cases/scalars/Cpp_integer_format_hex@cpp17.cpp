@@ -1,7 +1,6 @@
-#include <initializer_list>
 #include <string>
-#include <vector>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::vector<std::variant<int, double, bool, std::string>>{
     0x2a,

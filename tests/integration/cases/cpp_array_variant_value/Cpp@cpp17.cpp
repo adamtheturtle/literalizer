@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::map<std::string, std::variant<int, std::string, std::vector<int>, std::map<std::string, std::string>>>{
     {"a", 1},

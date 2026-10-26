@@ -1,8 +1,5 @@
-#include <initializer_list>
-#include <string>
-#include <cstddef>
 #include <vector>
-#include <variant>
+#include <cstddef>
 struct Record1 { int item{}; };
 struct Record2 { std::nullptr_t item{}; };
 struct Record0 { std::vector<std::vector<Record1>> integers; std::vector<std::vector<Record2>> nulls; std::vector<std::vector<std::vector<Record1>>> nested; std::vector<std::vector<Record1>> reversed; };

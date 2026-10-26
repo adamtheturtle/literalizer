@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <vector>
 struct thingType_ { template <typename... Args> auto go(Args...) const { return 0; } };
 const thingType_ thing;

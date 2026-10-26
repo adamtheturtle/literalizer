@@ -1,10 +1,8 @@
-#include <initializer_list>
-#include <string>
+#include <vector>
 #include <cstddef>
 #include <map>
-#include <array>
+#include <string>
 #include <variant>
-#include <vector>
 using LiteralizerRecordValue = std::variant<int, std::nullptr_t>;
 struct Record0 { std::map<std::string, LiteralizerRecordValue> input; };
 int main() {

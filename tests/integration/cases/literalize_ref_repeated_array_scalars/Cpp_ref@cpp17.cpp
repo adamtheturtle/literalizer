@@ -1,6 +1,4 @@
-#include <initializer_list>
 #include <array>
-#include <variant>
 int main() {
 auto shared = std::array<int, 2>{
     1,

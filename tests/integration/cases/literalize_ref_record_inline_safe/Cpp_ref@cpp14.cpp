@@ -1,5 +1,3 @@
-#include <initializer_list>
-#include <string>
 #include <cstddef>
 struct Record0 { int x{}; std::nullptr_t y{}; };
 int main() {

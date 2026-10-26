@@ -1,8 +1,6 @@
-#include <initializer_list>
+#include <cstddef>
 #include <string>
 #include <vector>
-#include <cstddef>
-#include <variant>
 struct thingType_ { [[nodiscard]] auto go(auto...) const { return 0; } };
 const thingType_ thing;
 int main() {

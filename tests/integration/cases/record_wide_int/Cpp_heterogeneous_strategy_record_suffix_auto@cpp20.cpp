@@ -1,6 +1,4 @@
-#include <initializer_list>
 #include <string>
-#include <variant>
 struct Record0 { long quantity{}; unsigned long long big{}; double ratio{}; std::string label; bool ok{}; };
 int main() {
 auto my_data = Record0{

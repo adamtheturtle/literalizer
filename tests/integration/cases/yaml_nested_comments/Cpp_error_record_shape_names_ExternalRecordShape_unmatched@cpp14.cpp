@@ -1,7 +1,5 @@
-#include "../../cpp_support/include/named_type.hpp"
-#include <initializer_list>
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
 #include <cstddef>
 #include <memory>
@@ -54,5 +52,6 @@ auto my_data = std::map<std::string, Value>{
         2,  // second
     }}},
 };
+    (void)my_data;
     return 0;
 }

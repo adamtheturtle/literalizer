@@ -1,5 +1,4 @@
-#include <initializer_list>
-#include <string>
+#include <utility>
 #include <vector>
 struct Record1 { std::vector<int> items; };
 struct Record0 { Record1 outer; };

@@ -1,5 +1,3 @@
-#include <initializer_list>
-#include <string>
 int main() {
 const auto* my_data = R"(
 root first line

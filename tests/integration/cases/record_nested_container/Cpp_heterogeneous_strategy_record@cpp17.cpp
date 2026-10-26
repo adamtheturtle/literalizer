@@ -1,7 +1,5 @@
-#include <initializer_list>
 #include <string>
 #include <vector>
-#include <variant>
 struct Record0 { std::string title; std::vector<std::string> tags; int priority{}; };
 int main() {
 auto my_data = Record0{

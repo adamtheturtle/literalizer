@@ -68,6 +68,7 @@ from literalizer._formatters.initializer_types import (
     TypedInitializer,
 )
 from literalizer._formatters.preamble_roles import (
+    declaration_import_preamble,
     import_preamble,
     preamble_imports,
 )
@@ -131,7 +132,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     VariantMetadata,
     body_preamble_from_scalars,
-    date_scalar_preamble,
     default_call_data_dependent_preamble,
     default_format_call_statement,
     default_format_call_stub,
@@ -687,6 +687,18 @@ class _CppVariantType(_CppTypeDependencies):
     __slots__ = ()
 
 
+class _CppCarrierDeclaration(_CppTypeDependencies):
+    """A generated heterogeneous carrier with its direct dependencies."""
+
+    __slots__ = ()
+
+
+class _CppRecordType(_CppTypeDependencies):
+    """A record initializer with dependencies of its emitted members."""
+
+    __slots__ = ()
+
+
 class _CppNarrowedMapScalar(str):
     """A scalar whose narrowed map already supplies its concrete type."""
 
@@ -818,7 +830,12 @@ class _CppTypeCtx:
     def variant_type(self, types: Sequence[str], /) -> str:
         """Return the active heterogeneous-value carrier type."""
         if self.variant_type_name != "std::variant":
-            return _CppVariantType(self.variant_type_name, headers=frozenset())
+            return _CppVariantType(
+                self.variant_type_name,
+                headers=frozenset[str]().union(
+                    *(_cpp_type_headers(type_name) for type_name in types)
+                ),
+            )
         return _CppVariantType(
             f"{self.variant_type_name}<{', '.join(types)}>",
             headers=frozenset({"#include <variant>"}).union(
@@ -995,11 +1012,13 @@ def _cpp_narrowed_empty_sequence(
     if type_ctx.tuple_strategy and any(
         is_tuple_eligible(value=sibling) for sibling in siblings
     ):
-        return type_ctx.sequence_type(inner="std::nullptr_t", length=0) + "{}"
-    inner = _compute_element_type_for_items(
-        items=siblings[0], type_ctx=type_ctx
-    )
-    return type_ctx.sequence_type(inner=inner, length=0) + "{}"
+        type_name = type_ctx.sequence_type(inner="std::nullptr_t", length=0)
+    else:
+        inner = _compute_element_type_for_items(
+            items=siblings[0], type_ctx=type_ctx
+        )
+        type_name = type_ctx.sequence_type(inner=inner, length=0)
+    return TypedInitializer(f"{type_name}{{}}", declared_type=type_name)
 
 
 @beartype
@@ -1362,6 +1381,19 @@ def _needs_variant_type(
 
     Used to determine whether ``#include <variant>`` is needed.
     """
+    if isinstance(data, CallPreambleData):
+        # Each parameter widens across its own rows; unrelated arguments
+        # do not form a C++ container or a shared heterogeneous carrier.
+        return any(
+            _needs_variant_type(
+                data=slot,
+                element_to_type=element_to_type,
+                type_ctx=type_ctx,
+                tuple_list_ids=tuple_list_ids,
+                record_dict_ids=record_dict_ids,
+            )
+            for slot in data.argument_slots
+        )
     match data:
         case list():
             if id(data) in tuple_list_ids:
@@ -1420,6 +1452,93 @@ def _has_empty_collection(data: Value) -> bool:
 
 
 @beartype
+def _cpp_carrier_declaration(name: str, /) -> str:
+    """Declare the C++14 carrier together with its required headers."""
+    return _CppCarrierDeclaration(
+        "\n".join(
+            (
+                f"struct {name} {{",
+                " private:",
+                "  struct Holder {",
+                "    Holder() = default;",
+                "    Holder(const Holder&) = delete;",
+                "    Holder(Holder&&) = delete;",
+                "    Holder& operator=(const Holder&) = delete;",
+                "    Holder& operator=(Holder&&) = delete;",
+                "    virtual ~Holder() = default;",
+                "  };",
+                ("  template <typename T> struct TypedHolder : Holder {"),
+                (
+                    "    explicit TypedHolder(T value) "
+                    ": value_(std::move(value)) {}"
+                ),
+                "    T& get() { return value_; }",
+                "    const T& get() const { return value_; }",
+                "   private:",
+                "    T value_;",
+                "  }; // TypedHolder",
+                (
+                    "  static std::shared_ptr<Holder> make_holder("
+                    "const char* value) {"
+                ),
+                (
+                    "    return std::make_shared<"
+                    "TypedHolder<std::string>>"
+                    "(value);"
+                ),
+                "  } // make_holder string",
+                (
+                    "  template <typename T> static "
+                    "std::shared_ptr<Holder> make_holder(T value) {"
+                ),
+                (
+                    "    return std::make_shared<TypedHolder<T>>"
+                    "(std::move(value));"
+                ),
+                "  } // make_holder generic",
+                "  std::shared_ptr<Holder> value_;",
+                " public:",
+                (
+                    f"  {name}() : value_(new "
+                    "TypedHolder<std::nullptr_t>(nullptr)) {}"
+                ),
+                (
+                    f"  template <typename T> explicit {name}(T value)"
+                    " : value_(make_holder(std::move(value))) {}"
+                ),
+                "  template <typename T> bool is() const {",
+                (
+                    "    return dynamic_cast<TypedHolder<T>*>"
+                    "(value_.get()) != nullptr;"
+                ),
+                "  }",
+                "  template <typename T> T& get() {",
+                (
+                    "    return static_cast<TypedHolder<T>*>"
+                    "(value_.get())->get();"
+                ),
+                "  } // get",
+                "  template <typename T> const T& get() const {",
+                (
+                    "    return static_cast<const TypedHolder<T>*>"
+                    "(value_.get())->get();"
+                ),
+                "  } // get const",
+                "};",
+            )
+        ),
+        headers=frozenset(
+            {
+                "#include <cstddef>",
+                "#include <memory>",
+                "#include <string>",
+                "#include <utility>",
+            }
+        ),
+    )
+
+
+@beartype
 def _build_variant_preamble(
     *,
     type_ctx: _CppTypeCtx,
@@ -1447,88 +1566,32 @@ def _build_variant_preamble(
                 lines.append(import_preamble(code="#include <variant>"))
             else:
                 name = type_ctx.variant_type_name
-                lines.extend(
-                    (
-                        import_preamble(code="#include <cstddef>"),
-                        import_preamble(code="#include <memory>"),
-                        import_preamble(code="#include <string>"),
-                        import_preamble(code="#include <utility>"),
-                        f"struct {name} {{",
-                        " private:",
-                        "  struct Holder {",
-                        "    Holder() = default;",
-                        "    Holder(const Holder&) = delete;",
-                        "    Holder(Holder&&) = delete;",
-                        "    Holder& operator=(const Holder&) = delete;",
-                        "    Holder& operator=(Holder&&) = delete;",
-                        "    virtual ~Holder() = default;",
-                        "  };",
-                        (
-                            "  template <typename T> struct "
-                            "TypedHolder : Holder {"
-                        ),
-                        (
-                            "    explicit TypedHolder(T value) "
-                            ": value_(std::move(value)) {}"
-                        ),
-                        "    T& get() { return value_; }",
-                        "    const T& get() const { return value_; }",
-                        "   private:",
-                        "    T value_;",
-                        "  }; // TypedHolder",
-                        (
-                            "  static std::shared_ptr<Holder> make_holder("
-                            "const char* value) {"
-                        ),
-                        (
-                            "    return std::make_shared<"
-                            "TypedHolder<std::string>>"
-                            "(value);"
-                        ),
-                        "  } // make_holder string",
-                        (
-                            "  template <typename T> static "
-                            "std::shared_ptr<Holder> make_holder(T value) {"
-                        ),
-                        (
-                            "    return std::make_shared<TypedHolder<T>>"
-                            "(std::move(value));"
-                        ),
-                        "  } // make_holder generic",
-                        "  std::shared_ptr<Holder> value_;",
-                        " public:",
-                        (
-                            f"  {name}() : value_(new "
-                            "TypedHolder<std::nullptr_t>(nullptr)) {}"
-                        ),
-                        (
-                            f"  template <typename T> explicit {name}(T value)"
-                            " : value_(make_holder(std::move(value))) {}"
-                        ),
-                        "  template <typename T> bool is() const {",
-                        (
-                            "    return dynamic_cast<TypedHolder<T>*>"
-                            "(value_.get()) != nullptr;"
-                        ),
-                        "  }",
-                        "  template <typename T> T& get() {",
-                        (
-                            "    return static_cast<TypedHolder<T>*>"
-                            "(value_.get())->get();"
-                        ),
-                        "  } // get",
-                        "  template <typename T> const T& get() const {",
-                        (
-                            "    return static_cast<const TypedHolder<T>*>"
-                            "(value_.get())->get();"
-                        ),
-                        "  } // get const",
-                        "};",
-                    )
-                )
+                lines.append(_cpp_carrier_declaration(name))
         return tuple(lines)
 
     return _variant_preamble
+
+
+@beartype
+def _cpp_pooled_map_type(
+    maps: Sequence[dict[Scalar, Value]], /, *, type_ctx: _CppTypeCtx
+) -> str:
+    """Type sibling map constructors after empty maps borrow their
+    type.
+    """
+    values = [value for mapping in maps for value in mapping.values()]
+    nested = [
+        value
+        for value in values
+        if isinstance(value, dict) and not isinstance(value, OrderedMap)
+    ]
+    if len(nested) > 0 and len(nested) == len(values):
+        value_type = _cpp_pooled_map_type(nested, type_ctx=type_ctx)
+    else:
+        value_type = _compute_element_type_for_items(
+            items=values, type_ctx=type_ctx, in_mapping_value=True
+        )
+    return type_ctx.dict_type(value_type)
 
 
 @beartype
@@ -2062,7 +2125,10 @@ def _cpp_record_literal(
     trailing-comma config applies unchanged.
     """
     return RenderedRecordLiteral(
-        head=TypedCollectionOpen(f"{name}{{", declared_type=name),
+        head=TypedCollectionOpen(
+            f"{name}{{",
+            declared_type=_cpp_record_initializer_type(name, fields),
+        ),
         entries=tuple(
             f".{field.identifier} = {_cpp_record_member_value(field)}"
             for field in fields
@@ -2085,11 +2151,54 @@ def _cpp_record_literal_positional(
     literals, so positional aggregate initialization remains well-formed.
     """
     return RenderedRecordLiteral(
-        head=TypedCollectionOpen(f"{name}{{", declared_type=name),
+        head=TypedCollectionOpen(
+            f"{name}{{",
+            declared_type=_cpp_record_initializer_type(name, fields),
+        ),
         entries=tuple(_cpp_record_member_value(field) for field in fields),
         closer="}",
         compact_pad="",
     )
+
+
+@beartype
+def _cpp_record_initializer_type(
+    name: str, fields: Sequence[RecordLiteralField], /
+) -> str:
+    """Keep dependencies of member expressions that retain type
+    prefixes.
+    """
+    values = tuple(_cpp_record_member_value(field) for field in fields)
+    return _CppRecordType(
+        name,
+        headers=frozenset[str]().union(
+            *(
+                _cpp_type_headers(value.declared_type)
+                for value in values
+                if isinstance(value, TypedInitializer)
+            )
+        ),
+    )
+
+
+@beartype
+def _typed_cpp_record_open(
+    code: str,
+    items: list[Value],
+    /,
+    *,
+    type_ctx: _CppTypeCtx,
+    record_rendering_active: bool,
+) -> str:
+    """Retain the deduced native vector's dependencies."""
+    if not record_rendering_active:
+        return code
+    type_name = _compute_cpp_type(
+        item=items,
+        element_to_type=type_ctx.element_to_type(int_type="int"),
+        type_ctx=type_ctx,
+    )
+    return TypedCollectionOpen(code, declared_type=type_name)
 
 
 @beartype
@@ -2104,6 +2213,7 @@ def _cpp_record_member_value(field: RecordLiteralField, /) -> str:
     if (
         isinstance(initializer, TypedInitializer)
         and initializer.declared_type == field.type_name
+        and initializer.startswith(f"{initializer.declared_type}{{")
     ):
         return initializer[len(initializer.declared_type) :]
     return initializer
@@ -2481,7 +2591,12 @@ def _build_cpp_record_preamble(
                     type_ctx=type_ctx,
                     in_mapping_value=True,
                 )
-            value_alias = (f"using {_CPP_RECORD_MAP_VALUE} = {value_type};",)
+            value_alias = (
+                _CppTypeDependencies(
+                    f"using {_CPP_RECORD_MAP_VALUE} = {value_type};",
+                    headers=_cpp_type_headers(value_type),
+                ),
+            )
         declarations = record_preamble(data)
         if type_ctx.sequence_is_array and _contains_record_sequence(data):
             headers.append(import_preamble(code="#include <vector>"))
@@ -2507,7 +2622,7 @@ def _apply_cpp_variant_sequence_open(
         type_ctx=type_ctx,
         in_mapping_value=False,
     )
-    type_name = f"std::vector<{inner}>"
+    type_name = type_ctx.sequence_type(inner=inner, length=len(items))
     return TypedCollectionOpen(f"{type_name}{{", declared_type=type_name)
 
 
@@ -2540,7 +2655,13 @@ def _apply_cpp_variant_ordered_map_open(
         type_ctx=type_ctx,
         in_mapping_value=True,
     )
-    type_name = f"std::vector<std::pair<std::string, {value_type}>>"
+    type_name = _CppTypeDependencies(
+        f"std::vector<std::pair<std::string, {value_type}>>",
+        headers=frozenset(
+            {"#include <vector>", "#include <utility>", "#include <string>"}
+        )
+        | _cpp_type_headers(value_type),
+    )
     return TypedCollectionOpen(f"{type_name}{{", declared_type=type_name)
 
 
@@ -4083,9 +4204,7 @@ class Cpp(metaclass=LanguageCls):
     supports_scalar_before_comments: ClassVar[bool] = True
     supports_scalar_inline_comments: ClassVar[bool] = False
     statement_terminator: ClassVar[str] = ";"
-    _default_static_preamble: ClassVar[Sequence[str]] = (
-        import_preamble(code="#include <initializer_list>"),
-    )
+    _default_static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = (
         import_preamble(code="#include <cmath>"),
@@ -4135,9 +4254,9 @@ class Cpp(metaclass=LanguageCls):
     def static_preamble(self) -> Sequence[str]:
         """Static preamble lines emitted once per file.
 
-        Under :attr:`json_type` the ``nlohmann/json.hpp`` header replaces
-        the default ``<initializer_list>`` include because every emitted
-        expression constructs a ``nlohmann::json`` value.
+        Native dependencies are selected from the rendered value types.
+        Under :attr:`json_type`, every expression constructs a
+        ``nlohmann::json`` value and needs its header.
         """
         if self._json_type_active:
             return _NLOHMANN_JSON_STATIC_PREAMBLE
@@ -4698,9 +4817,12 @@ class Cpp(metaclass=LanguageCls):
         built, since the record strategy is itself built from that
         context.
         """
-        if not self._record_strategy_active:
+        if self._record_strategy_active:
+            lookup = self._record_strategy.record_name_for_value
+        elif self._uses_cpp14_tuple_record_strategy:
+            lookup = self._tuple_record_strategy.record_name_for_value
+        else:
             return None
-        lookup = self._record_strategy.record_name_for_value
         return lookup(value)
 
     @cached_property
@@ -4736,7 +4858,10 @@ class Cpp(metaclass=LanguageCls):
             return _NLOHMANN_INLINE_SEQUENCE_CONFIG
         if self._json_type_active:
             return _NLOHMANN_JSON_SEQUENCE_CONFIG
-        return self.sequence_format.get_config(type_ctx=self._type_ctx)
+        return dataclasses.replace(
+            self.sequence_format.get_config(type_ctx=self._type_ctx),
+            preamble_lines=(),
+        )
 
     @cached_property
     @beartype
@@ -4750,7 +4875,7 @@ class Cpp(metaclass=LanguageCls):
             return _NLOHMANN_INLINE_SET_CONFIG
         if self._json_type_active:
             return _NLOHMANN_JSON_SET_CONFIG
-        return self.set_format.value
+        return dataclasses.replace(self.set_format.value, preamble_lines=())
 
     @cached_property
     @beartype
@@ -4792,6 +4917,12 @@ class Cpp(metaclass=LanguageCls):
         )
         record_name_for_value = record_strategy.record_name_for_value
 
+        _typed_record_open = functools.partial(
+            _typed_cpp_record_open,
+            type_ctx=self._preamble_type_ctx,
+            record_rendering_active=record_rendering_active,
+        )
+
         @beartype
         def _open(items: list[Value]) -> str:
             """Return the typed C++14 record-list opener when needed,
@@ -4807,9 +4938,9 @@ class Cpp(metaclass=LanguageCls):
                         record_name_for_value=record_name_for_value,
                     )
                     if record_open is not None and record_open != "":
-                        return record_open
+                        return _typed_record_open(record_open, base_items)
                     return base_open(base_items)
-                return "std::vector{"
+                return _typed_record_open("std::vector{", base_items)
             nested_type = _cpp_nested_record_sequence_type(
                 value=items,
                 record_name_for_value=record_name_for_value,
@@ -4817,11 +4948,11 @@ class Cpp(metaclass=LanguageCls):
             if nested_type is not None:
                 depth, name = nested_type
                 if self.language_version is self.version_formats.CPP14:
-                    return _cpp14_nested_record_list_open(
-                        depth=depth,
-                        name=name,
+                    return _typed_record_open(
+                        _cpp14_nested_record_list_open(depth=depth, name=name),
+                        items,
                     )
-                return "std::vector{"
+                return _typed_record_open("std::vector{", items)
             return base_open(base_items)
 
         @beartype
@@ -4978,7 +5109,10 @@ class Cpp(metaclass=LanguageCls):
             return _NLOHMANN_INLINE_DICT_CONFIG
         if self._json_type_active:
             return _NLOHMANN_JSON_DICT_CONFIG
-        return self.dict_format.get_config(type_ctx=self._type_ctx)
+        return dataclasses.replace(
+            self.dict_format.get_config(type_ctx=self._type_ctx),
+            preamble_lines=(),
+        )
 
     @cached_property
     @beartype
@@ -4998,7 +5132,10 @@ class Cpp(metaclass=LanguageCls):
             return _NLOHMANN_INLINE_ORDERED_MAP_CONFIG
         if self._json_type_active:
             return _NLOHMANN_JSON_ORDERED_MAP_CONFIG
-        config = _build_ordered_map_config(type_ctx=self._type_ctx)
+        config = dataclasses.replace(
+            _build_ordered_map_config(type_ctx=self._type_ctx),
+            preamble_lines=(),
+        )
         record_rendering_active = (
             self._record_strategy_active
             or self._uses_cpp14_tuple_record_strategy
@@ -5051,16 +5188,13 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def data_dependent_preamble(
+    def _representation_preamble(
         self,
     ) -> Callable[[Value], tuple[str, ...]]:
         """Build data-dependent preamble lines (variant and ``nullptr``
         headers, plus ``<tuple>`` under the ``TUPLE`` strategy or the
         generated ``struct`` declarations under ``RECORD``).
         """
-        if self._json_type_active:
-            return no_data_preamble
-
         if self._record_strategy_active:
             return _build_cpp_record_preamble(
                 type_ctx=self._type_ctx,
@@ -5108,6 +5242,218 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     @beartype
+    def data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Include dependencies of native values, not call structure."""
+        if self._json_type_active:
+            return no_data_preamble
+
+        return functools.partial(self._native_preamble, initializer_type=None)
+
+    def initializer_preamble(
+        self, data: Value, initializer_type: str | None, /
+    ) -> tuple[str, ...]:
+        """Prefer retained native dependencies over reference value
+        hints.
+        """
+        if self._json_type_active:
+            return ()
+        return self._native_preamble(data, initializer_type=initializer_type)
+
+    def _native_preamble(
+        self,
+        data: Value,
+        /,
+        *,
+        initializer_type: str | None,
+    ) -> tuple[str, ...]:
+        """Retain declarations and their actual type dependencies."""
+        entries = self._representation_preamble(data)
+        imports = frozenset(preamble_imports(entries))
+        declarations = tuple(e for e in entries if e not in imports)
+        values = (
+            data.argument_values
+            if isinstance(data, CallPreambleData)
+            else (data,)
+        )
+        value_headers = (
+            _cpp_type_headers(initializer_type)
+            if isinstance(initializer_type, _CppTypeDependencies)
+            else frozenset[str]().union(
+                *(self._native_value_headers(value) for value in values)
+            )
+        )
+        declaration_headers = frozenset[str]().union(
+            *(_cpp_type_headers(entry) for entry in declarations)
+        )
+        if isinstance(data, CallPreambleData):
+            # Calls can widen the same container parameter across rows.
+            # The row and argument lists themselves are not C++ vectors.
+            value_headers |= frozenset[str]().union(
+                *(
+                    _cpp_type_headers(
+                        _compute_element_type_for_items(
+                            items=slot,
+                            type_ctx=self._preamble_type_ctx,
+                            in_mapping_value=False,
+                        )
+                    )
+                    for slot in data.argument_slots
+                    if any(
+                        isinstance(v, dict)
+                        and self._preamble_type_ctx.record_name_for_value(v)
+                        is None
+                        for v in slot
+                    )
+                )
+            )
+        return (
+            *(import_preamble(code=h) for h in sorted(value_headers)),
+            *(
+                declaration_import_preamble(code=h)
+                for h in sorted(declaration_headers - value_headers)
+            ),
+            *declarations,
+        )
+
+    def _native_value_headers(self, value: Value, /) -> frozenset[str]:
+        """Read dependencies retained by the chosen native type."""
+        if (
+            _renders_as_string_literal(
+                data=value,
+                date_type=self._resolved_date_format.value.type_produced,
+                datetime_type=self._resolved_datetime_format.value.type_produced,
+            )
+            or value is None
+        ):
+            return frozenset[str]()
+        if (
+            isinstance(value, list)
+            and self._tuple_strategy_active
+            and is_tuple_eligible(value=value)
+        ):
+            return frozenset(
+                {"#include <tuple>"}
+            ) | self._native_child_headers(value)
+        if (
+            isinstance(value, list)
+            and self._type_ctx.sequence_is_array
+            and _cpp_array_type(items=value, type_ctx=self._preamble_type_ctx)
+            is None
+            and _cpp_nested_record_sequence_type(
+                value=value,
+                record_name_for_value=self._preamble_type_ctx.record_name_for_value,
+            )
+            is None
+        ):
+            maps = [
+                item
+                for item in value
+                if isinstance(item, dict) and not isinstance(item, OrderedMap)
+            ]
+            map_headers = (
+                _cpp_type_headers(
+                    _cpp_pooled_map_type(
+                        maps, type_ctx=self._preamble_type_ctx
+                    )
+                )
+                if len(maps) > 0 and len(maps) == len(value)
+                else frozenset[str]()
+            )
+            return frozenset({"#include <initializer_list>"}).union(
+                self._native_child_headers(value),
+                map_headers,
+            )
+        type_name = _compute_cpp_type(
+            item=value,
+            element_to_type=self._preamble_type_ctx.element_to_type(
+                int_type="int"
+            ),
+            type_ctx=self._preamble_type_ctx,
+        )
+        return _cpp_type_headers(type_name)
+
+    def _native_child_headers(
+        self, children: Sequence[Value], /
+    ) -> frozenset[str]:
+        """Empty sibling literals borrow their non-empty sibling's
+        type.
+        """
+        return frozenset[str]().union(
+            *(
+                self._native_value_headers(v)
+                for v in children
+                if not (isinstance(v, (list, dict, set)) and len(v) == 0)
+            )
+        )
+
+    @cached_property
+    def _preamble_type_ctx(self) -> _CppTypeCtx:
+        """Use the record producer selected for this representation."""
+        if self._uses_cpp14_tuple_record_strategy:
+            return dataclasses.replace(
+                self._type_ctx,
+                record_name_for_value=self._tuple_record_strategy.record_name_for_value,
+            )
+        return self._type_ctx
+
+    def composed_preamble(
+        self,
+        preambles: tuple[tuple[str, ...], ...],
+        supporting_preambles: tuple[tuple[str, ...], ...],
+        canonical: tuple[str, ...],
+        /,
+    ) -> tuple[str, ...]:
+        """Unify supporting declarations without inventing a container."""
+        entries = tuple(entry for preamble in preambles for entry in preamble)
+        if not self._json_type_active:
+            carriers = tuple(
+                dict.fromkeys(
+                    entry
+                    for preamble in supporting_preambles
+                    for entry in preamble
+                    if isinstance(entry, _CppCarrierDeclaration)
+                )
+            )
+            imports = frozenset(preamble_imports(canonical))
+            declarations = carriers + tuple(
+                entry
+                for entry in canonical
+                if entry not in imports
+                and entry not in entries
+                and not isinstance(entry, _CppCarrierDeclaration)
+            )
+            headers = frozenset[str]().union(
+                *(_cpp_type_headers(entry) for entry in declarations)
+            )
+            entries += (
+                *(
+                    declaration_import_preamble(code=h)
+                    for h in sorted(headers)
+                ),
+                *declarations,
+            )
+        return tuple(dict.fromkeys(entries))
+
+    def reference_value_preamble(
+        self,
+        values: tuple[Value | None, ...],
+        /,
+        *,
+        has_known_null: bool,
+    ) -> tuple[str, ...]:
+        """Include the transfer helper only for consuming references."""
+        if (has_known_null and self._json_type_active) or any(
+            not isinstance(value, (bool, int, float))
+            and not self._native_ref_value_is_trivial(value)
+            for value in values
+        ):
+            return (import_preamble(code="#include <utility>"),)
+        return ()
+
+    @cached_property
+    @beartype
     def heterogeneous_behavior(self) -> HeterogeneousBehavior:
         """Return the heterogeneous-behavior config.
 
@@ -5136,14 +5482,7 @@ class Cpp(metaclass=LanguageCls):
             )
         return behavior
 
-    @staticmethod
-    def reference_binding_data_dependent_preamble(
-        data: Value, /
-    ) -> tuple[str, ...]:
-        """Only a non-scalar reference's ``std::move`` needs a header."""
-        if isinstance(data, (bool, int, float)):
-            return ()
-        return (import_preamble(code="#include <utility>"),)
+    reference_binding_data_dependent_preamble = staticmethod(no_data_preamble)
 
     @staticmethod
     def reference_declaration_imports(
@@ -5259,18 +5598,8 @@ class Cpp(metaclass=LanguageCls):
     @cached_property
     @beartype
     def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar preamble computed from date/datetime format."""
-        if self._json_type_active:
-            return {}
-        return date_scalar_preamble(
-            date_format=self._resolved_date_format,
-            datetime_format=self._resolved_datetime_format,
-            extra={
-                str: (import_preamble(code="#include <string>"),),
-                bytes: (import_preamble(code="#include <string>"),),
-                type(None): (import_preamble(code="#include <cstddef>"),),
-            },
-        )
+        """Native type metadata supplies scalar and field dependencies."""
+        return {}
 
     @cached_property
     @beartype

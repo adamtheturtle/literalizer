@@ -1,6 +1,3 @@
-#include <initializer_list>
-#include <vector>
-#include <cstddef>
 template <typename... Args> auto consume_widget(Args...) { return 0; }
 int main() {
 auto shared = 1;

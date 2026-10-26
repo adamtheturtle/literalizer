@@ -1,5 +1,3 @@
-#include "../../cpp_support/include/named_type.hpp"
-#include <initializer_list>
 #include <string>
 #include <vector>
 #include <cstddef>
@@ -48,5 +46,6 @@ auto my_data = std::vector<std::vector<Value>>{
     // next element
     std::vector<Value>{Value{3}, Value{"world"}},
 };
+    (void)my_data;
     return 0;
 }
