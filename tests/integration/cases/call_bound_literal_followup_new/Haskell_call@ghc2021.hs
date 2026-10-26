@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
 module Fixture_call_bound_literal_followup_new_Haskell_call where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
@@ -10,7 +11,7 @@ instance Num Val where
     negate _ = error "not implemented"
 make_widget :: Val -> IO Val
 make_widget _ = return undefined
-consume :: Val -> IO ()
+consume :: (IO Val) -> IO ()
 consume _ = return ()
 my_data = make_widget (42)
 main :: IO ()

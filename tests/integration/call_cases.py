@@ -745,7 +745,10 @@ def _wrapper_parameter_names(
 
 @beartype
 def _wrapper_declarations(
-    *, spec: literalizer.Language, config: CallCaseSpec
+    *,
+    spec: literalizer.Language,
+    config: CallCaseSpec,
+    bound_result_slots: frozenset[int],
 ) -> CallStubDeclarations:
     """Keep actual operand representations and wrapper calling conventions."""
     body: list[str | RenderedCallStub] = []
@@ -756,6 +759,14 @@ def _wrapper_declarations(
         params = parameter_names
         wrapper_spec = spec
         arguments: Sequence[ParsedValue] = ()
+        if name == config.followup_target_function:
+            arguments = CallStubData(
+                data=(),
+                keyword_arguments=isinstance(
+                    spec.call_style_config, KeywordCallStyle
+                ),
+                call_result_slots=bound_result_slots,
+            )
         if wrapper is not None and name == wrapper.target:
             wrapper_spec = _wrapper_call_spec(spec=spec)
             params = _wrapper_parameter_names(spec=wrapper_spec, params=params)
@@ -793,6 +804,34 @@ def _wrapper_declarations(
     )
 
 
+@beartype
+def followup_result_slots(
+    *,
+    config: CallCaseSpec,
+    input_format: literalizer.InputFormat,
+) -> frozenset[int]:
+    """Identify direct bound-result operands in the parsed follow-up
+    call.
+    """
+    if config.followup_source is None or config.variable_form is None:
+        return frozenset[int]()
+    data = parse_input(
+        source=config.followup_source, input_format=input_format
+    ).data
+    rows = data if config.per_element and isinstance(data, list) else [data]
+    slots: set[int] = set()
+    for row in rows:
+        arguments = (
+            row if config.per_element and isinstance(row, list) else [row]
+        )
+        slots.update(
+            index
+            for index, value in enumerate(iterable=arguments)
+            if value == {config.ref_key: config.variable_form.name}
+        )
+    return frozenset(slots)
+
+
 @dataclasses.dataclass(frozen=True)
 class WrapperCallTransform:
     """A call producer retaining wrapper operands and declaration
@@ -817,7 +856,11 @@ class WrapperCallTransform:
         """Supply the same native wrappers to the production file
         builder.
         """
-        return _wrapper_declarations(spec=self.spec, config=self.config)
+        return _wrapper_declarations(
+            spec=self.spec,
+            config=self.config,
+            bound_result_slots=frozenset(),
+        )
 
     def __call__(self, context: literalizer.CallContext, /) -> str:
         """Apply the real wrapper convention to rendered native
@@ -1634,10 +1677,19 @@ def run_call_golden_case(
     # Statement stubs cover transform wrappers and a separate follow-up
     # consumer. Keep each target's parameter names so their argument
     # counts remain valid in languages with fixed parameter counts.
-    wrapper_stubs = _wrapper_declarations(spec=spec, config=config)
+    wrapper_stubs = _wrapper_declarations(
+        spec=spec,
+        config=config,
+        bound_result_slots=followup_result_slots(
+            config=config,
+            input_format=input_info.input_format,
+        ),
+    )
     body_stubs.extend(wrapper_stubs.body)
     class_stubs.extend(wrapper_stubs.class_scope)
     preamble_stubs.extend(wrapper_stubs.file_scope)
+    if config.variable_form is not None:
+        preamble_stubs.extend(spec.format_call_binding_file_pragmas())
     # One library entry point assembles the declarations and the call
     # into a single coherent file: it recomputes the body preamble
     # across the union of types in every declaration *and* the call,

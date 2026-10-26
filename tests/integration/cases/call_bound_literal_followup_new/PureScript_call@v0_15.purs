@@ -7,7 +7,7 @@ data Val
     | PList (Array Val)
 make_widget :: Val -> Unit
 make_widget _ = unit
-consume :: Val -> Unit
+consume :: Unit -> Unit
 consume _ = unit
 my_data = make_widget (PInt 42)
 
