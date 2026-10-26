@@ -6,3 +6,9 @@ axis = "float_format"
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "sequence"

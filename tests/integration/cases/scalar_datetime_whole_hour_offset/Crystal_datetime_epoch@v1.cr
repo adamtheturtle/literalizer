@@ -1,0 +1,4 @@
+module Fixture_scalar_datetime_whole_hour_offset_Crystal_datetime_epoch
+extend self
+my_data = 1705323600
+end

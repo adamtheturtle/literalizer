@@ -4,3 +4,12 @@ gates = [{kind = "capability_flag", flag = "default_allows_empty_dict_keys"}]
 
 [[variants]]
 axis = "string_format"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"
