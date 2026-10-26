@@ -451,7 +451,7 @@ def _mojo_typed_param_list(
     heterogeneous_value_type: str | None,
     datetime_type: str,
 ) -> tuple[str, ...] | None:
-    """Return ``("name: Type", ...)`` for a typed Mojo signature.
+    """Return ``("var name: Type", ...)`` for an owning Mojo signature.
 
     Thin wrapper over :func:`_mojo_compute_slot_signatures` that
     surfaces only the ``typed_params`` field.  See that function for
@@ -464,7 +464,9 @@ def _mojo_typed_param_list(
         arg_values=arg_values,
         heterogeneous_value_type=heterogeneous_value_type,
     )
-    return info.typed_params
+    if info.typed_params is None:
+        return None
+    return tuple(f"var {parameter}" for parameter in info.typed_params)
 
 
 @beartype
@@ -568,14 +570,16 @@ def _mojo_call_preamble_stub(
     every call's argument values at each slot resolve to the same
     Mojo type (a scalar, a recursive ``List[...]``, or a homogeneous
     ``Dict[String, ...]``), and the generic
-    ``[*Ts: AnyType](*args: *Ts)`` form otherwise.
+    ``[*Ts: Movable](var *args: *Ts)`` form otherwise.
+
+    Owned parameters retain a caller's explicit transfer under Mojo 1.2.
 
     When *stub_return* is :attr:`StubReturn.VALUE` (the call result feeds
     a surrounding ``call_transform`` wrapper), the inner stub is given
     an explicit ``-> None`` return annotation.  No per-call inference is
     available (the transform is a plain string wrapper), so ``None`` is
     used as a documented placeholder: it is always valid, the body stays
-    ``pass``, and the surrounding generic ``[*Ts: AnyType]`` wrapper
+    ``pass``, and the surrounding generic ``[*Ts: Movable]`` wrapper
     accepts it.  ``None`` also avoids ``-Werror`` ``value is unused``
     diagnostics when the transform is the identity (no outer wrapper),
     because the bare call has no value to leak.
@@ -597,7 +601,7 @@ def _mojo_call_preamble_stub(
             )
         return (
             (
-                f"def {parts[0]}[*Ts: AnyType](*args: *Ts)"
+                f"def {parts[0]}[*Ts: Movable](var *args: *Ts)"
                 f"{return_suffix}:\n{indent}pass"
             ),
         )
@@ -613,7 +617,7 @@ def _mojo_call_preamble_stub(
         )
     else:
         method_stub = (
-            f"{indent}def {method}[*Ts: AnyType](self, *args: *Ts)"
+            f"{indent}def {method}[*Ts: Movable](self, var *args: *Ts)"
             f"{return_suffix}:\n{indent}{indent}pass"
         )
     if len(fields) == 0:

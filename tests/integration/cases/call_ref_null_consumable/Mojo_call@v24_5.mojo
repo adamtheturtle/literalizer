@@ -1,4 +1,4 @@
-def consume[*Ts: AnyType](*args: *Ts):
+def consume[*Ts: Movable](var *args: *Ts):
     pass
 def main():
     var my_null = None

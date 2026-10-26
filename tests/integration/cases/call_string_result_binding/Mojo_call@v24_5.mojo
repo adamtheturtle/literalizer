@@ -1,4 +1,4 @@
-def make_widget(text: String) -> None:
+def make_widget(var text: String) -> None:
     pass
 def main():
     var my_data = make_widget("text")

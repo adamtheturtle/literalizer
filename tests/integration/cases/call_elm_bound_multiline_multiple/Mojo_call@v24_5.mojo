@@ -1,4 +1,4 @@
-def f(value: List[List[Int]]):
+def f(var value: List[List[Int]]):
     pass
 def main():
     var ref_data = List([

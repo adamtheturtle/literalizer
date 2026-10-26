@@ -1,4 +1,4 @@
-def f(a: Int, b: String):
+def f(var a: Int, var b: String):
     pass
 def main():
     f(2, "hello")  # trailing note

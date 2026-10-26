@@ -1,4 +1,4 @@
-def process(data: List[Int], count: Int):
+def process(var data: List[Int], var count: Int):
     pass
 def main():
     var my_var = List([

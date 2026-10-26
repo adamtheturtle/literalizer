@@ -1,4 +1,4 @@
-def process(value: String):
+def process(var value: String):
     pass
 def main():
     process("Dune")  # first edition

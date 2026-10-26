@@ -1,4 +1,4 @@
-def make_widget(value: Int) -> None:
+def make_widget(var value: Int) -> None:
     pass
 def main():
     var my_data = make_widget(1)

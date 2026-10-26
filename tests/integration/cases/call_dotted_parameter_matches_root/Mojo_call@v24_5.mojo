@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _OuterType(Copyable, Movable):
-    def inner(self, outer: Int, n: Int):
+    def inner(self, var outer: Int, var n: Int):
         pass
 def main():
     var outer = _OuterType()
