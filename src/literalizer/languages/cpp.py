@@ -4966,6 +4966,22 @@ class Cpp(metaclass=LanguageCls):
 
         return signature_open(render=_open, infer=_signature)
 
+    def sequence_open_from_unknown_references(
+        self, names: Sequence[str], /
+    ) -> str:
+        """Infer opaque element types from the native C++ references."""
+        if self._json_type_active or self._json_inline_document_active:
+            return self.sequence_open([])
+        types = ", ".join(f"decltype({name})" for name in names)
+        element_type = _CppTypeDependencies(
+            f"std::common_type_t<{types}>",
+            headers=frozenset({"#include <type_traits>"}),
+        )
+        type_name = self._type_ctx.sequence_type(
+            inner=element_type, length=len(names)
+        )
+        return TypedCollectionOpen(f"{type_name}{{", declared_type=type_name)
+
     @staticmethod
     def _record_sequence_signature(
         items: list[Value],
@@ -5277,11 +5293,19 @@ class Cpp(metaclass=LanguageCls):
             if isinstance(data, CallPreambleData)
             else (data,)
         )
+        argument_types: Mapping[int, str | None] = (
+            data.argument_types
+            if isinstance(data, CallPreambleData)
+            else dict[int, str | None]()
+        )
         value_headers = (
             _cpp_type_headers(initializer_type)
             if isinstance(initializer_type, _CppTypeDependencies)
             else frozenset[str]().union(
-                *(self._native_value_headers(value) for value in values)
+                *(
+                    self._native_argument_headers(value, argument_types)
+                    for value in values
+                )
             )
         )
         declaration_headers = frozenset[str]().union(
@@ -5316,6 +5340,15 @@ class Cpp(metaclass=LanguageCls):
             ),
             *declarations,
         )
+
+    def _native_argument_headers(
+        self, value: Value, argument_types: Mapping[int, str | None], /
+    ) -> frozenset[str]:
+        """Prefer the type actually selected for an opaque argument."""
+        type_name = argument_types.get(id(value))
+        if type_name is not None:
+            return _cpp_type_headers(type_name)
+        return self._native_value_headers(value)
 
     def _native_value_headers(self, value: Value, /) -> frozenset[str]:
         """Read dependencies retained by the chosen native type."""

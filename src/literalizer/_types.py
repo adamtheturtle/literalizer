@@ -1,7 +1,7 @@
 """Type aliases used across the literalizer package."""
 
 import datetime as dt
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Protocol, runtime_checkable
 
 from beartype import beartype
@@ -42,7 +42,9 @@ class CallPreambleData(list[Value]):
     actually appear in the generated calls for language preambles whose
     type discovery depends on container structure.  ``argument_slots``
     also preserves positional grouping across calls for strategies that
-    widen siblings in the same parameter slot.
+    widen siblings in the same parameter slot. ``argument_types`` keeps
+    declaration types selected from opaque native references, keyed by
+    argument identity.
     """
 
     def __init__(
@@ -51,11 +53,13 @@ class CallPreambleData(list[Value]):
         *,
         argument_values: tuple[Value, ...],
         argument_slots: tuple[list[Value], ...],
+        argument_types: Mapping[int, str | None],
     ) -> None:
         """Store the original preamble data and rendered arguments."""
         super().__init__(data)
         self.argument_values = argument_values
         self.argument_slots = argument_slots
+        self.argument_types = argument_types
 
 
 @runtime_checkable

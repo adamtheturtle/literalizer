@@ -1,0 +1,26 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC consume_widget (VAL MOBILE LIT arg_value)
+    SKIP
+:
+PROC main ()
+    VAL MOBILE LIT item IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT []):
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.list; MOBILE []MOBILE LIT [
+        item,
+        item
+    ]):
+    consume_widget(my_data)
+    SEQ
+        SKIP
+:

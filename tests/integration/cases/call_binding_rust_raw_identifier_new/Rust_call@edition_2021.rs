@@ -6,5 +6,5 @@ fn main() {
         fn r#type() {}
         r#type()
     }; // note
-    consume(my_data);
+    consume(my_data.clone());
 }

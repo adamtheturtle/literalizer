@@ -1,0 +1,10 @@
+# Caller declarations are composed after rendering; the API receives no value hints.
+schema_version = 1
+owner = "literalize-ref-default"
+input = "input.json"
+
+[ref]
+gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
+external_declarations = {item = "[]"}
+explicit_ref_value_sources = {}
+expected_value_source = "[[], []]"
