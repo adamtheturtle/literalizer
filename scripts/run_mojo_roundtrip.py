@@ -60,20 +60,10 @@ changing the backend's documented sequence type from ``List`` to ``Array``.
 
 import shutil
 
+from pydantic import JsonValue
+
 from literalizer.languages import Mojo
 from scripts import roundtrip_common
-
-# The validated input has this recursive shape, which lets
-# ``isinstance`` narrow the value helper cleanly under every type checker.
-type JsonValue = (
-    bool
-    | int
-    | float
-    | str
-    | list["JsonValue"]
-    | dict[str, "JsonValue"]
-    | None
-)
 
 _VAR_NAME = "my_data"
 _LIST_PROBE_NAME = "list_probe"
