@@ -11,7 +11,7 @@ if [[ ${1:-} == --pool ]]; then
         printf 'Mojo pool %s=%s\n' "$resource" "$(cat "$resource_root/$resource")"
     done
     status=0
-    xargs -0 -P 2 -n1 scripts/lint-mojo-fixture.sh || status=$?
+    xargs -0 -P 4 -n1 scripts/lint-mojo-fixture.sh || status=$?
     printf 'Mojo pool memory.peak=%s\n' "$(cat "$resource_root/memory.peak")"
     printf 'Mojo pool memory.events:\n'
     cat "$resource_root/memory.events"
@@ -20,7 +20,7 @@ fi
 
 # Keep a runaway compiler inside its own memory controller rather than
 # competing with the Actions runner. Pressure starts at 3 GiB; the whole
-# two-worker pool has a hard 4 GiB ceiling and cannot consume swap.
+# four-worker pool has a hard 4 GiB ceiling and cannot consume swap.
 # Drop back to the invoking user before executing fixture programs.
 exec sudo -n systemd-run --scope --quiet \
     --property=MemoryHigh=3G --property=MemoryMax=4G --property=MemorySwapMax=0 \
