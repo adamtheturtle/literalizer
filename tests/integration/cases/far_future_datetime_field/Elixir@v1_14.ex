@@ -1,0 +1,8 @@
+defmodule Check do
+  def x do
+    my_data = %{
+        "ts" => "3000-12-31T23:59:59.999999+00:00",
+    }
+    _ = my_data
+  end
+end

@@ -148,7 +148,7 @@ def test_wrap_in_file_case_handles_stale_rejected_call_arg(
 @pytest.mark.parametrize(
     argnames="call_case",
     argvalues=discover_call_cases(),
-    ids=lambda case: f"{case.config.case_dir_name}/{case.lang_cls.__name__}",
+    ids=lambda case: f"{case.config.coverage_id}/{case.lang_cls.__name__}",
 )
 def test_call_golden_file(
     call_case: CallCase,
@@ -181,7 +181,9 @@ def test_call_golden_file(
                 cleanup_stale_golden(
                     golden_path=make_golden_path(
                         parent=cases_dir / config.case_dir_name,
-                        name=f"{lang_cls.__name__}_call",
+                        name=config.golden_name(
+                            name=f"{lang_cls.__name__}_call"
+                        ),
                         extension=lang_cls.extension,
                         lang_cls=lang_cls,
                         version=version_format,
@@ -203,7 +205,7 @@ def test_call_golden_file(
 @pytest.mark.parametrize(
     argnames="call_variant_case",
     argvalues=build_call_variant_cases(),
-    ids=lambda case: f"{case.config.case_dir_name}/{case.variant.name}",
+    ids=lambda case: f"{case.config.coverage_id}/{case.variant.name}",
 )
 def test_call_variant_golden_file(
     call_variant_case: CallVariantCase,
@@ -240,7 +242,9 @@ def test_call_variant_golden_file(
             cleanup_stale_golden(
                 golden_path=make_golden_path(
                     parent=cases_dir / call_variant_case.config.case_dir_name,
-                    name=f"{call_variant_case.variant.name}_call",
+                    name=call_variant_case.config.golden_name(
+                        name=f"{call_variant_case.variant.name}_call"
+                    ),
                     extension=lang_cls.extension,
                     lang_cls=lang_cls,
                     version=version_format,

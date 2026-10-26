@@ -1,0 +1,10 @@
+class Fixture_call_bound_literal_followup_existing_Haxe_call {
+    public static function main() {
+        function make_widget(value:Dynamic):Dynamic return null;
+        function consume(value:Dynamic):Dynamic return null;
+        var my_data = make_widget(42);
+        consume(my_data);
+        my_data = make_widget(42);
+        consume(my_data);
+    }
+}

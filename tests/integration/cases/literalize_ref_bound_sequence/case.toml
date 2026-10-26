@@ -1,0 +1,44 @@
+# Shared input and API context; named examples preserve specialized regression witnesses.
+schema_version = 1
+owner = "literalize-ref"
+
+[ref.value_sources]
+ref_data = "[1, 2]"
+
+[[ref_examples]]
+# Regression provenance: literalize_ref_const_bound_list
+# Original regression (literalize_ref_const_rvalue): C++ reference declaration modifiers must accept the rendered value category.
+example = "literalize_ref_const_bound_list"
+variable_modifiers = ["CONST"]
+
+[[ref_examples.gates]]
+kind = "capability_flag"
+flag = "supports_variable_names"
+
+[[ref_examples.gates]]
+kind = "modifier_present"
+modifier = "CONST"
+
+[ref_examples.value_sources]
+ref_data = "[1, 2]"
+
+[[ref_examples]]
+# Regression provenance: literalize_ref_static_const_bound_list
+# Original regression (literalize_ref_static_const_rvalue): C++ reference declaration modifiers must accept the rendered value category.
+example = "literalize_ref_static_const_bound_list"
+variable_modifiers = ["STATIC", "CONST"]
+
+[[ref_examples.gates]]
+kind = "capability_flag"
+flag = "supports_variable_names"
+
+[[ref_examples.gates]]
+kind = "modifier_present"
+modifier = "STATIC"
+
+[[ref_examples.gates]]
+kind = "modifier_present"
+modifier = "CONST"
+
+[ref_examples.value_sources]
+ref_data = "[1, 2]"

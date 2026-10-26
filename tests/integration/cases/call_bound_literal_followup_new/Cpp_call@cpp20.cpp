@@ -1,0 +1,11 @@
+#include <initializer_list>
+#include <vector>
+#include <cstddef>
+#include <type_traits>
+auto make_widget(auto...) { return 0; }
+auto consume(auto...) { return 0; }
+int main() {
+auto my_data = make_widget(42);
+consume(my_data);
+    return 0;
+}

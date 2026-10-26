@@ -1,0 +1,6 @@
+sub make_widget(*@a, *%kw) {}
+sub consume(*@a, *%kw) {}
+my $my_data = make_widget(Nil);
+consume($my_data);
+$my_data = make_widget(42);
+consume($my_data);

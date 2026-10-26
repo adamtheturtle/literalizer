@@ -40,7 +40,6 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     VariableNameNotSupportedError,
 )
-from literalizer.languages import Matlab
 from tests.enum_members import enum_member_by_name
 from tests.yaml_support import as_yaml_parser
 
@@ -359,12 +358,13 @@ def _bound_ref_inputs(
     declarations.
     """
     collected_bound_refs_input: dict[str, ValueInput] = {}
+    key_syntax = make_spec(lang_cls=lang_cls).dict_format_config.key_syntax
+    effective_s = '{"_": "_"}'
+    if key_syntax is not None and not key_syntax.accepts(name="_"):
+        effective_s = '{"key": "value"}'
     for entry_raw_name in collect_ref_names(
         data=raw_data, ref_key=config.ref_key
     ):
-        effective_s = '{"_": "_"}'
-        if lang_cls is Matlab:
-            effective_s = '{"key": "value"}'
         collected_bound_refs_input[entry_raw_name] = json.loads(
             s=config.value_sources.get(entry_raw_name, effective_s)
         )
@@ -696,7 +696,7 @@ def run_literalize_ref_golden_case(
     input_source = input_path.read_text(encoding="utf-8")
     golden_path = make_golden_path(
         parent=input_path.parent,
-        name=golden_name,
+        name=config.golden_name(name=golden_name),
         extension=lang_cls.extension,
         lang_cls=lang_cls,
         version=version,

@@ -1,0 +1,24 @@
+# Shared input and API context; named examples preserve specialized regression witnesses.
+schema_version = 1
+owner = "literalize-ref"
+
+[ref.value_sources]
+shared = "[[1,2],{\"value\":1}]"
+
+[[ref_examples]]
+# Regression provenance: literalize_ref_repeated_hybrid_tuple
+# Original regression (literalize_ref_rust_repeated_tuple_owned): Rust ownership distinguishes reusable owned bindings from Copy values.
+example = "literalize_ref_repeated_hybrid_tuple"
+sequence_format = "TUPLE_NESTED_VEC"
+
+[[ref_examples.gates]]
+kind = "capability_flag"
+flag = "supports_variable_names"
+
+[[ref_examples.gates]]
+kind = "enum_member_present"
+option = "sequence_format"
+member = "TUPLE_NESTED_VEC"
+
+[ref_examples.value_sources]
+shared = "[[1,2],{\"value\":1}]"

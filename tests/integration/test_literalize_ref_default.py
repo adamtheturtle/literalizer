@@ -17,7 +17,7 @@ from .literalize_ref_cases import (
 @pytest.mark.parametrize(
     argnames="ref_case",
     argvalues=discover_literalize_default_ref_cases(),
-    ids=lambda case: f"{case.config.case_dir_name}/{case.lang_cls.__name__}",
+    ids=lambda case: f"{case.config.coverage_id}/{case.lang_cls.__name__}",
 )
 def test_literalize_ref_default_golden_file(
     ref_case: LiteralizeRefCase,

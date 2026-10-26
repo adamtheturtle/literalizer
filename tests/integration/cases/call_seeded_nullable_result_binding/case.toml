@@ -1,0 +1,36 @@
+# Shared input and API context; named examples preserve specialized regression witnesses.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[call.ref_declarations]
+my_data = "null"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_nested_format_comment_existing
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_nested_format_comment_existing"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+call_transform = "($\"{{$\"{{1://}}\"}}\").Length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[call_examples.ref_declarations]
+my_data = "null"

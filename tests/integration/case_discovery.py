@@ -11,7 +11,6 @@ import enum
 import functools
 import json
 import math
-import re
 import tomllib
 from pathlib import Path
 from typing import assert_never
@@ -25,11 +24,11 @@ from ruamel.yaml.comments import TaggedScalar
 from typing_extensions import TypeIs
 
 import literalizer
+from literalizer._language import NewVariableNameSyntax
 from literalizer.exceptions import (
     InvalidDictKeyError,
     UnrepresentableStringError,
 )
-from literalizer.languages import Matlab
 from tests.yaml_support import as_yaml_parser
 
 from .case_inputs import CaseInput
@@ -133,8 +132,6 @@ type CaseData = (
     | set[_CaseScalar]
     | frozenset[_CaseScalar]
 )
-
-_MATLAB_FIELD_NAME = re.compile(pattern=r"^[A-Za-z][A-Za-z0-9_]*$")
 
 
 def _is_object_dict(value: object, /) -> TypeIs[dict[object, object]]:
@@ -240,23 +237,25 @@ def has_non_printable_ascii_dict_keys(data: CaseData) -> bool:
             return False
 
 
-def has_invalid_matlab_struct_keys(data: CaseData) -> bool:
-    """Return whether *data* contains a key invalid for a MATLAB
-    struct.
+def has_invalid_dict_keys(
+    *, data: CaseData, key_syntax: NewVariableNameSyntax
+) -> bool:
+    """Return whether a nested string key violates its producer
+    grammar.
     """
     match data:
         case dict():
             return any(
-                isinstance(key, str)
-                and _MATLAB_FIELD_NAME.fullmatch(string=key) is None
+                isinstance(key, str) and not key_syntax.accepts(name=key)
                 for key in data
             ) or any(
-                has_invalid_matlab_struct_keys(data=value)
+                has_invalid_dict_keys(data=value, key_syntax=key_syntax)
                 for value in data.values()
             )
         case list():
             return any(
-                has_invalid_matlab_struct_keys(data=item) for item in data
+                has_invalid_dict_keys(data=item, key_syntax=key_syntax)
+                for item in data
             )
         case _:
             return False
@@ -264,15 +263,18 @@ def has_invalid_matlab_struct_keys(data: CaseData) -> bool:
 
 @functools.cache
 @beartype
-def cases_with_invalid_matlab_struct_keys(
-    cases_dir: Path,
+def cases_with_invalid_dict_keys(
+    *, cases_dir: Path, key_syntax: NewVariableNameSyntax | None
 ) -> frozenset[str]:
-    """Return case names MATLAB's default struct format cannot render."""
+    """Return inputs rejected by the declared dictionary key syntax."""
+    if key_syntax is None:
+        return frozenset[str]()
     return frozenset(
         case_dir.name
         for case_dir in cases_dir.iterdir()
-        if has_invalid_matlab_struct_keys(
-            data=load_case_data(input_info=case_input(case_dir=case_dir))
+        if has_invalid_dict_keys(
+            data=load_case_data(input_info=case_input(case_dir=case_dir)),
+            key_syntax=key_syntax,
         )
     )
 
@@ -342,9 +344,6 @@ def discover_cases(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
-    invalid_matlab_cases = cases_with_invalid_matlab_struct_keys(
-        cases_dir=cases_dir
-    )
     cases: list[tuple[str, literalizer.LanguageCls]] = []
     for manifest in load_case_manifests(cases_dir=cases_dir):
         if "base" not in manifest.suites:
@@ -353,7 +352,12 @@ def discover_cases(
         non_trivial = case_dir.name in non_trivial_key_cases
         special_float = case_dir.name in special_float_cases
         for lang_cls in _selected_languages(manifest=manifest):
-            if lang_cls is Matlab and case_dir.name in invalid_matlab_cases:
+            if case_dir.name in cases_with_invalid_dict_keys(
+                cases_dir=cases_dir,
+                key_syntax=make_spec(
+                    lang_cls=lang_cls
+                ).dict_format_config.key_syntax,
+            ):
                 continue
             if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
                 lang_cls=lang_cls
@@ -411,9 +415,6 @@ def discover_combined_cases(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
-    invalid_matlab_cases = cases_with_invalid_matlab_struct_keys(
-        cases_dir=cases_dir
-    )
     cases: list[CombinedCase] = []
     for manifest in load_case_manifests(cases_dir=cases_dir):
         if "combined" not in manifest.suites:
@@ -423,7 +424,11 @@ def discover_combined_cases(
         special_float = case_dir.name in special_float_cases
         for lang_cls in _selected_languages(manifest=manifest):
             lang_name = lang_cls.__name__
-            if lang_cls is Matlab and case_dir.name in invalid_matlab_cases:
+            spec = make_spec(lang_cls=lang_cls)
+            if case_dir.name in cases_with_invalid_dict_keys(
+                cases_dir=cases_dir,
+                key_syntax=spec.dict_format_config.key_syntax,
+            ):
                 continue
             if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
                 lang_cls=lang_cls
@@ -431,7 +436,6 @@ def discover_combined_cases(
                 continue
             if special_float and not lang_cls.supports_special_floats:
                 continue
-            spec = make_spec(lang_cls=lang_cls)
             redef_styles = find_redefinition_styles(spec=spec)
             for style in redef_styles:
                 if style is redef_styles[0]:

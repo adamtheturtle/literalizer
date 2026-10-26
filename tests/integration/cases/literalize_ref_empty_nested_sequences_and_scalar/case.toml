@@ -1,0 +1,24 @@
+# Shared input and API context; named examples preserve specialized regression witnesses.
+schema_version = 1
+owner = "literalize-ref"
+
+[ref.value_sources]
+seed = "1"
+
+[[ref_examples]]
+# Regression provenance: literalize_ref_interface_empty_array
+# Original regression (v_interface_empty_array_reference): V interface arrays retain fallback-typed empty leaves beside a bound scalar reference.
+example = "literalize_ref_interface_empty_array"
+heterogeneous_strategy = "INTERFACE"
+
+[[ref_examples.gates]]
+kind = "capability_flag"
+flag = "supports_variable_names"
+
+[[ref_examples.gates]]
+kind = "enum_member_present"
+option = "heterogeneous_strategy"
+member = "INTERFACE"
+
+[ref_examples.value_sources]
+seed = "1"

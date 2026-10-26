@@ -1,6 +1,7 @@
 """Validation tests for case-local golden coverage manifests."""
 
 from pathlib import Path
+from typing import Literal
 
 import pytest
 
@@ -27,6 +28,94 @@ from .case_manifests import (
     variable_form_for_context,
 )
 from .variant_cases import build_variant_cases, validate_unique_variant_targets
+
+
+@pytest.mark.parametrize(argnames="table", argvalues=["call", "ref"])
+@pytest.mark.parametrize(
+    argnames=("failure", "message"),
+    argvalues=[
+        ("missing_primary", "requires its primary API table"),
+        ("unnamed", "requires an example name"),
+        ("duplicate", "contains a duplicate example name"),
+        ("primary_named", "primary API tables cannot name an example"),
+        ("invalid_name", "String should match pattern"),
+    ],
+)
+def test_api_examples_reject_ambiguous_ownership(
+    tmp_path: Path,
+    table: Literal["call", "ref"],
+    failure: str,
+    message: str,
+) -> None:
+    """Examples must have one shared input owner and unique golden
+    names.
+    """
+    fields = (
+        'target_function = "target"\nparameter_names = ["value"]\n'
+        "per_element = false\n"
+        if table == "call"
+        else 'variable_name = "result"\n'
+    )
+    primary = f"[{table}]\n{fields}"
+    example = f'[[{table}_examples]]\nexample = "native"\n{fields}'
+    if failure == "missing_primary":
+        primary = ""
+    elif failure == "unnamed":
+        example = f"[[{table}_examples]]\n{fields}"
+    elif failure == "duplicate":
+        example += example
+    elif failure == "primary_named":
+        primary = f'[{table}]\nexample = "native"\n{fields}'
+    else:
+        example = example.replace('"native"', '"invalid-name"')
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            f'schema_version = 1\nowner = "literalize-{table}"\n'
+            f"{primary}{example}"
+        ),
+        input_name="input.yaml",
+    )
+    with pytest.raises(expected_exception=CaseManifestError, match=message):
+        _ = load_case_manifest(case_dir=case_dir)
+
+
+@pytest.mark.parametrize(argnames="table", argvalues=["call", "ref"])
+def test_api_examples_keep_the_shared_input_and_native_configuration(
+    tmp_path: Path,
+    table: Literal["call", "ref"],
+) -> None:
+    """Examples change golden identity while sharing input ownership."""
+    fields = (
+        'target_function = "target"\nparameter_names = ["value"]\n'
+        "per_element = false\n"
+        if table == "call"
+        else 'variable_name = "result"\n'
+    )
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            f'schema_version = 1\nowner = "literalize-{table}"\n'
+            f"[{table}]\n{fields}"
+            f'[[{table}_examples]]\nexample = "native"\n{fields}'
+            'variable_modifiers = ["CONST"]\n'
+        ),
+        input_name="input.yaml",
+    )
+    manifest = load_case_manifest(case_dir=case_dir)
+    primary = manifest.call if table == "call" else manifest.ref
+    examples = (
+        manifest.call_examples if table == "call" else manifest.ref_examples
+    )
+    assert primary is not None
+    assert primary.coverage_id == "example"
+    assert primary.golden_name(name="Backend") == "Backend"
+    assert len(examples) == 1
+    example = examples[0]
+    assert example.case_dir_name == primary.case_dir_name == case_dir.name
+    assert example.coverage_id == "example/native"
+    assert example.golden_name(name="Backend") == "Backend_native"
+    assert example.variable_modifiers == ("CONST",)
 
 
 def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:

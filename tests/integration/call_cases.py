@@ -1476,7 +1476,7 @@ def run_call_golden_case(
     source = input_info.path.read_text(encoding="utf-8")
     golden_path = make_golden_path(
         parent=input_info.path.parent,
-        name=golden_name,
+        name=config.golden_name(name=golden_name),
         extension=lang_cls.extension,
         lang_cls=lang_cls,
         version=version,
@@ -1595,9 +1595,7 @@ def run_call_golden_case(
     body_stubs: list[str | RenderedCallStub] = []
     class_stubs: list[str] = []
     preamble_stubs: list[str] = []
-    if config.has_call_transform or isinstance(
-        config.variable_form, literalizer.ExistingVariable
-    ):
+    if config.has_call_transform or config.variable_form is not None:
         stub_return = literalizer.StubReturn.VALUE
     else:
         stub_return = literalizer.StubReturn.VOID
