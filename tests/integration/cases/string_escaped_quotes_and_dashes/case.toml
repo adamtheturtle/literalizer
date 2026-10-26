@@ -9,3 +9,6 @@ axis = "string_format"
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "json_type"

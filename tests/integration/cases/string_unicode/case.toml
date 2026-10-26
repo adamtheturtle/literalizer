@@ -10,3 +10,12 @@ axis = "language_version"
 
 [[variants]]
 axis = "json_type"
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "collection_layout"

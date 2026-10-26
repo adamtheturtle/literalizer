@@ -6,3 +6,18 @@ axis = "language_version"
 
 [[variants]]
 axis = "collection_layout"
+
+[[variants]]
+axis = "bytes_format"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "json_type_bytes_cross"
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "sequence"

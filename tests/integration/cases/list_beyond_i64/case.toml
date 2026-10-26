@@ -14,3 +14,6 @@ suffix = "_list_beyond_i64"
 
 [[variants]]
 axis = "numeric_separator"
+
+[[variants]]
+axis = "type_hints"

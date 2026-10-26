@@ -6,3 +6,12 @@ axis = "language_version"
 
 [[variants]]
 axis = "collection_layout"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "type_hints"
