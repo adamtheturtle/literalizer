@@ -1914,12 +1914,10 @@ jobs:
       - name: PureScript roundtrip
         run: uv run python -m scripts.run_purescript_roundtrip
 
-  # Ubuntu's packaged clang-tidy is several releases behind and is the
-  # dominant cost of this job on runners. Pull a recent build from PyPI
-  # via uv instead.
-  # Pass compile flags after `--` so clang-tidy treats them as the full
-  # compile command and skips searching for a compile_commands.json.
+  # Use the shared toolchain to retain every check without repeatedly
+  # expanding shared designated-initializer subtrees (ci/clang/README.md).
   lint-c-tidy:
+    needs: [build-cpp-toolchain]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -1931,12 +1929,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.0
+      - name: Download the Clang toolchain
+        uses: actions/download-artifact@v8
         with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
+          name: cpp-toolchain
+          path: ${{ runner.temp }}
+      - name: Install the Clang toolchain
+        run: |-
+          mkdir -p "$RUNNER_TEMP/literalizer-clang"
+          tar -C "$RUNNER_TEMP/literalizer-clang" -xzf "$RUNNER_TEMP/cpp-toolchain.tar.gz"
+          echo "$RUNNER_TEMP/literalizer-clang/bin" >> "$GITHUB_PATH"
       # ``cJSON`` fixtures (``C(json_type=CJSON)``) need the cJSON header
       # on the include path.  clang-tidy does not link, so the compiled
       # ``-lcjson`` library is irrelevant here and the header alone
@@ -1968,7 +1970,7 @@ jobs:
       - name: Run clang-tidy on C files
         run: |-
           find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy && test -s /tmp/files-c-tidy
-          xargs -0 -P "$(nproc)" -n1 -I{} uv run --group=dev clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
+          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
   build-cpp-toolchain:
     runs-on: ubuntu-24.04

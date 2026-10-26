@@ -183,10 +183,12 @@ def source_tree(work: Path, patch: Path, /) -> Path:
                 "sparse-checkout",
                 "set",
                 "clang/lib/Sema",
+                "clang/lib/AST",
+                "clang/lib/ASTMatchers",
                 "clang/tools/driver",
                 "clang-tools-extra/clang-tidy/tool",
                 "clang-tools-extra/clang-tidy/utils",
-                "clang/lib/StaticAnalyzer/Checkers/WebKit",
+                "clang/lib/StaticAnalyzer/Checkers",
                 "clang/test/SemaTemplate",
             ],
             cwd=source,
@@ -348,6 +350,102 @@ def verify_exception_analysis(support: Path, binaries: Path, /) -> None:
         raise ValueError(message)
 
 
+def verify_parent_maps(
+    support: Path,
+    work: Path,
+    prefix: Path,
+    flags: list[str],
+    libraries: list[str],
+    /,
+) -> None:
+    """Compare parent edges and matcher bindings with the stock
+    release.
+    """
+    compiler = str(object=prefix / "bin/clang++")
+    control = work / "parent-map-controls.o"
+    _ = run(
+        [
+            compiler,
+            *flags,
+            "-c",
+            str(object=support / "parent-map-controls.cpp"),
+            "-o",
+            str(object=control),
+        ],
+        cwd=None,
+    )
+    stock_libraries = [
+        str(object=prefix / "lib" / Path(library).name)
+        if Path(library).name.startswith("libclang") and library.endswith(".a")
+        else library
+        for library in libraries
+    ]
+    outputs: list[str] = []
+    for label, linked_libraries in (
+        ("stock", stock_libraries),
+        ("patched", libraries),
+    ):
+        binary = work / f"parent-map-controls-{label}"
+        _ = run(
+            [
+                compiler,
+                *flags,
+                str(object=control),
+                "-o",
+                str(object=binary),
+                *linked_libraries,
+            ],
+            cwd=None,
+        )
+        outputs.append(run([str(object=binary)], cwd=None))
+    if outputs[0] != outputs[1]:
+        message = "Parent graph or distinct matcher bindings changed"
+        raise ValueError(message)
+
+
+def verify_parent_map_diagnostics(
+    support: Path, prefix: Path, binaries: Path, /
+) -> None:
+    """Retain warnings while avoiding repeated initializer traversal."""
+    outputs = [
+        run(
+            [
+                str(object=directory / "clang-tidy"),
+                str(object=support / "parent-map-diagnostics.c"),
+                "--checks=*",
+                "--config={}",
+                "--",
+                "-std=c99",
+            ],
+            cwd=None,
+        )
+        for directory in (prefix / "bin", binaries)
+    ]
+    # The raw total includes duplicate callbacks that the diagnostic
+    # consumer already folds into one warning at each source location.
+    outputs = [
+        re.sub(
+            pattern=r"(?m)^\d+ warnings? generated\.\n", repl="", string=output
+        )
+        for output in outputs
+    ]
+    if outputs[0] != outputs[1]:
+        message = "Initializer traversal changed clang-tidy diagnostics"
+        raise ValueError(message)
+    diagnosed = {
+        checker.strip()
+        for names in re.findall(pattern=r"\[([^\]\n]+)\]", string=outputs[1])
+        for checker in names.split(sep=",")
+    }
+    for checker in (
+        "bugprone-sizeof-expression",
+        "clang-analyzer-optin.performance.Padding",
+    ):
+        if checker not in diagnosed:
+            message = f"Diagnostic control did not exercise {checker}"
+            raise ValueError(message)
+
+
 def compiler_flags(config: str, /) -> list[str]:
     """Match the release's language, ABI and assertion configuration."""
     if run([config, "--version"], cwd=None) != VERSION:
@@ -361,7 +459,7 @@ def compiler_flags(config: str, /) -> list[str]:
 
 
 def build(work: Path, output: Path, /) -> None:
-    """Relink upstream drivers with five rebuilt implementation
+    """Relink upstream drivers with eight rebuilt implementation
     objects.
     """
     support = Path(__file__).resolve().parents[1] / "ci" / "clang"
@@ -395,9 +493,16 @@ def build(work: Path, output: Path, /) -> None:
             "SemaOverload",
         )
     ]
-    checker = source / (
-        "clang/lib/StaticAnalyzer/Checkers/WebKit/"
-        "RefCntblBaseVirtualDtorChecker.cpp"
+    checkers = [
+        source / "clang/lib/StaticAnalyzer/Checkers" / name
+        for name in (
+            "WebKit/RefCntblBaseVirtualDtorChecker.cpp",
+            "PaddingChecker.cpp",
+        )
+    ]
+    parent_map, matcher = (
+        source / "clang/lib/AST/ParentMapContext.cpp",
+        source / "clang/lib/ASTMatchers/ASTMatchFinder.cpp",
     )
     exception_analyzer = source / (
         "clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp"
@@ -420,7 +525,9 @@ def build(work: Path, output: Path, /) -> None:
     )
     sources = [
         *sema,
-        checker,
+        *checkers,
+        parent_map,
+        matcher,
         exception_analyzer,
         *driver_sources,
         tidy_source,
@@ -456,7 +563,9 @@ def build(work: Path, output: Path, /) -> None:
         work,
         {
             "libclangSema.a": sema,
-            "libclangStaticAnalyzerCheckers.a": [checker],
+            "libclangStaticAnalyzerCheckers.a": checkers,
+            "libclangAST.a": [parent_map],
+            "libclangASTMatchers.a": [matcher],
             "libclangTidyUtils.a": [exception_analyzer],
         },
         object_files,
@@ -483,6 +592,7 @@ def build(work: Path, output: Path, /) -> None:
         *system_libraries,
         "-pthread",
     ]
+    verify_parent_maps(support, work, prefix, flags, libraries)
     binaries = output / "bin"
     binaries.mkdir(parents=True, exist_ok=True)
     for name, members in (
@@ -518,6 +628,7 @@ def build(work: Path, output: Path, /) -> None:
     verify_checks(prefix, binaries)
     verify_frontend(source, binaries)
     verify_exception_analysis(support, binaries)
+    verify_parent_map_diagnostics(support, prefix, binaries)
     _ = shutil.copyfile(
         src=support / "LICENSE.TXT", dst=output / "LICENSE.TXT"
     )
