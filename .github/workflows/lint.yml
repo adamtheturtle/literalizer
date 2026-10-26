@@ -1988,7 +1988,9 @@ jobs:
           path: ${{ runner.temp }}/literalizer-clang
           key: >-
             clang-23.1.4-${{ runner.os }}-${{ runner.arch }}-${{
-            hashFiles('ci/clang/**', 'scripts/build_cpp_toolchain.py') }}
+            hashFiles('ci/clang/*.patch', 'ci/clang/*.cpp',
+            'ci/clang/*.c', 'ci/clang/LICENSE.TXT',
+            'scripts/build_cpp_toolchain.py') }}
       - name: Install build dependencies
         if: steps.cpp-toolchain.outputs.cache-hit != 'true'
         timeout-minutes: 10
