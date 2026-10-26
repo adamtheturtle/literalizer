@@ -430,3 +430,134 @@ index c6421f8..a3374aa 100644
            if (isExempt || ExemptDecls.contains(C)) {
              ExemptDecls.insert(RD);
              continue;
+diff --git a/clang/lib/AST/ParentMapContext.cpp b/clang/lib/AST/ParentMapContext.cpp
+--- a/clang/lib/AST/ParentMapContext.cpp
++++ b/clang/lib/AST/ParentMapContext.cpp
+@@ -467,6 +467,11 @@
+   // Using generic TraverseNode for Stmt would prevent data-recursion.
+   bool dataTraverseStmtPre(Stmt *StmtNode) {
+     addParent(StmtNode, &Map.PointerParents);
++    // Shared statements can have several parents, but their outgoing edges
++    // do not depend on the path used to reach them. Record every incoming
++    // edge before skipping descendants already included in the parent map.
++    if (!TraversedStmts.insert(StmtNode).second)
++      return false;
+     ParentStack.push_back(DynTypedNode::create(*StmtNode));
+     return true;
+   }
+@@ -476,6 +481,7 @@
+   }
+
+   ParentMap &Map;
++  llvm::SmallPtrSet<Stmt *, 32> TraversedStmts;
+   llvm::SmallVector<DynTypedNode, 16> ParentStack;
+ };
+
+diff --git a/clang/lib/ASTMatchers/ASTMatchFinder.cpp b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
+--- a/clang/lib/ASTMatchers/ASTMatchFinder.cpp
++++ b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
+@@ -191,8 +191,28 @@
+
+     if (!match(*StmtToTraverse))
+       return false;
++    // No descendant can match a direct-child query below this depth.
++    if (CurrentDepth >= MaxDepth)
++      return true;
+     return VisitorBase::TraverseStmt(StmtToTraverse, Queue);
+   }
++  // The input bindings and matcher are fixed for this visitor. Cache only
++  // descendant searches with no matches, preserving successful binding
++  // multiplicity even when a statement has several incoming AST edges.
++  bool dataTraverseStmtPre(Stmt *S) {
++    if (MaxDepth == INT_MAX && NoMatchingDescendants.contains(S))
++      return false;
++    MatchCounts.push_back(MatchCount);
++    return true;
++  }
++
++  bool dataTraverseStmtPost(Stmt *S) {
++    if (MaxDepth == INT_MAX && MatchCounts.back() == MatchCount)
++      NoMatchingDescendants.insert(S);
++    MatchCounts.pop_back();
++    return true;
++  }
++
+   // We assume that the QualType and the contained type are on the same
+   // hierarchy level. Thus, we try to match either of them.
+   bool TraverseType(QualType TypeNode, bool TraverseQualifier = true) {
+@@ -379,6 +399,7 @@
+       if (Matcher->matches(DynTypedNode::create(Node), Finder,
+                            &RecursiveBuilder)) {
+         Matches = true;
++        ++MatchCount;
+         ResultBindings.addMatch(RecursiveBuilder);
+         return false; // Abort as soon as a match is found.
+       }
+@@ -388,6 +409,7 @@
+                            &RecursiveBuilder)) {
+         // After the first match the matcher succeeds.
+         Matches = true;
++        ++MatchCount;
+         ResultBindings.addMatch(RecursiveBuilder);
+       }
+     }
+@@ -414,6 +436,9 @@
+   const bool IgnoreImplicitChildren;
+   const ASTMatchFinder::BindKind Bind;
+   bool Matches;
++  size_t MatchCount = 0;
++  llvm::SmallVector<size_t, 16> MatchCounts;
++  llvm::SmallPtrSet<const Stmt *, 32> NoMatchingDescendants;
+ };
+
+ // Controls the outermost traversal of the AST and allows to match multiple
+@@ -775,6 +800,8 @@
+   }
+
+ private:
++  std::set<std::tuple<const Stmt *, bool, bool, bool>>
++      TraversedCCompoundLiterals;
+   bool TraversingASTNodeNotSpelledInSource = false;
+   bool TraversingASTNodeNotAsIs = false;
+   bool TraversingASTChildrenNotSpelledInSource = false;
+@@ -1547,6 +1574,16 @@
+   bool ScopedTraversal = TraversingASTNodeNotSpelledInSource ||
+                          TraversingASTChildrenNotSpelledInSource;
+
++  // C designated initializers share compound literals between syntactic
++  // and semantic forms. Visit each literal once in each traversal context;
++  // repeating the same subtree adds duplicate callbacks, not new matches.
++  if (!getASTContext().getLangOpts().CPlusPlus &&
++      isa<CompoundLiteralExpr>(StmtNode) &&
++      !TraversedCCompoundLiterals
++           .emplace(StmtNode, ScopedTraversal, TraversingASTNodeNotAsIs,
++                    TraversingASTChildrenNotSpelledInSource)
++           .second)
++    return true;
+   ASTNodeNotSpelledInSourceScope RAII(this, ScopedTraversal);
+   match(*StmtNode);
+   return RecursiveASTVisitor<MatchASTVisitor>::TraverseStmt(StmtNode, Queue);
+diff --git a/clang/lib/StaticAnalyzer/Checkers/PaddingChecker.cpp b/clang/lib/StaticAnalyzer/Checkers/PaddingChecker.cpp
+--- a/clang/lib/StaticAnalyzer/Checkers/PaddingChecker.cpp
++++ b/clang/lib/StaticAnalyzer/Checkers/PaddingChecker.cpp
+@@ -20,6 +20,7 @@
+ #include "clang/StaticAnalyzer/Core/BugReporter/BugType.h"
+ #include "clang/StaticAnalyzer/Core/Checker.h"
+ #include "clang/StaticAnalyzer/Core/PathSensitive/AnalysisManager.h"
++#include "llvm/ADT/SmallPtrSet.h"
+ #include "llvm/Support/MathExtras.h"
+ #include "llvm/Support/raw_ostream.h"
+
+@@ -44,6 +45,12 @@
+     // want to visit those, so we make our own RecursiveASTVisitor.
+     struct LocalVisitor : DynamicRecursiveASTVisitor {
+       const PaddingChecker *Checker;
++      // Padding depends on declarations, not on the path to a shared
++      // initializer subtree. Still traverse every distinct statement.
++      llvm::SmallPtrSet<const Stmt *, 32> TraversedStmts;
++      bool dataTraverseStmtPre(Stmt *S) override {
++        return TraversedStmts.insert(S).second;
++      }
+       explicit LocalVisitor(const PaddingChecker *Checker) : Checker(Checker) {
+         ShouldVisitTemplateInstantiations = true;
+         ShouldVisitImplicitCode = true;
