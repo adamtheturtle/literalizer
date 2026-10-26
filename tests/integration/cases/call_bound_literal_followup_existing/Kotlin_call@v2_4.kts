@@ -1,0 +1,6 @@
+fun make_widget(value: Any? = null): Any? = listOf<Any?>(value)
+fun consume(value: Any? = null): Any? = listOf<Any?>(value)
+var my_data = make_widget(value = 42)
+consume(value = my_data)
+my_data = make_widget(value = 42)
+consume(value = my_data)

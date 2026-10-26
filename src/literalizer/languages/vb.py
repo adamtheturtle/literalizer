@@ -55,6 +55,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -69,12 +70,12 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RoundTripCapability,
@@ -107,6 +108,17 @@ from literalizer._language import (
     requires_declared_binding,
 )
 from literalizer._types import Value
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="Object",
+    value="Nothing",
+    conditional_template=(
+        "If({call} IsNot {null},\n"
+        "{call}, {inner_comment}\n"
+        "{null}){trailing_comment}"
+    ),
+    comment_prefix="'",
+)
 
 
 @beartype
@@ -394,12 +406,14 @@ def _vb_call_stub(
     ``End Class`` or ``End Function`` that legitimately appear in
     every block.
     """
+    return_type = _NULL_OBJECT_STUB.type_name
+    return_value = _NULL_OBJECT_STUB.value
     param_list = ", ".join(
         f"{_vb_call_identifier(p)} As Object" for p in params
     )
     method_block = (
-        f"Public Function {{method}}({param_list}) As Object\n"
-        f"{indent}Return Nothing\n"
+        f"Public Function {{method}}({param_list}) As {return_type}\n"
+        f"{indent}Return {return_value}\n"
         "End Function"
     )
     if len(parts) == 1 and parts[0].startswith("New "):
@@ -416,8 +430,8 @@ def _vb_call_stub(
         return (
             (
                 f"Function {_vb_call_identifier(parts[0])}"
-                f"({param_list}) As Object\n"
-                f"{indent}Return Nothing\n"
+                f"({param_list}) As {return_type}\n"
+                f"{indent}Return {return_value}\n"
                 "End Function"
             ),
         )
@@ -529,7 +543,7 @@ class VisualBasic(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

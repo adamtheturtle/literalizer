@@ -1,0 +1,9 @@
+#include <cstddef>
+#include <vector>
+int main() {
+auto my_data = std::vector<std::nullptr_t>{
+    nullptr,
+};
+    (void)my_data;
+    return 0;
+}

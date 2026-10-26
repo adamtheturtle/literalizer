@@ -1,0 +1,28 @@
+diff --git a/clang/lib/StaticAnalyzer/Checkers/WebKit/RefCntblBaseVirtualDtorChecker.cpp b/clang/lib/StaticAnalyzer/Checkers/WebKit/RefCntblBaseVirtualDtorChecker.cpp
+index b883cb78..1859536c 100644
+--- a/clang/lib/StaticAnalyzer/Checkers/WebKit/RefCntblBaseVirtualDtorChecker.cpp
++++ b/clang/lib/StaticAnalyzer/Checkers/WebKit/RefCntblBaseVirtualDtorChecker.cpp
+@@ -199,8 +199,8 @@ public:
+           if (!C)
+             continue;
+
+-          bool isExempt = T.getAsString() == "NoVirtualDestructorBase" &&
+-                          safeGetName(C->getParent()) == "WTF";
++          bool isExempt = safeGetName(C->getParent()) == "WTF" &&
++                          T.getAsString() == "NoVirtualDestructorBase";
+           if (isExempt || ExemptDecls.contains(C)) {
+             ExemptDecls.insert(RD);
+             continue;
+diff --git a/clang/test/Analysis/Checkers/WebKit/ref-cntbl-base-virtual-dtor-deep-types.cpp b/clang/test/Analysis/Checkers/WebKit/ref-cntbl-base-virtual-dtor-deep-types.cpp
+new file mode 100644
+index 0000000000000..aed8871ab793eb0afcb0acadeaffbcfc1575fe14
+--- /dev/null
++++ b/clang/test/Analysis/Checkers/WebKit/ref-cntbl-base-virtual-dtor-deep-types.cpp
+@@ -0,0 +1,7 @@
++// RUN: %clang_analyze_cc1 -analyzer-checker=webkit.RefCntblBaseVirtualDtor -std=c++17 -verify %s
++// expected-no-diagnostics
++
++template<class T> struct Alloc {};
++template<class T, class A> struct Storage {};
++template<class T, class A=Alloc<T>> struct Node : Storage<T,A> {};
++struct Derived : Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<int>>>>>>>>>>>>>>>>>>>>>>>>>>>> {};

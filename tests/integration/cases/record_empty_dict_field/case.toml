@@ -1,5 +1,6 @@
 schema_version = 1
-owner = "variant"
+suites = ["base"]
+# Regression provenance: record_empty_dict_field (Crystal).
 
 [[variants]]
 axis = "record_empty_dict_field"

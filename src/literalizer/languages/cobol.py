@@ -47,6 +47,7 @@ from literalizer._language import (
     NO_HETEROGENEOUS_BEHAVIOR,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommandCallStyle,
     CommentConfig,
@@ -62,7 +63,6 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -104,6 +104,9 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableStringError,
 )
+
+_COBOL_MAX_GROUP_LEVEL = 49
+_COBOL_LEVEL_SPACING = 5
 
 _COBOL_EMPTY_LITERAL = "05 FILLER PIC X(1) VALUE SPACES."
 _COBOL_PIC_S9_18_MAX = 10**18 - 1
@@ -385,22 +388,40 @@ def _to_cobol_entry(
 
 @beartype
 def _bump_levels(content: str) -> str:
-    """Increment every COBOL level number in *content* by 5.
+    """Place entries below a new level-05 group.
 
-    Only lines whose first non-space token is a two-digit level number
-    are modified.
+    Keep the usual five-level spacing while it fits. For deeper groups,
+    compact the distinct levels so children remain below their parents
+    instead of clamping several generations to level 49.
     """
+    pattern = r"^(\s*)(\d{2})(\s)"
+    levels = sorted(
+        {
+            int(match.group(2))
+            for match in re.finditer(
+                pattern=pattern,
+                string=content,
+                flags=re.MULTILINE,
+            )
+        }
+    )
+    bumped = (
+        {
+            level: index + _COBOL_LEVEL_SPACING + 1
+            for index, level in enumerate(iterable=levels)
+        }
+        if max(levels, default=0)
+        > _COBOL_MAX_GROUP_LEVEL - _COBOL_LEVEL_SPACING
+        else {level: level + _COBOL_LEVEL_SPACING for level in levels}
+    )
 
     @beartype
     def _bump(m: re.Match[str]) -> str:
-        """Return the matched level-number prefix with its level
-        incremented by 5.
-        """
-        new_level = min(int(m.group(2)) + 5, 49)
-        return f"{m.group(1)}{new_level:02d}{m.group(3)}"
+        """Return an entry with its allocated child level."""
+        return f"{m.group(1)}{bumped[int(m.group(2))]:02d}{m.group(3)}"
 
     return re.sub(
-        pattern=r"^(\s*)(\d{2})(\s)",
+        pattern=pattern,
         repl=_bump,
         string=content,
         flags=re.MULTILINE,
@@ -1170,7 +1191,7 @@ class Cobol(metaclass=LanguageCls):
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
     max_variable_identifier_length: ClassVar[int | None] = 63
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = None
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

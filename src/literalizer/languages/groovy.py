@@ -45,6 +45,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -58,12 +59,12 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RoundTripCapability,
@@ -101,6 +102,15 @@ from literalizer._language import (
     wrap_in_file_noop_static,
 )
 from literalizer._types import Scalar, Value
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="def",
+    value="null",
+    conditional_template=(
+        "{call} != {null} ?\n{call}{inner_comment}\n: {null}{trailing_comment}"
+    ),
+    comment_prefix="//",
+)
 
 
 @beartype
@@ -247,6 +257,8 @@ def _groovy_call_stub_factory(
     the concrete parameter list, which documents the expected argument
     names.
     """
+    return_type = _NULL_OBJECT_STUB.type_name
+    return_value = _NULL_OBJECT_STUB.value
 
     @beartype
     def _stub(
@@ -266,20 +278,26 @@ def _groovy_call_stub_factory(
                 param_list += " = [:]"
             return (f"class {name} {{ {name}({param_list}) {{}} }}",)
         if len(parts) == 1:
-            return (f"def {parts[0]}({param_list}) {{ null }}",)
+            return (
+                f"{return_type} {parts[0]}({param_list}) {{ {return_value} }}",
+            )
         root = parts[0]
         method = parts[-1]
         fields = parts[1:-1]
         if len(fields) == 0:
             cls = f"_{root.title()}Type"
             return (
-                f"class {cls} {{ def {method}({param_list}) {{ null }} }}",
+                (
+                    f"class {cls} {{ {return_type}"
+                    f" {method}({param_list}) {{ {return_value} }} }}"
+                ),
                 f"def {root} = new {cls}()",
             )
         lines: list[str] = []
         inner_cls = f"_{fields[-1].title()}Type"
         lines.append(
-            f"class {inner_cls} {{ def {method}({param_list}) {{ null }} }}"
+            f"class {inner_cls} {{ {return_type}"
+            f" {method}({param_list}) {{ {return_value} }} }}"
         )
         prev_cls = inner_cls
         for i in range(len(fields) - 2, -1, -1):
@@ -340,7 +358,7 @@ class Groovy(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

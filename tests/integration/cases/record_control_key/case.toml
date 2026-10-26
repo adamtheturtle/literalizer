@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: zig_record_control_key (Zig).
+
+[[variants]]
+axis = "zig_v0_12_record"

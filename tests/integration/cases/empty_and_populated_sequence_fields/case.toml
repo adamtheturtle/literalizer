@@ -1,0 +1,10 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: object_variant_nested_empty_list_table (Nim).
+
+[[variants]]
+axis = "object_variant_containers"
+
+[[variants]]
+axis = "collection_layout"
+context = { variable_form = "both" }

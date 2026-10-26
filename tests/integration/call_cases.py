@@ -29,6 +29,7 @@ from literalizer._language import (
     CallSupport,
     IntegerCallStubResult,
     KeywordCallStyle,
+    NullableObjectCallStubResult,
     ObjectCallStyle,
     PositionalCallStyle,
     RenderedCallStub,
@@ -746,7 +747,10 @@ def _wrapper_parameter_names(
 
 @beartype
 def _wrapper_declarations(
-    *, spec: literalizer.Language, config: CallCaseSpec
+    *,
+    spec: literalizer.Language,
+    config: CallCaseSpec,
+    bound_result_slots: frozenset[int],
 ) -> CallStubDeclarations:
     """Keep actual operand representations and wrapper calling conventions."""
     body: list[str | RenderedCallStub] = []
@@ -757,6 +761,14 @@ def _wrapper_declarations(
         params = parameter_names
         wrapper_spec = spec
         arguments: Sequence[ParsedValue] = ()
+        if name == config.followup_target_function:
+            arguments = CallStubData(
+                data=(),
+                keyword_arguments=isinstance(
+                    spec.call_style_config, KeywordCallStyle
+                ),
+                call_result_slots=bound_result_slots,
+            )
         if wrapper is not None and name == wrapper.target:
             wrapper_spec = _wrapper_call_spec(spec=spec)
             params = _wrapper_parameter_names(spec=wrapper_spec, params=params)
@@ -794,6 +806,34 @@ def _wrapper_declarations(
     )
 
 
+@beartype
+def followup_result_slots(
+    *,
+    config: CallCaseSpec,
+    input_format: literalizer.InputFormat,
+) -> frozenset[int]:
+    """Identify direct bound-result operands in the parsed follow-up
+    call.
+    """
+    if config.followup_source is None or config.variable_form is None:
+        return frozenset[int]()
+    data = parse_input(
+        source=config.followup_source, input_format=input_format
+    ).data
+    rows = data if config.per_element and isinstance(data, list) else [data]
+    slots: set[int] = set()
+    for row in rows:
+        arguments = (
+            row if config.per_element and isinstance(row, list) else [row]
+        )
+        slots.update(
+            index
+            for index, value in enumerate(iterable=arguments)
+            if value == {config.ref_key: config.variable_form.name}
+        )
+    return frozenset(slots)
+
+
 @dataclasses.dataclass(frozen=True)
 class WrapperCallTransform:
     """A call producer retaining wrapper operands and declaration
@@ -818,7 +858,11 @@ class WrapperCallTransform:
         """Supply the same native wrappers to the production file
         builder.
         """
-        return _wrapper_declarations(spec=self.spec, config=self.config)
+        return _wrapper_declarations(
+            spec=self.spec,
+            config=self.config,
+            bound_result_slots=frozenset(),
+        )
 
     def __call__(self, context: literalizer.CallContext, /) -> str:
         """Apply the real wrapper convention to rendered native
@@ -932,6 +976,67 @@ class IntegerResultCallTransform:
         return expression
 
 
+@dataclasses.dataclass(frozen=True)
+class ConditionalCallTransform:
+    """Retain both conditional arms, comments, and outer operand use."""
+
+    template: str
+    null_value: str
+    comment_prefix: str
+    indent: str
+    outer: CallTransform | None
+
+    @property
+    def uses_zipped(self) -> bool:
+        """Preserve the outer transform's zipped-operand contract."""
+        return self.outer is not None and self.outer.uses_zipped
+
+    def __call__(self, context: literalizer.CallContext, /) -> str:
+        """Use the native conditional expression and null object value."""
+        expression = self.template.format(
+            call=context.call,
+            null=self.null_value,
+            inner_comment=" " + self.comment_prefix + " inner",
+            trailing_comment=" " + self.comment_prefix + " trailing",
+            indent=self.indent,
+        )
+        if self.outer is not None:
+            return self.outer(dataclasses.replace(context, call=expression))
+        return expression
+
+
+@beartype
+def _result_call_transform(
+    *, spec: literalizer.Language, config: CallCaseSpec
+) -> IntegerResultCallTransform | ConditionalCallTransform:
+    """Build an admitted result expression from its producer metadata."""
+    result = next(
+        cls.call_stub_result
+        for cls in sorted_languages()
+        if cls.language_id == spec.language_id
+    )
+    # The manifest gates admit only producers of the required result type.
+    if config.call_transform_add_one:
+        syntax = TypeAdapter(type=IntegerCallStubResult).validate_python(
+            result
+        )
+        return IntegerResultCallTransform(
+            syntax=syntax, outer=config.call_transform
+        )
+    nullable = TypeAdapter(type=NullableObjectCallStubResult).validate_python(
+        result
+    )
+    return ConditionalCallTransform(
+        template=TypeAdapter(type=str).validate_python(
+            nullable.conditional_template
+        ),
+        null_value=nullable.value,
+        comment_prefix=nullable.comment_prefix,
+        indent=spec.indent,
+        outer=config.call_transform,
+    )
+
+
 @beartype
 def call_transform_for_case(
     *, spec: literalizer.Language, config: CallCaseSpec
@@ -954,18 +1059,11 @@ def call_transform_for_case(
             wrapper=config.call_transform_wrapper,
             zip_data=zip_data,
         )
-    if config.call_transform_add_one:
-        syntax = next(
-            cls.call_stub_result
-            for cls in sorted_languages()
-            if cls.language_id == spec.language_id
-        )
-        if syntax is None:
-            msg = "call_transform_add_one requires an integer-returning stub"
-            raise ValueError(msg)
-        return IntegerResultCallTransform(
-            syntax=syntax, outer=config.call_transform
-        )
+    if (
+        config.call_transform_add_one
+        or config.call_transform_nullable_conditional
+    ):
+        return _result_call_transform(spec=spec, config=config)
     if config.call_transform_sequence:
         return SequenceCallTransform(spec=spec, outer=config.call_transform)
     style = spec.call_style_config
@@ -1416,7 +1514,7 @@ def run_call_golden_case(
     source = input_info.path.read_text(encoding="utf-8")
     golden_path = make_golden_path(
         parent=input_info.path.parent,
-        name=golden_name,
+        name=config.golden_name(name=golden_name),
         extension=lang_cls.extension,
         lang_cls=lang_cls,
         version=version,
@@ -1535,9 +1633,7 @@ def run_call_golden_case(
     body_stubs: list[str | RenderedCallStub] = []
     class_stubs: list[str] = []
     preamble_stubs: list[str] = []
-    if config.has_call_transform or isinstance(
-        config.variable_form, literalizer.ExistingVariable
-    ):
+    if config.has_call_transform or config.variable_form is not None:
         stub_return = literalizer.StubReturn.VALUE
     else:
         stub_return = literalizer.StubReturn.VOID
@@ -1576,10 +1672,19 @@ def run_call_golden_case(
     # Statement stubs cover transform wrappers and a separate follow-up
     # consumer. Keep each target's parameter names so their argument
     # counts remain valid in languages with fixed parameter counts.
-    wrapper_stubs = _wrapper_declarations(spec=spec, config=config)
+    wrapper_stubs = _wrapper_declarations(
+        spec=spec,
+        config=config,
+        bound_result_slots=followup_result_slots(
+            config=config,
+            input_format=input_info.input_format,
+        ),
+    )
     body_stubs.extend(wrapper_stubs.body)
     class_stubs.extend(wrapper_stubs.class_scope)
     preamble_stubs.extend(wrapper_stubs.file_scope)
+    if config.variable_form is not None:
+        preamble_stubs.extend(spec.format_call_binding_file_pragmas())
     # One library entry point assembles the declarations and the call
     # into a single coherent file: it recomputes the body preamble
     # across the union of types in every declaration *and* the call,

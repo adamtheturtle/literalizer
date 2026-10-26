@@ -1,0 +1,4 @@
+[my_data]
+del = "a\u007fb"
+nel = "ab"
+c1 = "ab"

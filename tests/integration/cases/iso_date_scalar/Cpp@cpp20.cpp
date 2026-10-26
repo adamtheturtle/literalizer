@@ -1,0 +1,6 @@
+#include <chrono>
+int main() {
+auto my_data = std::chrono::year_month_day{std::chrono::year{2000}, std::chrono::month{1}, std::chrono::day{1}};
+    (void)my_data;
+    return 0;
+}

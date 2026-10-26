@@ -1,5 +1,0 @@
-schema_version = 1
-owner = "variant"
-
-[[variants]]
-axis = "datetime_epoch_far_future"

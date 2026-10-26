@@ -1,0 +1,4 @@
+# Regression provenance: Fortran line continuation, Swift type inference, and Elm formatting.
+# Preserve all 30 nested singleton sequences and their native container types.
+schema_version = 1
+suites = ["base"]

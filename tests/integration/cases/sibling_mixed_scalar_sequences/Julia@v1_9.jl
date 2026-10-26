@@ -1,0 +1,4 @@
+my_data = Dict(
+    "left" => [1, "one"],
+    "right" => [2, "two"],
+)

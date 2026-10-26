@@ -64,6 +64,7 @@ from literalizer._formatters.format_strings import (
     has_bidi_formatting_character,
 )
 from literalizer._formatters.initializer_types import (
+    SingleElementCollectionOpen,
     TypedCollectionOpen,
     TypedInitializer,
 )
@@ -104,6 +105,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -187,6 +189,7 @@ _INTEGER_CALL_STUB = IntegerCallStubResult(
 _TRAILING_LINE_WHITESPACE = re.compile(pattern=r"[ \t]+(?=\n)")
 _JSON_INTEGER_TOKEN = re.compile(pattern=r"-?(?:0|[1-9][0-9]*)\Z")
 _CPP_RAW_STRING_DELIMITER_MAX_LENGTH = 16
+_CPP_SINGLETON_CONSTRUCTOR_DEPTH = 8
 _CPP_RAW_STRING_DELIMITER_CHARACTERS = frozenset(
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -2618,6 +2621,36 @@ def _build_cpp_record_preamble(
 
 
 @beartype
+def _cpp_singleton_constructor(
+    items: list[Value],
+) -> tuple[str, str] | None:
+    """Keep deep vector construction out of shared initializer-list trees.
+
+    The innermost ordinary literals establish the native element type.
+    Each outer constructor takes its child by value and returns the same
+    owning vector type, without repeatedly embedding its initializer tree.
+    """
+    depth = 0
+    leaf: Value = items
+    while isinstance(leaf, list) and len(leaf) == 1:
+        depth += 1
+        leaf = leaf[0]
+    if depth < _CPP_SINGLETON_CONSTRUCTOR_DEPTH or isinstance(
+        leaf, (dict, list, set)
+    ):
+        return None
+    return (
+        (
+            "([](auto literalizer_value) { "
+            "return std::vector<decltype(literalizer_value)>"
+            "{literalizer_value}; "
+            "})("
+        ),
+        ")",
+    )
+
+
+@beartype
 def _apply_cpp_variant_sequence_open(
     *,
     items: list[Value],
@@ -2630,6 +2663,13 @@ def _apply_cpp_variant_sequence_open(
         in_mapping_value=False,
     )
     type_name = type_ctx.sequence_type(inner=inner, length=len(items))
+    delimiters = _cpp_singleton_constructor(items=items)
+    if delimiters is not None:
+        return SingleElementCollectionOpen(
+            f"{type_name}{{",
+            declared_type=type_name,
+            delimiters=delimiters,
+        )
     return TypedCollectionOpen(f"{type_name}{{", declared_type=type_name)
 
 
@@ -3268,9 +3308,7 @@ class Cpp(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = (
-        _INTEGER_CALL_STUB
-    )
+    call_stub_result: ClassVar[CallStubResult | None] = _INTEGER_CALL_STUB
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )

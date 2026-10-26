@@ -1,0 +1,36 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "if"; MOBILE LIT(lit.int; 1)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "then"; MOBILE LIT(lit.int; 2)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "else"; MOBILE LIT(lit.int; 3)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "let"; MOBILE LIT(lit.int; 4)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "in"; MOBILE LIT(lit.int; 5)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "using"; MOBILE LIT(lit.int; 6)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "missing"; MOBILE LIT(lit.int; 7)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "assert"; MOBILE LIT(lit.int; 8)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "as"; MOBILE LIT(lit.int; 9)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "Infinity"; MOBILE LIT(lit.int; 10)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "NaN"; MOBILE LIT(lit.int; 11)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "merge"; MOBILE LIT(lit.int; 12)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "Some"; MOBILE LIT(lit.int; 13)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "toMap"; MOBILE LIT(lit.int; 14)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "forall"; MOBILE LIT(lit.int; 15)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "with"; MOBILE LIT(lit.int; 16)),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "ordinary"; MOBILE LIT(lit.int; 17))
+    ]):
+    SEQ
+        SKIP
+:

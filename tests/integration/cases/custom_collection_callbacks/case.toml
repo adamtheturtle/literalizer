@@ -1,6 +1,0 @@
-schema_version = 1
-# Original regression: Sampled: a custom Go language exercises the callback extension contract with compiling output.
-owner = "variant"
-
-[[variants]]
-axis = "plain_collection_callbacks"

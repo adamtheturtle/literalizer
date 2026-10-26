@@ -73,6 +73,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -86,11 +87,11 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -132,6 +133,18 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableIntegerError,
     UnrepresentableSpecialFloatError,
+)
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="any",
+    value="nil",
+    conditional_template=(
+        "({call} != {null} ?\n"
+        "{call} \\\n"
+        "{inner_comment}\n"
+        ": {null}){trailing_comment}"
+    ),
+    comment_prefix="//",
 )
 
 _BYTE_ORDER_MARK = "\ufeff"
@@ -213,8 +226,15 @@ def _odin_call_preamble_stub(
     lives inside ``main`` rather than at package scope, avoiding an Odin
     compiler crash on nested struct literals in global scope.
     """
+    return_type = _NULL_OBJECT_STUB.type_name
+    return_value = _NULL_OBJECT_STUB.value
     if len(parts) == 1:
-        return (f"{parts[0]} :: proc(args: ..any) -> any {{ return nil }}",)
+        return (
+            (
+                f"{parts[0]} :: proc(args: ..any) ->"
+                f" {return_type} {{ return {return_value} }}"
+            ),
+        )
     root = parts[0]
     method = parts[-1]
     chain = parts[:-1]
@@ -222,8 +242,14 @@ def _odin_call_preamble_stub(
     holder_type = f"{holder.title()}Type_"
     helper_name = f"_{holder}_{method}_"
     lines: list[str] = [
-        f"{helper_name} :: proc(args: ..any) -> any {{ return nil }}",
-        f"{holder_type} :: struct {{ {method}: proc(..any) -> any }}",
+        (
+            f"{helper_name} :: proc(args: ..any) ->"
+            f" {return_type} {{ return {return_value} }}"
+        ),
+        (
+            f"{holder_type} :: struct {{ {method}:"
+            f" proc(..any) -> {return_type} }}"
+        ),
     ]
     prev_type = holder_type
     for i in range(len(chain) - 2, 0, -1):
@@ -588,7 +614,7 @@ class Odin(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )

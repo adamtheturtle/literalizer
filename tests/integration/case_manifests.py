@@ -547,6 +547,20 @@ class _OwnedCaseSpec(
     # by the manifest, so a case's directory name stays a single source
     # of truth on disk.
     case_dir_name: str
+    example: Annotated[str, Field(pattern=r"^[a-z][a-z0-9_]*$")] | None
+
+    @property
+    def coverage_id(self) -> str:
+        """Identify an example without changing its shared input owner."""
+        if self.example is None:
+            return self.case_dir_name
+        return f"{self.case_dir_name}/{self.example}"
+
+    def golden_name(self, *, name: str) -> str:
+        """Keep named examples distinct from the shared default golden."""
+        if self.example is None:
+            return name
+        return f"{name}_{self.example}"
 
     @model_validator(mode="before")
     @classmethod
@@ -559,7 +573,11 @@ class _OwnedCaseSpec(
         raw_context = info.context
         context: Mapping[str, str]
         context = dict[str, str]() if raw_context is None else raw_context
-        return {**data, "case_dir_name": context["case_dir_name"]}
+        return {
+            "example": None,
+            **data,
+            "case_dir_name": context["case_dir_name"],
+        }
 
 
 def _parse_ref_time(value: object, /) -> object:
@@ -780,6 +798,7 @@ class CallCaseSpec(  # noqa: NOD001
     call_transform_wrapper: CallWrapperSpec | None = None
     call_transform_sequence: bool = False
     call_transform_add_one: bool = False
+    call_transform_nullable_conditional: bool = False
     # Ordinary callbacks omit the template producer's zip-usage metadata.
     call_transform_reports_zip_usage: bool = True
     # An additional call, emitted after the primary call so a fixture
@@ -905,6 +924,7 @@ class CallCaseSpec(  # noqa: NOD001
             or self.call_transform_wrapper is not None
             or self.call_transform_sequence
             or self.call_transform_add_one
+            or self.call_transform_nullable_conditional
         )
 
     def _validate_transform_recipe(self) -> None:
@@ -926,6 +946,10 @@ class CallCaseSpec(  # noqa: NOD001
                 ),
                 ("call_transform_sequence", self.call_transform_sequence),
                 ("call_transform_add_one", self.call_transform_add_one),
+                (
+                    "call_transform_nullable_conditional",
+                    self.call_transform_nullable_conditional,
+                ),
             )
             if present
         ]
@@ -988,6 +1012,16 @@ class ConstructorCaseSpec(  # noqa: NOD001
     variable_name: Annotated[str, Field(min_length=1)] = "p"
 
 
+def _empty_call_examples() -> list[CallCaseSpec]:
+    """Return the explicitly typed default call examples."""
+    return []
+
+
+def _empty_ref_examples() -> list[RefCaseSpec]:
+    """Return the explicitly typed default reference examples."""
+    return []
+
+
 # Defaults stand in for omitted keys, as above.
 class _CaseManifestData(  # noqa: NOD001
     LanguageSelection,
@@ -1010,6 +1044,34 @@ class _CaseManifestData(  # noqa: NOD001
     constructor: ConstructorCaseSpec | None = None
     call: CallCaseSpec | None = None
     ref: RefCaseSpec | None = None
+    call_examples: list[CallCaseSpec] = Field(
+        default_factory=_empty_call_examples
+    )
+    ref_examples: list[RefCaseSpec] = Field(
+        default_factory=_empty_ref_examples
+    )
+
+    def _validate_examples(self) -> None:
+        """Require named, unique examples with a shared API input
+        owner.
+        """
+        for primary, examples, label in (
+            (self.call, self.call_examples, "call_examples"),
+            (self.ref, self.ref_examples, "ref_examples"),
+        ):
+            if primary is not None and primary.example is not None:
+                msg = "primary API tables cannot name an example"
+                raise ValueError(msg)
+            if len(examples) > 0 and primary is None:
+                msg = f"{label} requires its primary API table"
+                raise ValueError(msg)
+            names = [entry.example for entry in examples]
+            if None in names:
+                msg = f"{label} requires an example name"
+                raise ValueError(msg)
+            if len(names) != len(set(names)):
+                msg = f"{label} contains a duplicate example name"
+                raise ValueError(msg)
 
     def _validate_owned_table(
         self,
@@ -1035,6 +1097,7 @@ class _CaseManifestData(  # noqa: NOD001
     @model_validator(mode="after")
     def _validate_consistency(self) -> _CaseManifestData:
         """Validate relationships that span manifest fields."""
+        self._validate_examples()
         if self.input_roundtrip is not None and self.owner is not None:
             msg = "input_roundtrip requires a literal rendering suite"
             raise ValueError(msg)
@@ -1101,6 +1164,8 @@ class CaseManifest:
     constructor: ConstructorCaseSpec | None
     call: CallCaseSpec | None
     ref: RefCaseSpec | None
+    call_examples: tuple[CallCaseSpec, ...]
+    ref_examples: tuple[RefCaseSpec, ...]
 
 
 @beartype
@@ -1189,6 +1254,8 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         constructor=data.constructor,
         call=data.call,
         ref=data.ref,
+        call_examples=tuple(data.call_examples),
+        ref_examples=tuple(data.ref_examples),
     )
 
 
@@ -1213,9 +1280,10 @@ def load_case_manifests(cases_dir: Path) -> tuple[CaseManifest, ...]:
 def call_case_specs(cases_dir: Path) -> tuple[CallCaseSpec, ...]:
     """Return every declared ``literalize_call`` case configuration."""
     return tuple(
-        manifest.call
+        config
         for manifest in load_case_manifests(cases_dir=cases_dir)
         if manifest.call is not None
+        for config in (manifest.call, *manifest.call_examples)
     )
 
 
@@ -1228,9 +1296,10 @@ def ref_case_specs(
 ) -> tuple[RefCaseSpec, ...]:
     """Return every ``$ref`` case configuration declared by *owner*."""
     return tuple(
-        manifest.ref
+        config
         for manifest in load_case_manifests(cases_dir=cases_dir)
         if manifest.ref is not None and manifest.owner == owner
+        for config in (manifest.ref, *manifest.ref_examples)
     )
 
 

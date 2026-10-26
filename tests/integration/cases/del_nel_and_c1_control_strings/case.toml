@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: yaml_del_c1_controls (Yaml).
+
+[[variants]]
+axis = "yaml_v1_2_control_strings"

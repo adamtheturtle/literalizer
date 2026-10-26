@@ -65,6 +65,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommandCallStyle,
     CommentConfig,
@@ -79,7 +80,6 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -114,7 +114,7 @@ from literalizer._language import (
     unsupported_wrap_combined_in_file_static,
 )
 from literalizer._statements import split_statements
-from literalizer._types import OrderedMap, Scalar, Value
+from literalizer._types import CallStubData, OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableIntegerError,
@@ -624,6 +624,7 @@ def _build_purescript_call_stub_lines(
     params: Sequence[str],
     stub_return: StubReturn,
     type_name: str | None,
+    call_result_slots: frozenset[int],
 ) -> tuple[str, ...]:
     """Return PureScript stub declarations for a call name.
 
@@ -637,7 +638,10 @@ def _build_purescript_call_stub_lines(
         if len(parameter_types) > 0:
             quantifier = f"forall {' '.join(parameter_types)}. "
     else:
-        parameter_types = [type_name] * len(params)
+        parameter_types = [
+            "Unit" if index in call_result_slots else type_name
+            for index in range(len(params))
+        ]
 
     if len(parts) == 1:
         name = parts[0]
@@ -690,6 +694,11 @@ def _build_purescript_call_stub(
             params=params,
             stub_return=stub_return,
             type_name=type_name,
+            call_result_slots=(
+                _args.call_result_slots
+                if isinstance(_args, CallStubData)
+                else frozenset()
+            ),
         )
 
     return _purescript_call_stub
@@ -1182,7 +1191,7 @@ class PureScript(metaclass=LanguageCls):
     # A qualified target names a module, which PureScript spells
     # with an initial capital; the declaration grammar above
     # governs what a wrapped file can declare (issue #4525).
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = None
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax] = (
         NewVariableNameSyntax.ASCII

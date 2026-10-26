@@ -1,6 +1,7 @@
 """Validation tests for case-local golden coverage manifests."""
 
 from pathlib import Path
+from typing import Literal
 
 import pytest
 
@@ -29,6 +30,56 @@ from .case_manifests import (
 from .variant_cases import build_variant_cases, validate_unique_variant_targets
 
 
+@pytest.mark.parametrize(argnames="table", argvalues=["call", "ref"])
+@pytest.mark.parametrize(
+    argnames=("failure", "message"),
+    argvalues=[
+        ("missing_primary", "requires its primary API table"),
+        ("unnamed", "requires an example name"),
+        ("duplicate", "contains a duplicate example name"),
+        ("primary_named", "primary API tables cannot name an example"),
+        ("invalid_name", "String should match pattern"),
+    ],
+)
+def test_api_examples_reject_ambiguous_ownership(
+    tmp_path: Path,
+    table: Literal["call", "ref"],
+    failure: str,
+    message: str,
+) -> None:
+    """Examples must have one shared input owner and unique golden
+    names.
+    """
+    fields = (
+        'target_function = "target"\nparameter_names = ["value"]\n'
+        "per_element = false\n"
+        if table == "call"
+        else 'variable_name = "result"\n'
+    )
+    primary = f"[{table}]\n{fields}"
+    example = f'[[{table}_examples]]\nexample = "native"\n{fields}'
+    if failure == "missing_primary":
+        primary = ""
+    elif failure == "unnamed":
+        example = f"[[{table}_examples]]\n{fields}"
+    elif failure == "duplicate":
+        example += example
+    elif failure == "primary_named":
+        primary = f'[{table}]\nexample = "native"\n{fields}'
+    else:
+        example = example.replace('"native"', '"invalid-name"')
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            f'schema_version = 1\nowner = "literalize-{table}"\n'
+            f"{primary}{example}"
+        ),
+        input_name="input.yaml",
+    )
+    with pytest.raises(expected_exception=CaseManifestError, match=message):
+        _ = load_case_manifest(case_dir=case_dir)
+
+
 def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
     """Create one temporary case directory and return its path."""
     case_dir = tmp_path / "example"
@@ -41,6 +92,20 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
 @pytest.mark.parametrize(
     argnames=("manifest", "message"),
     argvalues=[
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n[call]\n'
+                'target_function = "target"\nparameter_names = ["value"]\n'
+                "per_element = false\n"
+                "call_transform_add_one = true\n"
+                "call_transform_nullable_conditional = true\n"
+            ),
+            (
+                "call_transform_add_one and "
+                "call_transform_nullable_conditional "
+                "are mutually exclusive"
+            ),
+        ),
         (
             (
                 'schema_version = 1\nowner = "literalize-call"\n[call]\n'

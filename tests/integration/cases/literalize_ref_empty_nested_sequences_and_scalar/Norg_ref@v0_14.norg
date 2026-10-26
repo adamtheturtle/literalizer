@@ -1,0 +1,12 @@
+* seed
+@code javascript
+1
+@end
+* my_data
+@code javascript
+[
+    [],
+    [[]],
+    seed
+]
+@end

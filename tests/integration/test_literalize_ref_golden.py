@@ -21,7 +21,7 @@ from .literalize_ref_cases import (
 @pytest.mark.parametrize(
     argnames="ref_case",
     argvalues=discover_literalize_ref_cases(),
-    ids=lambda case: f"{case.config.case_dir_name}/{case.lang_cls.__name__}",
+    ids=lambda case: f"{case.config.coverage_id}/{case.lang_cls.__name__}",
 )
 def test_literalize_ref_golden_file(
     ref_case: LiteralizeRefCase,
@@ -61,7 +61,7 @@ def test_literalize_ref_golden_file(
 @pytest.mark.parametrize(
     argnames="ref_variant_case",
     argvalues=build_literalize_ref_variant_cases(),
-    ids=lambda case: f"{case.config.case_dir_name}/{case.variant.name}",
+    ids=lambda case: f"{case.config.coverage_id}/{case.variant.name}",
 )
 def test_literalize_ref_variant_golden_file(
     ref_variant_case: LiteralizeRefVariantCase,

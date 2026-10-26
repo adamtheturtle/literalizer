@@ -84,6 +84,20 @@ class IntegerCallStubResult:
 
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class NullableObjectCallStubResult:
+    """An explicitly typed object result whose stub returns null."""
+
+    type_name: str
+    value: str
+    conditional_template: str | None
+    comment_prefix: str
+
+
+type CallStubResult = IntegerCallStubResult | NullableObjectCallStubResult
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class CallStubDeclarations:
     """Declarations supplied by a transform's native expression
     producer.
@@ -1771,7 +1785,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     module_name_must_start_uppercase: bool
     new_variable_name_syntax: NewVariableNameSyntax
     max_variable_identifier_length: int | None
-    call_stub_result: IntegerCallStubResult | None
+    call_stub_result: CallStubResult | None
     call_literal_syntax: CallLiteralSyntax | None
     call_target_name_syntax: NewVariableNameSyntax | None
     """The grammar each component of a ``target_function`` follows.

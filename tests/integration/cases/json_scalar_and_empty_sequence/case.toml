@@ -1,0 +1,7 @@
+schema_version = 1
+input = "input.json"
+suites = ["base"]
+# Regression provenance: tagged_enum_empty_list (Rust).
+
+[[variants]]
+axis = "tagged_enum_empty_container"

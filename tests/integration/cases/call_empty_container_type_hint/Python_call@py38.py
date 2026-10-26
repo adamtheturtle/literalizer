@@ -1,0 +1,3 @@
+from typing import Union
+def process(values: 'tuple[Union[int, dict[object, object]], ...]', count: 'int') -> object: ...
+process(values=(1, {}), count=42)

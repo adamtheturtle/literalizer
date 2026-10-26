@@ -1,0 +1,15 @@
+# Regression provenance: Objective-C nullable object conditional with inner and trailing comments.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform_nullable_conditional = true
+wrap_in_file = true
+variable_form = "new"
+gates = [{kind = "nullable_object_call_stub"}]
+
+[[call.variants]]
+axis = "json_type"

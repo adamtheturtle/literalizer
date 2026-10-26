@@ -19,6 +19,10 @@ from beartype import beartype
 from pydantic import BaseModel, Field
 
 import literalizer
+from literalizer._language import (
+    IntegerCallStubResult,
+    NullableObjectCallStubResult,
+)
 from literalizer._statements import (
     CallLiteralSyntax,
     CharacterAndHashRawLiterals,
@@ -255,6 +259,16 @@ class IntegerCallStubGate(BaseModel, extra="forbid", frozen=True, strict=True):
     kind: Literal["integer_call_stub"]
 
 
+class NullableObjectCallStubGate(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Require an object result that can be null and a conditional
+    expression.
+    """
+
+    kind: Literal["nullable_object_call_stub"]
+
+
 class CallIdentifierPrefixGate(
     BaseModel, extra="forbid", frozen=True, strict=True
 ):
@@ -341,7 +355,8 @@ type SuiteGate = Annotated[
     | CallCharacterQuoteGate
     | CallHashRawPrefixGate
     | CallIdentifierPrefixGate
-    | IntegerCallStubGate,
+    | IntegerCallStubGate
+    | NullableObjectCallStubGate,
     Field(discriminator="kind"),
 ]
 
@@ -391,6 +406,22 @@ def validate_gate_names(
 
 
 @beartype
+def _call_stub_gate_admits(
+    *,
+    gate: IntegerCallStubGate | NullableObjectCallStubGate,
+    lang_cls: literalizer.LanguageCls,
+) -> bool:
+    """Match result gates against the native producer's return type."""
+    result = lang_cls.call_stub_result
+    if isinstance(gate, IntegerCallStubGate):
+        return isinstance(result, IntegerCallStubResult)
+    return (
+        isinstance(result, NullableObjectCallStubResult)
+        and result.conditional_template is not None
+    )
+
+
+@beartype
 def gate_admits(
     *,
     gate: SuiteGate,
@@ -415,8 +446,8 @@ def gate_admits(
                 lang_cls=lang_cls,
                 spec=spec,
             )
-        case IntegerCallStubGate():
-            admits = lang_cls.call_stub_result is not None
+        case IntegerCallStubGate() | NullableObjectCallStubGate():
+            admits = _call_stub_gate_admits(gate=gate, lang_cls=lang_cls)
         case RecordVariantGate():
             admits = gate.variant in metadata.record_variants
         case NonDefaultKwargGate():

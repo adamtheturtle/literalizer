@@ -1,0 +1,169 @@
+# Shared input and API context; named examples preserve specialized regression witnesses.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[call.ref_declarations]
+my_data = "42"
+
+[[call_examples]]
+# Regression provenance: call_binding_rust_byte_raw_hashes_existing
+# Regression provenance: Rust. Rust raw and byte-raw string delimiters may contain quoted comment markers.
+example = "call_binding_rust_byte_raw_hashes_existing"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "make_widget(br#\"// payload\"#) // note"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_hash_raw_prefix"
+prefix = "br"
+marker = "#"
+
+[call_examples.ref_declarations]
+my_data = "42"
+
+[[call_examples]]
+# Regression provenance: call_binding_rust_character_escape_existing
+# Regression provenance: Rust. Rust character literals and their escapes must not hide trailing line comments.
+example = "call_binding_rust_character_escape_existing"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "make_widget('\\n') // note"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_character_quote"
+quote = "'"
+
+[call_examples.ref_declarations]
+my_data = "42"
+
+[[call_examples]]
+# Regression provenance: call_binding_rust_character_hex_existing
+# Regression provenance: Rust. Rust character literals and their escapes must not hide trailing line comments.
+example = "call_binding_rust_character_hex_existing"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "make_widget('\\x2f') // note"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_character_quote"
+quote = "'"
+
+[call_examples.ref_declarations]
+my_data = "42"
+
+[[call_examples]]
+# Regression provenance: call_binding_rust_character_quote_existing
+# Regression provenance: Rust. Rust character literals and their escapes must not hide trailing line comments.
+example = "call_binding_rust_character_quote_existing"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "make_widget('\"') // note"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_character_quote"
+quote = "'"
+
+[call_examples.ref_declarations]
+my_data = "42"
+
+[[call_examples]]
+# Regression provenance: call_binding_rust_character_unicode_existing
+# Regression provenance: Rust. Rust character literals and their escapes must not hide trailing line comments.
+example = "call_binding_rust_character_unicode_existing"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "make_widget('\\u{{2f}}') // note"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_character_quote"
+quote = "'"
+
+[call_examples.ref_declarations]
+my_data = "42"
+
+[[call_examples]]
+# Regression provenance: call_binding_rust_lifetime_existing
+# Regression provenance: Rust. Rust lifetime arguments must not be mistaken for quoted characters.
+example = "call_binding_rust_lifetime_existing"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "{{\n    {call};\n    {{\n        fn make_widget<'a>() where 'a: 'a {{}}\n        make_widget::<'static>()\n    }}\n}} // note"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_character_quote"
+quote = "'"
+
+[call_examples.ref_declarations]
+my_data = "42"
+
+[[call_examples]]
+# Regression provenance: call_binding_rust_raw_hashes_existing
+# Regression provenance: Rust. Rust raw and byte-raw string delimiters may contain quoted comment markers.
+example = "call_binding_rust_raw_hashes_existing"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "make_widget(r##\"a \" // payload\"##) // note"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_hash_raw_prefix"
+prefix = "r"
+marker = "#"
+
+[call_examples.ref_declarations]
+my_data = "42"
+
+[[call_examples]]
+# Regression provenance: call_binding_rust_raw_identifier_existing
+# Regression provenance: Rust. Rust raw identifiers must not be mistaken for raw string prefixes.
+example = "call_binding_rust_raw_identifier_existing"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform = "{{\n    {call};\n    fn r#type() {{}}\n    r#type()\n}} // note"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_hash_raw_prefix"
+prefix = "r"
+marker = "#"
+
+[call_examples.ref_declarations]
+my_data = "42"

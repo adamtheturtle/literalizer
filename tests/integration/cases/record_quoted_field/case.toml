@@ -1,5 +1,6 @@
 schema_version = 1
-owner = "variant"
+suites = ["base"]
+# Regression provenance: record_quoted_field (Zig).
 
 [[variants]]
 axis = "record_quoted_field"

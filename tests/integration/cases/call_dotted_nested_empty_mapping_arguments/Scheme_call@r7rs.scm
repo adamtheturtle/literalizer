@@ -1,0 +1,5 @@
+(define api (lambda args (if #f #f)))
+(define api.worker (lambda args (if #f #f)))
+(define api.worker.process (lambda args (if #f #f)))
+(api.worker.process (list 1 (list)) 42)
+(api.worker.process (list 2 (list (cons "x" "s"))) 43)

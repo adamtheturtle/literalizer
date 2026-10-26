@@ -1,0 +1,24 @@
+# Shared input and API context; named examples preserve specialized regression witnesses.
+schema_version = 1
+owner = "literalize-ref"
+
+[ref.value_sources]
+value = "null"
+
+[[ref_examples]]
+# Regression provenance: literalize_ref_null_interface
+# Original regression (literalize_ref_v_null_interface): V null pointer references retain interface wrapping in nested containers.
+example = "literalize_ref_null_interface"
+heterogeneous_strategy = "INTERFACE"
+
+[[ref_examples.gates]]
+kind = "capability_flag"
+flag = "supports_variable_names"
+
+[[ref_examples.gates]]
+kind = "enum_member_present"
+option = "heterogeneous_strategy"
+member = "INTERFACE"
+
+[ref_examples.value_sources]
+value = "null"

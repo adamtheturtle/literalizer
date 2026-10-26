@@ -1,0 +1,6 @@
+* my_data
+@code javascript
+{
+    "entries": [{"id": 1}]
+}
+@end

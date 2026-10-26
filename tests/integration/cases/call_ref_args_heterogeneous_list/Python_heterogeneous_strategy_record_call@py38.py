@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Any
-def process(*_args: object, **_kwargs: object) -> object: ...
+from typing import Union
+def process(data: 'Union[tuple[int, ...], tuple[str, ...], tuple[object, ...]]', count: 'int') -> object: ...
 my_ints = (
     1,
     2,

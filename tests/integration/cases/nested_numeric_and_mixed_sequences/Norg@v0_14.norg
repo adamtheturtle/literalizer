@@ -1,0 +1,8 @@
+* my_data
+@code javascript
+{
+    "numbers": [1, 2],
+    "nested": {"inner": [3]},
+    "mixed": [4, "five"]
+}
+@end

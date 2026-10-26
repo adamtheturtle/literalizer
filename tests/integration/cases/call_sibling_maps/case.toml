@@ -7,7 +7,8 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-variant_only = true
+# Original regression: Rust option-specific call rendering.
+# Also exercise this portable input with the default call configuration.
 
 [[call.variants]]
 axis = "heterogeneous_strategy_tagged_enum"

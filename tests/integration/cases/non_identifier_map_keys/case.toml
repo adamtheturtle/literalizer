@@ -1,0 +1,8 @@
+schema_version = 1
+suites = ["base"]
+# The original input includes an empty key; require the declared default policy.
+gates = [{kind = "capability_flag", flag = "default_allows_empty_dict_keys"}]
+# Regression provenance: ruby_symbol_non_identifier_keys (Ruby).
+
+[[variants]]
+axis = "ruby_symbol_non_identifier_keys"

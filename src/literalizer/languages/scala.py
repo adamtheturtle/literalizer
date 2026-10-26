@@ -91,6 +91,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -104,12 +105,12 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     KeywordCallStyle,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RenderedRecordLiteral,
@@ -130,8 +131,6 @@ from literalizer._language import (
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
-    default_format_call_variable_assignment,
-    default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
@@ -153,6 +152,17 @@ from literalizer.exceptions import (
     InvalidRecordNameError,
     NullInCollectionError,
     UnrepresentableInputError,
+)
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="Any",
+    value="null",
+    conditional_template=(
+        "if ({call} != {null})\n"
+        "{indent}{call}{inner_comment}\n"
+        "else {null}{trailing_comment}"
+    ),
+    comment_prefix="//",
 )
 
 _CIRCE_JSON_TYPE = "io.circe.Json"
@@ -371,25 +381,33 @@ def _scala_call_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Scala stub declarations for a call name."""
+    return_type = _NULL_OBJECT_STUB.type_name
+    return_value = _NULL_OBJECT_STUB.value
     param_list = ", ".join(_scala_parameter_declaration(p) for p in params)
     if len(parts) == 1 and parts[0].startswith("new "):
         class_name = parts[0].removeprefix("new ")
         return (f"class {class_name}({param_list})",)
     if len(parts) == 1:
-        return (f"def {parts[0]}({param_list}): Any = null",)
+        return (
+            f"def {parts[0]}({param_list}): {return_type} = {return_value}",
+        )
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
     if len(fields) == 0:
         cls = f"_{root.capitalize()}Type"
         return (
-            f"class {cls} {{ def {method}({param_list}): Any = null }}",
+            (
+                f"class {cls} {{ def {method}({param_list}):"
+                f" {return_type} = {return_value} }}"
+            ),
             f"val {root} = new {cls}",
         )
     lines: list[str] = []
     inner_cls = f"_{fields[-1].capitalize()}Type"
     lines.append(
-        f"class {inner_cls} {{ def {method}({param_list}): Any = null }}"
+        f"class {inner_cls} {{ def {method}({param_list}):"
+        f" {return_type} = {return_value} }}"
     )
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
@@ -733,15 +751,37 @@ class Scala(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
     format_integer_widened = no_format_integer_widened
-    format_call_variable_declaration = default_format_call_variable_declaration
-    format_call_variable_assignment = default_format_call_variable_assignment
+
+    @cached_property
+    @beartype
+    def format_call_variable_declaration(
+        self,
+    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
+        """Bind the actual call result without applying literal JSON
+        boxing.
+
+        Argument values do not determine a function's return type.
+        Preserve the selected val/var style and native type inference.
+        """
+        return self.declaration_style.value.formatter
+
+    @cached_property
+    @beartype
+    def format_call_variable_assignment(
+        self,
+    ) -> Callable[[str, str, Value], str]:
+        """Assign an opaque call result without converting its
+        arguments.
+        """
+        return variable_formatter(template="{name} = {value}")
+
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(new_constructor_target)
     )
@@ -786,7 +826,7 @@ class Scala(metaclass=LanguageCls):
     dotted_call_stub_requires_unique_parts = True
     dotted_call_stub_normalizes_part_case = True
     call_returns_expression = True
-    supports_json_call_result_binding = False
+    supports_json_call_result_binding = True
     supports_zero_parameter_calls = True
     max_call_parameters = NO_CALL_PARAMETER_LIMIT
     supports_inline_multiline_dict_args = True

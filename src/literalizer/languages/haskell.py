@@ -82,6 +82,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommandCallStyle,
     CommentConfig,
@@ -96,7 +97,6 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -134,7 +134,7 @@ from literalizer._language import (
     value_contains,
 )
 from literalizer._statements import split_statements
-from literalizer._types import OrderedMap, Value
+from literalizer._types import CallStubData, OrderedMap, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
@@ -158,7 +158,11 @@ def _haskell_call_preamble_stub(
 
 @beartype
 def _haskell_arg_type_str(
-    *, params: Sequence[str], type_name: str, curried: bool
+    *,
+    params: Sequence[str],
+    type_name: str,
+    curried: bool,
+    call_result_slots: frozenset[int],
 ) -> str | None:
     """Return the Haskell argument-type string for a call signature.
 
@@ -168,13 +172,17 @@ def _haskell_arg_type_str(
     many (including ``()`` for zero, since :class:`PositionalCallStyle`
     emits ``f()`` at the call site).
     """
+    parameter_types = [
+        f"(IO {type_name})" if index in call_result_slots else type_name
+        for index in range(len(params))
+    ]
     if curried:
         if len(params) == 0:
             return None
-        return " -> ".join(type_name for _ in params)
+        return " -> ".join(parameter_types)
     if len(params) == 1:
-        return type_name
-    return "(" + ", ".join(type_name for _ in params) + ")"
+        return parameter_types[0]
+    return "(" + ", ".join(parameter_types) + ")"
 
 
 _HASKELL_IMPORT_PREFIX = import_preamble(code="import ")
@@ -202,6 +210,7 @@ def _build_haskell_call_stub_lines(
     type_name: str,
     curried: bool,
     is_wrapper_stub: bool,
+    call_result_slots: frozenset[int],
 ) -> tuple[str, ...]:
     """Return Haskell stub declarations for a call name."""
     if stub_return is StubReturn.VALUE:
@@ -216,7 +225,10 @@ def _build_haskell_call_stub_lines(
     # never needs to default the wrapped expression's type.
     effective_curried = curried and not is_wrapper_stub
     arg_type = _haskell_arg_type_str(
-        params=params, type_name=type_name, curried=effective_curried
+        params=params,
+        type_name=type_name,
+        curried=effective_curried,
+        call_result_slots=call_result_slots,
     )
     lhs_wildcards = "_"
     if effective_curried:
@@ -309,6 +321,11 @@ def _build_haskell_call_stub(
                 len(params) == 1
                 and params[0].startswith("_")
                 and len(args) == 0
+            ),
+            call_result_slots=(
+                args.call_result_slots
+                if isinstance(args, CallStubData)
+                else frozenset()
             ),
         )
 
@@ -1821,7 +1838,7 @@ class Haskell(metaclass=LanguageCls):
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = None
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

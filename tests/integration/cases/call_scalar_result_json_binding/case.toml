@@ -1,0 +1,1070 @@
+# Shared input and API context; named examples preserve specialized regression witnesses.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples]]
+# Regression provenance: call_raw_interpolated_map_interpolation_binding
+# Regression provenance: Dart; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_raw_interpolated_map_interpolation_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "\"${{{{'value': '// payload'}}['value']}}\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_raw_interpolated_nested_interpolation_binding
+# Regression provenance: Dart; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_raw_interpolated_nested_interpolation_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "\"${{\"${{\"// payload\"}}\"}}\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_raw_interpolated_raw_double_binding
+# Regression provenance: Dart; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_raw_interpolated_raw_double_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "r\"ends\\\" + \"// payload\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_raw_interpolated_raw_interpolation_binding
+# Regression provenance: Dart; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_raw_interpolated_raw_interpolation_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "\"${{r\"ends\\\" + \"// payload\"}}\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_raw_interpolated_raw_single_binding
+# Regression provenance: Dart; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_raw_interpolated_raw_single_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "r'ends\\' + '// payload' // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_raw_interpolated_raw_triple_double_binding
+# Regression provenance: Dart; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_raw_interpolated_raw_triple_double_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "r\"\"\"ends\\\"\"\" + \"// payload\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_raw_interpolated_raw_triple_single_binding
+# Regression provenance: Dart; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_raw_interpolated_raw_triple_single_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "r'''ends\\''' + '// payload' // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_regex_interpolated_double_literal_binding
+# Regression provenance: Haxe; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_regex_interpolated_double_literal_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "\"prefix ${{ // payload\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "regex_literals"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "'"
+
+[[call_examples]]
+# Regression provenance: call_regex_interpolated_nested_interpolation_binding
+# Regression provenance: Haxe; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_regex_interpolated_nested_interpolation_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "'prefix ${{'// payload'}}' // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "regex_literals"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_escaped_quotes_comment_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_escaped_quotes_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"\\\"prefix ${{\"// payload\"}}\\\"\").length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_escaped_quotes_plain_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_escaped_quotes_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"\\\"prefix ${{\"// payload\"}}\\\"\").length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_interpolation_comments_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_interpolation_comments_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"${{ /* }} \" block */ 42 // }} \" line\n}}\").length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_map_comment_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_map_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"${{{{'value': '// payload'}}['value']}}\").length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_map_plain_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_map_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"${{{{'value': '// payload'}}['value']}}\").length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_nested_comment_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_nested_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"${{\"${{\"// payload\"}}\"}}\").length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_nested_plain_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_nested_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"${{\"${{\"// payload\"}}\"}}\").length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_nested_raw_comment_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_nested_raw_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"${{r\"ends\\\" + \"// payload\"}}\").length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_nested_raw_plain_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_nested_raw_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"${{r\"ends\\\" + \"// payload\"}}\").length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_raw_double_comment_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_raw_double_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(r\"ends\\\" + \"// payload\").length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_raw_double_plain_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_raw_double_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(r\"ends\\\" + \"// payload\").length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_raw_single_comment_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_raw_single_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(r'ends\\' + '// payload').length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_raw_single_plain_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_raw_single_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(r'ends\\' + '// payload').length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_raw_triple_double_comment_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_raw_triple_double_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(r\"\"\"ends\\\"\"\" + \"// payload\").length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_raw_triple_double_plain_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_raw_triple_double_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(r\"\"\"ends\\\"\"\" + \"// payload\").length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_raw_triple_single_comment_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_raw_triple_single_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(r'''ends\\''' + '// payload').length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_raw_triple_single_plain_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_raw_triple_single_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(r'''ends\\''' + '// payload').length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_triple_interpolation_comment_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_triple_interpolation_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "('''prefix ${{'// payload'}}''').length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_raw_interpolated_triple_interpolation_plain_new
+# Regression provenance: Dart; The transformed call uses Dart literal and comment syntax.
+example = "call_shared_comments_raw_interpolated_triple_interpolation_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "('''prefix ${{'// payload'}}''').length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_regex_interpolated_double_literal_comment_new
+# Regression provenance: Haxe; The transformed call uses Haxe literal and comment syntax.
+example = "call_shared_comments_regex_interpolated_double_literal_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"prefix ${{ // payload\").length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "regex_literals"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_regex_interpolated_double_literal_plain_new
+# Regression provenance: Haxe; The transformed call uses Haxe literal and comment syntax.
+example = "call_shared_comments_regex_interpolated_double_literal_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(\"prefix ${{ // payload\").length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "regex_literals"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_regex_interpolated_existing_regex_comment_new
+# Regression provenance: Haxe; The transformed call uses Haxe literal and comment syntax.
+example = "call_shared_comments_regex_interpolated_existing_regex_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(~/\\//).match(\"/\") ? {call} : null // trailing"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "regex_literals"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_regex_interpolated_existing_regex_plain_new
+# Regression provenance: Haxe; The transformed call uses Haxe literal and comment syntax.
+example = "call_shared_comments_regex_interpolated_existing_regex_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(~/\\//).match(\"/\") ? {call} : null"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "regex_literals"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_regex_interpolated_interpolation_comment_new
+# Regression provenance: Haxe; The transformed call uses Haxe literal and comment syntax.
+example = "call_shared_comments_regex_interpolated_interpolation_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "('prefix ${{'// payload'}}').length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "regex_literals"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_regex_interpolated_interpolation_plain_new
+# Regression provenance: Haxe; The transformed call uses Haxe literal and comment syntax.
+example = "call_shared_comments_regex_interpolated_interpolation_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "('prefix ${{'// payload'}}').length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "regex_literals"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "'"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_conditional_comment_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_conditional_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "($\"{{(true ? \"// payload\" : \"ok\")}}\").Length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_conditional_plain_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_conditional_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "($\"{{(true ? \"// payload\" : \"ok\")}}\").Length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_escaped_braces_comment_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_escaped_braces_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "($\"{{{{payload}}}} {{1://}}\").Length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_escaped_braces_plain_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_escaped_braces_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "($\"{{{{payload}}}} {{1://}}\").Length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_interpolated_verbatim_comment_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_interpolated_verbatim_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "($@\"a\"\" {{\"// payload\"}}\"\"b\").Length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_interpolated_verbatim_plain_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_interpolated_verbatim_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "($@\"a\"\" {{\"// payload\"}}\"\"b\").Length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_nested_format_comment_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_nested_format_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "($\"{{$\"{{1://}}\"}}\").Length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_nested_format_plain_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_nested_format_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "($\"{{$\"{{1://}}\"}}\").Length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_verbatim_comment_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_verbatim_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(@\"ends\\\" + \"// payload\").Length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_verbatim_interpolated_comment_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_verbatim_interpolated_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(@$\"a\"\" {{\"// payload\"}}\"\"b\").Length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_verbatim_interpolated_plain_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_verbatim_interpolated_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(@$\"a\"\" {{\"// payload\"}}\"\"b\").Length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_verbatim_plain_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_verbatim_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(@\"ends\\\" + \"// payload\").Length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_verbatim_quotes_comment_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_verbatim_quotes_comment_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(@\"a\"\" // payload\"\"b\").Length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_verbatim_interpolated_verbatim_quotes_plain_new
+# Regression provenance: CSharp; The transformed call uses CSharp literal and comment syntax.
+example = "call_shared_comments_verbatim_interpolated_verbatim_quotes_plain_new"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform = "(@\"a\"\" // payload\"\"b\").Length >= 0 ? {call} : {call}"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_verbatim_interpolated_conditional_interpolation_binding
+# Regression provenance: CSharp; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_verbatim_interpolated_conditional_interpolation_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "$\"{{(true ? \"// payload\" : \"ok\")}}\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_verbatim_interpolated_format_interpolation_binding
+# Regression provenance: CSharp; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_verbatim_interpolated_format_interpolation_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "$\"{{{{payload}}}} {{1://}}\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_verbatim_interpolated_nested_interpolation_binding
+# Regression provenance: CSharp; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_verbatim_interpolated_nested_interpolation_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "$\"{{$\"{{1://}}\"}}\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_verbatim_interpolated_verbatim_binding
+# Regression provenance: CSharp; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_verbatim_interpolated_verbatim_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "@\"ends\\\" + \"// payload\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""
+
+[[call_examples]]
+# Regression provenance: call_verbatim_interpolated_verbatim_quotes_binding
+# Regression provenance: CSharp; The target language preserves its quoted string syntax when terminating transformed call bindings.
+example = "call_verbatim_interpolated_verbatim_quotes_binding"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+call_transform = "@\"a\"\" // payload\"\"b\" // trailing\n// extra"
+wrap_in_file = true
+variable_form = "new"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "verbatim_strings"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "{"
+quotes = "\""

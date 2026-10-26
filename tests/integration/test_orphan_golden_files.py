@@ -255,7 +255,9 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         expected.update(
             _paths_for_versions(
                 parent=cases_dir / call_case.config.case_dir_name,
-                name=f"{call_case.lang_cls.__name__}_call",
+                name=call_case.config.golden_name(
+                    name=f"{call_case.lang_cls.__name__}_call"
+                ),
                 extension=call_case.lang_cls.extension,
                 lang_cls=call_case.lang_cls,
             )
@@ -265,7 +267,9 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         expected.add(
             make_golden_path(
                 parent=cases_dir / call_variant_case.config.case_dir_name,
-                name=f"{call_variant_case.variant.name}_call",
+                name=call_variant_case.config.golden_name(
+                    name=f"{call_variant_case.variant.name}_call"
+                ),
                 extension=call_variant_case.variant.spec.extension,
                 lang_cls=call_variant_case.variant.lang_cls,
                 version=call_variant_case.variant.spec.language_version,
@@ -276,7 +280,9 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         expected.update(
             make_golden_path(
                 parent=cases_dir / literalize_ref_case.config.case_dir_name,
-                name=f"{literalize_ref_case.lang_cls.__name__}_ref",
+                name=literalize_ref_case.config.golden_name(
+                    name=f"{literalize_ref_case.lang_cls.__name__}_ref"
+                ),
                 extension=literalize_ref_case.lang_cls.extension,
                 lang_cls=literalize_ref_case.lang_cls,
                 version=version,
@@ -291,7 +297,9 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         expected.add(
             make_golden_path(
                 parent=cases_dir / variant_case.config.case_dir_name,
-                name=variant_case.golden_name,
+                name=variant_case.config.golden_name(
+                    name=variant_case.golden_name
+                ),
                 extension=variant_case.variant.spec.extension,
                 lang_cls=variant_case.variant.lang_cls,
                 version=variant_case.variant.spec.language_version,
@@ -302,7 +310,9 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         expected.update(
             make_golden_path(
                 parent=cases_dir / default_ref_case.config.case_dir_name,
-                name=f"{default_ref_case.lang_cls.__name__}_ref_default",
+                name=default_ref_case.config.golden_name(
+                    name=f"{default_ref_case.lang_cls.__name__}_ref_default"
+                ),
                 extension=default_ref_case.lang_cls.extension,
                 lang_cls=default_ref_case.lang_cls,
                 version=version,

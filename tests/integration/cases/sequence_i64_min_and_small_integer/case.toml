@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: kotlin_widened_i64_min (Kotlin).
+
+[[variants]]
+axis = "kotlin_widened_i64_min"

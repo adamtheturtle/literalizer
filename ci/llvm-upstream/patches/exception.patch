@@ -1,0 +1,351 @@
+diff --git a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp
+index f414272b..60cf4636 100644
+--- a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp
++++ b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp
+@@ -10,6 +10,30 @@
+
+ namespace clang::tidy::utils {
+
++struct ExceptionAnalyzer::AnalysisContext {
++  llvm::DenseMap<const FunctionDecl *, ExceptionInfo> Completed;
++  unsigned RecursionGeneration = 0;
++};
++
++ExceptionAnalyzer::ExceptionInfo
++ExceptionAnalyzer::ExceptionInfo::withCallerStack(
++    const FunctionDecl *Root, const CallStack &Caller,
++    SourceLocation CallLoc) const {
++  ExceptionInfo Result = *this;
++  for (auto &Exception : Result.ThrownExceptions) {
++    CallStack Rebased = Caller;
++    bool WithinRoot = false;
++    for (const auto &Frame : Exception.second.Stack) {
++      WithinRoot |= Frame.first == Root;
++      if (WithinRoot)
++        Rebased.insert(
++            {Frame.first, Frame.first == Root ? CallLoc : Frame.second});
++    }
++    Exception.second.Stack = std::move(Rebased);
++  }
++  return Result;
++}
++
+ void ExceptionAnalyzer::ExceptionInfo::registerException(
+     const Type *ExceptionType, const ThrowInfo &ThrowInfo) {
+   Behaviour = State::Throwing;
+@@ -470,20 +494,38 @@ void ExceptionAnalyzer::ExceptionInfo::reevaluateBehaviour() {
+ }
+ ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
+     const FunctionDecl *Func, const ExceptionInfo::Throwables &Caught,
+-    CallStack &CallStack, SourceLocation CallLoc) {
+-  if (!Func || CallStack.contains(Func) ||
+-      (!CallStack.empty() && !canThrow(Func)))
++    CallStack &CallStack, SourceLocation CallLoc, AnalysisContext &Analysis) {
++  if (!Func || (!CallStack.empty() && !canThrow(Func)))
++    return ExceptionInfo::createNonThrowing();
++  if (CallStack.contains(Func)) {
++    ++Analysis.RecursionGeneration;
+     return ExceptionInfo::createNonThrowing();
++  }
++
++  // A caught exception and a recursive back edge depend on the current path.
++  // Reuse only complete analyses without either dependency.
++  if (Caught.empty()) {
++    const auto Cached = Analysis.Completed.find(Func);
++    if (Cached != Analysis.Completed.end())
++      return Cached->second.withCallerStack(Func, CallStack, CallLoc);
++  }
++  const unsigned Generation = Analysis.RecursionGeneration;
++  auto Finish = [&](ExceptionInfo Result) {
++    if (Caught.empty() && Generation == Analysis.RecursionGeneration)
++      Analysis.Completed.try_emplace(
++          Func, Result.withCallerStack(Func, {}, Func->getLocation()));
++    return Result;
++  };
+
+   if (const Stmt *Body = Func->getBody()) {
+     CallStack.insert({Func, CallLoc});
+-    ExceptionInfo Result = throwsException(Body, Caught, CallStack);
++    ExceptionInfo Result = throwsException(Body, Caught, CallStack, Analysis);
+
+     // For a constructor, we also have to check the initializers.
+     if (const auto *Ctor = dyn_cast<CXXConstructorDecl>(Func)) {
+       for (const CXXCtorInitializer *Init : Ctor->inits()) {
+         const ExceptionInfo Excs =
+-            throwsException(Init->getInit(), Caught, CallStack);
++            throwsException(Init->getInit(), Caught, CallStack, Analysis);
+         Result.merge(Excs);
+       }
+     }
+@@ -496,7 +538,7 @@ ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
+     }
+
+     CallStack.erase(Func);
+-    return Result;
++    return Finish(Result);
+   }
+
+   // Functions without a visible body can still be known non-throwing from their
+@@ -526,15 +568,14 @@ ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
+     CallStack.erase(Func);
+   }
+
+-  return Result;
++  return Finish(Result);
+ }
+
+ /// Analyzes a single statement on it's throwing behaviour. This is in principle
+ /// possible except some 'Unknown' functions are called.
+-ExceptionAnalyzer::ExceptionInfo
+-ExceptionAnalyzer::throwsException(const Stmt *St,
+-                                   const ExceptionInfo::Throwables &Caught,
+-                                   CallStack &CallStack) {
++ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
++    const Stmt *St, const ExceptionInfo::Throwables &Caught,
++    CallStack &CallStack, AnalysisContext &Analysis) {
+   auto Results = ExceptionInfo::createNonThrowing();
+   if (!St)
+     return Results;
+@@ -558,14 +599,15 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+     }
+   } else if (const auto *Try = dyn_cast<CXXTryStmt>(St)) {
+     ExceptionInfo Uncaught =
+-        throwsException(Try->getTryBlock(), Caught, CallStack);
++        throwsException(Try->getTryBlock(), Caught, CallStack, Analysis);
+     for (unsigned I = 0; I < Try->getNumHandlers(); ++I) {
+       const CXXCatchStmt *Catch = Try->getHandler(I);
+
+       // Everything is caught through 'catch(...)'.
+       if (!Catch->getExceptionDecl()) {
+-        const ExceptionInfo Rethrown = throwsException(
+-            Catch->getHandlerBlock(), Uncaught.getExceptions(), CallStack);
++        const ExceptionInfo Rethrown =
++            throwsException(Catch->getHandlerBlock(), Uncaught.getExceptions(),
++                            CallStack, Analysis);
+         Results.merge(Rethrown);
+         Uncaught.clear();
+       } else {
+@@ -585,8 +627,9 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+             Uncaught.filterByCatch(CaughtType,
+                                    Catch->getExceptionDecl()->getASTContext());
+         if (!FilteredExceptions.empty()) {
+-          const ExceptionInfo Rethrown = throwsException(
+-              Catch->getHandlerBlock(), FilteredExceptions, CallStack);
++          const ExceptionInfo Rethrown =
++              throwsException(Catch->getHandlerBlock(), FilteredExceptions,
++                              CallStack, Analysis);
+           Results.merge(Rethrown);
+         }
+       }
+@@ -594,38 +637,42 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+     Results.merge(Uncaught);
+   } else if (const auto *DefaultInit = dyn_cast<CXXDefaultInitExpr>(St)) {
+     const ExceptionInfo Excs =
+-        throwsException(DefaultInit->getExpr(), Caught, CallStack);
++        throwsException(DefaultInit->getExpr(), Caught, CallStack, Analysis);
+     Results.merge(Excs);
+   } else if (const auto *Coro = dyn_cast<CoroutineBodyStmt>(St)) {
+     for (const Stmt *Child : Coro->childrenExclBody()) {
+       if (Child != Coro->getExceptionHandler()) {
+-        const ExceptionInfo Excs = throwsException(Child, Caught, CallStack);
++        const ExceptionInfo Excs =
++            throwsException(Child, Caught, CallStack, Analysis);
+         Results.merge(Excs);
+       }
+     }
+     const ExceptionInfo Excs =
+-        throwsException(Coro->getBody(), Caught, CallStack);
++        throwsException(Coro->getBody(), Caught, CallStack, Analysis);
+     Results.merge(throwsException(Coro->getExceptionHandler(),
+-                                  Excs.getExceptions(), CallStack));
++                                  Excs.getExceptions(), CallStack, Analysis));
+     for (const auto &Exception : Excs.getExceptions()) {
+       const Type *ExcType = Exception.getFirst();
+       if (!ExcType)
+         continue;
+       if (const CXXRecordDecl *ThrowableRec = ExcType->getAsCXXRecordDecl()) {
+-        const ExceptionInfo DestructorExcs = throwsException(
+-            ThrowableRec->getDestructor(), Caught, CallStack, SourceLocation{});
++        const ExceptionInfo DestructorExcs =
++            throwsException(ThrowableRec->getDestructor(), Caught, CallStack,
++                            SourceLocation{}, Analysis);
+         Results.merge(DestructorExcs);
+       }
+     }
+   } else if (const auto *Lambda = dyn_cast<LambdaExpr>(St)) {
+     for (const Stmt *Init : Lambda->capture_inits()) {
+-      const ExceptionInfo Excs = throwsException(Init, Caught, CallStack);
++      const ExceptionInfo Excs =
++          throwsException(Init, Caught, CallStack, Analysis);
+       Results.merge(Excs);
+     }
+   } else {
+     // Check whether any of this node's subexpressions throws.
+     for (const Stmt *Child : St->children()) {
+-      const ExceptionInfo Excs = throwsException(Child, Caught, CallStack);
++      const ExceptionInfo Excs =
++          throwsException(Child, Caught, CallStack, Analysis);
+       Results.merge(Excs);
+     }
+
+@@ -633,14 +680,14 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+     // whether the call itself throws.
+     if (const auto *Call = dyn_cast<CallExpr>(St)) {
+       if (const FunctionDecl *Func = Call->getDirectCallee()) {
+-        const ExceptionInfo Excs =
+-            throwsException(Func, Caught, CallStack, Call->getBeginLoc());
++        const ExceptionInfo Excs = throwsException(
++            Func, Caught, CallStack, Call->getBeginLoc(), Analysis);
+         Results.merge(Excs);
+       }
+     } else if (const auto *Construct = dyn_cast<CXXConstructExpr>(St)) {
+       const ExceptionInfo Excs =
+           throwsException(Construct->getConstructor(), Caught, CallStack,
+-                          Construct->getBeginLoc());
++                          Construct->getBeginLoc(), Analysis);
+       Results.merge(Excs);
+     }
+   }
+@@ -655,8 +702,9 @@ ExceptionAnalyzer::analyzeImpl(const FunctionDecl *Func) {
+   const auto CacheEntry = FunctionCache.find(Func);
+   if (CacheEntry == FunctionCache.end()) {
+     CallStack CallStack;
++    AnalysisContext Analysis;
+     ExceptionList = throwsException(Func, ExceptionInfo::Throwables(),
+-                                    CallStack, Func->getLocation());
++                                    CallStack, Func->getLocation(), Analysis);
+
+     // Cache the result of the analysis. This is done prior to filtering
+     // because it is best to keep as much information as possible.
+@@ -673,7 +721,9 @@ ExceptionAnalyzer::analyzeImpl(const FunctionDecl *Func) {
+ ExceptionAnalyzer::ExceptionInfo
+ ExceptionAnalyzer::analyzeImpl(const Stmt *Stmt) {
+   CallStack CallStack;
+-  return throwsException(Stmt, ExceptionInfo::Throwables(), CallStack);
++  AnalysisContext Analysis;
++  return throwsException(Stmt, ExceptionInfo::Throwables(), CallStack,
++                         Analysis);
+ }
+
+ template <typename T>
+diff --git a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h
+index 08479ef5..4a5f6d6c 100644
+--- a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h
++++ b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h
+@@ -105,6 +105,11 @@ public:
+     /// corresponding entity.
+     const Throwables &getExceptions() const { return ThrownExceptions; }
+
++    /// Rebase a completed function's diagnostic frames onto a new caller.
++    ExceptionInfo withCallerStack(const FunctionDecl *Root,
++                                  const CallStack &Caller,
++                                  SourceLocation CallLoc) const;
++
+     /// Signal if the there is any 'Unknown' element within the scope of
+     /// the related entity. This might be relevant if the entity is 'Throwing'
+     /// and to ensure that no other exception then 'getExceptionTypes' can
+@@ -159,12 +164,16 @@ public:
+   ExceptionInfo analyze(const Stmt *Stmt);
+
+ private:
++  struct AnalysisContext;
++
+   ExceptionInfo throwsException(const FunctionDecl *Func,
+                                 const ExceptionInfo::Throwables &Caught,
+-                                CallStack &CallStack, SourceLocation CallLoc);
++                                CallStack &CallStack, SourceLocation CallLoc,
++                                AnalysisContext &Analysis);
+   ExceptionInfo throwsException(const Stmt *St,
+                                 const ExceptionInfo::Throwables &Caught,
+-                                CallStack &CallStack);
++                                CallStack &CallStack,
++                                AnalysisContext &Analysis);
+   ExceptionInfo analyzeImpl(const FunctionDecl *Func);
+   ExceptionInfo analyzeImpl(const Stmt *Stmt);
+
+diff --git a/clang-tools-extra/test/clang-tidy/checkers/bugprone/exception-escape-repeated-calls.cpp b/clang-tools-extra/test/clang-tidy/checkers/bugprone/exception-escape-repeated-calls.cpp
+new file mode 100644
+index 0000000000000..e9c71cf7ad8f31dce94ed9a7a49b759c181a0e92
+--- /dev/null
++++ b/clang-tools-extra/test/clang-tidy/checkers/bugprone/exception-escape-repeated-calls.cpp
+@@ -0,0 +1,80 @@
++// RUN: %check_clang_tidy -std=c++20 %s bugprone-exception-escape %t -- -- -fexceptions
++
++// Exercise cached diagnostics, catch contexts, recursion, and repeated calls.
++void leaf() { throw 1; }
++
++void catches() {
++  try {
++    leaf();
++  } catch (int) {
++  }
++}
++
++void escaped_after_catch() noexcept {
++// CHECK-MESSAGES: :[[@LINE-1]]:6: warning: an exception may be thrown in function 'escaped_after_catch' which should not throw exceptions [bugprone-exception-escape]
++  catches();
++  leaf();
++}
++
++void rethrow() {
++  try {
++    leaf();
++  } catch (int) {
++    throw;
++  }
++}
++
++void escaped_rethrow() noexcept { rethrow(); }
++// CHECK-MESSAGES: :[[@LINE-1]]:6: warning: an exception may be thrown in function 'escaped_rethrow' which should not throw exceptions [bugprone-exception-escape]
++
++void rethrows_current() { throw; }
++
++void caught_contexts() noexcept {
++// CHECK-MESSAGES: :[[@LINE-1]]:6: warning: an exception may be thrown in function 'caught_contexts' which should not throw exceptions [bugprone-exception-escape]
++  try {
++    throw 1;
++  } catch (int) {
++    try {
++      rethrows_current();
++    } catch (int) {
++    }
++  }
++  try {
++    throw 2.0;
++  } catch (double) {
++    rethrows_current();
++  }
++}
++
++void cycle_a();
++void cycle_b() { cycle_a(); }
++void cycle_a() {
++  cycle_b();
++  throw 1;
++}
++
++void recursive_escape() noexcept {
++// CHECK-MESSAGES: :[[@LINE-1]]:6: warning: an exception may be thrown in function 'recursive_escape' which should not throw exceptions [bugprone-exception-escape]
++  try {
++    cycle_a();
++  } catch (int) {
++  }
++  cycle_b();
++}
++
++template <int N> void repeated() {
++  repeated<N - 1>();
++  repeated<N - 1>();
++}
++template <> void repeated<0>() { throw 1; }
++
++void repeated_escape() noexcept { repeated<30>(); }
++// CHECK-MESSAGES: :[[@LINE-1]]:6: warning: an exception may be thrown in function 'repeated_escape' which should not throw exceptions [bugprone-exception-escape]
++
++void all_caught() noexcept {
++// CHECK-MESSAGES-NOT: warning: an exception may be thrown in function 'all_caught'
++  try {
++    repeated<30>();
++  } catch (...) {
++  }
++}

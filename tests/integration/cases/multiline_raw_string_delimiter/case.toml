@@ -1,6 +1,7 @@
 schema_version = 1
 input = "input.json"
-owner = "variant"
+suites = ["base"]
+# Regression provenance: multiline_raw_string_delimiter (Cpp).
 
 [[variants]]
 axis = "multiline_raw_string_delimiter"

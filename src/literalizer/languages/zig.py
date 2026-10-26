@@ -75,6 +75,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CollectionLayout,
     CommentConfig,
@@ -88,7 +89,6 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     Language,
     LanguageCls,
@@ -280,6 +280,15 @@ def _close_zig_wrapped_container_ids(
 
 
 @beartype
+def _zig_method_receiver(*, params: Sequence[str]) -> str:
+    """Choose a receiver distinct from every caller parameter."""
+    receiver = "self"
+    while receiver in params:
+        receiver += "_"
+    return receiver
+
+
+@beartype
 def _make_zig_call_preamble_stub(
     *,
     record_mode: bool,
@@ -334,6 +343,7 @@ def _make_zig_call_preamble_stub(
                 ),
             )
         chain = parts[:-1]
+        receiver = _zig_method_receiver(params=params)
         holder = chain[-1]
         holder_type = f"{holder.title()}Type_"
         type_preamble: tuple[str, ...] = ()
@@ -351,7 +361,7 @@ def _make_zig_call_preamble_stub(
                 return_type = carrier_type
         method_param_list = ", ".join(
             [
-                f"self: {holder_type}",
+                f"{receiver}: {holder_type}",
                 *(f"{p}: {param_type}" for p in params),
             ],
         )
@@ -359,7 +369,7 @@ def _make_zig_call_preamble_stub(
             (
                 f"const {holder_type} = struct {{ "
                 f"fn {method}({method_param_list}) {return_type} "
-                f"{{ _ = self;{param_discards}{return_statement} }} }};"
+                f"{{ _ = {receiver};{param_discards}{return_statement} }} }};"
             ),
         ]
         prev_type = holder_type
@@ -926,7 +936,7 @@ class Zig(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = None
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )

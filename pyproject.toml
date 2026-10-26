@@ -58,7 +58,8 @@ dev = [
     "doc8==2.0.0",
     "doccmd==2026.9.16.1",
     "furo==2025.12.19",
-    "hypothesis>=6.0",
+    # Keep CI on one published property-test runner, like the other tools.
+    "hypothesis==6.170.11",
     "interrogate==1.7.0",
     "mypy==2.4.0",
     "mypy-pytest-parametrize==2026.10.5.1",

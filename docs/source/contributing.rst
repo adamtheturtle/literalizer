@@ -165,6 +165,29 @@ A ``$ref`` case declares one of the two ref owners and describes itself in a ``[
 ``ref_case_override`` names an identifier case (``snake``, ``camel``, ``pascal``, ``upper_snake``, or ``kebab``) that replaces the language's default and skips any language whose ``supported_ref_cases`` excludes it.
 Each ``[ref.value_sources]`` entry maps a ref name to a JSON source that seeds the bound value for that ref.
 
+Keep regressions with the same input and API context together.
+A shared ``[call]`` or ``[ref]`` table can own named ``[[call_examples]]`` or ``[[ref_examples]]`` that exercise specific source syntax or representation options:
+
+.. code-block:: toml
+
+   schema_version = 1
+   owner = "literalize-ref"
+
+   [ref]
+   value_sources = { shared = '[1,"x"]' }
+
+   [[ref_examples]]
+   example = "tagged_enum"
+   gates = [{ kind = "enum_member_present", option = "heterogeneous_strategy", member = "TAGGED_ENUM" }]
+   heterogeneous_strategy = "TAGGED_ENUM"
+   value_sources = { shared = '[1,"x"]' }
+
+The primary table exercises the shared scenario across languages; each example selects the capabilities its additional contract needs.
+Examples share the owning input and use the same renderer, version expansion, compiler checks and orphan checks as the primary table.
+Each example declares its complete API configuration rather than inheriting options from the primary table.
+Its unique ``example`` name uses lowercase letters, digits and underscores and is appended to its golden filenames and test identifiers.
+Keep the original regression provenance with the example when consolidating cases.
+
 A case renders under every language unless it narrows.
 ``gates`` names the property the narrowing follows from, in the same vocabulary the variant axes and the rejection manifests use, so a language that later gains that property is covered without editing the manifest:
 
@@ -172,19 +195,11 @@ A case renders under every language unless it narrows.
 
    schema_version = 1
    suites = ["base"]
-   gates = [{ kind = "metadata_field", field = "nested_list_widening", value = "integer_width" }]
+   gates = [{ kind = "capability_flag", flag = "default_allows_empty_dict_keys" }]
 
-A narrowing no property expresses -- a syntax quirk one language has, or a deliberate one-language sample of a rendering that does not vary -- names its languages instead and says in ``languages_reason`` which of the two it is:
-
-.. code-block:: toml
-
-   schema_version = 1
-   suites = ["base"]
-   languages = ["Lua"]
-   languages_reason = "Lua alone closes a long string with the ]] delimiter this input runs up against."
-
-``languages`` and ``languages_reason`` require each other, and a case naming both ``languages`` and ``gates`` states its narrowing twice and is rejected.
-The ``[call]`` and ``[ref]`` tables narrow the languages they render under the same way.
+This gate belongs to an input containing an empty mapping key.
+Use the input's actual requirements to select its languages, and keep source-syntax regressions as capability-gated examples of shared scenarios.
+The ``[call]``, ``[ref]`` and named example tables use the same gate vocabulary.
 
 Non-default inputs can be explicit with ``input = "input.toml"``.
 Supported variant context fields are ``variable_form`` (``new``, ``existing``, or ``both``), ``collection_layout``, ``pre_indent_level``, and ``record_null_substitutions``.

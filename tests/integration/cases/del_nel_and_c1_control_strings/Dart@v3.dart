@@ -1,0 +1,5 @@
+final my_data = <String, String>{
+    "del": "ab",
+    "nel": "ab",
+    "c1": "ab",
+};

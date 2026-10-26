@@ -53,6 +53,7 @@ from literalizer._formatters.format_dates import datetime_epoch_seconds
 from literalizer._formatters.initializer_types import (
     finish_collection_initializer,
     prefix_initializer,
+    single_element_initializer_delimiters,
 )
 from literalizer._formatters.initializer_types import (
     initializer_type as retained_initializer_type,
@@ -1090,47 +1091,56 @@ def _accumulate_positional_empty_list_overrides(
 
 
 @beartype
+def _accumulate_list_group_empty_overrides(
+    *,
+    siblings: Sequence[list[Value]],
+    spec: Language,
+    out: dict[int, str | RenderedEmptySequence],
+) -> None:
+    """Type empty members from one family of corresponding lists."""
+    non_empty = [item for item in siblings if bool(item)]
+    empty = [item for item in siblings if len(item) == 0]
+    sibling_signatures = {
+        collection_signature(spec.sequence_open, item) for item in non_empty
+    }
+    widened_opener = _compute_sequence_open_override(
+        items=non_empty,
+        spec=spec,
+    )
+    sibling_opener = widened_opener
+    if len(sibling_signatures) == 1:
+        (signature,) = sibling_signatures
+        sibling_opener = (
+            None
+            if signature.arity_dependent
+            else selected_collection_open(spec.sequence_open, non_empty[0])
+        )
+    if len(empty) > 0 and sibling_opener is not None:
+        narrowed = spec.sequence_format_config.narrowed_empty_form
+        if narrowed is not None and widened_opener is None:
+            replacement = narrowed(non_empty)
+        else:
+            replacement = finish_collection_initializer(
+                opener=sibling_opener,
+                code=f"{sibling_opener}{spec.sequence_format_config.close}",
+            )
+        for item in empty:
+            _ = out.setdefault(id(item), replacement)
+
+
+@beartype
 def _accumulate_sibling_list_empty_overrides(
     *,
     value: Value,
     spec: Language,
     out: dict[int, str | RenderedEmptySequence],
 ) -> None:
-    """Type empty lists from homogeneous non-empty list siblings."""
+    """Type empty lists from direct siblings and matching map fields."""
     if isinstance(value, list):
-        non_empty = [
-            item for item in value if isinstance(item, list) and bool(item)
-        ]
-        empty = [
-            item for item in value if isinstance(item, list) and len(item) == 0
-        ]
-        sibling_signatures = {
-            collection_signature(spec.sequence_open, item)
-            for item in non_empty
-        }
-        widened_opener = _compute_sequence_open_override(
-            items=non_empty,
-            spec=spec,
-        )
-        sibling_opener = widened_opener
-        if len(sibling_signatures) == 1:
-            (signature,) = sibling_signatures
-            sibling_opener = (
-                None
-                if signature.arity_dependent
-                else selected_collection_open(spec.sequence_open, non_empty[0])
+        for siblings in _sibling_list_groups(data=value):
+            _accumulate_list_group_empty_overrides(
+                siblings=siblings, spec=spec, out=out
             )
-        if len(empty) > 0 and sibling_opener is not None:
-            narrowed = spec.sequence_format_config.narrowed_empty_form
-            if narrowed is not None and widened_opener is None:
-                replacement = narrowed(non_empty)
-            else:
-                replacement = finish_collection_initializer(
-                    opener=sibling_opener,
-                    code=f"{sibling_opener}{spec.sequence_format_config.close}",
-                )
-            for item in empty:
-                _ = out.setdefault(id(item), replacement)
         for child in value:
             _accumulate_sibling_list_empty_overrides(
                 value=child, spec=spec, out=out
@@ -1707,6 +1717,9 @@ def _format_dict_entry_value(
     *int_formatter* is the map's mixed-magnitude integer widener when
     values inferred :class:`WideInt` or :class:`BeyondI64`.
     """
+    empty_override = ctx.empty_container_overrides.get(id(value))
+    if empty_override is not None:
+        return empty_container_code(empty_override)
     child_ctx = _nested_collection_context(value=value, ctx=ctx)
     if isinstance(value, list):
         if len(value) == 0 and outer_sequence_override is None:
@@ -1871,12 +1884,47 @@ def _collect_dict_open_overrides(
 
 @beartype
 def _collect_dict_int_formatters(
-    *, data: Value, spec: Language
+    *, data: Value, spec: Language, wrap_ids: frozenset[int]
 ) -> Mapping[int, Callable[[int], str]]:
-    """Return widened integer formatters for sibling map value slots."""
+    """Return widened integer formatters for sibling map value slots.
+
+    Reuse the caller's wrapping IDs to keep its prepared record context.
+    """
     out: dict[int, Callable[[int], str]] = {}
-    _accumulate_dict_int_formatters(data=data, spec=spec, out=out)
+    behavior = spec.heterogeneous_behavior
+    wrapped_containers = (
+        frozenset[int]() if behavior.wrap_non_scalar is None else wrap_ids
+    )
+    _accumulate_dict_int_formatters(
+        data=data, spec=spec, out=out, wrapped_containers=wrapped_containers
+    )
     return out
+
+
+@beartype
+def _pool_nested_list_map_int_formatters(
+    *,
+    data: Value,
+    spec: Language,
+    out: dict[int, Callable[[int], str]],
+    wrapped_containers: frozenset[int],
+) -> None:
+    """Pool map widths across a homogeneous sequence's inner lists."""
+    if (
+        not isinstance(data, list)
+        or spec.sequence_format_config.supports_heterogeneity
+        or id(data) in wrapped_containers
+    ):
+        return
+    minimum_siblings = 2
+    for lists in _sibling_list_groups(data=data):
+        if len(lists) >= minimum_siblings:
+            _accumulate_dict_int_formatters(
+                data=[item for values in lists for item in values],
+                spec=spec,
+                out=out,
+                wrapped_containers=wrapped_containers,
+            )
 
 
 @beartype
@@ -1885,6 +1933,7 @@ def _accumulate_dict_int_formatters(
     data: Value,
     spec: Language,
     out: dict[int, Callable[[int], str]],
+    wrapped_containers: frozenset[int],
 ) -> None:
     """Widen integer leaves consistently across sibling nested maps."""
     match data:
@@ -1896,6 +1945,9 @@ def _accumulate_dict_int_formatters(
             children = list(data)
         case _:
             return
+    _pool_nested_list_map_int_formatters(
+        data=data, spec=spec, out=out, wrapped_containers=wrapped_containers
+    )
     sibling_maps = [
         child
         for child in children
@@ -1913,7 +1965,12 @@ def _accumulate_dict_int_formatters(
             for sibling in sibling_maps:
                 _ = out.setdefault(id(sibling), formatter)
     for child in children:
-        _accumulate_dict_int_formatters(data=child, spec=spec, out=out)
+        _accumulate_dict_int_formatters(
+            data=child,
+            spec=spec,
+            out=out,
+            wrapped_containers=wrapped_containers,
+        )
 
 
 @beartype
@@ -2658,6 +2715,13 @@ def _format_list_value(
     opener = _sequence_open_for_ref_inference(
         data=value, explicit_override=sequence_open_override, ctx=ctx
     )
+    if len(items) == 1:
+        delimiters = single_element_initializer_delimiters(opener)
+        if delimiters is not None:
+            opening, closing = delimiters
+            return finish_collection_initializer(
+                opener=opening, code=f"{opening}{joined}{closing}"
+            )
     return finish_collection_initializer(
         opener=opener, code=f"{opener}{joined}{sequence_cfg.close}"
     )
@@ -2990,6 +3054,18 @@ def _format_value(
 
 
 @beartype
+def _sequence_wrapper_delimiters(
+    *, opener: str, closing: str, source_length: int
+) -> tuple[str, str]:
+    """Select native sequence delimiters using the original arity."""
+    if source_length == 1:
+        delimiters = single_element_initializer_delimiters(opener)
+        if delimiters is not None:
+            return delimiters
+    return opener, closing
+
+
+@beartype
 def _wrap_body(
     *,
     body: str,
@@ -3040,8 +3116,11 @@ def _wrap_body(
             elif template is not None and source_length == 1:
                 open_str, _, close_str = template.partition("{items}")
             else:
-                open_str = spec.sequence_open(data)
-                close_str = sequence_cfg.close
+                open_str, close_str = _sequence_wrapper_delimiters(
+                    opener=spec.sequence_open(data),
+                    closing=sequence_cfg.close,
+                    source_length=source_length,
+                )
             opening = f"{line_prefix}{open_str}"
             closing = f"{close_prefix}{close_str}"
     return finish_collection_initializer(
@@ -3295,14 +3374,18 @@ def _single_element_sequence_delimiters(
     around its element; a multiline layout needs the two halves apart
     so the element can sit on its own line (issue #3928).
     """
-    template = ctx.spec.sequence_format_config.single_element_template
     if (
-        template is None
-        or sequence_open_override is not None
+        sequence_open_override is not None
         or not isinstance(data, list)
         or len(data) != 1
     ):
         return None
+    template = ctx.spec.sequence_format_config.single_element_template
+    if template is None:
+        opener = _sequence_open_for_ref_inference(
+            data=data, explicit_override=None, ctx=ctx
+        )
+        return single_element_initializer_delimiters(opener)
     opening, _, close = template.partition("{items}")
     return (opening, close)
 
@@ -3771,6 +3854,14 @@ def _format_collection_lines(
                 trailing_comma
                 and spec.sequence_format_config.supports_trailing_comma
             )
+            if len(list_data) == 1:
+                opener = _sequence_open_for_ref_inference(
+                    data=list_data,
+                    explicit_override=sequence_open_override,
+                    ctx=ctx,
+                )
+                if single_element_initializer_delimiters(opener) is not None:
+                    seq_trailing = False
             inferred_list_data = _opener_inference_value(
                 data=list_data, ctx=ctx
             )
@@ -4065,6 +4156,7 @@ def _record_context_formatting(
         dict_int_formatters=_collect_dict_int_formatters(
             data=data,
             spec=language,
+            wrap_ids=wrap_ids,
         ),
         empty_overrides=_empty_container_literal_overrides(
             data=data,
@@ -4122,8 +4214,9 @@ def _build_render_context(
         ref_key=ref_key,
     )
     alias_record_ids = language.heterogeneous_behavior.alias_record_ids
+    inferred_wrap_ids = _compute_wrap_ids(data=inference_data, spec=language)
     wrap_ids = _source_container_ids(
-        inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
+        inferred_ids=inferred_wrap_ids,
         id_map=inference_id_map,
     )
     if record_context_data is not None:
@@ -4199,6 +4292,7 @@ def _build_render_context(
                 inferred_mapping=_collect_dict_int_formatters(
                     data=inference_data,
                     spec=language,
+                    wrap_ids=inferred_wrap_ids,
                 ),
                 id_map=inference_id_map,
             ),
@@ -7100,7 +7194,7 @@ def _format_single_call_arg(
             data=value, spec=language
         ),
         dict_int_formatters=_collect_dict_int_formatters(
-            data=value, spec=language
+            data=value, spec=language, wrap_ids=wrap_ids
         ),
         empty_container_overrides=_empty_container_literal_overrides(
             data=value, spec=language
@@ -9163,9 +9257,10 @@ def _render_zip_literal(
     wiring.
     """
     check_data(data=value, spec=language)
+    wrap_ids = _compute_wrap_ids(data=value, spec=language)
     ctx = _RenderContext(
         spec=language,
-        wrap_ids=_compute_wrap_ids(data=value, spec=language),
+        wrap_ids=wrap_ids,
         tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
         dict_open_overrides=_collect_dict_open_overrides(
             data=value, spec=language, ref_key=disabled_ref_key()
@@ -9174,7 +9269,7 @@ def _render_zip_literal(
             data=value, spec=language
         ),
         dict_int_formatters=_collect_dict_int_formatters(
-            data=value, spec=language
+            data=value, spec=language, wrap_ids=wrap_ids
         ),
         empty_container_overrides=_empty_container_literal_overrides(
             data=value, spec=language

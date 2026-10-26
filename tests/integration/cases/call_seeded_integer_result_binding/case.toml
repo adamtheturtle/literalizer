@@ -1,0 +1,40 @@
+# Shared input and API context; named examples preserve specialized regression witnesses.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[call.ref_declarations]
+my_data = "42"
+
+[[call_examples]]
+# Regression provenance: call_shared_comments_regex_interpolated_existing_regex_comment_existing
+# Regression provenance: Haxe; The transformed call uses Haxe literal and comment syntax.
+example = "call_shared_comments_regex_interpolated_existing_regex_comment_existing"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+variant_only = true
+call_transform = "(~/\\//).match(\"/\") ? {call} : null // trailing"
+
+[[call_examples.gates]]
+kind = "call_literal_flag"
+flag = "regex_literals"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "'"
+
+[call_examples.ref_declarations]
+my_data = "42"
+
+[[call_examples.variants]]
+axis = "declaration_style"

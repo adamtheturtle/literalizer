@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+# Regression provenance: dhall_reserved_labels (Dhall).
+
+[[variants]]
+axis = "heterogeneous_value_union_name"

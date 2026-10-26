@@ -80,6 +80,7 @@ from literalizer._language import (
     NON_KEBAB_REF_CASES,
     BareIntegerWidthStrategies,
     CallParameterShadowing,
+    CallStubResult,
     CallStyle,
     CommentConfig,
     DateFormatConfig,
@@ -93,11 +94,11 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
-    IntegerCallStubResult,
     JsonType,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
+    NullableObjectCallStubResult,
     OrderedMapFormatConfig,
     PositionalCallStyle,
     RecordMapValueTypings,
@@ -138,6 +139,13 @@ from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     InvalidRecordNameError,
     UnrepresentableInputError,
+)
+
+_NULL_OBJECT_STUB = NullableObjectCallStubResult(
+    type_name="any",
+    value="nil",
+    conditional_template=None,
+    comment_prefix="//",
 )
 
 _GO_I32_MIN = -(2**31)
@@ -275,8 +283,15 @@ def _go_call_preamble_stub(
     /,
 ) -> tuple[str, ...]:
     """Return Go stub declarations for a call name."""
+    return_type = _NULL_OBJECT_STUB.type_name
+    return_value = _NULL_OBJECT_STUB.value
     if len(parts) == 1:
-        return (f"func {parts[0]}(args ...any) any {{ return nil }}",)
+        return (
+            (
+                f"func {parts[0]}(args ...any)"
+                f" {return_type} {{ return {return_value} }}"
+            ),
+        )
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
@@ -284,14 +299,18 @@ def _go_call_preamble_stub(
         type_name = f"{root}Type_"
         return (
             f"type {type_name} struct{{}}",
-            f"func ({type_name}) {method}(args ...any) any {{ return nil }}",
+            (
+                f"func ({type_name}) {method}(args ...any)"
+                f" {return_type} {{ return {return_value} }}"
+            ),
             f"var {root} {type_name}",
         )
     lines: list[str] = []
     inner_type = f"{fields[-1]}Type_"
     lines.append(f"type {inner_type} struct{{}}")
     lines.append(
-        f"func ({inner_type}) {method}(args ...any) any {{ return nil }}"
+        f"func ({inner_type}) {method}(args ...any)"
+        f" {return_type} {{ return {return_value} }}"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
@@ -568,7 +587,7 @@ class Go(metaclass=LanguageCls):
     module_name_must_start_uppercase = False
     new_variable_name_syntax = NewVariableNameSyntax.ASCII
     max_variable_identifier_length: ClassVar[int | None] = None
-    call_stub_result: ClassVar[IntegerCallStubResult | None] = None
+    call_stub_result: ClassVar[CallStubResult | None] = _NULL_OBJECT_STUB
     call_literal_syntax: ClassVar[None] = None
     call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
     supports_multiline_dict_layout = True

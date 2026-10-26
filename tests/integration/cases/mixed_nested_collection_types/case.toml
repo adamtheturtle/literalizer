@@ -1,0 +1,6 @@
+schema_version = 1
+# Regression provenance: Go ordinary collection callbacks retain child types.
+suites = ["base"]
+
+[[variants]]
+axis = "plain_collection_callbacks"

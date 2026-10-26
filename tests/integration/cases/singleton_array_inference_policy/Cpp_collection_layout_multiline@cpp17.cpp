@@ -1,0 +1,138 @@
+#include <map>
+#include <string>
+#include <variant>
+#include <vector>
+int main() {
+auto my_data = std::map<std::string, std::variant<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>>, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>>>, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>>>>>>>>>>>, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::string>>>>>>>>>, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<bool>>>>>>>>>, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>>>>>{
+    {"below", ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+        std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>{
+            std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>{
+                std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>{
+                    std::vector<std::vector<std::vector<std::vector<int>>>>{
+                        std::vector<std::vector<std::vector<int>>>{
+                            std::vector<std::vector<int>>{
+                                std::vector<int>{
+                                    1,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        }
+    )},
+    {"boundary", ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+        ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+            std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>{
+                std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>{
+                    std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>{
+                        std::vector<std::vector<std::vector<std::vector<int>>>>{
+                            std::vector<std::vector<std::vector<int>>>{
+                                std::vector<std::vector<int>>{
+                                    std::vector<int>{
+                                        2,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            }
+        )
+    )},
+    {"multiple", ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+        ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+            ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+                ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+                    ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+                        ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+                            ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+                                ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+                                    ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+                                        ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+                                            std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>{
+                                                std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>{
+                                                    std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>{
+                                                        std::vector<std::vector<std::vector<std::vector<int>>>>{
+                                                            std::vector<std::vector<std::vector<int>>>{
+                                                                std::vector<std::vector<int>>{
+                                                                    std::vector<int>{
+                                                                        3,
+                                                                    },
+                                                                },
+                                                            },
+                                                        },
+                                                    },
+                                                },
+                                            }
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )},
+    {"text", ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+        ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+            std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::string>>>>>>>{
+                std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::string>>>>>>{
+                    std::vector<std::vector<std::vector<std::vector<std::vector<std::string>>>>>{
+                        std::vector<std::vector<std::vector<std::vector<std::string>>>>{
+                            std::vector<std::vector<std::vector<std::string>>>{
+                                std::vector<std::vector<std::string>>{
+                                    std::vector<std::string>{
+                                        "value",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            }
+        )
+    )},
+    {"boolean", ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+        ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+            std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<bool>>>>>>>{
+                std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<bool>>>>>>{
+                    std::vector<std::vector<std::vector<std::vector<std::vector<bool>>>>>{
+                        std::vector<std::vector<std::vector<std::vector<bool>>>>{
+                            std::vector<std::vector<std::vector<bool>>>{
+                                std::vector<std::vector<bool>>{
+                                    std::vector<bool>{
+                                        true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            }
+        )
+    )},
+    {"float", ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+        ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(
+            std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>>{
+                std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>>{
+                    std::vector<std::vector<std::vector<std::vector<std::vector<double>>>>>{
+                        std::vector<std::vector<std::vector<std::vector<double>>>>{
+                            std::vector<std::vector<std::vector<double>>>{
+                                std::vector<std::vector<double>>{
+                                    std::vector<double>{
+                                        1.5,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            }
+        )
+    )},
+};
+    (void)my_data;
+    return 0;
+}
