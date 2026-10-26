@@ -16,7 +16,7 @@ status=0
 /usr/bin/time --quiet -o "$workspace/resources" \
     -f 'elapsed=%es max_rss=%MKiB exit=%x' \
     "$bounded_runner" "$fixture" --signal=KILL 60s \
-    mojo run --Werror "$fixture" > "$workspace/output" 2>&1 || status=$?
+    mojo run --num-threads 1 --Werror "$fixture" > "$workspace/output" 2>&1 || status=$?
 # Emit completed diagnostics together. Otherwise even a single GNU time
 # line can interleave byte-by-byte with another compiler's output.
 {
