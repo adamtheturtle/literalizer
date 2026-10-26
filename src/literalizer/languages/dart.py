@@ -275,7 +275,7 @@ def _dart_scalar_hint(
         case bool():
             hint = "bool"
         case int():
-            hint = "int"
+            hint = "int" if I64_MIN <= data <= I64_MAX else "BigInt"
         case float():
             hint = "double"
         case str() | bytes() | dt.time():

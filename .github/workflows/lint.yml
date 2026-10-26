@@ -1781,6 +1781,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      # Avoid the dead HTTP fallback mirrors (HTTP 403).
+      # Upstream: https://github.com/haskell/hackage-server/issues/1530
       - name: Configure Hackage over HTTPS
         run: |-
           cat > "$CABAL_CONFIG" <<EOF

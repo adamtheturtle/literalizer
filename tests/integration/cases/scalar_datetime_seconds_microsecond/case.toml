@@ -6,3 +6,12 @@ axis = "language_version"
 
 [[variants]]
 axis = "type_hints"
+
+[[variants]]
+axis = "datetime"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "json_type_datetime_cross"
