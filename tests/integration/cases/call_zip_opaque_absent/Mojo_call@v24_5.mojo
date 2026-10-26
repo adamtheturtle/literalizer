@@ -1,4 +1,4 @@
-def process(value: Int) -> None:
+def process(var value: Int) -> None:
     pass
 def main():
     process(1)

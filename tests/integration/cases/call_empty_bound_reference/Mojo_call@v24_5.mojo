@@ -1,4 +1,4 @@
-def make_widget[*Ts: AnyType](*args: *Ts) -> None:
+def make_widget[*Ts: Movable](var *args: *Ts) -> None:
     pass
 def main():
     var items = List[String]()

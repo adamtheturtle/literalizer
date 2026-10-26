@@ -1,4 +1,4 @@
-def f(using: Int):
+def f(var using: Int):
     pass
 def main():
     f(1)

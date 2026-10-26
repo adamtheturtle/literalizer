@@ -1,6 +1,6 @@
 from std.utils.variant import Variant
 comptime Value = Variant[Int, String, Bool, Float64, NoneType]
-def process(value: Value, extra: Value):
+def process(var value: Value, var extra: Value):
     pass
 def main():
     process(Value(1), Value(String("hello")))

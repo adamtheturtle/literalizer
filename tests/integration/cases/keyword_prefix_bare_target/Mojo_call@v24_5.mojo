@@ -1,4 +1,4 @@
-def first_value(value: Int):
+def first_value(var value: Int):
     pass
 def main():
     first_value(1)

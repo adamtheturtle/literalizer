@@ -1,4 +1,4 @@
-def DoThing(x: Int):
+def DoThing(var x: Int):
     pass
 def main():
     DoThing(1)

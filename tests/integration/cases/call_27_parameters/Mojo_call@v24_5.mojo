@@ -1,4 +1,4 @@
-def process(p0: Int, p1: Int, p2: Int, p3: Int, p4: Int, p5: Int, p6: Int, p7: Int, p8: Int, p9: Int, p10: Int, p11: Int, p12: Int, p13: Int, p14: Int, p15: Int, p16: Int, p17: Int, p18: Int, p19: Int, p20: Int, p21: Int, p22: Int, p23: Int, p24: Int, p25: Int, p26: Int):
+def process(var p0: Int, var p1: Int, var p2: Int, var p3: Int, var p4: Int, var p5: Int, var p6: Int, var p7: Int, var p8: Int, var p9: Int, var p10: Int, var p11: Int, var p12: Int, var p13: Int, var p14: Int, var p15: Int, var p16: Int, var p17: Int, var p18: Int, var p19: Int, var p20: Int, var p21: Int, var p22: Int, var p23: Int, var p24: Int, var p25: Int, var p26: Int):
     pass
 def main():
     process(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26)

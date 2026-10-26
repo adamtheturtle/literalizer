@@ -1,4 +1,4 @@
-def process(using: Int):
+def process(var using: Int):
     pass
 def main():
     process(1)

@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _AppType(Copyable, Movable):
-    def go(self, first_value: List[Int], second_value: List[String]):
+    def go(self, var first_value: List[Int], var second_value: List[String]):
         pass
 def main():
     var app = _AppType()

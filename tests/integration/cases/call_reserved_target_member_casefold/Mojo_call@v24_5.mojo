@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _ObjType(Copyable, Movable):
-    def BEGIN(self, a: Int):
+    def BEGIN(self, var a: Int):
         pass
 def main():
     var obj = _ObjType()

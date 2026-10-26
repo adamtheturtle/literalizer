@@ -2,7 +2,7 @@ from std.utils.variant import Variant
 comptime Value = Variant[String, Int, Bool]
 @fieldwise_init
 struct _ClientType(Copyable, Movable):
-    def post(self, data: Value):
+    def post(self, var data: Value):
         pass
 @fieldwise_init
 struct _ApiType(Copyable, Movable):

@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _ThingType(Copyable, Movable):
-    def go(self, value: List[Int]) -> None:
+    def go(self, var value: List[Int]) -> None:
         pass
 def main():
     var thing = _ThingType()
