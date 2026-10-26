@@ -4,3 +4,7 @@ suites = ["base"]
 
 [[variants]]
 axis = "record_empty_dict_field"
+
+# Explicit root annotations must retain the inferred record field types.
+[[variants]]
+axis = "record_type_hints_always"
