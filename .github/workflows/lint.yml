@@ -2922,16 +2922,52 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.d' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
-      # ``compiler: dmd-2.112.0`` implements D ``>=`` the ``V2`` default
+      # DMD ``2.112.0`` implements D ``>=`` the ``V2`` default
       # of ``D.language_version`` in ``src/literalizer/languages/d.py``;
       # keep them in sync. Every ``dmd-2.x`` release implements the D2
       # language, so this pin tracks a concrete compiler build rather
       # than a language standard, and avoids the ``dmd-latest`` drift.
-      - name: Install DMD
+      - name: Download DMD
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/dmd.tar.xz
+          ARTIFACT_URL: https://downloads.dlang.org/releases/2.x/2.112.0/dmd.2.112.0.linux.tar.xz
+        with: *download
+
+      - name: Download DMD signature
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/dmd.tar.xz.sig
+          ARTIFACT_URL: https://downloads.dlang.org/releases/2.x/2.112.0/dmd.2.112.0.linux.tar.xz.sig
+        with: *download
+
+      # setup-dlang downloads this keyring from dlang.org, which can return
+      # HTTP 521 while downloads.dlang.org remains available. Use the same
+      # keyring from the official repository at an immutable commit.
+      - name: Download DMD release keyring
+        timeout-minutes: 3
+        uses: nick-fields/retry@v4.0.0
+        env:
+          ARTIFACT_DESTINATION: /tmp/dmd-keyring.gpg
+          ARTIFACT_URL: https://raw.githubusercontent.com/dlang/dlang.org/17f18f72f0eed6ca87eea4c7d0cb38b2828f2507/d-keyring.gpg
+        with: *download
+
+      - name: Verify and install DMD
         timeout-minutes: 10
-        uses: dlang-community/setup-dlang@v2
-        with:
-          compiler: dmd-2.112.0
+        run: |-
+          mkdir -m 700 "$RUNNER_TEMP/dmd-gnupg"
+          gpg --no-options --homedir "$RUNNER_TEMP/dmd-gnupg" --batch \
+            --no-default-keyring --keyring /tmp/dmd-keyring.gpg \
+            --verify /tmp/dmd.tar.xz.sig /tmp/dmd.tar.xz
+          tar -xJf /tmp/dmd.tar.xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/dmd2/linux/bin64" >> "$GITHUB_PATH"
+          {
+            echo "DC=$RUNNER_TEMP/dmd2/linux/bin64/dmd"
+            echo "DMD=$RUNNER_TEMP/dmd2/linux/bin64/dmd"
+            echo "LD_LIBRARY_PATH=$RUNNER_TEMP/dmd2/linux/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          } >> "$GITHUB_ENV"
       # D derives the module name from the source filename and rejects
       # ``@`` as a non-identifier character, so copy each fixture to a
       # sanitized name before invoking ``dmd``.
