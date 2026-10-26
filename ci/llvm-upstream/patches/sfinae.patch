@@ -1,0 +1,132 @@
+diff --git a/clang/lib/Sema/SemaOverload.cpp b/clang/lib/Sema/SemaOverload.cpp
+index c56f8127..6fe31952 100644
+--- a/clang/lib/Sema/SemaOverload.cpp
++++ b/clang/lib/Sema/SemaOverload.cpp
+@@ -12724,9 +12724,17 @@ static void DiagnoseBadDeduction(Sema &S, NamedDecl *Found, Decl *Templated,
+     // We found a specific requirement that disabled the enable_if.
+     if (PDiag && PDiag->second.getDiagID() ==
+         diag::err_typename_nested_not_found_requirement) {
++      auto *Storage = PDiag->second.getStorage();
++      std::string Description;
++      if (Storage->DiagArgumentsKind[0] == DiagnosticsEngine::ak_expr) {
++        auto *Cond = reinterpret_cast<Expr *>(Storage->DiagArgumentsVal[0]);
++        Description = S.findFailedBooleanCondition(Cond).second;
++      } else {
++        Description = PDiag->second.getStringArg(0).str();
++      }
+       S.Diag(Templated->getLocation(),
+              diag::note_ovl_candidate_disabled_by_requirement)
+-        << PDiag->second.getStringArg(0) << TemplateArgString;
++          << Description << TemplateArgString;
+       return;
+     }
+
+diff --git a/clang/lib/Sema/SemaTemplate.cpp b/clang/lib/Sema/SemaTemplate.cpp
+index ec1f8077..d6b6492e 100644
+--- a/clang/lib/Sema/SemaTemplate.cpp
++++ b/clang/lib/Sema/SemaTemplate.cpp
+@@ -3718,9 +3718,8 @@ private:
+
+ } // end anonymous namespace
+
+-std::pair<Expr *, std::string>
+-Sema::findFailedBooleanCondition(Expr *Cond) {
+-  Cond = lookThroughRangesV3Condition(PP, Cond);
++static Expr *findFailedBooleanConditionExpr(Sema &S, Expr *Cond) {
++  Cond = lookThroughRangesV3Condition(S.getPreprocessor(), Cond);
+
+   // Separate out all of the terms in a conjunction.
+   SmallVector<Expr *, 4> Terms;
+@@ -3739,10 +3738,10 @@ Sema::findFailedBooleanCondition(Expr *Cond) {
+     // The initialization of the parameter from the argument is
+     // a constant-evaluated context.
+     EnterExpressionEvaluationContext ConstantEvaluated(
+-      *this, Sema::ExpressionEvaluationContext::ConstantEvaluated);
++      S, Sema::ExpressionEvaluationContext::ConstantEvaluated);
+
+     bool Succeeded;
+-    if (Term->EvaluateAsBooleanCondition(Succeeded, Context) &&
++    if (Term->EvaluateAsBooleanCondition(Succeeded, S.Context) &&
+         !Succeeded) {
+       FailedCond = TermAsWritten;
+       break;
+@@ -3751,6 +3750,12 @@ Sema::findFailedBooleanCondition(Expr *Cond) {
+   if (!FailedCond)
+     FailedCond = Cond->IgnoreParenImpCasts();
+
++  return FailedCond;
++}
++
++std::pair<Expr *, std::string>
++Sema::findFailedBooleanCondition(Expr *Cond) {
++  Expr *FailedCond = findFailedBooleanConditionExpr(*this, Cond);
+   std::string Description;
+   {
+     llvm::raw_string_ostream Out(Description);
+@@ -3927,10 +3932,10 @@ QualType Sema::CheckTemplateIdType(ElaboratedTypeKeyword Keyword,
+                   diag::err_typename_nested_not_found_enable_if &&
+               TemplateArgs[0].getArgument().getKind() ==
+                   TemplateArgument::Expression) {
+-            Expr *FailedCond;
+-            std::string FailedDescription;
+-            std::tie(FailedCond, FailedDescription) =
+-              findFailedBooleanCondition(TemplateArgs[0].getSourceExpression());
++            // Keep the expression until a failed candidate is diagnosed.
++            // Formatting canonical types here expands discarded candidates.
++            Expr *FailedCond = findFailedBooleanConditionExpr(
++                *this, TemplateArgs[0].getSourceExpression());
+
+             // Remove the old SFINAE diagnostic.
+             PartialDiagnosticAt OldDiag =
+@@ -3942,7 +3947,7 @@ QualType Sema::CheckTemplateIdType(ElaboratedTypeKeyword Keyword,
+             DeductionInfo->addSFINAEDiagnostic(
+                 OldDiag.first,
+                 PDiag(diag::err_typename_nested_not_found_requirement)
+-                    << FailedDescription << FailedCond->getSourceRange());
++                    << FailedCond << FailedCond->getSourceRange());
+           }
+         }
+       }
+@@ -11521,15 +11526,15 @@ Sema::CheckTypenameType(ElaboratedTypeKeyword Keyword,
+       // If we have a condition, narrow it down to the specific failed
+       // condition.
+       if (Cond) {
+-        Expr *FailedCond;
+-        std::string FailedDescription;
+-        std::tie(FailedCond, FailedDescription) =
+-          findFailedBooleanCondition(Cond);
+-
+-        Diag(FailedCond->getExprLoc(),
+-             diag::err_typename_nested_not_found_requirement)
+-          << FailedDescription
+-          << FailedCond->getSourceRange();
++        Expr *FailedCond = findFailedBooleanConditionExpr(*this, Cond);
++
++        auto DB = Diag(FailedCond->getExprLoc(),
++                       diag::err_typename_nested_not_found_requirement);
++        if (getSFINAEContext())
++          DB << FailedCond;
++        else
++          DB << findFailedBooleanCondition(FailedCond).second;
++        DB << FailedCond->getSourceRange();
+         return QualType();
+       }
+
+diff --git a/clang/test/SemaTemplate/enable-if-discarded-deep-diagnostic.cpp b/clang/test/SemaTemplate/enable-if-discarded-deep-diagnostic.cpp
+new file mode 100644
+index 0000000000000..ad99cf6990467b236ac274d77376e963221cca57
+--- /dev/null
++++ b/clang/test/SemaTemplate/enable-if-discarded-deep-diagnostic.cpp
+@@ -0,0 +1,12 @@
++// RUN: %clang_cc1 -std=c++17 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++namespace std {
++template<bool, class T=void> struct enable_if {};
++template<class T> struct enable_if<true,T> { using type=T; };
++template<bool B, class T=void> using enable_if_t=typename enable_if<B,T>::type;
++}
++template<class T, class U=T> struct Node {};
++template<class T, std::enable_if_t<(sizeof(T) == 0), int> = 0> void accept(T) {}
++void accept(...) {}
++int main() { ::accept(Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<Node<int>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>{}); }
