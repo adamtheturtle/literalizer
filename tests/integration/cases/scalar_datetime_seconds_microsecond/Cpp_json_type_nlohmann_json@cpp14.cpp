@@ -1,0 +1,10 @@
+#include <nlohmann/json.hpp>
+int main() {
+    try {
+auto my_data = nlohmann::json("2024-01-15T12:30:45.123456");
+    (void)my_data;
+        return 0;
+    } catch (...) {
+        return 1;
+    }
+}

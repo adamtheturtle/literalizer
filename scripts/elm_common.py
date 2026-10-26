@@ -168,6 +168,12 @@ def _is_elm_transient_error(result: subprocess.CompletedProcess[str]) -> bool:
         )
     ):
         return True
+    # EAI_AGAIN is temporary; permanent DNS lookup errors still fail.
+    if (
+        "Network.Socket.getAddrInfo" in output
+        and "does not exist (Try again)" in output
+    ):
+        return True
     if _ELM_TRANSIENT_BUSY_MARKER not in output:
         return False
     return any(m in output for m in _ELM_TRANSIENT_BINARY_FILE_MARKERS)
