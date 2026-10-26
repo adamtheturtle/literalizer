@@ -32,7 +32,6 @@ run)
     trap 'rm -rf "$temporary_directory"' EXIT
     scripts/run-bounded.sh "$fixture_path" --signal=KILL 60s \
         clang++ "-std=$standard" -Werror \
-        -include-pch "/tmp/lint-cpp-$standard.hpp.pch" \
         "$fixture_path" \
         -o "$temporary_directory/run"
     scripts/run-bounded.sh "$fixture_path" --signal=KILL 60s \

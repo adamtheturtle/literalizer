@@ -1,0 +1,61 @@
+{
+  "human_review_required": true,
+  "policy": "https://llvm.org/docs/AIToolPolicy.html#policy",
+  "patch_base": "fac4500420cdeed42f35537a26eea1e4e17badf0",
+  "submissions": [
+    {
+      "kind": "issue",
+      "repository": "llvm/llvm-project",
+      "issue_number": null,
+      "title": "[clang] Discarded enable_if diagnostics expand a repeated type exponentially",
+      "body_file": "ci/llvm-upstream/reports/sfinae.md",
+      "patch_file": "ci/llvm-upstream/patches/sfinae.patch",
+      "submitted": false
+    },
+    {
+      "kind": "issue",
+      "repository": "llvm/llvm-project",
+      "issue_number": null,
+      "title": "[clang] ADL repeatedly visits identical template arguments in a small nested type",
+      "body_file": "ci/llvm-upstream/reports/adl.md",
+      "patch_file": "ci/llvm-upstream/patches/adl.patch",
+      "submitted": false
+    },
+    {
+      "kind": "issue",
+      "repository": "llvm/llvm-project",
+      "issue_number": null,
+      "title": "[clang-analyzer] WebKit destructor checker prints unrelated deep base types before checking their namespace",
+      "body_file": "ci/llvm-upstream/reports/webkit.md",
+      "patch_file": "ci/llvm-upstream/patches/webkit.patch",
+      "submitted": false
+    },
+    {
+      "kind": "comment",
+      "repository": "llvm/llvm-project",
+      "issue_number": 224308,
+      "title": "Reduced repeated-call reproducer and candidate cache for bugprone-exception-escape",
+      "body_file": "ci/llvm-upstream/reports/exception.md",
+      "patch_file": "ci/llvm-upstream/patches/exception.patch",
+      "submitted": false
+    },
+    {
+      "kind": "issue",
+      "repository": "llvm/llvm-project",
+      "issue_number": null,
+      "title": "[clang-tidy] Shared C designated-initializer subtrees cause exponential traversal",
+      "body_file": "ci/llvm-upstream/reports/shared-initializers.md",
+      "patch_file": "ci/llvm-upstream/patches/shared-initializers.patch",
+      "submitted": false
+    },
+    {
+      "kind": "issue",
+      "repository": "llvm/llvm-project",
+      "issue_number": null,
+      "title": "[clang] PCH makes a small nested-vector declaration much slower than direct header parsing",
+      "body_file": "ci/llvm-upstream/reports/pch.md",
+      "patch_file": null,
+      "submitted": false
+    }
+  ]
+}

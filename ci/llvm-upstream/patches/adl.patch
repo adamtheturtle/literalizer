@@ -1,0 +1,61 @@
+diff --git a/clang/lib/Sema/SemaLookup.cpp b/clang/lib/Sema/SemaLookup.cpp
+index 75cad0bb..d6f3b415 100644
+--- a/clang/lib/Sema/SemaLookup.cpp
++++ b/clang/lib/Sema/SemaLookup.cpp
+@@ -2906,6 +2906,10 @@ namespace {
+       return ClassesTransitive.insert(RD);
+     }
+
++    bool visitTemplateArguments(CXXRecordDecl *RD) {
++      return ClassesWithVisitedTemplateArguments.insert(RD);
++    }
++
+     Sema &S;
+     Sema::AssociatedNamespaceSet &Namespaces;
+     Sema::AssociatedClassSet &Classes;
+@@ -2913,6 +2917,7 @@ namespace {
+
+   private:
+     Sema::AssociatedClassSet ClassesTransitive;
++    Sema::AssociatedClassSet ClassesWithVisitedTemplateArguments;
+   };
+ } // end anonymous namespace
+
+@@ -3089,9 +3094,11 @@ addAssociatedClassesAndNamespaces(AssociatedLookup &Result,
+     // Add the associated namespace for this class.
+     CollectEnclosingNamespace(Result.Namespaces, Ctx);
+
+-    const TemplateArgumentList &TemplateArgs = Spec->getTemplateArgs();
+-    for (unsigned I = 0, N = TemplateArgs.size(); I != N; ++I)
+-      addAssociatedClassesAndNamespaces(Result, TemplateArgs[I]);
++    if (Result.visitTemplateArguments(Class)) {
++      const TemplateArgumentList &TemplateArgs = Spec->getTemplateArgs();
++      for (unsigned I = 0, N = TemplateArgs.size(); I != N; ++I)
++        addAssociatedClassesAndNamespaces(Result, TemplateArgs[I]);
++    }
+   }
+
+   // Add the class itself. If we've already transitively visited this class,
+diff --git a/clang/test/SemaCXX/adl-repeated-template-arguments.cpp b/clang/test/SemaCXX/adl-repeated-template-arguments.cpp
+new file mode 100644
+index 0000000000000..d29f748b4c8dbec51439a2b3532906396789bc17
+--- /dev/null
++++ b/clang/test/SemaCXX/adl-repeated-template-arguments.cpp
+@@ -0,0 +1,17 @@
++// RUN: %clang_cc1 -std=c++17 -fsyntax-only -verify %s
++// expected-no-diagnostics
++
++namespace assoc {
++struct Leaf {};
++template<class T, class U=T> struct Node {};
++void consume(...);
++}
++void test(assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Node<assoc::Leaf>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> value) { consume(value); }
++
++template<class T> struct Base {};
++namespace other { struct Tag {}; }
++struct Derived : Base<other::Tag> {};
++namespace other {
++constexpr int select(Derived, Base<Tag>) { return 7; }
++}
++static_assert(select(Derived{}, Base<other::Tag>{}) == 7);

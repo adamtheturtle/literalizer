@@ -1,0 +1,563 @@
+diff --git a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp
+index 3224aa0..ea65a5f 100644
+--- a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp
++++ b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp
+@@ -10,6 +10,30 @@
+
+ namespace clang::tidy::utils {
+
++struct ExceptionAnalyzer::AnalysisContext {
++  llvm::DenseMap<const FunctionDecl *, ExceptionInfo> Completed;
++  unsigned RecursionGeneration = 0;
++};
++
++ExceptionAnalyzer::ExceptionInfo
++ExceptionAnalyzer::ExceptionInfo::withCallerStack(
++    const FunctionDecl *Root, const CallStack &Caller,
++    SourceLocation CallLoc) const {
++  ExceptionInfo Result = *this;
++  for (auto &Exception : Result.ThrownExceptions) {
++    CallStack Rebased = Caller;
++    bool WithinRoot = false;
++    for (const auto &Frame : Exception.second.Stack) {
++      WithinRoot |= Frame.first == Root;
++      if (WithinRoot)
++        Rebased.insert(
++            {Frame.first, Frame.first == Root ? CallLoc : Frame.second});
++    }
++    Exception.second.Stack = std::move(Rebased);
++  }
++  return Result;
++}
++
+ void ExceptionAnalyzer::ExceptionInfo::registerException(
+     const Type *ExceptionType, const ThrowInfo &ThrowInfo) {
+   Behaviour = State::Throwing;
+@@ -475,20 +499,38 @@ void ExceptionAnalyzer::ExceptionInfo::reevaluateBehaviour() {
+ }
+ ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
+     const FunctionDecl *Func, const ExceptionInfo::Throwables &Caught,
+-    CallStack &CallStack, SourceLocation CallLoc) {
+-  if (!Func || CallStack.contains(Func) ||
+-      (!CallStack.empty() && !canThrow(Func)))
++    CallStack &CallStack, SourceLocation CallLoc, AnalysisContext &Analysis) {
++  if (!Func || (!CallStack.empty() && !canThrow(Func)))
++    return ExceptionInfo::createNonThrowing();
++  if (CallStack.contains(Func)) {
++    ++Analysis.RecursionGeneration;
+     return ExceptionInfo::createNonThrowing();
++  }
++
++  // A caught exception and a recursive back edge depend on the current path.
++  // Reuse only complete analyses without either dependency.
++  if (Caught.empty()) {
++    const auto Cached = Analysis.Completed.find(Func);
++    if (Cached != Analysis.Completed.end())
++      return Cached->second.withCallerStack(Func, CallStack, CallLoc);
++  }
++  const unsigned Generation = Analysis.RecursionGeneration;
++  auto Finish = [&](ExceptionInfo Result) {
++    if (Caught.empty() && Generation == Analysis.RecursionGeneration)
++      Analysis.Completed.try_emplace(
++          Func, Result.withCallerStack(Func, {}, Func->getLocation()));
++    return Result;
++  };
+
+   if (const Stmt *Body = Func->getBody()) {
+     CallStack.insert({Func, CallLoc});
+-    ExceptionInfo Result = throwsException(Body, Caught, CallStack);
++    ExceptionInfo Result = throwsException(Body, Caught, CallStack, Analysis);
+
+     // For a constructor, we also have to check the initializers.
+     if (const auto *Ctor = dyn_cast<CXXConstructorDecl>(Func)) {
+       for (const CXXCtorInitializer *Init : Ctor->inits()) {
+         const ExceptionInfo Excs =
+-            throwsException(Init->getInit(), Caught, CallStack);
++            throwsException(Init->getInit(), Caught, CallStack, Analysis);
+         Result.merge(Excs);
+       }
+     }
+@@ -501,7 +543,7 @@ ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
+     }
+
+     CallStack.erase(Func);
+-    return Result;
++    return Finish(Result);
+   }
+
+   // Functions without a visible body can still be known non-throwing from their
+@@ -531,15 +573,14 @@ ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
+     CallStack.erase(Func);
+   }
+
+-  return Result;
++  return Finish(Result);
+ }
+
+ /// Analyzes a single statement on it's throwing behaviour. This is in principle
+ /// possible except some 'Unknown' functions are called.
+-ExceptionAnalyzer::ExceptionInfo
+-ExceptionAnalyzer::throwsException(const Stmt *St,
+-                                   const ExceptionInfo::Throwables &Caught,
+-                                   CallStack &CallStack) {
++ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
++    const Stmt *St, const ExceptionInfo::Throwables &Caught,
++    CallStack &CallStack, AnalysisContext &Analysis) {
+   auto Results = ExceptionInfo::createNonThrowing();
+   if (!St)
+     return Results;
+@@ -563,14 +604,15 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+     }
+   } else if (const auto *Try = dyn_cast<CXXTryStmt>(St)) {
+     ExceptionInfo Uncaught =
+-        throwsException(Try->getTryBlock(), Caught, CallStack);
++        throwsException(Try->getTryBlock(), Caught, CallStack, Analysis);
+     for (unsigned I = 0; I < Try->getNumHandlers(); ++I) {
+       const CXXCatchStmt *Catch = Try->getHandler(I);
+
+       // Everything is caught through 'catch(...)'.
+       if (!Catch->getExceptionDecl()) {
+-        const ExceptionInfo Rethrown = throwsException(
+-            Catch->getHandlerBlock(), Uncaught.getExceptions(), CallStack);
++        const ExceptionInfo Rethrown =
++            throwsException(Catch->getHandlerBlock(), Uncaught.getExceptions(),
++                            CallStack, Analysis);
+         Results.merge(Rethrown);
+         Uncaught.clear();
+       } else {
+@@ -590,8 +632,9 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+             Uncaught.filterByCatch(CaughtType,
+                                    Catch->getExceptionDecl()->getASTContext());
+         if (!FilteredExceptions.empty()) {
+-          const ExceptionInfo Rethrown = throwsException(
+-              Catch->getHandlerBlock(), FilteredExceptions, CallStack);
++          const ExceptionInfo Rethrown =
++              throwsException(Catch->getHandlerBlock(), FilteredExceptions,
++                              CallStack, Analysis);
+           Results.merge(Rethrown);
+         }
+       }
+@@ -599,38 +642,42 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+     Results.merge(Uncaught);
+   } else if (const auto *DefaultInit = dyn_cast<CXXDefaultInitExpr>(St)) {
+     const ExceptionInfo Excs =
+-        throwsException(DefaultInit->getExpr(), Caught, CallStack);
++        throwsException(DefaultInit->getExpr(), Caught, CallStack, Analysis);
+     Results.merge(Excs);
+   } else if (const auto *Coro = dyn_cast<CoroutineBodyStmt>(St)) {
+     for (const Stmt *Child : Coro->childrenExclBody()) {
+       if (Child != Coro->getExceptionHandler()) {
+-        const ExceptionInfo Excs = throwsException(Child, Caught, CallStack);
++        const ExceptionInfo Excs =
++            throwsException(Child, Caught, CallStack, Analysis);
+         Results.merge(Excs);
+       }
+     }
+     const ExceptionInfo Excs =
+-        throwsException(Coro->getBody(), Caught, CallStack);
++        throwsException(Coro->getBody(), Caught, CallStack, Analysis);
+     Results.merge(throwsException(Coro->getExceptionHandler(),
+-                                  Excs.getExceptions(), CallStack));
++                                  Excs.getExceptions(), CallStack, Analysis));
+     for (const auto &Exception : Excs.getExceptions()) {
+       const Type *ExcType = Exception.getFirst();
+       if (!ExcType)
+         continue;
+       if (const CXXRecordDecl *ThrowableRec = ExcType->getAsCXXRecordDecl()) {
+-        const ExceptionInfo DestructorExcs = throwsException(
+-            ThrowableRec->getDestructor(), Caught, CallStack, SourceLocation{});
++        const ExceptionInfo DestructorExcs =
++            throwsException(ThrowableRec->getDestructor(), Caught, CallStack,
++                            SourceLocation{}, Analysis);
+         Results.merge(DestructorExcs);
+       }
+     }
+   } else if (const auto *Lambda = dyn_cast<LambdaExpr>(St)) {
+     for (const Stmt *Init : Lambda->capture_inits()) {
+-      const ExceptionInfo Excs = throwsException(Init, Caught, CallStack);
++      const ExceptionInfo Excs =
++          throwsException(Init, Caught, CallStack, Analysis);
+       Results.merge(Excs);
+     }
+   } else {
+     // Check whether any of this node's subexpressions throws.
+     for (const Stmt *Child : St->children()) {
+-      const ExceptionInfo Excs = throwsException(Child, Caught, CallStack);
++      const ExceptionInfo Excs =
++          throwsException(Child, Caught, CallStack, Analysis);
+       Results.merge(Excs);
+     }
+
+@@ -638,14 +685,14 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+     // whether the call itself throws.
+     if (const auto *Call = dyn_cast<CallExpr>(St)) {
+       if (const FunctionDecl *Func = Call->getDirectCallee()) {
+-        const ExceptionInfo Excs =
+-            throwsException(Func, Caught, CallStack, Call->getBeginLoc());
++        const ExceptionInfo Excs = throwsException(
++            Func, Caught, CallStack, Call->getBeginLoc(), Analysis);
+         Results.merge(Excs);
+       }
+     } else if (const auto *Construct = dyn_cast<CXXConstructExpr>(St)) {
+       const ExceptionInfo Excs =
+           throwsException(Construct->getConstructor(), Caught, CallStack,
+-                          Construct->getBeginLoc());
++                          Construct->getBeginLoc(), Analysis);
+       Results.merge(Excs);
+     }
+   }
+@@ -660,8 +707,9 @@ ExceptionAnalyzer::analyzeImpl(const FunctionDecl *Func) {
+   const auto CacheEntry = FunctionCache.find(Func);
+   if (CacheEntry == FunctionCache.end()) {
+     CallStack CallStack;
++    AnalysisContext Analysis;
+     ExceptionList = throwsException(Func, ExceptionInfo::Throwables(),
+-                                    CallStack, Func->getLocation());
++                                    CallStack, Func->getLocation(), Analysis);
+
+     // Cache the result of the analysis. This is done prior to filtering
+     // because it is best to keep as much information as possible.
+@@ -678,7 +726,9 @@ ExceptionAnalyzer::analyzeImpl(const FunctionDecl *Func) {
+ ExceptionAnalyzer::ExceptionInfo
+ ExceptionAnalyzer::analyzeImpl(const Stmt *Stmt) {
+   CallStack CallStack;
+-  return throwsException(Stmt, ExceptionInfo::Throwables(), CallStack);
++  AnalysisContext Analysis;
++  return throwsException(Stmt, ExceptionInfo::Throwables(), CallStack,
++                         Analysis);
+ }
+
+ template <typename T>
+diff --git a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h
+index 08479ef..4a5f6d6 100644
+--- a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h
++++ b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h
+@@ -105,6 +105,11 @@ public:
+     /// corresponding entity.
+     const Throwables &getExceptions() const { return ThrownExceptions; }
+
++    /// Rebase a completed function's diagnostic frames onto a new caller.
++    ExceptionInfo withCallerStack(const FunctionDecl *Root,
++                                  const CallStack &Caller,
++                                  SourceLocation CallLoc) const;
++
+     /// Signal if the there is any 'Unknown' element within the scope of
+     /// the related entity. This might be relevant if the entity is 'Throwing'
+     /// and to ensure that no other exception then 'getExceptionTypes' can
+@@ -159,12 +164,16 @@ public:
+   ExceptionInfo analyze(const Stmt *Stmt);
+
+ private:
++  struct AnalysisContext;
++
+   ExceptionInfo throwsException(const FunctionDecl *Func,
+                                 const ExceptionInfo::Throwables &Caught,
+-                                CallStack &CallStack, SourceLocation CallLoc);
++                                CallStack &CallStack, SourceLocation CallLoc,
++                                AnalysisContext &Analysis);
+   ExceptionInfo throwsException(const Stmt *St,
+                                 const ExceptionInfo::Throwables &Caught,
+-                                CallStack &CallStack);
++                                CallStack &CallStack,
++                                AnalysisContext &Analysis);
+   ExceptionInfo analyzeImpl(const FunctionDecl *Func);
+   ExceptionInfo analyzeImpl(const Stmt *Stmt);
+
+diff --git a/clang/lib/Sema/SemaLookup.cpp b/clang/lib/Sema/SemaLookup.cpp
+index fe27632..d460b48 100644
+--- a/clang/lib/Sema/SemaLookup.cpp
++++ b/clang/lib/Sema/SemaLookup.cpp
+@@ -2904,6 +2904,10 @@ namespace {
+       return ClassesTransitive.insert(RD);
+     }
+
++    bool visitTemplateArguments(CXXRecordDecl *RD) {
++      return ClassesWithVisitedTemplateArguments.insert(RD);
++    }
++
+     Sema &S;
+     Sema::AssociatedNamespaceSet &Namespaces;
+     Sema::AssociatedClassSet &Classes;
+@@ -2911,6 +2915,7 @@ namespace {
+
+   private:
+     Sema::AssociatedClassSet ClassesTransitive;
++    Sema::AssociatedClassSet ClassesWithVisitedTemplateArguments;
+   };
+ } // end anonymous namespace
+
+@@ -3087,9 +3092,11 @@ addAssociatedClassesAndNamespaces(AssociatedLookup &Result,
+     // Add the associated namespace for this class.
+     CollectEnclosingNamespace(Result.Namespaces, Ctx);
+
+-    const TemplateArgumentList &TemplateArgs = Spec->getTemplateArgs();
+-    for (unsigned I = 0, N = TemplateArgs.size(); I != N; ++I)
+-      addAssociatedClassesAndNamespaces(Result, TemplateArgs[I]);
++    if (Result.visitTemplateArguments(Class)) {
++      const TemplateArgumentList &TemplateArgs = Spec->getTemplateArgs();
++      for (unsigned I = 0, N = TemplateArgs.size(); I != N; ++I)
++        addAssociatedClassesAndNamespaces(Result, TemplateArgs[I]);
++    }
+   }
+
+   // Add the class itself. If we've already transitively visited this class,
+diff --git a/clang/lib/Sema/SemaOverload.cpp b/clang/lib/Sema/SemaOverload.cpp
+index eafda32..19e02b3 100644
+--- a/clang/lib/Sema/SemaOverload.cpp
++++ b/clang/lib/Sema/SemaOverload.cpp
+@@ -12580,9 +12580,17 @@ static void DiagnoseBadDeduction(Sema &S, NamedDecl *Found, Decl *Templated,
+     // We found a specific requirement that disabled the enable_if.
+     if (PDiag && PDiag->second.getDiagID() ==
+         diag::err_typename_nested_not_found_requirement) {
++      auto *Storage = PDiag->second.getStorage();
++      std::string Description;
++      if (Storage->DiagArgumentsKind[0] == DiagnosticsEngine::ak_expr) {
++        auto *Cond = reinterpret_cast<Expr *>(Storage->DiagArgumentsVal[0]);
++        Description = S.findFailedBooleanCondition(Cond).second;
++      } else {
++        Description = PDiag->second.getStringArg(0).str();
++      }
+       S.Diag(Templated->getLocation(),
+              diag::note_ovl_candidate_disabled_by_requirement)
+-        << PDiag->second.getStringArg(0) << TemplateArgString;
++          << Description << TemplateArgString;
+       return;
+     }
+
+diff --git a/clang/lib/Sema/SemaTemplate.cpp b/clang/lib/Sema/SemaTemplate.cpp
+index 7286a0c..6d76976 100644
+--- a/clang/lib/Sema/SemaTemplate.cpp
++++ b/clang/lib/Sema/SemaTemplate.cpp
+@@ -3687,9 +3687,8 @@ private:
+
+ } // end anonymous namespace
+
+-std::pair<Expr *, std::string>
+-Sema::findFailedBooleanCondition(Expr *Cond) {
+-  Cond = lookThroughRangesV3Condition(PP, Cond);
++static Expr *findFailedBooleanConditionExpr(Sema &S, Expr *Cond) {
++  Cond = lookThroughRangesV3Condition(S.getPreprocessor(), Cond);
+
+   // Separate out all of the terms in a conjunction.
+   SmallVector<Expr *, 4> Terms;
+@@ -3708,10 +3707,10 @@ Sema::findFailedBooleanCondition(Expr *Cond) {
+     // The initialization of the parameter from the argument is
+     // a constant-evaluated context.
+     EnterExpressionEvaluationContext ConstantEvaluated(
+-      *this, Sema::ExpressionEvaluationContext::ConstantEvaluated);
++      S, Sema::ExpressionEvaluationContext::ConstantEvaluated);
+
+     bool Succeeded;
+-    if (Term->EvaluateAsBooleanCondition(Succeeded, Context) &&
++    if (Term->EvaluateAsBooleanCondition(Succeeded, S.Context) &&
+         !Succeeded) {
+       FailedCond = TermAsWritten;
+       break;
+@@ -3720,6 +3719,12 @@ Sema::findFailedBooleanCondition(Expr *Cond) {
+   if (!FailedCond)
+     FailedCond = Cond->IgnoreParenImpCasts();
+
++  return FailedCond;
++}
++
++std::pair<Expr *, std::string>
++Sema::findFailedBooleanCondition(Expr *Cond) {
++  Expr *FailedCond = findFailedBooleanConditionExpr(*this, Cond);
+   std::string Description;
+   {
+     llvm::raw_string_ostream Out(Description);
+@@ -3892,10 +3897,10 @@ QualType Sema::CheckTemplateIdType(ElaboratedTypeKeyword Keyword,
+                   diag::err_typename_nested_not_found_enable_if &&
+               TemplateArgs[0].getArgument().getKind() ==
+                   TemplateArgument::Expression) {
+-            Expr *FailedCond;
+-            std::string FailedDescription;
+-            std::tie(FailedCond, FailedDescription) =
+-              findFailedBooleanCondition(TemplateArgs[0].getSourceExpression());
++            // Keep the expression until a failed candidate is diagnosed.
++            // Formatting canonical types here expands discarded candidates.
++            Expr *FailedCond = findFailedBooleanConditionExpr(
++                *this, TemplateArgs[0].getSourceExpression());
+
+             // Remove the old SFINAE diagnostic.
+             PartialDiagnosticAt OldDiag =
+@@ -3907,7 +3912,7 @@ QualType Sema::CheckTemplateIdType(ElaboratedTypeKeyword Keyword,
+             DeductionInfo->addSFINAEDiagnostic(
+                 OldDiag.first,
+                 PDiag(diag::err_typename_nested_not_found_requirement)
+-                    << FailedDescription << FailedCond->getSourceRange());
++                    << FailedCond << FailedCond->getSourceRange());
+           }
+         }
+       }
+@@ -11438,15 +11443,15 @@ Sema::CheckTypenameType(ElaboratedTypeKeyword Keyword,
+       // If we have a condition, narrow it down to the specific failed
+       // condition.
+       if (Cond) {
+-        Expr *FailedCond;
+-        std::string FailedDescription;
+-        std::tie(FailedCond, FailedDescription) =
+-          findFailedBooleanCondition(Cond);
+-
+-        Diag(FailedCond->getExprLoc(),
+-             diag::err_typename_nested_not_found_requirement)
+-          << FailedDescription
+-          << FailedCond->getSourceRange();
++        Expr *FailedCond = findFailedBooleanConditionExpr(*this, Cond);
++
++        auto DB = Diag(FailedCond->getExprLoc(),
++                       diag::err_typename_nested_not_found_requirement);
++        if (getSFINAEContext())
++          DB << FailedCond;
++        else
++          DB << findFailedBooleanCondition(FailedCond).second;
++        DB << FailedCond->getSourceRange();
+         return QualType();
+       }
+
+diff --git a/clang/lib/StaticAnalyzer/Checkers/WebKit/RefCntblBaseVirtualDtorChecker.cpp b/clang/lib/StaticAnalyzer/Checkers/WebKit/RefCntblBaseVirtualDtorChecker.cpp
+index c6421f8..a3374aa 100644
+--- a/clang/lib/StaticAnalyzer/Checkers/WebKit/RefCntblBaseVirtualDtorChecker.cpp
++++ b/clang/lib/StaticAnalyzer/Checkers/WebKit/RefCntblBaseVirtualDtorChecker.cpp
+@@ -198,8 +198,8 @@ public:
+           if (!C)
+             continue;
+
+-          bool isExempt = T.getAsString() == "NoVirtualDestructorBase" &&
+-                          safeGetName(C->getParent()) == "WTF";
++          bool isExempt = safeGetName(C->getParent()) == "WTF" &&
++                          T.getAsString() == "NoVirtualDestructorBase";
+           if (isExempt || ExemptDecls.contains(C)) {
+             ExemptDecls.insert(RD);
+             continue;
+diff --git a/clang/lib/AST/ParentMapContext.cpp b/clang/lib/AST/ParentMapContext.cpp
+--- a/clang/lib/AST/ParentMapContext.cpp
++++ b/clang/lib/AST/ParentMapContext.cpp
+@@ -467,6 +467,11 @@
+   // Using generic TraverseNode for Stmt would prevent data-recursion.
+   bool dataTraverseStmtPre(Stmt *StmtNode) {
+     addParent(StmtNode, &Map.PointerParents);
++    // Shared statements can have several parents, but their outgoing edges
++    // do not depend on the path used to reach them. Record every incoming
++    // edge before skipping descendants already included in the parent map.
++    if (!TraversedStmts.insert(StmtNode).second)
++      return false;
+     ParentStack.push_back(DynTypedNode::create(*StmtNode));
+     return true;
+   }
+@@ -476,6 +481,7 @@
+   }
+
+   ParentMap &Map;
++  llvm::SmallPtrSet<Stmt *, 32> TraversedStmts;
+   llvm::SmallVector<DynTypedNode, 16> ParentStack;
+ };
+
+diff --git a/clang/lib/ASTMatchers/ASTMatchFinder.cpp b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
+--- a/clang/lib/ASTMatchers/ASTMatchFinder.cpp
++++ b/clang/lib/ASTMatchers/ASTMatchFinder.cpp
+@@ -191,8 +191,28 @@
+
+     if (!match(*StmtToTraverse))
+       return false;
++    // No descendant can match a direct-child query below this depth.
++    if (CurrentDepth >= MaxDepth)
++      return true;
+     return VisitorBase::TraverseStmt(StmtToTraverse, Queue);
+   }
++  // The input bindings and matcher are fixed for this visitor. Cache only
++  // descendant searches with no matches, preserving successful binding
++  // multiplicity even when a statement has several incoming AST edges.
++  bool dataTraverseStmtPre(Stmt *S) {
++    if (MaxDepth == INT_MAX && NoMatchingDescendants.contains(S))
++      return false;
++    MatchCounts.push_back(MatchCount);
++    return true;
++  }
++
++  bool dataTraverseStmtPost(Stmt *S) {
++    if (MaxDepth == INT_MAX && MatchCounts.back() == MatchCount)
++      NoMatchingDescendants.insert(S);
++    MatchCounts.pop_back();
++    return true;
++  }
++
+   // We assume that the QualType and the contained type are on the same
+   // hierarchy level. Thus, we try to match either of them.
+   bool TraverseType(QualType TypeNode, bool TraverseQualifier = true) {
+@@ -379,6 +399,7 @@
+       if (Matcher->matches(DynTypedNode::create(Node), Finder,
+                            &RecursiveBuilder)) {
+         Matches = true;
++        ++MatchCount;
+         ResultBindings.addMatch(RecursiveBuilder);
+         return false; // Abort as soon as a match is found.
+       }
+@@ -388,6 +409,7 @@
+                            &RecursiveBuilder)) {
+         // After the first match the matcher succeeds.
+         Matches = true;
++        ++MatchCount;
+         ResultBindings.addMatch(RecursiveBuilder);
+       }
+     }
+@@ -414,6 +436,9 @@
+   const bool IgnoreImplicitChildren;
+   const ASTMatchFinder::BindKind Bind;
+   bool Matches;
++  size_t MatchCount = 0;
++  llvm::SmallVector<size_t, 16> MatchCounts;
++  llvm::SmallPtrSet<const Stmt *, 32> NoMatchingDescendants;
+ };
+
+ // Controls the outermost traversal of the AST and allows to match multiple
+@@ -775,6 +800,8 @@
+   }
+
+ private:
++  std::set<std::tuple<const Stmt *, bool, bool, bool>>
++      TraversedCCompoundLiterals;
+   bool TraversingASTNodeNotSpelledInSource = false;
+   bool TraversingASTNodeNotAsIs = false;
+   bool TraversingASTChildrenNotSpelledInSource = false;
+@@ -1547,6 +1574,16 @@
+   bool ScopedTraversal = TraversingASTNodeNotSpelledInSource ||
+                          TraversingASTChildrenNotSpelledInSource;
+
++  // C designated initializers share compound literals between syntactic
++  // and semantic forms. Visit each literal once in each traversal context;
++  // repeating the same subtree adds duplicate callbacks, not new matches.
++  if (!getASTContext().getLangOpts().CPlusPlus &&
++      isa<CompoundLiteralExpr>(StmtNode) &&
++      !TraversedCCompoundLiterals
++           .emplace(StmtNode, ScopedTraversal, TraversingASTNodeNotAsIs,
++                    TraversingASTChildrenNotSpelledInSource)
++           .second)
++    return true;
+   ASTNodeNotSpelledInSourceScope RAII(this, ScopedTraversal);
+   match(*StmtNode);
+   return RecursiveASTVisitor<MatchASTVisitor>::TraverseStmt(StmtNode, Queue);
+diff --git a/clang/lib/StaticAnalyzer/Checkers/PaddingChecker.cpp b/clang/lib/StaticAnalyzer/Checkers/PaddingChecker.cpp
+--- a/clang/lib/StaticAnalyzer/Checkers/PaddingChecker.cpp
++++ b/clang/lib/StaticAnalyzer/Checkers/PaddingChecker.cpp
+@@ -20,6 +20,7 @@
+ #include "clang/StaticAnalyzer/Core/BugReporter/BugType.h"
+ #include "clang/StaticAnalyzer/Core/Checker.h"
+ #include "clang/StaticAnalyzer/Core/PathSensitive/AnalysisManager.h"
++#include "llvm/ADT/SmallPtrSet.h"
+ #include "llvm/Support/MathExtras.h"
+ #include "llvm/Support/raw_ostream.h"
+
+@@ -44,6 +45,12 @@
+     // want to visit those, so we make our own RecursiveASTVisitor.
+     struct LocalVisitor : DynamicRecursiveASTVisitor {
+       const PaddingChecker *Checker;
++      // Padding depends on declarations, not on the path to a shared
++      // initializer subtree. Still traverse every distinct statement.
++      llvm::SmallPtrSet<const Stmt *, 32> TraversedStmts;
++      bool dataTraverseStmtPre(Stmt *S) override {
++        return TraversedStmts.insert(S).second;
++      }
+       explicit LocalVisitor(const PaddingChecker *Checker) : Checker(Checker) {
+         ShouldVisitTemplateInstantiations = true;
+         ShouldVisitImplicitCode = true;
