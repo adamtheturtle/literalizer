@@ -1,5 +1,5 @@
-#include <initializer_list>
 #include <string>
+#include <tuple>
 #include <vector>
 #include <cstddef>
 #include <memory>
@@ -41,7 +41,6 @@ struct Value {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
-#include <tuple>
 int main() {
 auto my_data = std::vector<Value>{
     Value{std::vector<std::tuple<int, std::string>>{std::make_tuple(1, "Mainframe1")}},

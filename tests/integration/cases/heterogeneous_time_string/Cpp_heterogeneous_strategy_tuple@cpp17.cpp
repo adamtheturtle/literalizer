@@ -1,7 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <tuple>
 int main() {
 auto my_data = std::map<std::string, std::tuple<std::string, std::string>>{

@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <array>
 #include <cstddef>
 #include <type_traits>

@@ -1,8 +1,6 @@
-#include <initializer_list>
-#include <string>
-#include <map>
 #include <array>
-#include <variant>
+#include <map>
+#include <string>
 int main() {
 auto my_data = std::array<std::array<std::map<std::string, int>, 1>, 2>{
     std::array<std::map<std::string, int>, 1>{std::map<std::string, int>{{"a", 1}}},

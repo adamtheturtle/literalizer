@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <cmath>
 int main() {
 auto std = static_cast<double>(NAN);

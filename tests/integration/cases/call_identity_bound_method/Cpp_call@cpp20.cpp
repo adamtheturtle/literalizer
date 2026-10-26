@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <vector>
 struct thingType_ { [[nodiscard]] auto go(auto...) const { return 0; } };
 const thingType_ thing;

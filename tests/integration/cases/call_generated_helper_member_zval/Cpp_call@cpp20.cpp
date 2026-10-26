@@ -1,4 +1,3 @@
-#include <initializer_list>
 struct objType_ { void ZVal(auto...) const {} };
 const objType_ obj;
 int main() {

@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <vector>
 struct appType_ { template <typename... Args> void go(Args...) const {} };
 const appType_ app;

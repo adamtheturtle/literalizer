@@ -1,7 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <cstddef>
-#include <variant>
+#include <string>
 struct Record0 { std::string s; int i{}; double f{}; bool b{}; std::nullptr_t n{}; std::string d; long long dt{}; std::string by; };
 int main() {
 auto my_data = Record0{

@@ -1,6 +1,3 @@
-#include <initializer_list>
-#include <vector>
-#include <type_traits>
 template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 auto known_value = true;

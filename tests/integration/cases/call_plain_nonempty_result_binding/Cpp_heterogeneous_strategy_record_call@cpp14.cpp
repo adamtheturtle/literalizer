@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <vector>
 template <typename... Args> auto make_widget(Args...) { return 0; }
 int main() {

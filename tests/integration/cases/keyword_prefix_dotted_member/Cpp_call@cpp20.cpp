@@ -1,4 +1,3 @@
-#include <initializer_list>
 struct thingType_ { void first_value(auto...) const {} };
 const thingType_ thing;
 int main() {

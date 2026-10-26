@@ -1,4 +1,4 @@
-def consume(value: String):
+def consume(var value: String):
     pass
 def main():
     var item = "s"

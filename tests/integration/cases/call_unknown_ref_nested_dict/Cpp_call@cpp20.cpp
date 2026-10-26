@@ -1,10 +1,7 @@
-#include <initializer_list>
-#include <string>
 #include <map>
+#include <string>
+#include <utility>
 #include <vector>
-#include <cstddef>
-#include <variant>
-#include <type_traits>
 auto process(auto...) { return 0; }
 int main() {
 auto my_list = std::map<std::string, std::string>{

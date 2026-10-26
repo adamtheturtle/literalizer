@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _PlaylistType(Copyable, Movable):
-    def newValue(self, x: Int):
+    def newValue(self, var x: Int):
         pass
 def main():
     var Playlist = _PlaylistType()

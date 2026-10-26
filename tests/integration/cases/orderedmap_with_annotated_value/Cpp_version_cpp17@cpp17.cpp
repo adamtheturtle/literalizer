@@ -1,9 +1,8 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
-#include <utility>
 #include <cstddef>
+#include <string>
+#include <utility>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::vector<std::pair<std::string, std::variant<std::vector<std::nullptr_t>, int>>>{
     {"a", std::vector<std::nullptr_t>{}},

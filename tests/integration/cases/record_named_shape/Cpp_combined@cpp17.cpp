@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::vector<std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>>{
     std::map<std::string, std::variant<int, std::string, bool, std::vector<int>>>{{"id", 100}, {"label", "first entry"}, {"enabled", false}, {"related_ids", std::vector<int>{102, 103}}},

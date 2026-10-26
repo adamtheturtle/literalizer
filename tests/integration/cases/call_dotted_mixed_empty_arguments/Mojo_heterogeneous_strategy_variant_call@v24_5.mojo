@@ -2,7 +2,7 @@ from std.utils.variant import Variant
 comptime Value = Variant[String, Int, List[Int], List[String]]
 @fieldwise_init
 struct _ThingType(Copyable, Movable):
-    def go[*Ts: AnyType](self, *args: *Ts) -> None:
+    def go[*Ts: Movable](self, var *args: *Ts) -> None:
         pass
 def main():
     var thing = _ThingType()

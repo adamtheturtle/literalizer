@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <vector>
 int main() {
 static const auto my_data = std::vector<int>{

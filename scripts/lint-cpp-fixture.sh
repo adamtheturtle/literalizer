@@ -24,8 +24,9 @@ fi
 
 case "$mode" in
 tidy)
+    # Require direct C++ includes in addition to the shared checks.
     scripts/run-bounded.sh "$fixture_path" --signal=KILL 60s \
-        clang-tidy "$fixture_path" -- "-std=$standard"
+        clang-tidy --checks=misc-include-cleaner "$fixture_path" -- "-std=$standard"
     ;;
 run)
     temporary_directory=$(mktemp -d)

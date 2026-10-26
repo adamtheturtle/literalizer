@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <vector>
 int main() {
 auto ref_x = 3;

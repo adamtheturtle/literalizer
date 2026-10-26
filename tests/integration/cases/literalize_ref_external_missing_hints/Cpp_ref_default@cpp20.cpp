@@ -1,7 +1,5 @@
-#include <initializer_list>
 #include <vector>
-#include <type_traits>
-#include <cstddef>
+#include <utility>
 auto consume_widget(auto...) { return 0; }
 int main() {
 auto item = std::vector<int>{

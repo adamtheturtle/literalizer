@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <string>
-#include <array>
-struct Record0 { std::array<std::string, 1> labels; };
 #include <utility>
+#include <array>
+#include <string>
+struct Record0 { std::array<std::string, 1> labels; };
 int main() {
 auto first = Record0{
     {

@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::map<std::string, std::variant<int, std::vector<int>>>{
     {"minimum", (-0x7fffffff - 1)},

@@ -1,6 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
 int main() {
 auto my_data = std::vector<std::vector<std::map<std::string, int>>>{

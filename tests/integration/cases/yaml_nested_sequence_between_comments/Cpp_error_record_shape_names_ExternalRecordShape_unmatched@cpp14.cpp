@@ -1,7 +1,5 @@
-#include "../../cpp_support/include/named_type.hpp"
-#include <initializer_list>
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
 #include <cstddef>
 #include <memory>
@@ -54,5 +52,6 @@ auto my_data = std::vector<std::vector<Value>>{
     // This comment describes the last pair.
     std::vector<Value>{Value{std::map<std::string, std::string>{{"item", "last"}}}, Value{"kept too"}},
 };
+    (void)my_data;
     return 0;
 }

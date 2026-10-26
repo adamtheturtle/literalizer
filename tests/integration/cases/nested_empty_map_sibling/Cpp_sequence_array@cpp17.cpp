@@ -1,9 +1,7 @@
-#include <initializer_list>
-#include <string>
-#include <map>
-#include <array>
 #include <cstddef>
-#include <variant>
+#include <initializer_list>
+#include <map>
+#include <string>
 int main() {
 auto my_data = {
     std::map<std::string, std::map<std::string, std::nullptr_t>>{{"mapping", std::map<std::string, std::nullptr_t>{}}},

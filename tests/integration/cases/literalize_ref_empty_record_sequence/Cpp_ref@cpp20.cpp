@@ -1,7 +1,5 @@
-#include <initializer_list>
 #include <vector>
-#include <string>
-#include <cstddef>
+#include <utility>
 struct Record0 { int x{}; };
 int main() {
 auto empty_items = std::vector<Record0>{};

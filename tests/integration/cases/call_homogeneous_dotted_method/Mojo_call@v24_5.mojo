@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _ClientType(Copyable, Movable):
-    def fetch(self, value: String):
+    def fetch(self, var value: String):
         pass
 @fieldwise_init
 struct _AppType(Copyable, Movable):

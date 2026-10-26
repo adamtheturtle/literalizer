@@ -1,4 +1,4 @@
-def do_thing(x_: Int):
+def do_thing(var x_: Int):
     pass
 def main():
     do_thing(1)
