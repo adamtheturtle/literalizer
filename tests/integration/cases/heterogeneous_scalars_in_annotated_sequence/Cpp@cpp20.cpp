@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <cstddef>
 #include <chrono>
-#include <vector>
+#include <cstddef>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::vector<std::variant<bool, double, std::nullptr_t, std::chrono::year_month_day, std::chrono::system_clock::time_point, std::vector<std::nullptr_t>>>{
     true,

@@ -1,8 +1,3 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
-#include <variant>
-#include <tuple>
 struct clientType_ { [[nodiscard]] auto fetch(auto...) const { return 0; } };
 struct appType_ { clientType_ client; };
 const appType_ app;

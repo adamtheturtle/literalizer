@@ -1,8 +1,6 @@
-#include <initializer_list>
+#include <cstddef>
 #include <string>
 #include <vector>
-#include <cstddef>
-#include <variant>
 template <typename... Args> auto make_widget(Args...) { return 0; }
 int main() {
 static_cast<void>(make_widget(std::vector<std::nullptr_t>{}, std::vector<int>{1}, std::vector<std::nullptr_t>{}));

@@ -1,5 +1,3 @@
-#include <initializer_list>
-#include <string>
 #include <vector>
 struct Record0 { int a{}; };
 int main() {

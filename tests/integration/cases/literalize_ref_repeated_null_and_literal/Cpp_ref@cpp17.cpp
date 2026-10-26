@@ -1,7 +1,5 @@
-#include <initializer_list>
 #include <cstddef>
 #include <vector>
-#include <variant>
 int main() {
 auto value = nullptr;
 auto my_data = std::vector<std::nullptr_t>{

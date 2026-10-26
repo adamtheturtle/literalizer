@@ -1,4 +1,4 @@
-def process[*Ts: AnyType](var *args: *Ts):
+def process[*Ts: Movable](var *args: *Ts):
     pass
 def main():
     var big_list: List[String] = List([

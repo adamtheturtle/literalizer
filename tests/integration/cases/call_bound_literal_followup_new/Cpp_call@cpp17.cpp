@@ -1,7 +1,3 @@
-#include <initializer_list>
-#include <vector>
-#include <cstddef>
-#include <type_traits>
 template <typename... Args> auto make_widget(Args...) { return 0; }
 template <typename... Args> auto consume(Args...) { return 0; }
 int main() {

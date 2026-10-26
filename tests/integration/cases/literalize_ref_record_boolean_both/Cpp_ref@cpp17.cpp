@@ -1,4 +1,3 @@
-#include <initializer_list>
 int main() {
 auto first = true;
 auto&& my_data = first;

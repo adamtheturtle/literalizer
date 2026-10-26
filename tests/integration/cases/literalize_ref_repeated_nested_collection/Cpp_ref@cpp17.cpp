@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
+#include <vector>
 int main() {
 auto shared = std::vector<std::variant<std::vector<int>, std::map<std::string, int>>>{
     std::vector<int>{1, 2},

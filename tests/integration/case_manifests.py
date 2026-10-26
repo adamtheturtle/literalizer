@@ -369,6 +369,8 @@ class ManifestVariant(  # noqa: NOD001
     # Generate a declaration before an existing-variable assignment.
     initialize_variable: bool = False
     wrap_in_file: bool = True
+    # Some shape-mapping cases deliberately never use the external type.
+    include_extra_preamble: bool = True
     context: RenderContext = Field(default_factory=RenderContext)
     # The language capabilities this input needs in order to render at
     # all.  A variant whose language lacks one of them is skipped (no

@@ -1,7 +1,5 @@
-#include <initializer_list>
 #include <string>
 #include <vector>
-#include <variant>
 struct Record0 { std::vector<bool> flags; std::vector<double> values; std::vector<int> ints; std::vector<std::string> text; std::vector<std::vector<bool>> nested_flags; std::vector<std::vector<double>> nested_values; };
 int main() {
 auto my_data = Record0{

@@ -1,8 +1,6 @@
-#include <initializer_list>
-#include <string>
 #include <cstddef>
-#include <vector>
 #include <memory>
+#include <string>
 #include <utility>
 struct DynamicValue {
  private:
@@ -41,7 +39,6 @@ struct DynamicValue {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
-#include <tuple>
 template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 process(DynamicValue{1}, DynamicValue{"hello"});

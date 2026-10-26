@@ -1,5 +1,3 @@
-#include <initializer_list>
-#include <string>
 struct Record0 { int a{}; };
 int main() {
 auto ZKV = Record0{

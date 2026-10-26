@@ -1,4 +1,3 @@
-#include <initializer_list>
 template <typename... Args> auto f(Args...) { return 0; }
 int main() {
 // scalar heading

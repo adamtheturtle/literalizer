@@ -7,7 +7,7 @@ struct _ClientType(Copyable, Movable):
 @fieldwise_init
 struct _AppType(Copyable, Movable):
     var client: _ClientType
-def emit[*Ts: AnyType](var *args: *Ts):
+def emit[*Ts: Movable](var *args: *Ts):
     pass
 def main():
     var app = _AppType(_ClientType())

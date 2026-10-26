@@ -1,6 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <map>
+#include <string>
 int main() {
 static auto my_data = std::map<std::string, int>{
     // Field declaration
