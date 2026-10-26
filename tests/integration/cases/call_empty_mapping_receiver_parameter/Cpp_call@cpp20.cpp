@@ -1,9 +1,6 @@
-#include <initializer_list>
-#include <string>
-#include <map>
-#include <vector>
 #include <cstddef>
-#include <variant>
+#include <map>
+#include <string>
 struct apiType_ { void process(auto...) const {} };
 const apiType_ api;
 int main() {

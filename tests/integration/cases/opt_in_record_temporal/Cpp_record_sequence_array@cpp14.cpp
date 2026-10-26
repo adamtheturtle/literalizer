@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <string>
 struct Record0 { std::string event_date; std::string event_time; std::string event_datetime; };
 int main() {

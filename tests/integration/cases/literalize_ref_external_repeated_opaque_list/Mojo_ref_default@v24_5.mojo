@@ -3,7 +3,7 @@ def literalizer_ref_value(value: None) -> None:
 
 def literalizer_ref_value[T: Copyable](value: T) -> T:
     return value.copy()
-def consume_widget[*Ts: AnyType](var *args: *Ts):
+def consume_widget[*Ts: Movable](var *args: *Ts):
     pass
 def main():
     var item = List[String]()

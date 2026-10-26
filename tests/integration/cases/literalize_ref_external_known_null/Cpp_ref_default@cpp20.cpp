@@ -1,8 +1,3 @@
-#include <initializer_list>
-#include <vector>
-#include <type_traits>
-#include <cstddef>
-#include <variant>
 auto consume_widget(auto...) { return 0; }
 int main() {
 auto item = nullptr;

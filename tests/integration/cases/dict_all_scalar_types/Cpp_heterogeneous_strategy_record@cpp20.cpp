@@ -1,8 +1,6 @@
-#include <initializer_list>
-#include <string>
-#include <cstddef>
 #include <chrono>
-#include <variant>
+#include <cstddef>
+#include <string>
 struct Record0 { std::string s; int i{}; double f{}; bool b{}; std::nullptr_t n{}; std::chrono::year_month_day d; std::chrono::system_clock::time_point dt; std::string by; };
 int main() {
 auto my_data = Record0{

@@ -37,7 +37,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from pydantic import TypeAdapter
+from pydantic import JsonValue, TypeAdapter
 
 from literalizer import (
     InputFormat,
@@ -52,10 +52,6 @@ from scripts.bounded_command import bounded_command
 INPUT_PATH = Path(__file__).resolve().parent / "roundtrip_input.json"
 CAPABILITY_INPUT_PATH = (
     Path(__file__).resolve().parent / "roundtrip_capability_input.json"
-)
-
-type JsonValue = (
-    bool | int | float | str | list[JsonValue] | dict[str, JsonValue] | None
 )
 
 

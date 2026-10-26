@@ -3,6 +3,7 @@ suites = ["base", "combined"]
 
 [[variants]]
 axis = "error_record_shape_names"
+include_extra_preamble = false
 suffix = "_inconsistent"
 
 [[variants]]

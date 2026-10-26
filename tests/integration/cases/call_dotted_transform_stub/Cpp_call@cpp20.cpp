@@ -1,7 +1,3 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
-#include <variant>
 auto process(auto...) { return 0; }
 struct tracerType_ { void emit(auto...) const {} };
 const tracerType_ tracer;

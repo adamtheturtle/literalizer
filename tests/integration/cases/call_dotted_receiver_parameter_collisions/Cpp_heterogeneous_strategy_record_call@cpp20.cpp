@@ -1,9 +1,6 @@
-#include <initializer_list>
-#include <string>
-#include <map>
-#include <vector>
 #include <cstddef>
-#include <variant>
+#include <map>
+#include <string>
 struct workerType_ { void process(auto...) const {} };
 struct apiType_ { workerType_ worker; };
 const apiType_ api;

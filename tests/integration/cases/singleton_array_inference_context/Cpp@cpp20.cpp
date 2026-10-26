@@ -1,9 +1,8 @@
-#include <initializer_list>
-#include <string>
 #include <cstddef>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::map<std::string, std::variant<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>>>, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>>>>, std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<int>>>>>>>>>>>>{
     {"nil", ([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(([](auto literalizer_value) { return std::vector<decltype(literalizer_value)>{literalizer_value}; })(std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>>{std::vector<std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>>{std::vector<std::vector<std::vector<std::vector<std::nullptr_t>>>>{std::vector<std::vector<std::vector<std::nullptr_t>>>{std::vector<std::vector<std::nullptr_t>>{std::vector<std::nullptr_t>{nullptr}}}}}}}))},

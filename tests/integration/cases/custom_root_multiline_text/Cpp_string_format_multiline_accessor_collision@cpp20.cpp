@@ -1,5 +1,3 @@
-#include <initializer_list>
-#include <string>
 int main() {
 const auto* fixtureRoot = R"(head
 final my_data = 123;

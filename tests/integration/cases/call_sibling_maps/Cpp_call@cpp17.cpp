@@ -1,7 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
 template <typename... Args> auto process(Args...) { return 0; }
 int main() {

@@ -1,6 +1,3 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
 struct Record0 { int value{}; };
 auto consume(auto...) { return 0; }
 int main() {

@@ -1,6 +1,5 @@
-#include <initializer_list>
-#include <chrono>
 #include <array>
+#include <chrono>
 int main() {
 auto my_data = std::array<std::chrono::year_month_day, 2>{
     std::chrono::year_month_day{std::chrono::year{2024}, std::chrono::month{1}, std::chrono::day{15}},

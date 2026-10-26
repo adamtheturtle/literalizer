@@ -1,6 +1,3 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
 template <typename... Args> auto consume(Args...) { return 0; }
 int main() {
 consume("1901-12-13T20:45:51");

@@ -1,6 +1,4 @@
-#include <initializer_list>
 #include <string>
-#include <variant>
 struct Record0 { int a{}; long long b{}; std::string c; };
 int main() {
 auto my_data = Record0{

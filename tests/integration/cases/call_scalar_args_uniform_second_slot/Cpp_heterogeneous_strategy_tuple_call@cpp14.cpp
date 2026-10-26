@@ -1,8 +1,6 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
 #include <cstddef>
 #include <memory>
+#include <string>
 #include <utility>
 struct Value {
  private:
@@ -41,7 +39,6 @@ struct Value {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
-#include <tuple>
 template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 process(Value{"hello"}, "a");

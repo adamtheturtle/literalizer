@@ -1,5 +1,3 @@
-#include <initializer_list>
-#include <string>
 struct Record0 { long long value{}; };
 int main() {
 auto my_data = Record0{

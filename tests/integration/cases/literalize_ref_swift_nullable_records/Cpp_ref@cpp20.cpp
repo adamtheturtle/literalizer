@@ -1,7 +1,4 @@
-#include <initializer_list>
-#include <string>
 #include <cstddef>
-#include <variant>
 struct Record1 { int x{}; std::nullptr_t y{}; };
 struct Record2 { std::nullptr_t x{}; std::nullptr_t y{}; };
 struct Record3 { int x{}; int y{}; };
