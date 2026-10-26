@@ -1,0 +1,6 @@
+def process(value: Int) -> None:
+    pass
+def emit[*Ts: AnyType](*args: *Ts):
+    pass
+def main():
+    emit(process(1), 1705320000)

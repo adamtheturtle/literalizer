@@ -1,0 +1,13 @@
+# Native wrapper parameters retain the actual emitted float representation.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = false
+call_transform_wrapper = {target = "emit", arguments = ["call", "zipped"]}
+transform_stub_names = ["emit"]
+transform_stub_param_names = ["_call", "_zip"]
+zip_source = "1.5"
+zip_input_format = "yaml"

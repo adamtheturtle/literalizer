@@ -43,6 +43,65 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
     argvalues=[
         (
             (
+                "schema_version = 1\n"
+                'owner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "target"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = false\n"
+                'call_transform_wrapper = {target = "emit", arguments'
+                ' = ["call"]}\n'
+            ),
+            ("call_transform_wrapper requires a declared transform stub"),
+        ),
+        (
+            (
+                "schema_version = 1\n"
+                'owner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "target"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = false\n"
+                'transform_stub_names = ["emit"]\n'
+                'call_transform_wrapper = {target = "emit", arguments'
+                ' = ["call", "call"]}\n'
+            ),
+            ("wrapper operands must match transform_stub_param_names"),
+        ),
+        (
+            (
+                "schema_version = 1\n"
+                'owner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "target"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = false\n"
+                'transform_stub_names = ["emit"]\n'
+                'call_transform_wrapper = {target = "emit", arguments'
+                ' = ["zipped"]}\n'
+            ),
+            ("a zipped wrapper operand requires zip_source"),
+        ),
+        (
+            (
+                "schema_version = 1\n"
+                'owner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "target"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = false\n"
+                'transform_stub_names = ["emit"]\n'
+                'call_transform_wrapper = {target = "emit", arguments'
+                ' = ["call"]}\n'
+                "call_transform_sequence = true\n"
+            ),
+            (
+                "call_transform_wrapper and call_transform_sequence a"
+                "re mutually exclusive"
+            ),
+        ),
+        (
+            (
                 'schema_version = 1\nowner = "literalize-call"\n[call]\n'
                 'target_function = "target"\nparameter_names = ["value"]\n'
                 "per_element = false\n"

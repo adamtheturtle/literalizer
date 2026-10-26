@@ -71,6 +71,7 @@ from literalizer._formatters.type_inference import (
 from literalizer._json_comments import JsonComments, collection_comment_nodes
 from literalizer._language import (
     CallParameterShadowing,
+    CallStubDeclarations,
     CallStyle,
     CallSupport,
     CollectionLayout,
@@ -8299,6 +8300,30 @@ def _is_value_sequence(value: ValueInput, /) -> TypeIs[Sequence[ValueInput]]:
     return isinstance(value, Sequence) and not isinstance(value, (str, bytes))
 
 
+@runtime_checkable
+class _TransformWithCallDeclarations(Protocol):
+    """A transform that retains the declarations needed by its
+    expression.
+    """
+
+    @property
+    def call_stub_declarations(self) -> CallStubDeclarations:
+        """Native declarations grouped by their actual wrapper scope."""
+        ...
+
+
+@beartype
+def _transform_call_declarations(
+    transform: Callable[[CallContext], str] | None,
+) -> CallStubDeclarations:
+    """Keep transform helper declarations with wrapped call
+    expressions.
+    """
+    if isinstance(transform, _TransformWithCallDeclarations):
+        return transform.call_stub_declarations
+    return CallStubDeclarations(body=(), class_scope=(), file_scope=())
+
+
 @beartype
 def _wrap_call_in_file(
     *,
@@ -8333,6 +8358,10 @@ def _wrap_call_in_file(
     preamble_stubs = language.format_call_preamble_stub(
         target_function_parts, parameter_names, stub_return, arg_values
     )
+    transform_stubs = _transform_call_declarations(transform=call_transform)
+    body_stubs += transform_stubs.body
+    class_stubs += transform_stubs.class_scope
+    preamble_stubs += transform_stubs.file_scope
     wrap_in_file_hook = language.wrap_in_file
     if variable_form is not None and isinstance(
         language, _SupportsCallVariableWrapInFile
@@ -8376,7 +8405,9 @@ def _wrap_call_in_file(
         call_binding_pragmas = language.format_call_binding_file_pragmas()
     # Stubs follow the language's static preamble (e.g. Go's
     # ``package main`` must come first).
-    full_preamble = preamble + call_binding_pragmas + preamble_stubs
+    full_preamble = deduplicate_preamble_entries(
+        entries=preamble + call_binding_pragmas + preamble_stubs
+    )
     if len(full_preamble) > 0:
         wrapped = "\n".join(full_preamble) + "\n" + wrapped
     return wrapped
@@ -8467,6 +8498,10 @@ def _compose_call_with_bound_ref_declarations(
     preamble_stubs = language.format_call_preamble_stub(
         target_function_parts, parameter_names, stub_return, stub_arg_values
     )
+    transform_stubs = _transform_call_declarations(transform=call_transform)
+    body_stubs += transform_stubs.body
+    class_stubs += transform_stubs.class_scope
+    preamble_stubs += transform_stubs.file_scope
     return literalize_call_with_declarations(
         language=language,
         declarations=decl_results,

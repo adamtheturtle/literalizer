@@ -5,7 +5,7 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-call_transform = "emit({call}, {zipped})"
+call_transform_wrapper = {target = "emit", arguments = ["call", "zipped"]}
 transform_stub_names = ["emit"]
 # The bool ``$zipped`` value is not a map literal, so no
 # free-expression dict support is needed.  The two-parameter wrapper

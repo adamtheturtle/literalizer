@@ -111,7 +111,7 @@ from literalizer._language import (
     no_validate_call_arg,
     prepend_body_preamble,
 )
-from literalizer._types import OrderedMap, Value
+from literalizer._types import CallStubData, OrderedMap, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
@@ -777,13 +777,19 @@ def _gleam_json_call_preamble_stub(
 ) -> tuple[str, ...]:
     """Return Gleam module-level function stubs for a call target.
 
-    Under the ``GLEAM_JSON_JSON`` JSON value mode every argument is a
-    ``json.Json`` builder expression, so the stub's parameter types are
-    fixed at ``json.Json`` (not the polymorphic type variables the
-    default ``GVal`` stub uses).
+    Data arguments in JSON value mode are ``json.Json`` builder expressions.
+    A wrapper's call-result slots retain the generated stub's ``Nil`` type.
     """
     flat_name = "_".join(parts)
-    param_list = ", ".join(f"_{p}: json.Json" for p in params)
+    result_slots = (
+        _args.call_result_slots
+        if isinstance(_args, CallStubData)
+        else frozenset[int]()
+    )
+    param_list = ", ".join(
+        f"_{p}: {'Nil' if index in result_slots else 'json.Json'}"
+        for index, p in enumerate(iterable=params)
+    )
     return (f"pub fn {flat_name}({param_list}) -> Nil {{ Nil }}",)
 
 

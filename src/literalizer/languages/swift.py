@@ -125,7 +125,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop_static,
 )
-from literalizer._types import OrderedMap, Scalar, Value
+from literalizer._types import CallStubData, OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     TargetScalarCollisionError,
     UnrepresentableInputError,
@@ -340,11 +340,16 @@ def _swift_call_stub(
 ) -> tuple[str, ...]:
     """Return Swift stub declarations for a call name."""
     accepts_nil = _swift_args_contain_nil(args=args)
+    unlabeled_wrapper = (
+        not args.keyword_arguments
+        if isinstance(args, CallStubData)
+        else len(args) == 0
+    )
     param_list = ", ".join(
         _swift_param(
             name=p,
             accepts_nil=accepts_nil,
-            is_wrapper_parameter=len(args) == 0 and p.startswith("_"),
+            is_wrapper_parameter=unlabeled_wrapper and p.startswith("_"),
         )
         for p in params
     )

@@ -123,7 +123,7 @@ from literalizer._preamble import (
     EmptySet,
     HeterogeneousElements,
 )
-from literalizer._types import OrderedMap, Scalar, Value
+from literalizer._types import CallStubData, OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     UnrepresentableInputError,
@@ -776,6 +776,8 @@ def _build_python_call_stub(
         """Return Python stub declarations for a call name."""
         variadic = "*_args: object, **_kwargs: object"
         if len(parts) == 1:
+            if isinstance(_args, CallStubData) and parts[0] == "repr":
+                return ()
             return (f"def {parts[0]}({variadic}) -> object: ...",)
         root = parts[0]
         method = parts[-1]
