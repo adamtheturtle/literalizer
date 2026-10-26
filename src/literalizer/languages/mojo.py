@@ -1120,7 +1120,7 @@ class Mojo(metaclass=LanguageCls):
         frozenset()
     )
     reserved_call_target_head_identifiers: ClassVar[frozenset[str]] = (
-        frozenset()
+        frozenset({"literalizer_ref_value"})
     )
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
@@ -1163,6 +1163,7 @@ class Mojo(metaclass=LanguageCls):
     )
     reserved_variable_identifiers: frozenset[str] = frozenset(
         {
+            "literalizer_ref_value",
             "False",
             "None",
             "True",
@@ -1788,7 +1789,9 @@ class Mojo(metaclass=LanguageCls):
             """Copy unknown values and containers; retain known scalar
             formatting.
             """
-            if value is None or isinstance(value, (list, dict, set)):
+            if value is None:
+                return f"literalizer_ref_value({name})"
+            if isinstance(value, (list, dict, set)):
                 return f"{name}.copy()"
             return consume(name, value)
 
@@ -1799,6 +1802,27 @@ class Mojo(metaclass=LanguageCls):
     def format_known_null_ref_identifier(self) -> Callable[[str], str]:
         """Copy a known register-trivial null without a transfer."""
         return identity_known_null_ref_identifier
+
+    @staticmethod
+    @beartype
+    def format_unknown_reused_ref_identifier(identifier: str, /) -> str:
+        """Copy bindings whose ownership is unknown."""
+        return f"literalizer_ref_value({identifier})"
+
+    @cached_property
+    @beartype
+    def unresolved_reference_preamble(self) -> tuple[str, ...]:
+        """Copy unknown native values while preserving the null
+        literal.
+        """
+        return (
+            (
+                "def literalizer_ref_value(value: None) -> None:\n"
+                f"{self.indent}return None\n\n"
+                "def literalizer_ref_value[T: Copyable](value: T) -> T:\n"
+                f"{self.indent}return value.copy()"
+            ),
+        )
 
     @cached_property
     @beartype

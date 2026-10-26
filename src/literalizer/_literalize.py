@@ -2653,11 +2653,9 @@ def _format_list_value(
         and sequence_open_override is None
     ):
         return sequence_cfg.single_element_template.format(items=joined)
-    match sequence_open_override:
-        case str():
-            opener = sequence_open_override
-        case _:
-            opener = _sequence_open_for_ref_inference(data=value, ctx=ctx)
+    opener = _sequence_open_for_ref_inference(
+        data=value, explicit_override=sequence_open_override, ctx=ctx
+    )
     return finish_collection_initializer(
         opener=opener, code=f"{opener}{joined}{sequence_cfg.close}"
     )
@@ -2742,6 +2740,15 @@ def _format_bound_ref_identifier(
     return None
 
 
+@runtime_checkable
+class _UnknownReferenceValueLanguage(Protocol):
+    """A producer preserving owned references without value hints."""
+
+    def format_unknown_reused_ref_identifier(self, identifier: str, /) -> str:
+        """Preserve a binding whose Copy behavior is unknown."""
+        ...
+
+
 @beartype
 def _format_literal_ref_identifier(
     *,
@@ -2775,6 +2782,12 @@ def _format_literal_ref_identifier(
     )
     if bound_identifier is not None:
         return bound_identifier
+    if (
+        reused
+        and raw_ref_name not in _reference_binding_values(ref_values)
+        and isinstance(language, _UnknownReferenceValueLanguage)
+    ):
+        return language.format_unknown_reused_ref_identifier(ref_name)
     if reused and isinstance(language, _ReusableLiteralReferenceLanguage):
         return language.format_reused_literal_ref_identifier(
             ref_name, ref_value
@@ -3181,21 +3194,69 @@ def _dict_open_for_ref_inference(
     return ctx.spec.dict_format_config.dict_open(effective_inferred_2)
 
 
+@runtime_checkable
+class _UnknownReferenceSequenceLanguage(Protocol):
+    """A producer inferring sequence elements from native reference
+    types.
+    """
+
+    def sequence_open_from_unknown_references(
+        self, names: Sequence[str], /
+    ) -> str:
+        """Retain the native types of references without value hints."""
+        ...
+
+
+@beartype
+def _unknown_reference_sequence_open(
+    *, data: list[Value], ctx: _RenderContext
+) -> str | None:
+    """Retain unknown native element types before applying fallback
+    openers.
+    """
+    if (
+        ctx.ref_key is not _DISABLED_REF_KEY
+        and len(data) > 0
+        and isinstance(ctx.spec, _UnknownReferenceSequenceLanguage)
+    ):
+        references = (
+            _extract_call_arg_ref_name(value=value, ref_key=ctx.ref_key)
+            for value in data
+        )
+        hints = reference_values_or_empty(values=ctx.ref_values)
+        unknown = [
+            name
+            for name in references
+            if name is not None and name not in hints
+        ]
+        if len(unknown) == len(data):
+            names = tuple(
+                _validated_ref_name(
+                    raw_ref_name=name, ref_case=ctx.ref_case, language=ctx.spec
+                )
+                for name in unknown
+            )
+            return ctx.spec.sequence_open_from_unknown_references(names)
+    return None
+
+
 @beartype
 def _sequence_open_for_ref_inference(
-    *, data: list[Value], ctx: _RenderContext
+    *, data: list[Value], explicit_override: str | None, ctx: _RenderContext
 ) -> str:
     """Return the sequence opener using sibling types and resolved
     refs.
     """
+    unknown_opener = _unknown_reference_sequence_open(data=data, ctx=ctx)
+    if unknown_opener is not None:
+        return unknown_opener
+    if explicit_override is not None:
+        return explicit_override
     override = ctx.sequence_open_overrides.get(id(data))
     if override is not None:
         return override
     inferred = _opener_inference_value(data=data, ctx=ctx)
-    effective_inferred_3 = data
-    if len(inferred) > 0:
-        effective_inferred_3 = inferred
-    return ctx.spec.sequence_open(effective_inferred_3)
+    return ctx.spec.sequence_open(inferred)
 
 
 @beartype
@@ -3257,8 +3318,6 @@ def _collection_open_for_multiline_value(
                 key=set_sort_key,
             )
             opener = spec.set_format_config.set_open(sorted_set)
-        case _ if sequence_open_override is not None:
-            opener = sequence_open_override
         case _:
             delimiters = _single_element_sequence_delimiters(
                 data=data,
@@ -3268,7 +3327,11 @@ def _collection_open_for_multiline_value(
             if delimiters is not None:
                 opener = delimiters[0]
             else:
-                opener = _sequence_open_for_ref_inference(data=data, ctx=ctx)
+                opener = _sequence_open_for_ref_inference(
+                    data=data,
+                    explicit_override=sequence_open_override,
+                    ctx=ctx,
+                )
     return opener
 
 
@@ -4314,6 +4377,11 @@ def _format_root_collection(
     body = "\n".join(lines)
     if not include_delimiters or body == "":
         return body
+    root_sequence_open = ctx.sequence_open_overrides.get(id(data))
+    if isinstance(data, list):
+        unknown_opener = _unknown_reference_sequence_open(data=data, ctx=ctx)
+        if unknown_opener is not None:
+            root_sequence_open = unknown_opener
     literal = _wrap_body(
         body=body,
         is_ordered_map=is_ordered_map,
@@ -4322,7 +4390,7 @@ def _format_root_collection(
         line_prefix=line_prefix,
         source_length=len(data),
         dict_open_override=ctx.dict_open_overrides.get(id(data)),
-        sequence_open_override=ctx.sequence_open_overrides.get(id(data)),
+        sequence_open_override=root_sequence_open,
     )
     if root_mapping_entries is not None:
         return _RootMappingLiteral(
@@ -6733,6 +6801,10 @@ def _format_call_arg_ref_identifier(
         return language.format_call_arg_ref_identifier_consumable(
             ref_name, ref_value
         )
+    if raw_ref_name not in _reference_binding_values(
+        ref_values
+    ) and isinstance(language, _UnknownReferenceValueLanguage):
+        return language.format_unknown_reused_ref_identifier(ref_name)
     return language.format_call_arg_ref_identifier(ref_name, ref_value)
 
 
@@ -9265,6 +9337,12 @@ def literalize_call_parsed(
             )
             + computed.header
             + data_dependent_preamble
+            + _reference_preamble(
+                data=data,
+                ref_key=ref_key,
+                ref_values=materialized_ref_values,
+                language=language,
+            )
         )
     )
 

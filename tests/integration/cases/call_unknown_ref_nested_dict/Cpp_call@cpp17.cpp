@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstddef>
 #include <variant>
+#include <type_traits>
 template <typename... Args> auto process(Args...) { return 0; }
 int main() {
 auto my_list = std::map<std::string, std::string>{

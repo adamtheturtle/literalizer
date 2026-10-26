@@ -5,5 +5,5 @@ fn main() {
         2,
     ];
     let my_data = shared;
-    consume_widget(my_data);
+    consume_widget(my_data.clone());
 }

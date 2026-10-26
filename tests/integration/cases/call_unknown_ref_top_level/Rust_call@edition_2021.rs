@@ -3,5 +3,5 @@ fn main() {
     let unknown_value = vec![
         1,
     ];
-    process(unknown_value);
+    process(unknown_value.clone());
 }
