@@ -1,4 +1,4 @@
-def f(a: Int, b: Int):
+def f(var a: Int, var b: Int):
     pass
 def main():
     # calls heading

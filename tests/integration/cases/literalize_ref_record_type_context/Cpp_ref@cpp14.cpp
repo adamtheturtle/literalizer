@@ -1,4 +1,3 @@
-#include <initializer_list>
 #include <string>
 struct Record1 { std::string x; };
 struct Record2 { int x{}; };

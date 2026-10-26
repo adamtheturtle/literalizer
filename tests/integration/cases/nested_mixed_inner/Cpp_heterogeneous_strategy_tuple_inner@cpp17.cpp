@@ -1,8 +1,6 @@
-#include <initializer_list>
 #include <string>
-#include <vector>
-#include <variant>
 #include <tuple>
+#include <vector>
 int main() {
 auto my_data = std::vector<std::tuple<int, std::string>>{
     std::make_tuple(1, "a"),

@@ -1,6 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <vector>
+#include <string>
 #include <variant>
 struct Record0 { std::string call; std::vector<std::variant<int, std::string>> args; };
 int main() {

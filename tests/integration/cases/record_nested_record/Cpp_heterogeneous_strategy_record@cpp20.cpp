@@ -1,6 +1,4 @@
-#include <initializer_list>
 #include <string>
-#include <variant>
 struct Record1 { std::string name; int age{}; };
 struct Record0 { int id{}; Record1 owner; };
 int main() {

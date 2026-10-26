@@ -1,6 +1,6 @@
 @fieldwise_init
 struct _ThingType(Copyable, Movable):
-    def first_value(self, value: Int):
+    def first_value(self, var value: Int):
         pass
 def main():
     var thing = _ThingType()

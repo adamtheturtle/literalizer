@@ -1,10 +1,7 @@
-#include <initializer_list>
 #include <string>
-#include <cstddef>
-#include <array>
 #include <utility>
 #include <vector>
-#include <variant>
+#include <cstddef>
 struct Record0 { std::nullptr_t name{}; int id{}; };
 int main() {
 auto my_data = std::vector<std::pair<std::string, std::vector<Record0>>>{

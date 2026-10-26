@@ -2,7 +2,7 @@ from std.utils.variant import Variant
 comptime Value = Variant[Int, String]
 @fieldwise_init
 struct _ClientType(Copyable, Movable):
-    def go(self, first_value: List[Value], second_value: List[Value]):
+    def go(self, var first_value: List[Value], var second_value: List[Value]):
         pass
 @fieldwise_init
 struct _AppType(Copyable, Movable):

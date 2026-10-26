@@ -1,7 +1,4 @@
-#include <initializer_list>
-#include <cstddef>
 #include <array>
-#include <variant>
 auto process(auto...) { return 0; }
 int main() {
 process(nullptr);

@@ -1,4 +1,5 @@
 #include <nlohmann/json.hpp>
+#include <utility>
 auto consume(auto...) { return 0; }
 int main() {
     try {

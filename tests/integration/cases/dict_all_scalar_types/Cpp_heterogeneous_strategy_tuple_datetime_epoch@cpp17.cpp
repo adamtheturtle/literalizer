@@ -1,7 +1,6 @@
-#include <initializer_list>
-#include <string>
 #include <cstddef>
 #include <map>
+#include <string>
 #include <variant>
 int main() {
 auto my_data = std::map<std::string, std::variant<std::string, int, double, bool, std::nullptr_t, long long>>{

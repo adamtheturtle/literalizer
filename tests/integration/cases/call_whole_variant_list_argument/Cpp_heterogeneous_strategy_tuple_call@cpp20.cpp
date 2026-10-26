@@ -1,7 +1,3 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
-#include <variant>
 #include <tuple>
 auto f(auto...) { return 0; }
 int main() {

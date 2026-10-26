@@ -1,4 +1,4 @@
-def process(xs: List[Int]):
+def process(var xs: List[Int]):
     pass
 def main():
     process(List([

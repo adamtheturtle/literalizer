@@ -57,6 +57,7 @@ from literalizer._formatters.initializer_types import (
 from literalizer._formatters.initializer_types import (
     initializer_type as retained_initializer_type,
 )
+from literalizer._formatters.preamble_roles import independent_preamble_imports
 from literalizer._formatters.type_inference import (
     BeyondI64,
     DictType,
@@ -1124,8 +1125,9 @@ def _accumulate_sibling_list_empty_overrides(
             if narrowed is not None and widened_opener is None:
                 replacement = narrowed(non_empty)
             else:
-                replacement = (
-                    sibling_opener + spec.sequence_format_config.close
+                replacement = finish_collection_initializer(
+                    opener=sibling_opener,
+                    code=f"{sibling_opener}{spec.sequence_format_config.close}",
                 )
             for item in empty:
                 _ = out.setdefault(id(item), replacement)
@@ -3208,22 +3210,27 @@ class _UnknownReferenceSequenceLanguage(Protocol):
 
 
 @beartype
-def _unknown_reference_sequence_open(
-    *, data: list[Value], ctx: _RenderContext
+def _unknown_reference_sequence_open_for_language(
+    *,
+    data: Value,
+    language: Language,
+    ref_key: str,
+    ref_values: Mapping[str, Value] | None,
+    ref_case: IdentifierCase | None,
 ) -> str | None:
     """Retain unknown native element types before applying fallback
     openers.
     """
     if (
-        ctx.ref_key is not _DISABLED_REF_KEY
+        isinstance(data, list)
         and len(data) > 0
-        and isinstance(ctx.spec, _UnknownReferenceSequenceLanguage)
+        and isinstance(language, _UnknownReferenceSequenceLanguage)
     ):
         references = (
-            _extract_call_arg_ref_name(value=value, ref_key=ctx.ref_key)
+            _extract_call_arg_ref_name(value=value, ref_key=ref_key)
             for value in data
         )
-        hints = reference_values_or_empty(values=ctx.ref_values)
+        hints = reference_values_or_empty(values=ref_values)
         unknown = [
             name
             for name in references
@@ -3232,12 +3239,28 @@ def _unknown_reference_sequence_open(
         if len(unknown) == len(data):
             names = tuple(
                 _validated_ref_name(
-                    raw_ref_name=name, ref_case=ctx.ref_case, language=ctx.spec
+                    raw_ref_name=name, ref_case=ref_case, language=language
                 )
                 for name in unknown
             )
-            return ctx.spec.sequence_open_from_unknown_references(names)
+            return language.sequence_open_from_unknown_references(names)
     return None
+
+
+@beartype
+def _unknown_reference_sequence_open(
+    *, data: list[Value], ctx: _RenderContext
+) -> str | None:
+    """Skip opaque-reference inference when reference markers are disabled."""
+    if ctx.ref_key is _DISABLED_REF_KEY:
+        return None
+    return _unknown_reference_sequence_open_for_language(
+        data=data,
+        language=ctx.spec,
+        ref_key=ctx.ref_key,
+        ref_values=ctx.ref_values,
+        ref_case=ctx.ref_case,
+    )
 
 
 @beartype
@@ -4927,6 +4950,21 @@ def _apply_variable_wrapper(
 
 
 @runtime_checkable
+class _ReferenceValuePreambleLanguage(Protocol):
+    """A producer whose consuming reference expressions need imports."""
+
+    def reference_value_preamble(
+        self,
+        values: tuple[Value | None, ...],
+        /,
+        *,
+        has_known_null: bool,
+    ) -> tuple[str, ...]:
+        """Return imports for the reference transfer operations."""
+        ...
+
+
+@runtime_checkable
 class _UnresolvedReferencePreambleLanguage(Protocol):
     """A language with a typed operation for unresolved reference
     values.
@@ -4945,15 +4983,28 @@ def _reference_preamble(
     ref_key: str,
     ref_values: Mapping[str, Value] | None,
     language: Language,
+    consumable_names: frozenset[str],
 ) -> tuple[str, ...]:
     """Retain required reference helpers without mutable renderer
     state.
     """
     if ref_key is _DISABLED_REF_KEY or not isinstance(
-        language, _UnresolvedReferencePreambleLanguage
+        language,
+        (
+            _ReferenceValuePreambleLanguage,
+            _UnresolvedReferencePreambleLanguage,
+        ),
     ):
         return ()
     names = _collect_ref_names(value=data, ref_key=ref_key)
+    if isinstance(language, _ReferenceValuePreambleLanguage):
+        names &= consumable_names
+        values = _reference_binding_values(ref_values)
+        known_nulls = _known_null_reference_names(ref_values)
+        return language.reference_value_preamble(
+            tuple(values.get(name) for name in sorted(names - known_nulls)),
+            has_known_null=bool(names & known_nulls),
+        )
     if names.issubset(reference_values_or_empty(values=ref_values)):
         return ()
     return language.unresolved_reference_preamble
@@ -5216,6 +5267,16 @@ def _literalize_pre_form_impl(
             ref_key=active_ref_key,
             ref_values=ref_values,
             language=language,
+            consumable_names=(
+                _literal_ref_single_use_names(
+                    data=data,
+                    ref_key=active_ref_key,
+                    preserve_ref_values=preserve_ref_values,
+                )
+                if active_ref_key is not _DISABLED_REF_KEY
+                and isinstance(language, _ReferenceValuePreambleLanguage)
+                else frozenset()
+            ),
         ),
     )
 
@@ -5451,6 +5512,18 @@ def reject_undeclared_assignment(
 
 
 @beartype
+@runtime_checkable
+class _InitializerPreambleLanguage(Protocol):
+    """A producer retaining dependencies with its initializer type."""
+
+    def initializer_preamble(
+        self, data: Value, initializer_type: str | None, /
+    ) -> tuple[str, ...]:
+        """Return declarations and imports for the actual initializer."""
+        ...
+
+
+@beartype
 def literalize_apply_form(
     *,
     pre_form: _PreFormState,
@@ -5520,9 +5593,14 @@ def literalize_apply_form(
             and pre_form.has_preamble_value
         ),
     )
-    data_dependent_preamble = language.data_dependent_preamble(
-        pre_form.data_for_preamble
-    )
+    if isinstance(language, _InitializerPreambleLanguage):
+        data_dependent_preamble = language.initializer_preamble(
+            pre_form.data_for_preamble, pre_form.initializer_type
+        )
+    else:
+        data_dependent_preamble = language.data_dependent_preamble(
+            pre_form.data_for_preamble
+        )
     if _extract_call_arg_ref_name(
         value=pre_form.data, ref_key=pre_form.active_ref_key
     ) is not None and isinstance(language, _ReferenceBindingLanguage):
@@ -6059,7 +6137,14 @@ def _literalize_value_binding(
         and language.heterogeneous_behavior.render_record_literal is not None
     ):
         preamble_data = record_context_data
-    data_dependent_preamble = language.data_dependent_preamble(preamble_data)
+    if isinstance(language, _InitializerPreambleLanguage):
+        data_dependent_preamble = language.initializer_preamble(
+            preamble_data, retained_initializer_type(result_text)
+        )
+    else:
+        data_dependent_preamble = language.data_dependent_preamble(
+            preamble_data
+        )
     preamble = deduplicate_preamble_entries(
         entries=(
             computed.leading
@@ -6081,6 +6166,31 @@ def _literalize_value_binding(
         sections=(),
         data_dependent_preamble=data_dependent_preamble,
     )
+
+
+@runtime_checkable
+class _ComposedPreambleLanguage(Protocol):
+    """A producer reconciling declarations independently of imports."""
+
+    def composed_preamble(
+        self,
+        preambles: tuple[tuple[str, ...], ...],
+        supporting_preambles: tuple[tuple[str, ...], ...],
+        canonical: tuple[str, ...],
+        /,
+    ) -> tuple[str, ...]:
+        """Keep rendered dependencies while unifying supporting types."""
+        ...
+
+
+@beartype
+def _independent_preamble(result: LiteralizeResult, /) -> tuple[str, ...]:
+    """Retain independent entries and imports of supporting types."""
+    return tuple(
+        entry
+        for entry in result.preamble
+        if entry not in result.data_dependent_preamble
+    ) + independent_preamble_imports(result.data_dependent_preamble)
 
 
 @runtime_checkable
@@ -6218,6 +6328,18 @@ def _compose_bound_refs(
         )
         + tuple(entry for entry in all_entries if entry in data_entries)
     )
+    if isinstance(language, _ComposedPreambleLanguage):
+        all_preamble = language.composed_preamble(
+            tuple(
+                _independent_preamble(result)
+                for result in (*decl_results, main_result)
+            ),
+            tuple(
+                result.data_dependent_preamble
+                for result in (*decl_results, main_result)
+            ),
+            all_preamble,
+        )
     scoped = _scope_preamble_for_wrap(
         language=language,
         preamble=all_preamble,
@@ -8892,6 +9014,132 @@ def _preamble_data_with_zip(
         data=preamble_data,
         argument_values=argument_values,
         argument_slots=argument_slots,
+        argument_types={},
+    )
+
+
+@beartype
+def _literal_argument_preamble_data(
+    *,
+    data: Value,
+    per_element: bool,
+    ref_key: str,
+    ref_values: Mapping[str, Value],
+    zip_resolution: "_ZipResolution | None",
+    language: Language,
+    ref_case: IdentifierCase | None,
+) -> CallPreambleData:
+    """Keep literal arguments distinct from referenced bindings."""
+    rows = data if per_element and isinstance(data, list) else [[data]]
+    values: list[Value] = []
+    slots: dict[int, list[Value]] = {}
+    argument_types: dict[int, str | None] = {}
+    for row in rows:
+        arguments = row if isinstance(row, list) else [row]
+        for index, argument in enumerate(iterable=arguments):
+            if (
+                _extract_call_arg_ref_name(value=argument, ref_key=ref_key)
+                is not None
+            ):
+                continue
+            value = _substitute_known_refs(
+                value=argument,
+                ref_values=_reference_binding_values(ref_values),
+                ref_key=ref_key,
+            )
+            opener = _unknown_reference_sequence_open_for_language(
+                data=argument,
+                language=language,
+                ref_key=ref_key,
+                ref_values=ref_values,
+                ref_case=ref_case,
+            )
+            argument_types[id(value)] = (
+                retained_initializer_type(
+                    finish_collection_initializer(opener=opener, code="")
+                )
+                if opener is not None
+                else None
+            )
+            values.append(value)
+            slots.setdefault(index, []).append(value)
+    argument_slots = tuple(slots[index] for index in sorted(slots))
+    if zip_resolution is not None:
+        values.extend(zip_resolution.values)
+        argument_slots += tuple([value] for value in zip_resolution.values)
+    return CallPreambleData(
+        data=list(values),
+        argument_values=tuple(values),
+        # Whole-document calls never widen a parameter across rows.
+        argument_slots=argument_slots if per_element else (),
+        argument_types=argument_types,
+    )
+
+
+@beartype
+def _call_reference_preamble(
+    *,
+    data: Value,
+    ref_key: str,
+    ref_values: Mapping[str, Value],
+    language: Language,
+    consumable_refs: frozenset[str],
+) -> tuple[str, ...]:
+    """Classify reference transfers in their call's record context."""
+    if not isinstance(language, _ReferenceValuePreambleLanguage):
+        return _reference_preamble(
+            data=data,
+            ref_key=ref_key,
+            ref_values=ref_values,
+            language=language,
+            consumable_names=frozenset(),
+        )
+    compute_record_shapes = (
+        language.heterogeneous_behavior.compute_record_shapes
+    )
+    if compute_record_shapes is not None:
+        _ = compute_record_shapes(
+            list(_reference_binding_values(ref_values).values())
+        )
+    return _reference_preamble(
+        data=data,
+        ref_key=ref_key,
+        ref_values=ref_values,
+        language=language,
+        consumable_names=consumable_refs
+        & _literal_ref_single_use_names(
+            data=data, ref_key=ref_key, preserve_ref_values=False
+        ),
+    )
+
+
+@beartype
+def _call_render_preamble_data(
+    *,
+    language: Language,
+    ref_case: IdentifierCase | None,
+    data: Value,
+    per_element: bool,
+    ref_key: str,
+    ref_values: Mapping[str, Value],
+    resolved: _ResolvedCallPreambleData,
+    zip_resolution: "_ZipResolution | None",
+) -> Value:
+    """Select rendered argument dependencies or general type inference."""
+    if isinstance(language, _ReferenceValuePreambleLanguage):
+        return _literal_argument_preamble_data(
+            data=data,
+            per_element=per_element,
+            ref_key=ref_key,
+            ref_values=ref_values,
+            zip_resolution=zip_resolution,
+            language=language,
+            ref_case=ref_case,
+        )
+    return _preamble_data_with_zip(
+        data_for_preamble=resolved.value,
+        zip_resolution=zip_resolution,
+        per_element_rows=resolved.rows,
     )
 
 
@@ -9306,13 +9554,25 @@ def literalize_call_parsed(
         variable_form=variable_form,
         collection_layout=collection_layout,
     )
+    reference_preamble = _call_reference_preamble(
+        data=data,
+        ref_key=ref_key,
+        ref_values=materialized_ref_values,
+        language=language,
+        consumable_refs=consumable_refs,
+    )
     effective_zip_resolution = None
     if transform_usage is not None and transform_usage.uses_zipped:
         effective_zip_resolution = zip_resolution
-    preamble_data = _preamble_data_with_zip(
-        data_for_preamble=resolved_preamble_data.value,
+    preamble_data = _call_render_preamble_data(
+        language=language,
+        ref_case=ref_case,
+        data=data,
+        per_element=per_element,
+        ref_key=ref_key,
+        ref_values=materialized_ref_values,
+        resolved=resolved_preamble_data,
         zip_resolution=effective_zip_resolution,
-        per_element_rows=resolved_preamble_data.rows,
     )
     computed = compute_preamble(
         data=preamble_data,
@@ -9337,12 +9597,7 @@ def literalize_call_parsed(
             )
             + computed.header
             + data_dependent_preamble
-            + _reference_preamble(
-                data=data,
-                ref_key=ref_key,
-                ref_values=materialized_ref_values,
-                language=language,
-            )
+            + reference_preamble
         )
     )
 
@@ -9550,6 +9805,21 @@ def literalize_call_with_declarations(
             + extra_preamble
         )
     )
+    if isinstance(language, _ComposedPreambleLanguage):
+        all_preamble = deduplicate_preamble_entries(
+            entries=language.composed_preamble(
+                tuple(
+                    _independent_preamble(result)
+                    for result in (*declarations, call)
+                ),
+                tuple(
+                    result.data_dependent_preamble
+                    for result in (*declarations, call)
+                ),
+                all_preamble,
+            )
+            + extra_preamble
+        )
     scoped = _scope_preamble_for_wrap(
         language=language,
         preamble=all_preamble,

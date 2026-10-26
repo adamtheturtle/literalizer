@@ -1,9 +1,9 @@
-#include <initializer_list>
-#include <string>
-#include <vector>
 #include <cstddef>
 #include <memory>
+#include <string>
+#include <tuple>
 #include <utility>
+#include <vector>
 struct Value {
  private:
   struct Holder {
@@ -41,7 +41,6 @@ struct Value {
     return static_cast<const TypedHolder<T>*>(value_.get())->get();
   } // get const
 };
-#include <tuple>
 struct Record0 { std::vector<Value> first; std::vector<Value> second; };
 int main() {
 auto my_data = Record0{

@@ -1,4 +1,4 @@
-def f(a: Int):
+def f(var a: Int):
     pass
 def main():
     # scalar heading

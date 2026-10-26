@@ -1,5 +1,3 @@
-#include <initializer_list>
-#include <string>
 #include <cmath>
 struct Record0 { double nan{}; double positive{}; double negative{}; };
 int main() {

@@ -1,4 +1,4 @@
-def check(a: Int):
+def check(var a: Int):
     pass
 def main():
     check(42)

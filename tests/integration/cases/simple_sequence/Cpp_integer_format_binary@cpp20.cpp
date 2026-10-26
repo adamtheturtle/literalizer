@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <string>
 #include <cstddef>
-#include <vector>
+#include <string>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::vector<std::variant<int, std::string, bool, std::nullptr_t>>{
     0b1,

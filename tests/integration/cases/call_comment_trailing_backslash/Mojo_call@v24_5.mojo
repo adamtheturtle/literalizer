@@ -1,4 +1,4 @@
-def process(value: Int):
+def process(var value: Int):
     pass
 def main():
     process(1)  # trail \ .

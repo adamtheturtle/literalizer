@@ -1,7 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <chrono>
-#include <variant>
+#include <string>
 struct Record0 { std::chrono::year_month_day event_date; std::string event_time; std::chrono::system_clock::time_point event_datetime; };
 int main() {
 auto my_data = Record0{

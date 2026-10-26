@@ -1,4 +1,4 @@
-def process(a: Int, b: Int) -> None:
+def process(var a: Int, var b: Int) -> None:
     pass
 def main():
     var my_data = process(1, 2)

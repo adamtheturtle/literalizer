@@ -1,6 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <array>
+#include <string>
 int main() {
 auto my_data = std::array<std::string, 3>{
     "foo",
