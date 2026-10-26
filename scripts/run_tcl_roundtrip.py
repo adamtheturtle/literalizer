@@ -28,20 +28,10 @@ precision-loss exclusions seen in the typed-language scripts.
 
 import shutil
 
+from pydantic import JsonValue
+
 from literalizer.languages import Tcl
 from scripts import roundtrip_common
-
-# The validated input has this recursive shape, which lets
-# `isinstance` narrow the walker cleanly under every type checker.
-type JsonValue = (
-    bool
-    | int
-    | float
-    | str
-    | list["JsonValue"]
-    | dict[str, "JsonValue"]
-    | None
-)
 
 _VAR_NAME = "myData"
 _LABEL = "Tcl"
