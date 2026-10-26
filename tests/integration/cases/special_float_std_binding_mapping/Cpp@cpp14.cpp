@@ -1,7 +1,6 @@
-#include <initializer_list>
-#include <string>
 #include <cmath>
 #include <map>
+#include <string>
 int main() {
 auto std = std::map<std::string, double>{
     {"nan", static_cast<double>(NAN)},

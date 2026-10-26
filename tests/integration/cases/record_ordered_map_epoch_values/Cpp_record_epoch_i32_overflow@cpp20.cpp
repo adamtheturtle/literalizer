@@ -1,8 +1,6 @@
-#include <initializer_list>
 #include <string>
-#include <vector>
 #include <utility>
-#include <variant>
+#include <vector>
 struct Record0 { std::vector<std::pair<std::string, long long>> values; bool flag{}; std::vector<std::pair<std::string, std::vector<std::pair<std::string, long long>>>> nested_values; std::vector<std::pair<std::string, std::vector<long long>>> list_values; };
 int main() {
 auto my_data = Record0{

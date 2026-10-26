@@ -1,6 +1,4 @@
-#include <initializer_list>
 #include <string>
-#include <vector>
 #include <tuple>
 struct Record0 { std::tuple<std::string, std::string> vals; };
 int main() {

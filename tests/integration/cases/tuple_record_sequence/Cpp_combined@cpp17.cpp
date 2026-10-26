@@ -1,8 +1,7 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::vector<std::map<std::string, std::variant<std::string, std::vector<std::variant<int, std::string>>>>>{
     std::map<std::string, std::variant<std::string, std::vector<std::variant<int, std::string>>>>{{"call", "send"}, {"args", std::vector<std::variant<int, std::string>>{1, "email", "a@gmail.com", 100}}},

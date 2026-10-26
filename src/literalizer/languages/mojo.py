@@ -340,10 +340,10 @@ class _MojoSlotSignature:
 class _MojoSlotInfo:
     """Aggregate result of computing Mojo per-slot signatures.
 
-    ``typed_params`` is the formatted ``("var name: Type", ...)`` tuple
+    ``typed_params`` is the formatted ``("name: Type", ...)`` tuple
     consumed by the call-stub typed-param emitter, or ``None`` when the
     caller must fall back to the generic
-    ``[*Ts: AnyType](var *args: *Ts)`` form.  ``slots`` carries per-slot
+    ``[*Ts: AnyType](*args: *Ts)`` form.  ``slots`` carries per-slot
     metadata: aligned with ``params`` when ``typed_params`` is a tuple,
     a prefix up to and including the slot that triggered fallback when
     fallback happened mid-analysis, and empty when the input slot count
@@ -367,7 +367,7 @@ def _mojo_compute_slot_signatures(
     Returns a :class:`_MojoSlotInfo` whose ``typed_params`` mirrors the
     behavior previously implemented by ``_mojo_typed_param_list``: it
     is ``None`` to signal the caller should fall back to the generic
-    ``[*Ts: AnyType](var *args: *Ts)`` form.  Falls back when any per-call
+    ``[*Ts: AnyType](*args: *Ts)`` form.  Falls back when any per-call
     value at a parameter slot has no Mojo type (a ref-marker dict,
     ``None``, an inhomogeneous list, etc.) or when any slot has no
     values (e.g. transform-stub callers pass an empty ``arg_values``).
@@ -419,7 +419,7 @@ def _mojo_compute_slot_signatures(
             ),
         )
         if len(known_types) > 1 and heterogeneous_value_type is not None:
-            typed.append(f"var {name}: {heterogeneous_value_type}")
+            typed.append(f"{name}: {heterogeneous_value_type}")
             continue
         if len(slot_types) == 0 or None in slot_types:
             return _MojoSlotInfo(
@@ -436,7 +436,7 @@ def _mojo_compute_slot_signatures(
             )
             raise HeterogeneousScalarCollectionError(msg)
         (mojo_type,) = known_types
-        typed.append(f"var {name}: {mojo_type}")
+        typed.append(f"{name}: {mojo_type}")
     return _MojoSlotInfo(
         typed_params=tuple(typed),
         slots=tuple(slot_signatures),
@@ -451,7 +451,7 @@ def _mojo_typed_param_list(
     heterogeneous_value_type: str | None,
     datetime_type: str,
 ) -> tuple[str, ...] | None:
-    """Return ``("var name: Type", ...)`` for a typed Mojo signature.
+    """Return ``("var name: Type", ...)`` for an owning Mojo signature.
 
     Thin wrapper over :func:`_mojo_compute_slot_signatures` that
     surfaces only the ``typed_params`` field.  See that function for
@@ -464,7 +464,9 @@ def _mojo_typed_param_list(
         arg_values=arg_values,
         heterogeneous_value_type=heterogeneous_value_type,
     )
-    return info.typed_params
+    if info.typed_params is None:
+        return None
+    return tuple(f"var {parameter}" for parameter in info.typed_params)
 
 
 @beartype
@@ -568,17 +570,16 @@ def _mojo_call_preamble_stub(
     every call's argument values at each slot resolve to the same
     Mojo type (a scalar, a recursive ``List[...]``, or a homogeneous
     ``Dict[String, ...]``), and the generic
-    ``[*Ts: AnyType](var *args: *Ts)`` form otherwise. Parameters take
-    ownership so references marked as consumable can transfer their
-    values into the stub. Other references retain their existing copy
-    or borrowing behavior at the call site.
+    ``[*Ts: Movable](var *args: *Ts)`` form otherwise.
+
+    Owned parameters retain a caller's explicit transfer under Mojo 1.2.
 
     When *stub_return* is :attr:`StubReturn.VALUE` (the call result feeds
     a surrounding ``call_transform`` wrapper), the inner stub is given
     an explicit ``-> None`` return annotation.  No per-call inference is
     available (the transform is a plain string wrapper), so ``None`` is
     used as a documented placeholder: it is always valid, the body stays
-    ``pass``, and the surrounding generic ``[*Ts: AnyType]`` wrapper
+    ``pass``, and the surrounding generic ``[*Ts: Movable]`` wrapper
     accepts it.  ``None`` also avoids ``-Werror`` ``value is unused``
     diagnostics when the transform is the identity (no outer wrapper),
     because the bare call has no value to leak.
@@ -600,7 +601,7 @@ def _mojo_call_preamble_stub(
             )
         return (
             (
-                f"def {parts[0]}[*Ts: AnyType](var *args: *Ts)"
+                f"def {parts[0]}[*Ts: Movable](var *args: *Ts)"
                 f"{return_suffix}:\n{indent}pass"
             ),
         )
@@ -616,7 +617,7 @@ def _mojo_call_preamble_stub(
         )
     else:
         method_stub = (
-            f"{indent}def {method}[*Ts: AnyType](self, var *args: *Ts)"
+            f"{indent}def {method}[*Ts: Movable](self, var *args: *Ts)"
             f"{return_suffix}:\n{indent}{indent}pass"
         )
     if len(fields) == 0:
@@ -1752,7 +1753,7 @@ class Mojo(metaclass=LanguageCls):
         """Append ``^`` to trigger move/transfer semantics in Mojo,
         except for register-trivial scalars.
 
-        Mojo ``Dict`` cannot be copied implicitly, so a bare
+        Mojo ``Dict`` is not implicitly copyable, so a bare
         variable reference fails to compile and ``^`` transfers
         ownership instead.  Applying ``^`` to a register-trivial scalar
         (``Int``, ``Bool``, ``Float64``) is a hard error under

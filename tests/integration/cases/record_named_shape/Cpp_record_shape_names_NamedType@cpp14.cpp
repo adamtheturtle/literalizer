@@ -1,6 +1,4 @@
 #include "../../cpp_support/include/named_type.hpp"
-#include <initializer_list>
-#include <string>
 #include <vector>
 int main() {
 auto my_data = std::vector<NamedType>{

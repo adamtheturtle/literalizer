@@ -1,7 +1,6 @@
-#include <initializer_list>
 #include <string>
-#include <vector>
 #include <tuple>
+#include <vector>
 struct Record0 { std::vector<int> scores; std::tuple<int, std::string, std::string, int> args; };
 int main() {
 auto my_data = Record0{

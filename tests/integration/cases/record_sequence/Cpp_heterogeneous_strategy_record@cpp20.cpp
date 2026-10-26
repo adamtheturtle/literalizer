@@ -1,8 +1,6 @@
-#include <initializer_list>
-#include <string>
 #include <vector>
 #include <cstddef>
-#include <variant>
+#include <string>
 struct Record0 { int id{}; std::string label; std::vector<std::nullptr_t> tags; };
 int main() {
 auto my_data = std::vector{

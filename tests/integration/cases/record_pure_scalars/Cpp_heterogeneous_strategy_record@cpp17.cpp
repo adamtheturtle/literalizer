@@ -1,6 +1,4 @@
-#include <initializer_list>
 #include <string>
-#include <variant>
 struct Record0 { std::string name; int age{}; bool active{}; double score{}; };
 int main() {
 auto my_data = Record0{

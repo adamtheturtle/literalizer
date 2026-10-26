@@ -1,7 +1,6 @@
-#include <initializer_list>
 #include <string>
-#include <vector>
 #include <variant>
+#include <vector>
 struct Record2 { int value{}; };
 struct Record1 { std::vector<std::variant<int, Record2>> items; };
 struct Record4 { std::string value; };

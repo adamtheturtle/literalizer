@@ -1,7 +1,5 @@
-#include <initializer_list>
-#include <string>
 #include <cstddef>
-#include <variant>
+#include <string>
 struct Record1 { int a{}; std::string b; std::nullptr_t c{}; };
 struct Record0 { Record1 outer; };
 int main() {

@@ -1,9 +1,8 @@
-#include <initializer_list>
-#include <string>
 #include <map>
-#include <vector>
+#include <string>
 #include <utility>
 #include <variant>
+#include <vector>
 int main() {
 auto my_data = std::map<std::string, std::variant<std::vector<std::pair<std::string, int>>, std::map<std::string, std::variant<std::vector<int>, std::vector<std::string>>>, std::vector<std::string>>>{
     {"omap_value", std::vector<std::pair<std::string, int>>{{"first", 1}}},

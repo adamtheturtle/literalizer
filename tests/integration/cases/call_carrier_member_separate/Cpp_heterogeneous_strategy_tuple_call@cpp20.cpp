@@ -1,7 +1,5 @@
-#include <initializer_list>
 #include <string>
 #include <vector>
-#include <variant>
 struct appType_ { void go(auto...) const {} };
 const appType_ app;
 int main() {

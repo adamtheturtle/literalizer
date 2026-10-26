@@ -2,7 +2,7 @@
 struct _ThrottlerType(Copyable, Movable):
     def check(self, var user_id: String, var ts: Float64) -> None:
         pass
-def emit[*Ts: AnyType](var *args: *Ts):
+def emit[*Ts: Movable](var *args: *Ts):
     pass
 def main():
     var throttler = _ThrottlerType()

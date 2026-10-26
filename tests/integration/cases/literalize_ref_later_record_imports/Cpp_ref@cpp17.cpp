@@ -1,6 +1,5 @@
-#include <initializer_list>
+#include <utility>
 #include <string>
-#include <variant>
 struct Record1 { int x{}; };
 struct Record2 { std::string day; std::string stamp; };
 struct Record0 { Record1 plain; Record2 timed; };

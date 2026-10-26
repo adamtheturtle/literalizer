@@ -1,8 +1,6 @@
-#include <initializer_list>
-#include <string>
-#include <map>
 #include <vector>
-#include <variant>
+#include <map>
+#include <string>
 struct Record1 { std::string kind; std::string pr_id; };
 struct Record0 { std::string name; Record1 input; std::map<std::string, std::string> expected; };
 int main() {

@@ -1,7 +1,5 @@
-#include <initializer_list>
 #include <string>
 #include <vector>
-#include <variant>
 struct Record1 { int status{}; };
 struct Record2 { std::string status; };
 struct Record4 { std::string kind; bool urgent{}; };
