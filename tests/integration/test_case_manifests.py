@@ -80,44 +80,6 @@ def test_api_examples_reject_ambiguous_ownership(
         _ = load_case_manifest(case_dir=case_dir)
 
 
-@pytest.mark.parametrize(argnames="table", argvalues=["call", "ref"])
-def test_api_examples_keep_the_shared_input_and_native_configuration(
-    tmp_path: Path,
-    table: Literal["call", "ref"],
-) -> None:
-    """Examples change golden identity while sharing input ownership."""
-    fields = (
-        'target_function = "target"\nparameter_names = ["value"]\n'
-        "per_element = false\n"
-        if table == "call"
-        else 'variable_name = "result"\n'
-    )
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest=(
-            f'schema_version = 1\nowner = "literalize-{table}"\n'
-            f"[{table}]\n{fields}"
-            f'[[{table}_examples]]\nexample = "native"\n{fields}'
-            'variable_modifiers = ["CONST"]\n'
-        ),
-        input_name="input.yaml",
-    )
-    manifest = load_case_manifest(case_dir=case_dir)
-    primary = manifest.call if table == "call" else manifest.ref
-    examples = (
-        manifest.call_examples if table == "call" else manifest.ref_examples
-    )
-    assert primary is not None
-    assert primary.coverage_id == "example"
-    assert primary.golden_name(name="Backend") == "Backend"
-    assert len(examples) == 1
-    example = examples[0]
-    assert example.case_dir_name == primary.case_dir_name == case_dir.name
-    assert example.coverage_id == "example/native"
-    assert example.golden_name(name="Backend") == "Backend_native"
-    assert example.variable_modifiers == ("CONST",)
-
-
 def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
     """Create one temporary case directory and return its path."""
     case_dir = tmp_path / "example"

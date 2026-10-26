@@ -1,0 +1,21 @@
+typedef enum int {_VVAL_BOOL, _VVAL_INT, _VVAL_REAL, _VVAL_STR} _VTag;
+typedef struct {
+    _VTag tag;
+    longint i;
+    real r;
+    string s;
+} _VVal;
+typedef struct {
+    string k;
+    _VVal v;
+} _VKV;
+module main;
+function _VVal make_widget(input _VVal first, input _VVal second);
+    make_widget = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""};
+endfunction
+task consume(input _VVal first, input _VVal second); endtask
+initial begin
+static _VVal my_data = make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}, _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: ""});
+void'(consume(my_data, _VVal'{tag: _VVAL_INT, i: 3, r: 0.0, s: ""}));
+end
+endmodule

@@ -1,0 +1,10 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+target_function = "make_widget"
+parameter_names = ["first", "second"]
+per_element = true
+variable_form = "new"
+followup_target_function = "consume"
+followup_source = '[[3, {"$ref": "my_data"}]]'

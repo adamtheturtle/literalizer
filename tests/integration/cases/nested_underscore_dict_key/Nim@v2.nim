@@ -1,0 +1,4 @@
+import json
+var my_data = %* {
+    "outer": [{"_": 1}]
+}
