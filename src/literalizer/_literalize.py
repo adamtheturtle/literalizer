@@ -4899,7 +4899,13 @@ def _reference_preamble(
     """Retain required reference helpers without mutable renderer
     state.
     """
-    if ref_key is _DISABLED_REF_KEY:
+    if ref_key is _DISABLED_REF_KEY or not isinstance(
+        language,
+        (
+            _ReferenceValuePreambleLanguage,
+            _UnresolvedReferencePreambleLanguage,
+        ),
+    ):
         return ()
     names = _collect_ref_names(value=data, ref_key=ref_key)
     if isinstance(language, _ReferenceValuePreambleLanguage):
@@ -4910,8 +4916,6 @@ def _reference_preamble(
             tuple(values.get(name) for name in sorted(names - known_nulls)),
             has_known_null=bool(names & known_nulls),
         )
-    if not isinstance(language, _UnresolvedReferencePreambleLanguage):
-        return ()
     if names.issubset(reference_values_or_empty(values=ref_values)):
         return ()
     return language.unresolved_reference_preamble
@@ -5174,10 +5178,15 @@ def _literalize_pre_form_impl(
             ref_key=active_ref_key,
             ref_values=ref_values,
             language=language,
-            consumable_names=_literal_ref_single_use_names(
-                data=data,
-                ref_key=active_ref_key,
-                preserve_ref_values=preserve_ref_values,
+            consumable_names=(
+                _literal_ref_single_use_names(
+                    data=data,
+                    ref_key=active_ref_key,
+                    preserve_ref_values=preserve_ref_values,
+                )
+                if active_ref_key is not _DISABLED_REF_KEY
+                and isinstance(language, _ReferenceValuePreambleLanguage)
+                else frozenset()
             ),
         ),
     )
