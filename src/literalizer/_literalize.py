@@ -1880,12 +1880,47 @@ def _collect_dict_open_overrides(
 
 @beartype
 def _collect_dict_int_formatters(
-    *, data: Value, spec: Language
+    *, data: Value, spec: Language, wrap_ids: frozenset[int]
 ) -> Mapping[int, Callable[[int], str]]:
-    """Return widened integer formatters for sibling map value slots."""
+    """Return widened integer formatters for sibling map value slots.
+
+    Reuse the caller's wrapping IDs to keep its prepared record context.
+    """
     out: dict[int, Callable[[int], str]] = {}
-    _accumulate_dict_int_formatters(data=data, spec=spec, out=out)
+    behavior = spec.heterogeneous_behavior
+    wrapped_containers = (
+        frozenset[int]() if behavior.wrap_non_scalar is None else wrap_ids
+    )
+    _accumulate_dict_int_formatters(
+        data=data, spec=spec, out=out, wrapped_containers=wrapped_containers
+    )
     return out
+
+
+@beartype
+def _pool_nested_list_map_int_formatters(
+    *,
+    data: Value,
+    spec: Language,
+    out: dict[int, Callable[[int], str]],
+    wrapped_containers: frozenset[int],
+) -> None:
+    """Pool map widths across a homogeneous sequence's inner lists."""
+    if (
+        not isinstance(data, list)
+        or spec.sequence_format_config.supports_heterogeneity
+        or id(data) in wrapped_containers
+    ):
+        return
+    minimum_siblings = 2
+    for lists in _sibling_list_groups(data=data):
+        if len(lists) >= minimum_siblings:
+            _accumulate_dict_int_formatters(
+                data=[item for values in lists for item in values],
+                spec=spec,
+                out=out,
+                wrapped_containers=wrapped_containers,
+            )
 
 
 @beartype
@@ -1894,6 +1929,7 @@ def _accumulate_dict_int_formatters(
     data: Value,
     spec: Language,
     out: dict[int, Callable[[int], str]],
+    wrapped_containers: frozenset[int],
 ) -> None:
     """Widen integer leaves consistently across sibling nested maps."""
     match data:
@@ -1905,6 +1941,9 @@ def _accumulate_dict_int_formatters(
             children = list(data)
         case _:
             return
+    _pool_nested_list_map_int_formatters(
+        data=data, spec=spec, out=out, wrapped_containers=wrapped_containers
+    )
     sibling_maps = [
         child
         for child in children
@@ -1922,7 +1961,12 @@ def _accumulate_dict_int_formatters(
             for sibling in sibling_maps:
                 _ = out.setdefault(id(sibling), formatter)
     for child in children:
-        _accumulate_dict_int_formatters(data=child, spec=spec, out=out)
+        _accumulate_dict_int_formatters(
+            data=child,
+            spec=spec,
+            out=out,
+            wrapped_containers=wrapped_containers,
+        )
 
 
 @beartype
@@ -4087,6 +4131,7 @@ def _record_context_formatting(
         dict_int_formatters=_collect_dict_int_formatters(
             data=data,
             spec=language,
+            wrap_ids=wrap_ids,
         ),
         empty_overrides=_empty_container_literal_overrides(
             data=data,
@@ -4144,8 +4189,9 @@ def _build_render_context(
         ref_key=ref_key,
     )
     alias_record_ids = language.heterogeneous_behavior.alias_record_ids
+    inferred_wrap_ids = _compute_wrap_ids(data=inference_data, spec=language)
     wrap_ids = _source_container_ids(
-        inferred_ids=_compute_wrap_ids(data=inference_data, spec=language),
+        inferred_ids=inferred_wrap_ids,
         id_map=inference_id_map,
     )
     if record_context_data is not None:
@@ -4221,6 +4267,7 @@ def _build_render_context(
                 inferred_mapping=_collect_dict_int_formatters(
                     data=inference_data,
                     spec=language,
+                    wrap_ids=inferred_wrap_ids,
                 ),
                 id_map=inference_id_map,
             ),
@@ -7023,7 +7070,7 @@ def _format_single_call_arg(
             data=value, spec=language
         ),
         dict_int_formatters=_collect_dict_int_formatters(
-            data=value, spec=language
+            data=value, spec=language, wrap_ids=wrap_ids
         ),
         empty_container_overrides=_empty_container_literal_overrides(
             data=value, spec=language
@@ -8960,9 +9007,10 @@ def _render_zip_literal(
     wiring.
     """
     check_data(data=value, spec=language)
+    wrap_ids = _compute_wrap_ids(data=value, spec=language)
     ctx = _RenderContext(
         spec=language,
-        wrap_ids=_compute_wrap_ids(data=value, spec=language),
+        wrap_ids=wrap_ids,
         tuple_list_ids=_compute_tuple_list_ids(data=value, spec=language),
         dict_open_overrides=_collect_dict_open_overrides(
             data=value, spec=language, ref_key=disabled_ref_key()
@@ -8971,7 +9019,7 @@ def _render_zip_literal(
             data=value, spec=language
         ),
         dict_int_formatters=_collect_dict_int_formatters(
-            data=value, spec=language
+            data=value, spec=language, wrap_ids=wrap_ids
         ),
         empty_container_overrides=_empty_container_literal_overrides(
             data=value, spec=language

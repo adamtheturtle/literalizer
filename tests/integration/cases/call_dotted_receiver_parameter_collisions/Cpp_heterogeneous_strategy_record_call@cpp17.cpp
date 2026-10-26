@@ -1,0 +1,13 @@
+#include <initializer_list>
+#include <string>
+#include <map>
+#include <vector>
+#include <cstddef>
+#include <variant>
+struct workerType_ { template <typename... Args> void process(Args...) const {} };
+struct apiType_ { workerType_ worker; };
+const apiType_ api;
+int main() {
+api.worker.process(std::map<std::string, std::nullptr_t>{}, std::map<std::string, std::nullptr_t>{});
+    return 0;
+}
