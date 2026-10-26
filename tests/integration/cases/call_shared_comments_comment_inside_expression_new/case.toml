@@ -1,12 +1,12 @@
+# Regression provenance: C++ call-result arithmetic with an inner comment.
 schema_version = 1
 owner = "literalize-call"
 
 [call]
-languages = ["Cpp"]
-languages_reason = "The transformed call uses Cpp literal and comment syntax."
+gates = [{kind = "integer_call_stub"}]
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 wrap_in_file = true
 variable_form = "new"
-call_transform = "{call} // inner\n + 1"
+call_transform_add_one = true

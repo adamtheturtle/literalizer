@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "integer_call_stub"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform_add_one = true
+call_transform = "({call}) * {zipped}"
+zip_source = "3"
+zip_input_format = "json"

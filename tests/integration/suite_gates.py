@@ -249,6 +249,12 @@ class CallHashRawPrefixGate(
     marker: Annotated[str, Field(min_length=1)]
 
 
+class IntegerCallStubGate(BaseModel, extra="forbid", frozen=True, strict=True):
+    """Require the native producer's integer-returning value stub."""
+
+    kind: Literal["integer_call_stub"]
+
+
 class CallIdentifierPrefixGate(
     BaseModel, extra="forbid", frozen=True, strict=True
 ):
@@ -334,7 +340,8 @@ type SuiteGate = Annotated[
     | CallInterpolationGate
     | CallCharacterQuoteGate
     | CallHashRawPrefixGate
-    | CallIdentifierPrefixGate,
+    | CallIdentifierPrefixGate
+    | IntegerCallStubGate,
     Field(discriminator="kind"),
 ]
 
@@ -408,6 +415,8 @@ def gate_admits(
                 lang_cls=lang_cls,
                 spec=spec,
             )
+        case IntegerCallStubGate():
+            admits = lang_cls.call_stub_result is not None
         case RecordVariantGate():
             admits = gate.variant in metadata.record_variants
         case NonDefaultKwargGate():

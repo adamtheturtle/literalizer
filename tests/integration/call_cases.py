@@ -27,6 +27,7 @@ from literalizer._language import (
     CallParameterShadowing,
     CallStubDeclarations,
     CallSupport,
+    IntegerCallStubResult,
     KeywordCallStyle,
     ObjectCallStyle,
     PositionalCallStyle,
@@ -907,6 +908,30 @@ class SequenceCallTransform:
         return self.spec.sequence_open([]) + call + config.close
 
 
+@dataclasses.dataclass(frozen=True)
+class IntegerResultCallTransform:
+    """Retain arithmetic, inner comments, and outer operand metadata."""
+
+    syntax: IntegerCallStubResult
+    outer: CallTransform | None
+
+    @property
+    def uses_zipped(self) -> bool:
+        """Preserve the outer transform's zipped-operand contract."""
+        return self.outer is not None and self.outer.uses_zipped
+
+    def __call__(self, context: literalizer.CallContext, /) -> str:
+        """Add one using the integer result producer's native grammar."""
+        expression = self.syntax.addition_template.format(
+            left=context.call,
+            right="1",
+            comment=" " + self.syntax.comment_prefix + " inner",
+        )
+        if self.outer is not None:
+            return self.outer(dataclasses.replace(context, call=expression))
+        return expression
+
+
 @beartype
 def call_transform_for_case(
     *, spec: literalizer.Language, config: CallCaseSpec
@@ -928,6 +953,18 @@ def call_transform_for_case(
             config=config,
             wrapper=config.call_transform_wrapper,
             zip_data=zip_data,
+        )
+    if config.call_transform_add_one:
+        syntax = next(
+            cls.call_stub_result
+            for cls in sorted_languages()
+            if cls.language_id == spec.language_id
+        )
+        if syntax is None:
+            msg = "call_transform_add_one requires an integer-returning stub"
+            raise ValueError(msg)
+        return IntegerResultCallTransform(
+            syntax=syntax, outer=config.call_transform
         )
     if config.call_transform_sequence:
         return SequenceCallTransform(spec=spec, outer=config.call_transform)
