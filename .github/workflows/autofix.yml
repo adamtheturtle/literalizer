@@ -41,7 +41,6 @@ jobs:
           extra-args: >-
             --all-files --hook-stage pre-commit --no-fail-fast --verbose
         env:
-          UV_NO_CACHE: '1'
           UV_PYTHON: 3.14
 
       - uses: autofix-ci/action@v1.3.4
