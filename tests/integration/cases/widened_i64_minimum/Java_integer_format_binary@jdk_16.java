@@ -1,0 +1,8 @@
+class Main {
+    public static void main() {
+var my_data = new long[]{
+    -0b1000000000000000000000000000000000000000000000000000000000000000L,
+    0b101L
+};
+    }
+}
