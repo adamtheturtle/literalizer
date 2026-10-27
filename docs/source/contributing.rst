@@ -73,7 +73,7 @@ Other input formats cannot declare this YAML warning.
 
 Ordinary format variants exercise every supported language version.
 An axis that explicitly selects ``language_version`` stays pinned to that version; a format requiring newer syntax uses its effective version once.
-A typed axis can declare ``per_version = false`` to exercise only its default version.
+To exercise only its default version, a typed axis can declare ``per_version = false``.
 The orphan check uses those same effective specs for ordinary and call variants, so a compiling file still needs a rendering that compares its contents.
 
 An ordinary case participates in the base and combined suites.
@@ -222,7 +222,7 @@ The golden opens with the split of the languages the manifest selected, then gro
 A language raising a different exception from the rest of its family therefore appears as its own table rather than as a word buried in a line.
 
 A case is keyed by its language, then by the option member it ran under and the declared value it substituted, if the manifest varies either.
-An option member is named (``[CJSON]``) and a declared value is quoted (``['9Entry']``).
+Option members use their names (``[CJSON]``), and declared values are quoted (``['9Entry']``).
 
 The manifest itself declares what provokes the rejection:
 

@@ -160,7 +160,7 @@ For example, a C++ ``auto`` declaration or Rust ``let`` binding lets the compile
 A ``call_transform`` can impose further requirements: a wrapper that formats, compares, or consumes a value must accept the callee's actual result.
 
 A declaration that requires a compile-time constant also requires the call expression to satisfy the target language's constant-expression rules.
-An immutable binding alone does not necessarily impose that requirement: JavaScript ``const`` and Rust's ordinary ``let`` can bind runtime call results.
+Immutability alone does not necessarily impose that requirement: JavaScript ``const`` and Rust's ordinary ``let`` can bind runtime call results.
 In Dart, ``Dart.declaration_styles.CONST`` requires a constant expression.
 This constant-constructor call is valid:
 
