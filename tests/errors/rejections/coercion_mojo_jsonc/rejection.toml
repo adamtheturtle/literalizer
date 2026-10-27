@@ -1,0 +1,39 @@
+schema_version = 1
+summary = "Mojo rejects heterogeneous scalar, sibling-list and mixed-container shapes after JSONC parsing."
+exceptions = ["HeterogeneousScalarCollectionError", "HeterogeneousSiblingListsError", "MixedDictValuesError", "MixedListValuesError"]
+languages = ["Mojo"]
+
+[call]
+api = "literalize"
+sources = [
+  # Mixed scalar types in one array.
+  "[1, 2.5, 3]",
+  # Mixed scalar types in one dictionary.
+  "{\"a\": 1, \"b\": 2.5}",
+  # A mixed dictionary inside a mixed list reports dictionary type families.
+  "{\"wrapper\": [{\"a\": \"x\", \"b\": [1]}, \"text\"]}",
+  # A null value beside a list.
+  "{\"tags\": [\"admin\"], \"extra\": null}",
+  # A string value beside a list.
+  "{\"name\": \"Bob\", \"tags\": [\"admin\", \"user\"]}",
+  # A string element beside a nested list.
+  "[\"hello\", [\"nested\"]]",
+  # Mixed scalar types in a nested array.
+  "[[1, \"hello\"]]",
+  # Skip a homogeneous dictionary before finding a mixed one.
+  "{\"a\": {\"x\": 1}, \"b\": {\"x\": \"hello\", \"y\": [1]}}",
+  # Skip a homogeneous list before finding a mixed one.
+  "[[1, 2], [\"hello\", [\"nested\"]]]",
+  # Heterogeneous sibling lists nested one level deeper.
+  "[[[1, 2], [\"a\", \"b\"]]]",
+  # Sibling lists with incompatible scalar element types.
+  "[[1, 2], [\"a\", \"b\"]]",
+]
+input_format = "jsonc"
+variable_form = "none"
+kwargs = [
+  { kind = "option_member", option = "date_format", member = "ISO" },
+  { kind = "option_member", option = "datetime_format", member = "ISO" },
+  { kind = "option_member", option = "bytes_format", member = "HEX" },
+  { kind = "option_member", option = "sequence_format", member = "LIST" },
+]
