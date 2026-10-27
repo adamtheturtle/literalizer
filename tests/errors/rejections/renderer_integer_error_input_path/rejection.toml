@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A nested integer failure reports its exact input path."
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["PureScript"]
+
+[attributes]
+path = ["outer", 0, 0]
+
+[call]
+api = "literalize"
+sources = ["{\"outer\": [[1180591620717411303424]]}"]
+input_format = "json"
+variable_form = "none"

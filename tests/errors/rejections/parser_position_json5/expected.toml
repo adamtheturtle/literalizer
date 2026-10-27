@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSON5ParseError]
+Rust = "Invalid JSON5: Expected a JSON5 value at line 2 column 5"

@@ -34,6 +34,7 @@ from pydantic import (
 import literalizer
 from literalizer import exceptions as literalizer_exceptions
 from literalizer.languages import ALL_LANGUAGES
+from tests.integration.case_manifests import RefTimeInput
 from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
@@ -76,6 +77,12 @@ type BoundRefYaml = Annotated[
 ]
 
 
+type BoundRefTimes = Annotated[
+    tuple[tuple[str, RefTimeInput], ...],
+    BeforeValidator(func=_bound_refs_items),
+]
+
+
 class RejectionManifestError(ValueError):
     """A rejection manifest is invalid or internally inconsistent."""
 
@@ -94,7 +101,7 @@ _EXCEPTIONS_BY_NAME: Mapping[str, type[Exception]] = {
     name: value
     for name, value in vars(literalizer_exceptions).items()
     if isinstance(value, type) and issubclass(value, Exception)
-}
+} | {"TypeError": TypeError, "ValueError": ValueError}
 
 _INPUT_FORMATS_BY_NAME: Mapping[str, literalizer.InputFormat] = {
     member.name.lower(): member for member in literalizer.InputFormat
@@ -201,6 +208,14 @@ class OptionUnsetKwarg(
     option: Annotated[str, Field(min_length=1)]
 
 
+class BooleanKwarg(BaseModel, extra="forbid", frozen=True, strict=True):
+    """Pass a literal boolean constructor argument."""
+
+    kind: Literal["boolean"]
+    kwarg: Annotated[str, Field(min_length=1)]
+    value: bool
+
+
 class TextKwarg(
     BaseModel,
     extra="forbid",
@@ -243,8 +258,31 @@ class RecordShapeNamesKwarg(
         return self
 
 
+class EmptyContainerHint(BaseModel, extra="forbid", frozen=True, strict=True):
+    """One input path and its declared container type."""
+
+    path: Annotated[tuple[str | int, ...], Field(strict=False)]
+    type_name: str
+
+
+class EmptyContainerTypeHintsKwarg(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Pass literal type hints for empty containers."""
+
+    kind: Literal["empty_container_type_hints"]
+    hints: Annotated[
+        tuple[EmptyContainerHint, ...], Field(min_length=1, strict=False)
+    ]
+
+
 type RejectionKwarg = Annotated[
-    OptionMemberKwarg | OptionUnsetKwarg | TextKwarg | RecordShapeNamesKwarg,
+    OptionMemberKwarg
+    | OptionUnsetKwarg
+    | BooleanKwarg
+    | TextKwarg
+    | EmptyContainerTypeHintsKwarg
+    | RecordShapeNamesKwarg,
     Field(discriminator="kind"),
 ]
 
@@ -358,6 +396,7 @@ class CallSpec(  # noqa: NOD001
     modifiers: Annotated[tuple[DeclaredName, ...], Field(strict=False)] = (
         Field(default_factory=_no_names)
     )
+    modifier_language: DeclaredName | None = None
     target_function: str | None = None
     parameter_names: Annotated[
         tuple[DeclaredName, ...],
@@ -370,6 +409,7 @@ class CallSpec(  # noqa: NOD001
     ref_case: str | None = None
     bound_refs: BoundRefs = ()
     bound_ref_yaml: BoundRefYaml = ()
+    bound_ref_times: BoundRefTimes = ()
     ref_value_yaml: BoundRefYaml = ()
     comment_source: Annotated[tuple[str, ...], Field(strict=False)] | None = (
         None
@@ -429,8 +469,20 @@ class CallSpec(  # noqa: NOD001
         ):
             msg = "modifiers require a new or both variable form"
             raise ValueError(msg)
+        _ = self._validate_modifier_language()
         _ = self._validate_call_only_arguments()
         _ = self._validate_call_transform()
+        return self
+
+    def _validate_modifier_language(self) -> Self:
+        """Require a known modifier owner and at least one modifier."""
+        if self.modifier_language is not None:
+            if len(self.modifiers) == 0:
+                msg = "modifier_language requires modifiers"
+                raise ValueError(msg)
+            if self.modifier_language not in LANGUAGES_BY_NAME:
+                msg = f"unknown modifier language {self.modifier_language!r}"
+                raise ValueError(msg)
         return self
 
     def _validate_call_only_arguments(self) -> Self:
@@ -469,6 +521,16 @@ class CallSpec(  # noqa: NOD001
         return self
 
 
+class ErrorAttributes(  # noqa: NOD001
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Known public error attributes a manifest can assert."""
+
+    path: Annotated[tuple[str | int, ...], Field(strict=False)] | None = None
+    language_name: str | None = None
+    option: str | None = None
+
+
 class _RejectionData(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -481,6 +543,7 @@ class _RejectionData(  # noqa: NOD001
     summary: Annotated[str, Field(min_length=1)]
     exceptions: ExceptionTypes
     position: Annotated[tuple[int, int], Field(strict=False)] | None = None
+    attributes: ErrorAttributes | None = None
     gates: Annotated[tuple[LanguageGate, ...], Field(strict=False)] = Field(
         default_factory=_no_gates,
     )
@@ -590,11 +653,13 @@ def _kwarg_templates(*, kwarg: RejectionKwarg) -> tuple[str, ...]:
     match kwarg:
         case TextKwarg():
             templates = (kwarg.value,)
+        case EmptyContainerTypeHintsKwarg():
+            templates = ()
         case RecordShapeNamesKwarg():
             templates = tuple(kwarg.names)
         case OptionMemberKwarg():
             templates = (kwarg.member,)
-        case OptionUnsetKwarg():
+        case BooleanKwarg() | OptionUnsetKwarg():
             templates = ()
         case _ as unreachable:
             assert_never(unreachable)
@@ -610,6 +675,7 @@ class RejectionManifest:
     summary: str
     exceptions: tuple[type[Exception], ...]
     position: tuple[int, int] | None
+    attributes: ErrorAttributes | None
     gates: tuple[LanguageGate, ...]
     languages: tuple[str, ...]
     option: str | None
@@ -649,6 +715,7 @@ def load_rejection_manifest(*, manifest_path: Path) -> RejectionManifest:
         summary=data.summary,
         exceptions=data.exceptions,
         position=data.position,
+        attributes=data.attributes,
         gates=tuple(data.gates),
         languages=tuple(data.languages),
         option=data.option,

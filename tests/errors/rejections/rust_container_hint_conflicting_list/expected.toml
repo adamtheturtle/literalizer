@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ValueError]
+Rust = "TAGGED_ENUM can use only one concrete empty-list type per literal; supply the same type for each hinted empty list."

@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Combined variable forms require a style that supports assignment."
+exceptions = ["ValueError"]
+languages = ["Elm"]
+
+[call]
+api = "literalize"
+sources = ["42"]
+input_format = "json"
+variable_form = "both"
+variable_name = "x"
+wrap_in_file = true

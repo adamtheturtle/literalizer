@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnsupportedOptionError]
+Haxe = "Haxe does not support option 'default_dict_value_type'"

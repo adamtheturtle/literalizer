@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnsupportedOptionError]
+Python = "Python does not support option 'multiline_raw_string_delimiter_base'"

@@ -1,0 +1,10 @@
+schema_version = 1
+summary = "An unknown constructor keyword remains a TypeError."
+exceptions = ["TypeError"]
+languages = ["Cpp"]
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "boolean", kwarg = "definitely_not_an_option", value = true },
+]

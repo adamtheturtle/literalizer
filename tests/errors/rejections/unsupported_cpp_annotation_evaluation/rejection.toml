@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Unsupported Cpp options retain the language and option names."
+exceptions = ["UnsupportedOptionError"]
+languages = ["Cpp"]
+
+[attributes]
+language_name = "Cpp"
+option = "annotation_evaluation"
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_unset", option = "annotation_evaluation" },
+]

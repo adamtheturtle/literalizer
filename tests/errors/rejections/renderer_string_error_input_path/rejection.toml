@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A nested string failure reports its exact input path."
+exceptions = ["UnrepresentableStringError"]
+languages = ["Bash"]
+
+[attributes]
+path = ["outer", 0, 0]
+
+[call]
+api = "literalize"
+sources = ["{\"outer\": [[\"a\\u0000b\"]]}"]
+input_format = "json"
+variable_form = "none"

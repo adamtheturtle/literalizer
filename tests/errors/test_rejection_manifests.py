@@ -54,6 +54,35 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
     argvalues=[
         (
             _manifest(
+                selection='languages = ["Kotlin"]',
+                extra=_NO_EXTRA,
+                call=(
+                    'api = "literalize"\n'
+                    'sources = ["1"]\n'
+                    'input_format = "json"\n'
+                    'variable_form = "new"\n'
+                    'modifier_language = "Java"'
+                ),
+            ),
+            "modifier_language requires modifiers",
+        ),
+        (
+            _manifest(
+                selection='languages = ["Kotlin"]',
+                extra=_NO_EXTRA,
+                call=(
+                    'api = "literalize"\n'
+                    'sources = ["1"]\n'
+                    'input_format = "json"\n'
+                    'variable_form = "new"\n'
+                    'modifiers = ["FINAL"]\n'
+                    'modifier_language = "Missing"'
+                ),
+            ),
+            "unknown modifier language 'Missing'",
+        ),
+        (
+            _manifest(
                 selection=_JSON_TYPE_GATE,
                 call=_CONSTRUCTOR,
                 extra="mystery = true",

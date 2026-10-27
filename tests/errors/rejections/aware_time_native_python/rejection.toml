@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "A native Python time format refuses to discard a UTC offset."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ["{\"x\": {\"$ref\": \"value\"}}"]
+input_format = "json"
+variable_form = "new"
+variable_name = "out"
+wrap_in_file = true
+ref_key = "$ref"
+bound_ref_times = { value = "12:30:15+02:00" }
