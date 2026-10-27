@@ -1,0 +1,14 @@
+record Record0(String title, String[] tags, int priority) {}
+class Main {
+    public static void main() {
+Record0 my_data = new Record0(
+    "report",
+    new String[]{
+        "draft",
+        "urgent",
+        "review"
+    },
+    2
+);
+    }
+}
