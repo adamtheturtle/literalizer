@@ -1,0 +1,8 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Rust['18446744073709551616']" = "Rust json_type cannot represent integer 18446744073709551616: serde_json::Value requires -9223372036854775808 <= value <= 18446744073709551615"
+"Rust['-9223372036854775809']" = "Rust json_type cannot represent integer -9223372036854775809: serde_json::Value requires -9223372036854775808 <= value <= 18446744073709551615"
+"Rust['[[1], [1180591620717411303424]]']" = "Rust json_type cannot represent integer 1180591620717411303424: serde_json::Value requires -9223372036854775808 <= value <= 18446744073709551615"
+"Rust['{\"outer\": {\"value\": 18446744073709551616}}']" = "Rust json_type cannot represent integer 18446744073709551616: serde_json::Value requires -9223372036854775808 <= value <= 18446744073709551615"
+"Rust['[{\"value\": -9223372036854775809}]']" = "Rust json_type cannot represent integer -9223372036854775809: serde_json::Value requires -9223372036854775808 <= value <= 18446744073709551615"

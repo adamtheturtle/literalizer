@@ -1,0 +1,6 @@
+schema_version = 1
+owner = "variant"
+gates = [{kind = "enum_member_present", option = "json_type", member = "SERDE_JSON_VALUE"}]
+
+[[variants]]
+axis = "json_type"

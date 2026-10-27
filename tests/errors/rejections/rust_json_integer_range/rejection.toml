@@ -1,0 +1,21 @@
+schema_version = 1
+summary = """
+Rust's serde_json::Value stores integers as i64 or u64. Reject wider
+integers before emitting a json! expression that panics at runtime.
+"""
+exceptions = ["UnrepresentableIntegerError"]
+languages = ["Rust"]
+
+[call]
+api = "literalize"
+sources = [
+  "18446744073709551616",
+  "-9223372036854775809",
+  "[[1], [1180591620717411303424]]",
+  '{"outer": {"value": 18446744073709551616}}',
+  '[{"value": -9223372036854775809}]',
+]
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "SERDE_JSON_VALUE" },
+]

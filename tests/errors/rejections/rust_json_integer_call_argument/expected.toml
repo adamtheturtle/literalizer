@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+"Rust['[18446744073709551616]']" = "Rust json_type cannot represent integer 18446744073709551616: serde_json::Value requires -9223372036854775808 <= value <= 18446744073709551615"
+"Rust['[{\"nested\": -9223372036854775809}]']" = "Rust json_type cannot represent integer -9223372036854775809: serde_json::Value requires -9223372036854775808 <= value <= 18446744073709551615"
