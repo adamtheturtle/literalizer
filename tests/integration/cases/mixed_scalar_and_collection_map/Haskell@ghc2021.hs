@@ -1,4 +1,4 @@
-module Fixture_cpp_array_variant_value_Haskell where
+module Fixture_mixed_scalar_and_collection_map_Haskell where
 data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

@@ -1,4 +1,4 @@
-module Fixture_ocaml_nested_arrays_Crystal
+module Fixture_nested_sequence_with_empty_sibling_Crystal
 extend self
 my_data = [
     [[1]],

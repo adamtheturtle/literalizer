@@ -1,4 +1,4 @@
-class Fixture_cpp_array_variant_value_Haxe {
+class Fixture_mixed_scalar_and_collection_map_Haxe {
     public static function main() {
         final my_data = ([
             "a" => 1,

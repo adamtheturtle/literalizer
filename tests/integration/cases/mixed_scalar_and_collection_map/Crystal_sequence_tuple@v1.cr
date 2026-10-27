@@ -1,4 +1,4 @@
-module Fixture_cpp_array_variant_value_Crystal_sequence_tuple
+module Fixture_mixed_scalar_and_collection_map_Crystal_sequence_tuple
 extend self
 my_data = {
     "a" => 1,
