@@ -1,4 +1,4 @@
-object Fixture_csharp_fallback_map_non_scalar_Scala_record_nested_map_fallback_multiline {
+object Fixture_record_fallback_map_non_scalar_Scala_record_nested_map_fallback_multiline {
 case class Record0(name: String, payload: Map[String, Any])
 val my_data = List(
     Record0(
