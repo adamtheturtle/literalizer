@@ -3174,7 +3174,7 @@ jobs:
           mojo --version
       - name: Check Mojo syntax
         run: |-
-          printf 'Mojo compiler workers: 4; pool ceiling: 4 GiB; hard fixture deadline: 60s\n'
+          printf 'Mojo compiler workers: 4; compiler threads per worker: 1; pool ceiling: 4 GiB; hard fixture deadline: 60s\n'
           free -m
           df -h /tmp
           scripts/lint-mojo.sh < /tmp/files-to-lint
