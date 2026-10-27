@@ -146,6 +146,7 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidRecordNameError,
     UnrepresentableInputError,
+    UnrepresentableIntegerError,
 )
 
 _RUST_RAW_STRING_OPEN = re.compile(pattern=r'(?<![A-Za-z0-9_])r(#{1,255})"')
@@ -469,6 +470,7 @@ _I32_MIN = -(2**31)
 _I32_MAX = 2**31 - 1
 _I64_MIN = -(2**63)
 _I64_MAX = 2**63 - 1
+_U64_MAX = 2**64 - 1
 _I128_MIN = -(2**127)
 _I128_MAX = 2**127 - 1
 _SERDE_JSON_MACRO = "serde_json::json!"
@@ -4621,8 +4623,8 @@ class Rust(metaclass=LanguageCls):
             raise IncompatibleFormatsError(msg)
         self._validate_record_naming()
 
-    def _validate_json_value_keys(self, data: Value, /) -> None:
-        """Reject non-string object keys for ``serde_json::Value``."""
+    def _validate_json_value(self, data: Value, /) -> None:
+        """Reject keys and integers outside ``serde_json::Value``."""
         match data:
             case dict():
                 for key, value in data.items():
@@ -4632,13 +4634,20 @@ class Rust(metaclass=LanguageCls):
                             f"as JSON object strings, not {type(key).__name__}"
                         )
                         raise UnrepresentableInputError(msg)
-                    self._validate_json_value_keys(value)
+                    self._validate_json_value(value)
             case list():
                 for item in data:
-                    self._validate_json_value_keys(item)
+                    self._validate_json_value(item)
             case set():
                 for item in data:
-                    self._validate_json_value_keys(item)
+                    self._validate_json_value(item)
+            case int() if not _I64_MIN <= data <= _U64_MAX:
+                msg = (
+                    "Rust json_type cannot represent integer "
+                    f"{data}: serde_json::Value requires "
+                    f"{_I64_MIN} <= value <= {_U64_MAX}"
+                )
+                raise UnrepresentableIntegerError(msg)
             case _:
                 return
 
@@ -4743,7 +4752,7 @@ class Rust(metaclass=LanguageCls):
                 list_elements_are_independent=renders_list_as_tuple,
             )
         if self._json_type_active:
-            self._validate_json_value_keys(data)
+            self._validate_json_value(data)
         if (
             self.heterogeneous_strategy
             is type(self.heterogeneous_strategy).RECORD
