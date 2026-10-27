@@ -5,9 +5,6 @@ suites = ["base", "combined"]
 axis = "default_sequence_element_type"
 
 [[variants]]
-axis = "language_version"
-
-[[variants]]
 axis = "annotation_evaluation"
 
 [[variants]]

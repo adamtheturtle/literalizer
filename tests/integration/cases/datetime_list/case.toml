@@ -5,9 +5,6 @@ suites = ["base", "combined"]
 axis = "datetime"
 
 [[variants]]
-axis = "language_version"
-
-[[variants]]
 axis = "collection_layout"
 
 [[variants]]

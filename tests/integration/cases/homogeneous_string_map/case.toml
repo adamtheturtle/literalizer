@@ -8,9 +8,6 @@ axis = "type_hints"
 axis = "dict_format"
 
 [[variants]]
-axis = "language_version"
-
-[[variants]]
 axis = "collection_layout"
 
 [[variants]]

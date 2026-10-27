@@ -19,6 +19,3 @@ suffix = "_sibling_widening"
 [[variants]]
 axis = "heterogeneous_value_variant_name"
 suffix = "_sibling_widening"
-
-[[variants]]
-axis = "language_version"
