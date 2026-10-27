@@ -1,0 +1,20 @@
+# languages rejecting: 1; languages accepting: 0
+
+[HeterogeneousScalarCollectionError]
+"Mojo['[1, 2.5, 3]']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: float, int)"
+"Mojo['{\"a\": 1, \"b\": 2.5}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: float, int)"
+"Mojo['[[1, \"hello\"]]']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+
+[HeterogeneousSiblingListsError]
+"Mojo['[[[1, 2], [\"a\", \"b\"]]]']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Mojo['[[1, 2], [\"a\", \"b\"]]']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+
+[MixedDictValuesError]
+"Mojo['{\"wrapper\": [{\"a\": \"x\", \"b\": [1]}, \"text\"]}']" = "Dict contains values of mixed types that cannot be represented in the target language (found types: list, str)"
+"Mojo['{\"tags\": [\"admin\"], \"extra\": null}']" = "Dict contains values of mixed types that cannot be represented in the target language (found types: list, none)"
+"Mojo['{\"name\": \"Bob\", \"tags\": [\"admin\", \"user\"]}']" = "Dict contains values of mixed types that cannot be represented in the target language (found types: list, str)"
+"Mojo['{\"a\": {\"x\": 1}, \"b\": {\"x\": \"hello\", \"y\": [1]}}']" = "Dict contains values of mixed types that cannot be represented in the target language (found types: list, str)"
+
+[MixedListValuesError]
+"Mojo['[\"hello\", [\"nested\"]]']" = "List contains elements of mixed types that cannot be represented in the target language (found types: list, str)"
+"Mojo['[[1, 2], [\"hello\", [\"nested\"]]]']" = "List contains elements of mixed types that cannot be represented in the target language (found types: list, str)"

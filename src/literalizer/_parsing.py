@@ -112,7 +112,7 @@ class _YamlConstructor(Protocol):
 
 @runtime_checkable
 class _Yaml(Protocol):
-    """The ruamel operations used across Literalizer and its tests."""
+    """The ruamel parsing operations used by Literalizer."""
 
     constructor: _YamlConstructor
 
@@ -126,10 +126,6 @@ class _Yaml(Protocol):
 
     def load(self, stream: object) -> object:
         """Load one document from *stream*."""
-        raise NotImplementedError
-
-    def dump(self, data: object, stream: object) -> None:
-        """Write *data* to *stream*."""
         raise NotImplementedError
 
 
