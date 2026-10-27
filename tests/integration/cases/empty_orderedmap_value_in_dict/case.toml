@@ -6,6 +6,3 @@ axis = "collection_layout"
 
 [[variants]]
 axis = "json_type"
-
-[[variants]]
-axis = "language_version"

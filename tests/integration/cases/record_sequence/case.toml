@@ -14,9 +14,6 @@ axis = "heterogeneous_value_union_name"
 axis = "heterogeneous_value_variant_name"
 
 [[variants]]
-axis = "language_version"
-
-[[variants]]
 axis = "collection_layout"
 
 # Explicit root annotations must retain the inferred record field types.

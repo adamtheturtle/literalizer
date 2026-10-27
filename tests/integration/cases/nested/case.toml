@@ -3,6 +3,3 @@ suites = ["base", "combined"]
 
 [[variants]]
 axis = "collection_layout"
-
-[[variants]]
-axis = "language_version"
