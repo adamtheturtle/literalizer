@@ -131,16 +131,20 @@ def _fortran_source_width(value: str) -> int:
     return len(value.encode(encoding="utf-8"))
 
 
+_FORTRAN_STRING_FORMATTER = format_string_concat_control(
+    quote_char="'",
+    quote_escape="''",
+    control_char_template="achar({})",
+    concat_operator=" // ",
+    escape_delete_and_c1=False,
+)
+"""The checked formatter shared by all unwrapped string fragments."""
+
+
 @beartype
 def _format_fortran_string_unwrapped(value: str) -> str:
     """Format one string fragment without source-line wrapping."""
-    return format_string_concat_control(
-        quote_char="'",
-        quote_escape="''",
-        control_char_template="achar({})",
-        concat_operator=" // ",
-        escape_delete_and_c1=False,
-    )(value)
+    return _FORTRAN_STRING_FORMATTER(value)
 
 
 @beartype
