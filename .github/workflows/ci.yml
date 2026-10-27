@@ -63,11 +63,24 @@ jobs:
           assert Path(literalizer.__file__).resolve().is_relative_to(Path('.venv').resolve())"
 
       - name: Run tests
-        run: >-
-          uv run --no-sync python -m pytest -v -o verbosity_test_cases=0
-          --dist=worksteal --durations=20
-          --ignore=tests/benchmarks . --cov --cov-config=pyproject.toml
+        shell: bash
+        # Keep all tests and beartype checks in every matrix cell. Measure
+        # branch coverage on Python 3.14/3.15 for each change, and on every
+        # supported version nightly. Older-Python-only coverage regressions
+        # are therefore detected nightly rather than blocking each PR.
+        run: |
+          coverage_args=(--no-cov)
+          if [[ "$MEASURE_COVERAGE" == true ]]; then
+            coverage_args=(--cov --cov-config=pyproject.toml)
+          fi
+          printf 'Measure coverage: %s\n' "$MEASURE_COVERAGE"
+          uv run --no-sync python -m pytest -v -o verbosity_test_cases=0 \
+            --dist=worksteal --durations=20 \
+            --ignore=tests/benchmarks . "${coverage_args[@]}"
         env:
+          MEASURE_COVERAGE: >-
+            ${{ github.event_name == 'schedule' || matrix.python-version == '3.14'
+            || matrix.python-version == '3.15' }}
           # Keep execution and coverage on the same checkout, as with the
           # previous editable installation. The installed wheel is checked
           # separately above before this source-path override is applied.
