@@ -1,4 +1,4 @@
-"""Public input-format capabilities remain queryable by callers."""
+"""Public input formats declare whether they support null values."""
 
 from literalizer import InputFormat
 
