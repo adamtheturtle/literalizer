@@ -22,6 +22,8 @@ from tests.language_options import OPTIONS
 
 from .rejection_manifests import (
     LANGUAGES_BY_NAME,
+    BooleanKwarg,
+    EmptyContainerTypeHintsKwarg,
     OptionMemberKwarg,
     OptionUnsetKwarg,
     RecordShapeNamesKwarg,
@@ -99,6 +101,8 @@ def _kwarg_values(
             }
         case OptionUnsetKwarg():
             resolved = {OPTIONS[kwarg.option].kwarg: None}
+        case BooleanKwarg():
+            resolved = {kwarg.kwarg: kwarg.value}
         case TextKwarg():
             resolved = {
                 kwarg.kwarg: substituted(template=kwarg.value, value=value)
@@ -112,6 +116,12 @@ def _kwarg_values(
                         kwarg.names,
                         strict=True,
                     )
+                }
+            }
+        case EmptyContainerTypeHintsKwarg():
+            resolved = {
+                "empty_container_type_hints": {
+                    hint.path: hint.type_name for hint in kwarg.hints
                 }
             }
         case _ as unreachable:

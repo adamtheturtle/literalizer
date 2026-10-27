@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidVariableModifierError]
+Kotlin = "Kotlin cannot apply variable modifier _JavaModifiers.FINAL: it is not a member of the target language's Modifiers enum"

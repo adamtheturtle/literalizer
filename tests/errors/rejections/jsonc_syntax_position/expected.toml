@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSONCParseError]
+Python = "Invalid JSONC: Expected a JSONC value at line 1 column 18"

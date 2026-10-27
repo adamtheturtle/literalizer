@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Combined variable forms require a wrapped file."
+exceptions = ["ValueError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = ["42"]
+input_format = "json"
+variable_form = "both"
+variable_name = "x"

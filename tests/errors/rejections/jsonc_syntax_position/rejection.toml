@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "A JSONC syntax error reports its original source position."
+exceptions = ["JSONCParseError"]
+languages = ["Python"]
+position = [1, 18]
+
+[call]
+api = "literalize"
+sources = ["{\"a\": /* note */ ]}"]
+input_format = "jsonc"
+variable_form = "none"

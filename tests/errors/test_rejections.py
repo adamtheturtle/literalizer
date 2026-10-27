@@ -41,8 +41,10 @@ from .rejection_cases import (
     selected_languages,
 )
 from .rejection_manifests import (
+    LANGUAGES_BY_NAME,
     REJECTIONS_DIR,
     CallSpec,
+    ErrorAttributes,
     RejectionManifest,
     load_rejection_manifests,
     substituted,
@@ -158,6 +160,7 @@ def _bound_refs(
 ) -> dict[str, literalizer.ValueInput] | None:
     """Resolve scalar bindings and manifest-owned native YAML values."""
     bindings: dict[str, literalizer.ValueInput] = dict(call.bound_refs)
+    bindings.update(call.bound_ref_times)
     yaml_bindings = _yaml_reference_values(
         sources=call.bound_ref_yaml, value=value
     )
@@ -188,8 +191,15 @@ def _variable_form(
     an omitted form preserves the legacy default declaration.
     """
     name = substituted(template=call.variable_name, value=value)
+    modifier_cls = (
+        lang_cls
+        if call.modifier_language is None
+        else LANGUAGES_BY_NAME[call.modifier_language]
+    )
     modifiers = frozenset(
-        enum_member_by_name(enum_cls=lang_cls.Modifiers, name=modifier_name)
+        enum_member_by_name(
+            enum_cls=modifier_cls.Modifiers, name=modifier_name
+        )
         for modifier_name in call.modifiers
     )
     match call.variable_form:
@@ -335,6 +345,13 @@ def test_rejection_messages(
         if manifest.position is not None:
             assert isinstance(raised, ParseError)
             assert (raised.line, raised.column) == manifest.position
+        if manifest.attributes is not None:
+            actual_attributes = ErrorAttributes.model_validate(
+                obj=raised, from_attributes=True, strict=True
+            ).model_dump(include=manifest.attributes.model_fields_set)
+            assert actual_attributes == manifest.attributes.model_dump(
+                exclude_unset=True
+            )
         raised_by = messages_by_exception.setdefault(type(raised).__name__, {})
         raised_by[case.case_id] = str(object=raised)
     accepting = len(manifest.accepting_languages)

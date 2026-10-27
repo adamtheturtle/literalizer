@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "An unterminated JSONC comment reports its original source position."
+exceptions = ["JSONCParseError"]
+languages = ["Python"]
+position = [2, 3]
+
+[call]
+api = "literalize"
+sources = ["{\"a\": 1,\n  /* missing"]
+input_format = "jsonc"
+variable_form = "none"

@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[TypeError]
+Cpp = "Cpp.__init__() got an unexpected keyword argument 'definitely_not_an_option'"

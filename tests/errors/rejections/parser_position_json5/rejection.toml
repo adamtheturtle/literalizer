@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Malformed JSON5 reports its original source position."
+exceptions = ["JSON5ParseError"]
+languages = ["Rust"]
+position = [2, 5]
+
+[call]
+api = "literalize"
+sources = ["{\n a: ]\n}"]
+input_format = "json5"
+variable_form = "none"

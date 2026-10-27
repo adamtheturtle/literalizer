@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[ValueError]
+Rust = "empty-container type hint at (1,) must be a non-empty string"

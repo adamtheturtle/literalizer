@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableIntegerError]
+PureScript = "PureScript cannot represent integer 1180591620717411303424 without external arbitrary-precision integer support."

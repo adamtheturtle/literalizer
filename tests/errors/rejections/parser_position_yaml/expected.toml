@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[YAMLParseError]
+Rust = "Invalid YAML: while parsing a flow sequence\n  in \"<unicode string>\", line 2, column 5\ndid not find expected ',' or ']'\n  in \"<unicode string>\", line 3, column 1"
