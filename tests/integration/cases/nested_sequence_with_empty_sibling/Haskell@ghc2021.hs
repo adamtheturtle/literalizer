@@ -1,4 +1,4 @@
-module Fixture_ocaml_nested_arrays_Haskell where
+module Fixture_nested_sequence_with_empty_sibling_Haskell where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt

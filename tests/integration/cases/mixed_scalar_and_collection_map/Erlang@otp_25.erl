@@ -1,4 +1,4 @@
--module(fixture_cpp_array_variant_value_erlang).
+-module(fixture_mixed_scalar_and_collection_map_erlang).
 -export([x/0]).
 x() ->
     My_data = #{

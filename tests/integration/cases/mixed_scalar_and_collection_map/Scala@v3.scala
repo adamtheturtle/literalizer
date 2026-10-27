@@ -1,4 +1,4 @@
-object Fixture_cpp_array_variant_value_Scala {
+object Fixture_mixed_scalar_and_collection_map_Scala {
 val my_data = Map(
     "a" -> 1,
     "b" -> "x",

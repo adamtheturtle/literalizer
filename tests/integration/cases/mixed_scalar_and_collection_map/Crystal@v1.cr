@@ -1,4 +1,4 @@
-module Fixture_cpp_array_variant_value_Crystal
+module Fixture_mixed_scalar_and_collection_map_Crystal
 extend self
 my_data = {
     "a" => 1,
