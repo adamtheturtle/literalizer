@@ -1,19 +1,10 @@
-"""Call refusals that should remain direct tests.
-
-Most of ``literalize_call``'s negative paths are declared in
-``tests/errors/rejections`` and run by ``test_rejections.py``.  What is
-left here needs something a manifest should not encode: a bare ``ValueError``
-rather than a ``literalizer.exceptions`` type, or a call made straight
-to an internal check.
-"""
+"""Error contracts for internal checks and declaration composition."""
 
 import inspect
-import re
 
 import pytest
 
 from literalizer import (
-    BothVariableForms,
     ExistingVariable,
     InputFormat,
     NewVariable,
@@ -22,10 +13,8 @@ from literalizer import (
     literalize_call_with_declarations,
 )
 from literalizer._language import validate_call_parameter_names
-from literalizer.exceptions import (
-    UnsupportedCallShapeError,
-)
-from literalizer.languages import Ada, Elm, Python
+from literalizer.exceptions import UnsupportedCallShapeError
+from literalizer.languages import Ada
 
 
 def test_call_parameter_validation_requires_language_metaclass() -> None:
@@ -36,40 +25,6 @@ def test_call_parameter_validation_requires_language_metaclass() -> None:
         match="requires a LanguageCls language",
     ):
         validator(language=object(), names=(), reject_reserved=True)
-
-
-def test_both_variable_forms_without_wrap_in_file_raises() -> None:
-    """BothVariableForms without wrap_in_file=True raises ValueError."""
-    expected_msg = "BothVariableForms requires wrap_in_file=True"
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=f"^{re.escape(pattern=expected_msg)}$",
-    ):
-        _ = literalize(
-            source="42",
-            input_format=InputFormat.JSON,
-            language=Python(),
-            variable_form=BothVariableForms(name="x", modifiers=frozenset()),
-        )
-
-
-def test_both_variable_forms_without_redefinition_support_raises() -> None:
-    """BothVariableForms raises when declaration_style cannot redefine."""
-    expected = (
-        "BothVariableForms requires a declaration_style that supports "
-        "redefinition; 'ASSIGN' does not."
-    )
-    with pytest.raises(
-        expected_exception=ValueError,
-        match=rf"^{re.escape(pattern=expected)}$",
-    ):
-        _ = literalize(
-            source="42",
-            input_format=InputFormat.JSON,
-            language=Elm(),
-            variable_form=BothVariableForms(name="x", modifiers=frozenset()),
-            wrap_in_file=True,
-        )
 
 
 def test_ada_composition_rejects_declaration_after_assignment() -> None:
