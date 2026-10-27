@@ -1,4 +1,4 @@
-module Fixture_kotlin_map_of_wide_int_lists_Haskell where
+module Fixture_map_of_wide_int_lists_Haskell where
 data Val = HInt Integer | HStr String | HList [Val] | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt

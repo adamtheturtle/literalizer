@@ -1,4 +1,4 @@
--module(fixture_kotlin_map_of_wide_int_lists_erlang).
+-module(fixture_map_of_wide_int_lists_erlang).
 -export([x/0]).
 x() ->
     My_data = #{
