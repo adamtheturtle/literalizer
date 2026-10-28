@@ -1,4 +1,4 @@
-module Fixture_zig_delete_string_Haskell where
+module Fixture_delete_character_in_key_and_value_Haskell_type_hints_safe where
 data Val = HInt Integer | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
