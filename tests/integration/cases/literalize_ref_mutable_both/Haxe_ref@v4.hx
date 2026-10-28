@@ -1,4 +1,4 @@
-class Fixture_literalize_ref_zig_mutable_both_Haxe_ref {
+class Fixture_literalize_ref_mutable_both_Haxe_ref {
     public static function main() {
         var shared = ([
             1,
