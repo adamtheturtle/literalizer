@@ -1,4 +1,4 @@
--module(fixture_v_sibling_map_rendered_time_erlang).
+-module(fixture_sibling_map_rendered_time_erlang).
 -export([x/0]).
 x() ->
     My_data = #{
