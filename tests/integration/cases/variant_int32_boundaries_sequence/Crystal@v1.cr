@@ -1,4 +1,4 @@
-module Fixture_cpp_variant_int32_boundaries_sequence_Crystal
+module Fixture_variant_int32_boundaries_sequence_Crystal
 extend self
 my_data = [
     -2147483648,

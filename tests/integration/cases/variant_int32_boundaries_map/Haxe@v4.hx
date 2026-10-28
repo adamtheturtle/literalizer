@@ -1,4 +1,4 @@
-class Fixture_cpp_variant_int32_boundaries_map_Haxe {
+class Fixture_variant_int32_boundaries_map_Haxe {
     public static function main() {
         final my_data = ([
             "below" => -2147483649,
