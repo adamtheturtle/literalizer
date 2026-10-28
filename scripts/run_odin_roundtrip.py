@@ -71,7 +71,8 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[odin, "run", ".", "-out:prog"],
+                # Match the single-worker fixture compiler (issue 6298).
+                args=[odin, "run", ".", "-thread-count:1", "-out:prog"],
                 failure_label="odin run error",
             ),
         ],
