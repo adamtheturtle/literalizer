@@ -1,4 +1,4 @@
-object Fixture_cpp_record_scalar_array_value_initialization_Scala_record_array_sequence {
+object Fixture_record_scalar_array_value_initialization_Scala_record_array_sequence {
 case class Record0(numbers: Array[Int], nested_numbers: Array[Array[Int]], words: Array[String], flag: Boolean)
 val my_data = Record0(
     numbers = Array[Int](
