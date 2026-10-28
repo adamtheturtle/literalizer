@@ -35,6 +35,14 @@ class _HasArrayInferencePolicy(Protocol):
 
 
 @runtime_checkable
+class _HasListRenderingPolicy(Protocol):
+    """A spec exposing a configurable list-rendering policy."""
+
+    list_rendering_policy: enum.Enum
+    list_rendering_policies: type[enum.Enum]
+
+
+@runtime_checkable
 class _HasBoolFormat(Protocol):
     """A spec exposing a configurable boolean literal spelling."""
 
@@ -126,6 +134,22 @@ def _array_inference_policies(spec: literalizer.Language) -> type[enum.Enum]:
     if not isinstance(spec, _HasArrayInferencePolicy):
         raise NotImplementedError
     return spec.array_inference_policies
+
+
+@beartype
+def _list_rendering_policy(spec: literalizer.Language) -> object:
+    """Return the configured list-rendering policy."""
+    if not isinstance(spec, _HasListRenderingPolicy):
+        raise NotImplementedError
+    return spec.list_rendering_policy
+
+
+@beartype
+def _list_rendering_policies(spec: literalizer.Language) -> type[enum.Enum]:
+    """Return the list-rendering policies a language offers."""
+    if not isinstance(spec, _HasListRenderingPolicy):
+        raise NotImplementedError
+    return spec.list_rendering_policies
 
 
 @beartype
@@ -274,6 +298,11 @@ class Option:
 
 
 OPTIONS: Mapping[str, Option] = {
+    "list_rendering_policy": Option(
+        kwarg="list_rendering_policy",
+        get_default=_list_rendering_policy,
+        get_members=_list_rendering_policies,
+    ),
     "annotation_evaluation": Option(
         kwarg="annotation_evaluation",
         get_default=_annotation_evaluation,

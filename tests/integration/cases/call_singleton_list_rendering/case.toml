@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "spec_field_present", field = "list_rendering_policy"}]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+variant_only = true
+
+[[call.variants]]
+axis = "list_rendering_policy"

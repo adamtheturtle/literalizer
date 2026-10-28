@@ -1,0 +1,15 @@
+schema_version = 1
+owner = "variant"
+gates = [{kind = "spec_field_present", field = "list_rendering_policy"}]
+
+[[variants]]
+axis = "list_rendering_policy"
+
+[[variants]]
+axis = "list_rendering_policy_prefix"
+
+[[variants]]
+axis = "list_rendering_policy_json"
+
+[[variants]]
+axis = "list_rendering_policy_record"
