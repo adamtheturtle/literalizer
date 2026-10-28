@@ -1593,3 +1593,29 @@ reason = "A caller-defined Zig subclass overrides the null dictionary-field poli
 plan = "fixed_overrides"
 name_template = "{lang}_default_empty_dict_key"
 gates = [{kind = "capability_flag", flag = "default_allows_empty_ordered_map_keys"}]
+
+[axes.list_rendering_policy]
+plan = "every_non_default_member"
+name_template = "{lang}_list_rendering_{format}"
+option = "list_rendering_policy"
+include_default = true
+gates = [{ kind = "spec_field_present", field = "list_rendering_policy" }]
+layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
+
+[axes.list_rendering_policy_prefix]
+plan = "fixed_overrides"
+name_template = "{lang}_list_rendering_{format}_prefix"
+primary_axis = "list_rendering_policy"
+overrides = [{ kind = "non_default_kwarg", kwarg = "constructor_prefix" }]
+
+[axes.list_rendering_policy_json]
+plan = "fixed_overrides"
+name_template = "{lang}_list_rendering_{format}_json"
+primary_axis = "list_rendering_policy"
+overrides = [{ kind = "enum_member", option = "json_type", member = "JSON_ENCODE_VALUE" }]
+
+[axes.list_rendering_policy_record]
+plan = "fixed_overrides"
+name_template = "{lang}_list_rendering_{format}_record"
+primary_axis = "list_rendering_policy"
+overrides = [{ kind = "enum_member", option = "dict_format", member = "RECORD" }]

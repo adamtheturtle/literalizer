@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref"
+
+[ref]
+gates = [{kind = "spec_field_present", field = "list_rendering_policy"}]
+variant_only = true
+
+[ref.value_sources]
+shared = "[[1]]"
+
+[[ref.variants]]
+axis = "list_rendering_policy"

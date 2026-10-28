@@ -888,6 +888,10 @@ class Elm(metaclass=LanguageCls):
         dict_format: ``RECORD`` emits native Elm records for valid
             string-keyed fields and lets Elm infer their structural type.
             The default preserves the generated ``Val`` representation.
+
+        list_rendering_policy: ``AUTO`` uses cons syntax for singleton
+            ADT lists to keep formatting bounded. ``LITERAL`` uses direct
+            list literals. JSON values and native records are unaffected.
     """
 
     format_call_class_scope_stub = default_format_call_stub
@@ -1173,6 +1177,13 @@ class Elm(metaclass=LanguageCls):
 
         NO = TrailingCommaConfig(multiline_trailing_comma=False)
 
+    class ListRenderingPolicies(enum.Enum):
+        """Singleton ADT list rendering choices."""
+
+        AUTO = enum.auto()
+        LITERAL = enum.auto()
+
+    list_rendering_policies = ListRenderingPolicies
     date_formats = DateFormats
     datetime_formats = DatetimeFormats
     bytes_formats = BytesFormats
@@ -1388,6 +1399,7 @@ class Elm(metaclass=LanguageCls):
     datetime_format: DatetimeFormats = DatetimeFormats.ISO
     bytes_format: BytesFormats = BytesFormats.HEX
     sequence_format: SequenceFormats = SequenceFormats.LIST
+    list_rendering_policy: ListRenderingPolicies = ListRenderingPolicies.AUTO
     set_format: SetFormats = SetFormats.SET
     variable_type_hints: VariableTypeHints = VariableTypeHints.NEVER
     comment_format: CommentFormats = CommentFormats.DOUBLE_DASH
@@ -1586,6 +1598,8 @@ class Elm(metaclass=LanguageCls):
                 None
                 if self._json_active
                 or self.dict_format is type(self.dict_format).RECORD
+                or self.list_rendering_policy
+                is type(self.list_rendering_policy).LITERAL
                 else f"{self.constructor_prefix}List ({{items}} :: [])"
             ),
             supports_heterogeneity=(

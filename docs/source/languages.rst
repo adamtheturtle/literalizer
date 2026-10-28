@@ -100,6 +100,29 @@ Access a language's enum members through the class itself, e.g. ``Go.sequence_fo
 
 Each ``__init__`` parameter has a sensible default, so you only need to specify the options you want to change.
 
+Elm singleton lists
+-------------------
+
+Elm defaults to ``list_rendering_policy=Elm.list_rendering_policies.AUTO``.
+It renders a singleton ADT list as ``EList (EInt 1 :: [])`` to avoid expensive layout searches in elm-format for deeply nested lists.
+
+Choose ``LITERAL`` for direct brackets when embedding or reviewing generated code:
+
+.. code-block:: python
+
+   """Keep direct Elm list literals."""
+
+   from literalizer.languages import Elm
+
+   language = Elm(
+       list_rendering_policy=Elm.list_rendering_policies.LITERAL,
+   )
+
+This renders the same singleton as ``EList [EInt 1]``.
+Both policies preserve list values and types, the constructor prefix, collection layout, and supported variable and call forms.
+Empty lists, lists with multiple elements, JSON value mode, and native record mode retain their existing rendering.
+Direct brackets can make elm-format extremely slow for deeply nested singleton lists; the default keeps the formatter workaround enabled.
+
 Swift array inference
 ---------------------
 
