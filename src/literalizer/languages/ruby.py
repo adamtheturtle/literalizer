@@ -221,6 +221,15 @@ def _ruby_call_stub(
 
 
 @beartype
+def _format_date_ruby_short(value: dt.date) -> str:
+    """Use Ruby's default calendar only on or after its reform date."""
+    calendar = ", Date::GREGORIAN"
+    if (value.year, value.month, value.day) >= (1582, 10, 15):
+        calendar = ""
+    return f"Date.new({value.year}, {value.month}, {value.day}{calendar})"
+
+
+@beartype
 def _format_datetime_ruby(value: dt.datetime) -> str:
     """Format a datetime as a Ruby Time constructor call.
 
@@ -272,6 +281,13 @@ class Ruby(metaclass=LanguageCls):
               e.g. ``Date.new(2024, 1, 15, Date::GREGORIAN)``.
             * ``date_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15"``.
+            * ``date_formats.RUBY_SHORT`` — omit ``Date::GREGORIAN`` on
+              or after 1582-10-15. Earlier dates retain the explicit
+              Gregorian calendar, including dates in the reform gap.
+              Modern dates use Ruby's reform calendar for arithmetic:
+              subtracting one day from 1582-10-15 yields 1582-10-04.
+              The default ``RUBY`` format yields 1582-10-14 instead,
+              preserving Python's calendar arithmetic for every date.
 
         datetime_format: How to format :class:`datetime.datetime` values.
 
@@ -455,6 +471,11 @@ class Ruby(metaclass=LanguageCls):
         )
         ISO = DateFormatConfig(
             formatter=format_date_iso, type_produced=str, preamble_lines=()
+        )
+        RUBY_SHORT = DateFormatConfig(
+            formatter=_format_date_ruby_short,
+            preamble_lines=("require 'date'",),
+            type_produced=dt.date,
         )
 
     class DatetimeFormats(DatetimeFormatEnum):
