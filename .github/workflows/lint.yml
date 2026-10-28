@@ -697,9 +697,14 @@ jobs:
   # 2. A serial build segfaulted, then the retry spawned an odin process
   #    that never exited; GitHub Actions later killed it as an orphan.
   #
-  # Files are run serially in a single job so no two odin processes
-  # share a kernel.
+  # Each shard has its own runner. Files remain serial within a shard so
+  # no two odin processes share a kernel. Splitting the fixture work leaves
+  # room for cold roundtrip setup within the existing job timeout.
   lint-odin:
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1]
     runs-on: ubuntu-24.04
     # Normal runs finish in minutes.  If the compiler, setup action, or
     # cleanup hangs, stop this job promptly instead of leaving the
@@ -714,6 +719,8 @@ jobs:
     env:
       ODIN_VERSION: dev-2026-04
       ODIN_FIXTURE_TAG: dev_2024
+      ODIN_SHARD: ${{ matrix.shard }}
+      ODIN_SHARDS: 2
     steps:
       - uses: actions/checkout@v7
         with:
@@ -729,7 +736,7 @@ jobs:
           mapfile -d '' -t files < <(python3 -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
           n=${#files[@]}
           test "$n" -gt 0
-          for (( i=0; i<n; i+=1 )); do
+          for (( i=ODIN_SHARD; i<n; i+=ODIN_SHARDS )); do
             src=$(realpath "${files[i]}")
             # Print before running so a timeout log identifies the
             # fixture to minimize for an upstream Odin bug report.
