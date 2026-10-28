@@ -1,4 +1,4 @@
--module(fixture_dict_colliding_cobol_keys_erlang).
+-module(fixture_dict_colliding_normalized_keys_erlang).
 -export([x/0]).
 x() ->
     My_data = #{

@@ -1,4 +1,4 @@
-object Fixture_dict_colliding_cobol_keys_Scala {
+object Fixture_dict_colliding_normalized_keys_Scala {
 val my_data = Map[String, Int](
     "user_name" -> 1,
     "user.name" -> 2,
