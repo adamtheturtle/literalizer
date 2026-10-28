@@ -1,4 +1,4 @@
-object Fixture_cpp_record_nested_independent_array_fields_Scala_record_array_sequence {
+object Fixture_record_nested_independent_array_fields_Scala_record_array_sequence {
 case class Record0(numbers: Array[Array[Int]], words: Array[Array[String]])
 val my_data = Record0(
     numbers = Array[Array[Int]](
