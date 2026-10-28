@@ -2369,6 +2369,17 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.swift' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
+      - name: Bound Swift signing-key operations
+        shell: bash
+        run: |-
+          scripts/test-swift-gpg.sh
+          gpg_executable=$(command -v gpg)
+          wrapper_dir="$RUNNER_TEMP/swift-gpg"
+          mkdir -p "$wrapper_dir"
+          cp scripts/swift-gpg.sh "$wrapper_dir/gpg"
+          cp scripts/run-bounded.sh "$wrapper_dir/run-bounded.sh"
+          printf 'SWIFT_SETUP_GPG=%s\n' "$gpg_executable" >> "$GITHUB_ENV"
+          printf '%s\n' "$wrapper_dir" >> "$GITHUB_PATH"
       - name: Install Swift
         timeout-minutes: 10
         uses: SwiftyLab/setup-swift@v1
