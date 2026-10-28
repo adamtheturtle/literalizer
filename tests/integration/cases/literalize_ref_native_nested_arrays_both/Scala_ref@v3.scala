@@ -1,4 +1,4 @@
-object Fixture_literalize_ref_zig_native_nested_arrays_both_Scala_ref {
+object Fixture_literalize_ref_native_nested_arrays_both_Scala_ref {
 var shared = List[Int](
     1,
     2,
