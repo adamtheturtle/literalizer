@@ -1,4 +1,4 @@
-module Fixture_call_ref_cpp_external_known_null_Haskell_call where
+module Fixture_call_ref_external_known_null_Haskell_call where
 data Val = HNull
 consume :: Val -> IO ()
 consume _ = return ()

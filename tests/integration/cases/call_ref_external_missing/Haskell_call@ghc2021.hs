@@ -1,4 +1,4 @@
-module Fixture_call_ref_cpp_external_missing_Haskell_call where
+module Fixture_call_ref_external_missing_Haskell_call where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt
