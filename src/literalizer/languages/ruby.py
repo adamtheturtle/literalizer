@@ -224,7 +224,7 @@ def _ruby_call_stub(
 def _format_date_ruby_short(value: dt.date) -> str:
     """Use Ruby's default calendar only on or after its reform date."""
     calendar = ", Date::GREGORIAN"
-    if value >= dt.date(year=1582, month=10, day=15):
+    if (value.year, value.month, value.day) >= (1582, 10, 15):
         calendar = ""
     return f"Date.new({value.year}, {value.month}, {value.day}{calendar})"
 
