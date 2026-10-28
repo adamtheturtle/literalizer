@@ -1,4 +1,4 @@
--module(fixture_zig_json_helper_name_zval_erlang_json_type_otp_json).
+-module(fixture_json_helper_name_zval_erlang_json_type_otp_json).
 -export([x/0]).
 x() ->
     ZVal = #{
