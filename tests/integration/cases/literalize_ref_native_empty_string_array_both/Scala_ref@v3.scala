@@ -1,4 +1,4 @@
-object Fixture_literalize_ref_zig_native_empty_string_array_both_Scala_ref {
+object Fixture_literalize_ref_native_empty_string_array_both_Scala_ref {
 var shared = List[String]()
 var second = List[String](
     "one",
