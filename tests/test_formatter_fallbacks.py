@@ -59,7 +59,7 @@ def test_ruby_native_date_formatter_accepts_datetime(
     date_format: DateFormatEnum,
     value: dt.datetime,
 ) -> None:
-    """Native date formatters accept datetime's date interface."""
+    """Native date formatters accept values through the date interface."""
     # Literalize routes datetimes through datetime_format instead, so a
     # date-format golden cannot exercise this direct formatter contract.
     assert date_format(value) == date_format(value.date())
