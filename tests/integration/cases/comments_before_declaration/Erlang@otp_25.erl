@@ -1,4 +1,4 @@
--module(fixture_comments_vb_before_dim_erlang).
+-module(fixture_comments_before_declaration_erlang).
 -export([x/0]).
 x() ->
     My_data = #{

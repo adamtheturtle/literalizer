@@ -1,4 +1,4 @@
-class Fixture_dict_colliding_cobol_keys_Haxe_combined {
+class Fixture_dict_colliding_normalized_keys_Haxe_combined {
     public static function main() {
         var my_data = ([
             "user_name" => 1,

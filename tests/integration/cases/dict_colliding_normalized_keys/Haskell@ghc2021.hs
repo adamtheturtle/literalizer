@@ -1,4 +1,4 @@
-module Fixture_comments_vb_before_dim_Haskell_comment_block where
+module Fixture_dict_colliding_normalized_keys_Haskell where
 data Val = HInt Integer | HStr String | HMap [(String, Val)]
 instance Num Val where
     fromInteger = HInt
@@ -10,10 +10,11 @@ instance Num Val where
     negate _ = error "not implemented"
 my_data :: Val
 my_data = HMap [
-    {- Configuration -}
-    ("name", HStr "app"),
-    {- Port setting -}
-    ("port", 3000)
+    ("user_name", 1),
+    ("user.name", 2),
+    ("user-name", 3),
+    ("field_name_that_is_really_quite_long_one", 4),
+    ("field_name_that_is_really_quite_long_two", 5)
     ]
 main :: IO ()
 main = seq my_data (return ())

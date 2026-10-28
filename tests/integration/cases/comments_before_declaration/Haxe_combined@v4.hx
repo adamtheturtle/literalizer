@@ -1,4 +1,4 @@
-class Fixture_comments_vb_before_dim_Haxe_combined {
+class Fixture_comments_before_declaration_Haxe_combined {
     public static function main() {
         var my_data = ([
             // Configuration

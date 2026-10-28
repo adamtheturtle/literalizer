@@ -1,4 +1,4 @@
-object Fixture_comments_vb_before_dim_Scala_combined {
+object Fixture_comments_before_declaration_Scala_combined {
 var my_data = Map(
     // Configuration
     "name" -> "app",

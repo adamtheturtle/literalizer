@@ -1,4 +1,4 @@
-module Fixture_dict_colliding_cobol_keys_Crystal
+module Fixture_dict_colliding_normalized_keys_Crystal
 extend self
 my_data = {
     "user_name" => 1,

@@ -1,9 +1,9 @@
-class Fixture_comments_vb_before_dim_Haxe_comment_block {
+class Fixture_comments_before_declaration_Haxe {
     public static function main() {
         final my_data = ([
-            /* Configuration */
+            // Configuration
             "name" => "app",
-            /* Port setting */
+            // Port setting
             "port" => 3000,
         ] : Map<String, Dynamic>);
     }
