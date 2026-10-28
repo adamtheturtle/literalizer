@@ -1,4 +1,4 @@
--module(fixture_cpp_variant_int32_boundaries_map_erlang).
+-module(fixture_variant_int32_boundaries_map_erlang).
 -export([x/0]).
 x() ->
     My_data = #{

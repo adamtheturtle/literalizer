@@ -1,4 +1,4 @@
--module(fixture_cpp_variant_int32_boundaries_map_erlang_integer_format_hex).
+-module(fixture_variant_int32_boundaries_map_erlang_integer_format_hex).
 -export([x/0]).
 x() ->
     My_data = #{

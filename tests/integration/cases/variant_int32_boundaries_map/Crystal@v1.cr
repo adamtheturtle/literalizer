@@ -1,4 +1,4 @@
-module Fixture_cpp_variant_int32_boundaries_map_Crystal
+module Fixture_variant_int32_boundaries_map_Crystal
 extend self
 my_data = {
     "below" => -2147483649,

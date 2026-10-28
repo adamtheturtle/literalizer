@@ -1,4 +1,4 @@
--module(fixture_cpp_variant_int32_boundaries_sequence_erlang).
+-module(fixture_variant_int32_boundaries_sequence_erlang).
 -export([x/0]).
 x() ->
     My_data = [

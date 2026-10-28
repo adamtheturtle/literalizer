@@ -1,5 +1,4 @@
-{-# LANGUAGE BinaryLiterals #-}
-module Fixture_cpp_variant_int32_boundaries_sequence_Haskell_integer_format_binary where
+module Fixture_variant_int32_boundaries_sequence_Haskell_integer_format_hex where
 data Val = HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt
@@ -11,9 +10,9 @@ instance Num Val where
     negate _ = error "not implemented"
 my_data :: Val
 my_data = HList [
-    -0b10000000000000000000000000000000,
-    -0b1111111111111111111111111111111,
-    HList [0b0]
+    -0x80000000,
+    -0x7fffffff,
+    HList [0x0]
     ]
 main :: IO ()
 main = seq my_data (return ())
