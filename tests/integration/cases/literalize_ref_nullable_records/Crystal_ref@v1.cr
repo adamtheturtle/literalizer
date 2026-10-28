@@ -1,4 +1,4 @@
-module Fixture_literalize_ref_swift_nullable_records_safe_Crystal_ref
+module Fixture_literalize_ref_nullable_records_Crystal_ref
 extend self
 record Record1, x : Int32, y : Nil
 record Record2, x : Nil, y : Nil

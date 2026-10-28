@@ -1,4 +1,4 @@
-object Fixture_literalize_ref_swift_nullable_records_Scala_ref {
+object Fixture_literalize_ref_nullable_records_Scala_ref {
 case class Record1(x: Int, y: Any)
 case class Record2(x: Any, y: Any)
 case class Record3(x: Int, y: Int)
