@@ -74,7 +74,8 @@ jobs:
             coverage_args=(--cov --cov-config=pyproject.toml)
           fi
           printf 'Measure coverage: %s\n' "$MEASURE_COVERAGE"
-          uv run --no-sync python -m pytest -v -o verbosity_test_cases=0 \
+          uv run --no-sync python -m pytest -p scripts.pytest_worker_timing \
+            -v -o verbosity_test_cases=0 \
             --dist=worksteal --durations=20 \
             --ignore=tests/benchmarks . "${coverage_args[@]}"
         env:
