@@ -1,4 +1,4 @@
-module Fixture_cobol_call_ignored_reserved_parameter_Haskell_call where
+module Fixture_call_ignored_reserved_parameter_Haskell_call where
 process :: Val -> IO ()
 process _ = return ()
 data Val = HInt Integer
