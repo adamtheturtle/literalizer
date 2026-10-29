@@ -23,7 +23,6 @@ from .case_manifests import (
     case_input,
     case_manifests_by_name,
     load_case_manifest,
-    load_case_manifests,
     manifest_admits_language,
     variable_form_for_context,
 )
@@ -317,8 +316,7 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
         (
             (
                 'schema_version = 1\nowner = "literalize-ref-default"\n'
-                '[ref]\nlanguages = ["Rust"]\n'
-                'languages_reason = "Consumer and assertion conflict."\n'
+                "[ref]\n"
                 'external_declarations = {a = "0"}\n'
                 'expected_value_source = "[0, 1]"\n'
                 '[ref.consumer]\ntarget_function = "consume_widget"\n'
@@ -530,14 +528,14 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
         ),
         (
             'schema_version = 1\nsuites = ["base"]\nlanguages = ["Python"]\n',
-            "languages and languages_reason require each other",
+            "Extra inputs are not permitted",
         ),
         (
             (
                 'schema_version = 1\nsuites = ["base"]\n'
                 'languages_reason = "sampled"\n'
             ),
-            "languages and languages_reason require each other",
+            "Extra inputs are not permitted",
         ),
         (
             (
@@ -546,7 +544,7 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 'gates = [{ kind = "capability_flag", '
                 'flag = "supports_comments" }]\n'
             ),
-            "declare either languages or gates, not both",
+            "Extra inputs are not permitted",
         ),
         (
             (
@@ -577,7 +575,7 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 "[ref]\n"
                 'languages = ["Python"]\n'
             ),
-            "languages and languages_reason require each other",
+            "Extra inputs are not permitted",
         ),
         (
             (
@@ -588,14 +586,14 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 "per_element = true\n"
                 'languages = ["Python"]\n'
             ),
-            "languages and languages_reason require each other",
+            "Extra inputs are not permitted",
         ),
         (
             (
                 'schema_version = 1\nsuites = ["base"]\n'
                 'languages = ["Pythonic"]\nlanguages_reason = "sampled"\n'
             ),
-            "Input should be",
+            "Extra inputs are not permitted",
         ),
         (
             (
@@ -996,51 +994,6 @@ def test_an_ungated_case_selects_every_language(tmp_path: Path) -> None:
         manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
         for lang_cls in literalizer.languages.ALL_LANGUAGES
     )
-
-
-def test_named_languages_select_themselves(tmp_path: Path) -> None:
-    """A case naming its languages renders under exactly those."""
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest=(
-            "schema_version = 1\n"
-            'suites = ["base"]\n'
-            'languages = ["Python"]\n'
-            'languages_reason = "Sampled: one language shows this."\n'
-        ),
-        input_name="input.yaml",
-    )
-    manifest = load_case_manifest(case_dir=case_dir)
-    selected = [
-        lang_cls.__name__
-        for lang_cls in literalizer.languages.ALL_LANGUAGES
-        if manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
-    ]
-    assert selected == ["Python"]
-
-
-def test_every_named_language_set_records_its_reason(cases_dir: Path) -> None:
-    """No case narrows to named languages without saying why.
-
-    A narrowing that follows from a language property is a ``gates``
-    entry; one that does not names its languages and says which it is,
-    so a pin and a deliberate one-language sample stay distinguishable
-    rather than reading alike.
-    """
-    unexplained = sorted(
-        manifest.case_dir.name
-        for manifest in load_case_manifests(cases_dir=cases_dir)
-        for selection in (
-            manifest.selection,
-            *(
-                table
-                for table in (manifest.call, manifest.ref)
-                if table is not None
-            ),
-        )
-        if len(selection.languages) > 0 and selection.languages_reason is None
-    )
-    assert unexplained == []
 
 
 def test_owner_lookup_requires_exactly_one_case(tmp_path: Path) -> None:
