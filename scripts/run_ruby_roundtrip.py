@@ -37,6 +37,11 @@ def _build_program(json_text: str) -> str:
         "require 'json'\n"
         f"{preamble}\n"
         f"{result.code}\n"
+        f'negative_zero = {_VAR_NAME}.fetch("negative_zero")\n'
+        "unless negative_zero.is_a?(Float) && negative_zero.zero? &&\n"
+        "       (1.0 / negative_zero).negative?\n"
+        '  raise "negative_zero lost its sign"\n'
+        "end\n"
         f"STDOUT.write(JSON.generate({_VAR_NAME}))\n"
     )
 

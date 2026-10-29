@@ -52,6 +52,12 @@ def _build_program(json_text: str) -> str:
     return (
         f"{preamble}\n"
         f"{result.code}\n"
+        "val negativeZero =\n"
+        f"    ({_VAR_NAME} as kotlinx.serialization.json.JsonObject)\n"
+        '    .getValue("negative_zero").toString().toDouble()\n'
+        "check(negativeZero.toRawBits() == Long.MIN_VALUE) {\n"
+        '    "negative_zero lost its sign"\n'
+        "}\n"
         "print(Json.encodeToString("
         "JsonElement.serializer(), "
         f"{_VAR_NAME}"

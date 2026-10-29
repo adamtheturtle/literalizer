@@ -47,6 +47,11 @@ def _build_program(json_text: str) -> str:
         f"{preamble}\n"
         "void main() {\n"
         f"  {result.code}\n"
+        f'  final negativeZero = {_VAR_NAME}["negative_zero"];\n'
+        "  if (negativeZero is! double || negativeZero != 0 ||\n"
+        "      !negativeZero.isNegative) {\n"
+        '    throw StateError("negative_zero lost its sign");\n'
+        "  }\n"
         f"  print(jsonEncode({_VAR_NAME}));\n"
         "}\n"
     )

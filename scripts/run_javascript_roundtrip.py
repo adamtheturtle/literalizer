@@ -41,6 +41,9 @@ def _build_program(json_text: str) -> str:
     return (
         f"{preamble}\n"
         f"{result.code}\n"
+        f'if (!Object.is({_VAR_NAME}["negative_zero"], -0)) {{\n'
+        '  throw new Error("negative_zero lost its sign");\n'
+        "}\n"
         f"process.stdout.write(JSON.stringify({_VAR_NAME}));\n"
     )
 
