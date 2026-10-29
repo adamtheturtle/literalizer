@@ -2357,6 +2357,11 @@ jobs:
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
         run: uv run --no-dev --group=roundtrip python -m scripts.run_kotlin_roundtrip
+      # Four bounded programs share one record declaration across compatible
+      # documents, checking both document orders and runtime values.
+      - name: Kotlin shared-record composition
+        timeout-minutes: 3
+        run: uv run --no-dev --group=roundtrip python -m scripts.run_kotlin_shared_record
 
   lint-swift:
     runs-on: ubuntu-24.04
