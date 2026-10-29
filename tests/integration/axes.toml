@@ -88,7 +88,7 @@ plan = "every_non_default_member"
 name_template = "{lang}_bytes_format_{format}"
 option = "bytes_format"
 
-[axes.c_field_name]
+[axes.custom_value_field_names]
 plan = "fixed_overrides"
 name_template = "{lang}_field_names_custom"
 gates = [{ kind = "non_default_kwarg", kwarg = "bool_field" }]
@@ -246,7 +246,7 @@ overrides = [
 # so the widening fix is exactly what makes the list type-check (#2897).
 # It reuses that axis's strategy selection rather than restating the
 # behavior flag that names it.
-[axes.dhall_nested_map_widening]
+[axes.nested_map_widening_uniform_keys]
 plan = "fixed_overrides"
 name_template = "{lang}_nested_map_widening"
 overrides_from = "nested_map_widening_scalar_wrapping"
@@ -1453,7 +1453,7 @@ overrides = [
   { kind = "enum_member", option = "language_version", member = "V1_2" },
 ]
 
-[axes.ruby_symbol_non_identifier_keys]
+[axes.symbol_non_identifier_keys]
 plan = "fixed_overrides"
 name_template = "{lang}_symbol_non_identifier_keys"
 gates = [
@@ -1465,7 +1465,7 @@ overrides = [
 
 # The round-trip YAML loader retains explicit scalar tags in
 # ``TaggedScalar`` wrappers that must be demoted before rendering.
-[axes.python_yaml_tagged_scalars]
+[axes.yaml_tagged_scalars]
 plan = "fixed_overrides"
 name_template = "{lang}_yaml_tagged_scalars"
 
@@ -1483,7 +1483,7 @@ overrides = [
   { kind = "enum_member", option = "sequence_format", member = "LIST" },
 ]
 
-[axes.dart_call_result_var]
+[axes.call_result_var_type_hints_always]
 plan = "fixed_overrides"
 name_template = "{lang}_call_result_var_type_hints_always"
 gates = [

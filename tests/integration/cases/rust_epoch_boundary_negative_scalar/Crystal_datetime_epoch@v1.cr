@@ -1,4 +1,0 @@
-module Fixture_rust_epoch_boundary_negative_scalar_Crystal_datetime_epoch
-extend self
-my_data = -2147483649
-end

@@ -15,4 +15,4 @@ variable_form = "new"
 axis = "type_hints"
 
 [[call.variants]]
-axis = "dart_call_result_var"
+axis = "call_result_var_type_hints_always"

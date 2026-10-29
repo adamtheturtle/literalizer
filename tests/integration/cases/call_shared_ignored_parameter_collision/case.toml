@@ -1,6 +1,7 @@
 schema_version = 1
 owner = "literalize-call"
-# Shared companion to call_elixir_ignored_parameter_collision; the original control remains unchanged.
+# Shared companion to call_ignored_parameter_collision (originally Elixir).
+# The control retains its original configuration.
 
 [call]
 target_function = "process"

@@ -39,7 +39,7 @@ axis = "type_name"
 axis = "constructor_prefix"
 
 [[variants]]
-axis = "c_field_name"
+axis = "custom_value_field_names"
 
 [[variants]]
 axis = "constructor_name"

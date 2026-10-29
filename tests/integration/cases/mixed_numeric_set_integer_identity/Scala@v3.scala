@@ -1,0 +1,6 @@
+object Fixture_mixed_numeric_set_integer_identity_Scala {
+val my_data = Set[Any](
+    1.5,
+    9007199254740993L,
+)
+}

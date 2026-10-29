@@ -1,0 +1,4 @@
+module Fixture_epoch_scalar_above_i32_range_Crystal_datetime_epoch
+extend self
+my_data = 4085195400
+end

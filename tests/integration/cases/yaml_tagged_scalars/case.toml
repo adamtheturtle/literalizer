@@ -2,4 +2,4 @@ schema_version = 1
 owner = "variant"
 
 [[variants]]
-axis = "python_yaml_tagged_scalars"
+axis = "yaml_tagged_scalars"
