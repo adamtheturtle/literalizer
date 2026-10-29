@@ -7,3 +7,7 @@ suffix = "_nested_map_fallback"
 
 [[variants]]
 axis = "record_nested_map_fallback"
+
+# Pin the complete explicit-annotation rendering contract (#5236).
+[[variants]]
+axis = "record_type_hints_always"
