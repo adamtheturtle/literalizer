@@ -20,3 +20,8 @@ collection_layout = "multiline"
 due_date = -1
 parent_id = -1
 assignee = ""
+
+# Explicit root annotations retain this input's record schema (#5236).
+[[variants]]
+axis = "record_type_hints_always"
+context = { record_null_substitutions = { due_date = -1, parent_id = -1, assignee = "" } }
