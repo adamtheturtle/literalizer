@@ -1,4 +1,4 @@
-class Fixture_java_call_null_and_array_arguments_Haxe_call {
+class Fixture_call_null_and_array_arguments_Haxe_call {
     public static function main() {
         function process(value:Dynamic):Dynamic return null;
         process(null);

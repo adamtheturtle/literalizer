@@ -1,4 +1,4 @@
-module Fixture_java_call_null_and_array_arguments_Haskell_call where
+module Fixture_call_null_and_array_arguments_Haskell_call where
 data Val = HNull | HInt Integer | HList [Val]
 instance Num Val where
     fromInteger = HInt
