@@ -8,3 +8,7 @@ axis = "record_keyword_field"
 axis = "record_keyword_field"
 suffix = "_multiline"
 context = { collection_layout = "multiline" }
+
+# Explicit root annotations retain this input's record schema (#5236).
+[[variants]]
+axis = "record_type_hints_always"
