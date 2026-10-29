@@ -2397,9 +2397,9 @@ class C(metaclass=LanguageCls):
     ) -> Callable[[str, str, Value], str]:
         """Callable that formats an assignment to an existing variable.
 
-        The combined declaration+assignment form is only exercised for a
-        top-level record-shaped dict, so a ``RECORD`` reassignment is a
-        plain ``my_data = (struct Record0){...};`` struct copy.
+        Record-shaped dictionaries use a plain struct copy. Native arrays
+        of records cannot be assigned in C; reject these rather than
+        wrapping their struct elements as incompatible ``CVal`` entries.
 
         Under ``json_type=CJSON`` the value is rebuilt as a fresh
         ``cJSON`` node tree and the existing binding is reassigned to its
@@ -2440,7 +2440,13 @@ class C(metaclass=LanguageCls):
         def _format_assign(name: str, value: str, data: Value) -> str:
             """Format a C variable assignment."""
             lhs = self._record_binding_lhs(data)
-            if lhs is not None and not isinstance(lhs, _CArrayType):
+            if isinstance(lhs, _CArrayType):
+                msg = (
+                    "C cannot reassign a native record array under the "
+                    "RECORD heterogeneous strategy"
+                )
+                raise UnrepresentableInputError(msg)
+            if lhs is not None:
                 return f"{name} = {value};"
             wrapped = format_entry(data, value)
             return f"{name} = {wrapped};"
