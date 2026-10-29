@@ -6,3 +6,7 @@ axis = "record_numeric_cross"
 
 [[variants]]
 axis = "integer_width_strategy"
+
+# Pin the complete explicit-annotation rendering contract (#5236).
+[[variants]]
+axis = "record_type_hints_always"
