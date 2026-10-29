@@ -392,51 +392,31 @@ class ManifestVariant(  # noqa: NOD001
 
 
 # Defaults stand in for omitted keys, as above.
-class LanguageSelection(  # noqa: NOD001
+class CapabilitySelection(  # noqa: NOD001
     BaseModel,
     arbitrary_types_allowed=True,
     extra="forbid",
     frozen=True,
     strict=True,
 ):
-    """How one manifest table narrows the languages it renders under.
-
-    ``gates`` names the property the narrowing follows from, so a case
-    that a language qualifies for by gaining that property picks it up
-    without being edited.  ``languages`` names the languages outright,
-    for a narrowing no property expresses -- a syntax quirk only one
-    language has, or a deliberate one-language sample of a rendering
-    that does not vary -- and pairs with ``languages_reason``, which
-    says which of those it is.  Naming both would state the same
-    narrowing twice, so a table declares at most one.
+    """Select participation through declared properties and syntax support.
 
     A gate reads the language default spec: a case selects languages,
-    where a variant axis selects the specs its overrides build.
+    while a variant axis selects the specs its overrides build. Named
+    language lists are not part of the root, reference or call schema.
     """
 
-    languages: ManifestLanguages = ()
-    languages_reason: Annotated[str, Field(min_length=1)] | None = None
     gates: list[SuiteGate] = Field(default_factory=no_gates)
 
     @model_validator(mode="after")
     def _validate_language_selection(self) -> Self:
-        """Reject a narrowing stated twice, or stated without a
-        reason.
-        """
-        if len(self.languages) > 0 and bool(self.gates):
-            msg = "declare either languages or gates, not both"
-            raise ValueError(msg)
-        if bool(self.languages) != (self.languages_reason is not None):
-            msg = "languages and languages_reason require each other"
-            raise ValueError(msg)
+        """Validate every declared participation property."""
         validate_gate_names(subject="gates", gates=self.gates)
         return self
 
     @beartype
     def admits_language(self, *, lang_cls: literalizer.LanguageCls) -> bool:
         """Return whether this narrowing selects *lang_cls*."""
-        if len(self.languages) > 0:
-            return lang_cls in self.languages
         literal_gates = tuple(
             gate
             for gate in self.gates
@@ -611,7 +591,7 @@ class RefConsumerSpec(  # noqa: NOD001
 
 class RefCaseSpec(  # noqa: NOD001
     _OwnedCaseSpec,
-    LanguageSelection,
+    CapabilitySelection,
     frozen=True,
 ):
     """Everything a case declares about driving a ``$ref`` golden.
@@ -764,7 +744,7 @@ class CallWrapperSpec(BaseModel, extra="forbid", frozen=True):
 
 class CallCaseSpec(  # noqa: NOD001
     _OwnedCaseSpec,
-    LanguageSelection,
+    CapabilitySelection,
     frozen=True,
 ):
     """Everything a case declares about driving ``literalize_call``.
@@ -1024,7 +1004,7 @@ def _empty_ref_examples() -> list[RefCaseSpec]:
 
 # Defaults stand in for omitted keys, as above.
 class _CaseManifestData(  # noqa: NOD001
-    LanguageSelection,
+    CapabilitySelection,
     frozen=True,
 ):
     """Strict representation of the data read directly from TOML."""
@@ -1155,7 +1135,7 @@ class CaseManifest:
     schema_version: Literal[1]
     input: CaseInput
     input_roundtrip: InputRoundtripSpec | None
-    selection: LanguageSelection
+    selection: CapabilitySelection
     suites: frozenset[SuiteName]
     owner: OwnerName | None
     roles: frozenset[CaseRoleName]
@@ -1241,9 +1221,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         schema_version=data.schema_version,
         input=input_info,
         input_roundtrip=data.input_roundtrip,
-        selection=LanguageSelection(
-            languages=data.languages,
-            languages_reason=data.languages_reason,
+        selection=CapabilitySelection(
             gates=data.gates,
         ),
         suites=frozenset(data.suites),
