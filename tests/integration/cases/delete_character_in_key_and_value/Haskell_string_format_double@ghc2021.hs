@@ -1,5 +1,9 @@
-module Fixture_zig_delete_string_Haskell_type_hints_safe where
+{-# LANGUAGE OverloadedStrings #-}
+module Fixture_delete_character_in_key_and_value_Haskell_string_format_double where
+import Data.String (IsString(fromString))
 data Val = HInt Integer | HStr String | HMap [(String, Val)]
+instance IsString Val where
+    fromString = HStr
 instance Num Val where
     fromInteger = HInt
     _ + _ = error "not implemented"
@@ -10,7 +14,7 @@ instance Num Val where
     negate _ = error "not implemented"
 my_data :: Val
 my_data = HMap [
-    ("v", HStr "a\x7f\&b"),
+    ("v", "a\x7f\&b"),
     ("a\x7f\&b", 1)
     ]
 main :: IO ()

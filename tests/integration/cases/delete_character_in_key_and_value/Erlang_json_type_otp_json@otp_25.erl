@@ -1,4 +1,4 @@
--module(fixture_zig_delete_string_erlang_json_type_otp_json).
+-module(fixture_delete_character_in_key_and_value_erlang_json_type_otp_json).
 -export([x/0]).
 x() ->
     My_data = #{

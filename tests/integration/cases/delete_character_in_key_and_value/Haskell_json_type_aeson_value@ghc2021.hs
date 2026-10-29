@@ -1,5 +1,5 @@
 {-# LANGUAGE QuasiQuotes #-}
-module Fixture_zig_delete_string_Haskell_json_type_aeson_value where
+module Fixture_delete_character_in_key_and_value_Haskell_json_type_aeson_value where
 import Data.Aeson (Value)
 import Data.Aeson.QQ (aesonQQ)
 my_data :: Value
