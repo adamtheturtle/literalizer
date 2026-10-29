@@ -6,3 +6,8 @@ replacement = -1
 
 [[variants]]
 axis = "language_version"
+
+# Explicit root annotations retain this input's record schema (#5236).
+[[variants]]
+axis = "record_type_hints_always"
+context = { record_null_substitutions = { replacement = -1 } }
