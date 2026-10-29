@@ -24,7 +24,7 @@ axis = "statement_terminator_style"
 axis = "statement_terminator_style_decl"
 
 [[variants]]
-axis = "c_field_name"
+axis = "custom_value_field_names"
 
 [[variants]]
 axis = "language_version"

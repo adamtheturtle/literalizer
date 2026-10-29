@@ -1,0 +1,4 @@
+module Fixture_epoch_scalar_below_i32_range_Crystal_datetime_epoch
+extend self
+my_data = -2147483649
+end

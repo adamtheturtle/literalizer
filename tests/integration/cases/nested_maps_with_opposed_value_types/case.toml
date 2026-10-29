@@ -3,4 +3,4 @@ suites = ["base"]
 # Regression provenance: dhall_nested_map_widening (Dhall).
 
 [[variants]]
-axis = "dhall_nested_map_widening"
+axis = "nested_map_widening_uniform_keys"
