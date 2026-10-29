@@ -1,0 +1,5 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+"C['[{\"id\": 1}]']" = "C cannot reassign a native record array under the RECORD heterogeneous strategy"
+"C['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = "C cannot reassign a native record array under the RECORD heterogeneous strategy"
