@@ -3,3 +3,7 @@ owner = "variant"
 
 [[variants]]
 axis = "i64_min_record_integer_format"
+
+# Pin the complete explicit-annotation rendering contract (#5236).
+[[variants]]
+axis = "record_type_hints_always"
