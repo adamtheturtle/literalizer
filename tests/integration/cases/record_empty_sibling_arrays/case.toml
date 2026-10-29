@@ -3,3 +3,9 @@ owner = "variant"
 
 [[variants]]
 axis = "heterogeneous_strategy_record"
+
+# Compile declaration and assignment together for this carrier (#5236).
+[[variants]]
+axis = "heterogeneous_strategy_record"
+suffix = "_both"
+context = { variable_form = "both" }
