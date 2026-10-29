@@ -1,0 +1,92 @@
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
+struct Record0 { std::vector<std::pair<std::string, std::variant<std::vector<std::vector<long long>>, std::string>>> values; bool flag{}; std::vector<std::vector<long long>> direct_arrays; };
+int main() {
+auto my_data = Record0{
+    {
+        {"wide", std::vector<std::vector<long long>>{
+            std::vector<long long>{
+                2208988800,
+            },
+            std::vector<long long>{},
+        }},
+        {"narrow", std::vector<std::vector<long long>>{
+            std::vector<long long>{
+                946684800,
+            },
+        }},
+        {"negative", std::vector<std::vector<long long>>{
+            std::vector<long long>{
+                -2208988800,
+            },
+        }},
+        {"shifted", std::vector<std::vector<long long>>{
+            std::vector<long long>{
+                2208988800,
+            },
+        }},
+        {"mixed_width", std::vector<std::vector<long long>>{
+            std::vector<long long>{
+                946684800,
+            },
+            std::vector<long long>{
+                2208988800,
+            },
+        }},
+        {"text", "preserve"},
+    },
+    true,
+    {
+        std::vector<long long>{
+            2208988800,
+        },
+        std::vector<long long>{},
+    },
+};
+(void)my_data;
+my_data = Record0{
+    {
+        {"wide", std::vector<std::vector<long long>>{
+            std::vector<long long>{
+                2208988800,
+            },
+            std::vector<long long>{},
+        }},
+        {"narrow", std::vector<std::vector<long long>>{
+            std::vector<long long>{
+                946684800,
+            },
+        }},
+        {"negative", std::vector<std::vector<long long>>{
+            std::vector<long long>{
+                -2208988800,
+            },
+        }},
+        {"shifted", std::vector<std::vector<long long>>{
+            std::vector<long long>{
+                2208988800,
+            },
+        }},
+        {"mixed_width", std::vector<std::vector<long long>>{
+            std::vector<long long>{
+                946684800,
+            },
+            std::vector<long long>{
+                2208988800,
+            },
+        }},
+        {"text", "preserve"},
+    },
+    true,
+    {
+        std::vector<long long>{
+            2208988800,
+        },
+        std::vector<long long>{},
+    },
+};
+    (void)my_data;
+    return 0;
+}
