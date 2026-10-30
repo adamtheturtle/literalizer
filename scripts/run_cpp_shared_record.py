@@ -17,6 +17,15 @@ toolchain (``clang++``) is already installed.
 
 import shutil
 
+from literalizer import (
+    InputFormat,
+    Language,
+    LanguageCls,
+    NewVariable,
+    literalize,
+    literalize_call,
+    literalize_call_with_declarations,
+)
 from literalizer.languages import Cpp
 from scripts import roundtrip_common, shared_record_common
 
@@ -61,6 +70,102 @@ def _build_program() -> str:
     )
 
 
+def _build_composed_program(*, language: Language, reverse: bool) -> str:
+    """Compose independent records with an unhinted real consumer."""
+    declarations = [
+        literalize(
+            source=source,
+            input_format=InputFormat.JSON,
+            language=language,
+            variable_form=NewVariable(name=name, modifiers=frozenset()),
+        )
+        for name, source in (
+            ("first_data", '{"name": "first", "values": [1, 2]}'),
+            ("second_data", '{"name": "second", "values": [3]}'),
+        )
+    ]
+    if reverse:
+        declarations.reverse()
+    call = literalize_call(
+        source='[[{"$ref": "first_data"}, {"$ref": "second_data"}]]',
+        input_format=InputFormat.JSON,
+        language=language,
+        target_function="consume",
+        parameter_names=("first", "second"),
+        per_element=True,
+        ref_key="$ref",
+    )
+    result = literalize_call_with_declarations(
+        language=language,
+        declarations=declarations,
+        call=call,
+        extra_body_preamble=(),
+        extra_class_preamble=(),
+        extra_preamble=(
+            "#include <iostream>",
+            "#include <cstdlib>",
+            (
+                "template<class A, class B>\n"
+                "void consume(const A& first, const B& second) {\n"
+                "    if (first.values.size() != 2 || "
+                "second.values.size() != 1) std::abort();\n"
+                '    std::cout << "{\\"names\\":[\\"" << first.name\n'
+                '        << "\\",\\"" << second.name\n'
+                '        << "\\"],\\"values\\":["\n'
+                '        << first.values[0] << "," << first.values[1]\n'
+                '        << "," << second.values[0] << "]}";\n'
+                "}"
+            ),
+        ),
+    )
+    return result.code
+
+
+def _check_composed_records(*, clangxx: str) -> None:
+    """Verify both declaration orders with every supported C++ dialect."""
+    language_cls: LanguageCls = Cpp
+    for version, standard in (
+        (Cpp.version_formats.CPP14, "c++14"),
+        (Cpp.version_formats.CPP17, "c++17"),
+        (Cpp.version_formats.CPP20, "c++20"),
+    ):
+        language = language_cls(
+            language_version=version,
+            heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
+            module_name="main",
+        )
+        for reverse in (False, True):
+            roundtrip_common.execute(
+                label=f"C++ {standard} composed records reverse={reverse}",
+                source_filename="main.cpp",
+                program=_build_composed_program(
+                    language=language, reverse=reverse
+                ),
+                steps=[
+                    roundtrip_common.Step(
+                        args=[
+                            clangxx,
+                            f"-std={standard}",
+                            "-Werror",
+                            "main.cpp",
+                            "-o",
+                            "main",
+                        ],
+                        failure_label="clang++ composition error",
+                    ),
+                    roundtrip_common.Step(
+                        args=["./main"],
+                        failure_label="composition runtime error",
+                    ),
+                ],
+                excluded_keys=(),
+                expected_json=(
+                    '{"names": ["first", "second"], "values": [1, 2, 3]}'
+                ),
+                extra_files=None,
+            )
+
+
 def main() -> None:
     """Compile both documents against one set of declarations."""
     program = _build_program()
@@ -92,6 +197,7 @@ def main() -> None:
         expected_json=shared_record_common.OK_DOCUMENT,
         extra_files=None,
     )
+    _check_composed_records(clangxx=clangxx)
 
 
 if __name__ == "__main__":
