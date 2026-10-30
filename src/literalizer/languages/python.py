@@ -2537,6 +2537,20 @@ class Python(metaclass=LanguageCls):
 
     call_data_dependent_preamble = default_call_data_dependent_preamble
 
+    @staticmethod
+    @beartype
+    def composed_preamble(
+        _preambles: tuple[tuple[str, ...], ...],
+        _supporting_preambles: tuple[tuple[str, ...], ...],
+        canonical: tuple[str, ...],
+        /,
+    ) -> tuple[str, ...]:
+        """Keep future annotations ahead of every other declaration."""
+        future = "from __future__ import annotations"
+        return tuple(entry for entry in canonical if entry == future) + tuple(
+            entry for entry in canonical if entry != future
+        )
+
     @cached_property
     @beartype
     def type_hint_collection_preamble_lines(
