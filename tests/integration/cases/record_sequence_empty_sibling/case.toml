@@ -3,3 +3,7 @@ owner = "variant"
 
 [[variants]]
 axis = "heterogeneous_strategy_record"
+
+# Explicit root annotations retain this input's record schema (#5236).
+[[variants]]
+axis = "record_type_hints_always"

@@ -46,7 +46,14 @@ def _build_program(json_text: str) -> str:
         pre_indent_level=0,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
-    return f"{preamble}\n{result.code}\nprint {_VAR_NAME}.to_json\n"
+    return (
+        f"{preamble}\n{result.code}\n"
+        f'negative_zero = {_VAR_NAME}["negative_zero"].as_f\n'
+        'raise "negative_zero lost its sign" unless negative_zero == 0.0 && \
+'
+        "  (1.0 / negative_zero) == -Float64::INFINITY\n"
+        f"print {_VAR_NAME}.to_json\n"
+    )
 
 
 def main() -> None:

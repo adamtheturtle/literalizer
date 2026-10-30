@@ -47,18 +47,27 @@ def _build_program(json_text: str) -> str:
         var_name=_VAR_NAME,
         pre_indent_level=1,
     )
-    preamble = "\n".join((*result.preamble, *result.body_preamble))
+    preamble = "\n".join(
+        line
+        for line in (*result.preamble, *result.body_preamble)
+        if line != 'import "math"'
+    )
     return (
         f"{preamble}\n"
         "\n"
         "import (\n"
         '\t"encoding/json"\n'
         '\t"fmt"\n'
+        '\t"math"\n'
         '\t"os"\n'
         ")\n"
         "\n"
         "func main() {\n"
         f"{result.code}\n"
+        f'\tnegativeZero, ok := {_VAR_NAME}["negative_zero"].(float64)\n'
+        "\tif !ok || negativeZero != 0 || !math.Signbit(negativeZero) {\n"
+        '\t\tpanic("negative_zero lost its sign")\n'
+        "\t}\n"
         f"\tout, err := json.Marshal({_VAR_NAME})\n"
         "\tif err != nil {\n"
         "\t\tfmt.Fprintln(os.Stderr, err)\n"

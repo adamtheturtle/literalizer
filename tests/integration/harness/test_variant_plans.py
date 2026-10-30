@@ -1,0 +1,758 @@
+"""Tests for the declared variant-axis expansion plans."""
+
+from pathlib import Path
+
+import pytest
+
+from literalizer import CollectionLayout, CommentConfig
+from literalizer._enums import enum_payload
+from literalizer.languages import ALL_LANGUAGES, Cpp, Java
+from tests.enum_members import enum_member_by_name, find_enum_member
+from tests.integration.case_manifests import CaseManifestError
+from tests.integration.language_specs import make_spec
+from tests.integration.variant_axis_names import (
+    KNOWN_VARIANT_AXES,
+    SPECIAL_VARIANT_AXES,
+)
+from tests.integration.variant_cases import (
+    HasJsonType,
+    check_axis_coverage,
+    variants_for_axis,
+)
+from tests.integration.variant_plans import (
+    AxisPlanError,
+    declared_axis_names,
+    load_axis_registry,
+    special_axis_names,
+    variants_for_declared_axis,
+    variants_for_registry_axis,
+)
+
+_VALID_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+"""
+
+_VALID_FIXED_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+"""
+
+_VALID_KWARG_VALUES_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "kwarg_values"
+name_template = "{lang}_example_{format}"
+kwarg = "multiline_raw_string_delimiter_base"
+values = [{ name = "punctuation", value = "!?" }]
+"""
+
+_VALID_FILTERED_AXIS = """
+schema_version = 1
+
+[axes.date]
+plan = "every_non_default_member"
+name_template = "{lang}_date_{format}"
+option = "date_format"
+
+[axes.example]
+plan = "filtered"
+base = "date"
+"""
+
+_VALID_CROSS_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "cross_product"
+name_template = "{lang}_example_{format}_{tag}_{secondary}"
+primary = "date_format"
+secondaries = [{ tag = "dt", option = "datetime_format" }]
+"""
+
+_VALID_PAIRED_AXES = """
+schema_version = 1
+
+[axes.base]
+plan = "every_non_default_member"
+name_template = "{lang}_base_{format}"
+option = "date_format"
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example_{format}"
+primary_axis = "base"
+"""
+
+_CHAINED_OVERRIDES_AXES = """
+schema_version = 1
+
+[axes.source]
+plan = "fixed_overrides"
+name_template = "{lang}_source"
+overrides = [
+  { kind = "true_flag", kwarg = "record_unify_optional_fields" },
+]
+
+[axes.other]
+plan = "fixed_overrides"
+name_template = "{lang}_other"
+overrides_from = "source"
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+overrides_from = "other"
+"""
+
+
+def _write_registry(*, tmp_path: Path, contents: str) -> Path:
+    """Write one temporary axis registry and return its path."""
+    path = tmp_path / "axes.toml"
+    _ = path.write_text(data=contents, encoding="utf-8")
+    return path
+
+
+def test_every_axis_resolves_to_exactly_one_expansion() -> None:
+    """Each expandable axis has a declared plan."""
+    declared = declared_axis_names()
+
+    assert declared & SPECIAL_VARIANT_AXES == frozenset()
+    assert declared == KNOWN_VARIANT_AXES - SPECIAL_VARIANT_AXES
+
+
+def test_special_axes_are_declared() -> None:
+    """The context-assembled axes come from ``axes.toml`` as well."""
+    assert special_axis_names() == SPECIAL_VARIANT_AXES
+    assert (
+        frozenset(
+            {
+                "json_type_modifiers",
+                "json_type_variable_form",
+                "modifier_sequence_format",
+                "modifiers",
+                "record_modifiers",
+                "multiline_string_combined",
+                "multiline_string_pre_indent",
+                "plain_collection_callbacks",
+                "typed_collection_callback",
+                "custom_zig_null_policy",
+            }
+        )
+        == SPECIAL_VARIANT_AXES
+    )
+
+
+def test_every_declared_axis_expands() -> None:
+    """No declared plan silently expands to nothing."""
+    for axis_key in sorted(declared_axis_names()):
+        assert (
+            len(
+                variants_for_declared_axis(
+                    axis_key=axis_key, resolve_axis=variants_for_axis
+                )
+            )
+            > 0
+        ), axis_key
+
+
+def test_format_options_cover_versions_without_overriding_pins() -> None:
+    """Ordinary options cover versions; explicit pins and syntax floors
+    win.
+    """
+    ordinary = variants_for_axis(axis_key="bytes_format")
+    assert {
+        variant.spec.language_version
+        for variant in ordinary
+        if variant.lang_cls is Cpp
+        and variant.name == "Cpp_bytes_format_base64"
+    } == set(Cpp.VersionFormats)
+    pinned = variants_for_axis(axis_key="language_version")
+    assert {
+        variant.spec.language_version
+        for variant in pinned
+        if variant.name == "Cpp_version_cpp14"
+    } == {enum_member_by_name(enum_cls=Cpp.VersionFormats, name="CPP14")}
+    records = variants_for_axis(axis_key="heterogeneous_strategy_record")
+    assert [
+        variant.spec.language_version
+        for variant in records
+        if variant.lang_cls is Java
+    ] == [enum_member_by_name(enum_cls=Java.VersionFormats, name="JDK_16")]
+
+
+def test_axis_can_cover_only_default_version(
+    tmp_path: Path,
+) -> None:
+    """An explicit plan opt-out still renders its one default version."""
+    axis_path = tmp_path / "axes.toml"
+    _ = axis_path.write_text(data=_VALID_FIXED_AXIS + "per_version = false\n")
+    variants = variants_for_registry_axis(
+        axis_key="example",
+        path=axis_path,
+        resolve_axis=variants_for_axis,
+    )
+    assert [
+        variant.spec.language_version
+        for variant in variants
+        if variant.lang_cls is Cpp
+    ] == [enum_member_by_name(enum_cls=Cpp.VersionFormats, name="CPP20")]
+
+
+def test_optional_metadata_version_pins_only_languages_declaring_it(
+    tmp_path: Path,
+) -> None:
+    """A declared metadata pin wins; languages omitting it keep
+    coverage.
+    """
+    axis_path = _write_registry(
+        tmp_path=tmp_path,
+        contents=_VALID_FIXED_AXIS
+        + 'overrides = [{ kind = "metadata_enum_member", '
+        'option = "language_version", '
+        'field = "heterogeneous_value_variant_name_language_version", '
+        "optional = true }]\n",
+    )
+    variants = variants_for_registry_axis(
+        path=axis_path,
+        axis_key="example",
+        resolve_axis=variants_for_axis,
+    )
+    assert [
+        variant.spec.language_version
+        for variant in variants
+        if variant.lang_cls is Cpp
+    ] == [enum_member_by_name(enum_cls=Cpp.VersionFormats, name="CPP14")]
+    assert {
+        variant.spec.language_version
+        for variant in variants
+        if variant.lang_cls is Java
+    } == set(Java.VersionFormats)
+
+
+def test_declared_axis_names_are_unique_per_language() -> None:
+    """A plan never gives one language two identically named
+    variants.
+    """
+    for axis_key in sorted(declared_axis_names()):
+        variants = variants_for_declared_axis(
+            axis_key=axis_key,
+            resolve_axis=variants_for_axis,
+        )
+        keyed = {
+            (variant.name, variant.spec.language_version)
+            for variant in variants
+        }
+
+        assert len(keyed) == len(variants), axis_key
+
+
+def test_filtered_axis_narrows_its_base() -> None:
+    """A filtered plan keeps its base axis's variants for the languages
+    its gates admit, and nothing else.
+    """
+    base = variants_for_axis(axis_key="json_type")
+
+    assert variants_for_axis(axis_key="json_type_call_result") == [
+        variant
+        for variant in base
+        if variant.lang_cls.supports_json_call_result_binding
+    ]
+
+
+def test_json_type_axis_covers_every_capable_language() -> None:
+    """Every language with a JSON value type gets JSON-type variants.
+
+    The axis selects languages by the presence of the ``json_type``
+    field, so a future JSON-capable language cannot land without
+    coverage.
+    """
+    supported = {
+        lang_cls
+        for lang_cls in ALL_LANGUAGES
+        if isinstance(make_spec(lang_cls=lang_cls), HasJsonType)
+    }
+    covered = {
+        variant.lang_cls for variant in variants_for_axis(axis_key="json_type")
+    }
+
+    assert covered == supported
+
+
+def test_json_type_name_suffixes_rename_a_member() -> None:
+    """A declared JSON-type variant name suffix does something.
+
+    The suffix belongs to a JSON-capable language and differs from the
+    member name it stands in for, so neither a dead override nor a
+    silent duplicate of the member name survives.
+    """
+    for lang_cls in ALL_LANGUAGES:
+        suffix = lang_cls.json_type_variant_name_suffix
+        if suffix is None:
+            continue
+        spec = make_spec(lang_cls=lang_cls)
+
+        assert isinstance(spec, HasJsonType), lang_cls.__name__
+        assert suffix not in {
+            member.name.lower()
+            for member in spec.json_types
+            if member is not spec.json_type
+        }, lang_cls.__name__
+
+
+def test_layout_paired_axis_renders_both_layouts() -> None:
+    """A declared pair of layouts renders each variant twice.
+
+    The compact and multiline paths render a widened literal
+    separately, so each participating language contributes one variant
+    per layout under one spec.
+    """
+    variants = variants_for_axis(axis_key="empty_map_narrowing")
+    by_layout = {
+        layout: sorted(
+            variant.name
+            for variant in variants
+            if variant.collection_layout is layout
+        )
+        for layout in CollectionLayout
+    }
+
+    assert by_layout[CollectionLayout.MULTILINE] == [
+        f"{name}_multiline" for name in by_layout[CollectionLayout.COMPACT]
+    ]
+    assert by_layout[CollectionLayout.COMPACT] != []
+
+
+def test_behavior_flag_gate_selects_the_widening_languages() -> None:
+    """The ``RECORD`` fallback axis follows the rendering behavior.
+
+    A language reaches the axis when its ``RECORD`` strategy widens the
+    nested sibling maps no record shape fits, so gaining that behavior
+    is what enrolls it rather than a list naming it.
+    """
+    widening = set[str]()
+    for lang_cls in ALL_LANGUAGES:
+        strategy = find_enum_member(
+            enum_cls=make_spec(lang_cls=lang_cls).heterogeneous_strategies,
+            name="RECORD",
+        )
+        if strategy is None:
+            continue
+        spec = make_spec(lang_cls=lang_cls, heterogeneous_strategy=strategy)
+        behavior = spec.heterogeneous_behavior
+        if behavior.widens_unrecordizable_nested_sibling_maps:
+            widening.add(lang_cls.__name__)
+    covered = {
+        variant.lang_cls.__name__
+        for variant in variants_for_axis(axis_key="record_nested_map_fallback")
+    }
+
+    assert covered == widening
+
+
+def test_nested_map_widening_axes_partition_their_languages() -> None:
+    """The two nested-map widening axes never share a language.
+
+    They render one input under one name, so a language reaching both
+    would claim one golden path twice.
+    """
+    declared = {
+        variant.lang_cls
+        for variant in variants_for_axis(axis_key="nested_map_widening")
+    }
+    wrapping = {
+        variant.lang_cls
+        for variant in variants_for_axis(
+            axis_key="nested_map_widening_scalar_wrapping"
+        )
+    }
+
+    assert declared & wrapping == set()
+    assert wrapping != set()
+
+
+def test_member_flags_select_terminated_comment_formats() -> None:
+    """The comment-terminator axis decides on the member.
+
+    A comment format participates when it closes with a terminator,
+    including a language's own default format, which the ordinary
+    ``comment`` axis leaves out.
+    """
+    expected = set[tuple[str, str]]()
+    defaults = set[tuple[str, str]]()
+    for lang_cls in ALL_LANGUAGES:
+        spec = make_spec(lang_cls=lang_cls)
+        for member in spec.comment_formats:
+            if (
+                enum_payload(member=member, payload_type=CommentConfig).suffix
+                != ""
+            ):
+                expected.add((lang_cls.__name__, member.name))
+                if member is spec.comment_format:
+                    defaults.add((lang_cls.__name__, member.name))
+    covered = {
+        (variant.lang_cls.__name__, variant.spec.comment_format.name)
+        for variant in variants_for_axis(axis_key="comment_terminator")
+    }
+
+    assert covered == expected
+    assert defaults & covered == defaults
+    assert defaults != set()
+
+
+def test_sole_member_template_drops_a_pointless_format_name() -> None:
+    """One participating format is named by the language alone.
+
+    A language offering several string formats renders one golden per
+    format, so each carries the format name; a language offering one has
+    nothing to tell apart.
+    """
+    by_language: dict[str, set[str]] = {}
+    for variant in variants_for_axis(axis_key="string_embedded_nul"):
+        by_language.setdefault(variant.lang_cls.__name__, set()).add(
+            variant.name
+        )
+    sole = {
+        language: names
+        for language, names in by_language.items()
+        if len(names) == 1
+    }
+    several = {
+        language: names
+        for language, names in by_language.items()
+        if len(names) > 1
+    }
+
+    assert sole != {}
+    assert several != {}
+    assert sole == {
+        language: {f"{language}_string_embedded_nul"} for language in sole
+    }
+    for language, names in several.items():
+        prefix = f"{language}_string_embedded_nul_"
+
+        assert {name for name in names if name.startswith(prefix)} == names
+
+
+def test_unknown_axis_is_actionable() -> None:
+    """An axis with no declared plan names the missing axis."""
+    with pytest.raises(
+        expected_exception=AxisPlanError,
+        match="no plan declared for variant axis 'mystery'",
+    ):
+        _ = variants_for_axis(axis_key="mystery")
+
+
+@pytest.mark.parametrize(
+    argnames=("contents", "message"),
+    argvalues=[
+        ("schema_version = 2\n[axes]\n", "schema_version"),
+        (
+            _VALID_AXIS.replace(
+                'plan = "every_non_default_member"',
+                'plan = "invent"',
+            ),
+            "does not match any of the expected tags",
+        ),
+        (
+            _VALID_AXIS + 'gates = [{ kind = "vibes", name = "x" }]\n',
+            "does not match any of the expected tags",
+        ),
+        (
+            _VALID_AXIS + 'overrides = [{ kind = "vibes", name = "x" }]\n',
+            "does not match any of the expected tags",
+        ),
+        (
+            _VALID_AXIS.replace("{lang}_example_{format}", "{lang}_{mystery}"),
+            r"unknown name-template placeholder\(s\) \['mystery'\]",
+        ),
+        (
+            _VALID_FIXED_AXIS.replace("{lang}_example", "{lang}_{value}"),
+            "needs exactly one override marked 'name_value'",
+        ),
+        (
+            _VALID_AXIS.replace('option = "date_format"', 'option = "vibe"'),
+            "unknown option 'vibe'",
+        ),
+        (
+            _VALID_AXIS
+            + (
+                'gates = [{ kind = "capability_flag", '
+                'flag = "supports_vibes" }]\n'
+            ),
+            "unknown capability flag 'supports_vibes'",
+        ),
+        (
+            _VALID_AXIS
+            + 'gates = [{ kind = "spec_field_present", field = "vibe" }]\n',
+            "unknown spec field 'vibe'",
+        ),
+        (
+            _VALID_AXIS
+            + (
+                'overrides = [{ kind = "metadata_enum_member", '
+                'option = "language_version", field = "vibe" }]\n'
+            ),
+            "unknown metadata field 'vibe'",
+        ),
+        (
+            _VALID_AXIS
+            + (
+                'overrides = [{ kind = "enum_member", '
+                'option = "vibe", member = "RECORD" }]\n'
+            ),
+            "unknown option 'vibe'",
+        ),
+        (
+            _VALID_AXIS
+            + (
+                'overrides = [{ kind = "non_default_kwarg", '
+                'kwarg = "type_name", name_value = true }]\n'
+            ),
+            "needs exactly one override marked 'name_value'",
+        ),
+        (
+            _VALID_CROSS_AXIS.replace("_{tag}_{secondary}", ""),
+            r"name template omits placeholder\(s\) \['secondary', 'tag'\]",
+        ),
+        (
+            _VALID_CROSS_AXIS.replace('primary = "date_format"\n', ""),
+            r"unknown name-template placeholder\(s\) \['format'\]",
+        ),
+        (
+            _VALID_CROSS_AXIS.replace(
+                'option = "datetime_format"',
+                'option = "vibe"',
+            ),
+            "unknown option 'vibe'",
+        ),
+        (
+            _VALID_AXIS + 'member_name_source = "vibes"\n',
+            "unknown member name source 'vibes'",
+        ),
+        (
+            _VALID_AXIS + 'member_flags = ["vibes"]\n',
+            "unknown member flag 'vibes'",
+        ),
+        (
+            _VALID_AXIS + 'sole_member_name_template = "{lang}_{format}"\n',
+            r"unknown sole-member name-template placeholder\(s\) \['format'\]",
+        ),
+        (
+            _VALID_AXIS
+            + 'gates = [{ kind = "metadata_field", field = "vibe", '
+            'value = "default" }]\n',
+            "unknown metadata field 'vibe'",
+        ),
+        (
+            _VALID_AXIS + 'gates = [{ kind = "spec_config_field_present", '
+            'field = "vibe_config.vibe" }]\n',
+            "unknown spec config field 'vibe_config.vibe'",
+        ),
+        (
+            _VALID_AXIS
+            + 'gates = [{ kind = "behavior_flag", flag = "vibes" }]\n',
+            "unknown behavior flag 'vibes'",
+        ),
+        (
+            _VALID_AXIS
+            + (
+                'overrides = [{ kind = "behavior_flag_member", '
+                'option = "heterogeneous_strategy", flag = "vibes" }]\n'
+            ),
+            "unknown behavior flag 'vibes'",
+        ),
+        (
+            _VALID_AXIS
+            + (
+                'overrides = [{ kind = "metadata_table", kwarg = "vibes", '
+                'table = "vibes" }]\n'
+            ),
+            "unknown metadata table 'vibes'",
+        ),
+        (
+            _VALID_KWARG_VALUES_AXIS.replace("_{format}", ""),
+            r"name template omits placeholder\(s\) \['format'\]",
+        ),
+        (
+            _VALID_AXIS + 'layouts = [{ layout = "SIDEWAYS" }]\n',
+            "unknown layout 'SIDEWAYS'",
+        ),
+        (
+            _VALID_FIXED_AXIS + 'name_metadata_field = "vibes"\n',
+            "unknown name metadata field 'vibes'",
+        ),
+        (
+            _VALID_FIXED_AXIS
+            + 'name_metadata_field = "collection_layout_category"\n',
+            r"name template omits placeholder\(s\) \['category'\]",
+        ),
+        (
+            _VALID_FIXED_AXIS.replace("{lang}_example", "{lang}_{category}"),
+            r"unknown name-template placeholder\(s\) \['category'\]",
+        ),
+        (
+            _VALID_CROSS_AXIS + 'primary_axis = "date"\n',
+            "declares both a 'primary' option and a 'primary_axis'",
+        ),
+        (
+            _VALID_PAIRED_AXES.replace("{lang}_example_{format}", "{lang}_x"),
+            r"name template omits placeholder\(s\) \['format'\]",
+        ),
+        (
+            _VALID_PAIRED_AXES.replace('primary_axis = "base"', ""),
+            r"unknown name-template placeholder\(s\) \['format'\]",
+        ),
+        (
+            _VALID_PAIRED_AXES.replace(
+                'primary_axis = "base"', 'primary_axis = "vibes"'
+            ),
+            "primary axis 'vibes' is not a declared",
+        ),
+        (
+            _VALID_PAIRED_AXES
+            + (
+                '[[axes.base.overrides]]\nkind = "true_flag"\n'
+                'kwarg = "record_unify_optional_fields"\n'
+            ),
+            "primary axis 'base' declares overrides",
+        ),
+        (
+            _VALID_FIXED_AXIS + 'overrides_from = "vibes"\n',
+            "unknown overrides source 'vibes'",
+        ),
+        (
+            _CHAINED_OVERRIDES_AXES,
+            "overrides source 'other' reuses overrides itself",
+        ),
+        (
+            _VALID_FILTERED_AXIS.replace('base = "date"', 'base = "vibes"'),
+            "unknown base axis 'vibes'",
+        ),
+        (
+            _VALID_FILTERED_AXIS.replace('base = "date"', 'base = "example"'),
+            "base axis is itself",
+        ),
+        (
+            _VALID_FILTERED_AXIS
+            + (
+                'gates = [{ kind = "capability_flag", '
+                'flag = "supports_vibes" }]\n'
+            ),
+            "unknown capability flag 'supports_vibes'",
+        ),
+    ],
+)
+def test_invalid_registry_is_actionable(
+    tmp_path: Path,
+    contents: str,
+    message: str,
+) -> None:
+    """Bad plan data fails when the registry loads, not at render
+    time.
+    """
+    path = _write_registry(tmp_path=tmp_path, contents=contents)
+    with pytest.raises(expected_exception=AxisPlanError, match=message):
+        _ = load_axis_registry(path=path)
+
+
+def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
+    """TOML syntax errors retain the file path and parser detail."""
+    path = _write_registry(tmp_path=tmp_path, contents="axes = [\n")
+    with pytest.raises(
+        expected_exception=AxisPlanError,
+        match="invalid TOML",
+    ):
+        _ = load_axis_registry(path=path)
+
+
+def test_axis_coverage_gaps_are_actionable() -> None:
+    """An axis registered twice names what to do about it."""
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match=r"also expand as ordinary ones: \['date'\]",
+    ):
+        check_axis_coverage(
+            declared=frozenset({"date"}),
+            special=frozenset({"date"}),
+        )
+
+
+_UNDECLARED_SAMPLE_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+overrides = [{ kind = "non_default_kwarg", kwarg = "type_name" }]
+"""
+
+_UNDECLARED_METADATA_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+
+[[axes.example.overrides]]
+kind = "metadata_enum_member"
+option = "heterogeneous_strategy"
+field = "heterogeneous_value_variant_name_strategy"
+"""
+
+
+_UNDECLARED_TABLE_MEMBER_AXIS = """
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+
+[[axes.example.overrides]]
+kind = "metadata_enum_member"
+option = "heterogeneous_strategy"
+field = "empty_container_type_hint_heterogeneous_strategy"
+"""
+
+
+@pytest.mark.parametrize(
+    argnames=("contents", "message"),
+    argvalues=[
+        (_UNDECLARED_SAMPLE_AXIS, "declares no sample value for 'type_name'"),
+        (
+            _UNDECLARED_METADATA_AXIS,
+            "declares no 'heterogeneous_value_variant_name_strategy'",
+        ),
+        (
+            _UNDECLARED_TABLE_MEMBER_AXIS,
+            "declares no 'empty_container_type_hint_heterogeneous_strategy'",
+        ),
+    ],
+)
+def test_missing_language_metadata_is_actionable(
+    tmp_path: Path,
+    contents: str,
+    message: str,
+) -> None:
+    """A plan reading absent metadata names the file that lacks it.
+
+    Language metadata and the axis registry are separate files, so an
+    override with no matching gate can outlive the value it reads.
+    Expansion says which language file is missing what, rather than
+    building a spec from a silently dropped setting.
+    """
+    path = _write_registry(tmp_path=tmp_path, contents=contents)
+    with pytest.raises(expected_exception=AxisPlanError, match=message):
+        _ = variants_for_registry_axis(
+            path=path,
+            axis_key="example",
+            resolve_axis=variants_for_axis,
+        )

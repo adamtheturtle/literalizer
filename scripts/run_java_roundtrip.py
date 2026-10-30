@@ -41,6 +41,13 @@ def _build_main(json_text: str) -> str:
         "public class Main {\n"
         "    public static void main(String[] args) throws Exception {\n"
         f"        {indented_decl}\n"
+        f'        Object negativeZero = {_VAR_NAME}.get("negative_zero");\n'
+        "        if (!(negativeZero instanceof Double) ||\n"
+        "            Double.doubleToRawLongBits((Double) negativeZero)\n"
+        "                != Long.MIN_VALUE) {\n"
+        "            throw new IllegalStateException(\n"
+        '                "negative_zero lost its sign");\n'
+        "        }\n"
         "        java.io.PrintStream out = new java.io.PrintStream(\n"
         '            System.out, true, "UTF-8");\n'
         "        out.print(new ObjectMapper().writeValueAsString(\n"

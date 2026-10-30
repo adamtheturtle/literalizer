@@ -72,6 +72,13 @@ def _build_program(json_text: str) -> str:
         "static class Program {\n"
         "    public static void Main() {\n"
         f"{result.code}\n"
+        f'        if ({_VAR_NAME}["negative_zero"]\n'
+        "            is not double negativeZero ||\n"
+        "            BitConverter.DoubleToInt64Bits(negativeZero)\n"
+        "                != long.MinValue) {\n"
+        "            throw new InvalidOperationException(\n"
+        '                "negative_zero lost its sign");\n'
+        "        }\n"
         f"        Console.Write(JsonSerializer.Serialize({_VAR_NAME}));\n"
         "    }\n"
         "}\n"

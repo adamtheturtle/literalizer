@@ -3,3 +3,9 @@ owner = "variant"
 
 [[variants]]
 axis = "record_epoch_i32_overflow"
+
+# Compile declaration and assignment together for this carrier (#5236).
+[[variants]]
+axis = "record_epoch_i32_overflow"
+suffix = "_both"
+context = { variable_form = "both" }
