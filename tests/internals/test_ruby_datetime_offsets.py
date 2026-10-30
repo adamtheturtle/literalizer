@@ -32,7 +32,7 @@ def test_ruby_subminute_datetime_offset(
     offset: dt.timedelta,
     expression: str,
 ) -> None:
-    """The direct formatter retains native subminute offset precision."""
+    """The direct formatter retains offsets finer than a minute."""
     stamp = dt.datetime(
         year=2001,
         month=2,

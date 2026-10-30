@@ -91,7 +91,7 @@ def _check_date_calendars(*, ruby: str) -> None:
 def _check_datetime_offsets(*, ruby: str) -> None:
     """Native formatter inputs retain exact instants and UTC offsets.
 
-    YAML/TOML timestamps cannot carry these subminute offsets, and Ruby's
+    YAML/TOML timestamps cannot carry offsets finer than a minute, and Ruby's
     reference framework deliberately rejects native bound references.
     """
     offsets = (

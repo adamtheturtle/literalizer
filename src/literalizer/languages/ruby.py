@@ -235,8 +235,8 @@ def _format_datetime_ruby(value: dt.datetime) -> str:
 
     UTC-aware datetimes use ``Time.utc``. Datetimes with a non-UTC
     offset use ``Time.new`` with an offset string, or an exact numeric
-    offset for subminute precision. Naive datetimes use ``Time.utc`` so
-    the host time zone cannot affect the result.
+    offset for precision finer than a minute. Naive datetimes use
+    ``Time.utc`` so the host time zone cannot affect the result.
     """
     second = str(object=value.second)
     if value.microsecond != 0:
