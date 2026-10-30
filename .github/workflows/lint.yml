@@ -1847,11 +1847,19 @@ jobs:
       # `Data.Time` that non-`json_type` Haskell fixtures rely on.
       # Keep this paired with the `AESON_VALUE` member in
       # `Haskell.JsonTypes` in `src/literalizer/languages/haskell.py`.
+      - name: Update Haskell package index
+        timeout-minutes: 5
+        run: scripts/retry.sh cabal update
+
+      # A cache miss also compiles dependencies. Two complete build attempts
+      # need 2 * (390 + 10) + 5 = 805 seconds within this 900-second step.
+      # Index downloads keep their separate 3 * (80 + 10) + 2 * 5 = 280s bound.
       - name: Install aeson / aeson-qq for Haskell lint
-        timeout-minutes: 10
-        run: |-
-          scripts/retry.sh cabal update
-          scripts/retry.sh cabal install --lib aeson aeson-qq base time bytestring
+        timeout-minutes: 15
+        env:
+          RETRY_ATTEMPTS: '2'
+          RETRY_ATTEMPT_SECONDS: '390'
+        run: scripts/retry.sh cabal install --lib aeson aeson-qq base time bytestring
 
       # Compile all fixtures in a single ghc invocation to pay GHC's
       # startup cost once. Each fixture already carries a unique module

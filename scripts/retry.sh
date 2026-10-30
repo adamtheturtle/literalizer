@@ -17,7 +17,7 @@
 set -euo pipefail
 
 # Two calls share one step's ``timeout-minutes: 10`` (600s) budget in
-# every job that uses this helper, so one call must fit inside 300s:
+# most jobs that use this helper, so the default call fits inside 300s:
 #
 #     attempts x (attempt_seconds + kill_after) + (attempts - 1) x backoff
 #     3 x (80 + 10) + 2 x 5 = 280s
@@ -29,6 +29,9 @@ set -euo pipefail
 # Go installs compile cold dependencies as well as downloading them.
 # That caller uses two 130s attempts per command: 2 x (130 + 10) + 5
 # = 285s, leaving room for both installs inside its 600s step.
+# Haskell separates index downloads from dependency compilation. Its
+# compile step permits two 390s attempts: 2 x (390 + 10) + 5 = 805s,
+# within that step's 900s limit. The index keeps the 280s default bound.
 attempts=${RETRY_ATTEMPTS:-3}
 attempt_seconds=${RETRY_ATTEMPT_SECONDS:-80}
 backoff_seconds=5
