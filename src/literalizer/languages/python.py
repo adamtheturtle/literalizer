@@ -408,6 +408,7 @@ def _format_inline_type_hint_declaration(
         default_dict_key_type=default_dict_key_type,
         join_union=join_union,
         record_name_for_value=record_name_for_value,
+        typing_imports=None,
     )
     return f"{name}: {hint} = {value}"
 
@@ -416,23 +417,44 @@ def _format_inline_type_hint_declaration(
 class _PythonTypeDependencies(str):
     """Source whose type producer retained its typing dependency."""
 
-    __slots__ = ("_requires_union",)
+    __slots__ = ("_requires_union", "_typing_imports")
 
     _requires_union: bool
+    _typing_imports: frozenset[str]
 
-    def __new__(cls, code: str, /, *, requires_union: bool) -> Self:
+    def __new__(
+        cls,
+        code: str,
+        /,
+        *,
+        requires_union: bool,
+        typing_imports: frozenset[str],
+    ) -> Self:
         """Allocate text; the initializer retains producer metadata."""
-        del requires_union
+        del requires_union, typing_imports
         return super().__new__(cls, object=code)
 
-    def __init__(self, _code: str, /, *, requires_union: bool) -> None:
+    def __init__(
+        self,
+        _code: str,
+        /,
+        *,
+        requires_union: bool,
+        typing_imports: frozenset[str],
+    ) -> None:
         """Keep the union import decision alongside the emitted type."""
         self._requires_union = requires_union
+        self._typing_imports = typing_imports
 
     @property
     def requires_union(self) -> bool:
         """Whether this producer selected a typing.Union annotation."""
         return self._requires_union
+
+    @property
+    def typing_imports(self) -> frozenset[str]:
+        """Collection and default types selected by this producer."""
+        return self._typing_imports
 
 
 @beartype
@@ -594,6 +616,19 @@ def _python_scalar_hint(
 
 
 @beartype
+def _add_type_hint_imports(
+    *, imports: set[str] | None, outer: str, arguments: Sequence[str]
+) -> None:
+    """Retain aliases as the type producer selects a generic type."""
+    if imports is None:
+        return
+    if outer in {"List", "Tuple", "Set", "FrozenSet", "Dict"}:
+        imports.add(outer)
+    if "Any" in arguments:
+        imports.add("Any")
+
+
+@beartype
 def _python_type_hint(
     *,
     data: Value,
@@ -610,6 +645,7 @@ def _python_type_hint(
     default_dict_key_type: str,
     join_union: Callable[[list[str]], str],
     record_name_for_value: Callable[[Value], str | None] | None,
+    typing_imports: set[str] | None,
 ) -> str:
     """Derive a Python type hint from the original data and format
     config.
@@ -633,6 +669,7 @@ def _python_type_hint(
         default_dict_key_type=default_dict_key_type,
         join_union=join_union,
         record_name_for_value=record_name_for_value,
+        typing_imports=typing_imports,
     )
 
     match data:
@@ -661,6 +698,11 @@ def _python_type_hint(
                 join_union=join_union,
             )
             hint = f"{outer}[{key_hint}, {val_union}]"
+            _add_type_hint_imports(
+                imports=typing_imports,
+                outer=outer,
+                arguments=(key_hint, val_union),
+            )
         case set():
             elem_union = _collection_element_union(
                 elements=list(data),
@@ -671,6 +713,11 @@ def _python_type_hint(
                 join_union=join_union,
             )
             hint = f"{set_hint}[{elem_union}]"
+            _add_type_hint_imports(
+                imports=typing_imports,
+                outer=set_hint,
+                arguments=(elem_union,),
+            )
         case list():
             elem_union = _collection_element_union(
                 elements=data,
@@ -684,6 +731,11 @@ def _python_type_hint(
                 hint = f"{sequence_hint}[{elem_union}, ...]"
             else:
                 hint = f"{sequence_hint}[{elem_union}]"
+            _add_type_hint_imports(
+                imports=typing_imports,
+                outer=sequence_hint,
+                arguments=(elem_union,),
+            )
         case _:
             hint = _python_scalar_hint(
                 data=data,
@@ -798,7 +850,9 @@ def _python_contextual_call_parameters(
         )
         parameters.append(f"{name}: {hint!r}")
     return _PythonTypeDependencies(
-        ", ".join(parameters), requires_union=requires_union
+        ", ".join(parameters),
+        requires_union=requires_union,
+        typing_imports=frozenset(),
     )
 
 
@@ -1902,6 +1956,12 @@ class Python(metaclass=LanguageCls):
                 and field.type_name.requires_union
                 for field in fields
             ),
+            typing_imports=frozenset(
+                name
+                for field in fields
+                if isinstance(field.type_name, _PythonTypeDependencies)
+                for name in field.type_name.typing_imports
+            ),
         )
 
     def _type_hint_with_dependencies(
@@ -1911,6 +1971,7 @@ class Python(metaclass=LanguageCls):
         syntax.
         """
         requires_union = False
+        typing_imports: set[str] = set()
         union_formatter = self._join_union
 
         @beartype
@@ -1938,8 +1999,13 @@ class Python(metaclass=LanguageCls):
             default_dict_key_type=self.default_dict_key_type,
             join_union=_join_types,
             record_name_for_value=self._record_strategy.record_name_for_value,
+            typing_imports=typing_imports,
         )
-        return _PythonTypeDependencies(code, requires_union=requires_union)
+        return _PythonTypeDependencies(
+            code,
+            requires_union=requires_union,
+            typing_imports=frozenset(typing_imports),
+        )
 
     @cached_property
     @beartype
@@ -1970,11 +2036,18 @@ class Python(metaclass=LanguageCls):
             if request.record_name is not None:
                 return request.record_name
             if request.element_record_name is not None:
+                element_hint = request.element_record_name
                 if sequence_hint.casefold() == "tuple":
-                    return (
-                        f"{sequence_hint}[{request.element_record_name}, ...]"
-                    )
-                return f"{sequence_hint}[{request.element_record_name}]"
+                    element_hint += ", ..."
+                return _PythonTypeDependencies(
+                    f"{sequence_hint}[{element_hint}]",
+                    requires_union=False,
+                    typing_imports=(
+                        frozenset({sequence_hint})
+                        if self._uses_typing_collection_aliases
+                        else frozenset()
+                    ),
+                )
             return self._type_hint_with_dependencies(request.value)
 
         return _field_type
@@ -2052,9 +2125,19 @@ class Python(metaclass=LanguageCls):
                     requires_union
                     or self._type_hint_with_dependencies(data).requires_union
                 )
-            typing_import: tuple[str, ...] = ()
+            imports = {
+                name
+                for block in blocks
+                if isinstance(block, _PythonTypeDependencies)
+                for name in block.typing_imports
+            }
             if requires_union:
-                typing_import = ("from typing import Union",)
+                imports.add("Union")
+            typing_import: tuple[str, ...] = ()
+            if len(imports) > 0:
+                typing_import = (
+                    f"from typing import {', '.join(sorted(imports))}",
+                )
             return ("import dataclasses", *typing_import, *blocks)
 
         return _preamble
@@ -2109,8 +2192,11 @@ class Python(metaclass=LanguageCls):
             default_dict_key_type="object",
             join_union=_join_types,
             record_name_for_value=self._record_strategy.record_name_for_value,
+            typing_imports=None,
         )
-        return _PythonTypeDependencies(code, requires_union=requires_union)
+        return _PythonTypeDependencies(
+            code, requires_union=requires_union, typing_imports=frozenset()
+        )
 
     format_call_preamble_stub = default_format_call_stub
 
