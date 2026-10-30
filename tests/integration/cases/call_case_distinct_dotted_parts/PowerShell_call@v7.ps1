@@ -1,5 +1,5 @@
-class FooType_ { [object] bar([object] $x) { return $null } }
-class FooType_ { [FooType_] $Foo = [FooType_]::new() }
-class AType_ { [FooType_] $foo = [FooType_]::new() }
+class FooType_2 { [object] bar([object] $x) { return $null } }
+class FooType_1 { [FooType_2] $Foo = [FooType_2]::new() }
+class AType_ { [FooType_1] $foo = [FooType_1]::new() }
 $a = [AType_]::new()
 $a.foo.Foo.bar(@(1))
