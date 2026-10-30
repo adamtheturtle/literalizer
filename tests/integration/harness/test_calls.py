@@ -1,4 +1,6 @@
-"""Lifecycle and rejection-policy checks for the call golden harness."""
+"""Regeneration and rejection-policy checks for the call golden
+harness.
+"""
 
 from contextlib import nullcontext
 from pathlib import Path
