@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     fixed_open,
     sequence_surrogate_set_open,
@@ -243,8 +244,11 @@ def _d_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
+    type_names = dotted_helper_type_names(
+        parts=parts[:-1], suffix="Type_", ignore_underscores=False
+    )
     if len(fields) == 0:
-        type_name = f"{root.title()}Type_"
+        type_name = type_names[0]
         return (
             (
                 f"struct {type_name} {{"
@@ -254,17 +258,17 @@ def _d_call_stub(
             f"{type_name} {root};",
         )
     lines: list[str] = []
-    inner_type = f"{fields[-1].title()}Type_"
+    inner_type = type_names[-1]
     lines.append(
         f"struct {inner_type} {{ int {method}(T...)(T args) "
         f"{{ return {_INTEGER_CALL_STUB.value}; }} }}"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = type_names[i + 1]
         lines.append(f"struct {curr_type} {{ {prev_type} {fields[i + 1]}; }}")
         prev_type = curr_type
-    root_type = f"{root.title()}Type_"
+    root_type = type_names[0]
     lines.append(f"struct {root_type} {{ {prev_type} {fields[0]}; }}")
     lines.append(f"{root_type} {root};")
     return tuple(lines)

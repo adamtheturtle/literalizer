@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, ClassVar, Final
 from beartype import beartype
 
 from literalizer._checks import reject_aware_datetimes
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     CollectionSignature,
     CollectionType,
@@ -600,8 +601,11 @@ def _csharp_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
+    type_names = dotted_helper_type_names(
+        parts=parts[:-1], suffix="Type_", ignore_underscores=False
+    )
     if len(fields) == 0:
-        type_name = f"{root.title()}Type_"
+        type_name = type_names[0]
         return (
             (
                 f"class {type_name} {{"
@@ -611,20 +615,20 @@ def _csharp_call_stub(
             f"static {type_name} {root} = new {type_name}();",
         )
     lines: list[str] = []
-    inner_type = f"{fields[-1].title()}Type_"
+    inner_type = type_names[-1]
     lines.append(
         f"class {inner_type} {{"
         f" public {return_type} {method}({param_list}) => {return_value}; }}"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = type_names[i + 1]
         lines.append(
             f"class {curr_type} {{"
             f" public {prev_type} {fields[i + 1]} = new {prev_type}(); }}"
         )
         prev_type = curr_type
-    root_type = f"{root.title()}Type_"
+    root_type = type_names[0]
     lines.append(
         f"class {root_type} {{"
         f" public {prev_type} {fields[0]} = new {prev_type}(); }}"

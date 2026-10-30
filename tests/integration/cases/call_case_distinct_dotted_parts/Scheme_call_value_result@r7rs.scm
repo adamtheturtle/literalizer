@@ -1,0 +1,5 @@
+(define a (lambda args 0))
+(define a.foo (lambda args 0))
+(define a.foo.Foo (lambda args 0))
+(define a.foo.Foo.bar (lambda args 0))
+(define my_data (a.foo.Foo.bar (list 1)))

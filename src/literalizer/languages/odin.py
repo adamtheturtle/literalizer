@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
@@ -235,11 +236,13 @@ def _odin_call_preamble_stub(
                 f" {return_type} {{ return {return_value} }}"
             ),
         )
-    root = parts[0]
     method = parts[-1]
     chain = parts[:-1]
+    type_names = dotted_helper_type_names(
+        parts=chain, suffix="Type_", ignore_underscores=False
+    )
     holder = chain[-1]
-    holder_type = f"{holder.title()}Type_"
+    holder_type = type_names[-1]
     helper_name = f"_{holder}_{method}_"
     lines: list[str] = [
         (
@@ -253,12 +256,11 @@ def _odin_call_preamble_stub(
     ]
     prev_type = holder_type
     for i in range(len(chain) - 2, 0, -1):
-        curr = chain[i]
         child = chain[i + 1]
-        curr_type = f"{curr.title()}Type_"
+        curr_type = type_names[i]
         lines.append(f"{curr_type} :: struct {{ {child}: {prev_type} }}")
         prev_type = curr_type
-    root_type = f"{root.title()}Type_"
+    root_type = type_names[0]
     if len(chain) > 1:
         lines.append(f"{root_type} :: struct {{ {chain[1]}: {prev_type} }}")
     return tuple(lines)
@@ -284,13 +286,16 @@ def _odin_call_body_stub(
     root = parts[0]
     method = parts[-1]
     chain = parts[:-1]
+    type_names = dotted_helper_type_names(
+        parts=chain, suffix="Type_", ignore_underscores=False
+    )
     holder = chain[-1]
-    holder_type = f"{holder.title()}Type_"
+    holder_type = type_names[-1]
     helper_name = f"_{holder}_{method}_"
-    root_type = f"{root.title()}Type_"
+    root_type = type_names[0]
     init_expr = f"{holder_type}{{ {method} = {helper_name} }}"
     for i in range(len(chain) - 2, -1, -1):
-        outer_type = f"{chain[i].title()}Type_"
+        outer_type = type_names[i]
         inner_field = chain[i + 1]
         init_expr = f"{outer_type}{{ {inner_field} = {init_expr} }}"
     return (f"{root}: {root_type} = {init_expr}",)
