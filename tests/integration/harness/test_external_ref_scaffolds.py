@@ -8,11 +8,10 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from literalizer import SequenceFormatConfig
 from literalizer.exceptions import UnrepresentableInputError
 from literalizer.languages import CSharp, Elm
-
-from . import literalize_ref_cases
-from .case_manifests import RefCaseSpec
-from .language_specs import make_golden_path, make_spec
-from .literalize_ref_cases import external_assignment_spec
+from tests.integration import literalize_ref_cases
+from tests.integration.case_manifests import RefCaseSpec
+from tests.integration.language_specs import make_golden_path, make_spec
+from tests.integration.literalize_ref_cases import external_assignment_spec
 
 
 @pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])

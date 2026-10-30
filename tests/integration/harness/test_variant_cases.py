@@ -10,8 +10,7 @@ import literalizer.languages
 from literalizer._language import redefinition_config
 from literalizer.languages import Kotlin, Python
 from tests.enum_members import enum_member_by_name
-
-from .case_manifests import (
+from tests.integration.case_manifests import (
     CaseManifestError,
     ManifestVariant,
     RenderContext,
@@ -20,8 +19,8 @@ from .case_manifests import (
     load_case_manifest,
     load_case_manifests,
 )
-from .language_specs import make_spec, sorted_languages
-from .variant_cases import (
+from tests.integration.language_specs import make_spec, sorted_languages
+from tests.integration.variant_cases import (
     build_multiline_string_context_cases,
     build_variant_cases,
     case_for_manifest_variant,
@@ -30,7 +29,7 @@ from .variant_cases import (
     variant_languages,
     variants_for_axis,
 )
-from .variant_types import VariantCase
+from tests.integration.variant_types import VariantCase
 
 _SampleEnum = enum.Enum(value="_SampleEnum", names=["FIRST"])
 

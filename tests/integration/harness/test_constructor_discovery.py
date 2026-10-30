@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from . import constructor_cases
+from tests.integration import constructor_cases
 
 
 @pytest.mark.parametrize(argnames="owner_count", argvalues=[0, 2])

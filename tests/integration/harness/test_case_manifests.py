@@ -7,9 +7,8 @@ import pytest
 
 import literalizer
 import literalizer.languages
-
-from .case_discovery import load_case_data
-from .case_manifests import (
+from tests.integration.case_discovery import load_case_data
+from tests.integration.case_manifests import (
     CASE_ROLE_NAMES,
     INDENT_ROLE,
     KEBAB_NEW_VARIABLE_OWNER,
@@ -26,7 +25,10 @@ from .case_manifests import (
     manifest_admits_language,
     variable_form_for_context,
 )
-from .variant_cases import build_variant_cases, validate_unique_variant_targets
+from tests.integration.variant_cases import (
+    build_variant_cases,
+    validate_unique_variant_targets,
+)
 
 
 @pytest.mark.parametrize(argnames="table", argvalues=["call", "ref"])
@@ -841,7 +843,7 @@ def test_anchor_warning_count_must_match_input(
         input_name="input.yaml",
     )
     source = (
-        Path(__file__).parent
+        Path(__file__).parents[1]
         / "cases"
         / "yaml_rebound_anchor_multiple"
         / "input.yaml"

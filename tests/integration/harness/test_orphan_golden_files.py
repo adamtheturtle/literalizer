@@ -9,10 +9,9 @@ from beartype import beartype
 import literalizer
 from literalizer.languages import Cpp, Java
 from tests.enum_members import enum_member_by_name
-
-from .call_cases import discover_call_cases
-from .call_variant_cases import build_call_variant_cases
-from .case_discovery import (
+from tests.integration.call_cases import discover_call_cases
+from tests.integration.call_variant_cases import build_call_variant_cases
+from tests.integration.case_discovery import (
     build_indent_cases,
     build_no_variable_form_cases,
     build_pre_indent_cases,
@@ -22,26 +21,26 @@ from .case_discovery import (
     kebab_new_variable_languages,
     primed_new_variable_languages,
 )
-from .case_manifests import (
+from tests.integration.case_manifests import (
     KEBAB_NEW_VARIABLE_OWNER,
     PRIMED_NEW_VARIABLE_OWNER,
     RefCaseSpec,
     case_dir_name_for_owner,
     load_case_manifests,
 )
-from .constructor_cases import (
+from tests.integration.constructor_cases import (
     constructor_binding_cases,
     constructor_golden_path,
 )
-from .golden_scenarios import golden_groups
-from .language_specs import make_golden_path, make_spec
-from .literalize_ref_cases import (
+from tests.integration.golden_scenarios import golden_groups
+from tests.integration.language_specs import make_golden_path, make_spec
+from tests.integration.literalize_ref_cases import (
     build_literalize_ref_variant_cases,
     discover_literalize_default_ref_cases,
     discover_literalize_ref_cases,
     ref_language_versions,
 )
-from .variant_cases import build_variant_cases
+from tests.integration.variant_cases import build_variant_cases
 
 
 @beartype
@@ -385,7 +384,7 @@ def test_effective_language_version_owns_golden(tmp_path: Path) -> None:
         case_dir / f"{cpp_prefix}cpp20.cpp",
     }
     contents = (
-        Path(__file__).parent
+        Path(__file__).parents[1]
         / "cases"
         / "dict_mixed_scalars"
         / java_golden.name
@@ -430,7 +429,7 @@ def test_variant_version_inventory_preserves_coverage_and_rejects_phantoms(
         if path.parent == case_dir and path.name.startswith(pinned_name)
     } == {pinned}
     for path in ordinary | {pinned}:
-        actual = Path(__file__).parent / "cases" / "binary" / path.name
+        actual = Path(__file__).parents[1] / "cases" / "binary" / path.name
         _ = path.write_bytes(data=actual.read_bytes())
     _check_golden_inventory(cases_dir=cases_dir, expected=expected)
 

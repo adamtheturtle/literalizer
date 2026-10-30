@@ -4,13 +4,13 @@ corpus.
 
 from collections import Counter
 
-from .golden_scenarios import (
+from tests.integration.golden_scenarios import (
     GOLDEN_BATCH_VERSION_LIMIT,
     GOLDEN_SCENARIOS,
     batch_renderings,
     golden_groups,
 )
-from .language_specs import sorted_languages
+from tests.integration.language_specs import sorted_languages
 
 
 def test_golden_batches_preserve_every_rendering_in_order() -> None:

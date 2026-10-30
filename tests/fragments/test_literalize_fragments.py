@@ -85,7 +85,7 @@ _CASE_DOCUMENTS = tuple(
         load_toml_cases(name=path.stem)
     )
     for path in sorted(
-        (Path(__file__).parent / "unit_cases").glob(
+        (Path(__file__).parents[1] / "unit_cases").glob(
             pattern="literalize_fragments*.toml"
         )
     )
