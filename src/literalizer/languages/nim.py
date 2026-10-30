@@ -14,6 +14,7 @@ from beartype import beartype
 from literalizer._checks import (
     reject_ragged_nested_sequences,
 )
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     fixed_open,
     sequence_surrogate_set_open,
@@ -1142,14 +1143,18 @@ def _nim_call_stub(
         if len(parts) == 1:
             return (f"template {method}(args: varargs[untyped]) = discard",)
         chain = list(parts[:-1])
-        holder = chain[-1]
-        holder_type = f"{holder.title()}Type"
+        type_names = dotted_helper_type_names(
+            parts=chain,
+            suffix="Type",
+            ignore_underscores=True,
+            capitalize_parts=False,
+        )
+        holder_type = type_names[-1]
         lines: list[str] = [f"type {holder_type} = object"]
         for i in range(len(chain) - 2, -1, -1):
-            outer = chain[i]
             inner = chain[i + 1]
-            inner_type = f"{inner.title()}Type"
-            outer_type = f"{outer.title()}Type"
+            inner_type = type_names[i + 1]
+            outer_type = type_names[i]
             lines.extend(
                 [
                     f"type {outer_type} = object",
@@ -1161,7 +1166,7 @@ def _nim_call_stub(
             f" args: varargs[untyped]) = discard"
         )
         root = chain[0]
-        root_type = f"{root.title()}Type"
+        root_type = type_names[0]
         lines.append(f"var {root}: {root_type}")
         return tuple(lines)
 
@@ -1175,14 +1180,18 @@ def _nim_call_stub(
             uses_json_node=uses_json_node,
         )
     chain = list(parts[:-1])
-    holder = chain[-1]
-    holder_type = f"{holder.title()}Type"
+    type_names = dotted_helper_type_names(
+        parts=chain,
+        suffix="Type",
+        ignore_underscores=True,
+        capitalize_parts=False,
+    )
+    holder_type = type_names[-1]
     lines = [f"type {holder_type} = object"]
     for i in range(len(chain) - 2, -1, -1):
-        outer = chain[i]
         inner = chain[i + 1]
-        inner_type = f"{inner.title()}Type"
-        outer_type = f"{outer.title()}Type"
+        inner_type = type_names[i + 1]
+        outer_type = type_names[i]
         lines.extend(
             [
                 f"type {outer_type} = object",
@@ -1200,7 +1209,7 @@ def _nim_call_stub(
         )
     )
     root = chain[0]
-    root_type = f"{root.title()}Type"
+    root_type = type_names[0]
     lines.append(f"var {root}: {root_type}")
     return tuple(lines)
 

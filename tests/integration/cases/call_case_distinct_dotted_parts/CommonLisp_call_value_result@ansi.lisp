@@ -1,0 +1,5 @@
+(defun a (&rest args) (declare (ignore args)) 0)
+(defun a.foo (&rest args) (declare (ignore args)) 0)
+(defun a.foo.Foo (&rest args) (declare (ignore args)) 0)
+(defun a.foo.Foo.bar (&rest args) (declare (ignore args)) 0)
+(defparameter *my_data* (a.foo.Foo.bar :x (list 1)))

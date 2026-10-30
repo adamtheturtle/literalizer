@@ -5,6 +5,7 @@ import datetime as dt
 import enum
 import functools
 import re
+from collections import Counter
 from collections.abc import Callable, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -841,6 +842,15 @@ def _build_python_call_stub(
         root = parts[0]
         method = parts[-1]
         fields = parts[1:-1]
+        classes = tuple(
+            f"_{IdentifierCase.PASCAL.convert(name=part)}Type"
+            for part in parts[:-1]
+        )
+        counts = Counter(classes)
+        classes = tuple(
+            f"{name}{index}" if counts[name] > 1 else name
+            for index, name in enumerate(iterable=classes)
+        )
         receiver = "self"
         if contextual is not None:
             while receiver in _params:
@@ -849,7 +859,7 @@ def _build_python_call_stub(
             f"{indent}def {method}({receiver}, {arguments}) -> object: ..."
         )
         if len(fields) == 0:
-            cls = f"_{IdentifierCase.PASCAL.convert(name=root)}Type"
+            cls = classes[0]
             return (
                 *imports,
                 f"class {cls}:",
@@ -857,16 +867,16 @@ def _build_python_call_stub(
                 f"{root} = {cls}()",
             )
         lines: list[str] = list(imports)
-        inner_cls = f"_{IdentifierCase.PASCAL.convert(name=fields[-1])}Type"
+        inner_cls = classes[-1]
         lines.append(f"class {inner_cls}:")
         lines.append(method_declaration)
         prev_cls = inner_cls
         for i in range(len(fields) - 2, -1, -1):
-            cls = f"_{IdentifierCase.PASCAL.convert(name=fields[i])}Type"
+            cls = classes[i + 1]
             lines.append(f"class {cls}:")
             lines.append(f"{indent}{fields[i + 1]} = {prev_cls}()")
             prev_cls = cls
-        root_cls = f"_{IdentifierCase.PASCAL.convert(name=root)}Type"
+        root_cls = classes[0]
         lines.append(f"class {root_cls}:")
         lines.append(f"{indent}{fields[0]} = {prev_cls}()")
         lines.append(f"{root} = {root_cls}()")

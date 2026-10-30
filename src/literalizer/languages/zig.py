@@ -14,6 +14,7 @@ from beartype import beartype
 
 from literalizer._comments import ControlCharacterFreeCommentPrefix
 from literalizer._document_formatting import format_document_fast
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     CollectionSignature,
     fixed_open,
@@ -343,9 +344,14 @@ def _make_zig_call_preamble_stub(
                 ),
             )
         chain = parts[:-1]
+        helper_types = dotted_helper_type_names(
+            parts=chain,
+            suffix="Type_",
+            ignore_underscores=False,
+            capitalize_parts=False,
+        )
         receiver = _zig_method_receiver(params=params)
-        holder = chain[-1]
-        holder_type = f"{holder.title()}Type_"
+        holder_type = helper_types[-1]
         type_preamble: tuple[str, ...] = ()
         if method == "ZVal" and (
             param_type == "ZVal" or return_type == "ZVal"
@@ -374,7 +380,7 @@ def _make_zig_call_preamble_stub(
         ]
         prev_type = holder_type
         for i in range(len(chain) - 2, 0, -1):
-            curr_type = f"{chain[i].title()}Type_"
+            curr_type = helper_types[i]
             lines.append(
                 f"const {curr_type} = struct {{ "
                 f"{chain[i + 1]}: {prev_type} = .{{}} }};",
@@ -383,7 +389,7 @@ def _make_zig_call_preamble_stub(
         root = chain[0]
         intermediates = chain[1:]
         if len(intermediates) > 0:
-            root_type = f"{root.title()}Type_"
+            root_type = helper_types[0]
             lines.append(
                 f"const {root_type} = struct {{ "
                 f"{intermediates[0]}: {prev_type} = .{{}} }};",

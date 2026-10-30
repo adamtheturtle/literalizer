@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -253,20 +254,26 @@ def _php_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
+    helper_types = dotted_helper_type_names(
+        parts=parts[:-1],
+        suffix="Type",
+        ignore_underscores=False,
+        capitalize_parts=True,
+    )
     if len(fields) == 0:
-        cls = root.capitalize() + "Type"
+        cls = helper_types[0]
         return (
             f"class {cls} {{ function {method}({param_list}) {{}} }}",
             f"${root} = new {cls}();",
         )
     lines: list[str] = []
-    inner_cls = fields[-1].capitalize() + "Type"
+    inner_cls = helper_types[-1]
     lines.append(
         f"class {inner_cls} {{ function {method}({param_list}) {{}} }}",
     )
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
-        cls = fields[i].capitalize() + "Type"
+        cls = helper_types[i + 1]
         field = fields[i + 1]
         lines.append(
             f"class {cls} {{ public ${field}; "
@@ -274,7 +281,7 @@ def _php_call_stub(
             f"$this->{field} = new {prev_cls}(); }} }}"
         )
         prev_cls = cls
-    root_cls = root.capitalize() + "Type"
+    root_cls = helper_types[0]
     lines.append(
         f"class {root_cls} {{ public ${fields[0]}; "
         f"function __construct() {{ "

@@ -1,0 +1,38 @@
+schema_version = 1
+owner = "literalize-call"
+# Positive counterpart of case_colliding_dotted_call_helpers (#5236).
+# Case-preserving helpers remain distinct; normalized collisions still reject.
+
+[call]
+gates = [{ kind = "capability_flag", flag = "supports_dotted_calls" }]
+target_function = "a.foo.Foo.bar"
+parameter_names = ["x"]
+per_element = false
+wrap_in_file = true
+
+[[call_examples]]
+example = "value_result"
+gates = [{ kind = "capability_flag", flag = "supports_dotted_calls" }]
+target_function = "a.foo.Foo.bar"
+parameter_names = ["x"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+requires_call_returns_expression = true
+
+[[call_examples]]
+example = "root_collision"
+gates = [{ kind = "capability_flag", flag = "supports_dotted_calls" }]
+target_function = "foo.Foo.bar"
+parameter_names = ["x"]
+per_element = false
+wrap_in_file = true
+
+[[call_examples]]
+example = "nim_identifier_style"
+# Nim also ignores interior case and underscores when comparing type names.
+gates = [{ kind = "metadata_field", field = "language_id", value = "nim" }]
+target_function = "a.foo_bar.fooBar.bar"
+parameter_names = ["x"]
+per_element = false
+wrap_in_file = true

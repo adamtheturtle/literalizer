@@ -37,6 +37,8 @@ from literalizer._language import (
     validate_call_parameter_names,
 )
 from literalizer._literalize import (
+    _NormalizesDottedCallPartCase,
+    _RequiresUniqueDottedCallParts,
     assemble_call_expression,
     call_result_discard_formatter,
     format_rendered_call_arguments,
@@ -463,6 +465,26 @@ def _call_support_exception(
 
 
 @beartype
+def _dotted_helper_parts_collide(
+    *, spec: literalizer.Language, parts: Sequence[str]
+) -> bool:
+    """Recognize declaration collisions without narrowing success
+    cases.
+    """
+    compared_parts = (
+        [part.casefold() for part in parts]
+        if isinstance(spec, _NormalizesDottedCallPartCase)
+        and spec.dotted_call_stub_normalizes_part_case
+        else parts
+    )
+    return (
+        isinstance(spec, _RequiresUniqueDottedCallParts)
+        and spec.dotted_call_stub_requires_unique_parts
+        and len(set(compared_parts)) != len(compared_parts)
+    )
+
+
+@beartype
 def expected_call_shape_exception(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -533,13 +555,17 @@ def expected_call_shape_exception(
     if any(invalid_parameter_signals):
         return InvalidCallParameterNameError
     # Every golden declares a stub, including the manual wrapper path.
-    if _invalid_target_grammar(
-        lang_cls=lang_cls,
-        target=config.target_function,
-        wrapped=True,
-        spec=spec,
-    ) or _is_reserved_call_target(
-        lang_cls=lang_cls, target_function=config.target_function
+    if (
+        _invalid_target_grammar(
+            lang_cls=lang_cls,
+            target=config.target_function,
+            wrapped=True,
+            spec=spec,
+        )
+        or _is_reserved_call_target(
+            lang_cls=lang_cls, target_function=config.target_function
+        )
+        or _dotted_helper_parts_collide(spec=spec, parts=target_parts)
     ):
         return InvalidCallTargetError
     unsupported_signals = (

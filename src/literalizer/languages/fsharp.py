@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, ClassVar
 from beartype import beartype
 
 from literalizer._comments import NestingCommentSuffix
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -616,8 +617,14 @@ def _build_fsharp_call_stub_lines(
     root = parts[0]
     method = _fsharp_call_identifier(name=parts[-1])
     fields = parts[1:-1]
+    helper_types = dotted_helper_type_names(
+        parts=parts[:-1],
+        suffix="Type_",
+        ignore_underscores=False,
+        capitalize_parts=False,
+    )
     if len(fields) == 0:
-        cls = f"{root.title()}Type_"
+        cls = helper_types[0]
         return (
             f"type {cls}() =",
             (
@@ -627,19 +634,19 @@ def _build_fsharp_call_stub_lines(
             f"let {_fsharp_call_identifier(name=root)} = {cls}()",
         )
     lines: list[str] = []
-    inner_cls = f"{fields[-1].title()}Type_"
+    inner_cls = helper_types[-1]
     lines.append(f"type {inner_cls}() =")
     lines.append(
         f"    member _.{method}{param_list} : {return_type} = {return_value}"
     )
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
-        cls = f"{fields[i].title()}Type_"
+        cls = helper_types[i + 1]
         lines.append(f"type {cls}() =")
         field = _fsharp_call_identifier(name=fields[i + 1])
         lines.append(f"    member _.{field} = {prev_cls}()")
         prev_cls = cls
-    root_cls = f"{root.title()}Type_"
+    root_cls = helper_types[0]
     lines.append(f"type {root_cls}() =")
     field = _fsharp_call_identifier(name=fields[0])
     lines.append(f"    member _.{field} = {prev_cls}()")

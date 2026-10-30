@@ -15,6 +15,7 @@ from literalizer._checks import (
     reject_non_nfc_strings,
     reject_stringified_dict_key_collisions,
 )
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     fixed_open,
     sequence_surrogate_set_open,
@@ -172,24 +173,30 @@ def _raku_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
+    helper_types = dotted_helper_type_names(
+        parts=parts[:-1],
+        suffix="Type",
+        ignore_underscores=False,
+        capitalize_parts=True,
+    )
     if len(fields) == 0:
-        cls = root.capitalize() + "Type"
+        cls = helper_types[0]
         return (
             f"class {cls} {{ method {method}(*@a, *%kw) {{}} }}",
             f"my ${root} = {cls}.bless;",
         )
     lines: list[str] = []
-    inner_cls = fields[-1].capitalize() + "Type"
+    inner_cls = helper_types[-1]
     lines.append(f"class {inner_cls} {{ method {method}(*@a, *%kw) {{}} }}")
     prev_cls = inner_cls
     for i in range(len(fields) - 2, -1, -1):
-        cls = fields[i].capitalize() + "Type"
+        cls = helper_types[i + 1]
         field = fields[i + 1]
         lines.append(
             f"class {cls} {{ method {field} {{ {prev_cls}.bless }} }}"
         )
         prev_cls = cls
-    root_cls = root.capitalize() + "Type"
+    root_cls = helper_types[0]
     lines.append(
         f"class {root_cls} {{ method {fields[0]} {{ {prev_cls}.bless }} }}"
     )

@@ -1,0 +1,5 @@
+(define a (lambda args (if #f #f)))
+(define a.foo (lambda args (if #f #f)))
+(define a.foo.Foo (lambda args (if #f #f)))
+(define a.foo.Foo.bar (lambda args (if #f #f)))
+(a.foo.Foo.bar (list 1))
