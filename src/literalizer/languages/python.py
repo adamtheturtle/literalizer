@@ -239,16 +239,23 @@ def _format_datetime_python(
         if offset == dt.timedelta():
             parts.append(f"tzinfo={utc_tzinfo_expr}")
         else:
-            total_seconds = int(offset.total_seconds())
+            total_microseconds = offset // dt.timedelta(microseconds=1)
             sign = 1
-            if total_seconds < 0:
+            if total_microseconds < 0:
                 sign = -1
-            abs_seconds = abs(total_seconds)
+            abs_seconds, microseconds = divmod(
+                abs(total_microseconds), 1_000_000
+            )
             hours = sign * (abs_seconds // 3600)
             minutes = sign * ((abs_seconds % 3600) // 60)
+            seconds = sign * (abs_seconds % 60)
             td_parts = [f"hours={hours}"]
             if minutes != 0:
                 td_parts.append(f"minutes={minutes}")
+            if seconds != 0:
+                td_parts.append(f"seconds={seconds}")
+            if microseconds != 0:
+                td_parts.append(f"microseconds={sign * microseconds}")
             td_args = ", ".join(td_parts)
             parts.append(
                 f"tzinfo=datetime.timezone(offset=datetime.timedelta({td_args}))"
