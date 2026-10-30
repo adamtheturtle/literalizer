@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+# Positive counterpart of json_type_call_argument_non_string_dict_keys (#5236).
+# A backend whose call arguments stay native can retain the integer map key.
+
+[call]
+target_function = "process"
+parameter_names = ["x"]
+per_element = true
+wrap_in_file = true
+variant_only = true
+
+[[call.variants]]
+axis = "json_type"
