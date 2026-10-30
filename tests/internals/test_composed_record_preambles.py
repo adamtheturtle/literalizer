@@ -1,4 +1,5 @@
-"""Unhinted calls cannot replace declaration helpers with nothing
+"""Calls without reference hints retain declaration helpers in composed
+files
 (#6581).
 """
 
