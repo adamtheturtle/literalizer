@@ -9886,6 +9886,10 @@ def literalize_call_with_declarations(
             unified_data_dependent_preamble = (
                 language.call_data_dependent_preamble(combined_source_data)
             )
+            if len(unified_data_dependent_preamble) == 0:
+                # An empty replacement cannot supply declaration-only helpers.
+                dropped_declaration_blocks.clear()
+                call_preamble = call.preamble
     declaration_preamble = tuple(
         entry
         for d in declarations
