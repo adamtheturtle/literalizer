@@ -1,0 +1,11 @@
+schema_version = 1
+suites = ["base"]
+# Positive counterpart of the import_variable_name rejection family (#5236).
+# Other module-capable languages retain their reserved-name rejection.
+gates = [
+  { kind = "capability_flag", flag = "supports_module_name" },
+  { kind = "capability_flag", flag = "supports_variable_names" },
+]
+
+[base_context]
+variable_name = "import"
