@@ -1,1 +1,1 @@
-"""Discovery, ownership, and lifecycle contracts for golden tests."""
+"""Discovery, ownership, and regeneration contracts for golden tests."""
