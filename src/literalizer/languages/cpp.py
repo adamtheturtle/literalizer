@@ -703,6 +703,14 @@ class _CppCarrierDeclaration(_CppTypeDependencies):
     __slots__ = ()
 
 
+class _CppRecordDeclaration(_CppTypeDependencies):
+    """A generated record retaining its identity and member
+    dependencies.
+    """
+
+    __slots__ = ()
+
+
 class _CppRecordType(_CppTypeDependencies):
     """A record initializer with dependencies of its emitted members."""
 
@@ -2266,7 +2274,7 @@ def _cpp_render_record_declaration(
             f"{effective_value};"
         )
     members = " ".join(collected_members)
-    return _CppTypeDependencies(
+    return _CppRecordDeclaration(
         f"struct {name} {{ {members} }};",
         headers=frozenset[str]().union(
             *(_cpp_type_headers(field.type_name) for field in fields)
@@ -5490,12 +5498,19 @@ class Cpp(metaclass=LanguageCls):
         """Unify supporting declarations without inventing a container."""
         entries = tuple(entry for preamble in preambles for entry in preamble)
         if not self._json_type_active:
+            has_record_replacement = any(
+                isinstance(entry, _CppRecordDeclaration) for entry in canonical
+            )
             carriers = tuple(
                 dict.fromkeys(
                     entry
                     for preamble in supporting_preambles
                     for entry in preamble
                     if isinstance(entry, _CppCarrierDeclaration)
+                    or (
+                        not has_record_replacement
+                        and isinstance(entry, _CppRecordDeclaration)
+                    )
                 )
             )
             imports = frozenset(preamble_imports(canonical))
