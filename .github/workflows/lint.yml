@@ -1840,13 +1840,13 @@ jobs:
         run: scripts/retry.sh cabal update
 
       # A cache miss also compiles dependencies. Two complete build attempts
-      # need 2 * (270 + 10) + 5 = 565 seconds within this 600-second step.
+      # need 2 * (390 + 10) + 5 = 805 seconds within this 900-second step.
       # Index downloads keep their separate 3 * (80 + 10) + 2 * 5 = 280s bound.
       - name: Install aeson / aeson-qq for Haskell lint
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           RETRY_ATTEMPTS: '2'
-          RETRY_ATTEMPT_SECONDS: '270'
+          RETRY_ATTEMPT_SECONDS: '390'
         run: scripts/retry.sh cabal install --lib aeson aeson-qq base time bytestring
 
       # Compile all fixtures in a single ghc invocation to pay GHC's

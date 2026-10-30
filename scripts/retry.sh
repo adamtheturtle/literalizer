@@ -30,8 +30,8 @@ set -euo pipefail
 # That caller uses two 130s attempts per command: 2 x (130 + 10) + 5
 # = 285s, leaving room for both installs inside its 600s step.
 # Haskell separates index downloads from dependency compilation. Its
-# compile step permits two 270s attempts: 2 x (270 + 10) + 5 = 565s,
-# within that step's 600s limit. The index keeps the 280s default bound.
+# compile step permits two 390s attempts: 2 x (390 + 10) + 5 = 805s,
+# within that step's 900s limit. The index keeps the 280s default bound.
 attempts=${RETRY_ATTEMPTS:-3}
 attempt_seconds=${RETRY_ATTEMPT_SECONDS:-80}
 backoff_seconds=5
