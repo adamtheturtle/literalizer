@@ -1,8 +1,8 @@
 """The module-name boundary that is still valid.
 
 The rejection is declared in ``tests/errors/rejections`` and run by
-``test_rejections.py``.  What is left here is the acceptance side, which
-no rejection manifest expresses.
+``tests/errors/test_rejections.py``. What is left here is the acceptance
+side, which no rejection manifest expresses.
 """
 
 from literalizer.languages import Erlang

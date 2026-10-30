@@ -6,10 +6,12 @@ import pytest
 from pydantic import BaseModel, TypeAdapter
 
 from literalizer import CallContext
+from tests.integration.call_cases import (
+    GroupedCallTransform,
+    LiteralArgumentsTransform,
+)
+from tests.integration.case_manifests import CallTransform
 from tests.toml_cases import load_toml_cases
-
-from .call_cases import GroupedCallTransform, LiteralArgumentsTransform
-from .case_manifests import CallTransform
 
 
 class _GroupCase(BaseModel, extra="forbid", frozen=True):

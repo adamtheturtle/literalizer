@@ -4,14 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from .language_metadata import (
+from tests.integration.language_metadata import (
     LANGUAGES_DIR,
     LanguageMetadataError,
     language_metadata,
     language_metadata_by_id,
     load_language_metadata,
 )
-from .language_specs import make_spec, sorted_languages
+from tests.integration.language_specs import make_spec, sorted_languages
 
 _DEFAULT_TYPE_CAPABILITY_FIELDS = (
     "default_set_element_type",

@@ -8,16 +8,18 @@ from literalizer import CollectionLayout, CommentConfig
 from literalizer._enums import enum_payload
 from literalizer.languages import ALL_LANGUAGES, Cpp, Java
 from tests.enum_members import enum_member_by_name, find_enum_member
-
-from .case_manifests import CaseManifestError
-from .language_specs import make_spec
-from .variant_axis_names import KNOWN_VARIANT_AXES, SPECIAL_VARIANT_AXES
-from .variant_cases import (
+from tests.integration.case_manifests import CaseManifestError
+from tests.integration.language_specs import make_spec
+from tests.integration.variant_axis_names import (
+    KNOWN_VARIANT_AXES,
+    SPECIAL_VARIANT_AXES,
+)
+from tests.integration.variant_cases import (
     HasJsonType,
     check_axis_coverage,
     variants_for_axis,
 )
-from .variant_plans import (
+from tests.integration.variant_plans import (
     AxisPlanError,
     declared_axis_names,
     load_axis_registry,
