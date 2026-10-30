@@ -3,6 +3,10 @@
 Load with ``pytest -p scripts.pytest_worker_timing``. The controller emits
 one JSON summary. Shutdown includes teardown and communication; its tail
 is an observation of released workers, not a promised scheduling speedup.
+
+An upstream replacement is tracked at
+https://github.com/messense/pytest-timing/issues/12 (workers-only capture) and
+https://github.com/messense/pytest-timing/issues/11 (monotonic timings).
 """
 
 import json
