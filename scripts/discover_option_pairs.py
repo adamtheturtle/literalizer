@@ -68,6 +68,23 @@ def covering_sample() -> tuple[list[Configuration], set[Pair]]:
     return chosen, required
 
 
+def _same(*, expected: JsonValue, actual: JsonValue) -> bool:
+    """Compare JSON values without equating booleans and numbers."""
+    if isinstance(expected, bool) or isinstance(actual, bool):
+        return type(expected) is type(actual) and expected == actual
+    if isinstance(expected, dict) and isinstance(actual, dict):
+        return expected.keys() == actual.keys() and all(
+            _same(expected=value, actual=actual[key])
+            for key, value in expected.items()
+        )
+    if isinstance(expected, list) and isinstance(actual, list):
+        return len(expected) == len(actual) and all(
+            _same(expected=left, actual=right)
+            for left, right in zip(expected, actual, strict=True)
+        )
+    return expected == actual
+
+
 def main() -> None:
     """Compile and compare each covered configuration within a fixed
     budget.
@@ -114,9 +131,6 @@ def main() -> None:
             + "\nimport json\nimport sys\n"
             + f"if type(result_data['rows']) is not {sequence_type}:\n"
             + "    raise AssertionError('sequence representation changed')\n"
-            + "if any(type(flag) is not bool "
-            "for flag in result_data['flags']):\n"
-            + "    raise AssertionError('boolean representation changed')\n"
             + "sys.stdout.write(json.dumps(result_data))\n"
         )
         case = output / f"{index:03d}"
@@ -146,7 +160,11 @@ def main() -> None:
             actual = TypeAdapter(type=JsonValue).validate_json(
                 completed.stdout
             )
-            outcome = "pass" if actual == expected else "value-mismatch"
+            outcome = (
+                "pass"
+                if _same(expected=expected, actual=actual)
+                else "value-mismatch"
+            )
         elif completed.returncode in {124, 137}:
             outcome = "command-timeout"
         if outcome == "pass":
