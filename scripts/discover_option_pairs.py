@@ -114,6 +114,9 @@ def main() -> None:
             + "\nimport json\nimport sys\n"
             + f"if type(result_data['rows']) is not {sequence_type}:\n"
             + "    raise AssertionError('sequence representation changed')\n"
+            + "if any(type(flag) is not bool "
+            "for flag in result_data['flags']):\n"
+            + "    raise AssertionError('boolean representation changed')\n"
             + "sys.stdout.write(json.dumps(result_data))\n"
         )
         case = output / f"{index:03d}"
