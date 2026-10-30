@@ -1,0 +1,96 @@
+{
+  "base": "821ff92137829570c6780d4c5f0b72fd4599a781",
+  "pull_requests": [
+    6580,
+    6585,
+    6586,
+    6587,
+    6588
+  ],
+  "seeds": [
+    5493,
+    6579,
+    0
+  ],
+  "controller_python": "3.14.8",
+  "tools": {
+    "python": [
+      "3.8.20",
+      "3.12.12"
+    ],
+    "ruby": "4.0.9",
+    "go": "1.27.3",
+    "node": "26.12.1",
+    "clang": "Apple clang 21.0.0 (clang-2100.4.1.1)",
+    "rust": "rustc 1.99.1 (58cf8f9c3 2026-10-13) Homebrew"
+  },
+  "results": {
+    "typed-fixed": {
+      "controls": 396,
+      "seconds": 81.78303074999712,
+      "counts": {
+        "pass": 373,
+        "expected_rejection": 23
+      }
+    },
+    "native-temporal-fixed": {
+      "controls": 264,
+      "seconds": 42.27490462499554,
+      "counts": {
+        "pass": 216,
+        "expected_rejection": 48
+      }
+    },
+    "composition-final-heads": {
+      "controls": 96,
+      "seconds": 23.04359962500166,
+      "counts": {
+        "pass": 96
+      }
+    }
+  },
+  "source_heads": [
+    {
+      "path": "_formatters/format_dates.py",
+      "head": "4f26520648985b1a347a1afb664ec2b751bfe165",
+      "sha256": "b0b573029c78bf364285d0afb1d7604b63d442911e3a2989b6364b6d7fdb4073"
+    },
+    {
+      "path": "_literalize.py",
+      "head": "e7cf4ca1e72ec2745285d1f4e7dea0e50dac9e4d",
+      "sha256": "e8315c53c83814628424ace4a552420b13d602b893d79c9dd82fedbf944da6db"
+    },
+    {
+      "path": "languages/python.py",
+      "head": "45d21041c3232e4e2c05eb46244a8b7c79ae87ac",
+      "sha256": "830e1dc4074933e99632350412c88fdc608220a5ceb3c696d1e7804f2972f7a7"
+    },
+    {
+      "path": "languages/cpp.py",
+      "head": "946d8bfb7bf3425ec6f56d65de32d90a672e2893",
+      "sha256": "a7820c90620e6676c9e3a22d83e9248d08011002dd6a72ae2bd1b9fd5c371a7a"
+    }
+  ],
+  "limits": [
+    "Local execution costs; no matched hosted discovery cost comparison.",
+    "Bounded values and configurations; not complete API or backend coverage.",
+    "Rust and C++ matrix callees are generic stubs with native declaration assertions; Python and Go consumers compare the passed values. The permanent C++ runner additionally checks a real consumer in all three dialects.",
+    "Broad controllers are archived research, not production tools or normal CI.",
+    "Raw generated programs and logs remain in the local report directory, not this archive."
+  ],
+  "mutation_audit": {
+    "serialized": 373,
+    "composition_python_go": 48,
+    "mapping_keys_unchanged": true,
+    "valid_tagged_value_mutations": true
+  },
+  "excluded_exploration": [
+    "Initial Ruby keyword-call and JavaScript object-call adapters wrapped arguments incorrectly.",
+    "JavaScript dates and naive datetimes require local-calendar reconstruction rather than a UTC oracle.",
+    "The first Go composition adapter placed oracle imports after type declarations.",
+    "The first C++ adapter omitted file-scope stubs, used the wrong C++ dialect, or omitted the main entry point.",
+    "Rust equality against vec![] added an ambiguous oracle type; is_empty() is the correct native empty-sequence check.",
+    "Original mutations could create invalid encoded values; the final value-mutation audit retains valid tagged payloads and unchanged mapping keys.",
+    "One combined source snapshot was captured during a temporary baseline proof; it is excluded. Final source hashes and heads are recorded separately."
+  ]
+}
