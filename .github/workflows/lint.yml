@@ -1786,9 +1786,11 @@ jobs:
           repository hackage.haskell.org
             url: https://hackage.haskell.org/
             secure: true
-          remote-repo-cache: ${HOME}/.cabal/packages
-          store-dir: ${HOME}/.cabal/store
+          remote-repo-cache: ${RUNNER_TEMP}/literalizer-cabal-cold-packages
+          store-dir: ${RUNNER_TEMP}/literalizer-cabal-cold-store
           EOF
+          test ! -e "$RUNNER_TEMP/literalizer-cabal-cold-store"
+          test ! -e "$RUNNER_TEMP/literalizer-cabal-cold-packages"
       - uses: haskell-actions/setup@v2.12.1
         id: setup-haskell
         with:
@@ -1799,21 +1801,7 @@ jobs:
           # Update once, after restoring the index cache, using the bounded retry.
           cabal-update: false
 
-      # Cache the cabal store (compiled aeson and its deps) used by the
-      # `Haskell roundtrip` step's cabal-script. Keyed on the resolved
-      # GHC version and the script file (whose `{- cabal: ... -}` block
-      # holds the build-depends list), so a dependency bump invalidates
-      # automatically. `~/.cabal/packages` holds the Hackage index.
-      - name: Cache cabal store
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cabal/store
-            ~/.cabal/packages
-          key: cabal-${{ runner.os }}-ghc${{ steps.setup-haskell.outputs.ghc-version
-            }}-${{ hashFiles('scripts/run_haskell_roundtrip.py') }}
-          restore-keys: |
-            cabal-${{ runner.os }}-ghc${{ steps.setup-haskell.outputs.ghc-version }}-
+      # Cold-store validation head; restore the cache before final review.
       # ``purescript: 0.15.15`` is ``>=`` the ``V0_15`` (PureScript
       # 0.15.x) default of ``PureScript.language_version`` in
       # ``src/literalizer/languages/purescript.py``; keep them in sync.
@@ -1847,11 +1835,19 @@ jobs:
       # `Data.Time` that non-`json_type` Haskell fixtures rely on.
       # Keep this paired with the `AESON_VALUE` member in
       # `Haskell.JsonTypes` in `src/literalizer/languages/haskell.py`.
+      - name: Update Haskell package index
+        timeout-minutes: 5
+        run: scripts/retry.sh cabal update
+
+      # A cache miss also compiles dependencies. Two complete build attempts
+      # need 2 * (270 + 10) + 5 = 565 seconds within this 600-second step.
+      # Index downloads keep their separate 3 * (80 + 10) + 2 * 5 = 280s bound.
       - name: Install aeson / aeson-qq for Haskell lint
         timeout-minutes: 10
-        run: |-
-          scripts/retry.sh cabal update
-          scripts/retry.sh cabal install --lib aeson aeson-qq base time bytestring
+        env:
+          RETRY_ATTEMPTS: '2'
+          RETRY_ATTEMPT_SECONDS: '270'
+        run: scripts/retry.sh cabal install --lib aeson aeson-qq base time bytestring
 
       # Compile all fixtures in a single ghc invocation to pay GHC's
       # startup cost once. Each fixture already carries a unique module
