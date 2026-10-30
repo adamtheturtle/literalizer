@@ -77,6 +77,23 @@ def probes() -> list[Probe]:
     return result
 
 
+def _same(*, expected: JsonValue, actual: JsonValue) -> bool:
+    """Compare JSON values without equating booleans and numbers."""
+    if isinstance(expected, bool) or isinstance(actual, bool):
+        return type(expected) is type(actual) and expected == actual
+    if isinstance(expected, dict) and isinstance(actual, dict):
+        return expected.keys() == actual.keys() and all(
+            _same(expected=value, actual=actual[key])
+            for key, value in expected.items()
+        )
+    if isinstance(expected, list) and isinstance(actual, list):
+        return len(expected) == len(actual) and all(
+            _same(expected=left, actual=right)
+            for left, right in zip(expected, actual, strict=True)
+        )
+    return expected == actual
+
+
 def main() -> None:
     """Run every fixed relation within an explicit overall time budget."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -150,7 +167,11 @@ def main() -> None:
             actual = TypeAdapter(type=JsonValue).validate_json(
                 completed.stdout
             )
-            outcome = "pass" if actual == probe.expected else "value-mismatch"
+            outcome = (
+                "pass"
+                if _same(expected=probe.expected, actual=actual)
+                else "value-mismatch"
+            )
         elif completed.returncode in {124, 137}:
             outcome = "command-timeout"
         failed |= outcome != "pass"
