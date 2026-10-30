@@ -1,0 +1,12 @@
+items: [1, 2]
+empty_items: []
+values: !!set
+  1: null
+  2: null
+mapping:
+  1: 2
+  3: 4
+empty_mapping: {}
+records:
+  - value: 1
+  - value: 2

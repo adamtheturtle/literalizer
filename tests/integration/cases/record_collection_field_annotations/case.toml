@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "variant"
+
+# Record fields need imports even when the outer binding needs no hint.
+[[variants]]
+axis = "record_eager_field_annotations"
+context = { variable_form = "existing" }
+
+[[variants]]
+axis = "record_eager_collection_aliases"
+context = { variable_form = "existing" }
