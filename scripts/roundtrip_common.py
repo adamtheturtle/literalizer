@@ -106,6 +106,27 @@ def expected(*, json_text: str | None) -> dict[str, JsonValue]:
     return json_object_from_text(text=text)
 
 
+def _json_values_equal(*, left: JsonValue, right: JsonValue) -> bool:
+    """Compare JSON values without treating booleans as numbers."""
+    if isinstance(left, bool) or isinstance(right, bool):
+        return (
+            isinstance(left, bool)
+            and isinstance(right, bool)
+            and left == right
+        )
+    if isinstance(left, dict) and isinstance(right, dict):
+        return left.keys() == right.keys() and all(
+            _json_values_equal(left=value, right=right[key])
+            for key, value in left.items()
+        )
+    if isinstance(left, list) and isinstance(right, list):
+        return len(left) == len(right) and all(
+            _json_values_equal(left=left_value, right=right_value)
+            for left_value, right_value in zip(left, right, strict=True)
+        )
+    return left == right
+
+
 def verify(
     label: str,
     produced_json: str,
@@ -115,7 +136,8 @@ def verify(
     """Compare *produced_json* to :func:`expected`, exiting 1 on mismatch.
 
     *label* names the language for the diagnostic.  JSON object key order
-    is irrelevant because the comparison is on parsed Python values.
+    is irrelevant. Booleans are distinct from numbers at every nesting
+    depth, while equal integer/float representations remain equivalent.
 
     *exclude_keys* drops the named top-level object keys from both sides
     before comparing.  This is for languages whose JSON number type
@@ -135,7 +157,7 @@ def verify(
     for key in exclude_keys:
         _ = want.pop(key, None)
         _ = got.pop(key, None)
-    if got != want:
+    if not _json_values_equal(left=got, right=want):
         _ = sys.stderr.write(
             f"{label}: round-trip mismatch\n"
             f"  expected: {want!r}\n"
