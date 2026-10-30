@@ -362,7 +362,13 @@ def _format_datetime_go(value: dt.datetime) -> str:
     offset = value.utcoffset()
     offset_seconds = 0
     if offset is not None:
-        offset_seconds = int(offset.total_seconds())
+        if offset.microseconds != 0:
+            msg = (
+                "Go native datetime format cannot preserve subsecond "
+                f"UTC offset {offset}"
+            )
+            raise UnrepresentableInputError(msg)
+        offset_seconds = offset // dt.timedelta(seconds=1)
     location = "time.UTC"
     if offset_seconds != 0:
         location = f'time.FixedZone("", {offset_seconds})'
