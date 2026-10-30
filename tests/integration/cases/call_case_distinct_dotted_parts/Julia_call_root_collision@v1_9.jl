@@ -1,4 +1,4 @@
-struct FooType; bar; end
-struct FooType; Foo; end
-foo = FooType(FooType((args...; kwargs...) -> nothing))
+struct FooType1; bar; end
+struct FooType0; Foo; end
+foo = FooType0(FooType1((args...; kwargs...) -> nothing))
 foo.Foo.bar(x=[1])

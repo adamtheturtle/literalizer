@@ -245,7 +245,10 @@ def _d_call_stub(
     method = parts[-1]
     fields = parts[1:-1]
     type_names = dotted_helper_type_names(
-        parts=parts[:-1], suffix="Type_", ignore_underscores=False
+        parts=parts[:-1],
+        suffix="Type_",
+        ignore_underscores=False,
+        capitalize_parts=False,
     )
     if len(fields) == 0:
         type_name = type_names[0]

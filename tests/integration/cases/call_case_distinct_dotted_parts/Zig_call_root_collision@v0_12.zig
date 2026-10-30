@@ -10,9 +10,9 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-const FooType_ = struct { fn bar(self: FooType_, x: ZVal) void { _ = self; _ = x; } };
-const FooType_ = struct { Foo: FooType_ = .{} };
-const foo: FooType_ = .{};
+const FooType_1 = struct { fn bar(self: FooType_1, x: ZVal) void { _ = self; _ = x; } };
+const FooType_0 = struct { Foo: FooType_1 = .{} };
+const foo: FooType_0 = .{};
 pub fn main() void {
     foo.Foo.bar(.{ .arr = &.{.{ .int = 1 }}});
 }

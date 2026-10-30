@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
 
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     fixed_open,
     typed_collection_open,
@@ -176,25 +177,31 @@ def _julia_call_stub(
     root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
+    helper_types = dotted_helper_type_names(
+        parts=parts[:-1],
+        suffix="Type",
+        ignore_underscores=False,
+        capitalize_parts=True,
+    )
     _anon = f"({variadic}) -> nothing"
     if len(fields) == 0:
-        cls = root.capitalize() + "Type"
+        cls = helper_types[0]
         return (
             f"struct {cls}; {method}; end",
             f"{root} = {cls}({_anon})",
         )
     lines: list[str] = []
-    inner_cls = fields[-1].capitalize() + "Type"
+    inner_cls = helper_types[-1]
     lines.append(f"struct {inner_cls}; {method}; end")
     for i in range(len(fields) - 2, -1, -1):
-        cls = fields[i].capitalize() + "Type"
+        cls = helper_types[i + 1]
         field = fields[i + 1]
         lines.append(f"struct {cls}; {field}; end")
-    root_cls = root.capitalize() + "Type"
+    root_cls = helper_types[0]
     lines.append(f"struct {root_cls}; {fields[0]}; end")
     inner_inst = f"{inner_cls}({_anon})"
     for i in range(len(fields) - 2, -1, -1):
-        cls = fields[i].capitalize() + "Type"
+        cls = helper_types[i + 1]
         inner_inst = f"{cls}({inner_inst})"
     lines.append(f"{root} = {root_cls}({inner_inst})")
     return tuple(lines)

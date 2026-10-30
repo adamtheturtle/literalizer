@@ -1,13 +1,13 @@
 @fieldwise_init
-struct _FooType(Copyable, Movable):
+struct _FooType2(Copyable, Movable):
     def bar(self, var x: List[Int]):
         pass
 @fieldwise_init
-struct _FooType(Copyable, Movable):
-    var Foo: _FooType
+struct _FooType1(Copyable, Movable):
+    var Foo: _FooType2
 @fieldwise_init
 struct _AType(Copyable, Movable):
-    var foo: _FooType
+    var foo: _FooType1
 def main():
-    var a = _AType(_FooType(_FooType()))
+    var a = _AType(_FooType1(_FooType2()))
     a.foo.Foo.bar(List([1]))

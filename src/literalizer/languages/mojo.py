@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, ClassVar, assert_never, override
 
 from beartype import beartype
 
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     fixed_open,
     make_element_to_type,
@@ -515,15 +516,23 @@ def _mojo_init_expr(parts: Sequence[str]) -> str:
     ``@fieldwise_init`` generates a field-by-field init, so each struct
     that holds a field is constructed by passing the inner instance.
     """
-    root = parts[0]
     fields = parts[1:-1]
-    root_type = f"_{root.capitalize()}Type"
+    helper_types = tuple(
+        f"_{name}"
+        for name in dotted_helper_type_names(
+            parts=parts[:-1],
+            suffix="Type",
+            ignore_underscores=False,
+            capitalize_parts=True,
+        )
+    )
+    root_type = helper_types[0]
     if len(fields) == 0:
         return f"{root_type}()"
-    inner_type = f"_{fields[-1].capitalize()}Type"
+    inner_type = helper_types[-1]
     expr = f"{inner_type}()"
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"_{fields[i].capitalize()}Type"
+        curr_type = helper_types[i + 1]
         expr = f"{curr_type}({expr})"
     return f"{root_type}({expr})"
 
@@ -605,9 +614,17 @@ def _mojo_call_preamble_stub(
                 f"{return_suffix}:\n{indent}pass"
             ),
         )
-    root = parts[0]
     method = parts[-1]
     fields = parts[1:-1]
+    helper_types = tuple(
+        f"_{name}"
+        for name in dotted_helper_type_names(
+            parts=parts[:-1],
+            suffix="Type",
+            ignore_underscores=False,
+            capitalize_parts=True,
+        )
+    )
     struct_header = "(Copyable, Movable)"
     if typed_params is not None:
         method_param_list = ", ".join(("self", *typed_params))
@@ -621,7 +638,7 @@ def _mojo_call_preamble_stub(
             f"{return_suffix}:\n{indent}{indent}pass"
         )
     if len(fields) == 0:
-        type_name = f"_{root.capitalize()}Type"
+        type_name = helper_types[0]
         return (
             (
                 f"@fieldwise_init\n"
@@ -630,13 +647,13 @@ def _mojo_call_preamble_stub(
             ),
         )
     blocks: list[str] = []
-    inner_type = f"_{fields[-1].capitalize()}Type"
+    inner_type = helper_types[-1]
     blocks.append(
         f"@fieldwise_init\nstruct {inner_type}{struct_header}:\n{method_stub}"
     )
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"_{fields[i].capitalize()}Type"
+        curr_type = helper_types[i + 1]
         field = fields[i + 1]
         blocks.append(
             f"@fieldwise_init\n"
@@ -644,7 +661,7 @@ def _mojo_call_preamble_stub(
             f"{indent}var {field}: {prev_type}"
         )
         prev_type = curr_type
-    root_type = f"_{root.capitalize()}Type"
+    root_type = helper_types[0]
     blocks.append(
         f"@fieldwise_init\n"
         f"struct {root_type}{struct_header}:\n"

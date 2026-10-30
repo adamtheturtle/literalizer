@@ -1,10 +1,10 @@
 module Main
 
-type FooType_() =
+type FooType_1() =
     member _.bar(_x: obj) : obj = null
-type FooType_() =
-    member _.Foo = FooType_()
-let foo = FooType_()
+type FooType_0() =
+    member _.Foo = FooType_1()
+let foo = FooType_0()
 type Val =
     | FInt of int64
     | FList of Val list

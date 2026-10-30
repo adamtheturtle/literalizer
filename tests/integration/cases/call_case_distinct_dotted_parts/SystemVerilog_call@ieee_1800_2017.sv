@@ -10,14 +10,14 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-class FooType_;
+class FooType_2;
     task bar(input _VVal x); endtask
 endclass
-class FooType_;
-    FooType_ Foo = new();
+class FooType_1;
+    FooType_2 Foo = new();
 endclass
 class AType_;
-    FooType_ foo = new();
+    FooType_1 foo = new();
 endclass
 AType_ a = new();
 initial begin

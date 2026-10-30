@@ -1,11 +1,11 @@
 module Main
 
-type FooType_() =
+type FooType_2() =
     member _.bar(_x: obj) : obj = null
-type FooType_() =
-    member _.Foo = FooType_()
+type FooType_1() =
+    member _.Foo = FooType_2()
 type AType_() =
-    member _.foo = FooType_()
+    member _.foo = FooType_1()
 let a = AType_()
 type Val =
     | FInt of int64

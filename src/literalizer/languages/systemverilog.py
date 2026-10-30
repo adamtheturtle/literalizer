@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, ClassVar
 from beartype import beartype
 
 from literalizer._checks import guard_collection_nesting_depth
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -295,6 +296,12 @@ def _sv_call_stub(
     method = parts[-1]
     root = parts[0]
     fields = list(parts[1:-1])
+    helper_types = dotted_helper_type_names(
+        parts=parts[:-1],
+        suffix="Type_",
+        ignore_underscores=False,
+        capitalize_parts=False,
+    )
 
     if stub_return is StubReturn.VOID:
         method_decl = f"{indent}task {method}({param_str}); endtask"
@@ -306,25 +313,25 @@ def _sv_call_stub(
         )
 
     if len(fields) == 0:
-        type_name = f"{root.title()}Type_"
+        type_name = helper_types[0]
         return (
             f"class {type_name};\n{method_decl}\nendclass",
             f"{type_name} {root} = new();",
         )
 
     lines: list[str] = []
-    inner_type = f"{fields[-1].title()}Type_"
+    inner_type = helper_types[-1]
     lines.append(f"class {inner_type};\n{method_decl}\nendclass")
     prev_type = inner_type
     for i in range(len(fields) - 2, -1, -1):
-        curr_type = f"{fields[i].title()}Type_"
+        curr_type = helper_types[i + 1]
         lines.append(
             f"class {curr_type};\n"
             f"{indent}{prev_type} {fields[i + 1]} = new();\n"
             f"endclass"
         )
         prev_type = curr_type
-    root_type = f"{root.title()}Type_"
+    root_type = helper_types[0]
     lines.append(
         f"class {root_type};\n"
         f"{indent}{prev_type} {fields[0]} = new();\n"

@@ -10,13 +10,13 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-class FooType_;
+class FooType_1;
     task bar(input _VVal x); endtask
 endclass
-class FooType_;
-    FooType_ Foo = new();
+class FooType_0;
+    FooType_1 Foo = new();
 endclass
-FooType_ foo = new();
+FooType_0 foo = new();
 initial begin
 void'(foo.Foo.bar(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "'{_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: \"\"}}"}));
 end

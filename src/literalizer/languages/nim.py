@@ -1144,7 +1144,10 @@ def _nim_call_stub(
             return (f"template {method}(args: varargs[untyped]) = discard",)
         chain = list(parts[:-1])
         type_names = dotted_helper_type_names(
-            parts=chain, suffix="Type", ignore_underscores=True
+            parts=chain,
+            suffix="Type",
+            ignore_underscores=True,
+            capitalize_parts=False,
         )
         holder_type = type_names[-1]
         lines: list[str] = [f"type {holder_type} = object"]
@@ -1178,7 +1181,10 @@ def _nim_call_stub(
         )
     chain = list(parts[:-1])
     type_names = dotted_helper_type_names(
-        parts=chain, suffix="Type", ignore_underscores=True
+        parts=chain,
+        suffix="Type",
+        ignore_underscores=True,
+        capitalize_parts=False,
     )
     holder_type = type_names[-1]
     lines = [f"type {holder_type} = object"]

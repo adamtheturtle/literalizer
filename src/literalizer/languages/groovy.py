@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, ClassVar, override
 
 from beartype import beartype
 
+from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
     fixed_open,
 )
@@ -284,8 +285,17 @@ def _groovy_call_stub_factory(
         root = parts[0]
         method = parts[-1]
         fields = parts[1:-1]
+        helper_types = tuple(
+            f"_{name}"
+            for name in dotted_helper_type_names(
+                parts=parts[:-1],
+                suffix="Type",
+                ignore_underscores=False,
+                capitalize_parts=False,
+            )
+        )
         if len(fields) == 0:
-            cls = f"_{root.title()}Type"
+            cls = helper_types[0]
             return (
                 (
                     f"class {cls} {{ {return_type}"
@@ -294,19 +304,19 @@ def _groovy_call_stub_factory(
                 f"def {root} = new {cls}()",
             )
         lines: list[str] = []
-        inner_cls = f"_{fields[-1].title()}Type"
+        inner_cls = helper_types[-1]
         lines.append(
             f"class {inner_cls} {{ {return_type}"
             f" {method}({param_list}) {{ {return_value} }} }}"
         )
         prev_cls = inner_cls
         for i in range(len(fields) - 2, -1, -1):
-            cls = f"_{fields[i].title()}Type"
+            cls = helper_types[i + 1]
             lines.append(
                 f"class {cls} {{ def {fields[i + 1]} = new {prev_cls}() }}"
             )
             prev_cls = cls
-        root_cls = f"_{root.title()}Type"
+        root_cls = helper_types[0]
         lines.append(
             f"class {root_cls} {{ def {fields[0]} = new {prev_cls}() }}"
         )

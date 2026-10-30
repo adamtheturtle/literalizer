@@ -13,6 +13,7 @@ def dotted_helper_type_names(
     parts: Sequence[str],
     suffix: Literal["Type", "Type_"],
     ignore_underscores: bool,
+    capitalize_parts: bool,
 ) -> tuple[str, ...]:
     """Preserve ordinary names and index only colliding helper types.
 
@@ -21,7 +22,10 @@ def dotted_helper_type_names(
     name cannot collide with an unchanged name. Distinct positions have
     distinct indices even when their source components repeat.
     """
-    names = tuple(f"{part.title()}{suffix}" for part in parts)
+    names = tuple(
+        f"{part.capitalize() if capitalize_parts else part.title()}{suffix}"
+        for part in parts
+    )
     keys = tuple(
         name.replace("_", "").casefold() if ignore_underscores else name
         for name in names

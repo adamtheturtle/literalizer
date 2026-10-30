@@ -10,16 +10,16 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-class FooType_;
+class FooType_2;
     function _VVal bar(input _VVal x);
         bar = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""};
     endfunction
 endclass
-class FooType_;
-    FooType_ Foo = new();
+class FooType_1;
+    FooType_2 Foo = new();
 endclass
 class AType_;
-    FooType_ foo = new();
+    FooType_1 foo = new();
 endclass
 AType_ a = new();
 initial begin

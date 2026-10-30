@@ -239,7 +239,10 @@ def _odin_call_preamble_stub(
     method = parts[-1]
     chain = parts[:-1]
     type_names = dotted_helper_type_names(
-        parts=chain, suffix="Type_", ignore_underscores=False
+        parts=chain,
+        suffix="Type_",
+        ignore_underscores=False,
+        capitalize_parts=False,
     )
     holder = chain[-1]
     holder_type = type_names[-1]
@@ -287,7 +290,10 @@ def _odin_call_body_stub(
     method = parts[-1]
     chain = parts[:-1]
     type_names = dotted_helper_type_names(
-        parts=chain, suffix="Type_", ignore_underscores=False
+        parts=chain,
+        suffix="Type_",
+        ignore_underscores=False,
+        capitalize_parts=False,
     )
     holder = chain[-1]
     holder_type = type_names[-1]
