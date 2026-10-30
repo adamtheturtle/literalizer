@@ -234,8 +234,9 @@ def _format_datetime_ruby(value: dt.datetime) -> str:
     """Format a datetime as a Ruby Time constructor call.
 
     UTC-aware datetimes use ``Time.utc``. Datetimes with a non-UTC
-    offset use ``Time.new`` with the offset string. Naive datetimes use
-    ``Time.utc`` so the host time zone cannot affect the result.
+    offset use ``Time.new`` with an offset string, or an exact numeric
+    offset for subminute precision. Naive datetimes use ``Time.utc`` so
+    the host time zone cannot affect the result.
     """
     second = str(object=value.second)
     if value.microsecond != 0:
@@ -249,7 +250,13 @@ def _format_datetime_ruby(value: dt.datetime) -> str:
         return f"Time.utc({args})"
     if offset.total_seconds() == 0:
         return f"Time.utc({args})"
-    total_seconds = int(offset.total_seconds())
+    total_microseconds = offset // dt.timedelta(microseconds=1)
+    if total_microseconds % 60_000_000 != 0:
+        offset_arg = str(object=total_microseconds // 1_000_000)
+        if total_microseconds % 1_000_000 != 0:
+            offset_arg = f"Rational({total_microseconds}, 1000000)"
+        return f"Time.new({args}, {offset_arg})"
+    total_seconds = total_microseconds // 1_000_000
     sign = "-"
     if total_seconds >= 0:
         sign = "+"

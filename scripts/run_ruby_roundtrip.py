@@ -11,8 +11,10 @@ where the Ruby toolchain is installed.  It shares the same input and
 comparison logic as the other per-language round-trip helpers.
 """
 
+import datetime as dt
 import json
 import shutil
+from fractions import Fraction
 
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Ruby
@@ -86,6 +88,74 @@ def _check_date_calendars(*, ruby: str) -> None:
         )
 
 
+def _check_datetime_offsets(*, ruby: str) -> None:
+    """Native formatter inputs retain exact instants and UTC offsets.
+
+    YAML/TOML timestamps cannot carry these subminute offsets, and Ruby's
+    reference framework deliberately rejects native bound references.
+    """
+    offsets = (
+        0,
+        19_800_000_000,
+        -19_800_000_000,
+        1_000_000,
+        -1_000_000,
+        1,
+        -1,
+        19_815_000_001,
+        -19_815_000_001,
+    )
+    expressions: list[str] = []
+    expected: list[list[int]] = []
+    epoch = dt.datetime(year=1970, month=1, day=1, tzinfo=dt.UTC)
+    for microseconds in offsets:
+        stamp = dt.datetime(
+            year=2001,
+            month=2,
+            day=3,
+            hour=4,
+            minute=5,
+            second=6,
+            microsecond=123456,
+            tzinfo=dt.timezone(offset=dt.timedelta(microseconds=microseconds)),
+        )
+        expressions.append(Ruby().format_datetime(stamp))
+        instant = Fraction(
+            numerator=(stamp - epoch) // dt.timedelta(microseconds=1),
+            denominator=1_000_000,
+        )
+        offset = Fraction(numerator=microseconds, denominator=1_000_000)
+        expected.append(
+            [
+                instant.numerator,
+                instant.denominator,
+                offset.numerator,
+                offset.denominator,
+            ]
+        )
+    program = (
+        "require 'json'\n"
+        f"values = [{', '.join(expressions)}]\n"
+        "actual = values.map { |t| [t.to_r.numerator, t.to_r.denominator, "
+        "t.utc_offset.numerator, t.utc_offset.denominator] }\n"
+        "STDOUT.write(JSON.generate({values: actual}))\n"
+    )
+    roundtrip_common.execute(
+        label="Ruby native datetime offsets",
+        source_filename="offsets.rb",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[ruby, "offsets.rb"],
+                failure_label="Ruby datetime offset mismatch",
+            )
+        ],
+        excluded_keys=(),
+        expected_json=json.dumps(obj={"values": expected}),
+        extra_files=None,
+    )
+
+
 def main() -> None:
     """Round-trip the shared document through the Ruby backend."""
     json_text = roundtrip_common.input_for_capabilities(
@@ -110,6 +180,7 @@ def main() -> None:
         extra_files=None,
     )
     _check_date_calendars(ruby=ruby)
+    _check_datetime_offsets(ruby=ruby)
 
 
 if __name__ == "__main__":
