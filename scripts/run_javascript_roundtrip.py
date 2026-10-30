@@ -17,8 +17,11 @@ JavaScript cannot represent it as a safe ``Number`` and the backend rejects
 it rather than emitting a lossy numeric literal.
 """
 
+import datetime as dt
+import json
 import shutil
 
+from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import JavaScript
 from scripts import roundtrip_common
 
@@ -45,6 +48,63 @@ def _build_program(json_text: str) -> str:
         '  throw new Error("negative_zero lost its sign");\n'
         "}\n"
         f"process.stdout.write(JSON.stringify({_VAR_NAME}));\n"
+    )
+
+
+def _check_native_datetime_offsets(*, node: str) -> None:
+    """Check exact instants with offsets outside ISO parser syntax."""
+    cases = (
+        (1970, 0, 1_000_000, -1000),
+        (1970, 0, -1_000_000, 1000),
+        (1970, 1, 1, 0),
+        (1970, 1000, 1000, 0),
+        (1970, 999999, -1, 1000),
+        (1970, 123456, 123456, 0),
+        (1970, 123456, 122456, 1),
+        (1, 0, 1_000_000, -62_135_596_801_000),
+    )
+    stamps = [
+        dt.datetime(
+            year=year,
+            month=1,
+            day=1,
+            microsecond=wall,
+            tzinfo=dt.timezone(offset=dt.timedelta(microseconds=offset)),
+        )
+        for year, wall, offset, _milliseconds in cases
+    ]
+    result = literalize(
+        source='{"$ref": "stamps"}',
+        input_format=InputFormat.JSON,
+        language=JavaScript(),
+        variable_form=NewVariable(name=_VAR_NAME, modifiers=frozenset()),
+        ref_key="$ref",
+        bound_refs={"stamps": stamps},
+        wrap_in_file=True,
+    )
+    program = (
+        f"{result.code}\n"
+        f"const milliseconds = {_VAR_NAME}.map(value => {{\n"
+        '  if (!(value instanceof Date)) throw new Error("expected Date");\n'
+        "  return value.getTime();\n"
+        "});\n"
+        "process.stdout.write(JSON.stringify({milliseconds}));\n"
+    )
+    roundtrip_common.execute(
+        label="JavaScript native datetime offsets",
+        source_filename="offsets.js",
+        program=program,
+        steps=[
+            roundtrip_common.Step(
+                args=[node, "offsets.js"],
+                failure_label="JavaScript datetime instant mismatch",
+            ),
+        ],
+        excluded_keys=(),
+        expected_json=json.dumps(
+            obj={"milliseconds": [row[3] for row in cases]}
+        ),
+        extra_files=None,
     )
 
 
@@ -75,6 +135,7 @@ def main() -> None:
         expected_json=json_text,
         extra_files=None,
     )
+    _check_native_datetime_offsets(node=node)
 
 
 if __name__ == "__main__":

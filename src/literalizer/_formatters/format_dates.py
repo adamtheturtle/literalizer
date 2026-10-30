@@ -68,15 +68,29 @@ def format_datetime_javascript(value: dt.datetime) -> str:
 
     Naive values use the numeric constructor so their calendar components do
     not get parsed as an environment-dependent instant. Aware values retain
-    their explicit ISO offset. JavaScript ``Date`` has millisecond precision.
+    their explicit ISO offset where its syntax is supported. JavaScript
+    ``Date`` has millisecond precision.
     """
-    if value.microsecond % 1000 != 0:
+    offset = value.utcoffset()
+    epoch_microseconds: int | None = None
+    precision = value.microsecond % 1000
+    if (
+        offset is not None
+        and offset % dt.timedelta(minutes=1) != dt.timedelta()
+    ):
+        epoch_microseconds = _datetime_epoch_delta(value) // dt.timedelta(
+            microseconds=1
+        )
+        precision = epoch_microseconds % 1000
+    if precision != 0:
         msg = (
             "JavaScript Date cannot preserve sub-millisecond datetime "
             f"precision: {value.isoformat()}"
         )
         raise UnrepresentableInputError(msg)
-    if value.utcoffset() is not None:
+    if epoch_microseconds is not None:
+        return f"new Date({epoch_microseconds // 1000})"
+    if offset is not None:
         return f'new Date("{value.isoformat(timespec="milliseconds")}")'
     args = (
         f"{value.year}, {value.month - 1}, {value.day}, {value.hour}, "
@@ -166,39 +180,39 @@ def format_time_vb(value: dt.time) -> str:
 
 
 @beartype
+def _datetime_epoch_delta(value: dt.datetime, /) -> dt.timedelta:
+    """Return exact elapsed time without normalizing calendar fields."""
+    offset = value.utcoffset()
+    if offset is None or offset == dt.timedelta():
+        offset = dt.timedelta()
+    elapsed = dt.timedelta(
+        days=value.toordinal()
+        - dt.date(year=1970, month=1, day=1).toordinal(),
+        seconds=value.hour * 3600 + value.minute * 60 + value.second,
+        microseconds=value.microsecond,
+    )
+    return elapsed - offset
+
+
+@beartype
 def datetime_epoch_seconds(value: dt.datetime) -> int:
     """Return exact integer Unix epoch seconds for a datetime."""
-    if value.microsecond != 0:
+    elapsed = _datetime_epoch_delta(value)
+    if elapsed.microseconds != 0:
         msg = (
             "integer Unix epoch seconds cannot preserve fractional "
             f"datetime precision: {value.isoformat()}"
         )
         raise UnrepresentableInputError(msg)
-    offset = value.utcoffset()
-    if offset is None or offset == dt.timedelta():
-        offset = dt.timedelta()
-    elapsed = dt.timedelta(
-        days=value.toordinal()
-        - dt.date(year=1970, month=1, day=1).toordinal(),
-        seconds=value.hour * 3600 + value.minute * 60 + value.second,
-        microseconds=value.microsecond,
-    )
-    return (elapsed - offset) // dt.timedelta(seconds=1)
+    return elapsed // dt.timedelta(seconds=1)
 
 
 @beartype
 def format_datetime_epoch_fractional(value: dt.datetime) -> str:
     """Format exact Unix epoch seconds, retaining a fractional part."""
-    offset = value.utcoffset()
-    if offset is None or offset == dt.timedelta():
-        offset = dt.timedelta()
-    elapsed = dt.timedelta(
-        days=value.toordinal()
-        - dt.date(year=1970, month=1, day=1).toordinal(),
-        seconds=value.hour * 3600 + value.minute * 60 + value.second,
-        microseconds=value.microsecond,
+    total_microseconds = _datetime_epoch_delta(value) // dt.timedelta(
+        microseconds=1
     )
-    total_microseconds = (elapsed - offset) // dt.timedelta(microseconds=1)
     sign = ""
     if total_microseconds < 0:
         sign = "-"
