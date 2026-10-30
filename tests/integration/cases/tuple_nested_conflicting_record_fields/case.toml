@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "variant"
+# Positive counterpart of nested_tuple_field_type_conflict (#5236).
+# Keep the rejecting strategy configurations in the rejection manifest.
+
+[[variants]]
+axis = "nested_tuple_strategy"
+
+[[variants]]
+axis = "nested_tuple_strategy"
+suffix = "_multiline"
+context = { collection_layout = "multiline" }

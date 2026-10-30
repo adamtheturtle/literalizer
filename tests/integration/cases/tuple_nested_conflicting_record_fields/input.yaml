@@ -1,0 +1,4 @@
+- outer:
+    pair: [1, first]
+- outer:
+    pair: [false, second]
