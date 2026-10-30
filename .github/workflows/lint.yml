@@ -1786,11 +1786,9 @@ jobs:
           repository hackage.haskell.org
             url: https://hackage.haskell.org/
             secure: true
-          remote-repo-cache: ${RUNNER_TEMP}/literalizer-cabal-cold-packages
-          store-dir: ${RUNNER_TEMP}/literalizer-cabal-cold-store
+          remote-repo-cache: ${HOME}/.cabal/packages
+          store-dir: ${HOME}/.cabal/store
           EOF
-          test ! -e "$RUNNER_TEMP/literalizer-cabal-cold-store"
-          test ! -e "$RUNNER_TEMP/literalizer-cabal-cold-packages"
       - uses: haskell-actions/setup@v2.12.1
         id: setup-haskell
         with:
@@ -1801,7 +1799,21 @@ jobs:
           # Update once, after restoring the index cache, using the bounded retry.
           cabal-update: false
 
-      # Cold-store validation head; restore the cache before final review.
+      # Cache the cabal store (compiled aeson and its deps) used by the
+      # `Haskell roundtrip` step's cabal-script. Keyed on the resolved
+      # GHC version and the script file (whose `{- cabal: ... -}` block
+      # holds the build-depends list), so a dependency bump invalidates
+      # automatically. `~/.cabal/packages` holds the Hackage index.
+      - name: Cache cabal store
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cabal/store
+            ~/.cabal/packages
+          key: cabal-${{ runner.os }}-ghc${{ steps.setup-haskell.outputs.ghc-version
+            }}-${{ hashFiles('scripts/run_haskell_roundtrip.py') }}
+          restore-keys: |
+            cabal-${{ runner.os }}-ghc${{ steps.setup-haskell.outputs.ghc-version }}-
       # ``purescript: 0.15.15`` is ``>=`` the ``V0_15`` (PureScript
       # 0.15.x) default of ``PureScript.language_version`` in
       # ``src/literalizer/languages/purescript.py``; keep them in sync.
