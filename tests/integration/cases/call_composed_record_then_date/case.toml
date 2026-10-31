@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "literalize-call"
+
+# A date import and record helpers must compose legally in either order
+# (#6583). Both bindings are consumed so the compiler checks their types.
+[call]
+target_function = "consume"
+parameter_names = ["stamp", "value"]
+per_element = true
+variant_only = true
+ref_input_format = "yaml"
+ref_declarations = { item = '{a: 1}', stamp = '2001-02-03' }
+explicit_ref_value_sources = { stamp = '2001-02-03', item = '{a: 1}' }
+
+[[call.variants]]
+axis = "heterogeneous_strategy_record"

@@ -444,6 +444,17 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
                 'target_function = "process"\n'
                 'parameter_names = ["value"]\n'
                 "per_element = true\n"
+                'ref_input_format = "mystery"\n'
+            ),
+            "Input should be 'json', 'json5', 'jsonc', 'toml', 'yaml'",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-call"\n'
+                "[call]\n"
+                'target_function = "process"\n'
+                'parameter_names = ["value"]\n'
+                "per_element = true\n"
                 'variable_form = "mystery"\n'
             ),
             "Input should be 'existing', 'new'",

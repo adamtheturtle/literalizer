@@ -2418,6 +2418,7 @@ class Nim(metaclass=LanguageCls):
                 dict argument needs the import, a record-only call
                 leaves it harmlessly suppressed).
                 """
+                _ = self._record_strategy.compute_shapes(data)
                 return (
                     "{.warning[UnusedImport]:off.}",
                     import_preamble(code="import tables"),

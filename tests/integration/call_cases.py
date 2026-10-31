@@ -10,7 +10,6 @@ those declarations into per-language cases.  The runner
 import dataclasses
 import enum
 import functools
-import json
 import re
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
@@ -39,6 +38,7 @@ from literalizer._language import (
 from literalizer._literalize import (
     _NormalizesDottedCallPartCase,
     _RequiresUniqueDottedCallParts,
+    _resolve_refs_for_inference,
     assemble_call_expression,
     call_result_discard_formatter,
     format_rendered_call_arguments,
@@ -1244,14 +1244,18 @@ def run_wrap_in_file_case(
                 None
                 if config.explicit_ref_value_sources is None
                 else {
-                    name: json.loads(s=ref_source)
+                    name: parse_input(
+                        source=ref_source, input_format=config.ref_input_format
+                    ).data
                     for name, ref_source in (
                         config.explicit_ref_value_sources.items()
                     )
                 }
             ),
             bound_refs={
-                ref_name: json.loads(s=ref_source)
+                ref_name: parse_input(
+                    source=ref_source, input_format=config.ref_input_format
+                ).data
                 for ref_name, ref_source in config.ref_declarations.items()
             },
         )
@@ -1318,7 +1322,7 @@ def _render_ref_declaration(
             seed_spec = dataclasses.replace(spec, declaration_style=styles[0])
         result = literalizer.literalize_call(
             source=ref_source,
-            input_format=literalizer.InputFormat.JSON,
+            input_format=config.ref_input_format,
             language=seed_spec,
             target_function=config.target_function,
             parameter_names=config.parameter_names,
@@ -1331,7 +1335,7 @@ def _render_ref_declaration(
         )
     result = literalizer.literalize(
         source=ref_source,
-        input_format=literalizer.InputFormat.JSON,
+        input_format=config.ref_input_format,
         language=spec,
         variable_form=variable_form,
         collection_layout=literalizer.CollectionLayout(
@@ -1384,7 +1388,9 @@ def _run_call_with_declarations(
         }
         ref_values.update(
             {
-                ref_name: json.loads(s=ref_source)
+                ref_name: parse_input(
+                    source=ref_source, input_format=config.ref_input_format
+                ).data
                 for ref_name, ref_source in (
                     config.extra_ref_value_sources.items()
                 )
@@ -1395,7 +1401,9 @@ def _run_call_with_declarations(
             effective_ref_values = ref_values
         if config.explicit_ref_value_sources is not None:
             effective_ref_values = {
-                name: json.loads(s=ref_source)
+                name: parse_input(
+                    source=ref_source, input_format=config.ref_input_format
+                ).data
                 for name, ref_source in (
                     config.explicit_ref_value_sources.items()
                 )
@@ -1458,8 +1466,22 @@ def _run_call_with_declarations(
             and followup_result is not None
             and followup_target == config.target_function
         )
+        # A deliberately absent inference hint must not erase the actual
+        # declaration's type from the compiler fixture's consumer signature.
+        stub_source_data = result.source_data
+        if len(config.unknown_ref_names) > 0:
+            stub_source_data = _resolve_refs_for_inference(
+                value=parse_input(
+                    source=source, input_format=input_info.input_format
+                ).data,
+                ref_values={
+                    name: declaration.source_data
+                    for name, declaration in decl_results_by_ref_name.items()
+                },
+                ref_key=config.ref_key,
+            )
         stub_argument_values = _arg_values_for_stub(
-            source_data=result.source_data,
+            source_data=stub_source_data,
             per_element=config.per_element,
             seeded_feedback=seeded_feedback,
             seed_argument_values=tuple(
@@ -1516,6 +1538,22 @@ def _statement_stub_targets(
             (config.followup_target_function, config.parameter_names)
         )
     return targets
+
+
+@beartype
+def _call_stub_spec(
+    *, spec: literalizer.Language, argument_values: Sequence[ParsedValue]
+) -> literalizer.Language:
+    """Infer consumer types without changing the composer's inference
+    state.
+    """
+    stub_spec = dataclasses.replace(spec)
+    compute_record_shapes = (
+        stub_spec.heterogeneous_behavior.compute_record_shapes
+    )
+    if compute_record_shapes is not None:
+        _ = compute_record_shapes(list(argument_values))
+    return stub_spec
 
 
 @beartype
@@ -1613,7 +1651,9 @@ def run_call_golden_case(
                 wrap_in_file=True,
                 ref_values=None,
                 bound_refs={
-                    ref_name: json.loads(s=ref_source)
+                    ref_name: parse_input(
+                        source=ref_source, input_format=config.ref_input_format
+                    ).data
                     for ref_name, ref_source in config.ref_declarations.items()
                 },
             )
@@ -1665,8 +1705,9 @@ def run_call_golden_case(
         stub_return = literalizer.StubReturn.VOID
     target_function_parts = tuple(config.target_function.split(sep="."))
     call_arg_values = call_outcome.stub_argument_values
+    stub_spec = _call_stub_spec(spec=spec, argument_values=call_arg_values)
     body_stubs.extend(
-        spec.format_call_stub(
+        stub_spec.format_call_stub(
             target_function_parts,
             config.parameter_names,
             stub_return,
@@ -1674,7 +1715,7 @@ def run_call_golden_case(
         ),
     )
     class_stubs.extend(
-        spec.format_call_class_scope_stub(
+        stub_spec.format_call_class_scope_stub(
             target_function_parts,
             config.parameter_names,
             stub_return,
@@ -1688,7 +1729,7 @@ def run_call_golden_case(
         config=file_regression.request.config,
     ):
         preamble_stubs.extend(
-            spec.format_call_preamble_stub(
+            stub_spec.format_call_preamble_stub(
                 target_function_parts,
                 config.parameter_names,
                 stub_return,
