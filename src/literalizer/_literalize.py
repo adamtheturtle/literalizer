@@ -9828,6 +9828,14 @@ def literalize_call_with_declarations(
     unified_body_preamble = language.compute_body_preamble(
         union_types, combined_source_data
     )
+    if len(unified_body_preamble) == 0:
+        unified_body_preamble = deduplicate_preamble_entries(
+            entries=tuple(
+                entry
+                for result in (*declarations, call)
+                for entry in result.body_preamble
+            )
+        )
     # Each declaration emitted its data-dependent block (e.g. Gleam's
     # ``pub type GVal {...}``) from *its own* data alone, so the
     # per-declaration blocks disagree on which constructors they

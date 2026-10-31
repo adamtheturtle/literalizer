@@ -103,7 +103,6 @@ from literalizer._language import (
     TrailingCommaConfig,
     VariantMetadata,
     body_preamble_from_scalars,
-    default_call_data_dependent_preamble,
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier_consumable,
     default_format_call_statement,
@@ -1663,7 +1662,27 @@ class V(metaclass=LanguageCls):
             case _:
                 return NO_HETEROGENEOUS_BEHAVIOR
 
-    call_data_dependent_preamble = default_call_data_dependent_preamble
+    @cached_property
+    @beartype
+    def call_data_dependent_preamble(
+        self,
+    ) -> Callable[[Value], tuple[str, ...]]:
+        """Infer record declarations from the complete composition
+        input.
+        """
+        preamble = self.data_dependent_preamble
+        compute_shapes = self.heterogeneous_behavior.compute_record_shapes
+
+        @beartype
+        def _preamble(data: Value, /) -> tuple[str, ...]:
+            """Keep declaration-only records alongside generic
+            interfaces.
+            """
+            if compute_shapes is not None:
+                _ = compute_shapes(data)
+            return preamble(data)
+
+        return _preamble
 
     type_hint_collection_preamble_lines = (
         default_type_hint_collection_preamble_lines

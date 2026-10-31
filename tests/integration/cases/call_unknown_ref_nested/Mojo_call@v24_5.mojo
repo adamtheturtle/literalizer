@@ -3,7 +3,7 @@ def literalizer_ref_value(value: None) -> None:
 
 def literalizer_ref_value[T: Copyable](value: T) -> T:
     return value.copy()
-def process[*Ts: Movable](var *args: *Ts):
+def process(var known_value: Bool, var nested_missing: Bool):
     pass
 def main():
     var known_value = True

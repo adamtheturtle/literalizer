@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Retain declaration helpers when composing calls with or without inference
+# hints (#6581, #6583, #6584). Explicit hints exercise the manual composer,
+# rather than the bound-reference wrapper.
+[call]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+variant_only = true
+ref_declarations = { item = '{"a":1}' }
+unknown_ref_names = ["item"]
+
+[[call.variants]]
+axis = "heterogeneous_strategy_record"

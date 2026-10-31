@@ -211,6 +211,7 @@ class ActiveRecordStrategy(RecordStrategy):
     """Record strategy whose active callbacks are always available."""
 
     record_name_for_value: Callable[[ValueInput], str | None]
+    compute_shapes: Callable[[Value], Mapping[int, RecordShape]]
 
 
 @beartype
@@ -1194,4 +1195,5 @@ def build_record_strategy(
         behavior=behavior,
         preamble=state.preamble,
         record_name_for_value=record_name_for_value,
+        compute_shapes=state.compute_shapes,
     )

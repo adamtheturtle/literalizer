@@ -1,0 +1,11 @@
+#+feature dynamic-literals
+package main
+Record0 :: struct { a: int }
+consume :: proc(args: ..any) -> any { return nil }
+
+main :: proc() {
+item := Record0{
+	a = 1,
+}
+consume(item);
+}
