@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "An integral wall time with a fractional native offset has an inexact instant."
+exceptions = ["UnrepresentableInputError"]
+languages = ["Go", "JavaScript", "Python"]
+
+[call]
+api = "literalize"
+sources = ['{"$ref":"stamp"}']
+input_format = "json"
+variable_form = "new"
+variable_name = "result_data"
+ref_key = "$ref"
+wrap_in_file = true
+bound_ref_datetimes = {stamp = {wall_time = 1970-01-01T00:00:00, offset_microseconds = 1}}
+kwargs = [{kind = "option_member", option = "datetime_format", member = "EPOCH"}]

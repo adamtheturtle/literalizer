@@ -1125,25 +1125,47 @@ def test_duplicate_golden_target_is_actionable() -> None:
 
 
 @pytest.mark.parametrize(
-    argnames="time_source",
-    argvalues=['"not-a-time"', "42"],
+    argnames=("field", "source"),
+    argvalues=[
+        ("bound_ref_times", '"not-a-time"'),
+        ("bound_ref_times", "42"),
+        ("bound_ref_datetimes", '"not-a-datetime"'),
+        ("bound_ref_datetimes", "42"),
+        (
+            "bound_ref_datetimes",
+            ("{wall_time = 1970-01-01T00:00:00Z, offset_microseconds = 1}"),
+        ),
+        (
+            "bound_ref_datetimes",
+            ("{wall_time = 1970-01-01T00:00:00, offset_microseconds = true}"),
+        ),
+        (
+            "bound_ref_datetimes",
+            (
+                "{wall_time = 1970-01-01T00:00:00, "
+                "offset_microseconds = 86400000000}"
+            ),
+        ),
+    ],
 )
-def test_invalid_reference_time_source(
-    tmp_path: Path, time_source: str
+def test_invalid_reference_temporal_source(
+    tmp_path: Path, field: str, source: str
 ) -> None:
-    """Malformed time bindings fail with their owning manifest path."""
+    """Malformed temporal bindings fail with their owning manifest
+    path.
+    """
     case_dir = _write_case(
         tmp_path=tmp_path,
         manifest=(
             "schema_version = 1\n"
             'owner = "literalize-ref-default"\n'
             "[ref]\n"
-            f"bound_ref_times = {{ value = {time_source} }}\n"
+            f"{field} = {{ value = {source} }}\n"
         ),
         input_name="input.json",
     )
     with pytest.raises(
-        expected_exception=CaseManifestError, match=r"bound_ref_times\.value"
+        expected_exception=CaseManifestError, match=rf"{field}\.value"
     ):
         _ = load_case_manifest(case_dir=case_dir)
 
