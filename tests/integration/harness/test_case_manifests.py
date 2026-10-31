@@ -1131,6 +1131,16 @@ def test_duplicate_golden_target_is_actionable() -> None:
         ("bound_ref_times", "42"),
         ("bound_ref_datetimes", '"not-a-datetime"'),
         ("bound_ref_datetimes", "42"),
+        ("bound_ref_values", '{kind = "unknown", value = 1}'),
+        ("bound_ref_values", '{kind = "scalar"}'),
+        ("bound_ref_values", '{kind = "sequence", items = "wrong"}'),
+        (
+            "bound_ref_values",
+            (
+                '{kind = "mapping", entries = [{key = [], '
+                'value = {kind = "scalar", value = 1}}]}'
+            ),
+        ),
         (
             "bound_ref_datetimes",
             ("{wall_time = 1970-01-01T00:00:00Z, offset_microseconds = 1}"),
@@ -1148,12 +1158,10 @@ def test_duplicate_golden_target_is_actionable() -> None:
         ),
     ],
 )
-def test_invalid_reference_temporal_source(
+def test_invalid_reference_value_source(
     tmp_path: Path, field: str, source: str
 ) -> None:
-    """Malformed temporal bindings fail with their owning manifest
-    path.
-    """
+    """Malformed native bindings fail with their owning manifest path."""
     case_dir = _write_case(
         tmp_path=tmp_path,
         manifest=(

@@ -379,6 +379,12 @@ def _bound_ref_inputs(
         bound_refs_input.update(config.bound_refs)
     bound_refs_input.update(config.bound_ref_times)
     bound_refs_input.update(config.bound_ref_datetimes)
+    bound_refs_input.update(
+        {
+            name: source.to_value()
+            for name, source in config.bound_ref_values.items()
+        }
+    )
     return bound_refs_input
 
 

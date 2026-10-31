@@ -18,7 +18,6 @@ from pydantic import (
     BeforeValidator,
     Field,
     InstanceOf,
-    NaiveDatetime,
     ValidationInfo,
     model_validator,
 )
@@ -27,6 +26,7 @@ import literalizer
 from literalizer import ValueInput
 from literalizer._types import Scalar
 from literalizer.languages import ALL_LANGUAGES
+from tests.native_value_sources import RefDatetimeInput, RefValueSource
 
 from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
 from .language_metadata import language_metadata
@@ -576,34 +576,13 @@ def _empty_ref_times() -> dict[str, dt.time]:
     return {}
 
 
-class OffsetDatetimeSource(
-    BaseModel, extra="forbid", frozen=True, strict=True
-):
-    """Native offsets finer than a TOML timestamp permits."""
-
-    wall_time: NaiveDatetime
-    offset_microseconds: int
-
-
-def _parse_ref_datetime(value: object, /) -> object:
-    """Construct exact offsets without relying on ISO parser precision."""
-    if isinstance(value, dict):
-        source = OffsetDatetimeSource.model_validate(obj=value)
-        return source.wall_time.replace(
-            tzinfo=dt.timezone(
-                offset=dt.timedelta(microseconds=source.offset_microseconds)
-            )
-        )
-    return value
-
-
-type RefDatetimeInput = Annotated[
-    dt.datetime, BeforeValidator(func=_parse_ref_datetime)
-]
-
-
 def _empty_ref_datetimes() -> dict[str, dt.datetime]:
     """Return the default datetime-valued reference bindings."""
+    return {}
+
+
+def _empty_ref_values() -> dict[str, RefValueSource]:
+    """Return the default compound native reference sources."""
     return {}
 
 
@@ -641,6 +620,8 @@ class RefCaseSpec(  # noqa: NOD001
     additionally accepts tables with a naive TOML ``wall_time`` and signed
     ``offset_microseconds``, preserving native offsets that serialized
     timestamps and older ISO parsers cannot express exactly.
+    ``bound_ref_values`` composes scalar, sequence and mapping sources,
+    including native datetime mapping keys, into one bound value.
 
     *external_declarations* supplies a caller's declarations as JSON
     sources. They are composed around the unwrapped result afterwards,
@@ -682,6 +663,9 @@ class RefCaseSpec(  # noqa: NOD001
     # Native TOML datetimes or exact wall-time/offset tables.
     bound_ref_datetimes: dict[str, RefDatetimeInput] = Field(
         default_factory=_empty_ref_datetimes,
+    )
+    bound_ref_values: dict[str, RefValueSource] = Field(
+        default_factory=_empty_ref_values,
     )
     extra_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,

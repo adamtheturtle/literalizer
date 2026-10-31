@@ -162,6 +162,9 @@ def _bound_refs(
     bindings: dict[str, literalizer.ValueInput] = dict(call.bound_refs)
     bindings.update(call.bound_ref_times)
     bindings.update(call.bound_ref_datetimes)
+    bindings.update(
+        {name: source.to_value() for name, source in call.bound_ref_values}
+    )
     yaml_bindings = _yaml_reference_values(
         sources=call.bound_ref_yaml, value=value
     )

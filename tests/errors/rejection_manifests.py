@@ -34,7 +34,7 @@ from pydantic import (
 import literalizer
 from literalizer import exceptions as literalizer_exceptions
 from literalizer.languages import ALL_LANGUAGES
-from tests.integration.case_manifests import RefDatetimeInput, RefTimeInput
+from tests.integration.case_manifests import RefTimeInput
 from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
@@ -42,6 +42,7 @@ from tests.language_gates import (
     language_gate_admits,
 )
 from tests.language_options import CAPABILITY_FLAGS, OPTIONS
+from tests.native_value_sources import RefDatetimeInput, RefValueSource
 
 REJECTIONS_DIR = Path(__file__).parent / "rejections"
 """Where the declared rejections live."""
@@ -85,6 +86,12 @@ type BoundRefTimes = Annotated[
 
 type BoundRefDatetimes = Annotated[
     tuple[tuple[str, RefDatetimeInput], ...],
+    BeforeValidator(func=_bound_refs_items),
+]
+
+
+type BoundRefValueSources = Annotated[
+    tuple[tuple[str, RefValueSource], ...],
     BeforeValidator(func=_bound_refs_items),
 ]
 
@@ -417,6 +424,7 @@ class CallSpec(  # noqa: NOD001
     bound_ref_yaml: BoundRefYaml = ()
     bound_ref_times: BoundRefTimes = ()
     bound_ref_datetimes: BoundRefDatetimes = ()
+    bound_ref_values: BoundRefValueSources = ()
     ref_value_yaml: BoundRefYaml = ()
     comment_source: Annotated[tuple[str, ...], Field(strict=False)] | None = (
         None

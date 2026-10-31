@@ -185,6 +185,17 @@ overrides = [
   { kind = "enum_member", option = "datetime_format", member = "EPOCH" },
 ]
 
+[axes.datetime_python]
+plan = "fixed_overrides"
+name_template = "{lang}_datetime_python"
+per_version = true
+gates = [
+  { kind = "enum_member_present", option = "datetime_format", member = "PYTHON" },
+]
+overrides = [
+  { kind = "enum_member", option = "datetime_format", member = "PYTHON" },
+]
+
 [axes.datetime_javascript]
 plan = "fixed_overrides"
 name_template = "{lang}_datetime_javascript"
