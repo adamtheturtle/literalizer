@@ -1,6 +1,6 @@
 
 fn main() {
 	stamp := 0
-	result_data := stamp.clone()
+	result_data := stamp
 	_ = result_data
 }
