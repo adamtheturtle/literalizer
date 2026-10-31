@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[JSONParseError]
+"Python['{\"outer\": [{\"value\": \"\\\\ud800\"}]}']" = "Invalid JSON: input contains unpaired UTF-16 surrogate U+D800"
+"Python['{\"outer\": [{\"value\": \"\\\\udc00\"}]}']" = "Invalid JSON: input contains unpaired UTF-16 surrogate U+DC00"
+"Python['{\"outer\": [{\"\\\\ud800\": \"value\"}]}']" = "Invalid JSON: input contains unpaired UTF-16 surrogate U+D800"
+"Python['{\"outer\": [{\"\\\\udc00\": \"value\"}]}']" = "Invalid JSON: input contains unpaired UTF-16 surrogate U+DC00"

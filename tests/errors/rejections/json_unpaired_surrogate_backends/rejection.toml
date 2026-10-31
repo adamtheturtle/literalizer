@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Ada and COBOL reject the original escaped-surrogate regression input during parsing."
+exceptions = ["JSONParseError"]
+languages = ["Ada", "Cobol"]
+
+[call]
+api = "literalize"
+sources = ["{\"x\": \"\\ud800\"}"]
+input_format = "json"
+variable_form = "new"
+variable_name = "my_data"
+wrap_in_file = true

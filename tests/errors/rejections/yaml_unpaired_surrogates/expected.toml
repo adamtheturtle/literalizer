@@ -1,0 +1,7 @@
+# languages rejecting: 1; languages accepting: 0
+
+[YAMLParseError]
+"Python['outer:\\n  - inner: !!set\\n      ? \"\\\\ud800\"\\n']" = "Invalid YAML: input contains unpaired UTF-16 surrogate U+D800"
+"Python['outer:\\n  - inner: !!set\\n      ? \"\\\\udc00\"\\n']" = "Invalid YAML: input contains unpaired UTF-16 surrogate U+DC00"
+"Python['outer:\\n  - inner: !!omap\\n      - key: \"\\\\ud800\"\\n']" = "Invalid YAML: input contains unpaired UTF-16 surrogate U+D800"
+"Python['outer:\\n  - inner: !!omap\\n      - key: \"\\\\udc00\"\\n']" = "Invalid YAML: input contains unpaired UTF-16 surrogate U+DC00"

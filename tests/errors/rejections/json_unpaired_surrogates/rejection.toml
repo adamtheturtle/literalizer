@@ -1,0 +1,45 @@
+schema_version = 1
+summary = "JSON rejects escaped lone UTF-16 surrogates in nested values and keys."
+exceptions = ["JSONParseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = [
+    "{\"outer\": [{\"value\": \"\\ud800\"}]}",
+    "{\"outer\": [{\"value\": \"\\udc00\"}]}",
+    "{\"outer\": [{\"\\ud800\": \"value\"}]}",
+    "{\"outer\": [{\"\\udc00\": \"value\"}]}",
+]
+input_format = "json"
+variable_form = "none"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "date_format"
+member = "PYTHON"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "datetime_format"
+member = "PYTHON"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "bytes_format"
+member = "HEX"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "sequence_format"
+member = "TUPLE"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "set_format"
+member = "SET"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "variable_type_hints"
+member = "NEVER"
