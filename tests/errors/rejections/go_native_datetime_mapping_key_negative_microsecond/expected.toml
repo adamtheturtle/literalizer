@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Go = "Go native datetime format cannot preserve subsecond UTC offset -1 day, 23:59:59.999999"
