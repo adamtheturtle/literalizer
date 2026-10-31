@@ -755,7 +755,7 @@ class CallCaseSpec(  # noqa: NOD001
     :data:`CALL_TRANSFORM_PLACEHOLDERS` rather than evaluated code.
 
     ``ref_declarations`` maps a ``{"$ref": "name"}`` marker in the case
-    input to a JSON source rendered as a variable declaration via
+    input to a source in ``ref_input_format`` rendered as a declaration via
     :func:`literalizer.literalize`, emitted before the call so the
     resulting file is self-contained.
 
@@ -806,6 +806,8 @@ class CallCaseSpec(  # noqa: NOD001
     wrap_in_file: bool = False
     ref_case_per_language: bool = False
     ref_declarations: dict[str, str] = Field(default_factory=_empty_sources)
+    # Use one format for declaration sources and inference-hint sources.
+    ref_input_format: CallInputFormat = literalizer.InputFormat.JSON
     # Names from ``ref_declarations`` (in their original case) that
     # ``literalize_call`` may treat as consumable.  Empty means no ref
     # is consumed.
@@ -822,7 +824,7 @@ class CallCaseSpec(  # noqa: NOD001
     # An explicit mapping overrides declaration-derived inference hints.
     # An empty table passes {}, while omission keeps the inferred hints.
     explicit_ref_value_sources: dict[str, str] | None = None
-    # Additional JSON sources used to seed ``ref_values`` without
+    # Additional sources used to seed ``ref_values`` without
     # emitting declarations.  This covers mappings whose names are not
     # referenced by the input while keeping generated fixtures free of
     # unused declarations.
