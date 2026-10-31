@@ -18,6 +18,7 @@ from pydantic import (
     BeforeValidator,
     Field,
     InstanceOf,
+    NaiveDatetime,
     ValidationInfo,
     model_validator,
 )
@@ -575,6 +576,37 @@ def _empty_ref_times() -> dict[str, dt.time]:
     return {}
 
 
+class OffsetDatetimeSource(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Native offsets finer than a TOML timestamp permits."""
+
+    wall_time: NaiveDatetime
+    offset_microseconds: int
+
+
+def _parse_ref_datetime(value: object, /) -> object:
+    """Construct exact offsets without relying on ISO parser precision."""
+    if isinstance(value, dict):
+        source = OffsetDatetimeSource.model_validate(obj=value)
+        return source.wall_time.replace(
+            tzinfo=dt.timezone(
+                offset=dt.timedelta(microseconds=source.offset_microseconds)
+            )
+        )
+    return value
+
+
+type RefDatetimeInput = Annotated[
+    dt.datetime, BeforeValidator(func=_parse_ref_datetime)
+]
+
+
+def _empty_ref_datetimes() -> dict[str, dt.datetime]:
+    """Return the default datetime-valued reference bindings."""
+    return {}
+
+
 class RefConsumerSpec(  # noqa: NOD001
     BaseModel, extra="forbid", frozen=True, strict=True
 ):
@@ -605,7 +637,10 @@ class RefCaseSpec(  # noqa: NOD001
 
     *bound_refs* supplies values directly from TOML, including dates
     and times that JSON sources cannot express. These values override
-    the corresponding source-derived bindings.
+    the corresponding source-derived bindings. ``bound_ref_datetimes``
+    additionally accepts tables with a naive TOML ``wall_time`` and signed
+    ``offset_microseconds``, preserving native offsets that serialized
+    timestamps and older ISO parsers cannot express exactly.
 
     *external_declarations* supplies a caller's declarations as JSON
     sources. They are composed around the unwrapped result afterwards,
@@ -643,6 +678,10 @@ class RefCaseSpec(  # noqa: NOD001
     # ISO time strings can carry UTC offsets that TOML's native time cannot.
     bound_ref_times: dict[str, RefTimeInput] = Field(
         default_factory=_empty_ref_times,
+    )
+    # Native TOML datetimes or exact wall-time/offset tables.
+    bound_ref_datetimes: dict[str, RefDatetimeInput] = Field(
+        default_factory=_empty_ref_datetimes,
     )
     extra_ref_value_sources: dict[str, str] = Field(
         default_factory=_empty_sources,

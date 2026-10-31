@@ -1726,7 +1726,8 @@ class V(metaclass=LanguageCls):
         V compiler.  V's primitive scalars (``int``, ``bool``,
         ``f64``, …) have no ``.clone()`` method - ``int.clone()`` is a
         hard error - so we emit the bare identifier and let V's
-        automatic primitive copy do the right thing.  When the caller
+        automatic primitive copy do the right thing. Datetime epochs
+        follow their rendered integer type. When the caller
         did not supply ``ref_values`` we cannot tell which case applies
         and use a generic helper to preserve array/map ownership while
         copying primitive values.
@@ -1739,7 +1740,10 @@ class V(metaclass=LanguageCls):
             """
             if value is None:
                 return f"literalizer_ref_value({name})"
-            if isinstance(value, bool | int | float) or (
+            scalar_copy = isinstance(value, bool | int | float)
+            if isinstance(value, dt.datetime):
+                scalar_copy = self.datetime_format.value.type_produced is int
+            if scalar_copy or (
                 isinstance(value, dict)
                 and self.heterogeneous_strategy.name == "RECORD"
                 and self._record_strategy.record_name_for_value(value)

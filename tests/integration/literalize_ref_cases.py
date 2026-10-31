@@ -378,6 +378,7 @@ def _bound_ref_inputs(
     if config.bound_refs is not None:
         bound_refs_input.update(config.bound_refs)
     bound_refs_input.update(config.bound_ref_times)
+    bound_refs_input.update(config.bound_ref_datetimes)
     return bound_refs_input
 
 

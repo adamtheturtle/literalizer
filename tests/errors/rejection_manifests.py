@@ -34,7 +34,7 @@ from pydantic import (
 import literalizer
 from literalizer import exceptions as literalizer_exceptions
 from literalizer.languages import ALL_LANGUAGES
-from tests.integration.case_manifests import RefTimeInput
+from tests.integration.case_manifests import RefDatetimeInput, RefTimeInput
 from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
@@ -79,6 +79,12 @@ type BoundRefYaml = Annotated[
 
 type BoundRefTimes = Annotated[
     tuple[tuple[str, RefTimeInput], ...],
+    BeforeValidator(func=_bound_refs_items),
+]
+
+
+type BoundRefDatetimes = Annotated[
+    tuple[tuple[str, RefDatetimeInput], ...],
     BeforeValidator(func=_bound_refs_items),
 ]
 
@@ -410,6 +416,7 @@ class CallSpec(  # noqa: NOD001
     bound_refs: BoundRefs = ()
     bound_ref_yaml: BoundRefYaml = ()
     bound_ref_times: BoundRefTimes = ()
+    bound_ref_datetimes: BoundRefDatetimes = ()
     ref_value_yaml: BoundRefYaml = ()
     comment_source: Annotated[tuple[str, ...], Field(strict=False)] | None = (
         None

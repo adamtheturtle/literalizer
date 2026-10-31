@@ -161,6 +161,7 @@ def _bound_refs(
     """Resolve scalar bindings and manifest-owned native YAML values."""
     bindings: dict[str, literalizer.ValueInput] = dict(call.bound_refs)
     bindings.update(call.bound_ref_times)
+    bindings.update(call.bound_ref_datetimes)
     yaml_bindings = _yaml_reference_values(
         sources=call.bound_ref_yaml, value=value
     )

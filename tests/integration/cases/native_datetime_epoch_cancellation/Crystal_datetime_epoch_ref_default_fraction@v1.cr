@@ -1,0 +1,5 @@
+module Fixture_native_datetime_epoch_cancellation_Crystal_datetime_epoch_ref_default_fraction
+extend self
+stamp = 0
+result_data = stamp
+end
