@@ -1,5 +1,5 @@
-# These cases pin unwrapped LiteralizeResult views, which whole-file goldens
-# cannot check. Sources and expected literals belong to the fixture data.
+# Unwrapped result views are embedded in compiling integration goldens.
+# Direct assertions remain for record metadata with no rendered surface.
 record_input_case = "dict_mixed_scalars"
 records = ["Cpp", "Go", "Java", "Kotlin", "Rust", "Scala"]
 
