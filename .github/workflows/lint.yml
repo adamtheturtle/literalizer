@@ -38,8 +38,6 @@ env:
 # Keep the runner image explicit: ubuntu-latest can move to a new release
 # before these pinned toolchains support it. Upgrade the image and toolchains
 # together after validating every language job.
-# Julia validates Ubuntu 26.04 explicitly, including its older runtime's
-# compatibility with the newer glibc executable-stack policy.
 # Round-trip budgets include uv's cold project-environment setup. Allow at
 # least three minutes even when executing the generated program is quick.
 jobs:
@@ -2757,38 +2755,25 @@ jobs:
         shell: bash
         run: find tests/integration/cases -name '*.jl' -print0 > /tmp/files-to-lint
           && test -s /tmp/files-to-lint
-      # `version: '1.9.4'` is `>=` `Julia.language_version` (`V1_9`) in
+      # `version: '1.9'` is `>=` `Julia.language_version` (`V1_9`) in
       # `src/literalizer/languages/julia.py`; keep them in sync so the
       # fixture gate runs under the declared minimum Julia.
       - name: Install Julia
-        id: julia
         timeout-minutes: 10
         uses: julia-actions/setup-julia@v3
-        # setup-julia invokes Julia before returning its installation path.
-        # Allow that probe only; clear the unnecessary executable-stack
-        # marker before any fixture or roundtrip executes (#6321).
-        # https://github.com/JuliaLang/julia/issues/57250
+        # Bootstrap Julia 1.9 until OpenLibm's stack marker is cleared (#6321).
         env:
           GLIBC_TUNABLES: glibc.rtld.execstack=2
         with:
-          version: 1.9.4
-      - name: Prepare Julia for non-executable stacks
-        timeout-minutes: 5
-        env:
-          JULIA_BINDIR: ${{ steps.julia.outputs.julia-bindir }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends patchelf
-          patchelf --clear-execstack "$JULIA_BINDIR/../lib/julia/libopenlibm.so"
-          patchelf --print-execstack "$JULIA_BINDIR/../lib/julia/libopenlibm.so"
-          env -u GLIBC_TUNABLES "$JULIA_BINDIR/julia" --startup-file=no -e \
-            'using InteractiveUtils; @assert VERSION == v"1.9.4"; versioninfo()'
+          version: '1.9'
       # `JSON` is needed by the `Julia roundtrip` step below (see
       # `scripts/run_julia_roundtrip.py`); `DataStructures`
       # backs the `OrderedDict` literals the fixture goldens use.
       - name: Set up Julia project
         timeout-minutes: 10
         run: |
+          julia_bindir=$(dirname "$(command -v julia)")
+          patchelf --clear-execstack "$julia_bindir/../lib/julia/libopenlibm.so"
           mkdir -p /tmp/julia-lint
           julia --startup-file=no --project=/tmp/julia-lint -e \
             'using Pkg; Pkg.add(["DataStructures", "JSON"]); Pkg.precompile()'

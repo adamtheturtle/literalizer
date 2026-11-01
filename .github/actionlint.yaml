@@ -1,5 +1,4 @@
 ---
 self-hosted-runner:
-  # The pinned actionlint does not yet list this generally available image.
-  # https://github.com/actions/runner-images/issues/14747
+  # The pinned actionlint predates the hosted Ubuntu 26.04 label.
   labels: [ubuntu-26.04, ubicloud-standard-4]
