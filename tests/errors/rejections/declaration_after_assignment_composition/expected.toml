@@ -1,0 +1,80 @@
+# languages rejecting: 17; languages accepting: 48
+
+[Accepted]
+Bash = ""
+C = ""
+CSharp = ""
+Cpp = ""
+Crystal = ""
+D = ""
+Dart = ""
+Elixir = ""
+Elm = ""
+Erlang = ""
+FSharp = ""
+Forth = ""
+Fortran = ""
+Gleam = ""
+Go = ""
+Groovy = ""
+Haskell = ""
+Haxe = ""
+Hcl = ""
+Java = ""
+JavaScript = ""
+Kotlin = ""
+Lua = ""
+Matlab = ""
+Mojo = ""
+Nim = ""
+OCaml = ""
+ObjectiveC = ""
+Occam = ""
+Odin = ""
+Perl = ""
+Php = ""
+PowerShell = ""
+PureScript = ""
+Python = ""
+R = ""
+Raku = ""
+Roc = ""
+Rust = ""
+Scala = ""
+Sml = ""
+Swift = ""
+Tcl = ""
+TypeScript = ""
+V = ""
+VisualBasic = ""
+Wren = ""
+Zig = ""
+
+[CallArgNotSupportedError]
+Clojure = "Clojure cannot accept this value as a call argument: Clojure output is not wrapped in a function body; symbol references require a surrounding ``def`` that cannot be injected (got 'first')"
+CommonLisp = "CommonLisp cannot accept this value as a call argument: Common Lisp output is not wrapped in a function body; ``*name*`` references require a surrounding DEFPARAMETER that cannot be injected (got 'first')"
+Dhall = "Dhall cannot accept this value as a call argument: ref variable 'first' has a concrete type that cannot be unified with the DVal stub parameter type"
+Julia = "Julia cannot accept this value as a call argument: Julia output is not wrapped in a function body; variable references require a surrounding assignment that cannot be injected (got 'first')"
+Racket = "Racket cannot accept this value as a call argument: Racket output is not wrapped in a function body; identifier references require a surrounding ``define`` that cannot be injected (got 'first')"
+Ruby = "Ruby cannot accept this value as a call argument: Ruby output is not wrapped in a function body; variable references require a surrounding assignment (got 'first')"
+Scheme = "Scheme cannot accept this value as a call argument: Scheme output is not wrapped in a function body; variable references require a surrounding define (got 'first')"
+SystemVerilog = "SystemVerilog cannot accept this value as a call argument: SystemVerilog cannot reference a scalar value behind a ``$ref`` (got 'first'); the variable declaration shape is keyed off the ref marker and does not match the scalar's ``_VVal`` type."
+Toml = "TOML cannot accept this value as a call argument: TOML values must be literals, not variable references (got 'first')"
+
+[CallsNotSupportedByLanguageError]
+Norg = "Norg has no function call syntax"
+
+[CallsNotSupportedByToolError]
+Nix = "literalizer does not support function call rendering for Nix"
+
+[ReservedVariableNameError]
+Cobol = "Cobol cannot use NewVariable name 'first': it is a reserved identifier"
+
+[UnsupportedCallShapeError]
+Ada = "Ada cannot represent this call shape: a declaration after an executable assignment requires a nested declarative region"
+
+[VariableNameNotSupportedError]
+Json5 = "Json5 does not support variable names: 'first'"
+Jsonc = "Jsonc does not support variable names: 'first'"
+Jsonnet = "Jsonnet does not support variable names: 'first'"
+Yaml = "Yaml does not support variable names: 'first'"

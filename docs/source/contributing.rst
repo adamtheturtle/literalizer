@@ -251,7 +251,15 @@ Declaration modifiers normally resolve against the target's enum.
 ``modifier_source = "all"`` repeats the call using every enum that declares the requested modifier names, covering both local and foreign modifier ownership without naming an implementation in the manifest.
 Those cases add a ``['modifiers=Owner']`` part to the golden identifier, so distinct enum sources cannot overwrite each other's results.
 
-``api`` is ``constructor``, ``literalize``, or ``literalize_call``, and the loader rejects an argument the named API does not take.
+``api`` is ``constructor``, ``literalize``, ``literalize_call``, or ``literalize_call_with_declarations``, and the loader rejects an argument the named API does not take.
+Composition scenarios supply ordered ``call.declarations`` entries with ``source``, ``variable_form`` (``new`` or ``existing``), and ``variable_name``.
+The fragments and call use the same target and reference inference hints.
+Direct option operations use ``sequence_type_annotation`` with ``option = "sequence_format"`` or ``declaration_formatter`` with ``option = "declaration_style"``.
+These run every enum member declaring the corresponding callable interface or standard declaration configuration, without constructing a target with that member.
+
+An optional top-level ``integer_digit_limit`` scopes the interpreter's conversion limit to the scenario and restores it even if the call fails.
+Use zero to disable the limit, or at least ``sys.int_info.str_digits_check_threshold`` to enable it.
+With ``record_output = true``, successful rendering or formatter calls record their exact code in ``[Accepted]``; other scenarios record acceptance as an empty string.
 Each type in ``exceptions`` must occur in at least one case, keeping a scenario from silently losing the rejection it covers.
 Other public Literalizer errors are recorded with their exact types and messages too; unexpected exceptions escape the runner.
 For parser diagnostics, an optional top-level ``position = [line, column]`` asserts the public error's one-based ``line`` and ``column`` attributes when the declared exception occurs.

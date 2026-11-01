@@ -1,0 +1,10 @@
+schema_version = 1
+summary = "Exercise direct sequence type annotations through every option that declares the operation."
+exceptions = ["IncompatibleFormatsError"]
+option = "sequence_format"
+record_output = true
+
+[call]
+api = "sequence_type_annotation"
+element_type = "Element"
+length = 2

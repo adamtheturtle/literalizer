@@ -1,0 +1,10 @@
+schema_version = 1
+summary = "Exercise direct declaration configuration formatters, including type-aware placeholders."
+exceptions = ["NotImplementedError"]
+option = "declaration_style"
+record_output = true
+
+[call]
+api = "declaration_formatter"
+variable_name = "x"
+formatted_value = "v"

@@ -10,10 +10,11 @@ Python ``major.minor`` overrides. Each runtime checks its exact message;
 regeneration preserves entries for every other Python version.
 """
 
+import contextlib
 import re
 import sys
 import tomllib
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from pathlib import Path
 from typing import assert_never
 
@@ -34,6 +35,8 @@ from tests.yaml_support import as_yaml_parser
 
 from .rejection_cases import (
     RejectionCase,
+    SequenceTypeAnnotation,
+    declaration_style_config,
     rejection_cases,
 )
 from .rejection_manifests import (
@@ -234,7 +237,67 @@ def _call_transform(
 
 
 @beartype
-def _run(*, case: RejectionCase, call: CallSpec) -> None:
+def _run_formatter(*, case: RejectionCase, call: CallSpec) -> str:
+    """Invoke an option's declared callable without constructing a
+    target.
+    """
+    member = case.option_member
+    if call.api == "sequence_type_annotation":
+        assert isinstance(member, SequenceTypeAnnotation)
+        return member.format_type_annotation(
+            element_type=call.element_type, length=call.length
+        )
+    assert member is not None
+    payload = declaration_style_config(member=member)
+    assert payload is not None
+    return payload.formatter(
+        substituted(template=call.variable_name, value=case.value),
+        call.formatted_value,
+        call.formatter_data,
+        frozenset(),
+    )
+
+
+@beartype
+def _declarations(
+    *,
+    call: CallSpec,
+    case: RejectionCase,
+    language: literalizer.Language,
+) -> list[literalizer.LiteralizeResult]:
+    """Render the ordered fragments declared for a composition
+    scenario.
+    """
+    assert call.input_format is not None
+    declarations: list[literalizer.LiteralizeResult] = []
+    for declaration in call.declarations:
+        name = substituted(
+            template=declaration.variable_name, value=case.value
+        )
+        form: literalizer.NewVariable | literalizer.ExistingVariable
+        if declaration.variable_form == "new":
+            form = literalizer.NewVariable(name=name, modifiers=frozenset())
+        else:
+            form = literalizer.ExistingVariable(name=name)
+        declarations.append(
+            literalizer.literalize(
+                source=declaration.source,
+                input_format=call.input_format,
+                language=language,
+                variable_form=form,
+                ref_key=call.ref_key,
+                ref_values=_yaml_reference_values(
+                    sources=call.ref_value_yaml, value=case.value
+                ),
+            )
+        )
+    return declarations
+
+
+@beartype
+def _run(
+    *, case: RejectionCase, call: CallSpec
+) -> literalizer.LiteralizeResult | str | None:
     """Make the call one case declares.
 
     A source, ``input_format`` and ``target_function`` accompany the
@@ -242,6 +305,8 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     so the seams below only restate that for the type checker.
     """
     lang_cls = case.lang_cls
+    if call.api in {"sequence_type_annotation", "declaration_formatter"}:
+        return _run_formatter(case=case, call=call)
     variable_form = _variable_form(
         call=call,
         lang_cls=lang_cls,
@@ -258,11 +323,11 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         ref_case = resolved_ref_case
     if call.api == "constructor":
         _ = lang_cls(**case.kwargs)
-        return
+        return None
     if call.api == "literalize":
         assert case.source is not None
         assert call.input_format is not None
-        _ = literalizer.literalize(
+        return literalizer.literalize(
             source=case.source,
             input_format=call.input_format,
             language=lang_cls(**case.kwargs),
@@ -276,8 +341,12 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
             ref_values=_yaml_reference_values(
                 sources=call.ref_value_yaml, value=case.value
             ),
+            record_null_substitutions=(
+                dict(call.record_null_substitutions)
+                if len(call.record_null_substitutions) > 0
+                else None
+            ),
         )
-        return
     assert case.source is not None
     assert call.input_format is not None
     assert call.target_function is not None
@@ -297,11 +366,13 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     effective_variable_form = None
     if call.variable_form is not None:
         effective_variable_form = variable_form
-    _ = literalizer.literalize_call(
+    language = lang_cls(**case.kwargs)
+    declarations = _declarations(call=call, case=case, language=language)
+    result = literalizer.literalize_call(
         source=case.source,
         input_format=call.input_format,
         input_root_key=call.input_root_key,
-        language=lang_cls(**case.kwargs),
+        language=language,
         target_function=substituted(
             template=call.target_function,
             value=case.value,
@@ -321,6 +392,11 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
         zip_source=call.zip_source,
         zip_input_format=call.zip_input_format,
     )
+    if call.api == "literalize_call_with_declarations":
+        return literalizer.literalize_call_with_declarations(
+            language=language, declarations=declarations, call=result
+        )
+    return result
 
 
 @beartype
@@ -343,6 +419,34 @@ def _check_error_attributes(
         assert actual_attributes == expected_attributes
 
 
+@contextlib.contextmanager
+@beartype
+def _integer_digit_limit(*, limit: int | None) -> Generator[None]:
+    """Apply a scenario's interpreter setting and always restore it."""
+    if limit is None:
+        yield
+        return
+    original = sys.get_int_max_str_digits()
+    sys.set_int_max_str_digits(maxdigits=limit)
+    try:
+        yield
+    finally:
+        sys.set_int_max_str_digits(maxdigits=original)
+
+
+@beartype
+def _accepted_output(
+    *,
+    result: literalizer.LiteralizeResult | str | None,
+    record_output: bool,
+) -> str:
+    """Keep exact successful code only when the scenario requests it."""
+    if not record_output:
+        return ""
+    assert result is not None
+    return result if isinstance(result, str) else result.code
+
+
 @pytest.mark.parametrize(
     argnames="manifest",
     argvalues=_MANIFESTS,
@@ -363,25 +467,30 @@ def test_rejection_messages(
         LiteralizerError,
         *manifest.exceptions,
     )
-    for case in rejection_cases(manifest=manifest):
-        try:
-            _run(case=case, call=manifest.call)
-        except caught_exceptions as raised:
-            rejecting.add(case.lang_cls.__name__)
-            observed.add(type(raised))
-            if isinstance(raised, manifest.exceptions):
-                _check_error_attributes(
-                    manifest=manifest,
-                    raised=raised,
-                    language_name=case.lang_cls.__name__,
+    with _integer_digit_limit(limit=manifest.integer_digit_limit):
+        for case in rejection_cases(manifest=manifest):
+            try:
+                result = _run(case=case, call=manifest.call)
+            except caught_exceptions as raised:
+                rejecting.add(case.lang_cls.__name__)
+                observed.add(type(raised))
+                if isinstance(raised, manifest.exceptions):
+                    _check_error_attributes(
+                        manifest=manifest,
+                        raised=raised,
+                        language_name=case.lang_cls.__name__,
+                    )
+                raised_by = messages_by_exception.setdefault(
+                    type(raised).__name__, {}
                 )
-            raised_by = messages_by_exception.setdefault(
-                type(raised).__name__, {}
-            )
-            raised_by[case.case_id] = str(object=raised)
-        else:
-            accepting.add(case.lang_cls.__name__)
-            messages_by_exception.setdefault("Accepted", {})[case.case_id] = ""
+                raised_by[case.case_id] = str(object=raised)
+            else:
+                accepting.add(case.lang_cls.__name__)
+                messages_by_exception.setdefault("Accepted", {})[
+                    case.case_id
+                ] = _accepted_output(
+                    result=result, record_output=manifest.record_output
+                )
     for expected_exception in manifest.exceptions:
         assert any(
             issubclass(actual, expected_exception) for actual in observed
@@ -512,3 +621,21 @@ def test_versioned_messages_preserve_inactive_variants(
         "default": "modern",
         "3.12": "older",
     }
+
+
+@pytest.mark.parametrize(argnames="limit", argvalues=[None, 0, 640])
+def test_integer_digit_limit_restores_after_error(limit: int | None) -> None:
+    """A failed scenario cannot change the following scenario's limit."""
+    original = sys.get_int_max_str_digits()
+    with _integer_digit_limit(limit=limit):
+        assert sys.get_int_max_str_digits() == (
+            original if limit is None else limit
+        )
+    assert sys.get_int_max_str_digits() == original
+    msg = "scenario failed"
+    with (
+        pytest.raises(expected_exception=RuntimeError, match="scenario"),
+        _integer_digit_limit(limit=limit),
+    ):
+        raise RuntimeError(msg)
+    assert sys.get_int_max_str_digits() == original
