@@ -25,7 +25,12 @@ from ruamel.yaml import YAML
 
 import literalizer
 from literalizer import ValueInput
-from literalizer._literalize import materialize_value_input
+from literalizer._language import CallStyle
+from literalizer._literalize import (
+    assemble_call_expression,
+    format_rendered_call_arguments,
+    materialize_value_input,
+)
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -43,6 +48,7 @@ from literalizer.exceptions import (
 from tests.enum_members import enum_member_by_name
 from tests.yaml_support import as_yaml_parser
 
+from .call_cases import _call_stub_spec
 from .case_manifests import (
     REF_DEFAULT_OWNER,
     REF_OWNER,
@@ -496,6 +502,7 @@ def _compose_ref_consumer(
     declarations: list[literalizer.LiteralizeResult],
     result: literalizer.LiteralizeResult,
     argument_data: ValueInput,
+    expression: bool,
 ) -> literalizer.LiteralizeResult:
     """Compose a generated consumer around an external-reference
     result.
@@ -505,6 +512,29 @@ def _compose_ref_consumer(
     )
     parameters = ("arg_value",)
     target = tuple(consumer.target_function.split(sep="."))
+    stub_spec = (
+        _call_stub_spec(spec=spec, argument_values=([stub_data],))
+        if expression
+        else spec
+    )
+
+    def consume_expression(_context: literalizer.CallContext) -> str:
+        """Splice the actual unwrapped result into a native caller."""
+        style = TypeAdapter[CallStyle](type=CallStyle).validate_python(
+            spec.call_style_config
+        )
+        arguments = format_rendered_call_arguments(
+            formatted=[result.code],
+            params=parameters,
+            style=style,
+            allows_empty_call_parens=True,
+        )
+        return assemble_call_expression(
+            target_function=consumer.target_function,
+            args_str=arguments,
+            style=style,
+        )
+
     call = literalizer.literalize_call(
         source='{"$ref": "my_data"}',
         input_format=literalizer.InputFormat.JSON,
@@ -513,21 +543,31 @@ def _compose_ref_consumer(
         parameter_names=parameters,
         per_element=False,
         ref_key="$ref",
+        call_transform=consume_expression if expression else None,
     )
-    if consumer.before_assignment:
-        declarations.append(call)
-    declarations.append(result)
+    if expression:
+        call = dataclasses.replace(
+            result,
+            declaration_code=call.declaration_code,
+            pre_declaration_comments=call.pre_declaration_comments,
+            is_call_statement=True,
+            sections=(),
+        )
+    else:
+        if consumer.before_assignment:
+            declarations.append(call)
+        declarations.append(result)
     return literalizer.literalize_call_with_declarations(
         language=spec,
         declarations=declarations,
         call=call,
-        extra_body_preamble=spec.format_call_stub(
+        extra_body_preamble=stub_spec.format_call_stub(
             target, parameters, literalizer.StubReturn.VOID, ([stub_data],)
         ),
-        extra_class_preamble=spec.format_call_class_scope_stub(
+        extra_class_preamble=stub_spec.format_call_class_scope_stub(
             target, parameters, literalizer.StubReturn.VOID, ([stub_data],)
         ),
-        extra_preamble=spec.format_call_preamble_stub(
+        extra_preamble=stub_spec.format_call_preamble_stub(
             target, parameters, literalizer.StubReturn.VOID, ([stub_data],)
         ),
     )
@@ -667,6 +707,16 @@ def _compose_external_ref_fixture(
                 ),
             )
         )
+    result = dataclasses.replace(
+        result, preamble=(*config.caller_preamble, *result.preamble)
+    )
+    declarations = [
+        dataclasses.replace(
+            declaration,
+            preamble=(*config.caller_preamble, *declaration.preamble),
+        )
+        for declaration in declarations
+    ]
     assertion_helper = (
         Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
     )
@@ -682,6 +732,7 @@ def _compose_external_ref_fixture(
         consumer = RefConsumerSpec(target_function="consume_widget")
     return _compose_ref_consumer(
         consumer=consumer,
+        expression=config.variable_form == "none",
         spec=spec,
         declarations=declarations,
         result=result,
@@ -780,7 +831,10 @@ def run_literalize_ref_golden_case(
                 input_format=literalizer.InputFormat.JSON,
                 language=spec,
                 variable_form=variable_form_obj,
-                wrap_in_file=len(config.external_declarations) == 0,
+                wrap_in_file=(
+                    len(config.external_declarations) == 0
+                    and config.consumer is None
+                ),
             )
         except VariableNameNotSupportedError:
             variable_form_obj = None
@@ -810,7 +864,10 @@ def run_literalize_ref_golden_case(
             input_format=input_info.input_format,
             language=spec,
             variable_form=variable_form_obj,
-            wrap_in_file=len(config.external_declarations) == 0,
+            wrap_in_file=(
+                len(config.external_declarations) == 0
+                and config.consumer is None
+            ),
             ref_case=ref_case,
             bound_refs=(effective_bound_refs),
             ref_values=(effective_ref_values),
@@ -820,7 +877,10 @@ def run_literalize_ref_golden_case(
                 value=config.collection_layout
             ),
         )
-        if len(config.external_declarations) > 0:
+        if (
+            len(config.external_declarations) > 0
+            or config.consumer is not None
+        ):
             result = _compose_external_ref_fixture(
                 config=config,
                 spec=spec,

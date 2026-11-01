@@ -646,7 +646,7 @@ class RefCaseSpec(  # noqa: NOD001
     """
 
     ref_key: str = "$ref"
-    variable_form: VariableFormName = "new"
+    variable_form: VariableFormName | Literal["none"] = "new"
     variable_name: str = "my_data"
     variable_modifiers: StringTuple = Field(default_factory=_empty_names)
     collection_layout: CollectionLayoutName = "compact"
@@ -683,6 +683,8 @@ class RefCaseSpec(  # noqa: NOD001
     external_declarations: dict[str, str] = Field(
         default_factory=_empty_sources,
     )
+    # Caller-owned headers are attached only after the API render.
+    caller_preamble: StringTuple = Field(default_factory=_empty_names)
     explicit_ref_value_sources: dict[str, str] | None = None
     expected_value_source: str | None = None
     consumer: RefConsumerSpec | None = None
@@ -709,6 +711,9 @@ class RefCaseSpec(  # noqa: NOD001
         context.
         """
         if self.expected_value_source is not None:
+            if self.variable_form == "none":
+                msg = "expected_value_source requires a variable binding"
+                raise ValueError(msg)
             if len(self.external_declarations) == 0:
                 msg = "expected_value_source requires external_declarations"
                 raise ValueError(msg)
@@ -723,7 +728,10 @@ class RefCaseSpec(  # noqa: NOD001
     def _validate_consumer(self) -> RefCaseSpec:
         """Require the caller context needed by composed consumers."""
         if self.consumer is not None:
-            if len(self.external_declarations) == 0:
+            if (
+                len(self.external_declarations) == 0
+                and self.variable_form != "none"
+            ):
                 msg = "consumer requires external_declarations"
                 raise ValueError(msg)
             if self.consumer.before_assignment and (
@@ -740,10 +748,12 @@ class RefCaseSpec(  # noqa: NOD001
         """Resolve the explicitly requested case for one language."""
         return self.ref_case_by_language.get(lang_cls, self.ref_case_override)
 
-    def resolved_variable_form(self) -> literalizer.VariableForm:
+    def resolved_variable_form(self) -> literalizer.VariableForm | None:
         """Return the public API variable form selected by the
         manifest.
         """
+        if self.variable_form == "none":
+            return None
         return dataclasses.replace(
             _VARIABLE_FORMS_BY_NAME[self.variable_form],
             name=self.variable_name,

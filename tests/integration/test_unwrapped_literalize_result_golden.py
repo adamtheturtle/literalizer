@@ -11,7 +11,7 @@ import literalizer
 from literalizer import InputFormat, NewVariable
 from tests.toml_cases import load_toml_cases
 
-from .case_manifests import ManifestLanguage, ManifestLanguages
+from .case_manifests import ManifestLanguages
 from .golden_checks import check_golden
 from .language_specs import make_golden_path
 
@@ -29,21 +29,14 @@ class _PrefixCases(
     variable_name: str
 
 
-class _RecordCase(
+class _ResultCases(
     BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
 ):
-    """One language's unwrapped record literal contract."""
-
-    language: ManifestLanguage
-    expected_code: str
-
-
-class _ResultCases(BaseModel, extra="forbid", frozen=True):
     """TOML-owned inputs and expectations for unwrapped result views."""
 
     prefix: _PrefixCases
     record_input_case: str
-    records: tuple[_RecordCase, ...]
+    records: ManifestLanguages
 
 
 _CASES = TypeAdapter(type=_ResultCases).validate_python(
@@ -101,17 +94,16 @@ def test_unwrapped_literalize_result_golden(
 
 
 @pytest.mark.parametrize(
-    argnames="case",
+    argnames="lang_cls",
     argvalues=_CASES.records,
-    ids=lambda case: case.language.__name__,
+    ids=lambda lang_cls: lang_cls.__name__,
 )
-def test_unwrapped_record_preamble_golden(
+def test_unwrapped_record_preamble_metadata(
     *,
-    case: _RecordCase,
+    lang_cls: literalizer.LanguageCls,
     cases_dir: Path,
-    file_regression: FileRegressionFixture,
 ) -> None:
-    """Pin where ``RECORD`` declarations land on unwrapped results.
+    """Pin the preamble fields that compiling output cannot distinguish.
 
     Every ``RECORD``-capable language returns its generated record
     declarations via :attr:`~literalizer.LiteralizeResult.preamble`
@@ -120,7 +112,6 @@ def test_unwrapped_record_preamble_golden(
     collection literal they control (issue #3615 pinned Scala, which
     used to prepend ``case class`` lines to the code instead).
     """
-    lang_cls = case.language
     spec = lang_cls(
         heterogeneous_strategy=lang_cls.HeterogeneousStrategies["RECORD"],
     )
@@ -134,16 +125,3 @@ def test_unwrapped_record_preamble_golden(
     )
     assert len(result.preamble) > 0
     assert len(result.body_preamble) == 0
-    assert result.code == case.expected_code
-    check_golden(
-        contents="\n".join((*result.preamble, result.code)) + "\n",
-        extension=spec.extension,
-        golden_path=make_golden_path(
-            parent=_GOLDEN_DIR,
-            name=f"{lang_cls.__name__}_record_preamble",
-            extension=spec.extension,
-            lang_cls=lang_cls,
-            version=spec.language_version,
-        ),
-        file_regression=file_regression,
-    )

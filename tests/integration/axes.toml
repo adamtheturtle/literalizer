@@ -1685,3 +1685,14 @@ plan = "fixed_overrides"
 name_template = "{lang}_list_rendering_{format}_record"
 primary_axis = "list_rendering_policy"
 overrides = [{ kind = "enum_member", option = "dict_format", member = "RECORD" }]
+
+# This caller fixture uses C++ aggregate syntax and move-only record fields.
+[axes.cpp_external_record_move]
+plan = "fixed_overrides"
+name_template = "{lang}_external_record_move_{value}"
+per_version = true
+gates = [{kind = "enum_member_present", option = "sequence_format", member = "INITIALIZER_LIST"}]
+overrides = [
+  {kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD"},
+  {kind = "record_shape_names", keys = ["value"], name = "UserRecord"},
+]
