@@ -3,6 +3,8 @@ import java.util.Map;
 class Main {
     public static void main() {
 var my_data = Map.ofEntries(
+    Map.entry("ancient_date", "1500-03-01"),
+    Map.entry("modern_date", "2024-01-15"),
     Map.entry("before_date", "1582-10-04"),
     Map.entry("gap_date", "1582-10-10"),
     Map.entry("transition_date", "1582-10-15"),

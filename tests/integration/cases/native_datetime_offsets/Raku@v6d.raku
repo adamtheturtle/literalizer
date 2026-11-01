@@ -1,0 +1,3 @@
+my $my_data = {
+    'stamps' => [DateTime.new(year => 2001, month => 2, day => 3, hour => 4, minute => 5, second => 5, timezone => 0), DateTime.new(year => 2001, month => 2, day => 3, hour => 4, minute => 5, second => 7, timezone => 0), DateTime.new(year => 2001, month => 2, day => 3, hour => 4, minute => 5, second => 5.999999, timezone => 0), DateTime.new(year => 2001, month => 2, day => 3, hour => 4, minute => 5, second => 6.000001, timezone => 0), DateTime.new(year => 2001, month => 2, day => 2, hour => 22, minute => 34, second => 50.999999, timezone => 0), DateTime.new(year => 2001, month => 2, day => 3, hour => 9, minute => 35, second => 21.000001, timezone => 0)],
+};

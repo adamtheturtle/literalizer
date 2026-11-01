@@ -1,4 +1,6 @@
 def my_data = [
+    "ancient_date": java.time.LocalDate.of(1500, 3, 1),
+    "modern_date": java.time.LocalDate.of(2024, 1, 15),
     "before_date": java.time.LocalDate.of(1582, 10, 4),
     "gap_date": java.time.LocalDate.of(1582, 10, 10),
     "transition_date": java.time.LocalDate.of(1582, 10, 15),

@@ -3,6 +3,8 @@ import Data.Time (UTCTime(..), fromGregorian, secondsToDiffTime, picosecondsToDi
 data Val = HStr String | HMap [(String, Val)] | HDatetime UTCTime
 my_data :: Val
 my_data = HMap [
+    ("ancient_date", HStr "1500-03-01"),
+    ("modern_date", HStr "2024-01-15"),
     ("before_date", HStr "1582-10-04"),
     ("gap_date", HStr "1582-10-10"),
     ("transition_date", HStr "1582-10-15"),

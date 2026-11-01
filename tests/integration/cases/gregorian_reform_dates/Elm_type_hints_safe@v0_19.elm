@@ -8,6 +8,8 @@ type Val
 
 my_data : Val
 my_data = EDict [
+    ("ancient_date", EStr "1500-03-01"),
+    ("modern_date", EStr "2024-01-15"),
     ("before_date", EStr "1582-10-04"),
     ("gap_date", EStr "1582-10-10"),
     ("transition_date", EStr "1582-10-15"),

@@ -1,5 +1,7 @@
 : my_data
 +obj
+    s\" ancient_date" +key s\" 1500-03-01" +str
+    s\" modern_date" +key s\" 2024-01-15" +str
     s\" before_date" +key s\" 1582-10-04" +str
     s\" gap_date" +key s\" 1582-10-10" +str
     s\" transition_date" +key s\" 1582-10-15" +str

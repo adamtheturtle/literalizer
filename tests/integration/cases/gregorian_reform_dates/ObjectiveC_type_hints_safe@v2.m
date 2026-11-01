@@ -2,6 +2,8 @@
 int main(void) {
 @autoreleasepool {
 id my_data = @{
+    @"ancient_date": [NSDate dateWithTimeIntervalSince1970:-14826672000],
+    @"modern_date": [NSDate dateWithTimeIntervalSince1970:1705276800],
     @"before_date": [NSDate dateWithTimeIntervalSince1970:-12220243200],
     @"gap_date": [NSDate dateWithTimeIntervalSince1970:-12219724800],
     @"transition_date": [NSDate dateWithTimeIntervalSince1970:-12219292800],

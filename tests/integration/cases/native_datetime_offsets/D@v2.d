@@ -1,0 +1,6 @@
+import std.json;
+void main() {
+auto my_data = JSONValue([
+    "stamps": JSONValue([JSONValue("2001-02-03T04:05:06+00:00:01"), JSONValue("2001-02-03T04:05:06-00:00:01"), JSONValue("2001-02-03T04:05:06+00:00:00.000001"), JSONValue("2001-02-03T04:05:06-00:00:00.000001"), JSONValue("2001-02-03T04:05:06+05:30:15.000001"), JSONValue("2001-02-03T04:05:06-05:30:15.000001")]),
+]);
+}

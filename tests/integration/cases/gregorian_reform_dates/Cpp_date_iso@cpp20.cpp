@@ -4,6 +4,8 @@
 #include <variant>
 int main() {
 auto my_data = std::map<std::string, std::variant<std::string, std::chrono::system_clock::time_point>>{
+    {"ancient_date", "1500-03-01"},
+    {"modern_date", "2024-01-15"},
     {"before_date", "1582-10-04"},
     {"gap_date", "1582-10-10"},
     {"transition_date", "1582-10-15"},

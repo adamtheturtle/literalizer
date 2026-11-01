@@ -1,6 +1,8 @@
 defmodule Check do
   def x do
     my_data = %{
+        "ancient_date" => ~D[1500-03-01],
+        "modern_date" => ~D[2024-01-15],
         "before_date" => ~D[1582-10-04],
         "gap_date" => ~D[1582-10-10],
         "transition_date" => ~D[1582-10-15],

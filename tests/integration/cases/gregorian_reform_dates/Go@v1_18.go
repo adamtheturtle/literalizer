@@ -3,6 +3,8 @@ import "time"
 
 func main() {
 my_data := map[string]any{
+	"ancient_date": time.Date(1500, time.March, 1, 0, 0, 0, 0, time.UTC),
+	"modern_date": time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC),
 	"before_date": time.Date(1582, time.October, 4, 0, 0, 0, 0, time.UTC),
 	"gap_date": time.Date(1582, time.October, 10, 0, 0, 0, 0, time.UTC),
 	"transition_date": time.Date(1582, time.October, 15, 0, 0, 0, 0, time.UTC),

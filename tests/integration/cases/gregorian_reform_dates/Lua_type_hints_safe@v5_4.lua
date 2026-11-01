@@ -1,4 +1,6 @@
 local my_data = {
+    ["ancient_date"] = -14826672000,
+    ["modern_date"] = 1705276800,
     ["before_date"] = -12220243200,
     ["gap_date"] = -12219724800,
     ["transition_date"] = -12219292800,

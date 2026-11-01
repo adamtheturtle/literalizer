@@ -5,6 +5,8 @@ pub type GVal {
 
 pub fn main() {
   let my_data = GDict([
+    #("ancient_date", GStr("1500-03-01")),
+    #("modern_date", GStr("2024-01-15")),
     #("before_date", GStr("1582-10-04")),
     #("gap_date", GStr("1582-10-10")),
     #("transition_date", GStr("1582-10-15")),

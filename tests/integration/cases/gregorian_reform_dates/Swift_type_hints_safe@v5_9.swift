@@ -1,5 +1,7 @@
 import Foundation
 let my_data = [
+    "ancient_date": Date(timeIntervalSince1970: -14826672000),
+    "modern_date": DateComponents(calendar: Calendar(identifier: .gregorian), timeZone: TimeZone(secondsFromGMT: 0)!, year: 2024, month: 1, day: 15).date!,
     "before_date": Date(timeIntervalSince1970: -12220243200),
     "gap_date": Date(timeIntervalSince1970: -12219724800),
     "transition_date": Date(timeIntervalSince1970: -12219292800),

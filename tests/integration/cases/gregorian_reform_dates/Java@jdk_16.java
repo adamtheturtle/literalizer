@@ -4,6 +4,8 @@ import java.util.Map;
 class Main {
     public static void main() {
 var my_data = Map.ofEntries(
+    Map.entry("ancient_date", LocalDate.of(1500, 3, 1)),
+    Map.entry("modern_date", LocalDate.of(2024, 1, 15)),
     Map.entry("before_date", LocalDate.of(1582, 10, 4)),
     Map.entry("gap_date", LocalDate.of(1582, 10, 10)),
     Map.entry("transition_date", LocalDate.of(1582, 10, 15)),

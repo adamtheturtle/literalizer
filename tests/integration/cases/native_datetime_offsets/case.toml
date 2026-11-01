@@ -1,0 +1,48 @@
+# Whole-file public API coverage for native formatter offsets (#6574).
+schema_version = 1
+suites = ["base"]
+
+[base_context.record_null_value_sources.stamps]
+kind = "sequence"
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = 1000000
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = -1000000
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = 1
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = -1
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = 19815000001
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = -19815000001

@@ -1,4 +1,6 @@
 my_data = struct(
+    'ancient_date', datetime(1500, 3, 1),
+    'modern_date', datetime(2024, 1, 15),
     'before_date', datetime(1582, 10, 4),
     'gap_date', datetime(1582, 10, 10),
     'transition_date', datetime(1582, 10, 15),
