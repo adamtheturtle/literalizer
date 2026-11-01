@@ -306,7 +306,8 @@ def _invalid_value(*, source: InvalidValueSource) -> literalizer.ValueInput:
         return cycle
     value: literalizer.ValueInput = 0
     for _ in range(source.depth):
-        value = [value]
+        layer: list[literalizer.ValueInput] = [value]
+        value = layer
     return value
 
 
