@@ -48,6 +48,7 @@ from literalizer._language import (
     no_empty_container_literal_overrides,
 )
 from literalizer._literalize import guard_dict_keys_supported, rstrip_lines
+from literalizer._parsing import reject_excessive_integer_digits
 from literalizer._types import OrderedMap, Scalar, Value
 
 
@@ -216,6 +217,7 @@ class _JsonNativeRenderer:
                     return self.true_literal
                 return self.false_literal
             case int():
+                reject_excessive_integer_digits(value=value)
                 if (
                     not self.int_range.minimum
                     <= value

@@ -15,6 +15,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 import string
+import sys
 import tomllib
 from collections.abc import Callable, Mapping
 from pathlib import Path
@@ -53,7 +54,14 @@ VALUE_PLACEHOLDER = "value"
 _CALL_TRANSFORM_PLACEHOLDERS = frozenset({"call", "zipped"})
 """Names a rejection-manifest call transform may substitute."""
 
-type ApiName = Literal["literalize", "literalize_call", "constructor"]
+type ApiName = Literal[
+    "literalize",
+    "literalize_call",
+    "literalize_call_with_declarations",
+    "constructor",
+    "sequence_type_annotation",
+    "declaration_formatter",
+]
 type VariableFormName = Literal["new", "existing", "both", "none"]
 
 
@@ -110,7 +118,11 @@ _EXCEPTIONS_BY_NAME: Mapping[str, type[Exception]] = {
     name: value
     for name, value in vars(literalizer_exceptions).items()
     if isinstance(value, type) and issubclass(value, Exception)
-} | {"TypeError": TypeError, "ValueError": ValueError}
+} | {
+    "TypeError": TypeError,
+    "ValueError": ValueError,
+    "NotImplementedError": NotImplementedError,
+}
 
 _INPUT_FORMATS_BY_NAME: Mapping[str, literalizer.InputFormat] = {
     member.name.lower(): member for member in literalizer.InputFormat
@@ -331,6 +343,19 @@ def _validate_gate_references(*, gates: tuple[LanguageGate, ...]) -> None:
                 pass
 
 
+class DeclarationSpec(BaseModel, extra="forbid", frozen=True, strict=True):
+    """One fragment supplied to the declaration composition boundary."""
+
+    source: str
+    variable_form: Literal["new", "existing"]
+    variable_name: str
+
+
+def _no_declarations() -> tuple[DeclarationSpec, ...]:
+    """Return a typed empty declaration sequence."""
+    return ()
+
+
 class CallSpec(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -349,6 +374,13 @@ class CallSpec(  # noqa: NOD001
     """
 
     api: ApiName
+    declarations: Annotated[
+        tuple[DeclarationSpec, ...], Field(strict=False)
+    ] = Field(default_factory=_no_declarations)
+    element_type: str = "Element"
+    length: Annotated[int, Field(ge=0)] = 2
+    formatted_value: str = "v"
+    formatter_data: int | str | None = None
     sources: Annotated[tuple[str, ...], Field(strict=False)] = Field(
         default_factory=_no_sources,
     )
@@ -372,6 +404,7 @@ class CallSpec(  # noqa: NOD001
     ref_key: str | None = None
     ref_case: str | None = None
     bound_refs: BoundRefs = ()
+    record_null_substitutions: BoundRefs = ()
     bound_ref_yaml: BoundRefYaml = ()
     bound_ref_times: BoundRefTimes = ()
     bound_ref_datetimes: BoundRefDatetimes = ()
@@ -392,7 +425,11 @@ class CallSpec(  # noqa: NOD001
     @model_validator(mode="after")
     def _validate_api_arguments(self) -> Self:
         """Reject arguments the declared API does not take."""
-        renders = self.api != "constructor"
+        renders = self.api in {
+            "literalize",
+            "literalize_call",
+            "literalize_call_with_declarations",
+        }
         if renders != bool(self.sources):
             msg = f"api = {self.api!r} requires exactly sources"
             raise ValueError(msg)
@@ -402,7 +439,10 @@ class CallSpec(  # noqa: NOD001
         if renders != (self.input_format is not None):
             msg = f"api = {self.api!r} requires exactly an input_format"
             raise ValueError(msg)
-        calls = self.api == "literalize_call"
+        calls = self.api in {
+            "literalize_call",
+            "literalize_call_with_declarations",
+        }
         if calls != (self.target_function is not None):
             msg = f"api = {self.api!r} requires exactly a target_function"
             raise ValueError(msg)
@@ -436,6 +476,7 @@ class CallSpec(  # noqa: NOD001
             msg = "modifiers require a new or both variable form"
             raise ValueError(msg)
         _ = self._validate_modifier_source()
+        _ = self._validate_operation_arguments()
         _ = self._validate_call_only_arguments()
         _ = self._validate_call_transform()
         return self
@@ -444,6 +485,36 @@ class CallSpec(  # noqa: NOD001
         """Require modifier names when expanding their enum sources."""
         if self.modifier_source == "all" and len(self.modifiers) == 0:
             msg = "modifier_source = 'all' requires modifiers"
+            raise ValueError(msg)
+        return self
+
+    def _validate_operation_arguments(self) -> Self:
+        """Reject operation arguments that the selected boundary
+        ignores.
+        """
+        owners = {
+            "declarations": "literalize_call_with_declarations",
+            "element_type": "sequence_type_annotation",
+            "length": "sequence_type_annotation",
+            "formatted_value": "declaration_formatter",
+            "formatter_data": "declaration_formatter",
+            "record_null_substitutions": "literalize",
+        }
+        for name, owner in owners.items():
+            if name in self.model_fields_set and self.api != owner:
+                msg = f"{name} applies to api = {owner!r}"
+                raise ValueError(msg)
+        if (
+            self.api == "literalize_call_with_declarations"
+            and len(self.declarations) == 0
+        ):
+            msg = "composition requires declarations"
+            raise ValueError(msg)
+        if (
+            self.api in {"sequence_type_annotation", "declaration_formatter"}
+            and len(self.kwargs) > 0
+        ):
+            msg = "formatter operations do not construct a language"
             raise ValueError(msg)
         return self
 
@@ -458,7 +529,9 @@ class CallSpec(  # noqa: NOD001
         invalid = sorted(
             name
             for name, value in call_only_arguments.items()
-            if self.api != "literalize_call" and value is not None
+            if self.api
+            not in {"literalize_call", "literalize_call_with_declarations"}
+            and value is not None
         )
         if len(invalid) > 0:
             msg = f"{invalid[0]} applies to api = 'literalize_call'"
@@ -504,6 +577,8 @@ class _RejectionData(  # noqa: NOD001
     schema_version: Literal[1]
     summary: Annotated[str, Field(min_length=1)]
     exceptions: ExceptionTypes
+    integer_digit_limit: Annotated[int, Field(ge=0)] | None = None
+    record_output: bool = False
     position: Annotated[tuple[int, int], Field(strict=False)] | None = None
     attributes: ErrorAttributes | None = None
     gates: Annotated[tuple[LanguageGate, ...], Field(strict=False)] = Field(
@@ -530,6 +605,33 @@ class _RejectionData(  # noqa: NOD001
             msg = f"unknown option {self.option!r}"
             raise ValueError(msg)
         _validate_gate_references(gates=self.gates)
+        _ = self._validate_operation()
+        return self
+
+    def _validate_operation(self) -> Self:
+        """Validate runtime settings and the option used by a direct
+        call.
+        """
+        required = {
+            "sequence_type_annotation": "sequence_format",
+            "declaration_formatter": "declaration_style",
+        }.get(self.call.api)
+        if required is not None and self.option != required:
+            msg = f"api = {self.call.api!r} requires option = {required!r}"
+            raise ValueError(msg)
+        if self.record_output and self.call.api == "constructor":
+            msg = "record_output requires an operation that returns code"
+            raise ValueError(msg)
+        if self.integer_digit_limit is not None and (
+            0
+            < self.integer_digit_limit
+            < sys.int_info.str_digits_check_threshold
+        ):
+            msg = (
+                "integer_digit_limit must be zero or at least "
+                "the interpreter threshold"
+            )
+            raise ValueError(msg)
         return self
 
     @model_validator(mode="after")
@@ -541,6 +643,9 @@ class _RejectionData(  # noqa: NOD001
             for template in _kwarg_templates(kwarg=kwarg)
         ]
         templates.extend(self.call.parameter_names)
+        templates.extend(
+            declaration.variable_name for declaration in self.call.declarations
+        )
         templates.extend(source for _, source in self.call.bound_ref_yaml)
         templates.extend(source for _, source in self.call.ref_value_yaml)
         templates.append(self.call.variable_name)
@@ -593,6 +698,8 @@ class RejectionManifest:
     name: str
     summary: str
     exceptions: tuple[type[Exception], ...]
+    integer_digit_limit: int | None
+    record_output: bool
     position: tuple[int, int] | None
     attributes: ErrorAttributes | None
     gates: tuple[LanguageGate, ...]
@@ -620,6 +727,8 @@ def load_rejection_manifest(*, manifest_path: Path) -> RejectionManifest:
         name=manifest_path.parent.name,
         summary=data.summary,
         exceptions=data.exceptions,
+        integer_digit_limit=data.integer_digit_limit,
+        record_output=data.record_output,
         position=data.position,
         attributes=data.attributes,
         gates=tuple(data.gates),

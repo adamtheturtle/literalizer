@@ -1,0 +1,9 @@
+# languages rejecting: 1; languages accepting: 1
+
+[Accepted]
+"Rust[VEC]" = "Vec<Element>"
+"Rust[ARRAY]" = "[Element; 2]"
+"Rust[TUPLE_NESTED_VEC]" = "Vec<Element>"
+
+[IncompatibleFormatsError]
+"Rust[TUPLE]" = "Use per-element types for tuples"

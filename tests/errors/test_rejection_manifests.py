@@ -469,3 +469,104 @@ def test_scenario_without_gates_admits_every_language(tmp_path: Path) -> None:
         ),
     )
     assert set(selected_languages(manifest=manifest)) == set(ALL_LANGUAGES)
+
+
+@pytest.mark.parametrize(
+    argnames=("selection", "extra", "call", "message"),
+    argvalues=[
+        (
+            "",
+            "",
+            'api = "sequence_type_annotation"',
+            "requires option = 'sequence_format'",
+        ),
+        (
+            'option = "sequence_format"',
+            "",
+            'api = "declaration_formatter"',
+            "requires option = 'declaration_style'",
+        ),
+        (
+            "",
+            "",
+            (
+                'api = "literalize_call_with_declarations"\n'
+                'sources = ["0"]\ninput_format = "json"\n'
+                'target_function = "f"\nparameter_names = []'
+            ),
+            "composition requires declarations",
+        ),
+        (
+            'option = "declaration_style"',
+            "",
+            (
+                'api = "declaration_formatter"\n'
+                'kwargs = [{kind = "boolean", kwarg = "unused", value = true}]'
+            ),
+            "formatter operations do not construct a language",
+        ),
+        (
+            "",
+            "record_output = true",
+            _CONSTRUCTOR,
+            "record_output requires an operation that returns code",
+        ),
+        (
+            "",
+            "integer_digit_limit = 639",
+            _CONSTRUCTOR,
+            "integer_digit_limit must be zero or at least",
+        ),
+        (
+            "",
+            "integer_digit_limit = -1",
+            _CONSTRUCTOR,
+            "greater than or equal to 0",
+        ),
+        (
+            "",
+            "integer_digit_limit = true",
+            _CONSTRUCTOR,
+            "valid integer",
+        ),
+    ],
+)
+def test_invalid_operation_is_rejected(
+    selection: str, extra: str, call: str, message: str, tmp_path: Path
+) -> None:
+    """Reject ambiguous operations and invalid interpreter settings."""
+    manifest_path = _write_manifest(
+        tmp_path=tmp_path,
+        manifest=_manifest(selection=selection, extra=extra, call=call),
+    )
+    with pytest.raises(
+        expected_exception=RejectionManifestError, match=message
+    ):
+        _ = load_rejection_manifest(manifest_path=manifest_path)
+
+
+@pytest.mark.parametrize(
+    argnames="argument",
+    argvalues=[
+        "declarations = []",
+        'element_type = "Element"',
+        "length = 2",
+        'formatted_value = "v"',
+        'formatter_data = "metadata"',
+        "record_null_substitutions = {}",
+    ],
+)
+def test_operation_arguments_require_their_api(
+    argument: str, tmp_path: Path
+) -> None:
+    """An explicitly supplied operation argument cannot be ignored."""
+    manifest_path = _write_manifest(
+        tmp_path=tmp_path,
+        manifest=_manifest(
+            selection="", extra="", call=f"{_CONSTRUCTOR}\n{argument}"
+        ),
+    )
+    with pytest.raises(
+        expected_exception=RejectionManifestError, match="applies to api ="
+    ):
+        _ = load_rejection_manifest(manifest_path=manifest_path)

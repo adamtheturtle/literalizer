@@ -1,0 +1,30 @@
+schema_version = 1
+summary = "Exercise a declaration after an executable assignment when composing fragments and a call."
+exceptions = ["UnsupportedCallShapeError"]
+
+[call]
+api = "literalize_call_with_declarations"
+sources = ["0"]
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+ref_key = "$ref"
+
+[call.ref_value_yaml]
+first = "0"
+
+[[call.declarations]]
+source = "0"
+variable_form = "new"
+variable_name = "first"
+
+[[call.declarations]]
+source = "1"
+variable_form = "existing"
+variable_name = "first"
+
+[[call.declarations]]
+source = "{\"$ref\":\"first\"}"
+variable_form = "new"
+variable_name = "second"

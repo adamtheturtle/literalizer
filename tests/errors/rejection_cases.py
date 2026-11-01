@@ -12,11 +12,12 @@ import enum
 import functools
 import itertools
 from collections.abc import Mapping, Sequence
-from typing import assert_never
+from typing import Protocol, assert_never, runtime_checkable
 
 from beartype import beartype
 
 import literalizer
+from literalizer._language import DeclarationStyleConfig
 from tests.enum_members import enum_member_by_name, find_enum_member
 from tests.language_gates import LanguageGate, language_gate_admits
 from tests.language_options import OPTIONS
@@ -36,6 +37,36 @@ from .rejection_manifests import (
 )
 
 
+@runtime_checkable
+class SequenceTypeAnnotation(Protocol):
+    """The direct type-annotation operation declared by an option enum."""
+
+    def format_type_annotation(self, element_type: str, length: int) -> str:
+        """Return the annotation or refuse an incompatible sequence
+        shape.
+        """
+        ...
+
+
+@runtime_checkable
+class _OptionValue(Protocol):
+    """Read an enum payload without assuming its configuration type."""
+
+    @property
+    def value(self) -> object:
+        """Return the option's declared configuration."""
+        ...
+
+
+@beartype
+def declaration_style_config(
+    *, member: _OptionValue
+) -> DeclarationStyleConfig | None:
+    """Recognize the standard declaration formatter configuration."""
+    payload = member.value
+    return payload if isinstance(payload, DeclarationStyleConfig) else None
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class RejectionCase:
     """One language's run of one rejection manifest."""
@@ -43,6 +74,7 @@ class RejectionCase:
     case_id: str
     lang_cls: literalizer.LanguageCls
     modifier_cls: literalizer.LanguageCls
+    option_member: enum.Enum | None
     kwargs: Mapping[str, object]
     source: str | None
     value: str | None
@@ -142,7 +174,10 @@ def _option_members(
         return (None,)
     option = OPTIONS[manifest.option]
     spec = lang_cls()
-    if option.kwarg not in {
+    if manifest.call.api not in {
+        "sequence_type_annotation",
+        "declaration_formatter",
+    } and option.kwarg not in {
         field.name for field in dataclasses.fields(class_or_instance=spec)
     }:
         return ()
@@ -202,6 +237,7 @@ def _supports_case(
     manifest: RejectionManifest,
     lang_cls: literalizer.LanguageCls,
     value: str | None,
+    member: enum.Enum | None,
 ) -> bool:
     """Require enum members needed to express the call, without probing it."""
     spec = lang_cls()
@@ -220,6 +256,13 @@ def _supports_case(
                 is None
             ):
                 return False
+    if manifest.call.api == "sequence_type_annotation":
+        return isinstance(member, SequenceTypeAnnotation)
+    if manifest.call.api == "declaration_formatter":
+        return (
+            member is not None
+            and declaration_style_config(member=member) is not None
+        )
     return True
 
 
@@ -284,7 +327,10 @@ def _cases_for_languages(
             _modifier_classes(call=manifest.call, lang_cls=lang_cls),
         ):
             if not _supports_case(
-                manifest=manifest, lang_cls=lang_cls, value=value
+                manifest=manifest,
+                lang_cls=lang_cls,
+                value=value,
+                member=member,
             ):
                 continue
             for source in sources:
@@ -310,6 +356,7 @@ def _cases_for_languages(
                         ),
                         lang_cls=lang_cls,
                         modifier_cls=modifier_cls,
+                        option_member=member,
                         source=source,
                         value=value,
                         kwargs=_case_kwargs(
