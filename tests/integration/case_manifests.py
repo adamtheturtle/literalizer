@@ -811,6 +811,8 @@ class CallCaseSpec(  # noqa: NOD001
     target_function: str
     parameter_names: StringTuple
     per_element: bool
+    # Native built-ins need no synthetic target declaration in a manual file.
+    include_target_stub: bool = True
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None

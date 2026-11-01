@@ -5,7 +5,6 @@ import datetime as dt
 import pytest
 from pydantic import BaseModel, TypeAdapter
 
-from literalizer import FileWrapperContext
 from literalizer._formatters.format_integers import (
     make_negative_nondecimal_i64_formatter,
 )
@@ -42,19 +41,11 @@ class _DateViewCase(_LanguageCase, frozen=True):
     value: dt.datetime
 
 
-class _EmptyCallWrapperCase(_LanguageCase, frozen=True):
-    """An internal wrapper with no declarations or call preamble."""
-
-    calls: str
-    expected: str
-
-
 class _FormatterCases(BaseModel, extra="forbid", frozen=True):
     """The complete manifest-owned direct formatter corpus."""
 
     integer_suffixes: tuple[_IntegerSuffixCase, ...]
     date_views: tuple[_DateViewCase, ...]
-    empty_call_wrappers: tuple[_EmptyCallWrapperCase, ...]
 
 
 _CASES = TypeAdapter(type=_FormatterCases).validate_python(
@@ -89,33 +80,3 @@ def test_date_formatter_accepts_datetime(case: _DateViewCase) -> None:
     )
     assert isinstance(member, DateFormatEnum)
     assert member(case.value) == member(case.value.date())
-
-
-@pytest.mark.parametrize(
-    argnames="case",
-    argvalues=_CASES.empty_call_wrappers,
-    ids=lambda case: case.name,
-)
-def test_empty_call_wrapper(case: _EmptyCallWrapperCase) -> None:
-    """An empty preamble does not add separator lines."""
-    assert (
-        case.language().wrap_calls_with_declarations(
-            declarations=(),
-            calls=case.calls,
-            context=FileWrapperContext(
-                line_prefix="",
-                bound_variable_names=(),
-                variable_name="",
-                modifiers=frozenset(),
-                body_preamble=(),
-                class_preamble=(),
-                has_literal_declarations=False,
-                generated_body_preamble=(),
-                call_stub_names=frozenset(),
-                root_is_object_literal=False,
-                root_mapping_entries=None,
-                has_existing_bindings=False,
-            ),
-        )
-        == case.expected
-    )

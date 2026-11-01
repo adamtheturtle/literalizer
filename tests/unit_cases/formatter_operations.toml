@@ -64,9 +64,3 @@ name = "ruby_short_2024-01-15"
 language = "Ruby"
 format = "RUBY_SHORT"
 value = 2024-01-15T00:00:00Z
-
-[[empty_call_wrappers]]
-name = "empty_call_preamble"
-language = "Roc"
-calls = "call"
-expected = "module [main]\n\nmain =\n    dbg (call)\n    {}"

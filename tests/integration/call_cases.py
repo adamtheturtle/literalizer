@@ -1557,6 +1557,52 @@ def call_stub_spec(
 
 
 @beartype
+def _target_call_declarations(
+    *,
+    config: CallCaseSpec,
+    spec: literalizer.Language,
+    argument_values: Sequence[ParsedValue],
+    golden_path: Path,
+    file_regression: FileRegressionFixture,
+    lang_name: str,
+) -> CallStubDeclarations:
+    """Declare synthetic targets unless the case uses a built-in."""
+    if not config.include_target_stub:
+        return CallStubDeclarations(body=(), class_scope=(), file_scope=())
+    stub_return = (
+        literalizer.StubReturn.VALUE
+        if config.has_call_transform or config.variable_form is not None
+        else literalizer.StubReturn.VOID
+    )
+    stub_spec = call_stub_spec(spec=spec, argument_values=argument_values)
+    target_parts = tuple(config.target_function.split(sep="."))
+    body = stub_spec.format_call_stub(
+        target_parts, config.parameter_names, stub_return, argument_values
+    )
+    class_scope = stub_spec.format_call_class_scope_stub(
+        target_parts, config.parameter_names, stub_return, argument_values
+    )
+    file_scope: list[str] = []
+    with GoldenSkips(
+        policy=_PREAMBLE_STUB_SKIPS,
+        golden_path=golden_path,
+        prefix=lang_name,
+        config=file_regression.request.config,
+    ):
+        file_scope.extend(
+            stub_spec.format_call_preamble_stub(
+                target_parts,
+                config.parameter_names,
+                stub_return,
+                argument_values,
+            ),
+        )
+    return CallStubDeclarations(
+        body=body, class_scope=class_scope, file_scope=tuple(file_scope)
+    )
+
+
+@beartype
 def run_call_golden_case(
     *,
     config: CallCaseSpec,
@@ -1696,46 +1742,17 @@ def run_call_golden_case(
     decl_results = call_outcome.decl_results
     result = call_outcome.result
     # Build stub declarations for undefined names.
-    body_stubs: list[str | RenderedCallStub] = []
-    class_stubs: list[str] = []
-    preamble_stubs: list[str] = []
-    if config.has_call_transform or config.variable_form is not None:
-        stub_return = literalizer.StubReturn.VALUE
-    else:
-        stub_return = literalizer.StubReturn.VOID
-    target_function_parts = tuple(config.target_function.split(sep="."))
-    call_arg_values = call_outcome.stub_argument_values
-    stub_spec = call_stub_spec(spec=spec, argument_values=call_arg_values)
-    body_stubs.extend(
-        stub_spec.format_call_stub(
-            target_function_parts,
-            config.parameter_names,
-            stub_return,
-            call_arg_values,
-        ),
-    )
-    class_stubs.extend(
-        stub_spec.format_call_class_scope_stub(
-            target_function_parts,
-            config.parameter_names,
-            stub_return,
-            call_arg_values,
-        ),
-    )
-    with GoldenSkips(
-        policy=_PREAMBLE_STUB_SKIPS,
+    target_stubs = _target_call_declarations(
+        config=config,
+        spec=spec,
+        argument_values=call_outcome.stub_argument_values,
         golden_path=golden_path,
-        prefix=lang_cls.__name__,
-        config=file_regression.request.config,
-    ):
-        preamble_stubs.extend(
-            stub_spec.format_call_preamble_stub(
-                target_function_parts,
-                config.parameter_names,
-                stub_return,
-                call_arg_values,
-            ),
-        )
+        file_regression=file_regression,
+        lang_name=lang_cls.__name__,
+    )
+    body_stubs = list(target_stubs.body)
+    class_stubs = list(target_stubs.class_scope)
+    preamble_stubs = list(target_stubs.file_scope)
     # Statement stubs cover transform wrappers and a separate follow-up
     # consumer. Keep each target's parameter names so their argument
     # counts remain valid in languages with fixed parameter counts.
