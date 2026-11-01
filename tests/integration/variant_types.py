@@ -62,6 +62,7 @@ class VariantCase:
     variable_form: literalizer.VariableForm
     pre_indent_level: int
     expected_errors: tuple[VariantExpectedError, ...]
+    apply_fixture_module_name: bool
 
     @property
     def extension(self) -> str:

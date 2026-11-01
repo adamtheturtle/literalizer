@@ -1696,3 +1696,14 @@ overrides = [
   {kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD"},
   {kind = "record_shape_names", keys = ["value"], name = "UserRecord"},
 ]
+
+# Erlang module identifiers are atoms: the accepted boundary is 255
+# characters, while the 256-character rejection stays in the error corpus.
+[axes.erlang_module_name_atom_limit]
+plan = "kwarg_values"
+name_template = "{lang}_module_name_atom_limit_{format}"
+kwarg = "module_name"
+values = [{ name = "255_characters", value = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }]
+gates = [
+  { kind = "enum_member_present", option = "language_version", member = "OTP_25" },
+]

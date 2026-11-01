@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "variant"
+
+# Compile the exact accepted atom-length boundary previously checked only
+# by constructing Erlang(module_name="a" * 255).
+[[variants]]
+axis = "erlang_module_name_atom_limit"
+apply_fixture_module_name = false
