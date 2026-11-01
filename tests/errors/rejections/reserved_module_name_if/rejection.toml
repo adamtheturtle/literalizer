@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "C-family languages reject if as a wrapper name."
+summary = "Exercise if as a wrapper module name."
 exceptions = ["InvalidModuleNameError"]
 
 [call]

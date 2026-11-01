@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A capitalized bare Elixir name is an alias, not a function."
+summary = "Exercise a capitalized bare call target where that syntax may name a type."
 exceptions = ["InvalidCallTargetError"]
 
 [call]

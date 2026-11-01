@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Bash associative keys remain nonempty printable ASCII under single-quoted rendering (#6196)."
+summary = "Exercise associative mapping keys under single-quoted string rendering. (#6196)"
 exceptions = ["InvalidDictKeyError"]
 
 [call]

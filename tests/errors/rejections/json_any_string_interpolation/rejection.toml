@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A #{ sequence in the JSON document would be read as Crystal string
-interpolation rather than as the characters themselves.
-"""
+summary = "Exercise interpolation syntax inside embedded JSON text."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

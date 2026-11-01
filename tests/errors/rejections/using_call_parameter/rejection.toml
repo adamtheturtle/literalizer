@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Scala using clauses make using invalid as a generated call parameter."
+summary = "Exercise using as a generated call parameter name."
 exceptions = ["InvalidCallParameterNameError"]
 
 [call]

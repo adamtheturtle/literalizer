@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "SystemVerilog keywords cannot name a call parameter."
+summary = "Exercise reserved keywords as generated call parameter names."
 exceptions = ["InvalidCallParameterNameError"]
 values = ["before", "int"]
 

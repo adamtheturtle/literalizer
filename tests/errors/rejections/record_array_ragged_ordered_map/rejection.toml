@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Rust ordered-map values share one array type even under the RECORD strategy,
-so differently sized arrays remain unrepresentable.
-"""
+summary = "Exercise differently sized arrays sharing one ordered-map value type under record rendering."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

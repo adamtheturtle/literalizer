@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-C++14 carries a heterogeneous value in a generated variant type, whose
-name is written into the output as a type name and so must be a C++
-identifier that is not a keyword.
-"""
+summary = "Exercise generated heterogeneous-value type names against identifier and keyword restrictions."
 exceptions = ["InvalidRecordNameError"]
 values = ["", "1Value", "class", "value-name"]
 

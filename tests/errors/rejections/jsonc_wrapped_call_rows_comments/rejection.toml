@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "JSONC comments cannot be preserved in wrapped Erlang calls."
+summary = "Exercise JSONC comments in wrapped calls over rows."
 exceptions = ["UnsupportedCallShapeError"]
 
 [call]

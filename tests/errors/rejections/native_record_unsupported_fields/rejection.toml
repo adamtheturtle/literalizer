@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Concrete Gleam and OCaml records require string field names and cannot
-represent YAML ordered maps or sets.
-"""
+summary = "Exercise native record field names, ordered mappings, and sets supplied through YAML."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

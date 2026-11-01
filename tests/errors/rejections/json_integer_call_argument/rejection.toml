@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Rust JSON call arguments reject integers outside the serde_json::Value range."
+summary = "Exercise JSON call arguments beyond signed and unsigned 64-bit ranges."
 exceptions = ["UnrepresentableIntegerError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Haskell tuple-valued arguments cannot fit generated Val parameters."
+summary = "Exercise tuple-valued bound references in per-element call arguments."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

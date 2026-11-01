@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "V ordered-map values must share one generated native record type."
+summary = "Exercise ordered-map values requiring one generated nominal record type."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Haskell declaration cannot take a Prelude or entry-point name."
+summary = "Exercise declaration names that overlap standard prelude or entrypoint names."
 exceptions = ["ReservedVariableNameError"]
 values = ["abs", "foldl'", "length", "main", "map", "print", "seq"]
 

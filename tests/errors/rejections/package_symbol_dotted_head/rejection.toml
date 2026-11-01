@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-A Common Lisp dotted stub declares each prefix of the target, so the
-leading component alone can name a symbol of the locked COMMON-LISP
-package (#4547).
-"""
+summary = "Exercise a dotted call prefix that can name a symbol in a locked standard package. (#4547)"
 exceptions = ["InvalidCallTargetError"]
 
 [call]

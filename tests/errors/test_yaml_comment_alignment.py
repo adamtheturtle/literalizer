@@ -10,7 +10,7 @@ import pytest
 
 import literalizer
 from literalizer._comment_types import CollectionComments
-from literalizer.languages import Java
+from literalizer.languages import ALL_LANGUAGES
 
 
 def _misaligned_comments(
@@ -24,8 +24,18 @@ def _misaligned_comments(
     return CollectionComments(elements=(), trailing=("trailing",))
 
 
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=[
+        cls
+        for cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.language_id)
+        if cls().supports_collection_comments
+    ],
+    ids=lambda cls: cls.language_id,
+)
 def test_literalize_fails_on_yaml_comment_misalignment(
     monkeypatch: pytest.MonkeyPatch,
+    language_cls: literalizer.LanguageCls,
 ) -> None:
     """The public API fails hard when parser comment slots are
     misaligned.
@@ -44,6 +54,6 @@ def test_literalize_fails_on_yaml_comment_misalignment(
         _ = literalizer.literalize(
             source="outer:\n  # nested\n  keep: 1\n  drop: 2\n",
             input_format=literalizer.InputFormat.YAML,
-            language=Java(),
+            language=language_cls(),
             collection_layout=literalizer.CollectionLayout.MULTILINE,
         )

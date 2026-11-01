@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A control character has no form in a Dhall backtick-quoted label or a
-Nix attribute name.
-"""
+summary = "Exercise mapping-key syntaxes that cannot encode a control character."
 exceptions = ["InvalidDictKeyError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Zig JSON documents retain unsigned integer bounds."
+summary = "Exercise JSON document integers beyond the unsigned 64-bit range."
 exceptions = ["UnrepresentableIntegerError"]
 
 [call]

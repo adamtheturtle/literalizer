@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-Concrete Gleam and OCaml records require valid field names and concrete
-field types. Empty records, nulls, empty lists, and records nested two
-list levels deep cannot be typed in this mode.
-"""
+summary = "Exercise native records with invalid names, empty fields, nulls, and nested collections."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

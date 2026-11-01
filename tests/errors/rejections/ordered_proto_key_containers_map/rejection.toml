@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "MATLAB ordered-map fields retain their struct-name restriction when ordinary maps use containers.Map."
+summary = "Exercise ordered-map field names while ordinary mappings use a container-map representation."
 exceptions = ["InvalidDictKeyError"]
 
 [call]

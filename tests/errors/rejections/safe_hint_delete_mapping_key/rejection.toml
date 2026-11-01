@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "MATLAB SAFE struct fields reject a delete character in a mapping key."
+summary = "Exercise U+007F in mapping keys under SAFE struct-field hints."
 exceptions = ["InvalidDictKeyError"]
 
 [call]

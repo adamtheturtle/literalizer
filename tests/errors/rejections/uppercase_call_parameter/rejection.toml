@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Ada reserved parameter names are case-insensitive."
+summary = "Exercise uppercase spellings of case-insensitive reserved parameter names."
 exceptions = ["InvalidCallParameterNameError"]
 values = ["BEGIN", "IF"]
 

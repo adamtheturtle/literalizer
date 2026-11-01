@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "The Ruby pseudo-variables that cannot be assigned to."
+summary = "Exercise source-metadata constants as declaration names."
 exceptions = ["ReservedVariableNameError"]
 values = ["__ENCODING__", "__FILE__", "__LINE__"]
 

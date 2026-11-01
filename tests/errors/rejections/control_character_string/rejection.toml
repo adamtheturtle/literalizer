@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-A plain COBOL alphanumeric literal has no escape sequences and cannot
-span lines, so a string value carrying a tab, newline or carriage
-return is refused rather than silently turned into spaces (#4513).
-"""
+summary = "Exercise control characters in a string format without escapes or line breaks. (#4513)"
 exceptions = ["UnrepresentableStringError"]
 
 [call]

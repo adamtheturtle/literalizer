@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Roc list cannot mix records with conflicting field types."
+summary = "Exercise record lists whose corresponding fields have conflicting types."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

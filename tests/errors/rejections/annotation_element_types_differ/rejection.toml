@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Rust cannot annotate a collection whose element types differ in shape."
+summary = "Exercise collection annotations whose elements have incompatible shapes."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

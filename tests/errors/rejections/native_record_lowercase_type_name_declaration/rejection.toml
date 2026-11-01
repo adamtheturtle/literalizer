@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Generated Gleam record constructors require an uppercase type name."
+summary = "Exercise a lowercase native record type name in a declaration."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "PHP rejects string mapping keys that arrays coerce to integers."
+summary = "Exercise string mapping keys that native arrays may coerce to integers."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

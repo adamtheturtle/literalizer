@@ -56,7 +56,17 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
     argvalues=[
         (
             _manifest(
-                selection='languages = ["Python"]',
+                selection="",
+                extra=_NO_EXTRA,
+                call=(
+                    'api = "constructor"\nmodifier_language = "LegacyLanguage"'
+                ),
+            ),
+            "Extra inputs are not permitted",
+        ),
+        (
+            _manifest(
+                selection='languages = ["LegacyLanguage"]',
                 extra=_NO_EXTRA,
                 call=_CONSTRUCTOR,
             ),
@@ -66,7 +76,8 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
             _manifest(
                 selection="",
                 extra=(
-                    '[[accepts]]\nlanguages = ["Python"]\nreason = "renders"'
+                    '[[accepts]]\nlanguages = ["LegacyLanguage"]\n'
+                    'reason = "renders"'
                 ),
                 call=_CONSTRUCTOR,
             ),
@@ -89,10 +100,10 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                     'sources = ["1"]\n'
                     'input_format = "json"\n'
                     'variable_form = "new"\n'
-                    'modifier_language = "Java"'
+                    'modifier_source = "all"'
                 ),
             ),
-            "modifier_language requires modifiers",
+            "modifier_source = 'all' requires modifiers",
         ),
         (
             _manifest(
@@ -104,10 +115,10 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                     'input_format = "json"\n'
                     'variable_form = "new"\n'
                     'modifiers = ["FINAL"]\n'
-                    'modifier_language = "Missing"'
+                    'modifier_source = "Missing"'
                 ),
             ),
-            "unknown modifier language 'Missing'",
+            "Input should be 'target' or 'all'",
         ),
         (
             _manifest(

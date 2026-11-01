@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A wrapped V call target must name a declaration V can spell."
+summary = "Exercise a wrapped call target outside the generated declaration grammar."
 exceptions = ["InvalidCallTargetError"]
 values = ["C.atoi", "http.Server"]
 

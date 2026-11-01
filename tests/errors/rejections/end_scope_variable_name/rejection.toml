@@ -1,5 +1,5 @@
           schema_version = 1
-          summary = "Cobol scope terminators cannot be used as variable names."
+          summary = "Exercise scope terminators as declaration names."
           exceptions = ["ReservedVariableNameError"]
           values = [
             "END-IF",

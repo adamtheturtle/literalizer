@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-A pipe union is a runtime expression under eager annotations, and the
-type it builds does not exist before Python 3.10, so the two together
-name a version that cannot evaluate it.
-"""
+summary = "Exercise eager evaluation of pipe-union annotations under versions predating that syntax."
 exceptions = ["IncompatibleFormatsError"]
 values = ["PY38", "PY39"]
 

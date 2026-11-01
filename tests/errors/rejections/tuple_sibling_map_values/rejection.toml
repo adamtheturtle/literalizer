@@ -1,10 +1,5 @@
 schema_version = 1
-summary = """
-Rust tuple fields are independent, but corresponding map fields in tuples
-sharing a map-value slot still require one concrete value type (#6200).
-The shared native_record_mixed_field_type_refinement sequence variants
-retain compiler-backed coverage for representations that support the input.
-"""
+summary = "Exercise corresponding map fields that must share one value type across independently typed tuple fields. (#6200)"
 exceptions = ["HeterogeneousSiblingMapsError"]
 values = ["TUPLE", "TUPLE_NESTED_VEC"]
 

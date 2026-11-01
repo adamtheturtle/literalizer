@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Dhall with keyword cannot be used as a variable name."
+summary = "Exercise with as a declaration name."
 exceptions = ["ReservedVariableNameError"]
 values = [
   "with",

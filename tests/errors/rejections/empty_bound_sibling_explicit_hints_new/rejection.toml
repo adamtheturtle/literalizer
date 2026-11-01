@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Kotlin explicit hints refuse mixed empty/nonempty siblings through bound references."
+summary = "Exercise explicit hints for empty and nonempty bound siblings in a new declaration."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

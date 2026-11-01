@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Bound Zig JSON call arguments retain the restriction to string object keys."
+summary = "Exercise non-string object keys in bound JSON call arguments."
 exceptions = ["UnrepresentableInputError"]
 values = [
     "[{nested: {1.5: value}}]",

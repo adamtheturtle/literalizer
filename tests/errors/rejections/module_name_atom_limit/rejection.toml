@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-An Erlang module name becomes an atom, which the virtual machine caps
-at 255 characters.
-"""
+summary = "Exercise a wrapper module name exceeding a 255-character atom limit."
 exceptions = ["InvalidModuleNameError"]
 
 [call]

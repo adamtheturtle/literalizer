@@ -15,7 +15,7 @@ from collections.abc import Iterator
 
 import pytest
 
-from literalizer import InputFormat, NewVariable, literalize
+from literalizer import InputFormat, LanguageCls, NewVariable, literalize
 from literalizer.exceptions import (
     ExcessiveIntegerDigitsError,
     LiteralizerError,
@@ -83,6 +83,7 @@ def fixture_lowered_digit_limit() -> Iterator[None]:
 def test_parsed_integer_beyond_digit_limit(
     source: str,
     input_format: InputFormat,
+    language_cls: LanguageCls,
 ) -> None:
     """An integer the interpreter will not write out is rejected."""
     with pytest.raises(
@@ -92,13 +93,12 @@ def test_parsed_integer_beyond_digit_limit(
         _ = literalize(
             source=source,
             input_format=input_format,
-            language=Python(),
-            variable_form=NewVariable(name="v", modifiers=frozenset()),
+            language=language_cls(),
         )
 
 
 @pytest.mark.usefixtures("lowered_digit_limit")
-def test_toml_decimal_beyond_digit_limit() -> None:
+def test_toml_decimal_beyond_digit_limit(language_cls: LanguageCls) -> None:
     """A TOML decimal integer too wide to write out is rejected.
 
     Which rejection arrives depends on the tomlkit release: some read
@@ -111,8 +111,7 @@ def test_toml_decimal_beyond_digit_limit() -> None:
         _ = literalize(
             source=f"a = {_OVER_LIMIT_DIGITS}",
             input_format=InputFormat.TOML,
-            language=Python(),
-            variable_form=NewVariable(name="v", modifiers=frozenset()),
+            language=language_cls(),
         )
 
 

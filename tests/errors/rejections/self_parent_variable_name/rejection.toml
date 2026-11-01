@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "PHP cannot re-assign the $self or $parent variables."
+summary = "Exercise self and parent as variable binding names."
 exceptions = ["ReservedVariableNameError"]
 values = ["parent", "self"]
 

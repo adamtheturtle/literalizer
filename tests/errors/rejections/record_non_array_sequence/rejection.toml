@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-Java RECORD types a list-valued component from the array opener the
-value formatter emits, and another sequence format carries no element
-type.
-"""
+summary = "Exercise record fields whose collection types depend on an array sequence representation."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

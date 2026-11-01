@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Unsupported Python options retain the language and option names."
+summary = "Exercise an unsupported constructor option while preserving its option and target names in the public error."
 exceptions = ["UnsupportedOptionError"]
 gates = [{ kind = "spec_field_absent", field = "empty_dict_key" }]
 

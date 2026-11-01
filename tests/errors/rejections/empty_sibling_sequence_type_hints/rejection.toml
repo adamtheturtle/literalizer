@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-An explicit Kotlin annotation is one type, so sibling sequences that
-mix an empty one with a non-empty one have no annotation that holds
-both and the value is refused.
-"""
+summary = "Exercise annotations that must describe empty and nonempty sibling sequences together."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

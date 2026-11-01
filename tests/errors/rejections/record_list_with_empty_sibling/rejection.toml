@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Go RECORD cannot currently declare one nested slice type for a generated
-record list and its empty sibling.
-"""
+summary = "Exercise nested record-list type inference beside an empty sibling."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

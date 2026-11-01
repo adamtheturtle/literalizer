@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-The only C++ type holding a value above LLONG_MAX is unsigned, and
-no negative sibling narrows to it, so a collection mixing the two
-fits no single element type.
-"""
+summary = "Exercise a negative value beside a sibling that requires an unsigned integer type."
 exceptions = ["UnrepresentableIntegerError"]
 
 [call]

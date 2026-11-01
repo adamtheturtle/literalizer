@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Java BigInteger binding cannot initialize a double field."
+summary = "Exercise a large negative integer reference with a floating-point hint."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

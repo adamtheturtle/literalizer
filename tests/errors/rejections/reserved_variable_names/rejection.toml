@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-These seventeen COBOL reserved words cannot name a data item; GnuCOBOL
-rejects each one when used as an 01 name (#4771).
-"""
+summary = "Exercise reserved words as data-item declaration names. (#4771)"
 exceptions = ["ReservedVariableNameError"]
 values = [
     "all",

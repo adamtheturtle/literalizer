@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "C# wrapped calls reject their generated Main entrypoint."
+summary = "Exercise Main as a wrapped call target."
 exceptions = ["InvalidCallTargetError"]
 
 [call]

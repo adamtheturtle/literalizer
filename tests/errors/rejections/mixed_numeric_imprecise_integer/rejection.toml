@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Dart rejects imprecise integer literals in double-typed containers."
+summary = "Exercise integer precision inside floating-point-typed collections."
 exceptions = ["UnrepresentableIntegerError"]
 
 [call]

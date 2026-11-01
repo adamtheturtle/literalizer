@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Nim identifier cannot begin with an underscore."
+summary = "Exercise _do_thing as a generated call target."
 exceptions = ["InvalidCallTargetError"]
 
 [call]

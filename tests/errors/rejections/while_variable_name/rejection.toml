@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "``while`` cannot be used as a Swift identifier here."
+summary = "Exercise while as a declaration name."
 exceptions = ["ReservedVariableNameError"]
 values = ["while"]
 

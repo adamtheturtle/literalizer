@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "The Wren null literal, which no variable name can take."
+summary = "Exercise null as a declaration name."
 exceptions = ["ReservedVariableNameError"]
 values = ["null"]
 

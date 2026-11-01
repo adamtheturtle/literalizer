@@ -1,5 +1,5 @@
           schema_version = 1
-          summary = "A Scala value cannot silently override equals or getClass."
+          summary = "Exercise declaration names that can override equals or getClass."
           exceptions = ["ReservedVariableNameError"]
           values = [
             "equals",

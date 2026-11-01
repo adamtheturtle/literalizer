@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Unsupported shapes fail before emitting invalid Elm syntax."
+summary = "Exercise invalid field names and incompatible field shapes in native records."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

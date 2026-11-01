@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "MATLAB SAFE hints select struct fields, whose names must begin with a letter (#6196)."
+summary = "Exercise mapping keys beginning with a nonletter under SAFE struct-field hints. (#6196)"
 exceptions = ["InvalidDictKeyError"]
 
 [call]

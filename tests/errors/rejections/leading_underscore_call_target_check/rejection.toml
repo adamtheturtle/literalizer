@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "The Elm grammar has no place for a leading underscore in a name."
+summary = "Exercise _check as a generated call target."
 exceptions = ["InvalidCallTargetError"]
 
 [call]

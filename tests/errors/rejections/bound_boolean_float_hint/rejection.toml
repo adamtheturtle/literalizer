@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Java boolean binding cannot initialize a double field."
+summary = "Exercise a boolean reference binding with an explicit floating-point hint."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

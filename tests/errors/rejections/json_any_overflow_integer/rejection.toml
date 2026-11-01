@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Crystal's JSON::Any#as_i exposes signed 64-bit integers only, so a
-value outside that range has no accessor to read it back.
-"""
+summary = "Exercise embedded JSON integers beyond a signed 64-bit accessor range."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

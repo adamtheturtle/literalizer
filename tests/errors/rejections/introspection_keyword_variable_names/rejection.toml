@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Crystal keywords that no local variable can name."
+summary = "Exercise introspection keywords as declaration names."
 exceptions = ["ReservedVariableNameError"]
 values = ["annotation", "instance_sizeof", "offsetof", "pointerof"]
 

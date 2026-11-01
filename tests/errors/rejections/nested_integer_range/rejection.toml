@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-The nested_list_beyond_i64 success case retains 2**70 unchanged (#6202).
-Nim's native signed 64-bit and V's native unsigned 64-bit carriers cannot
-represent it, including when it occurs beside a narrower nested sibling.
-"""
+summary = "Exercise large integers beside narrower nested siblings; the shared success case retains 2**70 unchanged. (#6202)"
 exceptions = ["UnrepresentableIntegerError"]
 
 [call]

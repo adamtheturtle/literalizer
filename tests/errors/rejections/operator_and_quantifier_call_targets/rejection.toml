@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Ada reserved words that no declaration can name as a call target."
+summary = "Exercise operator and quantifier keywords as generated call targets."
 exceptions = ["InvalidCallTargetError"]
 values = ["abs", "and", "parallel", "some"]
 

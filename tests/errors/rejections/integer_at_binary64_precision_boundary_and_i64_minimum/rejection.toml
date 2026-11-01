@@ -1,10 +1,5 @@
 schema_version = 1
-summary = """
-Elm's supported safe integer range is -(2**53 - 1) to 2**53 - 1.
-Both decimal and hexadecimal formats reject values outside it (#3683),
-including the signed 64-bit minimum previously special-cased by the
-raw formatter (#5196).
-"""
+summary = "Exercise binary64 precision boundaries together with the signed 64-bit minimum. (#3683, #5196)"
 exceptions = ["UnrepresentableIntegerError"]
 option = "integer_format"
 

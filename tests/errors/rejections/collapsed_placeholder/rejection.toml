@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-A COBOL data item is a fixed picture, so a value with nothing to put
-in one -- a zero-length literal, a null, an empty container -- is
-refused rather than written as the spaces it would collapse to.
-"""
+summary = "Exercise values that a fixed-width data item could collapse to spaces."
 exceptions = [
   "UnrepresentableEmptyDictError",
   "UnrepresentableInputError",

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A runtime C# call result cannot initialize a compile-time constant."
+summary = "Exercise a runtime call result bound as a compile-time constant."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

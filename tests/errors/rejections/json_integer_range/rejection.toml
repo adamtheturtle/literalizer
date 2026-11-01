@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Rust's serde_json::Value stores integers as i64 or u64. Reject wider
-integers before emitting a json! expression that panics at runtime.
-"""
+summary = "Exercise JSON value construction beyond signed and unsigned 64-bit integer ranges."
 exceptions = ["UnrepresentableIntegerError"]
 
 [call]

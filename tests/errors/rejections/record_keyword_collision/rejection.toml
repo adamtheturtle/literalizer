@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Crystal keyword field renaming must not merge distinct input keys."
+summary = "Exercise field escaping that can merge distinct input keys."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "D narrow-typed mode and the RECORD strategy are exclusive."
+summary = "Exercise record rendering together with narrow-typed collection mode."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

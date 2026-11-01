@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Resolved tuple references cannot nest inside the generated Haskell Val type."
+summary = "Exercise a nested tuple supplied through a bound reference."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

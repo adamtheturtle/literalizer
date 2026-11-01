@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-Zig refuses a parameter that shadows any file-scope declaration, which
-for a dotted target includes the helper each component declares
-(#4528).
-"""
+summary = "Exercise call parameters that can shadow helpers generated for a dotted target. (#4528)"
 exceptions = ["InvalidCallParameterNameError"]
 
 [call]

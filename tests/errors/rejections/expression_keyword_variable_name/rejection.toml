@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Swift expression keywords cannot name a declaration."
+summary = "Exercise expression keywords as declaration names."
 exceptions = ["ReservedVariableNameError"]
 values = ["Any", "Self", "as", "false", "in", "nil", "self", "true"]
 

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Crystal rejects fun as a wrapper module name."
+summary = "Exercise fun as a wrapper module name."
 exceptions = ["InvalidModuleNameError"]
 
 [call]

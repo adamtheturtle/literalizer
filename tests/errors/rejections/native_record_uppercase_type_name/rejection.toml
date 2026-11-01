@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Generated OCaml record types require a lowercase type name."
+summary = "Exercise an uppercase native record type name."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

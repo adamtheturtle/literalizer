@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Nim CONST rejects OBJECT_VARIANT at construction: the strategy renders
-runtime .toTable and @[] calls.
-"""
+summary = "Exercise constant declarations with a variant representation that needs runtime collection constructors."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

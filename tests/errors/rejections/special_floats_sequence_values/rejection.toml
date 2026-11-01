@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Jsonnet numbers are JSON numbers, so the non-finite floats have no
-literal to be written as and are not substituted with strings.
-"""
+summary = "Exercise IEEE special floating-point values inside sequences without replacing them with strings."
 exceptions = ["UnrepresentableSpecialFloatError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Java wrapped calls reject their generated module entrypoint."
+summary = "Exercise module as a wrapped call target."
 exceptions = ["InvalidCallTargetError"]
 
 [call]

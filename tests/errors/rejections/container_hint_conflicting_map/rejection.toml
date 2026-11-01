@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Rust tagged enums require one concrete empty-map type."
+summary = "Exercise conflicting concrete empty-map types in tagged values."
 exceptions = ["ValueError"]
 
 [call]

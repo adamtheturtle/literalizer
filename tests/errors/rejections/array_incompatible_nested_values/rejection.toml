@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-C++ ARRAY nested heterogeneous values require explicit variant-arm
-construction that the array renderer cannot currently represent.
-"""
+summary = "Exercise nested heterogeneous arrays that need explicit variant construction."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

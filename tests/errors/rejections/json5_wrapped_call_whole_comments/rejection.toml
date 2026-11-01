@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "JSON5 comments cannot be preserved in wrapped Erlang calls."
+summary = "Exercise JSON5 comments in a wrapped whole-document call."
 exceptions = ["UnsupportedCallShapeError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Python nested records with incompatible field shapes cannot share one annotation."
+summary = "Exercise nested records with incompatible field annotations."
 exceptions = ["HeterogeneousSiblingListsError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Java wrapper classes reject reserved identifiers."
+summary = "Exercise wrapper names that overlap keywords or builtin types."
 exceptions = ["InvalidModuleNameError"]
 values = ["Class", "Public", "Return", "_", "int", "record", "var", "yield"]
 

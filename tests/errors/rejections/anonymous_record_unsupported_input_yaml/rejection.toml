@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Invalid native shapes fail clearly instead of emitting bad F#."
+summary = "Exercise YAML shapes that anonymous record fields cannot represent."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

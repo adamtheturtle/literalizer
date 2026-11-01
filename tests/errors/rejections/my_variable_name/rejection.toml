@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Raku cannot use the declarator my as a variable name."
+summary = "Exercise my as a declaration name."
 exceptions = ["ReservedVariableNameError"]
 values = ["my"]
 

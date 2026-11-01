@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Zig JSON documents retain fractional epoch precision validation."
+summary = "Exercise fractional epoch precision in a JSON value representation."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

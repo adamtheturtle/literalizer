@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-A COBOL data name cannot begin or end with a hyphen, and an
-underscore is rendered as one, so a name touching either boundary is
-refused.
-"""
+summary = "Exercise identifier boundaries when underscores render as hyphens."
 exceptions = ["InvalidNewVariableNameError"]
 values = ["_x", "x-", "x_"]
 

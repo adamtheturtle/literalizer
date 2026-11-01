@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A Fortran name starts with a letter, so a leading underscore is not
-a name at all.
-"""
+summary = "Exercise a leading underscore where declaration identifiers must begin with a letter."
 exceptions = ["InvalidNewVariableNameError"]
 
 [call]

@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-The Haskell TUPLE sequence format has no form for a list nested where
-the value type is required.
-"""
+summary = "Exercise list values nested where a tuple sequence representation requires a scalar carrier."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

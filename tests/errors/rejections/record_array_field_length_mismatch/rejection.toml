@@ -1,10 +1,5 @@
 schema_version = 1
-summary = """
-Under C's RECORD strategy a field holding a list of one-shape records
-becomes a fixed-size struct array sized from the shape's first
-instance, so a later record of that shape whose list is a different
-length would overflow the array or silently under-fill it.
-"""
+summary = "Exercise a record-array field whose length changes between instances of one shape."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

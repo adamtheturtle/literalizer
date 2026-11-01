@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A stub cannot declare one parameter twice.  Ada compares identifiers
-without regard to case, so two spellings of one name collide there.
-"""
+summary = "Exercise duplicate parameter names, including case-insensitive collisions."
 exceptions = ["InvalidCallParameterNameError"]
 
 [call]

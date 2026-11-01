@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-An Odin field named after a builtin type shadows it inside the struct,
-and the compiler also reads not_in without its underscore.
-"""
+summary = "Exercise record field names that can shadow builtin types or collapse under identifier normalization."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A double quote in the JSON document would close the Crystal %(...)
-percent literal the JSON value type is written into.
-"""
+summary = "Exercise a double quote inside an embedded JSON percent literal."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

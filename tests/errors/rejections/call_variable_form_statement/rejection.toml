@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A COBOL CALL is a statement, so there is no expression to bind to a
-name.
-"""
+summary = "Exercise result bindings for a call that renders as a statement."
 exceptions = ["UnsupportedCallShapeError"]
 
 [call]

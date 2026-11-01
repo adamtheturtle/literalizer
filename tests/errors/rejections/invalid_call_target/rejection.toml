@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Python rejects empty, malformed, and reserved dotted call targets."
+summary = "Exercise empty, malformed, and reserved dotted call targets."
 exceptions = ["InvalidCallTargetError"]
 values = ["", ".", ".f", "1f", "bad-name", "class", "class.obj", "f.", "f..g", "obj.class"]
 

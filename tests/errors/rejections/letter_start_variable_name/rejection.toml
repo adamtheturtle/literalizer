@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "R symbols begin with a letter, so a leading underscore is a syntax error."
+summary = "Exercise declaration names whose first character is not a letter."
 exceptions = ["InvalidNewVariableNameError"]
 values = ["_", "__x", "_x"]
 

@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Java records are emitted as top-level types beside the class the module
-name declares, so the two cannot share an identifier.
-"""
+summary = "Exercise a record shape name sharing a declaration scope with the wrapper module."
 exceptions = ["InvalidRecordNameError"]
 
 [call]

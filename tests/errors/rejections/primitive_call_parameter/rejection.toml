@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Zig call parameter cannot shadow a primitive or the wrapper's main."
+summary = "Exercise parameter names that overlap primitives or the generated entrypoint."
 exceptions = ["InvalidCallParameterNameError"]
 values = ["_", "bool", "comptime_int", "f16", "i33", "main", "type", "u7", "void"]
 

@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A COBOL call argument is emitted as an alphanumeric literal like any
-other value, so it carries the same control-character limits (#4513).
-"""
+summary = "Exercise control characters in alphanumeric call arguments. (#4513)"
 exceptions = ["UnrepresentableStringError"]
 
 [call]

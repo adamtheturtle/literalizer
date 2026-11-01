@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Mojo rejects heterogeneous scalar, sibling-list and mixed-container shapes after JSON parsing."
+summary = "Exercise mixed scalar, sibling-list, and container shapes after JSON parsing."
 exceptions = ["HeterogeneousScalarCollectionError", "HeterogeneousSiblingListsError", "MixedDictValuesError", "MixedListValuesError"]
 
 [call]

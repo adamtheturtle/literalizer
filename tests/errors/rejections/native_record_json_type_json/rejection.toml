@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Gleam concrete records and the JSON value backend are distinct output modes."
+summary = "Exercise concrete record rendering together with a JSON value backend."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

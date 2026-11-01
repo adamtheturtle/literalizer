@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A string value carrying |] closes the aesonQQ quasiquote the Haskell
-JSON value type is written into, mid-document.
-"""
+summary = "Exercise a quasiquote terminator inside an embedded JSON string."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Roc variable declarations cannot use uppercase tag names."
+summary = "Exercise uppercase declaration names where that syntax can denote a tag."
 exceptions = ["InvalidNewVariableNameError"]
 values = ["Record0"]
 

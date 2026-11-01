@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "PowerShell hash tables and ordered dictionaries do not accept null keys."
+summary = "Exercise null keys in hash tables and ordered dictionaries."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

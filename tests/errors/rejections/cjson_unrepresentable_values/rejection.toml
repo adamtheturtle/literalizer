@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-A cJSON number is a C double printed to 15 significant digits, and a
-cJSON string ends at the first null byte, so each of these inputs
-comes back as something else.
-"""
+summary = "Exercise cJSON number precision and null-terminated string restrictions."
 exceptions = ["UnrepresentableInputError"]
 option = "json_type"
 

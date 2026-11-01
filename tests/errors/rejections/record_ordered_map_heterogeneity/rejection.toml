@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "V ordered-map record fields retain their heterogeneous scalar rejection policy."
+summary = "Exercise heterogeneous scalar types inside ordered-map record fields."
 exceptions = ["HeterogeneousScalarCollectionError"]
 
 [call]

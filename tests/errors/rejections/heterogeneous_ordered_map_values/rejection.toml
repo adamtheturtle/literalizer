@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Rust ordered maps use one concrete value type, so values with incompatible
-nested collection types must be rejected before emitting invalid Rust.
-"""
+summary = "Exercise ordered-map values with incompatible nested collection types."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

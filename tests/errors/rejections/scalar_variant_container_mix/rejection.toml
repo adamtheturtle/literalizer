@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Mojo scalar VARIANT alternatives cannot include raw collection values."
+summary = "Exercise raw collections beside scalar alternatives in variant rendering."
 exceptions = ["MixedListValuesError"]
 
 [call]

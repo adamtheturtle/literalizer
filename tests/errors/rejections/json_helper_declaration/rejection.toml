@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Zig json declaration bindings cannot shadow the mode's helpers."
+summary = "Exercise a binding name that overlaps a helper emitted by the JSON value representation."
 exceptions = ["ReservedVariableNameError"]
 values = ["allocator", "std"]
 

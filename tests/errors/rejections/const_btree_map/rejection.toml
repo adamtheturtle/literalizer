@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Rust CONST rejects a dict under BTREE_MAP too: BTreeMap::from is as
-non-constant as HashMap::from.
-"""
+summary = "Exercise constant declarations whose ordered-map initializer uses a runtime factory."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

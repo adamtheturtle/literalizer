@@ -9,25 +9,15 @@ from collections.abc import Callable
 
 import pytest
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, LanguageCls, literalize
 from literalizer.exceptions import (
     JSON5ParseError,
     ParseError,
     TOMLParseError,
     YAMLParseError,
 )
-from literalizer.languages import Python
 
 type ParseErrorType = type[ParseError]
-
-PYTHON = Python(
-    date_format=Python.date_formats.PYTHON,
-    datetime_format=Python.datetime_formats.PYTHON,
-    bytes_format=Python.bytes_formats.HEX,
-    sequence_format=Python.sequence_formats.TUPLE,
-    set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.NEVER,
-)
 
 
 def _json5_value(*, surrogate: str) -> str:
@@ -81,6 +71,7 @@ def test_unpaired_surrogates_raise_parse_error(
     error_type: ParseErrorType,
     source_factory: Callable[..., str],
     surrogate_code_point: int,
+    language_cls: LanguageCls,
 ) -> None:
     """Every parser rejects lone high and low surrogates recursively."""
     surrogate = chr(surrogate_code_point)
@@ -91,11 +82,13 @@ def test_unpaired_surrogates_raise_parse_error(
         _ = literalize(
             source=source_factory(surrogate=surrogate),
             input_format=input_format,
-            language=PYTHON,
+            language=language_cls(),
         )
 
 
-def test_unpaired_surrogate_in_toml_comment_raises_parse_error() -> None:
+def test_unpaired_surrogate_in_toml_comment_raises_parse_error(
+    language_cls: LanguageCls,
+) -> None:
     """Preserved source comments cannot put a surrogate in output code."""
     with pytest.raises(
         expected_exception=TOMLParseError,
@@ -104,5 +97,5 @@ def test_unpaired_surrogate_in_toml_comment_raises_parse_error() -> None:
         _ = literalize(
             source=f'value = "safe" # {chr(0xD800)}',
             input_format=InputFormat.TOML,
-            language=PYTHON,
+            language=language_cls(),
         )

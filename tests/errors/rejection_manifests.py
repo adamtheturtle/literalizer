@@ -1,11 +1,9 @@
 """Load and validate language-independent rejection scenarios.
 
-A rejection manifest names one thing a language refuses to represent --
-non-string JSON object keys, a record name that is not PascalCase --
-and the call that provokes the refusal.  The suite expands it across
-every language the manifest's gates admit, so a rejection that holds
-for a family of languages is declared once and a language joining that
-family is covered the day it lands.
+A manifest describes input values and API options. The suite records how
+each applicable language handles that scenario, including both accepted
+calls and exact errors. Capability gates and enum declarations determine
+which combinations apply, so new implementations join without owner lists.
 
 The manifest never carries the message a language raises with.  That
 is kept in a golden file next to the manifest, which is itself TOML so
@@ -104,10 +102,9 @@ def _language_class_name(language_cls: literalizer.LanguageCls, /) -> str:
     return language_cls.__name__
 
 
-LANGUAGES_BY_NAME: Mapping[str, literalizer.LanguageCls] = {
-    lang_cls.__name__: lang_cls
-    for lang_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
-}
+LANGUAGE_CLASSES: tuple[literalizer.LanguageCls, ...] = tuple(
+    sorted(ALL_LANGUAGES, key=_language_class_name)
+)
 
 _EXCEPTIONS_BY_NAME: Mapping[str, type[Exception]] = {
     name: value
@@ -160,7 +157,7 @@ type RejectionInputFormat = Annotated[
     ),
 ]
 type DeclaredName = Annotated[str, Field(min_length=1)]
-"""A name a manifest spells: a language, an enum member, a parameter."""
+"""A name a manifest spells: an enum member or a parameter."""
 
 type DeclaredNames = Annotated[tuple[DeclaredName, ...], Field(strict=False)]
 """Several of those, spelled as a TOML array."""
@@ -363,7 +360,7 @@ class CallSpec(  # noqa: NOD001
     modifiers: Annotated[tuple[DeclaredName, ...], Field(strict=False)] = (
         Field(default_factory=_no_names)
     )
-    modifier_language: DeclaredName | None = None
+    modifier_source: Literal["target", "all"] = "target"
     target_function: str | None = None
     parameter_names: Annotated[
         tuple[DeclaredName, ...],
@@ -438,20 +435,16 @@ class CallSpec(  # noqa: NOD001
         ):
             msg = "modifiers require a new or both variable form"
             raise ValueError(msg)
-        _ = self._validate_modifier_language()
+        _ = self._validate_modifier_source()
         _ = self._validate_call_only_arguments()
         _ = self._validate_call_transform()
         return self
 
-    def _validate_modifier_language(self) -> Self:
-        """Require a known modifier owner and at least one modifier."""
-        if self.modifier_language is not None:
-            if len(self.modifiers) == 0:
-                msg = "modifier_language requires modifiers"
-                raise ValueError(msg)
-            if self.modifier_language not in LANGUAGES_BY_NAME:
-                msg = f"unknown modifier language {self.modifier_language!r}"
-                raise ValueError(msg)
+    def _validate_modifier_source(self) -> Self:
+        """Require modifier names when expanding their enum sources."""
+        if self.modifier_source == "all" and len(self.modifiers) == 0:
+            msg = "modifier_source = 'all' requires modifiers"
+            raise ValueError(msg)
         return self
 
     def _validate_call_only_arguments(self) -> Self:

@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-D narrow-typed mode gives a collection one element or value type, which
-mixed values do not share and an empty collection does not supply.
-"""
+summary = "Exercise mixed and empty collections without a common inferred type in narrow mode."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

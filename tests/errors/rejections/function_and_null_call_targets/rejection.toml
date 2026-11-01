@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Cobol reserved words that no program name or data name can take as a call target."
+summary = "Exercise function and null as generated call targets."
 exceptions = ["InvalidCallTargetError"]
 values = ["function", "null"]
 

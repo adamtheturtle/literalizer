@@ -1,4 +1,4 @@
-"""Golden-file tests for the declared per-language rejections.
+"""Golden-file tests for shared rejection scenarios.
 
 Each manifest runs its call against every applicable language and records
 acceptance or the exact exception and message in ``expected.toml``.
@@ -27,7 +27,6 @@ from tomlkit.items import InlineTable
 
 import literalizer
 from literalizer.exceptions import LiteralizerError, ParseError
-from literalizer.languages import Python
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import CallTransform
 from tests.integration.golden_checks import check_golden
@@ -38,7 +37,6 @@ from .rejection_cases import (
     rejection_cases,
 )
 from .rejection_manifests import (
-    LANGUAGES_BY_NAME,
     REJECTIONS_DIR,
     CallSpec,
     ErrorAttributes,
@@ -175,6 +173,7 @@ def _variable_form(
     *,
     call: CallSpec,
     lang_cls: literalizer.LanguageCls,
+    modifier_cls: literalizer.LanguageCls,
     value: str | None,
 ) -> (
     literalizer.NewVariable
@@ -184,19 +183,14 @@ def _variable_form(
 ):
     """Return the variable form a rendering case declares its value in.
 
-    Modifiers are resolved against the language rather than declared as
-    values, so a manifest naming ``CONST`` covers every language whose
-    declarations take one.  A language with no named variables to bind
-    to renders the value on its own, which is the only form it has.
+    Modifier members resolve against the enum source selected by the
+    case expansion. A manifest naming ``CONST`` can use the target enum
+    or every enum declaring that member. A target without variable names
+    renders the value on its own.
     Explicit ``none`` renders a bare value even for languages with names;
     an omitted form preserves the legacy default declaration.
     """
     name = substituted(template=call.variable_name, value=value)
-    modifier_cls = (
-        lang_cls
-        if call.modifier_language is None
-        else LANGUAGES_BY_NAME[call.modifier_language]
-    )
     modifiers = frozenset(
         enum_member_by_name(
             enum_cls=modifier_cls.Modifiers, name=modifier_name
@@ -251,6 +245,7 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     variable_form = _variable_form(
         call=call,
         lang_cls=lang_cls,
+        modifier_cls=case.modifier_cls,
         value=case.value,
     )
     ref_case = None
@@ -406,17 +401,16 @@ def test_rejection_messages(
 
 
 @pytest.mark.parametrize(
-    argnames=("declaration", "expected"),
-    argvalues=[
-        ({}, literalizer.NewVariable(name="my_data", modifiers=frozenset())),
-        ({"variable_form": "none"}, None),
-    ],
+    argnames="declaration",
+    argvalues=[{}, {"variable_form": "none"}],
 )
 def test_explicit_absence_preserves_omitted_default(
     declaration: dict[str, str],
-    expected: literalizer.NewVariable | None,
+    language_cls: literalizer.LanguageCls,
 ) -> None:
-    """An explicit bare value differs from the legacy implicit declaration."""
+    """Bare values and declarations follow each language's
+    capabilities.
+    """
     call = CallSpec.model_validate(
         obj={
             "api": "literalize",
@@ -425,7 +419,20 @@ def test_explicit_absence_preserves_omitted_default(
             **declaration,
         },
     )
-    assert _variable_form(call=call, lang_cls=Python, value=None) == expected
+    expected = None
+    if len(declaration) == 0 and language_cls.supports_variable_names:
+        expected = literalizer.NewVariable(
+            name="my_data", modifiers=frozenset()
+        )
+    assert (
+        _variable_form(
+            call=call,
+            lang_cls=language_cls,
+            modifier_cls=language_cls,
+            value=None,
+        )
+        == expected
+    )
 
 
 @pytest.mark.parametrize(

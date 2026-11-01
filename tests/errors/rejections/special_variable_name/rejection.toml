@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Common Lisp declaration cannot name a locked special variable."
+summary = "Exercise locked runtime variables as declaration names."
 exceptions = ["ReservedVariableNameError"]
 values = ["Package", "features", "package", "print-base", "standard-output"]
 

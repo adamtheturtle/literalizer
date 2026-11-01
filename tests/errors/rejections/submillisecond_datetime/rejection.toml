@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "JavaScript Date rejects datetime precision below one millisecond."
+summary = "Exercise native datetime precision finer than one millisecond."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

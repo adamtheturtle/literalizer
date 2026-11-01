@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Jsonnet keyword cannot name the object field a dotted call target declares."
+summary = "Exercise keywords as fields declared for dotted call targets."
 exceptions = ["InvalidCallTargetError"]
 values = ["assert", "else", "error", "false", "for", "function", "if", "import", "importbin", "importstr", "in", "local", "null", "self", "super", "tailstrict", "then", "true"]
 

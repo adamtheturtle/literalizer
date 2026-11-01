@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A bare underscore is reserved in a Mojo parameter declaration."
+summary = "Exercise a single underscore as a call parameter name."
 exceptions = ["InvalidCallParameterNameError"]
 values = ["_"]
 

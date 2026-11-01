@@ -5,14 +5,15 @@ These values cannot be declared in a rejection manifest.
 
 import pytest
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, LanguageCls, literalize
 from literalizer.exceptions import InvalidValueInputError
-from literalizer.languages import Python
 
 type _RecursiveIntValue = int | list[_RecursiveIntValue]
 
 
-def test_cyclic_supplemental_values_raise_typed_error() -> None:
+def test_cyclic_supplemental_values_raise_typed_error(
+    language_cls: LanguageCls,
+) -> None:
     """Cyclic Python-value arguments never leak ``RecursionError``."""
     cycle: list[_RecursiveIntValue] = []
     cycle.append(cycle)
@@ -24,7 +25,7 @@ def test_cyclic_supplemental_values_raise_typed_error() -> None:
         _ = literalize(
             source="1",
             input_format=InputFormat.JSON,
-            language=Python(),
+            language=language_cls(),
             ref_values={"value": cycle},
         )
     with pytest.raises(
@@ -34,7 +35,7 @@ def test_cyclic_supplemental_values_raise_typed_error() -> None:
         _ = literalize(
             source="1",
             input_format=InputFormat.JSON,
-            language=Python(),
+            language=language_cls(),
             bound_refs={"value": cycle},
         )
     with pytest.raises(
@@ -44,12 +45,14 @@ def test_cyclic_supplemental_values_raise_typed_error() -> None:
         _ = literalize(
             source="1",
             input_format=InputFormat.JSON,
-            language=Python(),
+            language=language_cls(),
             record_null_substitutions={"value": cycle},
         )
 
 
-def test_deep_supplemental_value_raises_typed_error() -> None:
+def test_deep_supplemental_value_raises_typed_error(
+    language_cls: LanguageCls,
+) -> None:
     """Deep cycle-free Python values avoid leaking recursion errors."""
     value: _RecursiveIntValue = 0
     for _ in range(2_000):
@@ -65,6 +68,6 @@ def test_deep_supplemental_value_raises_typed_error() -> None:
         _ = literalize(
             source="1",
             input_format=InputFormat.JSON,
-            language=Python(),
+            language=language_cls(),
             ref_values={"value": value},
         )

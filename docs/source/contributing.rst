@@ -247,6 +247,10 @@ A new language joining those gates is covered automatically.
 Languages lacking an enum member or declaration modifier needed to express the call do not contribute that combination.
 This selection reads option declarations, without executing the call to decide whether it belongs.
 
+Declaration modifiers normally resolve against the target's enum.
+``modifier_source = "all"`` repeats the call using every enum that declares the requested modifier names, covering both local and foreign modifier ownership without naming an implementation in the manifest.
+Those cases add a ``['modifiers=Owner']`` part to the golden identifier, so distinct enum sources cannot overwrite each other's results.
+
 ``api`` is ``constructor``, ``literalize``, or ``literalize_call``, and the loader rejects an argument the named API does not take.
 Each type in ``exceptions`` must occur in at least one case, keeping a scenario from silently losing the rejection it covers.
 Other public Literalizer errors are recorded with their exact types and messages too; unexpected exceptions escape the runner.

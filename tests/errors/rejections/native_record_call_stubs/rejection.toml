@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Wrapped call stubs assume the generic value type, which Gleam and OCaml
-concrete record modes do not define.
-"""
+summary = "Exercise wrapped call stubs with concrete record types and generic parameter carriers."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

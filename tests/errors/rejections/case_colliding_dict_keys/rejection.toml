@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "PowerShell hash-table string keys compare case-insensitively."
+summary = "Exercise mapping keys that compare equal without regard to case."
 exceptions = ["InvalidDictKeyError"]
 
 [call]

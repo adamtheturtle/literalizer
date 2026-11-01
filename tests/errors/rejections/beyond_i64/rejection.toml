@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-Nix integers are 64-bit signed, so a wider value is refused rather
-than routed through builtins.fromJSON, which floats or throws on it
-(#4503).
-"""
+summary = "Exercise integer values outside the signed 64-bit range. (#4503)"
 exceptions = ["UnrepresentableIntegerError"]
 
 [call]
