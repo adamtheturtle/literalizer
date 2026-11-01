@@ -48,7 +48,7 @@ from literalizer.exceptions import (
 from tests.enum_members import enum_member_by_name
 from tests.yaml_support import as_yaml_parser
 
-from .call_cases import _call_stub_spec
+from .call_cases import call_stub_spec
 from .case_manifests import (
     REF_DEFAULT_OWNER,
     REF_OWNER,
@@ -513,7 +513,7 @@ def _compose_ref_consumer(
     parameters = ("arg_value",)
     target = tuple(consumer.target_function.split(sep="."))
     stub_spec = (
-        _call_stub_spec(spec=spec, argument_values=([stub_data],))
+        call_stub_spec(spec=spec, argument_values=([stub_data],))
         if expression
         else spec
     )
