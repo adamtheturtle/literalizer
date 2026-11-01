@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Java wrapped calls reject their generated module entrypoint."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Java"]
 
 [call]
 api = "literalize_call"

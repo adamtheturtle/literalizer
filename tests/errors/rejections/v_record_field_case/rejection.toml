@@ -4,7 +4,6 @@ V holds a struct field name to snake case: no uppercase letter, and no
 leading underscore beyond the blank name.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["V"]
 
 [call]
 api = "literalize"

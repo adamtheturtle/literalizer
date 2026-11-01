@@ -4,7 +4,6 @@ A record named after a type the generated Java itself uses either
 shadows a java.lang type or clashes with the import naming it.
 """
 exceptions = ["InvalidRecordNameError"]
-languages = ["Java"]
 values = ["Integer", "Map", "Object", "String"]
 
 [call]

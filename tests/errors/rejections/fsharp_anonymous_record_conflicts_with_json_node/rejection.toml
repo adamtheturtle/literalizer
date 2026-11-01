@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "The two independent representations cannot be selected together."
 exceptions = ["UnrepresentableInputError"]
-languages = ["FSharp"]
 
 [call]
 api = "literalize"

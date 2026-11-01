@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Nix division by zero is an evaluation error, not NaN."
 exceptions = ["UnrepresentableSpecialFloatError"]
-languages = ["Nix"]
 
 [call]
 api = "literalize"

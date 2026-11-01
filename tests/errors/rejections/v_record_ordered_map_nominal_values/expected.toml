@@ -1,5 +1,37 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 6; languages accepting: 10
+
+[Accepted]
+"CSharp['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = ""
+"CSharp['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = ""
+"Crystal['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = ""
+"Crystal['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = ""
+"Go['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = ""
+"Go['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = ""
+"Java['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = ""
+"Java['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = ""
+"Kotlin['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = ""
+"Kotlin['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = ""
+"Odin['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = ""
+"Odin['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = ""
+"Python['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = ""
+"Python['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = ""
+"Scala['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = ""
+"Scala['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = ""
+"Swift['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = ""
+"Swift['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = ""
+"Zig['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = ""
+"Zig['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = ""
 
 [UnrepresentableInputError]
+"C['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = "C cannot represent a record-shaped dict (or a list whose every element is one) nested under a non-record container -- a non-all-record list, a non-record dict, an ordered map, or a set -- under the RECORD heterogeneous strategy: it renders as a generated struct, which is not a CVal union member, so it is representable only as a record-field value, an element of such a field's struct array, or the document root (cf. the set / non-record-dict field boundary tracked in #2317)"
+"C['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = "C cannot represent a record-shaped dict (or a list whose every element is one) nested under a non-record container -- a non-all-record list, a non-record dict, an ordered map, or a set -- under the RECORD heterogeneous strategy: it renders as a generated struct, which is not a CVal union member, so it is representable only as a record-field value, an element of such a field's struct array, or the document root (cf. the set / non-record-dict field boundary tracked in #2317)"
+"Cpp['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = "Cpp cannot represent a record as the value of a mapping that is not itself a record under the RECORD heterogeneous strategy: the mapping's value type is inferred from the dict the record was written from, so it would name a map where the literal writes a struct"
+"Cpp['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = "Cpp cannot represent a record as the value of a mapping that is not itself a record under the RECORD heterogeneous strategy: the mapping's value type is inferred from the dict the record was written from, so it would name a map where the literal writes a struct"
+"D['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
+"D['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
+"Nim['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = "Nim cannot represent a set or non-record-dict field under the RECORD heterogeneous strategy"
+"Nim['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = "Nim cannot represent a set or non-record-dict field under the RECORD heterogeneous strategy"
+"Rust['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = "Rust ordered maps require one concrete value type; these values have incompatible collection types"
+"Rust['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = "Rust cannot represent a non-record dict (empty, non-string-keyed, or an ordered map) as a field under the RECORD heterogeneous strategy"
 "V['values: !!omap\\n  - first: {x: 1}\\n  - second: {y: s}\\nflag: true\\n']" = "V cannot represent ordered-map values with multiple native record types under the RECORD heterogeneous strategy"
 "V['values: !!omap\\n  - first: {x: 1}\\n  - second: {x: 2147483648}\\nflag: true\\n']" = "V cannot represent ordered-map values with multiple native record types under the RECORD heterogeneous strategy"

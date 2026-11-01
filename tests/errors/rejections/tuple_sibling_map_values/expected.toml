@@ -1,7 +1,37 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 3; languages accepting: 10
+
+[Accepted]
+"CSharp['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = ""
+"CSharp['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = ""
+"Crystal['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = ""
+"Crystal['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = ""
+"Dart['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = ""
+"Dart['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = ""
+"Elixir['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = ""
+"Elixir['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = ""
+"Erlang['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = ""
+"Erlang['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = ""
+"Julia['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = ""
+"Julia['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = ""
+"Kotlin['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = ""
+"Kotlin['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = ""
+"Python['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = ""
+"Python['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = ""
+"Swift['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = ""
+"Swift['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = ""
+"TypeScript['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = ""
+"TypeScript['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = ""
 
 [HeterogeneousSiblingMapsError]
 "Rust['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
 "Rust['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
 "Rust['TUPLE_NESTED_VEC']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
 "Rust['TUPLE_NESTED_VEC']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+
+[IncompatibleFormatsError]
+"Haskell['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT. Use LIST or select the Aeson JSON type."
+"Haskell['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT. Use LIST or select the Aeson JSON type."
+
+[UnrepresentableInputError]
+"Gleam['TUPLE']['{\"first\":{\"items\":[1,{\"value\":2}]},\"second\":{\"items\":[1,{\"value\":\"s\"}]}}']" = "Gleam nested sequences require sequence_format=LIST"
+"Gleam['TUPLE']['{\"second\":{\"items\":[1,{\"value\":\"s\"}]},\"first\":{\"items\":[1,{\"value\":2}]}}']" = "Gleam nested sequences require sequence_format=LIST"

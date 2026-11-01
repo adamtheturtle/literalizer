@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Distinct byte and string set members must remain distinct after rendering."
 exceptions = ["TargetScalarCollisionError"]
-languages = ["JavaScript"]
 
 [call]
 api = "literalize"

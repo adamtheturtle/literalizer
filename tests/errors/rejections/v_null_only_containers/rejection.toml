@@ -7,7 +7,6 @@ and #3018).  The INTERFACE and RECORD strategies wrap each null and
 accept the same inputs.
 """
 exceptions = ["NullInCollectionError"]
-languages = ["V"]
 
 [call]
 api = "literalize"

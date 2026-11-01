@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Java native maps and sets reject null keys and members."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

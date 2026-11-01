@@ -5,7 +5,6 @@ span lines, so a string value carrying a tab, newline or carriage
 return is refused rather than silently turned into spaces (#4513).
 """
 exceptions = ["UnrepresentableStringError"]
-languages = ["Cobol"]
 
 [call]
 api = "literalize"

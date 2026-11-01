@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Haskell tuple-valued arguments cannot fit generated Val parameters."
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Haskell"]
 
 [call]
 api = "literalize_call"

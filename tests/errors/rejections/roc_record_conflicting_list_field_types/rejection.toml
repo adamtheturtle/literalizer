@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A Roc list cannot mix records with conflicting field types."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Roc"]
 
 [call]
 api = "literalize"

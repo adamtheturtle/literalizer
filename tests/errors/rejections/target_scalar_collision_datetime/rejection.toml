@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Distinct datetime and integer collection scalars must remain distinct after rendering."
 exceptions = ["TargetScalarCollisionError"]
-languages = ["JavaScript"]
 
 [call]
 api = "literalize"

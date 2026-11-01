@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A Jsonnet keyword cannot name the local binding a call target declares."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Jsonnet"]
 values = ["assert", "else", "error", "false", "for", "function", "if", "import", "importbin", "importstr", "in", "local", "null", "self", "super", "tailstrict", "then", "true"]
 
 [call]

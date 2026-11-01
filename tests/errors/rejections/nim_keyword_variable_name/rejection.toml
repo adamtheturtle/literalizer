@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Nim operator keywords and ``yield``, which no ``let`` can name."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Nim"]
 values = ["isnot", "notin", "yield"]
 
 [call]

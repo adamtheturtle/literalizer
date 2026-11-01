@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A companion source must contain one value per generated call."
 exceptions = ["ZipValuesLengthMismatchError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

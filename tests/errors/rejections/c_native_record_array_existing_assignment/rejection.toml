@@ -5,7 +5,6 @@ instead of emitting a CVal array initializer containing generated structs.
 The declaration-only record-array cases remain compiling goldens (#5236).
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["C"]
 
 [call]
 api = "literalize"

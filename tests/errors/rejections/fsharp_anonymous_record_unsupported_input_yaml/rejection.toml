@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Invalid native shapes fail clearly instead of emitting bad F#."
 exceptions = ["UnrepresentableInputError"]
-languages = ["FSharp"]
 
 [call]
 api = "literalize"

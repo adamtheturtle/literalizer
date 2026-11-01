@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A selected input-root key requires the parsed root to be a mapping."
 exceptions = ["InputRootNotMappingError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

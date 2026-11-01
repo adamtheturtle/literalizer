@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Scala using clauses make using invalid as a generated call parameter."
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["Scala"]
 
 [call]
 api = "literalize_call"

@@ -4,7 +4,6 @@ A call argument goes through the same Odin raw-string rule as a
 declared value, so a backtick in one is refused there too.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Odin"]
 
 [call]
 api = "literalize_call"

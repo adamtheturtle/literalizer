@@ -1,4 +1,5 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 0
 
 [IncompatibleFormatsError]
 Gleam = "Gleam records require sequence_format=LIST"
+Haskell = "Haskell records require sequence_format=LIST"

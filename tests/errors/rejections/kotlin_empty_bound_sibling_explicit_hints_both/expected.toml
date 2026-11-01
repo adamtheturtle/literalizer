@@ -1,4 +1,8 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 1
+
+[Accepted]
+Swift = ""
 
 [UnrepresentableInputError]
+Java = "cannot represent the dict key '$ref' as a lexical field identifier under the RECORD heterogeneous strategy"
 Kotlin = "Kotlin cannot represent explicit type hints for sibling sequences that mix empty and non-empty values"

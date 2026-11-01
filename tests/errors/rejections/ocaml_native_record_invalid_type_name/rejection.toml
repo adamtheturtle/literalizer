@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Generated OCaml record types require a lowercase type name."
 exceptions = ["UnrepresentableInputError"]
-languages = ["OCaml"]
 
 [call]
 api = "literalize"

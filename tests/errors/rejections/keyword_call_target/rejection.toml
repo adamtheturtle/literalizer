@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A keyword cannot lead a call target."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Go", "Java", "JavaScript", "Kotlin", "Python", "Rust", "Swift", "TypeScript"]
 
 [call]
 api = "literalize_call"

@@ -4,7 +4,6 @@ Rust ordered-map values share one array type even under the RECORD strategy,
 so differently sized arrays remain unrepresentable.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

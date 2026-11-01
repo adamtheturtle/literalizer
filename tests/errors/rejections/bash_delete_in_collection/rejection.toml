@@ -6,7 +6,6 @@ associative array uses, so a string in a collection loses its
 value (#4462).
 """
 exceptions = ["UnrepresentableStringError"]
-languages = ["Bash"]
 
 [call]
 api = "literalize"

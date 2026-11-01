@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A YAML set mixing dates and datetimes is heterogeneous."
 exceptions = ["HeterogeneousCollectionError"]
-languages = ["Mojo"]
 
 [call]
 api = "literalize"

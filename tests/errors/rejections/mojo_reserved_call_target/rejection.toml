@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Mojo keywords that no declaration can name as a call target."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Mojo"]
 values = ["case", "lambda", "match"]
 
 [call]

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Resolved tuple references cannot nest inside the generated Haskell Val type."
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Haskell"]
 
 [call]
 api = "literalize"

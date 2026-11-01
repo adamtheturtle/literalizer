@@ -5,7 +5,6 @@ in-range negative sibling that renders fine as a scalar cannot be
 represented inside the unsigned element type.
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Go"]
 
 [call]
 api = "literalize"

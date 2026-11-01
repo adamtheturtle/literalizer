@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Rust record widening cannot name container-valued map variants."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

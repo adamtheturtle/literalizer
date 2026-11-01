@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "JSON nesting failures use a typed parse error."
 exceptions = ["JSONParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

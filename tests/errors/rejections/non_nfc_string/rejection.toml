@@ -5,7 +5,6 @@ NFG-normalized by definition, so a decomposed sequence comes back
 precomposed however the literal is spelled.
 """
 exceptions = ["UnrepresentableStringError"]
-languages = ["Hcl", "Raku"]
 
 [call]
 api = "literalize"

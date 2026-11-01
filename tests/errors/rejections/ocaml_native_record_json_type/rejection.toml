@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "OCaml concrete records and the JSON value backend are distinct output modes."
 exceptions = ["IncompatibleFormatsError"]
-languages = ["OCaml"]
 
 [call]
 api = "literalize"

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Finality does not make a checked Jackson field initializer valid."
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

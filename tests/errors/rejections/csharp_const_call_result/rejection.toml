@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A runtime C# call result cannot initialize a compile-time constant."
 exceptions = ["IncompatibleFormatsError"]
-languages = ["CSharp"]
 
 [call]
 api = "literalize_call"

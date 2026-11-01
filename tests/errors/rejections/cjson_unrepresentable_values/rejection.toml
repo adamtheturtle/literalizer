@@ -5,7 +5,6 @@ cJSON string ends at the first null byte, so each of these inputs
 comes back as something else.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["C", "Cobol"]
 option = "json_type"
 
 [call]

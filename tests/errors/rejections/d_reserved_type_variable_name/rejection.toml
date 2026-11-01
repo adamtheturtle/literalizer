@@ -1,7 +1,6 @@
           schema_version = 1
           summary = "D built-in type names cannot be used as variable names."
           exceptions = ["ReservedVariableNameError"]
-          languages = ["D"]
           values = [
             "idouble",
 "ifloat",

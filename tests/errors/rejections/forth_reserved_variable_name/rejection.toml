@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Forth control-structure words cannot be used as variable names."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Forth"]
 values = [
   "BEGIN",
   "DO",

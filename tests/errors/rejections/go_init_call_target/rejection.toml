@@ -5,7 +5,6 @@ cannot be referenced at all, so a generated stub named after it
 neither declares nor calls (#4493).
 """
 exceptions = ["InvalidCallTargetError"]
-languages = ["Go"]
 
 [call]
 api = "literalize_call"

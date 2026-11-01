@@ -6,7 +6,6 @@ instance, so a later record of that shape whose list is a different
 length would overflow the array or silently under-fill it.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["C"]
 
 [call]
 api = "literalize"

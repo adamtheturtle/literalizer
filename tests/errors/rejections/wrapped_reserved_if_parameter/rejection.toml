@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Wrapped positional stubs reject if as a reserved parameter name."
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["Occam", "Zig"]
 
 [call]
 api = "literalize_call"

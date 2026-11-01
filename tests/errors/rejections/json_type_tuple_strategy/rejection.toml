@@ -15,10 +15,3 @@ api = "constructor"
 kwargs = [
   { kind = "option_member", option = "heterogeneous_strategy", member = "TUPLE" },
 ]
-
-[[accepts]]
-languages = ["Rust", "Scala"]
-reason = """
-Renders tuples alongside the JSON value type rather than instead of it,
-so the two settings compose.
-"""

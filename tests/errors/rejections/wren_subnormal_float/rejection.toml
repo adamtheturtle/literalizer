@@ -4,7 +4,6 @@ The Wren lexer reports a subnormal literal as out of range, and Wren
 has no hexadecimal float form to spell one another way (#4489).
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Wren"]
 
 [call]
 api = "literalize"

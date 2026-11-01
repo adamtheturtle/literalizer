@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "IEEE 1800-2017 keywords that no SystemVerilog declaration can name as a call target."
 exceptions = ["InvalidCallTargetError"]
-languages = ["SystemVerilog"]
 values = ["and", "assert", "before", "let", "new", "not", "null", "or"]
 
 [call]

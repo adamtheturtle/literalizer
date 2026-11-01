@@ -10,7 +10,6 @@ exceptions = [
   "MixedDictShapesError",
   "UnrepresentableInputError",
 ]
-languages = ["Dhall", "Mojo", "Nim", "Rust", "V"]
 
 [call]
 api = "literalize"

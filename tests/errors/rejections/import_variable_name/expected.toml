@@ -1,5 +1,15 @@
 # languages rejecting: 7; languages accepting: 8
 
+[Accepted]
+Ada = ""
+C = ""
+Cpp = ""
+Crystal = ""
+Erlang = ""
+FSharp = ""
+ObjectiveC = ""
+Occam = ""
+
 [ReservedVariableNameError]
 D = "D cannot use NewVariable name 'import': it is a reserved identifier"
 Fortran = "Fortran cannot use NewVariable name 'import': it is a reserved identifier"

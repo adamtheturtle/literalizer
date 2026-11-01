@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A wrapped bare value cannot emit the declaration required by its bound reference."
 exceptions = ["RefNotSelfContainedError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

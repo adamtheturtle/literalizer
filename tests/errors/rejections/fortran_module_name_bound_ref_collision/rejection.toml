@@ -5,7 +5,6 @@ names, so one named after the wrapper declares the name twice, exactly
 as the output binding does (#4752).
 """
 exceptions = ["ModuleNameVariableCollisionError"]
-languages = ["Fortran"]
 
 [call]
 api = "literalize"

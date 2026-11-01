@@ -5,7 +5,6 @@ so on, so a value variant taking one of those names would shadow a
 declaration the same file may emit.
 """
 exceptions = ["InvalidRecordNameError"]
-languages = ["Cpp"]
 
 [call]
 api = "constructor"

@@ -6,7 +6,6 @@ declarations they stand for would collide.  The second source reaches
 the same check through a call argument.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

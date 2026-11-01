@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Lua rejects null and NaN mapping keys and set members."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Lua"]
 
 [call]
 api = "literalize"

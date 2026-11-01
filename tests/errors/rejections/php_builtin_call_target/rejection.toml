@@ -6,7 +6,6 @@ not load, and PHP matches a function name without regard to case
 (#4495).
 """
 exceptions = ["InvalidCallTargetError"]
-languages = ["Php"]
 values = ["End", "count", "end", "next", "sort", "strlen"]
 
 [call]

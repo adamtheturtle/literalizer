@@ -16,14 +16,3 @@ input_format = "json"
 kwargs = [
   { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
-
-[[accepts]]
-languages = ["CSharp", "Go", "Nim"]
-reason = """
-These derive a field name from the key rather than using it verbatim,
-so the hyphen is dropped or the following letter is capitalised.
-"""
-
-[[accepts]]
-languages = ["Zig"]
-reason = "Zig writes the field as the quoted identifier @\"a-b\"."

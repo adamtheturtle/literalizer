@@ -5,7 +5,6 @@ namespace, so a wrapper named after the bound variable declares the
 name twice (#4530).
 """
 exceptions = ["ModuleNameVariableCollisionError"]
-languages = ["Fortran"]
 
 [call]
 api = "literalize"

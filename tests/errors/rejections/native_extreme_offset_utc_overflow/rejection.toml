@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Native datetime constructors reject extreme offsets whose equivalent UTC instant overflows the supported year range."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Scala", "Swift"]
 
 [call]
 api = "literalize"

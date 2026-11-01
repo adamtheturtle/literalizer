@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Conflicting Java visibility takes precedence over Jackson field limitations."
 exceptions = ["ConflictingVariableModifiersError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

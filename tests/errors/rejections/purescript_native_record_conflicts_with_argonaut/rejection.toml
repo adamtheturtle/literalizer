@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Native records and dynamic Argonaut values cannot be combined."
 exceptions = ["UnrepresentableInputError"]
-languages = ["PureScript"]
 
 [call]
 api = "literalize"

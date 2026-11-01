@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "F# requires decimal bigint literals in both native dictionary modes."
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["FSharp"]
 option = "dict_format"
 values = ["BINARY", "HEX", "OCTAL"]
 

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "YAML rejects escaped lone UTF-16 surrogates in nested sets and ordered maps."
 exceptions = ["YAMLParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

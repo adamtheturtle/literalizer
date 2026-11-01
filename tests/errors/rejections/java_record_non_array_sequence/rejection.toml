@@ -5,7 +5,6 @@ value formatter emits, and another sequence format carries no element
 type.
 """
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

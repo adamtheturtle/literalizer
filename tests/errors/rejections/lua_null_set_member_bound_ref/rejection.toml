@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A materialized bound set cannot use null as a Lua table key."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Lua"]
 
 [call]
 api = "literalize"

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Languages without null literals reject null dictionary keys."
 exceptions = ["UnrepresentableNullError"]
-languages = ["Bash", "Tcl"]
 
 [call]
 api = "literalize"

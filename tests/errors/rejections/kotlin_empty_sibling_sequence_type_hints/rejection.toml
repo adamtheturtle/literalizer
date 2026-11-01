@@ -5,7 +5,6 @@ mix an empty one with a non-empty one have no annotation that holds
 both and the value is refused.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Kotlin"]
 
 [call]
 api = "literalize"

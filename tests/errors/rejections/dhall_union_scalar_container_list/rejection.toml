@@ -4,7 +4,6 @@ Dhall's UNION_TYPE strategy defines scalar alternatives only, so a scalar
 cannot share a List with a record or another container.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Dhall"]
 
 [call]
 api = "literalize"

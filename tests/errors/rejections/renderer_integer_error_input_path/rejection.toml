@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A nested integer failure reports its exact input path."
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["PureScript"]
 
 [attributes]
 path = ["outer", 0, 0]

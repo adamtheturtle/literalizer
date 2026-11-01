@@ -5,7 +5,6 @@ module, and a generic module cannot be reopened without its type
 arguments (#4533).
 """
 exceptions = ["InvalidModuleNameError"]
-languages = ["Crystal"]
 values = ["Enumerable", "IO", "Int32", "String"]
 
 [call]

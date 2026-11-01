@@ -1,4 +1,15 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 0
+
+[ReservedVariableNameError]
+"D['[{nested: {1.5: value}}]']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['[{nested: {1: value}}]']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['[{nested: {true: value}}]']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{1.5: value}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{1: value}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{nested: {1.5: value}}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{nested: {1: value}}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{nested: {true: value}}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{true: value}']" = "D cannot use reference name 'shared': it is a reserved identifier"
 
 [UnrepresentableInputError]
 "Zig['[{nested: {1.5: value}}]']" = "Zig cannot represent dict key of type float"

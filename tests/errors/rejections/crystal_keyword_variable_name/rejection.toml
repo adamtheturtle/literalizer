@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Crystal keywords that no local variable can name."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Crystal"]
 values = ["annotation", "instance_sizeof", "offsetof", "pointerof"]
 
 [call]

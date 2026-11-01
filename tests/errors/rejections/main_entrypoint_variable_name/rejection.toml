@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Wrapped Go, Odin, and Rust output cannot bind the entrypoint name main."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Go", "Odin", "Rust"]
 values = ["main"]
 
 [call]

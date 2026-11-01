@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Rust tagged enums require one concrete empty-list type."
 exceptions = ["ValueError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

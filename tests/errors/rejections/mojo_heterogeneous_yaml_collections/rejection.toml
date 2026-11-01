@@ -6,7 +6,6 @@ or express only as strings.  A collection mixing one of those with a
 value of another type has no single element type, which Mojo needs.
 """
 exceptions = ["HeterogeneousScalarCollectionError", "MixedDictValuesError"]
-languages = ["Mojo"]
 
 [call]
 api = "literalize"

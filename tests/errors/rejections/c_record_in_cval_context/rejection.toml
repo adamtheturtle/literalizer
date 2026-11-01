@@ -6,7 +6,6 @@ list whose elements are not all records -- would have to occupy a CVal
 slot.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["C"]
 
 [call]
 api = "literalize"

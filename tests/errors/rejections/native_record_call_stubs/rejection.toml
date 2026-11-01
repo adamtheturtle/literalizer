@@ -4,7 +4,6 @@ Wrapped call stubs assume the generic value type, which Gleam and OCaml
 concrete record modes do not define.
 """
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Gleam", "OCaml"]
 
 [call]
 api = "literalize_call"

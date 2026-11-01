@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Strict JSON rejects non-standard numeric constants."
 exceptions = ["JSONParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

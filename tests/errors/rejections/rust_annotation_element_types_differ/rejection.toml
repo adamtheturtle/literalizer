@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Rust cannot annotate a collection whose element types differ in shape."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

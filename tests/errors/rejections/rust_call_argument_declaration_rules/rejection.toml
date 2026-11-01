@@ -4,7 +4,6 @@ A Rust call argument is written by the same value formatting a declared
 value is, so it faces the same rules.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize_call"

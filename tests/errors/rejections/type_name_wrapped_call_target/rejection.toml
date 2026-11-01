@@ -5,7 +5,6 @@ languages spell a capitalized name as a type or constructor, so the
 constructor-target exemption stops at the file scaffold (#4525).
 """
 exceptions = ["InvalidCallTargetError"]
-languages = ["Elm", "Gleam", "Haskell", "OCaml", "PureScript"]
 
 [call]
 api = "literalize_call"

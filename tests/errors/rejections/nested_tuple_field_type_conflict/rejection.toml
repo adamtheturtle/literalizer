@@ -18,10 +18,3 @@ input_format = "yaml"
 kwargs = [
   { kind = "option_member", option = "heterogeneous_strategy", member = "TUPLE" },
 ]
-
-[[accepts]]
-languages = ["TypeScript"]
-reason = """
-A TypeScript tuple field takes a union element type, so the two
-positional shapes share one declaration.
-"""

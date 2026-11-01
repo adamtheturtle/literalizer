@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "PHP rejects string mapping keys that arrays coerce to integers."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Php"]
 
 [call]
 api = "literalize"

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Ada reserved parameter names are case-insensitive."
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["Ada"]
 values = ["BEGIN", "IF"]
 
 [call]

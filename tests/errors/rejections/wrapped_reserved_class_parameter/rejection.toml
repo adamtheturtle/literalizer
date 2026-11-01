@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Wrapped positional stubs reject class as a reserved parameter name."
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["CSharp", "Haxe", "Mojo", "SystemVerilog", "VisualBasic", "Wren"]
 
 [call]
 api = "literalize_call"

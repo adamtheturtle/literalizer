@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A YAML alias naming the node that contains it has no value."
 exceptions = ["YAMLParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

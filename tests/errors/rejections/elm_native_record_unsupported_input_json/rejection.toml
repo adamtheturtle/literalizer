@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Unsupported shapes fail before emitting invalid Elm syntax."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Elm"]
 
 [call]
 api = "literalize"

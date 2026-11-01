@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Nim fixed-size call arrays require consistent nested lengths."
 exceptions = ["CallArgNotSupportedError"]
-languages = ["Nim"]
 
 [call]
 api = "literalize_call"

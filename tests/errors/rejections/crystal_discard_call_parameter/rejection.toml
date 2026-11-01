@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Crystal's discard marker cannot name a call parameter."
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["Crystal"]
 
 [call]
 api = "literalize_call"

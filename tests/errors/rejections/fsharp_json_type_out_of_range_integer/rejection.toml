@@ -5,7 +5,6 @@ integer outside the Int64 and UInt64 ranges has no overload to build a
 node from.
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["FSharp"]
 
 [call]
 api = "literalize"

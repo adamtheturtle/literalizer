@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Nested Vec slots in a tuple must agree across siblings."
 exceptions = ["MixedListValuesError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

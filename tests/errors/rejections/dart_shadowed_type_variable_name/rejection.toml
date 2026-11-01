@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Dart declarations cannot shadow an emitted type name or main."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Dart"]
 values = [
   "BigInt",
   "DateTime",

@@ -1,5 +1,35 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 5; languages accepting: 8
+
+[Accepted]
+"C['[[1, []], [2, [3]]]']" = ""
+"C['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = ""
+"CSharp['[[1, []], [2, [3]]]']" = ""
+"CSharp['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = ""
+"Crystal['[[1, []], [2, [3]]]']" = ""
+"Crystal['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = ""
+"Java['[[1, []], [2, [3]]]']" = ""
+"Java['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = ""
+"Kotlin['[[1, []], [2, [3]]]']" = ""
+"Kotlin['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = ""
+"Scala['[[1, []], [2, [3]]]']" = ""
+"Scala['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = ""
+"Swift['[[1, []], [2, [3]]]']" = ""
+"Swift['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = ""
+"Zig['[[1, []], [2, [3]]]']" = ""
+"Zig['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = ""
+
+[HeterogeneousScalarCollectionError]
+"Cpp['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Rust['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"V['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+
+[MixedListValuesError]
+"V['[[1, []], [2, [3]]]']" = "List contains elements of mixed types that cannot be represented in the target language (found types: int, list)"
 
 [UnrepresentableInputError]
+"Cpp['[[1, []], [2, [3]]]']" = "C++ ARRAY cannot construct nested heterogeneous values with incompatible element types"
+"D['[[1, []], [2, [3]]]']" = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
+"D['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
 "Nim['[[1, []], [2, [3]]]']" = "Nim native sequences require one inferable element type; this sequence contains incompatible elements"
 "Nim['{\"x\": [[1, \"a\"], [2, \"b\"]]}']" = "Nim native sequences require one inferable element type; this sequence contains incompatible elements"
+"Rust['[[1, []], [2, [3]]]']" = "Rust renders a sequence as a fixed-size array, whose length is part of its type at every level it nests, so sibling sequences of the same outer length whose nested sequences differ in length have no common type"

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Dhall rejects dictionaries with different key sets after JSON parsing."
 exceptions = ["MixedDictShapesError"]
-languages = ["Dhall"]
 
 [call]
 api = "literalize"

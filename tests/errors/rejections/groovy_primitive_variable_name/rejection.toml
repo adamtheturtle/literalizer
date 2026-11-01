@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A Groovy primitive type name cannot follow def."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Groovy"]
 values = [
   "boolean",
   "byte",

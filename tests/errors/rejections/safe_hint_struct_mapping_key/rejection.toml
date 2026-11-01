@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "MATLAB SAFE hints select struct fields, whose names must begin with a letter (#6196)."
 exceptions = ["InvalidDictKeyError"]
-languages = ["Matlab"]
 
 [call]
 api = "literalize"

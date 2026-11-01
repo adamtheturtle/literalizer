@@ -1,4 +1,21 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 4; languages accepting: 12
+
+[Accepted]
+C = ""
+CSharp = ""
+Crystal = ""
+Go = ""
+Java = ""
+Kotlin = ""
+Odin = ""
+Python = ""
+Scala = ""
+Swift = ""
+V = ""
+Zig = ""
 
 [UnrepresentableInputError]
+Cpp = "Cpp cannot preserve native set semantics with the selected set format"
+D = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
+Nim = "Nim cannot preserve native set semantics with the selected set format"
 Rust = "Rust cannot represent a set-valued field under the RECORD heterogeneous strategy"

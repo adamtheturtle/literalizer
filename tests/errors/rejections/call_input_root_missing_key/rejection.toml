@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A selected input-root key must exist in the parsed mapping."
 exceptions = ["InputRootKeyNotFoundError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

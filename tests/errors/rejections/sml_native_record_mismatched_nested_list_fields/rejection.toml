@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Sibling records with different list element types cannot unify."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Sml"]
 
 [call]
 api = "literalize"

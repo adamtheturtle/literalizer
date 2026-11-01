@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Bare strings must not be passed as comment_source."
 exceptions = ["InvalidSequenceArgumentError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

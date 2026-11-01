@@ -1,4 +1,39 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 4; languages accepting: 26
+
+[Accepted]
+Ada = ""
+CommonLisp = ""
+Dart = ""
+Elixir = ""
+Elm = ""
+Erlang = ""
+FSharp = ""
+Forth = ""
+Fortran = ""
+Gleam = ""
+Groovy = ""
+Haskell = ""
+Hcl = ""
+Kotlin = ""
+Nix = ""
+OCaml = ""
+Occam = ""
+PureScript = ""
+Python = ""
+R = ""
+Racket = ""
+Roc = ""
+Scala = ""
+Scheme = ""
+Sml = ""
+Wren = ""
+
+[HeterogeneousScalarCollectionError]
+Dhall = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, none, str)"
+Mojo = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, none, str)"
 
 [NullInCollectionError]
 Java = "Java's List.of() does not accept null elements (got 3 items, including null). Use sequence_format=ARRAY instead."
+
+[UnrepresentableNullError]
+Tcl = "Tcl cannot represent null distinctly from the empty string"

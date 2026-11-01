@@ -9,7 +9,6 @@ exceptions = [
   "UnrepresentableInputError",
   "UnrepresentableStringError",
 ]
-languages = ["Cobol"]
 
 [call]
 api = "literalize"

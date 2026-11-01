@@ -5,7 +5,6 @@ sequence )json" right before the JSON string literal's closing quote,
 ending the R"json(...)json" raw string mid-document.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Cpp"]
 
 [call]
 api = "literalize"

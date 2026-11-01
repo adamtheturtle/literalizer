@@ -1,4 +1,23 @@
-# languages rejecting: 48; languages accepting: 0
+# languages rejecting: 48; languages accepting: 17
+
+[Accepted]
+Ada = ""
+Dhall = ""
+Elm = ""
+Fortran = ""
+Haskell = ""
+Json5 = ""
+Jsonc = ""
+Jsonnet = ""
+Matlab = ""
+PureScript = ""
+Roc = ""
+Sml = ""
+Swift = ""
+Toml = ""
+VisualBasic = ""
+Yaml = ""
+Zig = ""
 
 [UnrepresentableStringError]
 Bash = "Bash string literals cannot represent U+0001 control character"

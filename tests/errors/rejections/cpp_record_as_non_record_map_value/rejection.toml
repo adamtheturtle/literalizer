@@ -7,7 +7,6 @@ ordered map holding lists of records is unaffected: the list gives the
 slot a std::vector<RecordN> type of its own (#4754).
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Cpp"]
 
 [call]
 api = "literalize"

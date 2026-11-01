@@ -4,7 +4,6 @@ An Erlang module name becomes an atom, which the virtual machine caps
 at 255 characters.
 """
 exceptions = ["InvalidModuleNameError"]
-languages = ["Erlang"]
 
 [call]
 api = "constructor"

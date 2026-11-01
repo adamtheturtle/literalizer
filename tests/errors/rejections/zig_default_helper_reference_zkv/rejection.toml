@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Zig default reference bindings cannot shadow the mode's helpers."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Zig"]
 
 [call]
 api = "literalize"

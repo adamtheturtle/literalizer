@@ -6,7 +6,6 @@ input distinguishes it from.  The sources put the null at the
 document root and inside a nested collection.
 """
 exceptions = ["UnrepresentableNullError"]
-languages = ["Bash", "Tcl"]
 
 [call]
 api = "literalize"

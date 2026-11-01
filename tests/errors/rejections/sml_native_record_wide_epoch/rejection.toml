@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "An epoch beyond native int range fails before SML compilation."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Sml"]
 
 [call]
 api = "literalize"

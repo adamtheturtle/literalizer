@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Gleam tuple sequences cannot inhabit the uniform GVal list carrier."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Gleam"]
 
 [call]
 api = "literalize"

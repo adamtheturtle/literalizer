@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Rust empty-container hints require a valid type and an empty target."
 exceptions = ["ValueError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

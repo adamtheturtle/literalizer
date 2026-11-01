@@ -4,7 +4,6 @@ A case-insensitive language reads two spellings of one name as one
 parameter, so a stub declaring both would declare it twice.
 """
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["Ada"]
 
 [call]
 api = "literalize_call"

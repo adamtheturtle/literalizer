@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "V ordered-map values must share one generated native record type."
 exceptions = ["UnrepresentableInputError"]
-languages = ["V"]
 
 [call]
 api = "literalize"

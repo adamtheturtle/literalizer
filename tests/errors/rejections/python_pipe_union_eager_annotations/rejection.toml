@@ -5,7 +5,6 @@ type it builds does not exist before Python 3.10, so the two together
 name a version that cannot evaluate it.
 """
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Python"]
 values = ["PY38", "PY39"]
 
 [call]

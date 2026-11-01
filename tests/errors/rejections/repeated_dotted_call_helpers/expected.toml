@@ -1,4 +1,73 @@
-# languages rejecting: 6; languages accepting: 0
+# languages rejecting: 14; languages accepting: 51
+
+[Accepted]
+Ada = ""
+Bash = ""
+C = ""
+CSharp = ""
+Clojure = ""
+Cobol = ""
+CommonLisp = ""
+Cpp = ""
+Crystal = ""
+D = ""
+Dart = ""
+Dhall = ""
+Elixir = ""
+Elm = ""
+Erlang = ""
+FSharp = ""
+Forth = ""
+Gleam = ""
+Groovy = ""
+Haskell = ""
+Haxe = ""
+JavaScript = ""
+Jsonnet = ""
+Julia = ""
+Lua = ""
+Matlab = ""
+Mojo = ""
+Nim = ""
+OCaml = ""
+ObjectiveC = ""
+Occam = ""
+Odin = ""
+Perl = ""
+Php = ""
+PowerShell = ""
+PureScript = ""
+Python = ""
+R = ""
+Racket = ""
+Raku = ""
+Roc = ""
+Ruby = ""
+Scheme = ""
+Sml = ""
+SystemVerilog = ""
+Tcl = ""
+TypeScript = ""
+V = ""
+VisualBasic = ""
+Wren = ""
+Zig = ""
+
+[CallsNotSupportedByLanguageError]
+Json5 = "Json5 has no function call syntax"
+Jsonc = "Jsonc has no function call syntax"
+Norg = "Norg has no function call syntax"
+Toml = "Toml has no function call syntax"
+Yaml = "Yaml has no function call syntax"
+
+[CallsNotSupportedByToolError]
+Nix = "literalizer does not support function call rendering for Nix"
+
+[DottedCallTargetNotSupportedError]
+Hcl = "Hcl does not support dotted call targets: 'app.app.f'"
+
+[InvalidCallParameterNameError]
+Fortran = "Fortran cannot use call parameter 'value': it is a reserved identifier"
 
 [InvalidCallTargetError]
 Go = "Go cannot use call target 'app.app.f': repeated components collide with generated dotted-call helper declarations"

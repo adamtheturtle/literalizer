@@ -1,0 +1,12 @@
+# languages rejecting: 7; languages accepting: 0
+
+[HeterogeneousScalarCollectionError]
+Elm = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+Gleam = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+Haskell = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+OCaml = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+PureScript = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+Roc = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+
+[UnrepresentableInputError]
+Sml = "SML record mode requires uniform list element types"

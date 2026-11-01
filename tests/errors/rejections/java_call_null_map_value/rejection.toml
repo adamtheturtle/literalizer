@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Java call arguments reject null-valued native map entries."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Java"]
 
 [call]
 api = "literalize_call"

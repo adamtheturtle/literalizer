@@ -13,12 +13,3 @@ sources = ["- {1: one}"]
 input_format = "yaml"
 target_function = "process"
 parameter_names = ["x"]
-
-[[accepts]]
-languages = ["Erlang", "Scheme"]
-reason = """
-Renders the call argument in the language's own map syntax rather than
-through the JSON value type, so the object-key rule does not apply to
-it. This is intentional: these backends' call-argument formatters do not
-consume ``json_type`` and preserve the native non-string map key.
-"""

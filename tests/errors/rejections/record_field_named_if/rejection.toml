@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Exercise if as a generated record field name."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize"
+sources = ['[{"if": 1}]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

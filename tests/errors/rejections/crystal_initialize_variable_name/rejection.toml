@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Crystal cannot bind data to the constructor name initialize."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Crystal"]
 values = [
   "initialize",
 ]

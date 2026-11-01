@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Java Map.entry() rejects null values."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

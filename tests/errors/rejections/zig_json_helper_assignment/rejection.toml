@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Zig json assignment bindings cannot shadow the mode's helpers."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Zig"]
 values = ["allocator", "std"]
 
 [call]

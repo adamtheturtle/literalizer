@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A Nim declaration name cannot begin with an underscore."
 exceptions = ["InvalidNewVariableNameError"]
-languages = ["Nim"]
 
 [call]
 api = "literalize"

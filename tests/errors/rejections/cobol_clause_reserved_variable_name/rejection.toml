@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Cobol picture and clause words cannot be used as variable names."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Cobol"]
 values = [
   "COMP",
   "COMP-2",

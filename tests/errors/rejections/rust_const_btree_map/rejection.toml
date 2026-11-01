@@ -4,7 +4,6 @@ Rust CONST rejects a dict under BTREE_MAP too: BTreeMap::from is as
 non-constant as HashMap::from.
 """
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

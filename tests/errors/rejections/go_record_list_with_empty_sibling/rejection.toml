@@ -4,7 +4,6 @@ Go RECORD cannot currently declare one nested slice type for a generated
 record list and its empty sibling.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Go"]
 
 [call]
 api = "literalize"

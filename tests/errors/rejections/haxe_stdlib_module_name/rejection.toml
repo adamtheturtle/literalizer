@@ -5,7 +5,6 @@ shadows it, and the generated code and the compiler itself reach for
 those types (#4533).
 """
 exceptions = ["InvalidModuleNameError"]
-languages = ["Haxe"]
 values = ["Array", "Map", "Std"]
 
 [call]

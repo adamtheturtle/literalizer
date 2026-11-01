@@ -5,7 +5,6 @@ that agrees with the set literal rendered for it, so the value is
 refused rather than emitted as a struct that fails to compile.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Mojo keywords that no declaration can name."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Mojo"]
 values = ["case", "lambda", "match"]
 
 [call]

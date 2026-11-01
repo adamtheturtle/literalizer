@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Rust keywords reserved for future use, which need a raw identifier."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Rust"]
 values = ["do", "final"]
 
 [call]

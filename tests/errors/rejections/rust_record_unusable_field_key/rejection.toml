@@ -4,7 +4,6 @@ A dict key a Rust raw identifier cannot express has no compiling
 struct field name.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

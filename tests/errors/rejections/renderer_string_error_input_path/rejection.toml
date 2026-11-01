@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A nested string failure reports its exact input path."
 exceptions = ["UnrepresentableStringError"]
-languages = ["Bash"]
 
 [attributes]
 path = ["outer", 0, 0]

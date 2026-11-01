@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Negative pre-indent levels are invalid public render arguments."
 exceptions = ["InvalidRenderArgumentError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

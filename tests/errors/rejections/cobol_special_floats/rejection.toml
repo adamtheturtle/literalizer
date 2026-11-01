@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "COBOL cannot represent IEEE special floating-point values."
 exceptions = ["UnrepresentableSpecialFloatError"]
-languages = ["Cobol"]
 
 [call]
 api = "literalize"

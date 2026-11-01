@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Call stubs cannot assume the generic Val type in record mode."
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Haskell"]
 
 [call]
 api = "literalize_call"

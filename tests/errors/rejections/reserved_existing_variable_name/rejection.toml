@@ -4,7 +4,6 @@ An assignment target carries the same reserved-word check a new
 declaration does.
 """
 exceptions = ["ReservedVariableNameError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

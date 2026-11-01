@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Ordered maps and sets retain the default tagged representation."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Roc"]
 
 [call]
 api = "literalize"

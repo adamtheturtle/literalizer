@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[UnrepresentableInputError]
-Cpp = "C++ RECORD ordered maps require one compatible value type; these record-list values have distinct shapes"

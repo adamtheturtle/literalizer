@@ -5,7 +5,6 @@ same program unit, so the collision is reached through the call API
 too.
 """
 exceptions = ["ModuleNameVariableCollisionError"]
-languages = ["Fortran"]
 
 [call]
 api = "literalize_call"

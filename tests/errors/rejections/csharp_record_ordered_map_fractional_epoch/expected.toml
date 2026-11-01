@@ -1,4 +1,19 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 16; languages accepting: 0
 
 [UnrepresentableInputError]
+C = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
 CSharp = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Cpp = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Crystal = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+D = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Go = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Java = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Kotlin = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Nim = "Nim cannot represent a set or non-record-dict field under the RECORD heterogeneous strategy"
+Odin = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Python = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Rust = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Scala = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Swift = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+V = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"
+Zig = "integer Unix epoch seconds cannot preserve fractional datetime precision: 2040-01-01T00:00:00.123456+00:00"

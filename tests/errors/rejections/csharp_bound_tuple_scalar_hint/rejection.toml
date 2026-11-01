@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "An explicit scalar hint cannot type a C# tuple-valued static field."
 exceptions = ["UnrepresentableInputError"]
-languages = ["CSharp"]
 
 [call]
 api = "literalize"

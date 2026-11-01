@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Java record rendering still rejects null ordered-map values."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

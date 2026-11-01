@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Cobol reserved words that no program name or data name can take as a call target."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Cobol"]
 values = ["function", "null"]
 
 [call]

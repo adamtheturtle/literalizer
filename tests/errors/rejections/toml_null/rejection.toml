@@ -4,7 +4,6 @@ TOML has no null, so a document carrying one is refused wherever it
 sits rather than written out with the null dropped.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Toml"]
 
 [call]
 api = "literalize"

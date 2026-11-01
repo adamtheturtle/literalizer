@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Positional Go calls require one value per parameter."
 exceptions = ["ParameterCountMismatchError"]
-languages = ["Go"]
 
 [call]
 api = "literalize_call"

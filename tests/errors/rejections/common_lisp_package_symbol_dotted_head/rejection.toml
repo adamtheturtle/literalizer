@@ -5,7 +5,6 @@ leading component alone can name a symbol of the locked COMMON-LISP
 package (#4547).
 """
 exceptions = ["InvalidCallTargetError"]
-languages = ["CommonLisp"]
 
 [call]
 api = "literalize_call"

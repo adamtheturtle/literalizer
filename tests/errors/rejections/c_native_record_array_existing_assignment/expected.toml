@@ -1,4 +1,38 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 15
+
+[Accepted]
+"CSharp['[{\"id\": 1}]']" = ""
+"CSharp['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Cpp['[{\"id\": 1}]']" = ""
+"Cpp['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Crystal['[{\"id\": 1}]']" = ""
+"Crystal['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"D['[{\"id\": 1}]']" = ""
+"D['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Go['[{\"id\": 1}]']" = ""
+"Go['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Java['[{\"id\": 1}]']" = ""
+"Java['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Kotlin['[{\"id\": 1}]']" = ""
+"Kotlin['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Nim['[{\"id\": 1}]']" = ""
+"Nim['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Odin['[{\"id\": 1}]']" = ""
+"Odin['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Python['[{\"id\": 1}]']" = ""
+"Rust['[{\"id\": 1}]']" = ""
+"Rust['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Scala['[{\"id\": 1}]']" = ""
+"Scala['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Swift['[{\"id\": 1}]']" = ""
+"Swift['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"V['[{\"id\": 1}]']" = ""
+"V['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Zig['[{\"id\": 1}]']" = ""
+"Zig['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+
+[HeterogeneousSiblingListsError]
+"Python['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
 
 [UnrepresentableInputError]
 "C['[{\"id\": 1}]']" = "C cannot reassign a native record array under the RECORD heterogeneous strategy"

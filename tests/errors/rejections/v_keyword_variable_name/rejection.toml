@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "V keywords that no ``:=`` binding can name."
 exceptions = ["ReservedVariableNameError"]
-languages = ["V"]
 values = ["asm", "dump", "goto", "isreftype", "lock", "rlock", "sizeof", "spawn", "static", "typeof", "union", "volatile"]
 
 [call]

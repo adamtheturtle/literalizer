@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Exercise integers immediately outside the signed 128-bit range."
+exceptions = ["UnrepresentableIntegerError"]
+
+[call]
+api = "literalize"
+sources = [
+  "170141183460469231731687303715884105728",
+  "-170141183460469231731687303715884105729",
+]
+input_format = "json"

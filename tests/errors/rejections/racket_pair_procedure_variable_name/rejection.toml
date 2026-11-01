@@ -1,7 +1,6 @@
           schema_version = 1
           summary = "A Racket definition cannot shadow car, cdr, or cons."
           exceptions = ["ReservedVariableNameError"]
-          languages = ["Racket"]
           values = [
             "car",
 "cdr",

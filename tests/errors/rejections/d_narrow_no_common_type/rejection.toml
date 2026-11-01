@@ -4,7 +4,6 @@ D narrow-typed mode gives a collection one element or value type, which
 mixed values do not share and an empty collection does not supply.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["D"]
 
 [call]
 api = "literalize"

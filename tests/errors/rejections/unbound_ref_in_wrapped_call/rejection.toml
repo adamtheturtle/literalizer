@@ -4,7 +4,6 @@ A wrapped call is a complete file too, so a reference it passes along
 has to be declared in it.
 """
 exceptions = ["RefNotSelfContainedError"]
-languages = ["Go"]
 
 [call]
 api = "literalize_call"

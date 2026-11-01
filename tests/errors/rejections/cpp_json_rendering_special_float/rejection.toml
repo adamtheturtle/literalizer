@@ -5,7 +5,6 @@ through <cmath> macros, but the inline JSON document is parsed against
 the JSON spec, which has no NaN or Infinity tokens.
 """
 exceptions = ["UnrepresentableSpecialFloatError"]
-languages = ["Cpp"]
 
 [call]
 api = "literalize"

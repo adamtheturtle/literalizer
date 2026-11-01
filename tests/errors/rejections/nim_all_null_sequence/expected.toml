@@ -1,4 +1,21 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 1; languages accepting: 15
+
+[Accepted]
+C = ""
+CSharp = ""
+Cpp = ""
+Crystal = ""
+D = ""
+Go = ""
+Java = ""
+Kotlin = ""
+Odin = ""
+Python = ""
+Rust = ""
+Scala = ""
+Swift = ""
+V = ""
+Zig = ""
 
 [UnrepresentableInputError]
 Nim = "Nim cannot infer an element type for a native sequence containing only null values"

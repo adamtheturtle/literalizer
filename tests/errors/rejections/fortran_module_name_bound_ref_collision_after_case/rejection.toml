@@ -5,7 +5,6 @@ that does not match the wrapper as the caller spelled it can still
 match it as it is written.
 """
 exceptions = ["ModuleNameVariableCollisionError"]
-languages = ["Fortran"]
 
 [call]
 api = "literalize"

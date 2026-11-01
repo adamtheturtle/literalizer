@@ -4,7 +4,6 @@ Rust CONST rejects the VEC sequence format at construction:
 vec![...] is not a constant expression.
 """
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Rust"]
 
 [call]
 api = "constructor"

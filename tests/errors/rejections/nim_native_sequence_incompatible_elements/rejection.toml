@@ -4,7 +4,6 @@ Nim native sequences require a single inferable element type. Mixed scalar
 types and scalar/container positions otherwise produce code rejected by Nim.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Nim"]
 
 [call]
 api = "literalize"

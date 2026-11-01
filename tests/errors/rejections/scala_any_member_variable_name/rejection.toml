@@ -1,7 +1,6 @@
           schema_version = 1
           summary = "A Scala value cannot silently override equals or getClass."
           exceptions = ["ReservedVariableNameError"]
-          languages = ["Scala"]
           values = [
             "equals",
 "getClass",

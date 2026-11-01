@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Fixed-size sequence shapes must agree through nested map values."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

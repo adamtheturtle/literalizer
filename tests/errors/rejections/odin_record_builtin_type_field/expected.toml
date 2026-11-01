@@ -1,5 +1,37 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 3; languages accepting: 15
+
+[Accepted]
+"C['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"C['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"CSharp['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"CSharp['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"Cpp['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Cpp['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"Crystal['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Crystal['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"D['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Go['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Go['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"Java['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Java['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"Kotlin['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Kotlin['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"Nim['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"Python['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Python['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"Rust['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Rust['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"Scala['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Scala['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"Swift['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Swift['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"V['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"V['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
+"Zig['[{\"notin\": 1, \"zz\": \"s\"}]']" = ""
+"Zig['[{\"string\": 1, \"zz\": \"s\"}]']" = ""
 
 [UnrepresentableInputError]
+"D['[{\"string\": 1, \"zz\": \"s\"}]']" = "D record field name 'string' is reserved"
+"Nim['[{\"notin\": 1, \"zz\": \"s\"}]']" = "Nim record field name 'notin' is reserved"
 "Odin['[{\"notin\": 1, \"zz\": \"s\"}]']" = "Odin record field name 'notin' is reserved"
 "Odin['[{\"string\": 1, \"zz\": \"s\"}]']" = "Odin record field name 'string' is reserved"

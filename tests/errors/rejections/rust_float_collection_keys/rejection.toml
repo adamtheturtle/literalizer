@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Rust native maps and sets reject floating-point keys."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

@@ -5,7 +5,6 @@ single underscores, so a leading, trailing or doubled one is not a
 field name.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Nim"]
 
 [call]
 api = "literalize"

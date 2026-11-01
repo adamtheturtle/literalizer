@@ -5,7 +5,6 @@ generated structs below nested tuple levels, so the declaration and value types
 cannot agree.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Swift"]
 
 [call]
 api = "literalize"

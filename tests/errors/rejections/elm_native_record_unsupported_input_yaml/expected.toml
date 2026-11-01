@@ -1,6 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[UnrepresentableInputError]
-"Elm['1: one\\n']" = "Elm record mode cannot represent field 1"
-"Elm['--- !!omap\\n- a: 1\\n']" = "Elm record mode cannot represent ordered maps"
-"Elm['--- !!set\\na:\\n']" = "Elm record mode cannot represent set"

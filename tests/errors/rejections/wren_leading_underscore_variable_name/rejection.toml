@@ -4,7 +4,6 @@ Wren reserves a leading underscore for a field inside a class, so a
 top-level declaration cannot take one.
 """
 exceptions = ["ReservedVariableNameError"]
-languages = ["Wren"]
 values = ["_", "_field"]
 
 [call]

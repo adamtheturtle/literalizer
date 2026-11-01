@@ -6,7 +6,6 @@ The shared native_record_mixed_field_type_refinement sequence variants
 retain compiler-backed coverage for representations that support the input.
 """
 exceptions = ["HeterogeneousSiblingMapsError"]
-languages = ["Rust"]
 values = ["TUPLE", "TUPLE_NESTED_VEC"]
 
 [call]

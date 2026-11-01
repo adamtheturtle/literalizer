@@ -1,4 +1,12 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 7; languages accepting: 0
+
+[HeterogeneousSiblingListsError]
+Gleam = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+Haskell = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+OCaml = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
 
 [UnrepresentableInputError]
+Elm = "Elm record mode requires uniform record list types"
+PureScript = "PureScript record mode requires uniform record array types"
 Roc = "Roc native record mode requires uniform record list types"
+Sml = "SML record mode requires uniform list element types"

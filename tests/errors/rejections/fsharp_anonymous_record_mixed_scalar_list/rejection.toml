@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Native F# lists cannot contain unrelated scalar types."
 exceptions = ["HeterogeneousScalarCollectionError"]
-languages = ["FSharp"]
 
 [call]
 api = "literalize"

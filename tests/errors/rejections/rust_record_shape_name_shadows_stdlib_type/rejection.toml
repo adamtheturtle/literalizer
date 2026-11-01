@@ -4,7 +4,6 @@ A struct named after a type the generated Rust itself uses either
 shadows that type or clashes with the use line importing it.
 """
 exceptions = ["InvalidRecordNameError"]
-languages = ["Rust"]
 values = ["HashMap", "String", "Value", "Vec"]
 
 [call]

@@ -16,10 +16,3 @@ api = "constructor"
 kwargs = [
   { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
 ]
-
-[[accepts]]
-languages = ["CSharp", "Crystal", "D", "Nim", "Rust", "Scala"]
-reason = """
-Renders records alongside the JSON value type rather than instead of
-it, so the two settings compose.
-"""

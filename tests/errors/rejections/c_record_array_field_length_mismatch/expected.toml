@@ -1,4 +1,36 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 1; languages accepting: 15
+
+[Accepted]
+"CSharp['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"CSharp['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Cpp['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Cpp['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Crystal['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Crystal['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"D['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"D['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Go['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Go['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Java['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Java['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Kotlin['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Kotlin['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Nim['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Nim['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Odin['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Odin['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Python['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Python['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Rust['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Rust['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Scala['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Scala['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Swift['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Swift['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"V['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"V['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
+"Zig['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = ""
+"Zig['- group:\\n  - x: 1\\n- group:\\n  - x: 1\\n  - x: 2\\n']" = ""
 
 [UnrepresentableInputError]
 "C['items:\\n- sub:\\n  - x: 1\\n- sub:\\n  - x: 2\\n  - x: 3\\n']" = "C cannot represent two record-shaped dicts of one shape whose shared all-record-list field has differing lengths under the RECORD heterogeneous strategy: that field becomes a fixed-size struct RecordN [len] member sized from the shape's first-seen instance, so a later instance with a different-length list would overflow the array (excess initializers fail to compile) or silently under-fill it -- neither faithfully represents the input (cf. the set / non-record-dict field boundary tracked in #2317)"

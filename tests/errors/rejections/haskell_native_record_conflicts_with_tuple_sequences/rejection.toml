@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Tuple sequences do not have a uniform list field type."
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Haskell"]
 
 [call]
 api = "literalize"

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "JavaScript Date rejects datetime precision below one millisecond."
 exceptions = ["UnrepresentableInputError"]
-languages = ["JavaScript"]
 
 [call]
 api = "literalize"

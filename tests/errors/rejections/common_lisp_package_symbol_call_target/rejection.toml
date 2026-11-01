@@ -4,7 +4,6 @@ A Common Lisp call target cannot name a symbol of the locked
 COMMON-LISP package, in any spelling.
 """
 exceptions = ["InvalidCallTargetError"]
-languages = ["CommonLisp"]
 values = [
   "MOD",
   "abs",

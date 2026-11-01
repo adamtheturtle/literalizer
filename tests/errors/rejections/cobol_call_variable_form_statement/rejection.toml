@@ -4,7 +4,6 @@ A COBOL CALL is a statement, so there is no expression to bind to a
 name.
 """
 exceptions = ["UnsupportedCallShapeError"]
-languages = ["Cobol"]
 
 [call]
 api = "literalize_call"

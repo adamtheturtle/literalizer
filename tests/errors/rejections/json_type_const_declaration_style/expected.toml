@@ -1,5 +1,8 @@
 # languages rejecting: 2; languages accepting: 1
 
+[Accepted]
+"Zig[STD_JSON_VALUE]" = ""
+
 [IncompatibleFormatsError]
 "Nim[JSON_NODE]" = "Nim json_type uses the runtime %* macro, which is not a constant-expression initializer. Use VAR or LET instead."
 "Rust[SERDE_JSON_VALUE]" = "Rust json_type uses serde_json::json!(…), which is not a constant-expression initializer. Use LET, LET_MUT, or LAZY_STATIC instead."

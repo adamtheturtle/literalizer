@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Roc variable declarations cannot use uppercase tag names."
 exceptions = ["InvalidNewVariableNameError"]
-languages = ["Roc"]
 values = ["Record0"]
 
 [call]

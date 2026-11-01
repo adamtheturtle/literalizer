@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "PowerShell hash tables and ordered dictionaries do not accept null keys."
 exceptions = ["UnrepresentableInputError"]
-languages = ["PowerShell"]
 
 [call]
 api = "literalize"

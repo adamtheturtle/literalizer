@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A Nim identifier cannot begin with an underscore."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Nim"]
 
 [call]
 api = "literalize_call"

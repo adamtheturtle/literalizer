@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A Scala value cannot silently override an inherited Any member."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Scala"]
 values = [
   "clone",
   "finalize",

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A command-style call needs one value per declared parameter."
 exceptions = ["ParameterCountMismatchError"]
-languages = ["Forth", "Haskell", "Tcl"]
 
 [call]
 api = "literalize_call"

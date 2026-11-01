@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Standard ML special identifiers and the infix mod, which no binding can redefine."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Sml"]
 values = ["false", "mod", "nil", "true"]
 
 [call]

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A wrapped V call target must name a declaration V can spell."
 exceptions = ["InvalidCallTargetError"]
-languages = ["V"]
 values = ["C.atoi", "http.Server"]
 
 [call]

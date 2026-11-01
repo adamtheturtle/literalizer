@@ -4,7 +4,6 @@ A #{ sequence in the JSON document would be read as Crystal string
 interpolation rather than as the characters themselves.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Crystal"]
 
 [call]
 api = "literalize"

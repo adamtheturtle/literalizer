@@ -4,7 +4,6 @@ A C# const needs a compile-time constant initializer, which a
 collection literal and a date or datetime value are not.
 """
 exceptions = ["IncompatibleFormatsError"]
-languages = ["CSharp"]
 
 [call]
 api = "literalize"

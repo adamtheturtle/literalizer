@@ -1,4 +1,10 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 3
+
+[Accepted]
+JavaScript = ""
+TypeScript = ""
+Zig = ""
 
 [UnrepresentableInputError]
+Nim = "Nim renders a sequence as a fixed-size array, whose length is part of its type, so sibling sequences of lengths 0, 2 have no common type"
 Rust = "Rust renders a sequence as a fixed-size array, whose length is part of its type, so sibling sequences of lengths 0, 2 have no common type"

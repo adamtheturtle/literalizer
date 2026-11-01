@@ -5,7 +5,6 @@ for a dotted target includes the helper each component declares
 (#4528).
 """
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["Zig"]
 
 [call]
 api = "literalize_call"

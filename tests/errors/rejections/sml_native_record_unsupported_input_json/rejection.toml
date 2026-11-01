@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Unsupported shapes fail before invalid SML is emitted."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Sml"]
 
 [call]
 api = "literalize"

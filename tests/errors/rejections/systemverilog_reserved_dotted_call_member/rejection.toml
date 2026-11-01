@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "SystemVerilog keywords cannot name a dotted call member."
 exceptions = ["InvalidCallTargetError"]
-languages = ["SystemVerilog"]
 values = ["before", "int"]
 
 [call]

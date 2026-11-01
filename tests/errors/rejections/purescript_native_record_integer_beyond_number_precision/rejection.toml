@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Avoid silently rounding beyond the safe integer range."
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["PureScript"]
 
 [call]
 api = "literalize"

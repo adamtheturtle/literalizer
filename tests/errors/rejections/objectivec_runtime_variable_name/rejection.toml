@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Objective-C runtime keyword names cannot be used as variable identifiers."
 exceptions = ["ReservedVariableNameError"]
-languages = ["ObjectiveC"]
 values = [
   "BOOL",
   "Class",

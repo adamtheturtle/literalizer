@@ -1,4 +1,8 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 3; languages accepting: 0
 
 [UnrepresentableInputError]
+CSharp = "C# reference hints must have the same declaration type as their bound values"
 Java = "Java reference hints must have the same declaration type as their bound values"
+
+[UnrepresentableIntegerError]
+Cpp = "C++ cannot represent negative integer -1208925819614629174706176 below the signed 64-bit range using an unsigned fallback."

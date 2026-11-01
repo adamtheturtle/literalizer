@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Exercise integers immediately outside the exact binary64 range."
+exceptions = ["UnrepresentableIntegerError"]
+
+[call]
+api = "literalize"
+sources = ["9007199254740993", "-9007199254740993"]
+input_format = "json"

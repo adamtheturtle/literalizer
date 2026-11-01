@@ -208,58 +208,51 @@ The loader rejects unknown fields or axes, missing inputs, duplicate logical cas
 Rejection manifests
 -------------------
 
-A rejection that holds for a family of languages -- every language with a ``json_type`` refusing a non-string dict key, every language taking ``record_shape_names`` refusing a name that is not PascalCase -- is declared once under :file:`tests/errors/rejections/`.
-Each directory holds a :file:`rejection.toml` and an :file:`expected.toml` golden file.
-The golden opens with the split of the languages the manifest selected, then groups what each raised under a table per exception type:
+Each scenario under :file:`tests/errors/rejections/` declares an API call in :file:`rejection.toml` and records its results in an :file:`expected.toml` golden file.
+Scenarios run across every language by default; the input manifest has no language list.
+The golden counts languages accepting and rejecting, groups exact messages by exception type, and records successful calls in an ``Accepted`` table.
+For example, a scalar null scenario includes these entries:
 
 .. code-block:: toml
 
-   # languages rejecting: 21; languages accepting: 0
+   [Accepted]
+   Python = ""
 
    [UnrepresentableInputError]
-   "C[CJSON]" = "C json_type can only represent dict keys as JSON object strings, not int"
-
-A language raising a different exception from the rest of its family therefore appears as its own table rather than as a word buried in a line.
+   Toml = "TOML cannot represent null values; remove the null or choose a language with a null literal"
 
 A case is keyed by its language, then by the option member it ran under and the declared value it substituted, if the manifest varies either.
 Option members use their names (``[CJSON]``), and declared values are quoted (``['9Entry']``).
+A language may accept one source and reject another, so it can appear in both population counts.
+Changes between acceptance and rejection, exception types, or messages fail golden comparison.
 
-The manifest itself declares what provokes the rejection:
+The manifest declares what provokes the rejection:
 
 .. code-block:: toml
 
    schema_version = 1
-   summary = """
-   A JSON value type keys its objects with strings.
-   """
+   summary = "A JSON value type keys its objects with strings."
    exceptions = ["UnrepresentableInputError"]
    option = "json_type"
    gates = [{ kind = "spec_field_present", field = "json_type" }]
 
    [call]
    api = "literalize"
-   source = "{1: one}"
+   sources = ["1: one"]
    input_format = "yaml"
 
-``gates`` selects the languages the rejection is claimed for, using the same vocabulary as the golden suite's variant axes; a language that later joins those gates is covered without editing the manifest.
-A rejection about one language's own rendering names it in ``languages`` instead.
-``option`` runs each language once per member of that option, and ``values`` runs a case per declared value, which any ``{value}`` in a constructor argument substitutes.
+Optional ``gates`` narrow the scenario by capability using the same vocabulary as the golden suite's variant axes.
+A new language joining those gates is covered automatically.
+``option`` runs each applicable language once per member of that option, and ``values`` runs a case per declared value, which any ``{value}`` in a constructor argument substitutes.
+Languages lacking an enum member or declaration modifier needed to express the call do not contribute that combination.
+This selection reads option declarations, without executing the call to decide whether it belongs.
 
 ``api`` is ``constructor``, ``literalize``, or ``literalize_call``, and the loader rejects an argument the named API does not take.
-``exceptions`` lists the exception types any selected language may raise; the golden file records which one each raised, together with its message.
-For parser diagnostics, an optional top-level ``position = [line, column]`` also asserts the public error's one-based ``line`` and ``column`` attributes for every source in that manifest.
-
-A language a gate admits that represents the input rather than refusing it is declared in an ``accepts`` entry with the reason it does:
-
-.. code-block:: toml
-
-   [[accepts]]
-   languages = ["Rust", "Scala"]
-   reason = """
-   Renders tuples alongside the JSON value type rather than instead of it.
-   """
-
-An entry there is an assertion rather than a mute: the suite makes the same call for those languages and fails if it stops going through, so a language that starts rejecting cannot sit behind a stale reason.
+Each type in ``exceptions`` must occur in at least one case, keeping a scenario from silently losing the rejection it covers.
+Other public Literalizer errors are recorded with their exact types and messages too; unexpected exceptions escape the runner.
+For parser diagnostics, an optional top-level ``position = [line, column]`` asserts the public error's one-based ``line`` and ``column`` attributes when the declared exception occurs.
+The same rule applies to optional ``attributes`` assertions; ``language_name = "{language}"`` checks the current language name.
+Python-version-specific message overrides remain in the golden, and regeneration preserves inactive versions.
 
 Documentation
 -------------

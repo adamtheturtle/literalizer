@@ -4,7 +4,6 @@ json_rendering chooses between renderings of a nlohmann::json value,
 so it has no meaning without a JSON value type.
 """
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Cpp"]
 
 [call]
 api = "constructor"

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A capitalized bare Elixir name is an alias, not a function."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Elixir"]
 
 [call]
 api = "literalize_call"

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Distinct date and datetime set members must remain distinct after rendering."
 exceptions = ["TargetScalarCollisionError"]
-languages = ["Swift"]
 
 [call]
 api = "literalize"

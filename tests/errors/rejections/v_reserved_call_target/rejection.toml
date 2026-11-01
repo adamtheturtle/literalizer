@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "The V nil literal and the builtin functions no declaration can redefine as a call target."
 exceptions = ["InvalidCallTargetError"]
-languages = ["V"]
 values = ["exit", "nil", "panic", "print", "println"]
 
 [call]

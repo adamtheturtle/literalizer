@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Inline JSON documents reject C++ numeric separators."
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Cpp"]
 
 [call]
 api = "literalize"

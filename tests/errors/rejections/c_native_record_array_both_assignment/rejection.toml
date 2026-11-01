@@ -4,8 +4,7 @@ C native arrays cannot be reassigned. Preserve this public error boundary
 instead of emitting a CVal array initializer containing generated structs.
 The declaration-only record-array cases remain compiling goldens (#5236).
 """
-exceptions = ["UnrepresentableInputError"]
-languages = ["C"]
+exceptions = ["UnrepresentableInputError", "ValueError"]
 
 [call]
 api = "literalize"

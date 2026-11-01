@@ -4,7 +4,6 @@ Rust CONST requires a constant-expression initializer, and a dict
 renders as a runtime HashMap::from / BTreeMap::from call.
 """
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

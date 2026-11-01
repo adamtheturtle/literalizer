@@ -1,6 +1,6 @@
 """Expand a rejection manifest into the cases the suite runs.
 
-A manifest selects languages -- by gate or by name -- and may vary one
+A manifest selects languages by capability and may vary one
 option's members and one list of declared values across them.  This
 module turns that declaration into a flat, ordered list of cases, each
 carrying the language, the constructor arguments its spec is built
@@ -16,7 +16,7 @@ from typing import assert_never
 from beartype import beartype
 
 import literalizer
-from tests.enum_members import enum_member_by_name
+from tests.enum_members import enum_member_by_name, find_enum_member
 from tests.language_gates import LanguageGate, language_gate_admits
 from tests.language_options import OPTIONS
 
@@ -64,16 +64,11 @@ def selected_languages(
     *,
     manifest: RejectionManifest,
 ) -> tuple[literalizer.LanguageCls, ...]:
-    """Return every language the manifest's gates or list select.
+    """Return every language admitted by the scenario's capability gates.
 
-    Both the languages the manifest claims the rejection for and the
-    ones it records as accepting the input are drawn from here, so a
-    golden file can state the whole population it was built from.
+    An omitted gate admits every language. Requested enum members are
+    checked separately for each combination of options and values.
     """
-    if len(manifest.languages) > 0:
-        return tuple(
-            LANGUAGES_BY_NAME[name] for name in sorted(manifest.languages)
-        )
     return tuple(
         lang_cls
         for lang_cls in LANGUAGES_BY_NAME.values()
@@ -143,7 +138,12 @@ def _option_members(
     if manifest.option is None:
         return (None,)
     option = OPTIONS[manifest.option]
-    return tuple(option.get_members(lang_cls()))
+    spec = lang_cls()
+    if option.kwarg not in {
+        field.name for field in dataclasses.fields(class_or_instance=spec)
+    }:
+        return ()
+    return tuple(option.get_members(spec))
 
 
 @beartype
@@ -194,6 +194,41 @@ def _case_id(
 
 
 @beartype
+def _supports_case(
+    *,
+    manifest: RejectionManifest,
+    lang_cls: literalizer.LanguageCls,
+    value: str | None,
+) -> bool:
+    """Require enum members needed to express the call, without probing it."""
+    spec = lang_cls()
+    fields = {
+        field.name for field in dataclasses.fields(class_or_instance=spec)
+    }
+    for kwarg in manifest.call.kwargs:
+        if isinstance(kwarg, OptionMemberKwarg):
+            option = OPTIONS[kwarg.option]
+            if (
+                option.kwarg not in fields
+                or find_enum_member(
+                    enum_cls=option.get_members(spec),
+                    name=substituted(template=kwarg.member, value=value),
+                )
+                is None
+            ):
+                return False
+    modifier_language = manifest.call.modifier_language
+    modifier_class = lang_cls
+    if modifier_language is not None:
+        modifier_class = LANGUAGES_BY_NAME[modifier_language]
+    return all(
+        find_enum_member(enum_cls=modifier_class.Modifiers, name=name)
+        is not None
+        for name in manifest.call.modifiers
+    )
+
+
+@beartype
 def _cases_for_languages(
     *,
     manifest: RejectionManifest,
@@ -213,6 +248,10 @@ def _cases_for_languages(
     for lang_cls in lang_classes:
         for member in _option_members(manifest=manifest, lang_cls=lang_cls):
             for value in values:
+                if not _supports_case(
+                    manifest=manifest, lang_cls=lang_cls, value=value
+                ):
+                    continue
                 for source in sources:
                     # A single source is the manifest's whole subject,
                     # so naming it in every case identifier would say
@@ -246,24 +285,10 @@ def rejection_cases(
     *,
     manifest: RejectionManifest,
 ) -> tuple[RejectionCase, ...]:
-    """Return every case whose language must raise the rejection."""
-    accepting = frozenset(manifest.accepting_languages)
-    selected = [
-        lang_cls
-        for lang_cls in selected_languages(manifest=manifest)
-        if lang_cls.__name__ not in accepting
-    ]
-    return _cases_for_languages(manifest=manifest, lang_classes=selected)
-
-
-@functools.cache
-@beartype
-def accepting_cases(
-    *,
-    manifest: RejectionManifest,
-) -> tuple[RejectionCase, ...]:
-    """Return every case whose language is declared not to reject."""
-    selected = [
-        LANGUAGES_BY_NAME[name] for name in manifest.accepting_languages
-    ]
-    return _cases_for_languages(manifest=manifest, lang_classes=selected)
+    """Expand a scenario across languages offering its requested
+    options.
+    """
+    return _cases_for_languages(
+        manifest=manifest,
+        lang_classes=selected_languages(manifest=manifest),
+    )

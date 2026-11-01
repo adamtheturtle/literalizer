@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A companion source requires its own input format."
 exceptions = ["ZipSourceWithoutInputFormatError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

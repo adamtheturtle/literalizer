@@ -5,7 +5,6 @@ variable, so it cannot name a module however well it spells an
 identifier elsewhere.
 """
 exceptions = ["InvalidModuleNameError"]
-languages = ["Erlang"]
 
 [call]
 api = "constructor"

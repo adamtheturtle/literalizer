@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Ada reserved words that no declaration can name as a call target."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Ada"]
 values = ["abs", "and", "parallel", "some"]
 
 [call]

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "The JSON value backend and records are distinct output modes."
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Haskell"]
 
 [call]
 api = "literalize"

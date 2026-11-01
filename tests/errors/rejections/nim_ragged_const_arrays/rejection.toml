@@ -4,7 +4,6 @@ A Nim const renders a bare array literal, whose length is part of its
 type, so sibling sequences of different lengths have no common type.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Nim"]
 
 [call]
 api = "literalize"

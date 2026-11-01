@@ -1,4 +1,18 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 11
+
+[Accepted]
+C = ""
+CSharp = ""
+Cpp = ""
+Crystal = ""
+Java = ""
+Kotlin = ""
+Nim = ""
+Scala = ""
+Swift = ""
+V = ""
+Zig = ""
 
 [UnrepresentableInputError]
+D = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
 Rust = "Rust renders a sequence as a fixed-size array, whose length is part of its type, so sibling sequences of lengths 1, 2 have no common type"

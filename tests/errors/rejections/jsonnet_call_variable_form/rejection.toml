@@ -3,7 +3,6 @@ summary = """
 A language that names no variables cannot bind a call result to one.
 """
 exceptions = ["VariableNameNotSupportedError"]
-languages = ["Jsonnet"]
 
 [call]
 api = "literalize_call"

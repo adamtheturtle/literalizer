@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "PHP cannot re-assign the $self or $parent variables."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Php"]
 values = ["parent", "self"]
 
 [call]

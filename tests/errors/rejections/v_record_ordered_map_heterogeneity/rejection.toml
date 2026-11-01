@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "V ordered-map record fields retain their heterogeneous scalar rejection policy."
 exceptions = ["HeterogeneousScalarCollectionError"]
-languages = ["V"]
 
 [call]
 api = "literalize"

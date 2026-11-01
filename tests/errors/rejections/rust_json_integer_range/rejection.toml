@@ -4,7 +4,6 @@ Rust's serde_json::Value stores integers as i64 or u64. Reject wider
 integers before emitting a json! expression that panics at runtime.
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

@@ -5,7 +5,6 @@ LIST-format sequence holding one is refused at literalize time rather
 than emitted as a literal that fails at runtime.
 """
 exceptions = ["NullInCollectionError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

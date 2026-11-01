@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Elixir special forms cannot be used as variable names."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Elixir"]
 values = [
   "__CALLER__",
   "__DIR__",

@@ -6,7 +6,6 @@ including the signed 64-bit minimum previously special-cased by the
 raw formatter (#5196).
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Elm"]
 option = "integer_format"
 
 [call]

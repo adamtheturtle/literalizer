@@ -5,7 +5,6 @@ an aware input carries, so the value is refused rather than written
 out shifted or truncated -- as a value, and as a mapping key.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["CSharp", "Kotlin", "Rust"]
 
 [call]
 api = "literalize"

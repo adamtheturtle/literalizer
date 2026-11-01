@@ -4,7 +4,6 @@ Go derives a field name from each key, so two keys that derive the
 same name would produce one field.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Go"]
 
 [call]
 api = "literalize"

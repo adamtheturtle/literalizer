@@ -4,7 +4,6 @@ A complete file has to declare every name it uses, and only bound_refs
 emits a declaration for a reference.
 """
 exceptions = ["RefNotSelfContainedError"]
-languages = ["Go"]
 
 [call]
 api = "literalize"

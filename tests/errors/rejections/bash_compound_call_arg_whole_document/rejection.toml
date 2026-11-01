@@ -4,7 +4,6 @@ The Bash call-argument guard fires on the whole-document path too,
 where the list is the single argument rather than a row of them.
 """
 exceptions = ["CallArgNotSupportedError"]
-languages = ["Bash"]
 
 [call]
 api = "literalize_call"

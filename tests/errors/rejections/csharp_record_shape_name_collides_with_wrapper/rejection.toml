@@ -4,7 +4,6 @@ C# record declarations share file scope with the generated Check wrapper,
 so an external record shape cannot use that name.
 """
 exceptions = ["InvalidRecordNameError"]
-languages = ["CSharp"]
 
 [call]
 api = "constructor"

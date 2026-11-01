@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Cobol division and section headers cannot be used as variable names."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Cobol"]
 values = [
   "DATA",
   "DIVISION",

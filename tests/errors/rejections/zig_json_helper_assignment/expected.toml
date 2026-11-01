@@ -1,4 +1,8 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 0
+
+[ExistingVariableNotSelfContainedError]
+"D['allocator']" = "D cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
+"D['std']" = "D cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
 
 [ReservedVariableNameError]
 "Zig['allocator']" = "Zig cannot use ExistingVariable name 'allocator': it is a reserved identifier"

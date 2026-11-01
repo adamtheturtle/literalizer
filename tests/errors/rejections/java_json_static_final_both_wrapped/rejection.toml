@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Immutability takes precedence over Jackson class-field limitations."
 exceptions = ["ImmutableVariableModifierError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

@@ -4,7 +4,6 @@ Crystal's JSON::Any#as_i exposes signed 64-bit integers only, so a
 value outside that range has no accessor to read it back.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Crystal"]
 
 [call]
 api = "literalize"

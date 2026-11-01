@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Mojo rejects heterogeneous scalar, sibling-list and mixed-container shapes after TOML parsing."
 exceptions = ["HeterogeneousScalarCollectionError", "HeterogeneousSiblingListsError", "MixedDictValuesError", "MixedListValuesError"]
-languages = ["Mojo"]
 
 [call]
 api = "literalize"

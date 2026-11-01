@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "HCL block type keywords cannot be used as variable names."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Hcl"]
 values = [
   "check",
   "data",

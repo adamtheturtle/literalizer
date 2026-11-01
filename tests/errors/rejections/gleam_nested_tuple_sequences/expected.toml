@@ -1,5 +1,33 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 3; languages accepting: 11
+
+[Accepted]
+"CSharp['{\"a\":[1],\"b\":[]}']" = ""
+"CSharp['[[1],[]]']" = ""
+"Crystal['{\"a\":[1],\"b\":[]}']" = ""
+"Crystal['[[1],[]]']" = ""
+"Dart['{\"a\":[1],\"b\":[]}']" = ""
+"Dart['[[1],[]]']" = ""
+"Elixir['{\"a\":[1],\"b\":[]}']" = ""
+"Elixir['[[1],[]]']" = ""
+"Erlang['{\"a\":[1],\"b\":[]}']" = ""
+"Erlang['[[1],[]]']" = ""
+"Julia['{\"a\":[1],\"b\":[]}']" = ""
+"Julia['[[1],[]]']" = ""
+"Kotlin['{\"a\":[1],\"b\":[]}']" = ""
+"Kotlin['[[1],[]]']" = ""
+"Python['{\"a\":[1],\"b\":[]}']" = ""
+"Python['[[1],[]]']" = ""
+"Rust['[[1],[]]']" = ""
+"Swift['{\"a\":[1],\"b\":[]}']" = ""
+"Swift['[[1],[]]']" = ""
+"TypeScript['{\"a\":[1],\"b\":[]}']" = ""
+"TypeScript['[[1],[]]']" = ""
+
+[IncompatibleFormatsError]
+"Haskell['{\"a\":[1],\"b\":[]}']" = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT. Use LIST or select the Aeson JSON type."
+"Haskell['[[1],[]]']" = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT. Use LIST or select the Aeson JSON type."
 
 [UnrepresentableInputError]
 "Gleam['{\"a\":[1],\"b\":[]}']" = "Gleam nested sequences require sequence_format=LIST"
 "Gleam['[[1],[]]']" = "Gleam nested sequences require sequence_format=LIST"
+"Rust['{\"a\":[1],\"b\":[]}']" = "Rust renders a sequence as a fixed-size array, whose length is part of its type, so sibling sequences of lengths 0, 1 have no common type"

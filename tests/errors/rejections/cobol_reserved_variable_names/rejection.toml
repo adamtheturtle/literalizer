@@ -4,7 +4,6 @@ These seventeen COBOL reserved words cannot name a data item; GnuCOBOL
 rejects each one when used as an 01 name (#4771).
 """
 exceptions = ["ReservedVariableNameError"]
-languages = ["Cobol"]
 values = [
     "all",
     "copy",

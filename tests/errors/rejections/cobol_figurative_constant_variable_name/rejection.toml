@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Cobol figurative constants cannot be used as variable names."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Cobol"]
 values = [
   "HIGH-VALUE",
   "HIGH-VALUES",

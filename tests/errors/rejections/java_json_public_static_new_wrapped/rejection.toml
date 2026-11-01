@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Field modifiers require handling the checked Jackson parsing exception."
 exceptions = ["IncompatibleFormatsError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

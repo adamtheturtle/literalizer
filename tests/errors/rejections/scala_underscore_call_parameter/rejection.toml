@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A Scala parameter cannot be named from underscores alone."
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["Scala"]
 values = ["_", "__"]
 
 [call]

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "An immutable Jackson declaration cannot be reassigned."
 exceptions = ["ImmutableVariableModifierError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

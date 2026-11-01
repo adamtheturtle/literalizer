@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "An ordered map cannot contain a record below nested tuple levels."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Swift"]
 
 [call]
 api = "literalize"

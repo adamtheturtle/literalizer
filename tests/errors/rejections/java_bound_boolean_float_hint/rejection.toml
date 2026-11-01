@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A Java boolean binding cannot initialize a double field."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Java"]
 
 [call]
 api = "literalize"

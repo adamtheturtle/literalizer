@@ -16,10 +16,3 @@ target_function = "a.foo.Foo.bar"
 parameter_names = ["x"]
 per_element = false
 wrap_in_file = true
-
-[[accepts]]
-languages = ["Go", "Swift"]
-reason = """
-Go and Swift interpolate each component into the helper name as
-spelled, so case-distinct components yield distinct declarations.
-"""

@@ -4,7 +4,6 @@ A string value carrying |] closes the aesonQQ quasiquote the Haskell
 JSON value type is written into, mid-document.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Haskell"]
 
 [call]
 api = "literalize"

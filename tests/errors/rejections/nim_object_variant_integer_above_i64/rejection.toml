@@ -5,7 +5,6 @@ the preamble compares the two table value shapes before formatting
 rejects the integer, so the refusal also covers that comparison path.
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Nim"]
 
 [call]
 api = "literalize"

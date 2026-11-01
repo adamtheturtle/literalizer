@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Nim record fields collide under its style-insensitive identifier equality."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Nim"]
 
 [call]
 api = "literalize"

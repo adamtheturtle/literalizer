@@ -1,5 +1,33 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 3; languages accepting: 10
+
+[Accepted]
+"CSharp['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"CSharp['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+"Crystal['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"Crystal['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+"Dart['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"Dart['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+"Elixir['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"Elixir['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+"Erlang['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"Erlang['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+"Julia['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"Julia['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+"Kotlin['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"Kotlin['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+"Python['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"Python['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+"Swift['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"Swift['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+"TypeScript['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"TypeScript['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+
+[IncompatibleFormatsError]
+"Haskell['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT. Use LIST or select the Aeson JSON type."
+"Haskell['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT. Use LIST or select the Aeson JSON type."
 
 [UnrepresentableInputError]
+"Gleam['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = "Gleam nested sequences require sequence_format=LIST"
+"Gleam['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = "Gleam nested sequences require sequence_format=LIST"
 "Rust['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = "Rust renders a sequence as a fixed-size array, whose length is part of its type at every level it nests, so sibling sequences of the same outer length whose nested sequences differ in length have no common type"
 "Rust['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = "Rust renders a sequence as a fixed-size array, whose length is part of its type at every level it nests, so sibling sequences of the same outer length whose nested sequences differ in length have no common type"

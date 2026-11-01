@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Crystal keyword field renaming must not merge distinct input keys."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Crystal"]
 
 [call]
 api = "literalize"

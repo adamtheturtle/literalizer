@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Ada and COBOL reject the original escaped-surrogate regression input during parsing."
 exceptions = ["JSONParseError"]
-languages = ["Ada", "Cobol"]
 
 [call]
 api = "literalize"

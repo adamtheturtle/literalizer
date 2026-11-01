@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Rust JSON call arguments reject integers outside the serde_json::Value range."
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize_call"

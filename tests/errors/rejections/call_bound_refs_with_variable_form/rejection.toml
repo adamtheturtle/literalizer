@@ -5,7 +5,6 @@ its result, and the composition path that writes the declarations
 cannot apply a language's call-result file scaffold.
 """
 exceptions = ["UnsupportedCallShapeError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

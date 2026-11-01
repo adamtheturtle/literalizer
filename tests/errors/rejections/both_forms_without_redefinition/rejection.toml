@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Combined variable forms require a style that supports assignment."
 exceptions = ["ValueError"]
-languages = ["Elm"]
 
 [call]
 api = "literalize"

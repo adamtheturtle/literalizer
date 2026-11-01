@@ -4,7 +4,6 @@ A constructor spelling is still a Fortran name, so it is held to the
 same 63-character limit.
 """
 exceptions = ["InvalidCallTargetError"]
-languages = ["Fortran"]
 
 [call]
 api = "literalize_call"

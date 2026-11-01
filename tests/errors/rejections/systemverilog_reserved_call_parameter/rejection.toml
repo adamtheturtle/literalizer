@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "SystemVerilog keywords cannot name a call parameter."
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["SystemVerilog"]
 values = ["before", "int"]
 
 [call]

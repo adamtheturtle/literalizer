@@ -6,7 +6,6 @@ backslash and whitespace.  A base outside that set is refused when the
 language is built rather than when it renders.
 """
 exceptions = ["InvalidCppRawStringDelimiterError"]
-languages = ["Cpp"]
 values = [
   "",
   "abcdefghijklmnopq",

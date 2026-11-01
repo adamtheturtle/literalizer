@@ -1,4 +1,18 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 11
+
+[Accepted]
+C = ""
+CSharp = ""
+Cpp = ""
+Crystal = ""
+Kotlin = ""
+Nim = ""
+Rust = ""
+Scala = ""
+Swift = ""
+V = ""
+Zig = ""
 
 [UnrepresentableInputError]
+D = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
 Java = "Java's Map.entry() does not accept null values; remove the null-valued entry"

@@ -5,7 +5,6 @@ library prototypes into scope, so a wrapper named after one of them
 redeclares it with a different signature (#4534).
 """
 exceptions = ["InvalidModuleNameError"]
-languages = ["ObjectiveC"]
 values = ["memcpy", "printf", "strlen"]
 
 [call]

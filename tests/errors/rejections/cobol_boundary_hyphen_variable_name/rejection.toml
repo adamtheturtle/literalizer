@@ -5,7 +5,6 @@ underscore is rendered as one, so a name touching either boundary is
 refused.
 """
 exceptions = ["InvalidNewVariableNameError"]
-languages = ["Cobol"]
 values = ["_x", "x-", "x_"]
 
 [call]

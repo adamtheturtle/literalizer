@@ -4,7 +4,6 @@ The C++14 value variant and an externally named record shape are both
 written as type declarations in one file, so they cannot share a name.
 """
 exceptions = ["InvalidRecordNameError"]
-languages = ["Cpp"]
 
 [call]
 api = "constructor"

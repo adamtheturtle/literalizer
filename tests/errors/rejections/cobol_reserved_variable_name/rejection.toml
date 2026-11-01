@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Cobol reserved words that no program name or data name can take."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Cobol"]
 values = ["function", "null"]
 
 [call]

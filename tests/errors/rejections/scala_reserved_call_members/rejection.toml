@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Scala call members must use identifiers that compile without escaping."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Scala"]
 values = ["Playlist.new", "foo.class", "foo.def"]
 
 [call]

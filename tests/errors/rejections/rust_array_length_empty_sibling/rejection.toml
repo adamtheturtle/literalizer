@@ -4,7 +4,6 @@ An array annotation spells its length, so an empty sequence beside a
 non-empty one is a different type that no sibling can speak for.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

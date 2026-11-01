@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Mojo scalar VARIANT alternatives cannot include raw collection values."
 exceptions = ["MixedListValuesError"]
-languages = ["Mojo"]
 
 [call]
 api = "literalize"

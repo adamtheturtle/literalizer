@@ -1,4 +1,12 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 5
+
+[Accepted]
+Elm = ""
+OCaml = ""
+PureScript = ""
+Roc = ""
+Sml = ""
 
 [UnrepresentableInputError]
+Gleam = "Gleam record mode requires a valid type_name"
 Haskell = "Haskell record mode requires a valid type_name"

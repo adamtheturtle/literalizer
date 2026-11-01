@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Malformed underscored YAML numerics raise the public YAML parse error."
 exceptions = ["YAMLParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

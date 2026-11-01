@@ -1,4 +1,61 @@
-# languages rejecting: 12; languages accepting: 0
+# languages rejecting: 26; languages accepting: 39
+
+[Accepted]
+Bash = ""
+C = ""
+Clojure = ""
+Cobol = ""
+CommonLisp = ""
+Crystal = ""
+Dhall = ""
+Elixir = ""
+Elm = ""
+Erlang = ""
+FSharp = ""
+Forth = ""
+Gleam = ""
+JavaScript = ""
+Julia = ""
+Lua = ""
+Matlab = ""
+Mojo = ""
+Nim = ""
+ObjectiveC = ""
+Occam = ""
+Odin = ""
+Perl = ""
+Php = ""
+PowerShell = ""
+PureScript = ""
+R = ""
+Racket = ""
+Raku = ""
+Roc = ""
+Ruby = ""
+Rust = ""
+Scheme = ""
+Sml = ""
+Tcl = ""
+TypeScript = ""
+V = ""
+VisualBasic = ""
+Zig = ""
+
+[CallsNotSupportedByLanguageError]
+Json5 = "Json5 has no function call syntax"
+Jsonc = "Jsonc has no function call syntax"
+Norg = "Norg has no function call syntax"
+Toml = "Toml has no function call syntax"
+Yaml = "Yaml has no function call syntax"
+
+[CallsNotSupportedByToolError]
+Nix = "literalizer does not support function call rendering for Nix"
+
+[DottedCallTargetNotSupportedError]
+Hcl = "Hcl does not support dotted call targets: 'thing.if'"
+
+[InvalidCallParameterNameError]
+Fortran = "Fortran cannot use call parameter 'value': it is a reserved identifier"
 
 [InvalidCallTargetError]
 Ada = "Ada cannot use call target 'thing.if': component 'if' is a reserved identifier"
@@ -9,7 +66,13 @@ Dart = "Dart cannot use call target 'thing.if': component 'if' is a reserved ide
 Go = "Go cannot use call target 'thing.if': component 'if' is a reserved identifier"
 Groovy = "Groovy cannot use call target 'thing.if': component 'if' is a reserved identifier"
 Haskell = "Haskell cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Haxe = "Haxe cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Java = "Java cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Jsonnet = "Jsonnet cannot use call target 'thing.if': component 'if' is a reserved identifier"
 Kotlin = "Kotlin cannot use call target 'thing.if': component 'if' is a reserved identifier"
 OCaml = "OCaml cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Python = "Python cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Scala = "Scala cannot use call target 'thing.if': component 'if' is a reserved identifier"
 Swift = "Swift cannot use call target 'thing.if': component 'if' is a reserved identifier"
 SystemVerilog = "SystemVerilog cannot use call target 'thing.if': component 'if' is a reserved identifier"
+Wren = "Wren cannot use call target 'thing.if': component 'if' is a reserved identifier"

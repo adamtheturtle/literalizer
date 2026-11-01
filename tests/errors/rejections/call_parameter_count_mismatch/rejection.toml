@@ -13,10 +13,3 @@ sources = ["[[1]]", "[[1, 2], [3]]"]
 input_format = "json"
 target_function = "process"
 parameter_names = ["a", "b"]
-
-[[accepts]]
-languages = ["Scheme"]
-reason = """
-A Scheme call takes its arguments positionally with no declared
-arity, so a row of any length reaches the target.
-"""

@@ -4,7 +4,6 @@ An Elixir call root is stubbed as a module of that name, so a root
 naming the generated wrapper module would define it twice.
 """
 exceptions = ["InvalidCallTargetError"]
-languages = ["Elixir"]
 
 [call]
 api = "literalize_call"

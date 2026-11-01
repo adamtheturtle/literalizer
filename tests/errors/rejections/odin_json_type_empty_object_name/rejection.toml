@@ -4,7 +4,6 @@ Odin's JSON parser discards an object member whose name is empty, so
 the entry would be missing from the parsed value.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Odin"]
 
 [call]
 api = "literalize"

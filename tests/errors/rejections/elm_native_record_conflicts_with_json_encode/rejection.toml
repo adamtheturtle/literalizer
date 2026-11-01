@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Native records and Json.Encode values are different representations."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Elm"]
 
 [call]
 api = "literalize"

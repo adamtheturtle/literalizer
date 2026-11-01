@@ -1,4 +1,21 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 14
+
+[Accepted]
+C = ""
+CSharp = ""
+Cpp = ""
+D = ""
+Go = ""
+Java = ""
+Kotlin = ""
+Odin = ""
+Python = ""
+Rust = ""
+Scala = ""
+Swift = ""
+V = ""
+Zig = ""
 
 [UnrepresentableInputError]
 Crystal = "cannot represent the dict key 'end_' under the RECORD heterogeneous strategy: its field identifier 'end_' collides with another key in the same record"
+Nim = "Nim record field name 'end' is reserved"

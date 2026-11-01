@@ -4,7 +4,6 @@ A reference marker stands for one argument, so it counts toward the
 row length the parameter names are checked against.
 """
 exceptions = ["ParameterCountMismatchError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

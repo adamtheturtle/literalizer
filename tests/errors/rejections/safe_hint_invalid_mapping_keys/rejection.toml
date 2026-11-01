@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "SAFE hints retain declared key constraints for control characters and struct field names."
 exceptions = ["InvalidDictKeyError"]
-languages = ["Bash", "Dhall", "Matlab", "Nix"]
 
 [call]
 api = "literalize"

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Zig declarations cannot shadow a primitive or the wrapper's main."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Zig"]
 values = [
   "anyerror",
   "bool",

@@ -1,10 +1,10 @@
 schema_version = 1
-summary = "Unsupported Cpp options retain the language and option names."
+summary = "Unsupported annotation evaluation retains the language and option names."
 exceptions = ["UnsupportedOptionError"]
-languages = ["Cpp"]
+gates = [{ kind = "spec_field_absent", field = "annotation_evaluation" }]
 
 [attributes]
-language_name = "Cpp"
+language_name = "{language}"
 option = "annotation_evaluation"
 
 [call]

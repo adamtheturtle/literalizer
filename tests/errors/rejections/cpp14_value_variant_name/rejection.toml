@@ -5,7 +5,6 @@ name is written into the output as a type name and so must be a C++
 identifier that is not a keyword.
 """
 exceptions = ["InvalidRecordNameError"]
-languages = ["Cpp"]
 values = ["", "1Value", "class", "value-name"]
 
 [call]

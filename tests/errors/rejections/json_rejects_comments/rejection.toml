@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "JSON input rejects JSONC line comments."
 exceptions = ["JSONParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

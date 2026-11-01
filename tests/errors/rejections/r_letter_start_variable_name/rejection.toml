@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "R symbols begin with a letter, so a leading underscore is a syntax error."
 exceptions = ["InvalidNewVariableNameError"]
-languages = ["R"]
 values = ["_", "__x", "_x"]
 
 [call]

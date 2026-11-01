@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Call transforms require an expression call style that can be wrapped."
 exceptions = ["UnsupportedCallShapeError"]
-languages = ["Tcl"]
 
 [call]
 api = "literalize_call"

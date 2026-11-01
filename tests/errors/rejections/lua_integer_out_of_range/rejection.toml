@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Lua integer numerals outside signed 64-bit range become floats and are rejected."
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Lua"]
 option = "integer_format"
 
 [call]

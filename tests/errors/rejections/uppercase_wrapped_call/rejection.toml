@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Roc and V wrapped function declarations require lowercase names."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Roc", "V"]
 values = ["DoThing", "Playlist.new"]
 
 [call]

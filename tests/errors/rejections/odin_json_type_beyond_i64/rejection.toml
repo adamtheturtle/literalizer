@@ -4,7 +4,6 @@ The embedded JSON text is parsed with parse_integers=true, which stores
 every integer as an i64, so one outside that range wraps around.
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Odin"]
 
 [call]
 api = "literalize"

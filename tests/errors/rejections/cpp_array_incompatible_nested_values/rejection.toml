@@ -4,7 +4,6 @@ C++ ARRAY nested heterogeneous values require explicit variant-arm
 construction that the array renderer cannot currently represent.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Cpp"]
 
 [call]
 api = "literalize"

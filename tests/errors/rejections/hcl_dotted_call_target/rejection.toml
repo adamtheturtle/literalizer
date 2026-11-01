@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "HCL does not support dotted call targets."
 exceptions = ["DottedCallTargetNotSupportedError"]
-languages = ["Hcl"]
 
 [call]
 api = "literalize_call"

@@ -5,7 +5,6 @@ than routed through builtins.fromJSON, which floats or throws on it
 (#4503).
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Nix"]
 
 [call]
 api = "literalize"

@@ -1,4 +1,19 @@
-# languages rejecting: 3; languages accepting: 0
+# languages rejecting: 3; languages accepting: 13
+
+[Accepted]
+C = ""
+CSharp = ""
+Crystal = ""
+Go = ""
+Java = ""
+Kotlin = ""
+Odin = ""
+Python = ""
+Rust = ""
+Scala = ""
+Swift = ""
+V = ""
+Zig = ""
 
 [UnrepresentableInputError]
 Cpp = "C++ record field name 'template' is reserved"

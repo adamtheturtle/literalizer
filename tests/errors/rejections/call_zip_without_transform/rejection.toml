@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Companion values require a call transform that consumes them."
 exceptions = ["ZipValuesWithoutCallTransformError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

@@ -4,7 +4,6 @@ A COBOL compound value is a DATA DIVISION entry, so it cannot be
 written inline after USING.
 """
 exceptions = ["CallArgNotSupportedError"]
-languages = ["Cobol"]
 
 [call]
 api = "literalize_call"

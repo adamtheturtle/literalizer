@@ -4,7 +4,6 @@ A reference name is rewritten into the case a caller asks for, so a
 case the language has no identifier form for is refused.
 """
 exceptions = ["UnsupportedIdentifierCaseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

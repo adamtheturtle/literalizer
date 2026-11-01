@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Kotlin reserves every all-underscore name, not just the blank identifier."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Kotlin"]
 values = ["__", "___"]
 
 [call]

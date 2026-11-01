@@ -5,7 +5,6 @@ no negative sibling narrows to it, so a collection mixing the two
 fits no single element type.
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["Cpp"]
 
 [call]
 api = "literalize"

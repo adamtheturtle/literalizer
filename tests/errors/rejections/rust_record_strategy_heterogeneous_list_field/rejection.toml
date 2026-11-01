@@ -5,7 +5,6 @@ heterogeneous list nested in a record still meets the standard check:
 vec! has no element type that holds mixed scalars.
 """
 exceptions = ["HeterogeneousCollectionError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

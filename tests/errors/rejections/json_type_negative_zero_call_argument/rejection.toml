@@ -4,7 +4,6 @@ A call argument is built as the same JSON value a declared one is,
 and that type has no signed zero.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Elm", "Haskell", "PureScript"]
 option = "json_type"
 
 [call]

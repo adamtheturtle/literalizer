@@ -9,7 +9,6 @@ integration suite catches HeterogeneousCollectionError and skips, so
 this has no golden rendering to check.
 """
 exceptions = ["HeterogeneousSiblingMapsError"]
-languages = ["Cpp"]
 
 [call]
 api = "literalize"

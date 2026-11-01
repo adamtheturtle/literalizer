@@ -1,4 +1,40 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 5; languages accepting: 28
+
+[Accepted]
+Bash = ""
+C = ""
+CSharp = ""
+Crystal = ""
+D = ""
+FSharp = ""
+Haxe = ""
+Java = ""
+JavaScript = ""
+Julia = ""
+Kotlin = ""
+Nim = ""
+Norg = ""
+OCaml = ""
+ObjectiveC = ""
+Perl = ""
+Php = ""
+PowerShell = ""
+Raku = ""
+Ruby = ""
+Scala = ""
+Swift = ""
+SystemVerilog = ""
+Toml = ""
+TypeScript = ""
+V = ""
+VisualBasic = ""
+Zig = ""
 
 [UnrepresentableInputError]
 Cpp = "C++ ARRAY cannot construct nested heterogeneous values with incompatible element types"
+Rust = "Rust nested sibling lists require one concrete element type; these siblings are incompatible"
+
+[VariableNameNotSupportedError]
+Json5 = "Json5 does not support variable names: 'my_data'"
+Jsonc = "Jsonc does not support variable names: 'my_data'"
+Jsonnet = "Jsonnet does not support variable names: 'my_data'"

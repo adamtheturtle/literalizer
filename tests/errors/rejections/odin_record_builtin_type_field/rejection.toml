@@ -4,7 +4,6 @@ An Odin field named after a builtin type shadows it inside the struct,
 and the compiler also reads not_in without its underscore.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Odin"]
 
 [call]
 api = "literalize"

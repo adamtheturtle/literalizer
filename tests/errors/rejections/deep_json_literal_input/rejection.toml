@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "The literal API rejects depth-800 JSON with a typed parse error."
 exceptions = ["JSONParseError"]
-languages = ["PureScript"]
 
 [call]
 api = "literalize"

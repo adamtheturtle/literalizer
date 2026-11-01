@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "C# wrapped calls reject their generated Main entrypoint."
 exceptions = ["InvalidCallTargetError"]
-languages = ["CSharp"]
 
 [call]
 api = "literalize_call"

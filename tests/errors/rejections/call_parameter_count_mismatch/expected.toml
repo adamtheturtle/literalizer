@@ -1,5 +1,9 @@
 # languages rejecting: 58; languages accepting: 1
 
+[Accepted]
+"Scheme['[[1]]']" = ""
+"Scheme['[[1, 2], [3]]']" = ""
+
 [ParameterCountMismatchError]
 "Ada['[[1]]']" = "Expected 2 parameters but got 1 values"
 "Ada['[[1, 2], [3]]']" = "Expected 2 parameters but got 1 values"

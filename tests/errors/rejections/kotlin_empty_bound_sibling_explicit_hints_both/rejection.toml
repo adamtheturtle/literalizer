@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Kotlin explicit hints refuse mixed empty/nonempty siblings through bound references."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Kotlin"]
 
 [call]
 api = "literalize"

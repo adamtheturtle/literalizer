@@ -4,7 +4,6 @@ Rust nested sibling lists require one concrete element type under the default
 ERROR strategy and must reject incompatible record-map shapes.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Rust"]
 
 [call]
 api = "literalize"

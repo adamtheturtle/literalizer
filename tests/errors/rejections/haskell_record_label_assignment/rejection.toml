@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Haskell native record labels cannot collide with complete-file binding names."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Haskell"]
 values = ["foo"]
 
 [call]

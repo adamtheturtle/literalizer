@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Tcl command keywords cannot be used as variable names."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Tcl"]
 values = [
   "break",
   "catch",
