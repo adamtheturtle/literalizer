@@ -1,4 +1,6 @@
 my_data <- list(
+    "ancient_date" = as.Date("1500-03-01"),
+    "modern_date" = as.Date("2024-01-15"),
     "before_date" = as.Date("1582-10-04"),
     "gap_date" = as.Date("1582-10-10"),
     "transition_date" = as.Date("1582-10-15"),

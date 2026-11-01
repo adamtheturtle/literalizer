@@ -1,5 +1,7 @@
 require 'date'
 my_data = {
+  "ancient_date" => Date.new(1500, 3, 1, Date::GREGORIAN),
+  "modern_date" => Date.new(2024, 1, 15),
   "before_date" => Date.new(1582, 10, 4, Date::GREGORIAN),
   "gap_date" => Date.new(1582, 10, 10, Date::GREGORIAN),
   "transition_date" => Date.new(1582, 10, 15),

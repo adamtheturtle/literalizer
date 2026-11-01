@@ -1,6 +1,8 @@
 with A_Stub; use A_Stub;
 procedure Main is
     my_data : A_Val := AMap'[
+        AEntry ("ancient_date", AStr ("1500-03-01")),
+        AEntry ("modern_date", AStr ("2024-01-15")),
         AEntry ("before_date", AStr ("1582-10-04")),
         AEntry ("gap_date", AStr ("1582-10-10")),
         AEntry ("transition_date", AStr ("1582-10-15")),

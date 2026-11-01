@@ -12,7 +12,6 @@ from literalizer._formatters.format_integers import (
 from literalizer._language import DateFormatEnum
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import ManifestLanguage
-from tests.native_value_sources import RefDatetimeInput
 from tests.toml_cases import load_toml_cases
 
 
@@ -30,11 +29,10 @@ class _IntegerSuffixCase(BaseModel, extra="forbid", frozen=True):
 class _LanguageCase(
     BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
 ):
-    """A direct language operation and its exact rendered result."""
+    """The identity of a direct language operation."""
 
     name: str
     language: ManifestLanguage
-    expected: str
 
 
 class _DateViewCase(_LanguageCase, frozen=True):
@@ -44,16 +42,11 @@ class _DateViewCase(_LanguageCase, frozen=True):
     value: dt.datetime
 
 
-class _DatetimeOffsetCase(_LanguageCase, frozen=True):
-    """A native datetime retaining an exact UTC offset."""
-
-    value: RefDatetimeInput
-
-
 class _EmptyCallWrapperCase(_LanguageCase, frozen=True):
     """An internal wrapper with no declarations or call preamble."""
 
     calls: str
+    expected: str
 
 
 class _FormatterCases(BaseModel, extra="forbid", frozen=True):
@@ -61,7 +54,6 @@ class _FormatterCases(BaseModel, extra="forbid", frozen=True):
 
     integer_suffixes: tuple[_IntegerSuffixCase, ...]
     date_views: tuple[_DateViewCase, ...]
-    datetime_offsets: tuple[_DatetimeOffsetCase, ...]
     empty_call_wrappers: tuple[_EmptyCallWrapperCase, ...]
 
 
@@ -89,23 +81,14 @@ def test_integer_suffix_composition(case: _IntegerSuffixCase) -> None:
     argnames="case", argvalues=_CASES.date_views, ids=lambda case: case.name
 )
 def test_date_formatter_accepts_datetime(case: _DateViewCase) -> None:
-    """Both date views preserve the independently declared output."""
+    """Accept datetime through the date interface, outside API
+    dispatch.
+    """
     member = enum_member_by_name(
         enum_cls=case.language.DateFormats, name=case.format
     )
     assert isinstance(member, DateFormatEnum)
-    assert member(case.value) == case.expected
-    assert member(case.value.date()) == case.expected
-
-
-@pytest.mark.parametrize(
-    argnames="case",
-    argvalues=_CASES.datetime_offsets,
-    ids=lambda case: case.name,
-)
-def test_native_datetime_offsets(case: _DatetimeOffsetCase) -> None:
-    """The direct formatter retains offsets finer than a minute."""
-    assert case.language().format_datetime(case.value) == case.expected
+    assert member(case.value) == member(case.value.date())
 
 
 @pytest.mark.parametrize(

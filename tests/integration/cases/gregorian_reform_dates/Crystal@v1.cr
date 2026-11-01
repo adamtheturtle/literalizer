@@ -1,6 +1,8 @@
 module Fixture_gregorian_reform_dates_Crystal
 extend self
 my_data = {
+    "ancient_date" => Time.utc(1500, 3, 1),
+    "modern_date" => Time.utc(2024, 1, 15),
     "before_date" => Time.utc(1582, 10, 4),
     "gap_date" => Time.utc(1582, 10, 10),
     "transition_date" => Time.utc(1582, 10, 15),

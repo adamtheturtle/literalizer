@@ -1,6 +1,8 @@
 from __future__ import annotations
 import datetime
 my_data: dict[str, datetime.date | datetime.datetime] = {
+    "ancient_date": datetime.date(year=1500, month=3, day=1),
+    "modern_date": datetime.date(year=2024, month=1, day=15),
     "before_date": datetime.date(year=1582, month=10, day=4),
     "gap_date": datetime.date(year=1582, month=10, day=10),
     "transition_date": datetime.date(year=1582, month=10, day=15),

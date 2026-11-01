@@ -338,20 +338,28 @@ class RenderContext(  # noqa: NOD001
     record_null_mapping_substitutions: dict[
         str, list[SubstitutionMappingEntry]
     ] = Field(default_factory=dict)
+    record_null_value_sources: dict[str, RefValueSource] = Field(
+        default_factory=dict
+    )
 
     def resolved_record_null_substitutions(
         self,
     ) -> Mapping[str, ValueInput] | None:
-        """Merge ordinary substitutions with mappings using scalar
-        keys.
+        """Resolve ordinary, mapping-key and native-value
+        substitutions.
         """
-        if len(self.record_null_mapping_substitutions) == 0:
+        if (
+            len(self.record_null_mapping_substitutions) == 0
+            and len(self.record_null_value_sources) == 0
+        ):
             return self.record_null_substitutions
         substitutions = dict[str, ValueInput]()
         if self.record_null_substitutions is not None:
             substitutions.update(self.record_null_substitutions)
         for name, entries in self.record_null_mapping_substitutions.items():
             substitutions[name] = {entry.key: entry.value for entry in entries}
+        for name, source in self.record_null_value_sources.items():
+            substitutions[name] = source.to_value()
         return substitutions
 
 

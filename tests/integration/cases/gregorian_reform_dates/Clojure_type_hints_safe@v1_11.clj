@@ -1,4 +1,6 @@
 (def my_data {
+    "ancient_date" #inst "1500-03-01T00:00:00.000-00:00"
+    "modern_date" #inst "2024-01-15T00:00:00.000-00:00"
     "before_date" #inst "1582-10-04T00:00:00.000-00:00"
     "gap_date" #inst "1582-10-10T00:00:00.000-00:00"
     "transition_date" #inst "1582-10-15T00:00:00.000-00:00"

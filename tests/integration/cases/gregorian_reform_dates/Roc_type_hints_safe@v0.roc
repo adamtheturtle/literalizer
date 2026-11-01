@@ -7,6 +7,8 @@ Val : [
 
 my_data : Val
 my_data = RDict [
+    ("ancient_date", RStr "1500-03-01"),
+    ("modern_date", RStr "2024-01-15"),
     ("before_date", RStr "1582-10-04"),
     ("gap_date", RStr "1582-10-10"),
     ("transition_date", RStr "1582-10-15"),

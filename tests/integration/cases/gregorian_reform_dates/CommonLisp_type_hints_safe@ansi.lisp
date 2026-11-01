@@ -1,4 +1,6 @@
 (defparameter *my_data* (list
+    (cons "ancient_date" "1500-03-01")
+    (cons "modern_date" "2024-01-15")
     (cons "before_date" "1582-10-04")
     (cons "gap_date" "1582-10-10")
     (cons "transition_date" "1582-10-15")

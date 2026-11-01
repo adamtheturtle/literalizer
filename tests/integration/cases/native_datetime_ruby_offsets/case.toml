@@ -1,0 +1,49 @@
+# Ruby Time.new preserves exact native UTC offsets (#6574).
+schema_version = 1
+suites = ["base"]
+gates = [{kind = "enum_member_present", option = "datetime_format", member = "RUBY"}]
+
+[base_context.record_null_value_sources.stamps]
+kind = "sequence"
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = 1000000
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = -1000000
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = 1
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = -1
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = 19815000001
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = -19815000001

@@ -2,6 +2,8 @@
 -export([x/0]).
 x() ->
     My_data = #{
+        "ancient_date" => {1500, 3, 1},
+        "modern_date" => {2024, 1, 15},
         "before_date" => {1582, 10, 4},
         "gap_date" => {1582, 10, 10},
         "transition_date" => {1582, 10, 15},

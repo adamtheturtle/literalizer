@@ -1,5 +1,7 @@
 use DateTime;
 my $my_data = {
+    "ancient_date" => DateTime->new(year => 1500, month => 3, day => 1),
+    "modern_date" => DateTime->new(year => 2024, month => 1, day => 15),
     "before_date" => DateTime->new(year => 1582, month => 10, day => 4),
     "gap_date" => DateTime->new(year => 1582, month => 10, day => 10),
     "transition_date" => DateTime->new(year => 1582, month => 10, day => 15),

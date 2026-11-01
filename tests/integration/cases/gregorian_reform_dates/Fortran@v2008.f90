@@ -85,6 +85,8 @@ program main
     implicit none
     type(fval_t) :: my_data
     my_data = fmap([fval_t :: &
+        fentry('ancient_date', fstr("1500-03-01")), &
+        fentry('modern_date', fstr("2024-01-15")), &
         fentry('before_date', fstr("1582-10-04")), &
         fentry('gap_date', fstr("1582-10-10")), &
         fentry('transition_date', fstr("1582-10-15")), &

@@ -1,6 +1,8 @@
 import std.json;
 void main() {
 auto my_data = JSONValue([
+    "ancient_date": JSONValue("1500-03-01"),
+    "modern_date": JSONValue("2024-01-15"),
     "before_date": JSONValue("1582-10-04"),
     "gap_date": JSONValue("1582-10-10"),
     "transition_date": JSONValue("1582-10-15"),

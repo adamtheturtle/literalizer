@@ -13,6 +13,8 @@ MOBILE DATA TYPE LIT IS
 
 PROC main ()
     VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "ancient_date"; MOBILE LIT(lit.str; MOBILE []BYTE "1500-03-01")),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "modern_date"; MOBILE LIT(lit.str; MOBILE []BYTE "2024-01-15")),
         MOBILE LIT(lit.pair; MOBILE []BYTE "before_date"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-04")),
         MOBILE LIT(lit.pair; MOBILE []BYTE "gap_date"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-10")),
         MOBILE LIT(lit.pair; MOBILE []BYTE "transition_date"; MOBILE LIT(lit.str; MOBILE []BYTE "1582-10-15")),

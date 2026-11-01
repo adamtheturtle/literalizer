@@ -16,6 +16,8 @@ struct CVal {
 struct CKV { const char *k; CVal v; };
 int main(void) {
 CVal my_data = ((CVal){.m = (CKV[]){
+    {"ancient_date", ((CVal){.s = "1500-03-01"})},
+    {"modern_date", ((CVal){.s = "2024-01-15"})},
     {"before_date", ((CVal){.s = "1582-10-04"})},
     {"gap_date", ((CVal){.s = "1582-10-10"})},
     {"transition_date", ((CVal){.s = "1582-10-15"})},

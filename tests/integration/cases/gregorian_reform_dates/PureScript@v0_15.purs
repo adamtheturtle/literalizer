@@ -9,6 +9,8 @@ data Val
 
 my_data :: Val
 my_data = PDict [
+    (Tuple "ancient_date" (PStr "1500-03-01")),
+    (Tuple "modern_date" (PStr "2024-01-15")),
     (Tuple "before_date" (PStr "1582-10-04")),
     (Tuple "gap_date" (PStr "1582-10-10")),
     (Tuple "transition_date" (PStr "1582-10-15")),

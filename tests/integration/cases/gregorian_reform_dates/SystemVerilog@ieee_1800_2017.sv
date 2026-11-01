@@ -12,6 +12,8 @@ typedef struct {
 module main;
 initial begin
 static _VKV my_data[] = '{
+    _VKV'{k: "ancient_date", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "1500-03-01"}},
+    _VKV'{k: "modern_date", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "2024-01-15"}},
     _VKV'{k: "before_date", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "1582-10-04"}},
     _VKV'{k: "gap_date", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "1582-10-10"}},
     _VKV'{k: "transition_date", v: _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "1582-10-15"}},

@@ -1,5 +1,7 @@
 <?php
 $my_data = [
+    "ancient_date" => new DateTime("1500-03-01", new DateTimeZone("UTC")),
+    "modern_date" => new DateTime("2024-01-15", new DateTimeZone("UTC")),
     "before_date" => new DateTime("1582-10-04", new DateTimeZone("UTC")),
     "gap_date" => new DateTime("1582-10-10", new DateTimeZone("UTC")),
     "transition_date" => new DateTime("1582-10-15", new DateTimeZone("UTC")),

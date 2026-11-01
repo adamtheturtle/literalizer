@@ -1,6 +1,8 @@
 Imports System.Collections.Generic
 Module Check
     Dim my_data = New Dictionary(Of String, Object) From {
+        {"ancient_date", "1500-03-01"},
+        {"modern_date", "2024-01-15"},
         {"before_date", "1582-10-04"},
         {"gap_date", "1582-10-10"},
         {"transition_date", "1582-10-15"},
