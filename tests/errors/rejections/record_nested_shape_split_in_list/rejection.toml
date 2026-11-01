@@ -4,7 +4,6 @@ Two records that agree on their keys but whose nested records differ
 cannot share one declaration, so a list holding both is refused.
 """
 exceptions = ["HeterogeneousSiblingListsError"]
-languages = ["Cpp"]
 
 [call]
 api = "literalize"

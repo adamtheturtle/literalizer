@@ -4,7 +4,6 @@ A record field literal cannot overflow its inferred u64 field type, so
 a field value of 2**64 is refused under the RECORD strategy (#2713).
 """
 exceptions = ["UnrepresentableIntegerError"]
-languages = ["V", "Zig"]
 
 [call]
 api = "literalize"

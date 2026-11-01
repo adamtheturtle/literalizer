@@ -1,0 +1,12 @@
+# languages rejecting: 3; languages accepting: 4
+
+[Accepted]
+Elm = ""
+Gleam = ""
+Haskell = ""
+PureScript = ""
+
+[UnrepresentableInputError]
+OCaml = "OCaml record mode cannot represent field 'when'"
+Roc = "Roc native record mode cannot represent field 'when'"
+Sml = "SML record mode requires 32-bit epoch integers"

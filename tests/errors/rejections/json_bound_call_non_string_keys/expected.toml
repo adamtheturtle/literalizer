@@ -1,0 +1,23 @@
+# languages rejecting: 2; languages accepting: 0
+
+[ReservedVariableNameError]
+"D['[{nested: {1.5: value}}]']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['[{nested: {1: value}}]']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['[{nested: {true: value}}]']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{1.5: value}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{1: value}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{nested: {1.5: value}}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{nested: {1: value}}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{nested: {true: value}}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+"D['{true: value}']" = "D cannot use reference name 'shared': it is a reserved identifier"
+
+[UnrepresentableInputError]
+"Zig['[{nested: {1.5: value}}]']" = "Zig cannot represent dict key of type float"
+"Zig['[{nested: {1: value}}]']" = "Zig cannot represent dict key of type int"
+"Zig['[{nested: {true: value}}]']" = "Zig cannot represent dict key of type bool"
+"Zig['{1.5: value}']" = "Zig cannot represent dict key of type float"
+"Zig['{1: value}']" = "Zig cannot represent dict key of type int"
+"Zig['{nested: {1.5: value}}']" = "Zig cannot represent dict key of type float"
+"Zig['{nested: {1: value}}']" = "Zig cannot represent dict key of type int"
+"Zig['{nested: {true: value}}']" = "Zig cannot represent dict key of type bool"
+"Zig['{true: value}']" = "Zig cannot represent dict key of type bool"

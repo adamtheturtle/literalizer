@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "SystemVerilog keywords cannot name a dotted call member."
+exceptions = ["InvalidCallTargetError"]
+values = ["before", "int"]
+
+[call]
+api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = "thing.{value}"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true

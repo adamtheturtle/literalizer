@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[InvalidCallTargetError]
-Elixir = "Elixir cannot use call target 'Check.new': it collides with the generated file entrypoint"

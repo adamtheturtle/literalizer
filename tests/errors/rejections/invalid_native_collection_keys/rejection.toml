@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Lua rejects null and NaN mapping keys and set members."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize"
+sources = ["null: value\n", ".nan: value\n", "!!set\n? null\n", "!!set\n? .nan\n"]
+input_format = "yaml"

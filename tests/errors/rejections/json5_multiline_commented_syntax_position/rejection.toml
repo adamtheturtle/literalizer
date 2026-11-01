@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "JSON5 syntax errors after multiline comments retain original source coordinates."
 exceptions = ["JSON5ParseError"]
-languages = ["Rust"]
 position = [4, 18]
 
 [call]

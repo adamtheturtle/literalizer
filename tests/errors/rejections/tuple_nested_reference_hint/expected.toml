@@ -1,0 +1,22 @@
+# languages rejecting: 13; languages accepting: 0
+
+[CallArgNotSupportedError]
+"Julia['[1, x]']" = "Julia cannot accept this value as a call argument: Julia output is not wrapped in a function body; variable references require a surrounding assignment that cannot be injected (got 'shared')"
+
+[IncompatibleFormatsError]
+"Haskell['[1, x]']" = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT. Use LIST or select the Aeson JSON type."
+
+[RefNotSelfContainedError]
+"CSharp['[1, x]']" = "CSharp cannot combine wrap_in_file=True with the unbound reference shared because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+"Crystal['[1, x]']" = "Crystal cannot combine wrap_in_file=True with the unbound reference shared because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+"Dart['[1, x]']" = "Dart cannot combine wrap_in_file=True with the unbound reference shared because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+"Elixir['[1, x]']" = "Elixir cannot combine wrap_in_file=True with the unbound reference shared because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+"Erlang['[1, x]']" = "Erlang cannot combine wrap_in_file=True with the unbound reference shared because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+"Kotlin['[1, x]']" = "Kotlin cannot combine wrap_in_file=True with the unbound reference shared because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+"Python['[1, x]']" = "Python cannot combine wrap_in_file=True with the unbound reference shared because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+"Rust['[1, x]']" = "Rust cannot combine wrap_in_file=True with the unbound reference shared because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+"Swift['[1, x]']" = "Swift cannot combine wrap_in_file=True with the unbound reference shared because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+"TypeScript['[1, x]']" = "TypeScript cannot combine wrap_in_file=True with the unbound reference shared because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+
+[UnrepresentableInputError]
+"Gleam['[1, x]']" = "Gleam nested sequences require sequence_format=LIST"

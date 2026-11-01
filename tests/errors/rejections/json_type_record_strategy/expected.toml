@@ -1,5 +1,13 @@
 # languages rejecting: 6; languages accepting: 6
 
+[Accepted]
+"CSharp[SYSTEM_TEXT_JSON_NODE]" = ""
+"Crystal[JSON_ANY]" = ""
+"D[STD_JSON_VALUE]" = ""
+"Nim[JSON_NODE]" = ""
+"Rust[SERDE_JSON_VALUE]" = ""
+"Scala[CIRCE]" = ""
+
 [IncompatibleFormatsError]
 "C[CJSON]" = "C json_type renders data as a cJSON_Create*(...) node tree and is incompatible with heterogeneous_strategy=RECORD, which generates struct declarations. Use heterogeneous_strategy=ERROR."
 "Cpp[NLOHMANN_JSON]" = "Cpp json_type renders data as a structural nlohmann::json expression and is incompatible with heterogeneous_strategy=RECORD, which generates struct declarations. Use heterogeneous_strategy=ERROR."

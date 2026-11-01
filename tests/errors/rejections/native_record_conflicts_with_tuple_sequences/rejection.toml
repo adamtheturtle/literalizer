@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "Tuple sequences do not have a uniform list field type."
+exceptions = ["IncompatibleFormatsError"]
+
+[call]
+api = "literalize"
+sources = [
+    '{"x":[1]}',
+]
+input_format = "json"
+variable_form = "none"
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "RECORD"},
+    {kind = "option_member", option = "sequence_format", member = "TUPLE"},
+]

@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Rust JSON call arguments reject integers outside the serde_json::Value range."
+exceptions = ["UnrepresentableIntegerError"]
+
+[call]
+api = "literalize_call"
+sources = ["[18446744073709551616]", '[{"nested": -9223372036854775809}]']
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]
+kwargs = [
+  { kind = "option_member", option = "json_type", member = "SERDE_JSON_VALUE" },
+]

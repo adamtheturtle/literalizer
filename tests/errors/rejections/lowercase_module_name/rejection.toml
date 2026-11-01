@@ -4,7 +4,6 @@ A wrapper that is a type or module declaration must start with an
 uppercase letter.
 """
 exceptions = ["InvalidModuleNameError"]
-languages = ["Crystal", "Haskell", "Haxe"]
 
 [call]
 api = "constructor"

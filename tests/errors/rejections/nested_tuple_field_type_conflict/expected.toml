@@ -1,5 +1,8 @@
 # languages rejecting: 4; languages accepting: 1
 
+[Accepted]
+TypeScript = ""
+
 [HeterogeneousSiblingListsError]
 Kotlin = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
 Rust = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"

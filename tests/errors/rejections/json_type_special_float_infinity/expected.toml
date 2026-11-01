@@ -1,5 +1,19 @@
 # languages rejecting: 9; languages accepting: 12
 
+[Accepted]
+"C[CJSON]" = ""
+"CSharp[SYSTEM_TEXT_JSON_NODE]" = ""
+"Cpp[NLOHMANN_JSON]" = ""
+"D[STD_JSON_VALUE]" = ""
+"Elm[JSON_ENCODE_VALUE]" = ""
+"FSharp[SYSTEM_TEXT_JSON_NODE]" = ""
+"Java[JACKSON_JSON_NODE]" = ""
+"Kotlin[KOTLINX_JSON_ELEMENT]" = ""
+"Nim[JSON_NODE]" = ""
+"OCaml[YOJSON_SAFE_T]" = ""
+"Rust[SERDE_JSON_VALUE]" = ""
+"Scala[CIRCE]" = ""
+
 [UnrepresentableSpecialFloatError]
 "Cobol[CJSON]" = "COBOL cannot represent special float inf."
 "Crystal[JSON_ANY]" = "Crystal(json_type=JSON_ANY) cannot represent special floats because JSON.parse accepts only finite numbers."

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Wrapped calls reject their generated main entrypoint."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Dart", "Elm", "Gleam", "Go", "Mojo", "PureScript", "V"]
 
 [call]
 api = "literalize_call"

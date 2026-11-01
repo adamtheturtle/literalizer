@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Haxe and Objective-C cannot use super as a variable name."
 exceptions = ["ReservedVariableNameError"]
-languages = ["Haxe", "ObjectiveC"]
 values = ["super"]
 
 [call]

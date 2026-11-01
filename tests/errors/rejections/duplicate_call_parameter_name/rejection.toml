@@ -4,7 +4,6 @@ A stub cannot declare one parameter twice.  Ada compares identifiers
 without regard to case, so two spellings of one name collide there.
 """
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

@@ -1,0 +1,22 @@
+# languages rejecting: 3; languages accepting: 10
+
+[Accepted]
+CSharp = ""
+Crystal = ""
+Dart = ""
+Elixir = ""
+Erlang = ""
+Kotlin = ""
+Python = ""
+Rust = ""
+Swift = ""
+TypeScript = ""
+
+[CallArgNotSupportedError]
+Julia = "Julia cannot accept this value as a call argument: Julia output is not wrapped in a function body; variable references require a surrounding assignment that cannot be injected (got 'shared')"
+
+[IncompatibleFormatsError]
+Haskell = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT. Use LIST or select the Aeson JSON type."
+
+[UnrepresentableInputError]
+Gleam = "Gleam nested sequences require sequence_format=LIST"

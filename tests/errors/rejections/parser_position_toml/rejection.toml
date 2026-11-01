@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Malformed TOML reports its original source position."
 exceptions = ["TOMLParseError"]
-languages = ["Rust"]
 position = [1, 5]
 
 [call]

@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "The Wren null literal, which no variable name can take."
+exceptions = ["ReservedVariableNameError"]
+values = ["null"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

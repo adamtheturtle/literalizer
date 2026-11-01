@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Case-converted bound references cannot shadow the call-target scaffold."
 exceptions = ["UnsupportedCallShapeError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

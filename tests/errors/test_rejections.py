@@ -1,10 +1,9 @@
 """Golden-file tests for the declared per-language rejections.
 
-Each manifest under ``rejections/`` runs its call against every
-language it selects and records what was raised in that manifest's
-``expected.toml``: a table per exception type, a line per case.  A
-language that joins a manifest's gates -- a new language declaring
-``json_type``, say -- shows up as a new line rather than as silence.
+Each manifest runs its call against every applicable language and records
+acceptance or the exact exception and message in ``expected.toml``.
+Capability gates and requested enum members narrow applicability without
+language lists or probing the call's result.
 
 A message may instead declare an inline table with ``default`` and
 Python ``major.minor`` overrides. Each runtime checks its exact message;
@@ -27,7 +26,7 @@ from ruamel.yaml import YAML
 from tomlkit.items import InlineTable
 
 import literalizer
-from literalizer.exceptions import ParseError
+from literalizer.exceptions import LiteralizerError, ParseError
 from literalizer.languages import Python
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import CallTransform
@@ -36,9 +35,7 @@ from tests.yaml_support import as_yaml_parser
 
 from .rejection_cases import (
     RejectionCase,
-    accepting_cases,
     rejection_cases,
-    selected_languages,
 )
 from .rejection_manifests import (
     LANGUAGES_BY_NAME,
@@ -331,6 +328,26 @@ def _run(*, case: RejectionCase, call: CallSpec) -> None:
     )
 
 
+@beartype
+def _check_error_attributes(
+    *, manifest: RejectionManifest, raised: Exception, language_name: str
+) -> None:
+    """Keep the scenario's metadata assertions on its declared error types."""
+    if manifest.position is not None:
+        assert isinstance(raised, ParseError)
+        assert (raised.line, raised.column) == manifest.position
+    if manifest.attributes is not None:
+        actual_attributes = ErrorAttributes.model_validate(
+            obj=raised, from_attributes=True, strict=True
+        ).model_dump(include=manifest.attributes.model_fields_set)
+        expected_attributes = manifest.attributes.model_dump(
+            exclude_unset=True
+        )
+        if expected_attributes.get("language_name") == "{language}":
+            expected_attributes["language_name"] = language_name
+        assert actual_attributes == expected_attributes
+
+
 @pytest.mark.parametrize(
     argnames="manifest",
     argvalues=_MANIFESTS,
@@ -340,57 +357,52 @@ def test_rejection_messages(
     manifest: RejectionManifest,
     file_regression: FileRegressionFixture,
 ) -> None:
-    """Every selected language raises, with the golden file's message."""
+    """Snapshot acceptance and exact errors for every applicable
+    language.
+    """
     messages_by_exception: dict[str, dict[str, str]] = {}
+    rejecting: set[str] = set()
+    accepting: set[str] = set()
+    observed: set[type[Exception]] = set()
+    caught_exceptions: tuple[type[Exception], ...] = (
+        LiteralizerError,
+        *manifest.exceptions,
+    )
     for case in rejection_cases(manifest=manifest):
-        with pytest.raises(expected_exception=manifest.exceptions) as caught:
+        try:
             _run(case=case, call=manifest.call)
-        raised = caught.value
-        if manifest.position is not None:
-            assert isinstance(raised, ParseError)
-            assert (raised.line, raised.column) == manifest.position
-        if manifest.attributes is not None:
-            actual_attributes = ErrorAttributes.model_validate(
-                obj=raised, from_attributes=True, strict=True
-            ).model_dump(include=manifest.attributes.model_fields_set)
-            assert actual_attributes == manifest.attributes.model_dump(
-                exclude_unset=True
+        except caught_exceptions as raised:
+            rejecting.add(case.lang_cls.__name__)
+            observed.add(type(raised))
+            if isinstance(raised, manifest.exceptions):
+                _check_error_attributes(
+                    manifest=manifest,
+                    raised=raised,
+                    language_name=case.lang_cls.__name__,
+                )
+            raised_by = messages_by_exception.setdefault(
+                type(raised).__name__, {}
             )
-        raised_by = messages_by_exception.setdefault(type(raised).__name__, {})
-        raised_by[case.case_id] = str(object=raised)
-    accepting = len(manifest.accepting_languages)
+            raised_by[case.case_id] = str(object=raised)
+        else:
+            accepting.add(case.lang_cls.__name__)
+            messages_by_exception.setdefault("Accepted", {})[case.case_id] = ""
+    for expected_exception in manifest.exceptions:
+        assert any(
+            issubclass(actual, expected_exception) for actual in observed
+        ), (manifest.name, expected_exception.__name__)
     check_golden(
         contents=_rejection_document(
             messages_by_exception=messages_by_exception,
             expected=_load_expected_messages(golden_path=manifest.golden_path),
-            rejecting=len(selected_languages(manifest=manifest)) - accepting,
-            accepting=accepting,
+            rejecting=len(rejecting),
+            accepting=len(accepting),
             python_version=f"{sys.version_info.major}.{sys.version_info.minor}",
         ),
         extension=".toml",
         golden_path=manifest.golden_path,
         file_regression=file_regression,
     )
-
-
-@pytest.mark.parametrize(
-    argnames="manifest",
-    argvalues=_MANIFESTS,
-    ids=lambda manifest: manifest.name,
-)
-def test_accepting_languages_still_accept(
-    manifest: RejectionManifest,
-) -> None:
-    """Every language a manifest records as accepting still accepts.
-
-    An ``accepts`` entry is the manifest's record of a language its
-    gates admit that represents the input rather than refusing it.
-    Running the same call for those languages is what keeps the record
-    honest: a language that starts rejecting fails here rather than
-    sitting in the file as a stale reason.
-    """
-    for case in accepting_cases(manifest=manifest):
-        _run(case=case, call=manifest.call)
 
 
 @pytest.mark.parametrize(

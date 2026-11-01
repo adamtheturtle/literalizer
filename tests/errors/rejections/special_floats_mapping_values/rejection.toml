@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "COBOL cannot represent IEEE special floating-point values."
+exceptions = ["UnrepresentableSpecialFloatError"]
+
+[call]
+api = "literalize"
+sources = ["value: -.inf", "value: .inf", "value: .nan"]
+input_format = "yaml"

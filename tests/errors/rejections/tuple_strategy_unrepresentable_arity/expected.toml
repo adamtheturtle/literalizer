@@ -1,4 +1,14 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 1; languages accepting: 4
+
+[Accepted]
+"Cpp['- 1\\n- email\\n- a@gmail.com\\n- 100\\n- x\\n']" = ""
+"Cpp['call: send\\nargs:\\n  - 1\\n  - email\\n  - a@gmail.com\\n  - 100\\n']" = ""
+"Rust['- 1\\n- email\\n- a@gmail.com\\n- 100\\n- x\\n']" = ""
+"Rust['call: send\\nargs:\\n  - 1\\n  - email\\n  - a@gmail.com\\n  - 100\\n']" = ""
+"Scala['- 1\\n- email\\n- a@gmail.com\\n- 100\\n- x\\n']" = ""
+"Scala['call: send\\nargs:\\n  - 1\\n  - email\\n  - a@gmail.com\\n  - 100\\n']" = ""
+"TypeScript['- 1\\n- email\\n- a@gmail.com\\n- 100\\n- x\\n']" = ""
+"TypeScript['call: send\\nargs:\\n  - 1\\n  - email\\n  - a@gmail.com\\n  - 100\\n']" = ""
 
 [TupleArityNotRepresentableError]
 "Kotlin['- 1\\n- email\\n- a@gmail.com\\n- 100\\n- x\\n']" = "a heterogeneous scalar array of 5 elements has no native fixed-size tuple in the target language"

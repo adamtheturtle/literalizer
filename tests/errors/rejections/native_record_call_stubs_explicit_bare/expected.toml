@@ -1,0 +1,12 @@
+# languages rejecting: 3; languages accepting: 4
+
+[Accepted]
+Elm = ""
+PureScript = ""
+Roc = ""
+Sml = ""
+
+[IncompatibleFormatsError]
+Gleam = "Gleam record mode cannot infer concrete call stub types"
+Haskell = "Haskell record mode cannot infer concrete call stub types"
+OCaml = "OCaml record mode cannot infer concrete call stub types"

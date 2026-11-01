@@ -1,0 +1,17 @@
+# languages rejecting: 2; languages accepting: 1
+
+[Accepted]
+"Cpp['2024-01-15']" = ""
+"Cpp['2024-01-15T12:30:00']" = ""
+"Cpp['[1, 2, 3]']" = ""
+"Cpp['{a: 1}']" = ""
+
+[IncompatibleFormatsError]
+"CSharp['!!set {1, 2}']" = "C# 'const' requires a compile-time constant initializer, but collection and date/datetime literals are not constant expressions. Use 'readonly' or remove the 'const' modifier."
+"CSharp['2024-01-15']" = "C# 'const' requires a compile-time constant initializer, but collection and date/datetime literals are not constant expressions. Use 'readonly' or remove the 'const' modifier."
+"CSharp['2024-01-15T12:30:00']" = "C# 'const' requires a compile-time constant initializer, but collection and date/datetime literals are not constant expressions. Use 'readonly' or remove the 'const' modifier."
+"CSharp['[1, 2, 3]']" = "C# 'const' requires a compile-time constant initializer, but collection and date/datetime literals are not constant expressions. Use 'readonly' or remove the 'const' modifier."
+"CSharp['{a: 1}']" = "C# 'const' requires a compile-time constant initializer, but collection and date/datetime literals are not constant expressions. Use 'readonly' or remove the 'const' modifier."
+
+[UnrepresentableInputError]
+"Cpp['!!set {1, 2}']" = "Cpp cannot preserve native set semantics with the selected set format"

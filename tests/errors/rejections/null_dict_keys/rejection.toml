@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "PowerShell hash tables and ordered dictionaries do not accept null keys."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize"
+sources = ["null: value\n", "- null: value\n", "outer:\n  null: value\n", "!!omap\n- null: value\n"]
+input_format = "yaml"

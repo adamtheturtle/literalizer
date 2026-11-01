@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A control character reaching the numeric pre-scan is a YAML parse error."
 exceptions = ["YAMLParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

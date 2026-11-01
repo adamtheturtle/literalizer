@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Unsupported annotation evaluation retains the language and option names."
+exceptions = ["UnsupportedOptionError"]
+gates = [{ kind = "spec_field_absent", field = "annotation_evaluation" }]
+
+[attributes]
+language_name = "{language}"
+option = "annotation_evaluation"
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "option_unset", option = "annotation_evaluation" },
+]

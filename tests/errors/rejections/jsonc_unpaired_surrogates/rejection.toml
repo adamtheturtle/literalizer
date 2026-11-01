@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "JSONC rejects escaped lone UTF-16 surrogates in nested values and keys."
 exceptions = ["JSONCParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

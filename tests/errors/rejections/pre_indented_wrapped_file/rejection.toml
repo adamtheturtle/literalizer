@@ -5,7 +5,6 @@ it, so a language that reads indentation as structure cannot parse
 the file that results.
 """
 exceptions = ["PreIndentedWrappedFileError"]
-languages = ["Elm", "Haskell", "Mojo", "Nim", "Occam", "PureScript", "Python"]
 
 [call]
 api = "literalize"

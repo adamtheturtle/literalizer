@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "An unterminated JSONC comment reports its original source position."
 exceptions = ["JSONCParseError"]
-languages = ["Python"]
 position = [2, 3]
 
 [call]

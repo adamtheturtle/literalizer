@@ -1,9 +1,0 @@
-schema_version = 1
-summary = "Java wrapper classes reject reserved identifiers."
-exceptions = ["InvalidModuleNameError"]
-languages = ["Java"]
-values = ["Class", "Public", "Return", "_", "int", "record", "var", "yield"]
-
-[call]
-api = "constructor"
-kwargs = [{ kind = "text", kwarg = "module_name", value = "{value}" }]

@@ -1,4 +1,33 @@
-# languages rejecting: 1; languages accepting: 0
+# languages rejecting: 2; languages accepting: 26
+
+[Accepted]
+Ada = ""
+CommonLisp = ""
+Dart = ""
+Elixir = ""
+Elm = ""
+FSharp = ""
+Forth = ""
+Fortran = ""
+Gleam = ""
+Groovy = ""
+Haskell = ""
+Hcl = ""
+Java = ""
+Kotlin = ""
+Nix = ""
+OCaml = ""
+Occam = ""
+PureScript = ""
+R = ""
+Racket = ""
+Roc = ""
+Scala = ""
+Scheme = ""
+Sml = ""
+Tcl = ""
+Wren = ""
 
 [HeterogeneousScalarCollectionError]
+Dhall = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: date, datetime)"
 Mojo = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: date, datetime)"

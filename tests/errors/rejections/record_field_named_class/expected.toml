@@ -1,4 +1,18 @@
-# languages rejecting: 4; languages accepting: 0
+# languages rejecting: 4; languages accepting: 12
+
+[Accepted]
+C = ""
+CSharp = ""
+Crystal = ""
+Go = ""
+Kotlin = ""
+Nim = ""
+Odin = ""
+Rust = ""
+Scala = ""
+Swift = ""
+V = ""
+Zig = ""
 
 [UnrepresentableInputError]
 Cpp = "C++ record field name 'class' is reserved"

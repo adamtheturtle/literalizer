@@ -1,0 +1,21 @@
+schema_version = 1
+summary = "Exercise native record rendering of non-string keys, ordered maps, and sets."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize"
+sources = [
+    '''1: one
+''',
+    '''--- !!omap
+- a: 1
+''',
+    '''--- !!set
+a:
+''',
+]
+input_format = "yaml"
+variable_form = "none"
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "RECORD"},
+]

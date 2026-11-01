@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A Kotlin call rejects a Java declaration modifier."
 exceptions = ["InvalidVariableModifierError"]
-languages = ["Kotlin"]
 
 [call]
 api = "literalize_call"

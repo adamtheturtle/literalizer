@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Exercise enum as a declared variable name."
+exceptions = ["ReservedVariableNameError"]
+values = ["enum"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

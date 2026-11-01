@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[UnrepresentableIntegerError]
-OCaml = "OCaml cannot represent integer 4611686018427387904 without external arbitrary-precision integer support."

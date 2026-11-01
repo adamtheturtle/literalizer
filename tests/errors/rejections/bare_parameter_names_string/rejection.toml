@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Bare strings must not be passed as parameter_names."
 exceptions = ["InvalidSequenceArgumentError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

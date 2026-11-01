@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Unsupported Python options retain the language and option names."
+exceptions = ["UnsupportedOptionError"]
+
+[attributes]
+language_name = "{language}"
+option = "heterogeneous_value_enum_name"
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "text", kwarg = "heterogeneous_value_enum_name", value = "Value" },
+]

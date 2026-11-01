@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Bash associative keys remain nonempty printable ASCII under single-quoted rendering (#6196)."
+exceptions = ["InvalidDictKeyError"]
+
+[call]
+api = "literalize"
+sources = ['{"": 1, "a\u0001b": 2}']
+input_format = "json"
+kwargs = [{kind = "option_member", option = "string_format", member = "SINGLE"}]

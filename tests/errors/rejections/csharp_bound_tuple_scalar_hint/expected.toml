@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[UnrepresentableInputError]
-CSharp = "C# reference hints must have the same declaration type as their bound values"

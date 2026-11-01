@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A delimiter-stripped fragment cannot assign an existing variable."
 exceptions = ["InvalidRenderArgumentError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

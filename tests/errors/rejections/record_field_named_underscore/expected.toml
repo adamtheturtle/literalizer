@@ -1,0 +1,21 @@
+# languages rejecting: 6; languages accepting: 10
+
+[Accepted]
+C = ""
+CSharp = ""
+Cpp = ""
+Crystal = ""
+D = ""
+Kotlin = ""
+Python = ""
+Swift = ""
+V = ""
+Zig = ""
+
+[UnrepresentableInputError]
+Go = "Go cannot represent the dict key '_' as a struct field name: the blank identifier names no field, so a struct literal cannot initialize it"
+Java = "Java record field name '_' is reserved"
+Nim = "Nim cannot represent the dict key '_' as an object field name: '_' is not a Nim identifier, which starts with a letter and separates the rest with single underscores"
+Odin = "Odin record field name '_' is reserved"
+Rust = "Rust cannot represent the dict key '_' as a struct field name under the RECORD heterogeneous strategy: it is not usable as a Rust identifier and raw-identifier escaping (r#...) cannot express it"
+Scala = "Scala cannot represent the dict key '_' as a case class field name: it is the wildcard, which is invalid even as a backquoted identifier"

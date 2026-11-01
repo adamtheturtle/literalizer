@@ -5,7 +5,6 @@ languages have no escape that would let a declaration name a field
 'class'.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Cpp", "D", "Java", "Python"]
 
 [call]
 api = "literalize"

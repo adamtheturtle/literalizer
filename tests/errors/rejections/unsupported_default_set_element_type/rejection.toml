@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Unsupported Haxe options retain the language and option names."
+exceptions = ["UnsupportedOptionError"]
+
+[attributes]
+language_name = "{language}"
+option = "default_set_element_type"
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "text", kwarg = "default_set_element_type", value = "String" },
+]

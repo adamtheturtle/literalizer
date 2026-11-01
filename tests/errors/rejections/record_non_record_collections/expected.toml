@@ -1,0 +1,17 @@
+# languages rejecting: 7; languages accepting: 0
+
+[UnrepresentableInputError]
+"Elm['--- !!omap\\n- a: 1\\n']" = "Elm record mode cannot represent ordered maps"
+"Elm['---\\n- x: !!set\\n    a:\\n- x: !!set\\n    b:\\n']" = "Elm record mode cannot represent set"
+"Gleam['--- !!omap\\n- a: 1\\n']" = "Gleam record mode cannot represent ordered maps"
+"Gleam['---\\n- x: !!set\\n    a:\\n- x: !!set\\n    b:\\n']" = "Gleam record mode cannot represent set"
+"Haskell['--- !!omap\\n- a: 1\\n']" = "Haskell record mode cannot represent ordered maps"
+"Haskell['---\\n- x: !!set\\n    a:\\n- x: !!set\\n    b:\\n']" = "Haskell record mode cannot represent set"
+"OCaml['--- !!omap\\n- a: 1\\n']" = "OCaml record mode cannot represent ordered maps"
+"OCaml['---\\n- x: !!set\\n    a:\\n- x: !!set\\n    b:\\n']" = "OCaml record mode cannot represent set"
+"PureScript['--- !!omap\\n- a: 1\\n']" = "PureScript record mode cannot represent ordered maps"
+"PureScript['---\\n- x: !!set\\n    a:\\n- x: !!set\\n    b:\\n']" = "PureScript record mode cannot represent set"
+"Roc['--- !!omap\\n- a: 1\\n']" = "Roc native record mode cannot represent ordered maps"
+"Roc['---\\n- x: !!set\\n    a:\\n- x: !!set\\n    b:\\n']" = "Roc native record mode cannot represent sets"
+"Sml['--- !!omap\\n- a: 1\\n']" = "SML record mode cannot represent ordered maps"
+"Sml['---\\n- x: !!set\\n    a:\\n- x: !!set\\n    b:\\n']" = "SML record mode cannot represent set"

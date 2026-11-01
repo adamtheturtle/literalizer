@@ -1,0 +1,48 @@
+# languages rejecting: 10; languages accepting: 8
+
+[Accepted]
+"C['{values: [1, s]}']" = ""
+"C['{values: [[1], [s]]}']" = ""
+"CSharp['{values: [1, s]}']" = ""
+"CSharp['{values: [[1], [s]]}']" = ""
+"Crystal['{values: [1, s]}']" = ""
+"Crystal['{values: [[1], [s]]}']" = ""
+"Crystal['{1: [1], 2: [s]}']" = ""
+"Java['{values: [1, s]}']" = ""
+"Java['{values: [[1], [s]]}']" = ""
+"Java['{1: [1], 2: [s]}']" = ""
+"Kotlin['{values: [1, s]}']" = ""
+"Kotlin['{values: [[1], [s]]}']" = ""
+"Scala['{values: [1, s]}']" = ""
+"Scala['{values: [[1], [s]]}']" = ""
+"Swift['{values: [1, s]}']" = ""
+"Swift['{values: [[1], [s]]}']" = ""
+"Swift['{1: [1], 2: [s]}']" = ""
+"Zig['{values: [1, s]}']" = ""
+"Zig['{values: [[1], [s]]}']" = ""
+
+[HeterogeneousScalarCollectionError]
+"Cpp['{values: [1, s]}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Rust['{values: [1, s]}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"V['{values: [1, s]}']" = "Collection contains heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+
+[HeterogeneousSiblingListsError]
+"Cpp['{1: [1], 2: [s]}']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Rust['{values: [[1], [s]]}']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"Rust['{1: [1], 2: [s]}']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"V['{values: [[1], [s]]}']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+"V['{1: [1], 2: [s]}']" = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language (found types: int, str)"
+
+[UnrepresentableInputError]
+"C['{1: [1], 2: [s]}']" = "C cannot represent dict key of type int"
+"CSharp['{1: [1], 2: [s]}']" = "CSharp cannot represent dict key of type int"
+"Cpp['{values: [[1], [s]]}']" = "C++ ARRAY cannot construct nested heterogeneous values with incompatible element types"
+"D['{values: [1, s]}']" = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
+"D['{values: [[1], [s]]}']" = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
+"D['{1: [1], 2: [s]}']" = "D cannot represent dict key of type int"
+"Kotlin['{1: [1], 2: [s]}']" = "Kotlin cannot represent dict key of type int"
+"Nim['{values: [1, s]}']" = "Nim native sequences require one inferable element type; this sequence contains incompatible elements"
+"Nim['{values: [[1], [s]]}']" = "Nim native sequences require one inferable element type; this sequence contains incompatible elements"
+"Nim['{1: [1], 2: [s]}']" = "Nim cannot represent dict key of type int"
+"Scala['{1: [1], 2: [s]}']" = "Scala cannot represent dict key of type int"
+"Zig['{1: [1], 2: [s]}']" = "Zig cannot represent dict key of type int"

@@ -1,5 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[ReservedVariableNameError]
-"Zig['ZKV']" = "Zig cannot use ExistingVariable name 'ZKV': it is a reserved identifier"
-"Zig['ZVal']" = "Zig cannot use ExistingVariable name 'ZVal': it is a reserved identifier"

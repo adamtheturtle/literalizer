@@ -1,5 +1,9 @@
 # languages rejecting: 4; languages accepting: 2
 
+[Accepted]
+Go = ""
+Swift = ""
+
 [InvalidCallTargetError]
 Java = "Java cannot use call target 'a.foo.Foo.bar': repeated components collide with generated dotted-call helper declarations"
 Kotlin = "Kotlin cannot use call target 'a.foo.Foo.bar': repeated components collide with generated dotted-call helper declarations"

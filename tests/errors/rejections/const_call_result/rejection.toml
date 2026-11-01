@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "A runtime C# call result cannot initialize a compile-time constant."
+exceptions = ["IncompatibleFormatsError"]
+
+[call]
+api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["item"]
+per_element = false
+variable_form = "new"
+variable_name = "data"
+modifiers = ["CONST"]

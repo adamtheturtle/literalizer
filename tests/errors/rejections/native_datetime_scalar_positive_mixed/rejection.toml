@@ -1,0 +1,20 @@
+# Preserve the original native input shape (#6575).
+schema_version = 1
+summary = "Go native datetime values reject UTC offsets finer than an integer second."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize"
+sources = ["{\"$ref\":\"binding\"}"]
+input_format = "json"
+variable_form = "new"
+variable_name = "result_data"
+ref_key = "$ref"
+wrap_in_file = true
+
+[call.bound_ref_values.binding]
+kind = "scalar"
+
+[call.bound_ref_values.binding.value]
+wall_time = 2001-02-03T04:05:06.123456
+offset_microseconds = 19815000001

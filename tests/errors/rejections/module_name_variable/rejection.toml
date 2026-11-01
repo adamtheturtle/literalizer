@@ -1,0 +1,11 @@
+schema_version = 1
+summary = """
+An Erlang module name is an atom, and a capitalized word is a
+variable, so it cannot name a module however well it spells an
+identifier elsewhere.
+"""
+exceptions = ["InvalidModuleNameError"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "Module" }]

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "JSON rejects escaped lone UTF-16 surrogates in nested values and keys."
 exceptions = ["JSONParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

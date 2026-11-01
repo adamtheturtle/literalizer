@@ -1,0 +1,20 @@
+# languages rejecting: 3; languages accepting: 10
+
+[Accepted]
+CSharp = ""
+Crystal = ""
+Dart = ""
+Elixir = ""
+Erlang = ""
+Julia = ""
+Kotlin = ""
+Python = ""
+Swift = ""
+TypeScript = ""
+
+[IncompatibleFormatsError]
+Haskell = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT. Use LIST or select the Aeson JSON type."
+
+[UnrepresentableInputError]
+Gleam = "Gleam nested sequences require sequence_format=LIST"
+Rust = "Rust renders a sequence as a fixed-size array, whose length is part of its type, so sibling sequences of lengths 1, 3 have no common type"

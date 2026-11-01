@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "UTC normalization outside Python's datetime range is a typed error."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Haskell", "Perl", "R", "Raku"]
 
 [call]
 api = "literalize"

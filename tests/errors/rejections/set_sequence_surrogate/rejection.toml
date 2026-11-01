@@ -5,7 +5,6 @@ tagged set as a list, dropping the uniqueness the input states, so the
 value is refused instead.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Cpp", "D", "Haxe", "Nim", "Raku"]
 
 [call]
 api = "literalize"

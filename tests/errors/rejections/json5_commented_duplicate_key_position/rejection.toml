@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "JSON5 duplicate key errors retain original source coordinates across line endings."
 exceptions = ["JSON5ParseError"]
-languages = ["Python"]
 position = [2, 8]
 
 [call]

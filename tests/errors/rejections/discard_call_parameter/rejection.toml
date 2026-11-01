@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Crystal's discard marker cannot name a call parameter."
+exceptions = ["InvalidCallParameterNameError"]
+
+[call]
+api = "literalize_call"
+sources = ["[[1]]"]
+input_format = "json"
+target_function = "do_thing"
+parameter_names = ["_"]
+wrap_in_file = true

@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[UnrepresentableInputError]
-Haskell = "Haskell record mode cannot use a field label as variable name 'my_data'"

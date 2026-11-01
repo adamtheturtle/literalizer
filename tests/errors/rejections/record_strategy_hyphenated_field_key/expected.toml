@@ -1,5 +1,11 @@
 # languages rejecting: 12; languages accepting: 4
 
+[Accepted]
+CSharp = ""
+Go = ""
+Nim = ""
+Zig = ""
+
 [UnrepresentableInputError]
 C = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"
 Cpp = "cannot represent the dict key 'a-b' as a lexical field identifier under the RECORD heterogeneous strategy"

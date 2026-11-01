@@ -47,6 +47,18 @@ class SpecFieldPresentGate(
     field: Annotated[str, Field(min_length=1)]
 
 
+class SpecFieldAbsentGate(
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+):
+    """Admit languages whose spec does not expose an optional field."""
+
+    kind: Literal["spec_field_absent"]
+    field: Annotated[str, Field(min_length=1)]
+
+
 class EnumMemberPresentGate(
     BaseModel,
     extra="forbid",
@@ -75,6 +87,7 @@ class ModifierPresentGate(
 type LanguageGate = Annotated[
     CapabilityFlagGate
     | SpecFieldPresentGate
+    | SpecFieldAbsentGate
     | EnumMemberPresentGate
     | ModifierPresentGate,
     Field(discriminator="kind"),
@@ -86,6 +99,7 @@ def language_gate_admits(
     *,
     gate: CapabilityFlagGate
     | SpecFieldPresentGate
+    | SpecFieldAbsentGate
     | EnumMemberPresentGate
     | ModifierPresentGate,
     lang_cls: literalizer.LanguageCls,
@@ -106,6 +120,11 @@ def language_gate_admits(
         case SpecFieldPresentGate():
             fields = dataclasses.fields(class_or_instance=spec)
             admits = gate.field in {spec_field.name for spec_field in fields}
+        case SpecFieldAbsentGate():
+            fields = dataclasses.fields(class_or_instance=spec)
+            admits = gate.field not in {
+                spec_field.name for spec_field in fields
+            }
         case EnumMemberPresentGate():
             option = OPTIONS[gate.option]
             admits = (

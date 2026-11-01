@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Finite JSON numbers outside binary64 range are rejected."
 exceptions = ["ParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

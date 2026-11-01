@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[ReservedVariableNameError]
-Zig = "Zig cannot use reference name 'ZVal': it is a reserved identifier"

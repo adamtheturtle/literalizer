@@ -11,24 +11,3 @@ gates = [{ kind = "spec_field_present", field = "json_type" }]
 api = "literalize"
 sources = ["[Infinity]"]
 input_format = "json5"
-
-[[accepts]]
-languages = [
-  "C",
-  "CSharp",
-  "Cpp",
-  "D",
-  "Elm",
-  "FSharp",
-  "Java",
-  "Kotlin",
-  "Nim",
-  "OCaml",
-  "Rust",
-  "Scala",
-]
-reason = """
-Builds the JSON value from typed constructor calls rather than from a
-JSON document, so a non-finite float reaches the language's own float
-syntax.
-"""

@@ -1,0 +1,17 @@
+schema_version = 1
+summary = "Conflicting Java visibility takes precedence over Jackson field limitations."
+exceptions = ["ConflictingVariableModifiersError"]
+
+[call]
+api = "literalize"
+sources = ["42"]
+input_format = "json"
+variable_form = "new"
+variable_name = "data"
+modifiers = ["PUBLIC", "PRIVATE"]
+wrap_in_file = false
+
+[[call.kwargs]]
+kind = "option_member"
+option = "json_type"
+member = "JACKSON_JSON_NODE"

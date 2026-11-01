@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Gleam tuple sequences cannot inhabit the uniform GVal list carrier."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize"
+sources = ['{"a":[1],"b":[]}', '[[1],[]]']
+input_format = "json"
+kwargs = [
+  { kind = "option_member", option = "sequence_format", member = "TUPLE" },
+]

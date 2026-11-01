@@ -5,7 +5,6 @@ what they are given, so the rejection a declared value gets applies
 to an argument too.
 """
 exceptions = ["UnrepresentableStringError"]
-languages = ["Hcl", "Raku"]
 
 [call]
 api = "literalize_call"

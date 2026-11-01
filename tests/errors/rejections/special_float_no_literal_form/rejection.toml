@@ -5,7 +5,6 @@ float, so one is refused at literalize time rather than emitted as
 output that fails at run time.
 """
 exceptions = ["UnrepresentableSpecialFloatError"]
-languages = ["Elixir", "Erlang", "Gleam", "Hcl"]
 
 [call]
 api = "literalize"

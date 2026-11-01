@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Unsupported Python options retain the language and option names."
+exceptions = ["UnsupportedOptionError"]
+
+[attributes]
+language_name = "{language}"
+option = "multiline_raw_string_delimiter_base"
+
+[call]
+api = "constructor"
+kwargs = [
+  { kind = "text", kwarg = "multiline_raw_string_delimiter_base", value = "tag" },
+]

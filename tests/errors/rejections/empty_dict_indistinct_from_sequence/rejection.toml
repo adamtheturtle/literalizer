@@ -7,7 +7,6 @@ value, or inside a list element -- is refused at literalize time
 rather than emitted as a literal that degrades on round-trip.
 """
 exceptions = ["UnrepresentableEmptyDictError"]
-languages = ["Ada", "Cobol", "CommonLisp", "Lua", "Php", "R", "Scheme"]
 
 [call]
 api = "literalize"

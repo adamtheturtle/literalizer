@@ -1,0 +1,20 @@
+# languages rejecting: 2; languages accepting: 11
+
+[Accepted]
+CSharp = ""
+Crystal = ""
+Dart = ""
+Elixir = ""
+Erlang = ""
+Gleam = ""
+Kotlin = ""
+Python = ""
+Rust = ""
+Swift = ""
+TypeScript = ""
+
+[CallArgNotSupportedError]
+Julia = "Julia cannot accept this value as a call argument: Julia output is not wrapped in a function body; variable references require a surrounding assignment that cannot be injected (got 'items')"
+
+[IncompatibleFormatsError]
+Haskell = "Haskell sequence_format=TUPLE cannot represent tuple-valued call arguments as Val"

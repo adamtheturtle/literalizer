@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A bound ref cannot redeclare the rendered output variable."
 exceptions = ["BoundRefOutputCollisionError"]
-languages = ["JavaScript"]
 
 [call]
 api = "literalize"

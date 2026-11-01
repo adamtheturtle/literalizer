@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "A Clojure def cannot rebind an implicitly imported class name."
+exceptions = ["ReservedVariableNameError"]
+values = ["Integer", "Math", "Object", "String"]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

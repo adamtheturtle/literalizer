@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "JSON5 comments cannot be preserved in wrapped Erlang calls."
 exceptions = ["UnsupportedCallShapeError"]
-languages = ["Erlang"]
 
 [call]
 api = "literalize_call"

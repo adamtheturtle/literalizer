@@ -5,7 +5,6 @@ encoded, and JSON.stringify writes 0 for -0, so these JSON value
 types cannot keep the sign.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Elm", "Haskell", "PureScript"]
 option = "json_type"
 
 [call]

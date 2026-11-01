@@ -1,4 +1,4 @@
-"""Load and validate the declared per-language rejection manifests.
+"""Load and validate language-independent rejection scenarios.
 
 A rejection manifest names one thing a language refuses to represent --
 non-string JSON object keys, a record name that is not PascalCase --
@@ -39,7 +39,6 @@ from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
     LanguageGate,
-    language_gate_admits,
 )
 from tests.language_options import CAPABILITY_FLAGS, OPTIONS
 from tests.native_value_sources import RefDatetimeInput, RefValueSource
@@ -320,11 +319,6 @@ def _no_sources() -> tuple[str, ...]:
     return ()
 
 
-def _no_acceptances() -> tuple[Acceptance, ...]:
-    """Return a typed empty acceptance list for the models."""
-    return ()
-
-
 @beartype
 def _validate_gate_references(*, gates: tuple[LanguageGate, ...]) -> None:
     """Reject gate names that the shared gate evaluator cannot resolve."""
@@ -338,46 +332,6 @@ def _validate_gate_references(*, gates: tuple[LanguageGate, ...]) -> None:
                 raise ValueError(msg)
             case _:
                 pass
-
-
-@beartype
-def _unadmitted_acceptances(
-    *, gates: tuple[LanguageGate, ...], names: tuple[str, ...]
-) -> list[str]:
-    """Return accepted languages that the manifest's gates exclude."""
-    return sorted(
-        name
-        for name in names
-        if not all(
-            language_gate_admits(
-                gate=gate,
-                lang_cls=LANGUAGES_BY_NAME[name],
-                spec=LANGUAGES_BY_NAME[name](),
-            )
-            for gate in gates
-        )
-    )
-
-
-class Acceptance(
-    BaseModel,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Languages a gate admits that represent the manifest's input.
-
-    Declaring one is an assertion, not a mute: the suite makes the same
-    call for these languages and fails if it stops going through, so a
-    language that starts rejecting cannot sit here behind a stale
-    reason.  Languages sharing a reason are declared together.
-    """
-
-    languages: Annotated[
-        tuple[DeclaredName, ...],
-        Field(min_length=1, strict=False),
-    ]
-    reason: Annotated[str, Field(min_length=1)]
 
 
 class CallSpec(  # noqa: NOD001
@@ -562,70 +516,27 @@ class _RejectionData(  # noqa: NOD001
     gates: Annotated[tuple[LanguageGate, ...], Field(strict=False)] = Field(
         default_factory=_no_gates,
     )
-    languages: Annotated[tuple[DeclaredName, ...], Field(strict=False)] = (
-        Field(default_factory=_no_names)
-    )
     option: Annotated[str, Field(min_length=1)] | None = None
     values: Annotated[tuple[str, ...], Field(strict=False)] = Field(
         default_factory=_no_names,
-    )
-    accepts: Annotated[tuple[Acceptance, ...], Field(strict=False)] = Field(
-        default_factory=_no_acceptances,
     )
     call: CallSpec
 
     @model_validator(mode="after")
     def _validate_selection(self) -> Self:
-        """Reject a manifest that selects no languages, or selects them
-        twice over.
+        """Validate shared selectors and the values varied by a
+        scenario.
         """
-        if bool(self.gates) == bool(self.languages):
-            msg = "declare either gates or languages, not both"
+        if list(self.values) != sorted(self.values):
+            msg = "values is not in sorted order"
             raise ValueError(msg)
-        if len(self.languages) > 0 and bool(self.accepts):
-            msg = "accepts applies to a gated manifest"
-            raise ValueError(msg)
-        accepting = tuple(
-            name
-            for acceptance in self.accepts
-            for name in acceptance.languages
-        )
-        # Each accepts entry is sorted in itself; the entries are
-        # ordered by the reason they share rather than by language, so
-        # only their languages taken together must not repeat.
-        sorted_lists = (
-            (self.languages, "languages"),
-            (self.values, "values"),
-            *(
-                (acceptance.languages, "accepts")
-                for acceptance in self.accepts
-            ),
-        )
-        for names, field_name in sorted_lists:
-            if list(names) != sorted(names):
-                msg = f"{field_name} is not in sorted order"
-                raise ValueError(msg)
-        for names, field_name in (*sorted_lists, (accepting, "accepts")):
-            if len(names) != len(set(names)):
-                msg = f"{field_name} contains a duplicate entry"
-                raise ValueError(msg)
-        unknown = sorted(
-            set(self.languages + accepting) - set(LANGUAGES_BY_NAME)
-        )
-        if len(unknown) > 0:
-            msg = f"unknown language(s) {unknown}"
+        if len(self.values) != len(set(self.values)):
+            msg = "values contains a duplicate entry"
             raise ValueError(msg)
         if self.option is not None and self.option not in OPTIONS:
             msg = f"unknown option {self.option!r}"
             raise ValueError(msg)
         _validate_gate_references(gates=self.gates)
-        unadmitted = _unadmitted_acceptances(
-            gates=self.gates,
-            names=accepting,
-        )
-        if len(unadmitted) > 0:
-            msg = f"accepts language(s) not admitted by gates {unadmitted}"
-            raise ValueError(msg)
         return self
 
     @model_validator(mode="after")
@@ -692,27 +603,14 @@ class RejectionManifest:
     position: tuple[int, int] | None
     attributes: ErrorAttributes | None
     gates: tuple[LanguageGate, ...]
-    languages: tuple[str, ...]
     option: str | None
     values: tuple[str, ...]
-    accepts: tuple[Acceptance, ...]
     call: CallSpec
 
     @property
     def golden_path(self) -> Path:
         """Return the golden file holding every case's message."""
         return self.path.parent / GOLDEN_NAME
-
-    @property
-    def accepting_languages(self) -> tuple[str, ...]:
-        """Return every language the manifest records as accepting."""
-        return tuple(
-            sorted(
-                name
-                for acceptance in self.accepts
-                for name in acceptance.languages
-            )
-        )
 
 
 @beartype
@@ -732,10 +630,8 @@ def load_rejection_manifest(*, manifest_path: Path) -> RejectionManifest:
         position=data.position,
         attributes=data.attributes,
         gates=tuple(data.gates),
-        languages=tuple(data.languages),
         option=data.option,
         values=tuple(data.values),
-        accepts=tuple(data.accepts),
         call=data.call,
     )
 

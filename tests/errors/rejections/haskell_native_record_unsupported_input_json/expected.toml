@@ -1,9 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[UnrepresentableInputError]
-"Haskell['{\"bad-key\":1}']" = "Haskell record mode cannot represent field 'bad-key'"
-"Haskell['{\"case\":1}']" = "Haskell record mode cannot represent field 'case'"
-"Haskell['{}']" = "Haskell record mode cannot represent empty records"
-"Haskell['{\"x\":null}']" = "Haskell record mode cannot represent NoneType"
-"Haskell['{\"x\":[]}']" = "Haskell record mode cannot infer empty list element types"
-"Haskell['{\"x\":[[{\"y\":1}]]}']" = "Haskell record mode cannot type dict"

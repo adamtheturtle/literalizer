@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "MATLAB SAFE struct fields reject a delete character in a mapping key."
 exceptions = ["InvalidDictKeyError"]
-languages = ["Matlab"]
 
 [call]
 api = "literalize"

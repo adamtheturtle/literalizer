@@ -1,0 +1,21 @@
+# languages rejecting: 7; languages accepting: 9
+
+[Accepted]
+CSharp = ""
+Crystal = ""
+Go = ""
+Kotlin = ""
+Rust = ""
+Scala = ""
+Swift = ""
+V = ""
+Zig = ""
+
+[UnrepresentableInputError]
+C = "C record field name 'if' is reserved"
+Cpp = "C++ record field name 'if' is reserved"
+D = "D record field name 'if' is reserved"
+Java = "Java record field name 'if' is reserved"
+Nim = "Nim record field name 'if' is reserved"
+Odin = "Odin record field name 'if' is reserved"
+Python = "Python record field name 'if' is reserved"

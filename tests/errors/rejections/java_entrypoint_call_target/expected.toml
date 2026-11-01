@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[InvalidCallTargetError]
-Java = "Java cannot use call target 'module': it collides with the generated file entrypoint"

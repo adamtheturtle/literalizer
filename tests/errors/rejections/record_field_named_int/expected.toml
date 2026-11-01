@@ -1,0 +1,21 @@
+# languages rejecting: 5; languages accepting: 11
+
+[Accepted]
+CSharp = ""
+Crystal = ""
+Go = ""
+Kotlin = ""
+Nim = ""
+Python = ""
+Rust = ""
+Scala = ""
+Swift = ""
+V = ""
+Zig = ""
+
+[UnrepresentableInputError]
+C = "C record field name 'int' is reserved"
+Cpp = "C++ record field name 'int' is reserved"
+D = "D record field name 'int' is reserved"
+Java = "Java record field name 'int' is reserved"
+Odin = "Odin record field name 'int' is reserved"

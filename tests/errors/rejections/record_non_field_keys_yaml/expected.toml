@@ -1,0 +1,10 @@
+# languages rejecting: 7; languages accepting: 0
+
+[UnrepresentableInputError]
+Elm = "Elm record mode cannot represent field 1"
+Gleam = "Gleam record mode cannot represent field 1"
+Haskell = "Haskell record mode cannot represent field 1"
+OCaml = "OCaml record mode cannot represent field 1"
+PureScript = "PureScript record mode cannot represent field 1"
+Roc = "Roc native record mode cannot represent field 1"
+Sml = "SML record mode cannot represent field 1"

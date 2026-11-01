@@ -4,7 +4,6 @@ BothVariableForms writes a declaration and an assignment, which for a
 call would invoke the target function twice.
 """
 exceptions = ["UnsupportedCallShapeError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

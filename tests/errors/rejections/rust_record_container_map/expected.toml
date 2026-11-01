@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[UnrepresentableInputError]
-Rust = "Rust cannot widen divergent record maps whose values contain containers"

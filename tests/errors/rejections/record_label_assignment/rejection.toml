@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "Haskell native record labels cannot collide with complete-file binding names."
+exceptions = ["UnrepresentableInputError"]
+values = ["foo"]
+
+[call]
+api = "literalize"
+sources = ['{"foo": 1}', '{"nested": {"foo": 1}}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "existing"
+variable_name = "{value}"
+kwargs = [
+  { kind = "option_member", option = "dict_format", member = "RECORD" },
+]

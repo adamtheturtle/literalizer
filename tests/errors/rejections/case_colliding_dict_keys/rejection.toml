@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "PowerShell hash-table string keys compare case-insensitively."
+exceptions = ["InvalidDictKeyError"]
+
+[call]
+api = "literalize"
+sources = ['{"key": 1, "KEY": 2}']
+input_format = "json"

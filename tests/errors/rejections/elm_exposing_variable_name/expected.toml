@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[ReservedVariableNameError]
-"Elm['exposing']" = "Elm cannot use NewVariable name 'exposing': it is a reserved identifier"

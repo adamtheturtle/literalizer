@@ -1,5 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[InvalidCallTargetError]
-"SystemVerilog['before']" = "SystemVerilog cannot use call target 'thing.before': component 'before' is a reserved identifier"
-"SystemVerilog['int']" = "SystemVerilog cannot use call target 'thing.int': component 'int' is a reserved identifier"

@@ -1,0 +1,32 @@
+schema_version = 1
+summary = "Tcl command keywords cannot be used as variable names."
+exceptions = ["ReservedVariableNameError"]
+values = [
+  "break",
+  "catch",
+  "class",
+  "continue",
+  "else",
+  "elseif",
+  "expr",
+  "for",
+  "foreach",
+  "global",
+  "if",
+  "method",
+  "namespace",
+  "proc",
+  "return",
+  "set",
+  "switch",
+  "variable",
+  "while",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

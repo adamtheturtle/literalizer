@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Exercise integers immediately outside the signed 64-bit range."
+exceptions = ["UnrepresentableIntegerError"]
+
+[call]
+api = "literalize"
+sources = ["9223372036854775808", "-9223372036854775809"]
+input_format = "json"

@@ -1,0 +1,20 @@
+schema_version = 1
+summary = "Cobol division and section headers cannot be used as variable names."
+exceptions = ["ReservedVariableNameError"]
+values = [
+  "DATA",
+  "DIVISION",
+  "IDENTIFICATION",
+  "PROCEDURE",
+  "PROGRAM-ID",
+  "SECTION",
+  "WORKING-STORAGE",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

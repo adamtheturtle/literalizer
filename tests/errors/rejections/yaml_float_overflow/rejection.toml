@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A finite YAML number above binary64 range is rejected."
 exceptions = ["ParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

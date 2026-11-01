@@ -1,0 +1,11 @@
+# languages rejecting: 1; languages accepting: 5
+
+[Accepted]
+CSharp = ""
+Crystal = ""
+Kotlin = ""
+Python = ""
+Rust = ""
+
+[UnrepresentableInputError]
+Swift = "Swift RECORD tuple fields cannot declare generated record types nested below multiple tuple levels"

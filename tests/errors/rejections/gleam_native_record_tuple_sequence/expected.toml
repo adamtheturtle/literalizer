@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[IncompatibleFormatsError]
-Gleam = "Gleam records require sequence_format=LIST"

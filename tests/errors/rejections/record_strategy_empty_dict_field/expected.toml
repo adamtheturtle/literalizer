@@ -1,5 +1,20 @@
 # languages rejecting: 3; languages accepting: 13
 
+[Accepted]
+C = ""
+CSharp = ""
+Cpp = ""
+Crystal = ""
+Go = ""
+Java = ""
+Kotlin = ""
+Odin = ""
+Python = ""
+Scala = ""
+Swift = ""
+V = ""
+Zig = ""
+
 [UnrepresentableInputError]
 D = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non-record dict under the RECORD heterogeneous strategy"
 Nim = "Nim cannot represent a set or non-record-dict field under the RECORD heterogeneous strategy"

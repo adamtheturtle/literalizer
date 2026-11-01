@@ -1,0 +1,31 @@
+schema_version = 1
+summary = "Cobol picture and clause words cannot be used as variable names."
+exceptions = ["ReservedVariableNameError"]
+values = [
+  "COMP",
+  "COMP-2",
+  "COMP-5",
+  "FILLER",
+  "FROM",
+  "GIVING",
+  "OCCURS",
+  "PIC",
+  "PICTURE",
+  "POINTER",
+  "REDEFINES",
+  "RETURNING",
+  "RUN",
+  "TIMES",
+  "TO",
+  "USAGE",
+  "USING",
+  "VALUE",
+]
+
+[call]
+api = "literalize"
+sources = ['{"a": 1, "b": [1, 2]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+variable_name = "{value}"

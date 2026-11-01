@@ -5,7 +5,6 @@ statement, and these languages treat the target name as in scope
 there, so a parameter repeating it is refused (#4528).
 """
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["Fortran", "VisualBasic", "Zig"]
 
 [call]
 api = "literalize_call"

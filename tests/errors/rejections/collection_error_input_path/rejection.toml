@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A nested collection failure reports its exact input path."
 exceptions = ["HeterogeneousScalarCollectionError"]
-languages = ["Rust"]
 
 [attributes]
 path = ["users", 1, "tags"]

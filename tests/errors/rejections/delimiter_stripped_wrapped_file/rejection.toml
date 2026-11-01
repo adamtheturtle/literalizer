@@ -6,7 +6,6 @@ that name no variable, which is how this case reaches wrap_in_file
 without a variable form of its own.
 """
 exceptions = ["DelimiterlessWrappedFileError"]
-languages = ["Json5", "Jsonnet", "Yaml"]
 
 [call]
 api = "literalize"

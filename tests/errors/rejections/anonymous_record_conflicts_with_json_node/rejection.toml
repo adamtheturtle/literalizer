@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "The two independent representations cannot be selected together."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize"
+sources = [
+    '{"x": 1}',
+]
+input_format = "json"
+variable_form = "none"
+kwargs = [
+    {kind = "option_member", option = "dict_format", member = "ANONYMOUS_RECORD"},
+    {kind = "option_member", option = "json_type", member = "SYSTEM_TEXT_JSON_NODE"},
+]

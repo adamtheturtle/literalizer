@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Malformed JSON5 reports its original source position."
 exceptions = ["JSON5ParseError"]
-languages = ["Rust"]
 position = [2, 5]
 
 [call]

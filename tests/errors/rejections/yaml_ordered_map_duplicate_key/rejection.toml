@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A repeated key in an ordered mapping is a YAML parse error."
 exceptions = ["YAMLParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

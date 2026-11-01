@@ -16,10 +16,3 @@ input_format = "yaml"
 kwargs = [
   { kind = "option_member", option = "heterogeneous_strategy", member = "TUPLE" },
 ]
-
-[[accepts]]
-languages = ["Cpp", "TypeScript"]
-reason = """
-These write both fields as one type -- a variant sequence and a union
-element type -- so a fixed-size array and a list still share it.
-"""

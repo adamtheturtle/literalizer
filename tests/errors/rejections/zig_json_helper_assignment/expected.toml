@@ -1,5 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[ReservedVariableNameError]
-"Zig['allocator']" = "Zig cannot use ExistingVariable name 'allocator': it is a reserved identifier"
-"Zig['std']" = "Zig cannot use ExistingVariable name 'std': it is a reserved identifier"

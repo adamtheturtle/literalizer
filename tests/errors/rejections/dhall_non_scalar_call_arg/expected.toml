@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[CallArgNotSupportedError]
-Dhall = "Dhall cannot accept this value as a call argument: Dhall call stubs only support scalar arguments"

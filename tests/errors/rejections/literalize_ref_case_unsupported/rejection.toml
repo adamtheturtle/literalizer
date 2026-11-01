@@ -3,7 +3,6 @@ summary = """
 A value declaration applies the same reference-case check a call does.
 """
 exceptions = ["UnsupportedIdentifierCaseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

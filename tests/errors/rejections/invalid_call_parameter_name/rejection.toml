@@ -4,7 +4,6 @@ A parameter label is written into the generated stub, so it has to be
 an identifier the language accepts.
 """
 exceptions = ["InvalidCallParameterNameError"]
-languages = ["Python"]
 values = ["2c", "a b", "class"]
 
 [call]

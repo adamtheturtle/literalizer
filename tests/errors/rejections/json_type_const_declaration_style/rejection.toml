@@ -15,10 +15,3 @@ api = "constructor"
 kwargs = [
   { kind = "option_member", option = "declaration_style", member = "CONST" },
 ]
-
-[[accepts]]
-languages = ["Zig"]
-reason = """
-Zig's const binds any comptime-known expression, and the parse result
-is bound rather than evaluated at compile time.
-"""

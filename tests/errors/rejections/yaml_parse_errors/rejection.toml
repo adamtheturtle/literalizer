@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Malformed YAML raises typed errors on safe and round-trip parse paths."
 exceptions = ["YAMLParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

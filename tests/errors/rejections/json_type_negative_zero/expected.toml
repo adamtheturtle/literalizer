@@ -1,4 +1,24 @@
-# languages rejecting: 3; languages accepting: 0
+# languages rejecting: 3; languages accepting: 18
+
+[Accepted]
+"C[CJSON]" = ""
+"CSharp[SYSTEM_TEXT_JSON_NODE]" = ""
+"Cobol[CJSON]" = ""
+"Cpp[NLOHMANN_JSON]" = ""
+"Crystal[JSON_ANY]" = ""
+"D[STD_JSON_VALUE]" = ""
+"Erlang[OTP_JSON]" = ""
+"FSharp[SYSTEM_TEXT_JSON_NODE]" = ""
+"Gleam[GLEAM_JSON_JSON]" = ""
+"Java[JACKSON_JSON_NODE]" = ""
+"Kotlin[KOTLINX_JSON_ELEMENT]" = ""
+"Nim[JSON_NODE]" = ""
+"OCaml[YOJSON_SAFE_T]" = ""
+"Odin[JSON_VALUE]" = ""
+"Rust[SERDE_JSON_VALUE]" = ""
+"Scala[CIRCE]" = ""
+"Scheme[GUILE_JSON]" = ""
+"Zig[STD_JSON_VALUE]" = ""
 
 [UnrepresentableInputError]
 "Elm[JSON_ENCODE_VALUE]" = "Elm cannot represent negative zero: its JSON value type has no signed zero"

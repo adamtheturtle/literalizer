@@ -4,7 +4,6 @@ Kotlin has only Pair and Triple, so a tuple-eligible array of another
 length has no native fixed-size tuple.
 """
 exceptions = ["TupleArityNotRepresentableError"]
-languages = ["Kotlin"]
 
 [call]
 api = "literalize"

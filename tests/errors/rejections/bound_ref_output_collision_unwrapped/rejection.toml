@@ -6,7 +6,6 @@ redeclaration; the general ref-output rule still rejects it, the same
 way it rejects the equivalent ref_values form.
 """
 exceptions = ["RefOutputCollisionError"]
-languages = ["JavaScript"]
 
 [call]
 api = "literalize"

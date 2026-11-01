@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Dhall rejects dictionaries with different key sets after TOML parsing."
+exceptions = ["MixedDictShapesError"]
+
+[call]
+api = "literalize"
+sources = [
+  # Sibling dictionaries with different key sets.
+  "[[items]]\ntype = \"create\"\ndraft = true\n\n[[items]]\ntype = \"update\"\n",
+]
+input_format = "toml"
+variable_form = "none"

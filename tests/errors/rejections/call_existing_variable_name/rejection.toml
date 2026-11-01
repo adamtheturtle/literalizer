@@ -4,7 +4,6 @@ A call result bound to an existing name goes through the same target
 validation a value declaration does.
 """
 exceptions = ["InvalidNewVariableNameError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"

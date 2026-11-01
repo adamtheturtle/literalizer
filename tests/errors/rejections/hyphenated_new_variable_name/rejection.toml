@@ -14,18 +14,3 @@ input_format = "json"
 variable_form = "new"
 variable_name = "a-b"
 wrap_in_file = true
-
-[[accepts]]
-languages = [
-  "Clojure",
-  "Cobol",
-  "CommonLisp",
-  "Nix",
-  "Racket",
-  "Raku",
-  "Scheme",
-]
-reason = """
-A hyphen is an ordinary identifier character in these grammars, so
-a-b names one variable rather than subtracting b from a.
-"""

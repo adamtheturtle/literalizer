@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[UnrepresentableInputError]
-Sml = "SML record mode requires uniform list element types"

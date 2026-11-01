@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Wrapped dotted calls reject repeated generated helper components."
 exceptions = ["InvalidCallTargetError"]
-languages = ["Go", "Java", "Kotlin", "Rust", "Scala", "Swift"]
 
 [call]
 api = "literalize_call"

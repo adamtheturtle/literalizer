@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Fixed-size sequence shapes must agree through nested map values."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize"
+sources = ['{"a":[{"item":[1]}],"b":[{"item":[2,3]}]}', '{"a":[{"outer":{"item":[1]}}],"b":[{"outer":{"item":[2,3]}}]}']
+input_format = "json"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "sequence_format", member = "ARRAY" },
+]

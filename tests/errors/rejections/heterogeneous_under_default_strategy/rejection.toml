@@ -10,7 +10,6 @@ exceptions = [
   "HeterogeneousScalarCollectionError",
   "HeterogeneousSiblingListsError",
 ]
-languages = ["Dhall", "Mojo", "Nim", "Rust"]
 
 [call]
 api = "literalize"

@@ -5,7 +5,6 @@ conversion is rejected: the emitted identifier reads the binding being
 declared (#4506).
 """
 exceptions = ["RefOutputCollisionError"]
-languages = ["JavaScript"]
 
 [call]
 api = "literalize"

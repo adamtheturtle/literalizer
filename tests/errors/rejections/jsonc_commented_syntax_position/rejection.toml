@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "JSONC syntax errors retain original source coordinates across line endings."
 exceptions = ["JSONCParseError"]
-languages = ["Python"]
 position = [2, 7]
 
 [call]

@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "A finite nonzero YAML number below binary64 range cannot become zero."
 exceptions = ["ParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

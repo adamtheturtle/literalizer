@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[UnrepresentableIntegerError]
+CSharp = "C# cannot represent integer -99999999999999999999 without external arbitrary-precision integer support."
+FSharp = "F# json_type cannot represent integer -99999999999999999999: JsonValue.Create has no overload for values outside the Int64 / UInt64 ranges."

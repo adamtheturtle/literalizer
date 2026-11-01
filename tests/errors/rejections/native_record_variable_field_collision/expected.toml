@@ -1,0 +1,12 @@
+# languages rejecting: 1; languages accepting: 6
+
+[Accepted]
+Elm = ""
+Gleam = ""
+OCaml = ""
+PureScript = ""
+Roc = ""
+Sml = ""
+
+[UnrepresentableInputError]
+Haskell = "Haskell record mode cannot use a field label as variable name 'my_data'"

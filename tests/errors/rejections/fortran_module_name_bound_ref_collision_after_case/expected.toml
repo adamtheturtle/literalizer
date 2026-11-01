@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[ModuleNameVariableCollisionError]
-Fortran = "Fortran cannot use module_name 'shared_name': the wrapper and the variable it binds share one scope"

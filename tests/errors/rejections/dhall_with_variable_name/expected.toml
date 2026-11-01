@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[ReservedVariableNameError]
-"Dhall['with']" = "Dhall cannot use NewVariable name 'with': it is a reserved identifier"

@@ -1,0 +1,16 @@
+# languages rejecting: 11; languages accepting: 0
+
+[InvalidDictKeyError]
+Bash = "Bash does not support the dict key ''. Associative-array keys must be non-empty printable ASCII."
+
+[UnrepresentableStringError]
+Dart = "Dart string literals cannot represent U+0001 control character"
+JavaScript = "JavaScript string literals cannot represent U+0001 control character"
+Lua = "Lua string literals cannot represent U+0001 control character"
+Perl = "Perl string literals cannot represent U+0001 control character"
+Php = "Php string literals cannot represent U+0001 control character"
+Python = "Python string literals cannot represent U+0001 control character"
+Raku = "Raku string literals cannot represent U+0001 control character"
+Ruby = "Ruby string literals cannot represent U+0001 control character"
+TypeScript = "TypeScript string literals cannot represent U+0001 control character"
+V = "V string literals cannot represent U+0001 control character"

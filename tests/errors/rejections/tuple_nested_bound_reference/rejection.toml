@@ -1,0 +1,15 @@
+schema_version = 1
+summary = "Resolved tuple references cannot nest inside the generated Haskell Val type."
+exceptions = ["IncompatibleFormatsError"]
+
+[call]
+api = "literalize"
+sources = [
+    '[{"$ref":"shared"},{"$ref":"shared"}]',
+]
+input_format = "json"
+wrap_in_file = true
+ref_key = "$ref"
+variable_form = "new"
+bound_ref_yaml = { shared = "[1, x]" }
+kwargs = [{ kind = "option_member", option = "sequence_format", member = "TUPLE" }]

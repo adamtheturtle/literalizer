@@ -1,5 +1,14 @@
 # languages rejecting: 54; languages accepting: 7
 
+[Accepted]
+Clojure = ""
+Cobol = ""
+CommonLisp = ""
+Nix = ""
+Racket = ""
+Raku = ""
+Scheme = ""
+
 [InvalidNewVariableNameError]
 Ada = "Ada cannot use NewVariable name 'a-b': it is not a valid identifier"
 Bash = "Bash cannot use NewVariable name 'a-b': it is not a valid identifier"

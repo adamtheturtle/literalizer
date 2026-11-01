@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Exercise an ordered map whose record-list values have distinct shapes."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize"
+sources = ["!!omap\n- first:\n  - id: 1\n- second:\n  - name: example\n"]
+input_format = "yaml"
+wrap_in_file = true
+variable_form = "new"
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

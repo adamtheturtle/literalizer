@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Dhall rejects dictionaries with different key sets after JSON5 parsing."
+exceptions = ["MixedDictShapesError"]
+
+[call]
+api = "literalize"
+sources = [
+  # Sibling dictionaries with different key sets.
+  "{\"items\": [{\"type\": \"create\", \"draft\": true}, {\"type\": \"update\"}]}",
+]
+input_format = "json5"
+variable_form = "none"

@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[MixedDictShapesError]
-Dhall = "List contains dicts with different key sets that cannot be represented in the target language"

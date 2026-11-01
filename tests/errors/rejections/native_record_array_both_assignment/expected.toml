@@ -1,0 +1,41 @@
+# languages rejecting: 8; languages accepting: 9
+
+[Accepted]
+"CSharp['[{\"id\": 1}]']" = ""
+"CSharp['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Cpp['[{\"id\": 1}]']" = ""
+"Cpp['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Crystal['[{\"id\": 1}]']" = ""
+"Crystal['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"D['[{\"id\": 1}]']" = ""
+"D['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Go['[{\"id\": 1}]']" = ""
+"Go['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Java['[{\"id\": 1}]']" = ""
+"Java['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Nim['[{\"id\": 1}]']" = ""
+"Nim['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Odin['[{\"id\": 1}]']" = ""
+"Odin['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = ""
+"Python['[{\"id\": 1}]']" = ""
+
+[HeterogeneousSiblingListsError]
+"Python['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+
+[UnrepresentableInputError]
+"C['[{\"id\": 1}]']" = "C cannot reassign a native record array under the RECORD heterogeneous strategy"
+"C['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = "C cannot reassign a native record array under the RECORD heterogeneous strategy"
+
+[ValueError]
+"Kotlin['[{\"id\": 1}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'VAL' does not."
+"Kotlin['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'VAL' does not."
+"Rust['[{\"id\": 1}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'LET' does not."
+"Rust['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'LET' does not."
+"Scala['[{\"id\": 1}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'VAL' does not."
+"Scala['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'VAL' does not."
+"Swift['[{\"id\": 1}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'LET' does not."
+"Swift['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'LET' does not."
+"V['[{\"id\": 1}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'ASSIGN' does not."
+"V['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'ASSIGN' does not."
+"Zig['[{\"id\": 1}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'CONST' does not."
+"Zig['[{\"name\":\"one\",\"payload\":{\"value\":1}},{\"name\":\"two\",\"payload\":{\"other\":2}}]']" = "BothVariableForms requires a declaration_style that supports redefinition; 'CONST' does not."

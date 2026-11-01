@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[ParameterCountMismatchError]
-Go = "Expected 1 parameters but got 3 values"

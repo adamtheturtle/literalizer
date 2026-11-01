@@ -1,4 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[UnrepresentableNullError]
-Perl = "Perl cannot represent null distinctly from the string form of that key"

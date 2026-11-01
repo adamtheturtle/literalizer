@@ -1,0 +1,15 @@
+# languages rejecting: 1; languages accepting: 4
+
+[Accepted]
+"JavaScript['{\"a\": \"b\"}']" = ""
+"JavaScript['{}']" = ""
+"Nim['{\"a\": \"b\"}']" = ""
+"Nim['{}']" = ""
+"TypeScript['{\"a\": \"b\"}']" = ""
+"TypeScript['{}']" = ""
+"Zig['{\"a\": \"b\"}']" = ""
+"Zig['{}']" = ""
+
+[IncompatibleFormatsError]
+"Rust['{\"a\": \"b\"}']" = "Rust CONST requires a constant-expression initializer, but the dict format produces a runtime ::from([…]) call which is not a constant expression."
+"Rust['{}']" = "Rust CONST requires a constant-expression initializer, but the dict format produces a runtime ::from([…]) call which is not a constant expression."

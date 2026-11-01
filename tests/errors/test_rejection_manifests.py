@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 from beartype import beartype
 
+from literalizer.languages import ALL_LANGUAGES
+from tests.errors.rejection_cases import selected_languages
 from tests.errors.rejection_manifests import (
     GOLDEN_NAME,
     MANIFEST_NAME,
@@ -54,7 +56,33 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
     argvalues=[
         (
             _manifest(
-                selection='languages = ["Kotlin"]',
+                selection='languages = ["Python"]',
+                extra=_NO_EXTRA,
+                call=_CONSTRUCTOR,
+            ),
+            "Extra inputs are not permitted",
+        ),
+        (
+            _manifest(
+                selection="",
+                extra=(
+                    '[[accepts]]\nlanguages = ["Python"]\nreason = "renders"'
+                ),
+                call=_CONSTRUCTOR,
+            ),
+            "Extra inputs are not permitted",
+        ),
+        (
+            _manifest(
+                selection="",
+                extra='values = ["a", "a"]',
+                call=_CONSTRUCTOR,
+            ),
+            "values contains a duplicate entry",
+        ),
+        (
+            _manifest(
+                selection="",
                 extra=_NO_EXTRA,
                 call=(
                     'api = "literalize"\n'
@@ -68,7 +96,7 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
         ),
         (
             _manifest(
-                selection='languages = ["Kotlin"]',
+                selection="",
                 extra=_NO_EXTRA,
                 call=(
                     'api = "literalize"\n'
@@ -106,61 +134,6 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
         ),
         (
             _manifest(
-                extra=_NO_EXTRA,
-                call=_CONSTRUCTOR,
-                selection=f'{_JSON_TYPE_GATE}\nlanguages = ["Rust"]',
-            ),
-            "declare either gates or languages, not both",
-        ),
-        (
-            _manifest(extra=_NO_EXTRA, call=_CONSTRUCTOR, selection=""),
-            "declare either gates or languages, not both",
-        ),
-        (
-            _manifest(
-                call=_CONSTRUCTOR,
-                selection='languages = ["Rust"]',
-                extra='[[accepts]]\nlanguages = ["Go"]\nreason = "renders"',
-            ),
-            "accepts applies to a gated manifest",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                call=_CONSTRUCTOR,
-                extra='[[accepts]]\nlanguages = ["Rust", "Go"]\nreason = "x"',
-            ),
-            "accepts is not in sorted order",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                call=_CONSTRUCTOR,
-                extra=(
-                    '[[accepts]]\nlanguages = ["Go"]\nreason = "x"\n'
-                    '[[accepts]]\nlanguages = ["Go"]\nreason = "y"'
-                ),
-            ),
-            "accepts contains a duplicate entry",
-        ),
-        (
-            _manifest(
-                extra=_NO_EXTRA,
-                call=_CONSTRUCTOR,
-                selection='languages = ["Rust", "Cpp"]',
-            ),
-            "languages is not in sorted order",
-        ),
-        (
-            _manifest(
-                extra=_NO_EXTRA,
-                call=_CONSTRUCTOR,
-                selection='languages = ["Klingon"]',
-            ),
-            r"unknown language\(s\) \['Klingon'\]",
-        ),
-        (
-            _manifest(
                 selection=_JSON_TYPE_GATE,
                 call=_CONSTRUCTOR,
                 extra='option = "sorcery"',
@@ -187,17 +160,6 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
                 extra=_NO_EXTRA,
             ),
             "unknown gate option 'sorcery'",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                call=_CONSTRUCTOR,
-                extra=(
-                    '[[accepts]]\nlanguages = ["Go"]\n'
-                    'reason = "not selected by the gate"'
-                ),
-            ),
-            r"accepts language\(s\) not admitted by gates \['Go'\]",
         ),
         (
             _manifest(
@@ -438,7 +400,7 @@ def test_modifiers_require_a_declaration(call: str, tmp_path: Path) -> None:
     manifest_path = _write_manifest(
         tmp_path=tmp_path,
         manifest=_manifest(
-            selection='languages = ["CSharp"]',
+            selection="",
             extra=_NO_EXTRA,
             call=f'{call}\nmodifiers = ["CONST"]',
         ),
@@ -481,3 +443,18 @@ def test_every_rejection_directory_is_declared() -> None:
     }
     found = {path for path in REJECTIONS_DIR.iterdir() if path.is_dir()}
     assert found == declared
+
+
+def test_scenario_without_gates_admits_every_language(tmp_path: Path) -> None:
+    """New languages join a scenario without a manifest edit."""
+    manifest = load_rejection_manifest(
+        manifest_path=_write_manifest(
+            tmp_path=tmp_path,
+            manifest=_manifest(
+                selection="",
+                extra=_NO_EXTRA,
+                call=_CONSTRUCTOR,
+            ),
+        ),
+    )
+    assert set(selected_languages(manifest=manifest)) == set(ALL_LANGUAGES)

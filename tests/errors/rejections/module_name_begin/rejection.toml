@@ -1,0 +1,7 @@
+schema_version = 1
+summary = "Exercise begin as a wrapper module name."
+exceptions = ["InvalidModuleNameError"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "begin" }]

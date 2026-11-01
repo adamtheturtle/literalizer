@@ -1,0 +1,7 @@
+# languages rejecting: 2; languages accepting: 0
+
+[CallArgNotSupportedError]
+Cobol = "COBOL cannot accept this value as a call argument: COBOL json_type=CJSON builds each value as a multi-statement cJSON node tree, and COBOL has no inline call-expression form to pass one as a CALL argument"
+
+[UnrepresentableInputError]
+C = "C json_type can only render a scalar (or temporal / bytes) call argument inline as a single cJSON_Create*(...) expression; a container call argument is not supported in this slice"

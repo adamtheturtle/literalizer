@@ -1,7 +1,0 @@
-# languages rejecting: 1; languages accepting: 0
-
-[UnrepresentableInputError]
-"PowerShell['null: value\\n']" = "PowerShell hash-table keys cannot be null."
-"PowerShell['- null: value\\n']" = "PowerShell hash-table keys cannot be null."
-"PowerShell['outer:\\n  null: value\\n']" = "PowerShell hash-table keys cannot be null."
-"PowerShell['!!omap\\n- null: value\\n']" = "PowerShell hash-table keys cannot be null."

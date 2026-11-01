@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "An integral wall time with a fractional native offset has an inexact instant."
 exceptions = ["UnrepresentableInputError"]
-languages = ["Go", "JavaScript", "Python"]
 
 [call]
 api = "literalize"

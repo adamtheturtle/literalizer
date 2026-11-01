@@ -5,7 +5,6 @@ field types. Empty records, nulls, empty lists, and records nested two
 list levels deep cannot be typed in this mode.
 """
 exceptions = ["UnrepresentableInputError"]
-languages = ["Gleam", "OCaml"]
 
 [call]
 api = "literalize"

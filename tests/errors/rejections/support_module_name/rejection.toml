@@ -1,0 +1,7 @@
+schema_version = 1
+summary = "Fortran rejects the name of the support module its files always emit."
+exceptions = ["InvalidModuleNameError"]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "fval_m" }]

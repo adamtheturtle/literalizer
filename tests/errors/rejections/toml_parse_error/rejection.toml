@@ -1,7 +1,6 @@
 schema_version = 1
 summary = "Malformed TOML raises a typed parse error."
 exceptions = ["TOMLParseError"]
-languages = ["Python"]
 
 [call]
 api = "literalize"

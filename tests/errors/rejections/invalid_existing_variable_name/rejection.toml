@@ -4,7 +4,6 @@ An assignment target is a plain identifier, so an empty name or an
 expression that indexes into one is refused.
 """
 exceptions = ["InvalidNewVariableNameError"]
-languages = ["Python"]
 values = ["", "a.b[0]"]
 
 [call]

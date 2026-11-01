@@ -4,7 +4,6 @@ A single name binds one call result, so a per-element source that
 produces two calls -- or none -- leaves nothing unambiguous to bind.
 """
 exceptions = ["UnsupportedCallShapeError"]
-languages = ["Python"]
 
 [call]
 api = "literalize_call"
