@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+# Scalar inference metadata cannot establish that the caller's class is copyable.
+[ref]
+variable_form = "none"
+variant_only = true
+external_declarations = {first = '{"child":{"value":1}}'}
+explicit_ref_value_sources = {first = '{"child":{"value":1}}'}
+caller_preamble = ['#include "../../cpp_support/include/move_only_record.hpp"']
+
+[ref.consumer]
+target_function = "consume_widget"
+
+[[ref.variants]]
+axis = "cpp_external_record_move"

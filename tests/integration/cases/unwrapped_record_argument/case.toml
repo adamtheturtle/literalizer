@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+# RECORD preambles must remain outside an unwrapped expression (#3615).
+[ref]
+variable_form = "none"
+variant_only = true
+
+[ref.consumer]
+target_function = "consume_widget"
+
+[[ref.variants]]
+axis = "heterogeneous_strategy_record"

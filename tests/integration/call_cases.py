@@ -1541,7 +1541,7 @@ def _statement_stub_targets(
 
 
 @beartype
-def _call_stub_spec(
+def call_stub_spec(
     *, spec: literalizer.Language, argument_values: Sequence[ParsedValue]
 ) -> literalizer.Language:
     """Infer consumer types without changing the composer's inference
@@ -1705,7 +1705,7 @@ def run_call_golden_case(
         stub_return = literalizer.StubReturn.VOID
     target_function_parts = tuple(config.target_function.split(sep="."))
     call_arg_values = call_outcome.stub_argument_values
-    stub_spec = _call_stub_spec(spec=spec, argument_values=call_arg_values)
+    stub_spec = call_stub_spec(spec=spec, argument_values=call_arg_values)
     body_stubs.extend(
         stub_spec.format_call_stub(
             target_function_parts,

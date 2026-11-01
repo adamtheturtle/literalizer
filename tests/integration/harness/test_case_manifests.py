@@ -318,6 +318,14 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
         (
             (
                 'schema_version = 1\nowner = "literalize-ref-default"\n'
+                '[ref]\nvariable_form = "none"\n'
+                'expected_value_source = "1"\n'
+            ),
+            "expected_value_source requires a variable binding",
+        ),
+        (
+            (
+                'schema_version = 1\nowner = "literalize-ref-default"\n'
                 "[ref]\n"
                 'external_declarations = {a = "0"}\n'
                 'expected_value_source = "[0, 1]"\n'
