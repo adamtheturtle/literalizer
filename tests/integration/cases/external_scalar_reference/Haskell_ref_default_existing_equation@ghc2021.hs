@@ -12,6 +12,7 @@ consume_widget :: Val -> IO ()
 consume_widget _ = return ()
 shared :: Val
 shared = 1
+my_data :: Val
 my_data = shared
 main :: IO ()
 main = do

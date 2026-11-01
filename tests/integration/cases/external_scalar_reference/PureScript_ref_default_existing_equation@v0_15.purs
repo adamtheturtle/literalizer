@@ -9,6 +9,7 @@ consume_widget :: Val -> Unit
 consume_widget _ = unit
 shared :: Val
 shared = PInt 1
+my_data :: Val
 my_data = shared
 
 

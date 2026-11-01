@@ -595,6 +595,43 @@ def external_assignment_spec(
 
 
 @beartype
+def _with_caller_binding_signature(
+    *,
+    config: RefCaseSpec,
+    spec: literalizer.Language,
+    result: literalizer.LiteralizeResult,
+    raw_data: _RefData,
+) -> literalizer.LiteralizeResult:
+    """Let the caller annotate a new equation without supplying API
+    hints.
+    """
+    if (
+        config.variable_form == "existing"
+        and config.variable_name not in config.external_declarations
+    ):
+        value = _external_result_value(
+            source=TypeAdapter[Value](type=Value).validate_python(raw_data),
+            config=config,
+        )
+        placeholder = "caller_value"
+        assignment = spec.format_variable_assignment(
+            config.variable_name, placeholder, value
+        )
+        declaration = spec.format_variable_declaration(
+            config.variable_name, placeholder, value, frozenset()
+        )
+        if declaration.endswith("\n" + assignment):
+            signature = declaration.removesuffix(assignment)
+            result = dataclasses.replace(
+                result,
+                declaration_code=(
+                    signature + result.declaration_code.removeprefix(signature)
+                ),
+            )
+    return result
+
+
+@beartype
 def _compose_external_ref_fixture(
     *,
     config: RefCaseSpec,
@@ -603,6 +640,9 @@ def _compose_external_ref_fixture(
     raw_data: _RefData,
 ) -> literalizer.LiteralizeResult:
     """Compose caller declarations and optional generated checks."""
+    result = _with_caller_binding_signature(
+        config=config, spec=spec, result=result, raw_data=raw_data
+    )
     declarations: list[literalizer.LiteralizeResult] = []
     for name, source in config.external_declarations.items():
         declaration_spec = spec

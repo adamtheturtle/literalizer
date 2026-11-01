@@ -13,6 +13,7 @@ main =
     let
         shared : Val
         shared = EInt 1
+        my_data : Val
         my_data = shared
         _ = consume_widget my_data
     in
