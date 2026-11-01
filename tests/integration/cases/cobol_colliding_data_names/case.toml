@@ -1,0 +1,9 @@
+schema_version = 1
+suites = ["base"]
+
+# COBOL typed data-item declarations share a normalized-name namespace.
+# Keep the original 1,000-key collision workload, including every suffix.
+gates = [
+  {kind = "enum_member_present", option = "declaration_style", member = "TYPED"},
+  {kind = "enum_member_present", option = "sequence_format", member = "SEQUENCE"},
+]
