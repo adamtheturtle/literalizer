@@ -1,0 +1,17 @@
+schema_version = 1
+summary = "Deep acyclic reference values raise a typed error instead of exhausting the stack."
+exceptions = ["InvalidValueInputError"]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "none"
+
+[[call.invalid_values]]
+argument = "ref_values"
+name = "value"
+
+[call.invalid_values.value]
+kind = "nested_sequence"
+depth = 2000

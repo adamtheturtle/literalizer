@@ -1,0 +1,18 @@
+schema_version = 1
+summary = "TOML rejects raw lone high and low surrogates in nested values and keys."
+exceptions = ["TOMLParseError"]
+
+[call]
+api = "literalize"
+sources = [
+    "outer = [{ value = \"{high}\" }]",
+    "outer = [{ value = \"{low}\" }]",
+    "outer = [{ \"{high}\" = \"value\" }]",
+    "outer = [{ \"{low}\" = \"value\" }]",
+]
+input_format = "toml"
+variable_form = "none"
+
+[call.source_codepoints]
+high = 55296
+low = 56320

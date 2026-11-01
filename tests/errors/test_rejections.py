@@ -14,7 +14,7 @@ import contextlib
 import re
 import sys
 import tomllib
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Mapping
 from pathlib import Path
 from typing import assert_never
 
@@ -42,8 +42,11 @@ from .rejection_cases import (
 from .rejection_manifests import (
     REJECTIONS_DIR,
     CallSpec,
+    CyclicSequenceValue,
     ErrorAttributes,
+    InvalidValueSource,
     RejectionManifest,
+    SupplementalArgument,
     load_rejection_manifests,
     substituted,
 )
@@ -295,6 +298,36 @@ def _declarations(
 
 
 @beartype
+def _invalid_value(*, source: InvalidValueSource) -> literalizer.ValueInput:
+    """Construct a fresh native graph from its finite recipe."""
+    if isinstance(source, CyclicSequenceValue):
+        cycle: list[literalizer.ValueInput] = []
+        cycle.append(cycle)
+        return cycle
+    value: literalizer.ValueInput = 0
+    for _ in range(source.depth):
+        value = [value]
+    return value
+
+
+@beartype
+def _supplemental_argument(
+    *,
+    call: CallSpec,
+    argument: SupplementalArgument,
+    values: Mapping[str, literalizer.ValueInput] | None,
+) -> dict[str, literalizer.ValueInput] | None:
+    """Add invalid native values without sharing mutable fixture
+    graphs.
+    """
+    bindings = {} if values is None else dict(values)
+    for recipe in call.invalid_values:
+        if recipe.argument == argument:
+            bindings[recipe.name] = _invalid_value(source=recipe.value)
+    return bindings if len(bindings) > 0 else None
+
+
+@beartype
 def _run(
     *, case: RejectionCase, call: CallSpec
 ) -> literalizer.LiteralizeResult | str | None:
@@ -328,7 +361,7 @@ def _run(
         assert case.source is not None
         assert call.input_format is not None
         return literalizer.literalize(
-            source=case.source,
+            source=call.resolve_source(case.source),
             input_format=call.input_format,
             language=lang_cls(**case.kwargs),
             variable_form=variable_form,
@@ -337,14 +370,22 @@ def _run(
             include_delimiters=call.include_delimiters,
             ref_key=call.ref_key,
             ref_case=ref_case,
-            bound_refs=_bound_refs(call=call, value=case.value),
-            ref_values=_yaml_reference_values(
-                sources=call.ref_value_yaml, value=case.value
+            bound_refs=_supplemental_argument(
+                call=call,
+                argument="bound_refs",
+                values=_bound_refs(call=call, value=case.value),
             ),
-            record_null_substitutions=(
-                dict(call.record_null_substitutions)
-                if len(call.record_null_substitutions) > 0
-                else None
+            ref_values=_supplemental_argument(
+                call=call,
+                argument="ref_values",
+                values=_yaml_reference_values(
+                    sources=call.ref_value_yaml, value=case.value
+                ),
+            ),
+            record_null_substitutions=_supplemental_argument(
+                call=call,
+                argument="record_null_substitutions",
+                values=dict(call.record_null_substitutions),
             ),
         )
     assert case.source is not None
