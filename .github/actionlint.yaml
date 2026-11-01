@@ -1,3 +1,4 @@
 ---
 self-hosted-runner:
-  labels: [ubicloud-standard-4]
+  # The pinned actionlint predates the hosted Ubuntu 26.04 label.
+  labels: [ubuntu-26.04, ubicloud-standard-4]

@@ -34,7 +34,7 @@ env:
       "$ARTIFACT_URL" --output "$temporary"
     mv "$temporary" "$ARTIFACT_DESTINATION"
 
-# Toolchain installers and apt package versions below target Ubuntu 24.04.
+# Most toolchain installers and apt package versions target Ubuntu 24.04.
 # Keep the runner image explicit: ubuntu-latest can move to a new release
 # before these pinned toolchains support it. Upgrade the image and toolchains
 # together after validating every language job.
@@ -2745,7 +2745,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_dart_roundtrip
 
   lint-julia:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -2761,6 +2761,9 @@ jobs:
       - name: Install Julia
         timeout-minutes: 10
         uses: julia-actions/setup-julia@v3
+        # Bootstrap Julia 1.9 until OpenLibm's stack marker is cleared (#6321).
+        env:
+          GLIBC_TUNABLES: glibc.rtld.execstack=2
         with:
           version: '1.9'
       # `JSON` is needed by the `Julia roundtrip` step below (see
@@ -2769,6 +2772,8 @@ jobs:
       - name: Set up Julia project
         timeout-minutes: 10
         run: |
+          julia_bindir=$(dirname "$(command -v julia)")
+          patchelf --clear-execstack "$julia_bindir/../lib/julia/libopenlibm.so"
           mkdir -p /tmp/julia-lint
           julia --startup-file=no --project=/tmp/julia-lint -e \
             'using Pkg; Pkg.add(["DataStructures", "JSON"]); Pkg.precompile()'
