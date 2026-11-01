@@ -1,0 +1,5 @@
+# languages rejecting: 2; languages accepting: 0
+
+[JSONParseError]
+Ada = "Invalid JSON: input contains unpaired UTF-16 surrogate U+D800"
+Cobol = "Invalid JSON: input contains unpaired UTF-16 surrogate U+D800"

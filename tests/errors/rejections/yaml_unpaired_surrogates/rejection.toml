@@ -1,0 +1,45 @@
+schema_version = 1
+summary = "YAML rejects escaped lone UTF-16 surrogates in nested sets and ordered maps."
+exceptions = ["YAMLParseError"]
+languages = ["Python"]
+
+[call]
+api = "literalize"
+sources = [
+    "outer:\n  - inner: !!set\n      ? \"\\ud800\"\n",
+    "outer:\n  - inner: !!set\n      ? \"\\udc00\"\n",
+    "outer:\n  - inner: !!omap\n      - key: \"\\ud800\"\n",
+    "outer:\n  - inner: !!omap\n      - key: \"\\udc00\"\n",
+]
+input_format = "yaml"
+variable_form = "none"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "date_format"
+member = "PYTHON"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "datetime_format"
+member = "PYTHON"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "bytes_format"
+member = "HEX"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "sequence_format"
+member = "TUPLE"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "set_format"
+member = "SET"
+
+[[call.kwargs]]
+kind = "option_member"
+option = "variable_type_hints"
+member = "NEVER"
