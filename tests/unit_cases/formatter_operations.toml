@@ -1,0 +1,133 @@
+# Formatter-only contracts from issues #4699 and #6574.
+
+[[integer_suffixes]]
+name = "retain_existing_suffix"
+value = -2147483648
+rendered = "-0x80000000LL"
+suffix = "LL"
+base_suffix = "LL"
+expected = "-0x80000000LL"
+
+[[integer_suffixes]]
+name = "widen_existing_suffix"
+value = -2147483648
+rendered = "-0x80000000L"
+suffix = "LL"
+base_suffix = "L"
+expected = "-0x80000000LL"
+
+[[date_views]]
+name = "ruby_1500-03-01"
+language = "Ruby"
+format = "RUBY"
+value = 1500-03-01T00:00:00Z
+expected = "Date.new(1500, 3, 1, Date::GREGORIAN)"
+
+[[date_views]]
+name = "ruby_short_1500-03-01"
+language = "Ruby"
+format = "RUBY_SHORT"
+value = 1500-03-01T00:00:00Z
+expected = "Date.new(1500, 3, 1, Date::GREGORIAN)"
+
+[[date_views]]
+name = "ruby_1582-10-10"
+language = "Ruby"
+format = "RUBY"
+value = 1582-10-10T00:00:00Z
+expected = "Date.new(1582, 10, 10, Date::GREGORIAN)"
+
+[[date_views]]
+name = "ruby_short_1582-10-10"
+language = "Ruby"
+format = "RUBY_SHORT"
+value = 1582-10-10T00:00:00Z
+expected = "Date.new(1582, 10, 10, Date::GREGORIAN)"
+
+[[date_views]]
+name = "ruby_1582-10-15"
+language = "Ruby"
+format = "RUBY"
+value = 1582-10-15T00:00:00Z
+expected = "Date.new(1582, 10, 15, Date::GREGORIAN)"
+
+[[date_views]]
+name = "ruby_short_1582-10-15"
+language = "Ruby"
+format = "RUBY_SHORT"
+value = 1582-10-15T00:00:00Z
+expected = "Date.new(1582, 10, 15)"
+
+[[date_views]]
+name = "ruby_2024-01-15"
+language = "Ruby"
+format = "RUBY"
+value = 2024-01-15T00:00:00Z
+expected = "Date.new(2024, 1, 15, Date::GREGORIAN)"
+
+[[date_views]]
+name = "ruby_short_2024-01-15"
+language = "Ruby"
+format = "RUBY_SHORT"
+value = 2024-01-15T00:00:00Z
+expected = "Date.new(2024, 1, 15)"
+
+[[datetime_offsets]]
+name = "positive_second"
+language = "Ruby"
+expected = "Time.new(2001, 2, 3, 4, 5, 6, 1)"
+
+[datetime_offsets.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = 1000000
+
+[[datetime_offsets]]
+name = "negative_second"
+language = "Ruby"
+expected = "Time.new(2001, 2, 3, 4, 5, 6, -1)"
+
+[datetime_offsets.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = -1000000
+
+[[datetime_offsets]]
+name = "positive_microsecond"
+language = "Ruby"
+expected = "Time.new(2001, 2, 3, 4, 5, 6, Rational(1, 1000000))"
+
+[datetime_offsets.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = 1
+
+[[datetime_offsets]]
+name = "negative_microsecond"
+language = "Ruby"
+expected = "Time.new(2001, 2, 3, 4, 5, 6, Rational(-1, 1000000))"
+
+[datetime_offsets.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = -1
+
+[[datetime_offsets]]
+name = "positive_mixed"
+language = "Ruby"
+expected = "Time.new(2001, 2, 3, 4, 5, 6, Rational(19815000001, 1000000))"
+
+[datetime_offsets.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = 19815000001
+
+[[datetime_offsets]]
+name = "negative_mixed"
+language = "Ruby"
+expected = "Time.new(2001, 2, 3, 4, 5, 6, Rational(-19815000001, 1000000))"
+
+[datetime_offsets.value]
+wall_time = 2001-02-03T04:05:06
+offset_microseconds = -19815000001
+
+[[empty_call_wrappers]]
+name = "empty_call_preamble"
+language = "Roc"
+calls = "call"
+expected = "module [main]\n\nmain =\n    dbg (call)\n    {}"
