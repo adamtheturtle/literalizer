@@ -19,7 +19,7 @@ from literalizer.languages import ALL_LANGUAGES
 
 
 def _exhaust_stack(**_kwargs: object) -> Never:
-    """Reproduce stack exhaustion independently of a renderer's depth."""
+    """Reproduce stack exhaustion without relying on rendering depth."""
     msg = "rendering exhausted the stack"
     raise RecursionError(msg)
 
