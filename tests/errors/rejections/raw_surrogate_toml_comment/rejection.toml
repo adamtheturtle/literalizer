@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Preserved TOML comments reject a raw lone surrogate."
+exceptions = ["TOMLParseError"]
+
+[call]
+api = "literalize"
+sources = ["value = \"safe\" # {high}"]
+input_format = "toml"
+variable_form = "none"
+
+[call.source_codepoints]
+high = 55296

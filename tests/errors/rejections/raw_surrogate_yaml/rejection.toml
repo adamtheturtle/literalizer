@@ -1,0 +1,18 @@
+schema_version = 1
+summary = "YAML rejects raw lone high and low surrogates in nested values and keys."
+exceptions = ["YAMLParseError"]
+
+[call]
+api = "literalize"
+sources = [
+    "outer:\n  - value: \"{high}\"\n",
+    "outer:\n  - value: \"{low}\"\n",
+    "outer:\n  - \"{high}\": value\n",
+    "outer:\n  - \"{low}\": value\n",
+]
+input_format = "yaml"
+variable_form = "none"
+
+[call.source_codepoints]
+high = 55296
+low = 56320

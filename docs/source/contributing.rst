@@ -257,6 +257,9 @@ The fragments and call use the same target and reference inference hints.
 Direct option operations use ``sequence_type_annotation`` with ``option = "sequence_format"`` or ``declaration_formatter`` with ``option = "declaration_style"``.
 These run every enum member declaring the corresponding callable interface or standard declaration configuration, without constructing a target with that member.
 
+For ``literalize`` scenarios, ``call.source_codepoints`` maps named ``{placeholders}`` to Unicode code points, including lone surrogates that TOML cannot store.
+``call.invalid_values`` declares cyclic sequences or a fixed depth of nested sequences for ``ref_values``, ``bound_refs``, or ``record_null_substitutions``; the runner builds fresh native values for each call.
+
 An optional top-level ``integer_digit_limit`` scopes the interpreter's conversion limit to the scenario and restores it even if the call fails.
 Use zero to disable the limit, or at least ``sys.int_info.str_digits_check_threshold`` to enable it.
 With ``record_output = true``, successful rendering or formatter calls record their exact code in ``[Accepted]``; other scenarios record acceptance as an empty string.

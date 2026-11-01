@@ -1,0 +1,71 @@
+[[cases]]
+name = "negative_codepoint"
+call = '''api = "literalize"
+sources = ["{bad}"]
+input_format = "json"
+source_codepoints = { bad = -1 }
+'''
+message = "Input should be greater than or equal to 0"
+
+[[cases]]
+name = "codepoint_above_unicode_range"
+call = '''api = "literalize"
+sources = ["{bad}"]
+input_format = "json"
+source_codepoints = { bad = 1114112 }
+'''
+message = "Input should be less than or equal to 1114111"
+
+[[cases]]
+name = "unused_codepoint_placeholder"
+call = '''api = "literalize"
+sources = ["1"]
+input_format = "json"
+source_codepoints = { bad = 0xD800 }
+'''
+message = "source_codepoints contains unused placeholder 'bad'"
+
+[[cases]]
+name = "codepoint_on_constructor"
+call = '''api = "constructor"
+source_codepoints = { bad = 0xD800 }
+'''
+message = "source_codepoints applies to api = 'literalize'"
+
+[[cases]]
+name = "unknown_supplemental_argument"
+call = '''api = "literalize"
+sources = ["1"]
+input_format = "json"
+invalid_values = [{ argument = "missing", name = "value", value = { kind = "cyclic_sequence" } }]
+'''
+message = "Input should be 'ref_values', 'bound_refs' or 'record_null_substitutions'"
+
+[[cases]]
+name = "zero_nested_depth"
+call = '''api = "literalize"
+sources = ["1"]
+input_format = "json"
+invalid_values = [{ argument = "ref_values", name = "value", value = { kind = "nested_sequence", depth = 0 } }]
+'''
+message = "Input should be greater than or equal to 1"
+
+[[cases]]
+name = "cycle_with_unused_depth"
+call = '''api = "literalize"
+sources = ["1"]
+input_format = "json"
+invalid_values = [{ argument = "ref_values", name = "value", value = { kind = "cyclic_sequence", depth = 1 } }]
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "invalid_value_on_call_api"
+call = '''api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]
+invalid_values = [{ argument = "ref_values", name = "value", value = { kind = "cyclic_sequence" } }]
+'''
+message = "invalid_values applies to api = 'literalize'"

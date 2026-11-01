@@ -63,6 +63,9 @@ type ApiName = Literal[
     "declaration_formatter",
 ]
 type VariableFormName = Literal["new", "existing", "both", "none"]
+type SupplementalArgument = Literal[
+    "ref_values", "bound_refs", "record_null_substitutions"
+]
 
 
 def _bound_refs_items(
@@ -356,6 +359,40 @@ def _no_declarations() -> tuple[DeclarationSpec, ...]:
     return ()
 
 
+class CyclicSequenceValue(BaseModel, extra="forbid", frozen=True, strict=True):
+    """A sequence containing itself, constructed only at call time."""
+
+    kind: Literal["cyclic_sequence"]
+
+
+class NestedSequenceValue(BaseModel, extra="forbid", frozen=True, strict=True):
+    """A declared number of sequence layers around the integer zero."""
+
+    kind: Literal["nested_sequence"]
+    depth: Annotated[int, Field(ge=1)]
+
+
+type InvalidValueSource = Annotated[
+    CyclicSequenceValue | NestedSequenceValue, Field(discriminator="kind")
+]
+
+
+class InvalidSupplementalValue(
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """A native value supplied to one supplemental API argument."""
+
+    argument: SupplementalArgument
+    name: DeclaredName
+    value: InvalidValueSource
+
+
+type SourceCodepoints = Annotated[
+    tuple[tuple[DeclaredName, Annotated[int, Field(ge=0, le=0x10FFFF)]], ...],
+    BeforeValidator(func=_bound_refs_items),
+]
+
+
 class CallSpec(  # noqa: NOD001
     BaseModel,
     extra="forbid",
@@ -371,6 +408,10 @@ class CallSpec(  # noqa: NOD001
 
     ``ref_value_yaml`` supplies reference inference hints without emitting
     bindings, using the same native YAML value syntax as ``bound_ref_yaml``.
+    ``source_codepoints`` replaces named ``{placeholders}`` with native
+    characters, including lone surrogates TOML cannot store directly.
+    ``invalid_values`` constructs cyclic or deeply nested supplemental
+    values immediately before the call; manifests remain finite and frozen.
     """
 
     api: ApiName
@@ -384,6 +425,10 @@ class CallSpec(  # noqa: NOD001
     sources: Annotated[tuple[str, ...], Field(strict=False)] = Field(
         default_factory=_no_sources,
     )
+    source_codepoints: SourceCodepoints = ()
+    invalid_values: Annotated[
+        tuple[InvalidSupplementalValue, ...], Field(strict=False)
+    ] = ()
     input_format: RejectionInputFormat | None = None
     input_root_key: str | None = None
     call_transform: str | None = None
@@ -499,10 +544,16 @@ class CallSpec(  # noqa: NOD001
             "formatted_value": "declaration_formatter",
             "formatter_data": "declaration_formatter",
             "record_null_substitutions": "literalize",
+            "source_codepoints": "literalize",
+            "invalid_values": "literalize",
         }
         for name, owner in owners.items():
             if name in self.model_fields_set and self.api != owner:
                 msg = f"{name} applies to api = {owner!r}"
+                raise ValueError(msg)
+        for name, _ in self.source_codepoints:
+            if not any(f"{{{name}}}" in source for source in self.sources):
+                msg = f"source_codepoints contains unused placeholder {name!r}"
                 raise ValueError(msg)
         if (
             self.api == "literalize_call_with_declarations"
@@ -517,6 +568,14 @@ class CallSpec(  # noqa: NOD001
             msg = "formatter operations do not construct a language"
             raise ValueError(msg)
         return self
+
+    def resolve_source(self, source: str, /) -> str:
+        """Insert declared code points without interpreting other
+        escapes.
+        """
+        for name, codepoint in self.source_codepoints:
+            source = source.replace(f"{{{name}}}", chr(codepoint))
+        return source
 
     def _validate_call_only_arguments(self) -> Self:
         """Reject call arguments declared for another API."""
