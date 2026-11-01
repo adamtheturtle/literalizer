@@ -108,7 +108,7 @@ A suffix distinguishes multiple logical uses of one input:
    suffix = "_mixed"
 
 Native Python values that TOML cannot encode belong in ``base_context.record_null_value_sources``.
-Use the shared scalar, sequence, and mapping recipes to substitute them through the public ``record_null_substitutions`` API; ``native_datetime_offsets`` demonstrates exact microsecond UTC offsets.
+Use the shared scalar, sequence, and mapping recipes to substitute them through the public ``record_null_substitutions`` API; ``native_datetime_ruby_offsets`` demonstrates exact microsecond UTC offsets.
 
 Simple render context also belongs beside the input.
 This base case replaces null record fields before inference:

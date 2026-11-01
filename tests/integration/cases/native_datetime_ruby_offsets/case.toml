@@ -1,6 +1,7 @@
-# Whole-file public API coverage for native formatter offsets (#6574).
+# Ruby Time.new preserves exact native UTC offsets (#6574).
 schema_version = 1
 suites = ["base"]
+gates = [{kind = "enum_member_present", option = "datetime_format", member = "RUBY"}]
 
 [base_context.record_null_value_sources.stamps]
 kind = "sequence"
