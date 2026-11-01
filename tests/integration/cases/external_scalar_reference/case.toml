@@ -6,3 +6,15 @@ gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
 # Shared coverage retains external_scalar_reference.
 external_declarations = {shared = "1"}
 explicit_ref_value_sources = {shared = "1"}
+
+# An existing-variable form can introduce a top-level equation without a prior
+# destination. Preserve the Haskell external-reference fragment contract.
+[[ref_examples]]
+example = "existing_equation"
+gates = [
+  {kind = "capability_flag", flag = "supports_variable_names"},
+  {kind = "enum_member_present", option = "declaration_style", member = "ASSIGN"},
+  {kind = "behavior_flag", flag = "declaration_disallows_redefinition"},
+]
+variable_form = "existing"
+external_declarations = {shared = "1"}

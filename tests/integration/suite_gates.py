@@ -22,6 +22,7 @@ import literalizer
 from literalizer._language import (
     IntegerCallStubResult,
     NullableObjectCallStubResult,
+    redefinition_config,
 )
 from literalizer._statements import (
     CallLiteralSyntax,
@@ -103,6 +104,13 @@ METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str | None]] = {
 # option member whose spec has it; the flag is named here once so
 # neither spells it itself.
 BEHAVIOR_FLAGS: Mapping[str, Callable[[literalizer.Language], bool]] = {
+    "declaration_disallows_redefinition": (
+        lambda spec: (
+            not redefinition_config(
+                spec.declaration_style
+            ).supports_redefinition
+        )
+    ),
     "sequence_supports_heterogeneity": (
         lambda spec: spec.sequence_format_config.supports_heterogeneity
     ),
