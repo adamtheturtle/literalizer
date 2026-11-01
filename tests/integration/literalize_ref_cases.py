@@ -524,7 +524,7 @@ def _compose_ref_consumer(
             spec.call_style_config
         )
         arguments = format_rendered_call_arguments(
-            formatted=[result.code],
+            formatted=[result.bare_code],
             params=parameters,
             style=style,
             allows_empty_call_parens=True,

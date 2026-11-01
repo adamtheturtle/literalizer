@@ -191,7 +191,7 @@ Each example declares its complete API configuration rather than inheriting opti
 Its unique ``example`` name uses lowercase letters, digits and underscores and is appended to its golden filenames and test identifiers.
 Keep the original regression provenance with the example when consolidating cases.
 
-A ``[ref]`` case with ``variable_form = "none"`` and a ``consumer`` splices the actual unwrapped ``LiteralizeResult.code`` into a native function argument.
+A ``[ref]`` case with ``variable_form = "none"`` and a ``consumer`` splices the unwrapped ``LiteralizeResult.bare_code`` into a native function argument.
 Its compiling golden checks that record declarations remain outside the expression.
 Optional ``caller_preamble`` entries supply caller-owned headers after rendering, without teaching the renderer about the caller's class ownership.
 
