@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Scala value cannot silently override an inherited Any member."
+summary = "Exercise declaration names that overlap inherited members."
 exceptions = ["ReservedVariableNameError"]
 values = [
   "clone",

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Groovy primitive type name cannot follow def."
+summary = "Exercise primitive type names as declaration identifiers."
 exceptions = ["ReservedVariableNameError"]
 values = [
   "boolean",

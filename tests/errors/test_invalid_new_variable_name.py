@@ -41,10 +41,8 @@ def _spellings(*, name: str, language_cls: LanguageCls) -> tuple[str, ...]:
     return tuple(dict.fromkeys(spellings))
 
 
-# Jsonnet declares reserved identifiers for its call parameter and
-# call target names while naming no variable at all, so a
-# ``NewVariable`` there is refused for a different reason (issue
-# #4549).
+# A target can reserve call names without supporting named variables.
+# Select declaration-name cases only where those declarations apply (#4549).
 
 
 @pytest.mark.parametrize(

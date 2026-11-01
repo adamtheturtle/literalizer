@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-JavaScript and Wren number precision tops out at 2**53 - 1 in either
-direction, so an integer just past that range is refused rather than
-silently rounded (#2713, #3675).
-"""
+summary = "Exercise integers at the binary64 precision boundary in both directions. (#2713, #3675)"
 exceptions = ["UnrepresentableIntegerError"]
 
 [call]

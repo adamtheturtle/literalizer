@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-The C++14 value variant and an externally named record shape are both
-written as type declarations in one file, so they cannot share a name.
-"""
+summary = "Exercise a heterogeneous-value type name that overlaps an explicitly named record shape."
 exceptions = ["InvalidRecordNameError"]
 
 [call]

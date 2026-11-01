@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "YAML forbids the Unicode noncharacters U+FFFE and U+FFFF."
+summary = "Exercise Unicode noncharacters U+FFFE and U+FFFF in string values."
 exceptions = ["UnrepresentableStringError"]
 
 [call]

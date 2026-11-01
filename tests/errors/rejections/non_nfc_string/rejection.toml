@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-HCL normalizes its source to NFC by specification and a Raku Str is
-NFG-normalized by definition, so a decomposed sequence comes back
-precomposed however the literal is spelled.
-"""
+summary = "Exercise preservation of decomposed Unicode text by normalized string representations."
 exceptions = ["UnrepresentableStringError"]
 
 [call]

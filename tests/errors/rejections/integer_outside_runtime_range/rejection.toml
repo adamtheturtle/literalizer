@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "PHP integer literals must remain integer-typed at runtime."
+summary = "Exercise integer literals outside the runtime integer range."
 exceptions = ["UnrepresentableIntegerError"]
 option = "integer_format"
 

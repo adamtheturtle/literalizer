@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A Common Lisp call target cannot name a symbol of the locked
-COMMON-LISP package, in any spelling.
-"""
+summary = "Exercise call targets that overlap symbols in a locked standard package."
 exceptions = ["InvalidCallTargetError"]
 values = [
   "MOD",

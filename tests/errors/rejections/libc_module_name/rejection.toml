@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-A wrapped Objective-C file imports Foundation, which brings the C
-library prototypes into scope, so a wrapper named after one of them
-redeclares it with a different signature (#4534).
-"""
+summary = "Exercise wrapper names that can collide with imported runtime function declarations. (#4534)"
 exceptions = ["InvalidModuleNameError"]
 values = ["memcpy", "printf", "strlen"]
 

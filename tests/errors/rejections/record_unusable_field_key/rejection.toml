@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A dict key a Rust raw identifier cannot express has no compiling
-struct field name.
-"""
+summary = "Exercise record field keys that cannot be expressed by escaped identifiers."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

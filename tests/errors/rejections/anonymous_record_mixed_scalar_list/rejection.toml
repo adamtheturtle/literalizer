@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Native F# lists cannot contain unrelated scalar types."
+summary = "Exercise mixed scalar types with anonymous record rendering."
 exceptions = ["HeterogeneousScalarCollectionError"]
 
 [call]

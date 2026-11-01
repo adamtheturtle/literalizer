@@ -1,6 +1,6 @@
 # Preserve the original native input shape (#6575).
 schema_version = 1
-summary = "Go native datetime values reject UTC offsets finer than an integer second."
+summary = "Exercise a native datetime binding with a UTC offset finer than an integer second."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

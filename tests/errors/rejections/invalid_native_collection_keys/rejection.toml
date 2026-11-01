@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Lua rejects null and NaN mapping keys and set members."
+summary = "Exercise null and NaN as native mapping keys and set members."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

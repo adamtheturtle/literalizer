@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Nim fixed-size call arrays require consistent nested lengths."
+summary = "Exercise fixed-size call arrays with inconsistent nested lengths."
 exceptions = ["CallArgNotSupportedError"]
 
 [call]

@@ -1,7 +1,5 @@
 schema_version = 1
-summary = """
-A record named after a type the generated C# itself uses either shadows that type or clashes with the using line bringing it in.
-"""
+summary = "Exercise generated record names that can shadow runtime types or conflict with imports."
 exceptions = ["InvalidRecordNameError"]
 values = ["DateOnly", "DateTime", "System"]
 

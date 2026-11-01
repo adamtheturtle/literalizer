@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "The V nil literal and the builtin functions no declaration can redefine."
+summary = "Exercise exit, nil, panic, print, and println as declaration names."
 exceptions = ["ReservedVariableNameError"]
 values = ["exit", "nil", "panic", "print", "println"]
 

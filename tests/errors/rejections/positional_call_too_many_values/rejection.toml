@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Positional Go calls require one value per parameter."
+summary = "Exercise a positional call with more values than declared parameters."
 exceptions = ["ParameterCountMismatchError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Gleam tuple sequences cannot supply the uniform list types of record fields."
+summary = "Exercise tuple sequences where native record fields require uniform list types."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

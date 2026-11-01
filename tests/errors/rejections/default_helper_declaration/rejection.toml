@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Zig default declaration bindings cannot shadow the mode's helpers."
+summary = "Exercise a binding name that overlaps a helper emitted by the default value representation."
 exceptions = ["ReservedVariableNameError"]
 values = ["ZKV", "ZVal"]
 

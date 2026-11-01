@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Generated type constructors need an uppercase Haskell name."
+summary = "Exercise a lowercase native record type name when rendering a bare value."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Rust empty-container hints require a valid type and an empty target."
+summary = "Exercise an empty-container hint whose type name is empty."
 exceptions = ["ValueError"]
 
 [call]

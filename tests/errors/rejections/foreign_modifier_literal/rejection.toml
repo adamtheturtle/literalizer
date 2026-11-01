@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Kotlin literal rejects a Java declaration modifier."
+summary = "Exercise declaration modifiers from every enum offering the requested member."
 exceptions = ["InvalidVariableModifierError"]
 
 [call]
@@ -9,4 +9,4 @@ input_format = "json"
 variable_form = "new"
 variable_name = "value"
 modifiers = ["FINAL"]
-modifier_language = "Java"
+modifier_source = "all"

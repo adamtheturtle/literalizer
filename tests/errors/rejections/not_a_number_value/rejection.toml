@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Nix division by zero is an evaluation error, not NaN."
+summary = "Exercise a NaN value where division by zero is an evaluation error."
 exceptions = ["UnrepresentableSpecialFloatError"]
 
 [call]

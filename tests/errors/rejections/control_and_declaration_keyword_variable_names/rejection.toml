@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Norg keyword names cannot be used as variable identifiers."
+summary = "Exercise control-flow and declaration keywords as variable names."
 exceptions = ["ReservedVariableNameError"]
 values = [
   "break",

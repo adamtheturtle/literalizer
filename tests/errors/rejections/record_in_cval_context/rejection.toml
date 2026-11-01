@@ -1,10 +1,5 @@
 schema_version = 1
-summary = """
-A C struct is not a member of the tagged CVal union, so a record
-reached only through a non-record container -- an ordered map, or a
-list whose elements are not all records -- would have to occupy a CVal
-slot.
-"""
+summary = "Exercise a generated record inside a container whose tagged value carrier has no record alternative."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

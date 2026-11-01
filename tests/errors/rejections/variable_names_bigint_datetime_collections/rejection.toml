@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Dart declarations cannot shadow an emitted type name or main."
+summary = "Exercise variable names that can shadow emitted types, collection constructors, or the entrypoint."
 exceptions = ["ReservedVariableNameError"]
 values = [
   "BigInt",

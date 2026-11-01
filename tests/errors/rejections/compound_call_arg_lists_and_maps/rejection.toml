@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A Bash list or map has no inline literal form, so neither can be
-written as a call argument.
-"""
+summary = "Exercise lists and maps as inline call arguments."
 exceptions = ["CallArgNotSupportedError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "C++ override cannot be used as a variable name."
+summary = "Exercise override as a declaration name."
 exceptions = ["ReservedVariableNameError"]
 values = [
   "override",

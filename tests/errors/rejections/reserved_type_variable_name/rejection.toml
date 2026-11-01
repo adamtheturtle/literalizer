@@ -1,5 +1,5 @@
           schema_version = 1
-          summary = "D built-in type names cannot be used as variable names."
+          summary = "Exercise builtin type names as declaration identifiers."
           exceptions = ["ReservedVariableNameError"]
           values = [
             "idouble",

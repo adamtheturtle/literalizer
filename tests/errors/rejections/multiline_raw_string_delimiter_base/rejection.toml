@@ -1,10 +1,5 @@
 schema_version = 1
-summary = """
-A C++ raw string is delimited by d-chars: at most 16 of them, drawn
-from the basic character set and excluding the parentheses, the
-backslash and whitespace.  A base outside that set is refused when the
-language is built rather than when it renders.
-"""
+summary = "Exercise raw-string delimiter bases beyond the length or character restrictions."
 exceptions = ["InvalidCppRawStringDelimiterError"]
 values = [
   "",

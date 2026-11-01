@@ -1,10 +1,5 @@
 schema_version = 1
-summary = """
-Declaring again a PHP function from the always-present Core or
-standard extension is a fatal error, so a generated stub named after one does
-not load, and PHP matches a function name without regard to case
-(#4495).
-"""
+summary = "Exercise call targets that overlap runtime and standard-library functions. (#4495)"
 exceptions = ["InvalidCallTargetError"]
 values = ["End", "count", "end", "next", "sort", "strlen"]
 

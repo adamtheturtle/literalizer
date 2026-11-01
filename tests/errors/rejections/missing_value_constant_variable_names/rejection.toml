@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "The typed ``NA`` constants of R are parser literals, not assignable names."
+summary = "Exercise typed missing-value constants as declaration names."
 exceptions = ["ReservedVariableNameError"]
 values = ["NA_character_", "NA_complex_", "NA_integer_", "NA_real_"]
 

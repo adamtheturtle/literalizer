@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Java Map.entry() rejects null values."
+summary = "Exercise null values in entries constructed by a native map factory."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Unsupported values fail before invalid Haskell is produced."
+summary = "Exercise empty and deeply nested list fields in native records."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

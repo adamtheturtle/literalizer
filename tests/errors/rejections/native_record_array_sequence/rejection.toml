@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "OCaml array sequences cannot supply the list types of record fields."
+summary = "Exercise array sequences where native record fields require list types."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

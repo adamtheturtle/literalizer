@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Forth control-structure words cannot be used as variable names."
+summary = "Exercise loop-control words as declaration names."
 exceptions = ["ReservedVariableNameError"]
 values = [
   "BEGIN",

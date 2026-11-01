@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "IEEE 1800-2017 keywords that no SystemVerilog declaration can name."
+summary = "Exercise assertion and logic keywords as declaration names."
 exceptions = ["ReservedVariableNameError"]
 values = ["and", "assert", "before", "let", "new", "not", "null", "or"]
 

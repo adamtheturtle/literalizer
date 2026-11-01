@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Julia declaration keywords cannot be used as variable names."
+summary = "Exercise declaration keywords as variable names."
 exceptions = ["ReservedVariableNameError"]
 values = ["abstract", "mutable", "primitive", "type", "where"]
 

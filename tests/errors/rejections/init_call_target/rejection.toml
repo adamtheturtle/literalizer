@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-A Go init function must take no arguments and return nothing, and
-cannot be referenced at all, so a generated stub named after it
-neither declares nor calls (#4493).
-"""
+summary = "Exercise init as a generated call target with arguments. (#4493)"
 exceptions = ["InvalidCallTargetError"]
 
 [call]

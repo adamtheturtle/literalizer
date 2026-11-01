@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Mojo keywords that no declaration can name as a call target."
+summary = "Exercise case, lambda, and match as generated call targets."
 exceptions = ["InvalidCallTargetError"]
 values = ["case", "lambda", "match"]
 

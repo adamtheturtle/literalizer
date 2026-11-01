@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Independent C++ record fields do not exempt heterogeneous elements within an array or sibling arrays in a plain mapping."
+summary = "Exercise heterogeneous elements and sibling array shapes in independent record fields."
 exceptions = ["HeterogeneousScalarCollectionError", "HeterogeneousSiblingListsError", "UnrepresentableInputError"]
 
 [call]

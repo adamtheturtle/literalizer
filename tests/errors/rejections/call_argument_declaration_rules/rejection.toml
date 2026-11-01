@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A Rust call argument is written by the same value formatting a declared
-value is, so it faces the same rules.
-"""
+summary = "Exercise value-formatting restrictions through call arguments."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

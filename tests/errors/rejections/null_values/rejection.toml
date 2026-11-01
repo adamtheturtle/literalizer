@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-TOML has no null, so a document carrying one is refused wherever it
-sits rather than written out with the null dropped.
-"""
+summary = "Exercise null values at the root and at nested mapping and sequence positions."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

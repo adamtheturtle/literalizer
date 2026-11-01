@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "C record fields cannot use reserved keywords."
+summary = "Exercise int as a generated record field name."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

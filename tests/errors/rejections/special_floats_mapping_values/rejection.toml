@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "COBOL cannot represent IEEE special floating-point values."
+summary = "Exercise IEEE special floating-point values inside mappings."
 exceptions = ["UnrepresentableSpecialFloatError"]
 
 [call]

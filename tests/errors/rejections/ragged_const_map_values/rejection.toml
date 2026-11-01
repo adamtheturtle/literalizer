@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A Nim const renders map values as bare array literals, whose lengths are
-part of their types, so empty and non-empty list values have no common type.
-"""
+summary = "Exercise constant mappings with empty and nonempty array values of different lengths."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

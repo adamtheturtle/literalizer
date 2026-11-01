@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Crystal's discard marker cannot name a call parameter."
+summary = "Exercise a discard marker as a declared call parameter."
 exceptions = ["InvalidCallParameterNameError"]
 
 [call]

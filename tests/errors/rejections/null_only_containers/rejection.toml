@@ -1,11 +1,5 @@
 schema_version = 1
-summary = """
-V's default (ERROR) strategy has no element type to infer for a
-non-empty all-null list or map, so it refuses the shape instead of
-emitting a voidptr collection the V/C back end rejects (issues #3017
-and #3018).  The INTERFACE and RECORD strategies wrap each null and
-accept the same inputs.
-"""
+summary = "Exercise nonempty all-null lists and mappings under heterogeneous collection strategies. (#3017, #3018)"
 exceptions = ["NullInCollectionError"]
 
 [call]

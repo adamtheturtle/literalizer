@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Conflicting Java visibility takes precedence over Jackson field limitations."
+summary = "Exercise conflicting visibility modifiers on a bare JSON value declaration."
 exceptions = ["ConflictingVariableModifiersError"]
 
 [call]

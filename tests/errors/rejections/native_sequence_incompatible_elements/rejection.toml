@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Nim native sequences require a single inferable element type. Mixed scalar
-types and scalar/container positions otherwise produce code rejected by Nim.
-"""
+summary = "Exercise mixed scalar and container positions in native sequence type inference."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

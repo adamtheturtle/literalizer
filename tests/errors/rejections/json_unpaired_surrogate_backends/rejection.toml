@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Ada and COBOL reject the original escaped-surrogate regression input during parsing."
+summary = "Exercise an escaped lone UTF-16 surrogate in a wrapped declaration."
 exceptions = ["JSONParseError"]
 
 [call]

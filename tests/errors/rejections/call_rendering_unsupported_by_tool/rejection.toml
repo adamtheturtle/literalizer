@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Nix has function call syntax, but literalizer does not write calls in
-it, which is a different refusal from a language having none.
-"""
+summary = "Exercise targets whose call syntax the tool does not implement."
 exceptions = ["CallsNotSupportedByToolError"]
 
 [call]

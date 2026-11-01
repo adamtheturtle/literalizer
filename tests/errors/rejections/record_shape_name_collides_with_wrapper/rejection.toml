@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-C# record declarations share file scope with the generated Check wrapper,
-so an external record shape cannot use that name.
-"""
+summary = "Exercise a record shape name that matches the generated wrapper name."
 exceptions = ["InvalidRecordNameError"]
 
 [call]

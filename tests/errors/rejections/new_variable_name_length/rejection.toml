@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Fortran 2018 limits a name to 63 characters, so a 64-character one is
-refused rather than truncated.
-"""
+summary = "Exercise a 64-character declaration name against identifier length restrictions."
 exceptions = ["InvalidNewVariableNameError"]
 
 [call]

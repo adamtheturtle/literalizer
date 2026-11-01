@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Clojure def cannot rebind an implicitly imported class name."
+summary = "Exercise declaration names that overlap implicitly imported classes."
 exceptions = ["ReservedVariableNameError"]
 values = ["Integer", "Math", "Object", "String"]
 

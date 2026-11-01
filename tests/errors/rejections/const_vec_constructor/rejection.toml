@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Rust CONST rejects the VEC sequence format at construction:
-vec![...] is not a constant expression.
-"""
+summary = "Exercise constant declarations with a sequence format using a runtime constructor."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

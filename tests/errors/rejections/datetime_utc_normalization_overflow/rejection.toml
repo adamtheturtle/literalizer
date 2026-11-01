@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "UTC normalization outside Python's datetime range is a typed error."
+summary = "Exercise UTC normalization outside the native datetime range."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

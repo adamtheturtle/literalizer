@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Nim record fields collide under its style-insensitive identifier equality."
+summary = "Exercise record fields that collide under style-insensitive identifier comparison."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Wren reserves a leading underscore for a field inside a class, so a
-top-level declaration cannot take one.
-"""
+summary = "Exercise leading-underscore names as top-level declarations rather than class fields."
 exceptions = ["ReservedVariableNameError"]
 values = ["_", "_field"]
 

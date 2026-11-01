@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Elixir special forms cannot be used as variable names."
+summary = "Exercise special-form keywords as variable identifiers."
 exceptions = ["ReservedVariableNameError"]
 values = [
   "__CALLER__",

@@ -1,5 +1,5 @@
           schema_version = 1
-          summary = "A Racket definition cannot shadow car, cdr, or cons."
+          summary = "Exercise car, cdr, and cons as declaration names that can shadow literal helpers."
           exceptions = ["ReservedVariableNameError"]
           values = [
             "car",

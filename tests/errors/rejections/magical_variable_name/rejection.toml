@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Perl magical variables cannot be used as my-scoped names."
+summary = "Exercise names reserved for special runtime variables."
 exceptions = ["ReservedVariableNameError"]
 values = ["ARGV", "ENV", "INC", "SIG", "STDERR", "STDIN", "STDOUT"]
 

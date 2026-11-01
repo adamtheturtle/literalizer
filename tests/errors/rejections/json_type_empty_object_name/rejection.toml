@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Odin's JSON parser discards an object member whose name is empty, so
-the entry would be missing from the parsed value.
-"""
+summary = "Exercise preservation of an empty object member name by an embedded JSON parser."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

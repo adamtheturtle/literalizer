@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Rust STATIC rejects the VEC sequence format at construction:
-vec![...] is not a constant expression.
-"""
+summary = "Exercise static declarations whose sequence representation uses a runtime constructor."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

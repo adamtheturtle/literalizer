@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Never emit a syntactically invalid Roc record field."
+summary = "Exercise YAML mapping keys outside the native record field grammar."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

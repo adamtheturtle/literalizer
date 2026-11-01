@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Kotlin reserves every all-underscore name, not just the blank identifier."
+summary = "Exercise declaration names consisting entirely of underscores."
 exceptions = ["ReservedVariableNameError"]
 values = ["__", "___"]
 

@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Rust CONST requires a constant-expression initializer, and a dict
-renders as a runtime HashMap::from / BTreeMap::from call.
-"""
+summary = "Exercise constant declarations of mappings built by runtime factory calls."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

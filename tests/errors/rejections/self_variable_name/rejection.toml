@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Mojo cannot bind data to the implicit method receiver name."
+summary = "Exercise self as a variable binding name."
 exceptions = ["ReservedVariableNameError"]
 values = ["self"]
 

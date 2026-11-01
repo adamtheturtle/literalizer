@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-An Erlang module name is an atom, and a capitalized word is a
-variable, so it cannot name a module however well it spells an
-identifier elsewhere.
-"""
+summary = "Exercise a capitalized module name where atom and variable syntax differ."
 exceptions = ["InvalidModuleNameError"]
 
 [call]

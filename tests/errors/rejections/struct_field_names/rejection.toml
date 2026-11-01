@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "MATLAB struct field names must be valid identifiers."
+summary = "Exercise invalid native struct-field identifiers."
 exceptions = ["InvalidDictKeyError"]
 
 [call]

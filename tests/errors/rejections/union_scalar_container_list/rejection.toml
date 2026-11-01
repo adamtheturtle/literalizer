@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Dhall's UNION_TYPE strategy defines scalar alternatives only, so a scalar
-cannot share a List with a record or another container.
-"""
+summary = "Exercise a scalar mixed with a record or container under a scalar-only union strategy."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

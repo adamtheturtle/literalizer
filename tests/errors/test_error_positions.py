@@ -3,12 +3,14 @@
 import pytest
 from tomlkit.exceptions import TOMLKitError
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, LanguageCls, literalize
 from literalizer.exceptions import TOMLParseError
-from literalizer.languages import Rust
 
 
-def test_toml_error_without_position(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_toml_error_without_position(
+    monkeypatch: pytest.MonkeyPatch,
+    language_cls: LanguageCls,
+) -> None:
     """A parser failure without location metadata retains its cause."""
     cause = TOMLKitError("unpositioned failure")
 
@@ -22,7 +24,7 @@ def test_toml_error_without_position(monkeypatch: pytest.MonkeyPatch) -> None:
         _ = literalize(
             source="a = 1",
             input_format=InputFormat.TOML,
-            language=Rust(),
+            language=language_cls(),
         )
     assert caught.value.line is None
     assert caught.value.column is None

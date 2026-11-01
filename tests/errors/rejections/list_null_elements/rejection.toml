@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-Java's List.of() throws NullPointerException on a null element, so a
-LIST-format sequence holding one is refused at literalize time rather
-than emitted as a literal that fails at runtime.
-"""
+summary = "Exercise null elements in a list constructed by a native collection factory."
 exceptions = ["NullInCollectionError"]
 
 [call]

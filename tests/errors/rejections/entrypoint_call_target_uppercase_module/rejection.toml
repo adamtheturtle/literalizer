@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "C and C++ wrapped calls reject their generated Module entrypoint."
+summary = "Exercise Module as a wrapped call target."
 exceptions = ["InvalidCallTargetError"]
 
 [call]

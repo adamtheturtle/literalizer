@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Dhall rejects dictionaries with different key sets after TOML parsing."
+summary = "Exercise records with different key sets after TOML parsing."
 exceptions = ["MixedDictShapesError"]
 
 [call]

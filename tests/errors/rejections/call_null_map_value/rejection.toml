@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Java call arguments reject null-valued native map entries."
+summary = "Exercise native map call arguments containing null values."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

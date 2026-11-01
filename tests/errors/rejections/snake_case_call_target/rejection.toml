@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "V function names are snake_case and cannot start with an underscore."
+summary = "Exercise call targets outside a lowercase snake-case declaration grammar."
 exceptions = ["InvalidCallTargetError"]
 values = ["_do_thing", "doThing"]
 

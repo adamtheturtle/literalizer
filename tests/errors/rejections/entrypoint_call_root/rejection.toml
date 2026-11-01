@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-An Elixir call root is stubbed as a module of that name, so a root
-naming the generated wrapper module would define it twice.
-"""
+summary = "Exercise a dotted call root that can collide with the wrapper declaration."
 exceptions = ["InvalidCallTargetError"]
 
 [call]

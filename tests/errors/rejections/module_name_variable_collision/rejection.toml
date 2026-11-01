@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-A Fortran program unit and the variables it declares are one
-namespace, so a wrapper named after the bound variable declares the
-name twice (#4530).
-"""
+summary = "Exercise a wrapper module name sharing a namespace with its declared variable. (#4530)"
 exceptions = ["ModuleNameVariableCollisionError"]
 
 [call]

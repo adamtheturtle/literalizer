@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Kotlin call rejects a Java declaration modifier."
+summary = "Exercise call-result modifiers from every enum offering the requested member."
 exceptions = ["InvalidVariableModifierError"]
 
 [call]
@@ -11,4 +11,4 @@ parameter_names = ["value"]
 variable_form = "new"
 variable_name = "value"
 modifiers = ["FINAL"]
-modifier_language = "Java"
+modifier_source = "all"

@@ -1,10 +1,5 @@
 schema_version = 1
-summary = """
-YAML carries tagged binary, set and ordered-map values and native date
-and datetime scalars, which other input formats either cannot express
-or express only as strings.  A collection mixing one of those with a
-value of another type has no single element type, which Mojo needs.
-"""
+summary = "Exercise YAML collections mixing tagged binary, sets, ordered maps, and temporal scalars."
 exceptions = ["HeterogeneousScalarCollectionError", "MixedDictValuesError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "MATLAB SAFE struct fields reject prototype, numeric-looking, and quoted field names."
+summary = "Exercise prototype, numeric-looking, and quoted field names under SAFE hints."
 exceptions = ["InvalidDictKeyError"]
 
 [call]

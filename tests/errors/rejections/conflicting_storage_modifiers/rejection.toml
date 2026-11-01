@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A C# const is implicitly static, so spelling both is invalid.  C++
-takes the pair, where static is storage and const is mutability.
-"""
+summary = "Exercise static and const together where they may describe storage or imply one another."
 exceptions = ["ConflictingVariableModifiersError"]
 gates = [
   { kind = "modifier_present", modifier = "STATIC" },

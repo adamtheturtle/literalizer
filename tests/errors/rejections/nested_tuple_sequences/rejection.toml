@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Gleam tuple sequences cannot inhabit the uniform GVal list carrier."
+summary = "Exercise nested tuple sequences inside a uniform list carrier."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

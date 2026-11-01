@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Kotlin has only Pair and Triple, so a tuple-eligible array of another
-length has no native fixed-size tuple.
-"""
+summary = "Exercise a tuple-eligible sequence whose length differs from fixed pair and triple arities."
 exceptions = ["TupleArityNotRepresentableError"]
 
 [call]

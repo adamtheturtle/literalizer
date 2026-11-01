@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Crystal record fields cannot use the generated initialize method name."
+summary = "Exercise initialize as a generated record field name."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

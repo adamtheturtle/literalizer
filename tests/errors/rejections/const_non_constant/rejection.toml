@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A C# const needs a compile-time constant initializer, which a
-collection literal and a date or datetime value are not.
-"""
+summary = "Exercise compile-time constant declarations of collections and temporal values."
 exceptions = ["IncompatibleFormatsError"]
 
 [call]

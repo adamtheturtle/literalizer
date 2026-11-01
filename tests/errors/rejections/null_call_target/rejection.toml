@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "The Wren null literal, which no variable name can take as a call target."
+summary = "Exercise null as a generated call target."
 exceptions = ["InvalidCallTargetError"]
 values = ["null"]
 

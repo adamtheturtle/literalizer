@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Fortran rejects the name of the support module its files always emit."
+summary = "Exercise a wrapper name that can collide with a generated support module."
 exceptions = ["InvalidModuleNameError"]
 
 [call]

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Racket definition cannot shadow a procedure its literal calls."
+summary = "Exercise declaration names that can shadow procedures used by literals."
 exceptions = ["ReservedVariableNameError"]
 values = ["date", "hash", "list", "make-keyword-procedure", "set", "void"]
 

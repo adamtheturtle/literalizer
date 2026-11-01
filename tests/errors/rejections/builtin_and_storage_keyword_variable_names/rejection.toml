@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "V keywords that no ``:=`` binding can name."
+summary = "Exercise builtin and storage keywords as declaration names."
 exceptions = ["ReservedVariableNameError"]
 values = ["asm", "dump", "goto", "isreftype", "lock", "rlock", "sizeof", "spawn", "static", "typeof", "union", "volatile"]
 

@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A materialized bound set cannot use null as a Lua table key."
+summary = "Exercise null as a set member supplied through a bound reference."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

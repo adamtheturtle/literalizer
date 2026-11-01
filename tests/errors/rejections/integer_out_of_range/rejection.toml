@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Lua integer numerals outside signed 64-bit range become floats and are rejected."
+summary = "Exercise integer tokens that can become floating-point values outside the native range."
 exceptions = ["UnrepresentableIntegerError"]
 option = "integer_format"
 

@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-COBOL holds an integer in a PIC S9(18) field, so a 19-digit value is
-refused rather than emitted into a picture too narrow to hold it.
-"""
+summary = "Exercise integer values wider than a PIC S9(18) field."
 exceptions = ["UnrepresentableIntegerError"]
 
 [call]

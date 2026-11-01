@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-Swift tuple field inference sees raw dictionaries while RECORD rendering emits
-generated structs below nested tuple levels, so the declaration and value types
-cannot agree.
-"""
+summary = "Exercise record dictionaries below tuple levels whose inferred and rendered types may differ."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

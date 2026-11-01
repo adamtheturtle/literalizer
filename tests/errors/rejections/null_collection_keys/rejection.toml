@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Java native maps and sets reject null keys and members."
+summary = "Exercise null mapping keys and set members in native collections."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

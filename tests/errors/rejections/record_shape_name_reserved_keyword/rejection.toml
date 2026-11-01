@@ -1,9 +1,5 @@
 schema_version = 1
-summary = """
-A record name that is a reserved word cannot be declared as a type.
-Only Rust has a PascalCase keyword; every other language's keywords are
-lowercase, so its PascalCase check already covers them.
-"""
+summary = "Exercise a PascalCase record shape name that can also be a reserved keyword."
 exceptions = ["InvalidRecordNameError"]
 
 [call]

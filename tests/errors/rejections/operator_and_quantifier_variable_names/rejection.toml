@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Ada reserved words that no declaration can name."
+summary = "Exercise operator and quantifier keywords as declaration names."
 exceptions = ["ReservedVariableNameError"]
 values = ["abs", "and", "parallel", "some"]
 

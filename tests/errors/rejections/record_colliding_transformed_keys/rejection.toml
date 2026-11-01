@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-Go derives a field name from each key, so two keys that derive the
-same name would produce one field.
-"""
+summary = "Exercise distinct input keys that transform to one generated field name."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

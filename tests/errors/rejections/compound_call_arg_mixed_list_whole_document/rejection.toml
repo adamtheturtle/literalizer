@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-A COBOL compound value is a DATA DIVISION entry, so it cannot be
-written inline after USING.
-"""
+summary = "Exercise a compound value passed as a single whole-document argument."
 exceptions = ["CallArgNotSupportedError"]
 
 [call]

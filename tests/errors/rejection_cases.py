@@ -10,6 +10,7 @@ from, and the identifier its line in the golden file is keyed by.
 import dataclasses
 import enum
 import functools
+import itertools
 from collections.abc import Mapping, Sequence
 from typing import assert_never
 
@@ -21,8 +22,9 @@ from tests.language_gates import LanguageGate, language_gate_admits
 from tests.language_options import OPTIONS
 
 from .rejection_manifests import (
-    LANGUAGES_BY_NAME,
+    LANGUAGE_CLASSES,
     BooleanKwarg,
+    CallSpec,
     EmptyContainerTypeHintsKwarg,
     OptionMemberKwarg,
     OptionUnsetKwarg,
@@ -40,6 +42,7 @@ class RejectionCase:
 
     case_id: str
     lang_cls: literalizer.LanguageCls
+    modifier_cls: literalizer.LanguageCls
     kwargs: Mapping[str, object]
     source: str | None
     value: str | None
@@ -71,7 +74,7 @@ def selected_languages(
     """
     return tuple(
         lang_cls
-        for lang_cls in LANGUAGES_BY_NAME.values()
+        for lang_cls in LANGUAGE_CLASSES
         if _admits(gates=manifest.gates, lang_cls=lang_cls)
     )
 
@@ -217,15 +220,44 @@ def _supports_case(
                 is None
             ):
                 return False
-    modifier_language = manifest.call.modifier_language
-    modifier_class = lang_cls
-    if modifier_language is not None:
-        modifier_class = LANGUAGES_BY_NAME[modifier_language]
-    return all(
-        find_enum_member(enum_cls=modifier_class.Modifiers, name=name)
-        is not None
-        for name in manifest.call.modifiers
+    return True
+
+
+@beartype
+def _modifier_classes(
+    *,
+    call: CallSpec,
+    lang_cls: literalizer.LanguageCls,
+) -> tuple[literalizer.LanguageCls, ...]:
+    """Select owners by their declared modifier members, not their
+    names.
+    """
+    candidates: Sequence[literalizer.LanguageCls] = (lang_cls,)
+    if call.modifier_source == "all":
+        candidates = tuple(LANGUAGE_CLASSES)
+    return tuple(
+        candidate
+        for candidate in candidates
+        if all(
+            find_enum_member(enum_cls=candidate.Modifiers, name=name)
+            is not None
+            for name in call.modifiers
+        )
     )
+
+
+@beartype
+def _modifier_case_part(
+    *,
+    call: CallSpec,
+    modifier_cls: literalizer.LanguageCls,
+) -> str | None:
+    """Label enum ownership only when the scenario expands that
+    dimension.
+    """
+    if call.modifier_source == "all":
+        return f"modifiers={modifier_cls.__name__}"
+    return None
 
 
 @beartype
@@ -246,36 +278,48 @@ def _cases_for_languages(
         sources = (None,)
     cases: list[RejectionCase] = []
     for lang_cls in lang_classes:
-        for member in _option_members(manifest=manifest, lang_cls=lang_cls):
-            for value in values:
-                if not _supports_case(
-                    manifest=manifest, lang_cls=lang_cls, value=value
-                ):
-                    continue
-                for source in sources:
-                    # A single source is the manifest's whole subject,
-                    # so naming it in every case identifier would say
-                    # nothing the manifest does not already say.
-                    named_source = None
-                    if len(sources) > 1:
-                        named_source = source
-                    cases.append(
-                        RejectionCase(
-                            case_id=_case_id(
-                                lang_cls=lang_cls,
-                                parts=(member, value, named_source),
-                            ),
+        for member, value, modifier_cls in itertools.product(
+            _option_members(manifest=manifest, lang_cls=lang_cls),
+            values,
+            _modifier_classes(call=manifest.call, lang_cls=lang_cls),
+        ):
+            if not _supports_case(
+                manifest=manifest, lang_cls=lang_cls, value=value
+            ):
+                continue
+            for source in sources:
+                # A single source is the manifest's whole subject,
+                # so naming it in every case identifier would say
+                # nothing the manifest does not already say.
+                modifier_source = _modifier_case_part(
+                    call=manifest.call, modifier_cls=modifier_cls
+                )
+                named_source = None
+                if len(sources) > 1:
+                    named_source = source
+                cases.append(
+                    RejectionCase(
+                        case_id=_case_id(
                             lang_cls=lang_cls,
-                            source=source,
-                            value=value,
-                            kwargs=_case_kwargs(
-                                manifest=manifest,
-                                lang_cls=lang_cls,
-                                member=member,
-                                value=value,
+                            parts=(
+                                member,
+                                value,
+                                named_source,
+                                modifier_source,
                             ),
-                        )
+                        ),
+                        lang_cls=lang_cls,
+                        modifier_cls=modifier_cls,
+                        source=source,
+                        value=value,
+                        kwargs=_case_kwargs(
+                            manifest=manifest,
+                            lang_cls=lang_cls,
+                            member=member,
+                            value=value,
+                        ),
                     )
+                )
     return tuple(cases)
 
 

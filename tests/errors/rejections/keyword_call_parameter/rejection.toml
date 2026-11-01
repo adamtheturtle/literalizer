@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "A Jsonnet keyword cannot name a function parameter."
+summary = "Exercise keywords as generated function parameter names."
 exceptions = ["InvalidCallParameterNameError"]
 values = ["assert", "else", "error", "false", "for", "function", "if", "import", "importbin", "importstr", "in", "local", "null", "self", "super", "tailstrict", "then", "true"]
 

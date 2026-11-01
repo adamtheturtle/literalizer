@@ -1,8 +1,5 @@
 schema_version = 1
-summary = """
-V holds a struct field name to snake case: no uppercase letter, and no
-leading underscore beyond the blank name.
-"""
+summary = "Exercise uppercase and leading-underscore field names under a snake-case field grammar."
 exceptions = ["UnrepresentableInputError"]
 
 [call]

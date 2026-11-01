@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Nim cannot infer the element type of an all-null native sequence."
+summary = "Exercise element-type inference for a native sequence containing only nulls."
 exceptions = ["UnrepresentableInputError"]
 
 [call]
