@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+# Preserve the Roc unwrapped/pre-indented RList fragment in a real caller.
+# Configurable constructor prefixes select the native tagged-value families.
+[ref]
+gates = [{kind = "non_default_kwarg", kwarg = "constructor_prefix"}]
+variable_form = "none"
+pre_indent_level = 1
+
+[ref.consumer]
+target_function = "consume_widget"

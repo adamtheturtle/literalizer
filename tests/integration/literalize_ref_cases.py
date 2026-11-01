@@ -518,42 +518,40 @@ def _compose_ref_consumer(
         else spec
     )
 
-    def consume_expression(_context: literalizer.CallContext) -> str:
-        """Splice the actual unwrapped result into a native caller."""
+    if expression:
         style = TypeAdapter[CallStyle](type=CallStyle).validate_python(
             spec.call_style_config
         )
         arguments = format_rendered_call_arguments(
-            formatted=[result.bare_code],
+            formatted=[stub_spec.format_call_arg(stub_data, result.bare_code)],
             params=parameters,
             style=style,
             allows_empty_call_parens=True,
         )
-        return assemble_call_expression(
+        call_expression = assemble_call_expression(
             target_function=consumer.target_function,
             args_str=arguments,
             style=style,
         )
-
-    call = literalizer.literalize_call(
-        source='{"$ref": "my_data"}',
-        input_format=literalizer.InputFormat.JSON,
-        language=spec,
-        target_function=consumer.target_function,
-        parameter_names=parameters,
-        per_element=False,
-        ref_key="$ref",
-        call_transform=consume_expression if expression else None,
-    )
-    if expression:
         call = dataclasses.replace(
             result,
-            declaration_code=call.declaration_code,
-            pre_declaration_comments=call.pre_declaration_comments,
+            declaration_code=spec.format_call_statement(
+                call_expression + spec.statement_terminator
+            ),
+            pre_declaration_comments=(),
             is_call_statement=True,
             sections=(),
         )
     else:
+        call = literalizer.literalize_call(
+            source='{"$ref": "my_data"}',
+            input_format=literalizer.InputFormat.JSON,
+            language=spec,
+            target_function=consumer.target_function,
+            parameter_names=parameters,
+            per_element=False,
+            ref_key="$ref",
+        )
         if consumer.before_assignment:
             declarations.append(call)
         declarations.append(result)
