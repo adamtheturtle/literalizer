@@ -1,0 +1,40 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Preserve group -> suffix -> outer composition with native integer
+# expressions. Zip data must reach either template that consumes it.
+[call]
+gates = [{kind = "integer_call_stub"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform_group = {body = "{call}", suffix = " + 1"}
+call_transform = "({call}) * {zipped}"
+zip_source = "3"
+zip_input_format = "json"
+
+[[call_examples]]
+example = "body_zip"
+gates = [{kind = "integer_call_stub"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform_group = {body = "{call} * {zipped}", suffix = " + 1"}
+call_transform = "({call}) * 2"
+zip_source = "3"
+zip_input_format = "json"
+
+[[call_examples]]
+example = "no_zip"
+gates = [{kind = "integer_call_stub"}]
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+wrap_in_file = true
+variable_form = "new"
+call_transform_group = {body = "{call}", suffix = " + 1"}
+call_transform = "({call}) * 2"

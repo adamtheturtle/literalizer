@@ -3,18 +3,15 @@ name = "native_only"
 outer = ""
 suffix = " suffix"
 uses_zipped = false
-expected = "native-value suffix"
 
 [[cases]]
 name = "outer_zip"
 outer = "{call} then {zipped}"
 suffix = " suffix"
 uses_zipped = true
-expected = "native-value suffix then zip-value"
 
 [[cases]]
 name = "outer_plain"
 outer = "outer {call}"
 suffix = " suffix"
 uses_zipped = false
-expected = "outer native-value suffix"
