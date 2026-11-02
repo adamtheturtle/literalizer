@@ -1,0 +1,107 @@
+{
+  "source": "reproducers/exception-recursive.cpp",
+  "source_sha256": "fec5c1a4b8720be89df0de8fb22831f484ec552a7abaaea9c5109c5bbb73a555",
+  "platform": {
+    "architecture": "aarch64",
+    "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+    "cpu_affinity": [
+      4
+    ]
+  },
+  "samples": {
+    "previous_cache": {
+      "command": [
+        "timeout",
+        "10s",
+        "/task/clang-ci-runtime-c-parent/bin/clang-tidy",
+        "/repo/ci/llvm-upstream/reproducers/exception-recursive.cpp",
+        "--checks=-*,bugprone-exception-escape",
+        "--config={}",
+        "--",
+        "-std=c++20"
+      ],
+      "elapsed_seconds": 10.004735796000006,
+      "returncode": 124,
+      "binary_sha256": "238ace5a9cad3265f00773e2a68e77917eaef6db781fd1d05f68eacc9c6921e1",
+      "toolchain": {
+        "llvm_version": "23.1.4",
+        "source_commit": "7a941dfb2877a0b8cf30323fefa85ad019e0b0f5",
+        "patch_sha256": "fe31a6cc432e40d08ce1f0570168522bb763d4c1000793d118bbe53bda085b7c",
+        "cxx_flags": [
+          "-I/task/clang-ci-work/bootstrap/include",
+          "-std=c++17",
+          "-D_GNU_SOURCE",
+          "-D_GLIBCXX_USE_CXX11_ABI=1",
+          "-D__STDC_CONSTANT_MACROS",
+          "-D__STDC_FORMAT_MACROS",
+          "-D__STDC_LIMIT_MACROS",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-O3",
+          "-DNDEBUG",
+          "-I/task/clang-ci-work/objects-fe31a6cc432e-6304f7298d4c"
+        ],
+        "clang_sha256": "d1863683b877471a19db81ab6c9eeac6a9d12d77b68649ea2014e2bc5369a76a",
+        "clang_tidy_sha256": "238ace5a9cad3265f00773e2a68e77917eaef6db781fd1d05f68eacc9c6921e1"
+      },
+      "warning_functions": [],
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "recursive_component_cache": {
+      "command": [
+        "timeout",
+        "10s",
+        "/task/recursive-cache-runtime-20261102/bin/clang-tidy",
+        "/repo/ci/llvm-upstream/reproducers/exception-recursive.cpp",
+        "--checks=-*,bugprone-exception-escape",
+        "--config={}",
+        "--",
+        "-std=c++20"
+      ],
+      "elapsed_seconds": 0.033025250000008555,
+      "returncode": 0,
+      "binary_sha256": "34ff6484b62a22f96816aff5218d75e952568918232a8b048171ff21a16a299c",
+      "toolchain": {
+        "llvm_version": "23.1.4",
+        "source_commit": "7a941dfb2877a0b8cf30323fefa85ad019e0b0f5",
+        "patch_sha256": "6df6d369c21e4b84c967df0f2841785288b473b88c8681660b9c40d8a99b46e2",
+        "cxx_flags": [
+          "-I/task/clang-ci-work/bootstrap/include",
+          "-std=c++17",
+          "-D_GNU_SOURCE",
+          "-D_GLIBCXX_USE_CXX11_ABI=1",
+          "-D__STDC_CONSTANT_MACROS",
+          "-D__STDC_FORMAT_MACROS",
+          "-D__STDC_LIMIT_MACROS",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-O3",
+          "-DNDEBUG",
+          "-I/task/recursive-cache-build-20261102/objects-6df6d369c21e-6304f7298d4c"
+        ],
+        "clang_sha256": "d1863683b877471a19db81ab6c9eeac6a9d12d77b68649ea2014e2bc5369a76a",
+        "clang_tidy_sha256": "34ff6484b62a22f96816aff5218d75e952568918232a8b048171ff21a16a299c"
+      },
+      "warning_functions": [
+        "test"
+      ],
+      "output_sha256": "37d13489cfd6e055442bec613471cd54ed654be15b7611c55d819bb9441dbe2f"
+    }
+  },
+  "semantic_controls": {
+    "standards": [
+      "c++14",
+      "c++17",
+      "c++20"
+    ],
+    "analyzer_assumption_combinations": 4,
+    "entry_points": [
+      "function",
+      "statement"
+    ],
+    "rows": 474,
+    "analysis_results": 288,
+    "stock_and_patched_output_sha256": "1e37f93650879eb36089483e901fd48868d2d0cac8a84f61b9d150be394b6507"
+  },
+  "note": "Single sequential wall-clock samples, not statistical benchmarks. The ten-second measurement limit is separate from the unchanged sixty-second CI fixture deadline."
+}
