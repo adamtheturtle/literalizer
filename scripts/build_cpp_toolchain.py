@@ -337,6 +337,7 @@ def verify_exception_analysis(support: Path, binaries: Path, /) -> None:
         "caught_contexts",
         "recursive_escape",
         "repeated_escape",
+        "repeated_recursive_escape",
     }
     if len(diagnosed) != len(expected) or set(diagnosed) != expected:
         message = "Exception analysis changed escaping or caught exceptions"
@@ -350,7 +351,7 @@ def verify_exception_analysis(support: Path, binaries: Path, /) -> None:
         raise ValueError(message)
 
 
-def verify_parent_maps(
+def verify_ast_controls(
     support: Path,
     work: Path,
     prefix: Path,
@@ -358,49 +359,48 @@ def verify_parent_maps(
     libraries: list[str],
     /,
 ) -> None:
-    """Compare parent edges and matcher bindings with the stock
-    release.
-    """
+    """Compare parent, matcher and exception controls with stock."""
     compiler = str(object=prefix / "bin/clang++")
-    control = work / "parent-map-controls.o"
-    _ = run(
-        [
-            compiler,
-            *flags,
-            "-c",
-            str(object=support / "parent-map-controls.cpp"),
-            "-o",
-            str(object=control),
-        ],
-        cwd=None,
-    )
     stock_libraries = [
         str(object=prefix / "lib" / Path(library).name)
         if Path(library).name.startswith("libclang") and library.endswith(".a")
         else library
         for library in libraries
     ]
-    outputs: list[str] = []
-    for label, linked_libraries in (
-        ("stock", stock_libraries),
-        ("patched", libraries),
-    ):
-        binary = work / f"parent-map-controls-{label}"
+    for name in ("parent-map-controls", "exception-cache-controls"):
+        control = work / f"{name}.o"
         _ = run(
             [
                 compiler,
                 *flags,
-                str(object=control),
+                "-c",
+                str(object=support / f"{name}.cpp"),
                 "-o",
-                str(object=binary),
-                *linked_libraries,
+                str(object=control),
             ],
             cwd=None,
         )
-        outputs.append(run([str(object=binary)], cwd=None))
-    if outputs[0] != outputs[1]:
-        message = "Parent graph or distinct matcher bindings changed"
-        raise ValueError(message)
+        outputs: list[str] = []
+        for label, linked_libraries in (
+            ("stock", stock_libraries),
+            ("patched", libraries),
+        ):
+            binary = work / f"{name}-{label}"
+            _ = run(
+                [
+                    compiler,
+                    *flags,
+                    str(object=control),
+                    "-o",
+                    str(object=binary),
+                    *linked_libraries,
+                ],
+                cwd=None,
+            )
+            outputs.append(run([str(object=binary)], cwd=None))
+        if outputs[0] != outputs[1]:
+            message = f"Native AST control changed: {name}"
+            raise ValueError(message)
 
 
 def verify_parent_map_diagnostics(
@@ -592,7 +592,7 @@ def build(work: Path, output: Path, /) -> None:
         *system_libraries,
         "-pthread",
     ]
-    verify_parent_maps(support, work, prefix, flags, libraries)
+    verify_ast_controls(support, work, prefix, flags, libraries)
     binaries = output / "bin"
     binaries.mkdir(parents=True, exist_ok=True)
     for name, members in (

@@ -1,14 +1,42 @@
 diff --git a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp
-index f414272b..60cf4636 100644
 --- a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp
 +++ b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.cpp
-@@ -10,6 +10,30 @@
+@@ -7,8 +7,58 @@
+ //===----------------------------------------------------------------------===//
+
+ #include "ExceptionAnalyzer.h"
++#include "llvm/ADT/STLExtras.h"
++#include "llvm/ADT/SmallPtrSet.h"
++#include "llvm/ADT/SmallVector.h"
 
  namespace clang::tidy::utils {
-
++
 +struct ExceptionAnalyzer::AnalysisContext {
 +  llvm::DenseMap<const FunctionDecl *, ExceptionInfo> Completed;
-+  unsigned RecursionGeneration = 0;
++  llvm::DenseMap<const FunctionDecl *,
++                 llvm::SmallPtrSet<const FunctionDecl *, 4>>
++      Callees;
++  llvm::SmallVector<llvm::SmallPtrSet<const FunctionDecl *, 8>, 16>
++      RecursiveDependencies;
++
++  bool hasActiveCallee(const FunctionDecl *Root,
++                       const CallStack &Caller) const {
++    if (Caller.empty())
++      return false;
++    llvm::SmallPtrSet<const FunctionDecl *, 32> Visited;
++    llvm::SmallVector<const FunctionDecl *, 32> Pending{Root};
++    while (!Pending.empty()) {
++      const auto *Current = Pending.pop_back_val();
++      if (!Visited.insert(Current).second)
++        continue;
++      if (Caller.contains(Current))
++        return true;
++      const auto Children = Callees.find(Current);
++      if (Children != Callees.end())
++        Pending.append(Children->second.begin(), Children->second.end());
++    }
++    return false;
++  }
 +};
 +
 +ExceptionAnalyzer::ExceptionInfo
@@ -29,11 +57,10 @@ index f414272b..60cf4636 100644
 +  }
 +  return Result;
 +}
-+
+
  void ExceptionAnalyzer::ExceptionInfo::registerException(
      const Type *ExceptionType, const ThrowInfo &ThrowInfo) {
-   Behaviour = State::Throwing;
-@@ -470,20 +494,38 @@ void ExceptionAnalyzer::ExceptionInfo::reevaluateBehaviour() {
+@@ -470,20 +520,50 @@
  }
  ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
      const FunctionDecl *Func, const ExceptionInfo::Throwables &Caught,
@@ -42,22 +69,34 @@ index f414272b..60cf4636 100644
 -      (!CallStack.empty() && !canThrow(Func)))
 +    CallStack &CallStack, SourceLocation CallLoc, AnalysisContext &Analysis) {
 +  if (!Func || (!CallStack.empty() && !canThrow(Func)))
-+    return ExceptionInfo::createNonThrowing();
-+  if (CallStack.contains(Func)) {
-+    ++Analysis.RecursionGeneration;
      return ExceptionInfo::createNonThrowing();
++  if (!CallStack.empty())
++    Analysis.Callees[CallStack.back().first].insert(Func);
++  if (CallStack.contains(Func)) {
++    Analysis.RecursiveDependencies.back().insert(Func);
++    return ExceptionInfo::createNonThrowing();
 +  }
 +
-+  // A caught exception and a recursive back edge depend on the current path.
-+  // Reuse only complete analyses without either dependency.
++  // The shared direct call graph avoids storing a transitive callee set in
++  // every cache entry. A new caller must not cut off a traversed function.
 +  if (Caught.empty()) {
 +    const auto Cached = Analysis.Completed.find(Func);
-+    if (Cached != Analysis.Completed.end())
++    if (Cached != Analysis.Completed.end() &&
++        !Analysis.hasActiveCallee(Func, CallStack))
 +      return Cached->second.withCallerStack(Func, CallStack, CallLoc);
 +  }
-+  const unsigned Generation = Analysis.RecursionGeneration;
-+  auto Finish = [&](ExceptionInfo Result) {
-+    if (Caught.empty() && Generation == Analysis.RecursionGeneration)
++
++  Analysis.RecursiveDependencies.emplace_back();
++  const auto Finish = [&](ExceptionInfo Result) {
++    auto Dependencies = std::move(Analysis.RecursiveDependencies.back());
++    Analysis.RecursiveDependencies.pop_back();
++    // A back edge to this root is resolved by its complete traversal. Edges
++    // to an ancestor still depend on that caller's unfinished analysis.
++    Dependencies.erase(Func);
++    if (!Analysis.RecursiveDependencies.empty())
++      Analysis.RecursiveDependencies.back().insert(Dependencies.begin(),
++                                                   Dependencies.end());
++    if (Caught.empty() && Dependencies.empty())
 +      Analysis.Completed.try_emplace(
 +          Func, Result.withCallerStack(Func, {}, Func->getLocation()));
 +    return Result;
@@ -77,7 +116,7 @@ index f414272b..60cf4636 100644
          Result.merge(Excs);
        }
      }
-@@ -496,7 +538,7 @@ ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
+@@ -496,19 +576,19 @@
      }
 
      CallStack.erase(Func);
@@ -86,7 +125,21 @@ index f414272b..60cf4636 100644
    }
 
    // Functions without a visible body can still be known non-throwing from their
-@@ -526,15 +568,14 @@ ExceptionAnalyzer::ExceptionInfo ExceptionAnalyzer::throwsException(
+   // exception specification.
+   if (!canThrow(Func))
+-    return ExceptionInfo::createNonThrowing();
++    return Finish(ExceptionInfo::createNonThrowing());
+
+   auto Result = ExceptionInfo::createUnknown();
+
+   if (const auto *FPT = Func->getType()->getAs<FunctionProtoType>()) {
+     if (isUnresolvedExceptionSpec(FPT->getExceptionSpecType()))
+-      return ExceptionInfo::createNonThrowing();
++      return Finish(ExceptionInfo::createNonThrowing());
+
+     for (const QualType &Ex : FPT->exceptions()) {
+       CallStack.insert({Func, CallLoc});
+@@ -526,15 +606,14 @@
      CallStack.erase(Func);
    }
 
@@ -106,7 +159,7 @@ index f414272b..60cf4636 100644
    auto Results = ExceptionInfo::createNonThrowing();
    if (!St)
      return Results;
-@@ -558,14 +599,15 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+@@ -558,14 +637,15 @@
      }
    } else if (const auto *Try = dyn_cast<CXXTryStmt>(St)) {
      ExceptionInfo Uncaught =
@@ -125,7 +178,7 @@ index f414272b..60cf4636 100644
          Results.merge(Rethrown);
          Uncaught.clear();
        } else {
-@@ -585,8 +627,9 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+@@ -585,8 +665,9 @@
              Uncaught.filterByCatch(CaughtType,
                                     Catch->getExceptionDecl()->getASTContext());
          if (!FilteredExceptions.empty()) {
@@ -137,7 +190,7 @@ index f414272b..60cf4636 100644
            Results.merge(Rethrown);
          }
        }
-@@ -594,38 +637,42 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+@@ -594,38 +675,42 @@
      Results.merge(Uncaught);
    } else if (const auto *DefaultInit = dyn_cast<CXXDefaultInitExpr>(St)) {
      const ExceptionInfo Excs =
@@ -188,7 +241,7 @@ index f414272b..60cf4636 100644
        Results.merge(Excs);
      }
 
-@@ -633,14 +680,14 @@ ExceptionAnalyzer::throwsException(const Stmt *St,
+@@ -633,14 +718,14 @@
      // whether the call itself throws.
      if (const auto *Call = dyn_cast<CallExpr>(St)) {
        if (const FunctionDecl *Func = Call->getDirectCallee()) {
@@ -206,7 +259,7 @@ index f414272b..60cf4636 100644
        Results.merge(Excs);
      }
    }
-@@ -655,8 +702,9 @@ ExceptionAnalyzer::analyzeImpl(const FunctionDecl *Func) {
+@@ -655,8 +740,9 @@
    const auto CacheEntry = FunctionCache.find(Func);
    if (CacheEntry == FunctionCache.end()) {
      CallStack CallStack;
@@ -217,7 +270,7 @@ index f414272b..60cf4636 100644
 
      // Cache the result of the analysis. This is done prior to filtering
      // because it is best to keep as much information as possible.
-@@ -673,7 +721,9 @@ ExceptionAnalyzer::analyzeImpl(const FunctionDecl *Func) {
+@@ -673,7 +759,9 @@
  ExceptionAnalyzer::ExceptionInfo
  ExceptionAnalyzer::analyzeImpl(const Stmt *Stmt) {
    CallStack CallStack;
@@ -229,7 +282,7 @@ index f414272b..60cf4636 100644
 
  template <typename T>
 diff --git a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h
-index 08479ef5..4a5f6d6c 100644
+index 08479ef..4a5f6d6 100644
 --- a/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h
 +++ b/clang-tools-extra/clang-tidy/utils/ExceptionAnalyzer.h
 @@ -105,6 +105,11 @@ public:
@@ -265,10 +318,9 @@ index 08479ef5..4a5f6d6c 100644
 
 diff --git a/clang-tools-extra/test/clang-tidy/checkers/bugprone/exception-escape-repeated-calls.cpp b/clang-tools-extra/test/clang-tidy/checkers/bugprone/exception-escape-repeated-calls.cpp
 new file mode 100644
-index 0000000000000..e9c71cf7ad8f31dce94ed9a7a49b759c181a0e92
 --- /dev/null
 +++ b/clang-tools-extra/test/clang-tidy/checkers/bugprone/exception-escape-repeated-calls.cpp
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,130 @@
 +// RUN: %check_clang_tidy -std=c++20 %s bugprone-exception-escape %t -- -- -fexceptions
 +
 +// Exercise cached diagnostics, catch contexts, recursion, and repeated calls.
@@ -285,6 +337,7 @@ index 0000000000000..e9c71cf7ad8f31dce94ed9a7a49b759c181a0e92
 +// CHECK-MESSAGES: :[[@LINE-1]]:6: warning: an exception may be thrown in function 'escaped_after_catch' which should not throw exceptions [bugprone-exception-escape]
 +  catches();
 +  leaf();
++// CHECK-MESSAGES: :[[@LINE-1]]:3: note: frame #1: function 'escaped_after_catch' calls function 'leaf' here
 +}
 +
 +void rethrow() {
@@ -347,5 +400,54 @@ index 0000000000000..e9c71cf7ad8f31dce94ed9a7a49b759c181a0e92
 +  try {
 +    repeated<30>();
 +  } catch (...) {
++  }
++}
++
++void recursive_leaf() {
++  recursive_leaf();
++  throw 1;
++}
++
++template <int N> void repeated_recursive() {
++  repeated_recursive<N - 1>();
++  repeated_recursive<N - 1>();
++}
++template <> void repeated_recursive<0>() { recursive_leaf(); }
++
++void repeated_recursive_escape() noexcept { repeated_recursive<30>(); }
++// CHECK-MESSAGES: :[[@LINE-1]]:6: warning: an exception may be thrown in function 'repeated_recursive_escape' which should not throw exceptions [bugprone-exception-escape]
++
++void recursive_all_caught() noexcept {
++// CHECK-MESSAGES-NOT: warning: an exception may be thrown in function 'recursive_all_caught'
++  try {
++    repeated_recursive<30>();
++  } catch (int) {
++  }
++}
++
++void cache_context_a();
++void cache_context_b();
++void enter_b() { cache_context_b(); }
++void cache_context_a() { cache_context_b(); }
++void cache_context_b() {
++  try {
++    cache_context_a();
++  } catch (double) {
++    throw 1;
++  }
++  throw 2.0;
++}
++
++// The first call caches a complete component. A callee is active during the
++// second call, so reusing that result would invent an escaping int exception.
++void active_caller_caught() noexcept {
++// CHECK-MESSAGES-NOT: warning: an exception may be thrown in function 'active_caller_caught'
++  try {
++    cache_context_a();
++  } catch (...) {
++  }
++  try {
++    enter_b();
++  } catch (double) {
 +  }
 +}
