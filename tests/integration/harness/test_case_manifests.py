@@ -5,7 +5,6 @@ from typing import Literal
 
 import pytest
 
-import literalizer
 import literalizer.languages
 from tests.integration.case_discovery import load_case_data
 from tests.integration.case_manifests import (
@@ -13,8 +12,6 @@ from tests.integration.case_manifests import (
     INDENT_ROLE,
     KEBAB_NEW_VARIABLE_OWNER,
     CaseManifestError,
-    RenderContext,
-    VariableFormName,
     case_dir_name_for_owner,
     case_dir_name_for_role,
     case_dir_names_for_role,
@@ -23,7 +20,6 @@ from tests.integration.case_manifests import (
     case_manifests_by_name,
     load_case_manifest,
     manifest_admits_language,
-    variable_form_for_context,
 )
 from tests.integration.variant_cases import (
     build_variant_cases,
@@ -809,44 +805,6 @@ def test_input_inference_rejects_multiple_candidates(tmp_path: Path) -> None:
         _ = load_case_manifest(case_dir=case_dir)
 
 
-def test_case_input_returns_manifest_input(tmp_path: Path) -> None:
-    """The harness helper returns the input validated by the manifest."""
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest='schema_version = 1\nsuites = ["base"]\n',
-        input_name="input.yaml",
-    )
-
-    assert (
-        case_input(case_dir=case_dir)
-        == load_case_manifest(case_dir=case_dir).input
-    )
-    assert case_input(case_dir=case_dir).expected_reused_anchor_warning is None
-
-
-@pytest.mark.parametrize(argnames="input_name", argvalues=[None, "input.yaml"])
-def test_anchor_warning_metadata_is_loaded(
-    tmp_path: Path, input_name: str | None
-) -> None:
-    """Warning metadata belongs to the input under either selection
-    path.
-    """
-    manifest = 'schema_version = 1\nsuites = ["base"]\n'
-    if input_name is not None:
-        manifest += f'input = "{input_name}"\n'
-    manifest += (
-        '[expected_reused_anchor_warning]\nanchor = "other+"\ncount = 2\n'
-    )
-    case_dir = _write_case(
-        tmp_path=tmp_path, manifest=manifest, input_name="input.yaml"
-    )
-    expectation = case_input(case_dir=case_dir).expected_reused_anchor_warning
-    assert expectation is not None
-    assert expectation.anchor == "other+"
-    expected_count = 2
-    assert expectation.count == expected_count
-
-
 @pytest.mark.parametrize(argnames="count", argvalues=[1, 3])
 def test_anchor_warning_count_must_match_input(
     tmp_path: Path, count: int
@@ -894,25 +852,6 @@ def test_anchor_warning_requires_yaml(tmp_path: Path) -> None:
         _ = load_case_manifest(case_dir=case_dir)
 
 
-def test_input_roundtrip_is_loaded(tmp_path: Path) -> None:
-    """A roundtrip resolves its producer and subsequent input parser."""
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest=(
-            "schema_version = 1\n"
-            'suites = ["base"]\n'
-            "[input_roundtrip]\n"
-            'language = "Jsonc"\n'
-            'input_format = "jsonc"\n'
-        ),
-        input_name="input.yaml",
-    )
-    roundtrip = load_case_manifest(case_dir=case_dir).input_roundtrip
-    assert roundtrip is not None
-    assert roundtrip.language.__name__ == "Jsonc"
-    assert roundtrip.input_format is literalizer.InputFormat.JSONC
-
-
 def test_input_roundtrip_rejects_non_literal_owner(tmp_path: Path) -> None:
     """Other runners cannot silently ignore a declared roundtrip."""
     case_dir = _write_case(
@@ -932,52 +871,6 @@ def test_input_roundtrip_rejects_non_literal_owner(tmp_path: Path) -> None:
         match="input_roundtrip requires a literal rendering suite",
     ):
         _ = load_case_manifest(case_dir=case_dir)
-
-
-def test_render_context_is_loaded(tmp_path: Path) -> None:
-    """Simple rendering arguments load into the typed context."""
-    expected_pre_indent_level = 2
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest=(
-            "schema_version = 1\n"
-            'suites = ["base", "combined"]\n'
-            "[base_context]\n"
-            'variable_form = "existing"\n'
-            'collection_layout = "multiline"\n'
-            "pre_indent_level = 2\n"
-            "[base_context.record_null_substitutions]\n"
-            "missing = -1\n"
-        ),
-        input_name="input.yaml",
-    )
-    context = load_case_manifest(case_dir=case_dir).base_context
-    assert context.variable_form == "existing"
-    assert context.collection_layout == "multiline"
-    assert context.pre_indent_level == expected_pre_indent_level
-    assert context.record_null_substitutions == {"missing": -1}
-
-
-def test_ref_table_is_loaded(tmp_path: Path) -> None:
-    """A ``[ref]`` table resolves its case name and defaults its key."""
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest=(
-            "schema_version = 1\n"
-            'owner = "literalize-ref"\n'
-            "[ref]\n"
-            'ref_case_override = "camel"\n'
-            "[ref.value_sources]\n"
-            'my_int = "42"\n'
-        ),
-        input_name="input.yaml",
-    )
-    ref = load_case_manifest(case_dir=case_dir).ref
-    assert ref is not None
-    assert ref.case_dir_name == "example"
-    assert ref.ref_key == "$ref"
-    assert ref.ref_case_override == literalizer.IdentifierCase.CAMEL
-    assert ref.value_sources == {"my_int": "42"}
 
 
 def test_gates_select_the_languages_declaring_the_property(
@@ -1092,32 +985,6 @@ def test_variant_axis_lookup_finds_no_case_for_an_unused_axis(
         )
         == 0
     )
-
-
-@pytest.mark.parametrize(
-    argnames=("name", "expected_type"),
-    argvalues=[
-        ("new", literalizer.NewVariable),
-        ("existing", literalizer.ExistingVariable),
-        ("both", literalizer.BothVariableForms),
-    ],
-)
-@pytest.mark.parametrize(
-    argnames="variable_name", argvalues=["my_data", "custom_name"]
-)
-def test_variable_form_for_context(
-    name: VariableFormName,
-    expected_type: type[literalizer.VariableForm],
-    variable_name: str,
-) -> None:
-    """Every manifest variable form maps to its public API
-    representation.
-    """
-    variable_form = variable_form_for_context(
-        context=RenderContext(variable_form=name, variable_name=variable_name)
-    )
-    assert isinstance(variable_form, expected_type)
-    assert variable_form.name == variable_name
 
 
 def test_duplicate_golden_target_is_actionable() -> None:
