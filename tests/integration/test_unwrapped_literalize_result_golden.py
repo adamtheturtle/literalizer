@@ -12,6 +12,7 @@ from literalizer import FileWrapperContext, InputFormat, NewVariable
 from .golden_checks import check_golden
 from .language_specs import make_golden_path, with_per_fixture_module_name
 from .unwrapped_result_cases import RESULT_CASES as _CASES
+from .unwrapped_result_cases import RecordConsumer, record_consumer_specs
 
 
 @pytest.mark.parametrize(
@@ -19,9 +20,7 @@ from .unwrapped_result_cases import RESULT_CASES as _CASES
     argvalues=_CASES.prefix.languages,
     ids=lambda lang_cls: lang_cls.__name__,
 )
-@pytest.mark.parametrize(
-    argnames="attribute", argvalues=_CASES.prefix.attributes
-)
+@pytest.mark.parametrize(argnames="attribute", argvalues=_CASES.attributes)
 def test_unwrapped_literalize_result_golden(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -85,34 +84,62 @@ def test_unwrapped_literalize_result_golden(
 
 
 @pytest.mark.parametrize(
-    argnames="lang_cls",
-    argvalues=_CASES.records,
-    ids=lambda lang_cls: lang_cls.__name__,
+    argnames="consumer",
+    argvalues=_CASES.record_consumers,
+    ids=lambda consumer: consumer.language.__name__,
 )
-def test_unwrapped_record_preamble_metadata(
+@pytest.mark.parametrize(argnames="attribute", argvalues=_CASES.attributes)
+def test_unwrapped_record_collection_golden(
     *,
-    lang_cls: literalizer.LanguageCls,
+    consumer: RecordConsumer,
+    attribute: Literal["code", "bare_code"],
     cases_dir: Path,
+    file_regression: FileRegressionFixture,
+    subtests: pytest.Subtests,
 ) -> None:
-    """Pin the preamble fields that compiling output cannot distinguish.
+    """Splice actual result views into a caller's native collection.
 
-    Every ``RECORD``-capable language returns its generated record
-    declarations via :attr:`~literalizer.LiteralizeResult.preamble`
-    and keeps :attr:`~literalizer.LiteralizeResult.code` as just the
-    literal, so callers can splice the code into a surrounding
-    collection literal they control (issue #3615 pinned Scala, which
-    used to prepend ``case class`` lines to the code instead).
+    Keep returned preambles in their declared scopes without recomputing
+    or reconciling them. A type declaration in the expression breaks the
+    consumer (including the Scala regression from issue #3615).
     """
-    spec = lang_cls(
-        heterogeneous_strategy=lang_cls.HeterogeneousStrategies["RECORD"],
-    )
-    result = literalizer.literalize(
-        source=(cases_dir / _CASES.record_input_case / "input.yaml").read_text(
-            encoding="utf-8"
-        ),
-        input_format=InputFormat.YAML,
-        language=spec,
-        wrap_in_file=False,
-    )
-    assert len(result.preamble) > 0
-    assert len(result.body_preamble) == 0
+    lang_cls = consumer.language
+    for record_spec in record_consumer_specs(consumer=consumer):
+        version = record_spec.language_version
+        with subtests.test(version=version.name):
+            golden_path = make_golden_path(
+                parent=cases_dir / _CASES.record_input_case,
+                name=f"{lang_cls.__name__}_unwrapped_record_{attribute}",
+                extension=lang_cls.extension,
+                lang_cls=lang_cls,
+                version=version,
+            )
+            spec = with_per_fixture_module_name(
+                spec=record_spec,
+                golden_path=golden_path,
+            )
+            result = literalizer.literalize(
+                source=(
+                    cases_dir / _CASES.record_input_case / "input.yaml"
+                ).read_text(encoding="utf-8"),
+                input_format=InputFormat.YAML,
+                language=spec,
+                wrap_in_file=False,
+            )
+            contents = consumer.template.format(
+                preamble="\n".join(result.preamble),
+                body_preamble="\n".join(result.body_preamble)
+                if attribute == "bare_code"
+                else "",
+                code=result.code if attribute == "code" else result.bare_code,
+                module_name=(
+                    f"Fixture_{golden_path.parent.name}_"
+                    f"{golden_path.stem.rsplit(sep='@', maxsplit=1)[0]}"
+                ),
+            )
+            check_golden(
+                contents=contents,
+                extension=spec.extension,
+                golden_path=golden_path,
+                file_regression=file_regression,
+            )
