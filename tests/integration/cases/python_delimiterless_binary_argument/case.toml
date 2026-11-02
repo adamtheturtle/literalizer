@@ -1,0 +1,12 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+# Preserve the delimiterless binary-sequence fragment verbatim in a
+# Python call: its trailing comma terminates a real call argument.
+[ref]
+gates = [{kind = "enum_member_present", option = "language_version", member = "PY38"}]
+variable_form = "none"
+include_delimiters = false
+
+[ref.consumer]
+target_function = "consume_widget"

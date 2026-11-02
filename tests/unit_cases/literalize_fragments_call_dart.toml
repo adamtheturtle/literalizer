@@ -1,5 +1,3 @@
-literals = []
-
 [[calls]]
 name = "dart_incomplete_interpolation_0"
 language = "Dart"
