@@ -33,7 +33,7 @@ func main() {{
 [[record_consumers]]
 language = "Java"
 template = '''{preamble}
-class {module_name} {{
+class Main {{
     public static void main() {{
 {body_preamble}
         var my_data = java.util.List.of({code});
