@@ -1,7 +1,7 @@
 # LLVM upstream review bundle
 
-Six reduced performance reports and five isolated candidate patches, prepared for human review.
-Nothing in this bundle has been submitted to LLVM.
+Local copies of six reduced performance reports and five isolated candidate patches.
+The original exception cache is under review in [LLVM PR 235716](https://github.com/llvm/llvm-project/pull/235716); the exception files also include a follow-up for recursive components.
 LLVM requires contributors to review AI-assisted text and code before requesting upstream review; see its [AI Tool Use Policy](https://llvm.org/docs/AIToolPolicy.html#policy).
 
 | Topic | Draft destination | Report | Candidate patch |
@@ -9,7 +9,7 @@ LLVM requires contributors to review AI-assisted text and code before requesting
 | sfinae | New LLVM issue | [Draft](reports/sfinae.md) | [Patch and regression test](patches/sfinae.patch) |
 | adl | New LLVM issue | [Draft](reports/adl.md) | [Patch and regression test](patches/adl.patch) |
 | webkit | New LLVM issue | [Draft](reports/webkit.md) | [Patch and regression test](patches/webkit.patch) |
-| exception | Comment on [#224308](https://github.com/llvm/llvm-project/issues/224308) | [Draft](reports/exception.md) | [Patch and regression test](patches/exception.patch) |
+| exception | [PR 235716](https://github.com/llvm/llvm-project/pull/235716), following [#224308](https://github.com/llvm/llvm-project/issues/224308) | [Report and follow-up](reports/exception.md) | [Patch and regression test](patches/exception.patch) |
 | shared-initializers | New LLVM issue | [Draft](reports/shared-initializers.md) | [Patch and regression test](patches/shared-initializers.patch) |
 | pch | New LLVM issue | [Draft](reports/pch.md) | No implementation fix yet |
 

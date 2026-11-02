@@ -9,7 +9,11 @@ The WebKit virtual-destructor checker also expands unrelated standard-library ty
 
 Clang-tidy's exception analyzer also repeatedly follows the same constructor calls in C++20, as reported in [LLVM issue 224308](https://github.com/llvm/llvm-project/issues/224308).
 Cache complete function analyses within one traversal, preserving exception types and rebasing diagnostic call stacks at each use.
-Do not reuse results that depend on caught exceptions or a recursive back edge.
+Track recursive dependencies until their root finishes: a closed cycle can be cached, while a result that depends on an unfinished ancestor cannot.
+A shared direct call graph records the traversed callees; reject a cache hit when any reachable callee is already active in the caller.
+The graph is stored once per traversal, avoiding a transitive callee set in every cache entry.
+Do not reuse results with an external caught-exception context.
+This keeps repeated calls above recursive standard-library helpers linear instead of invalidating the whole cache after every back edge.
 The analyzer's object layout is unchanged; only its implementation and private call signatures change.
 
 C designated initializers share expression subtrees between their syntactic and semantic forms.
@@ -19,9 +23,12 @@ Cache only descendant searches with no matches, preserving successful binding mu
 Match a shared C compound literal once in each traversal context instead of issuing identical callbacks for repeated paths to the same expression.
 The padding checker likewise visits each distinct statement, retaining all record and array checks.
 
-The builder links parent-graph and matcher controls against both stock and patched libraries and requires identical output.
+The builder links parent-graph, matcher and exception-cache controls against both stock and patched libraries and requires identical output.
 These cover designated initializers, multiple template parents, lambdas, type locations, positive descendant binding multiplicity, missing descendants, and distinct direct-child matches.
 Duplicate outer callbacks for the same C expression are intentionally removed; distinct matches and diagnostics remain checked.
+The exception controls compare states, unknown exceptions, every exception type and its full diagnostic stack in C++14, C++17 and C++20.
+They cover recursive callers, caught and rethrown exceptions, constructors, captures, missing definitions, and both optional analyzer assumptions.
+Separate repeated-call checks include a recursive leaf at depth thirty so invalidating otherwise reusable callers cannot regress silently.
 
 The builder verifies the official LLVM 23.1.4 release archive, checks out its exact source commit, and rebuilds the eight affected translation units.
 It replaces those objects in copies of their original static libraries and links the upstream compiler and clang-tidy drivers.
@@ -33,7 +40,7 @@ Loading that header makes Clang's `TemplateArgumentHasher` recursively expand th
 Direct header parsing avoids this separate exponential path and retains the existing fixture deadlines.
 
 Reduced reports, five independently applicable patches, regression tests and measured commands are in the [upstream review bundle](../llvm-upstream/README.md).
-These await the human review required by LLVM before submission.
+The original exception cache is under review in [LLVM PR 235716](https://github.com/llvm/llvm-project/pull/235716); the bundle also contains the recursive-component follow-up.
 
 Remove a patch after an upstream release contains its fix and the complete compiler-backed C and C++ corpora passes within the existing fixture budgets.
 

@@ -70,3 +70,24 @@ void all_caught() noexcept {
   } catch (...) {
   }
 }
+
+// A recursive leaf must not invalidate caching throughout the callers above it.
+void recursive_leaf() {
+  recursive_leaf();
+  throw 1;
+}
+
+template <int N> void repeated_recursive() {
+  repeated_recursive<N - 1>();
+  repeated_recursive<N - 1>();
+}
+template <> void repeated_recursive<0>() { recursive_leaf(); }
+
+void repeated_recursive_escape() noexcept { repeated_recursive<30>(); }
+
+void recursive_all_caught() noexcept {
+  try {
+    repeated_recursive<30>();
+  } catch (int) {
+  }
+}
