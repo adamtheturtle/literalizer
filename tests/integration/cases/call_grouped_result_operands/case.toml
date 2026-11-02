@@ -38,3 +38,60 @@ wrap_in_file = true
 variable_form = "new"
 call_transform_group = {body = "{call}", suffix = " + 1"}
 call_transform = "({call}) * 2"
+[[call_examples]]
+example = "outer_zip_date"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "new"
+call_transform_group = {body = "wrap_widget({call}, r#\"// group\"#)", suffix = ""}
+call_transform = "zip_widget({call}, {zipped})"
+transform_stub_names = ["wrap_widget", "zip_widget"]
+transform_stub_param_names = ["value", "extra"]
+zip_source = "2024-01-15"
+zip_input_format = "yaml"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_hash_raw_prefix"
+prefix = "r"
+marker = "#"
+[[call_examples]]
+example = "body_zip_date"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "new"
+call_transform_group = {body = "zip_widget({call}, {zipped})", suffix = ""}
+call_transform = "wrap_widget({call}, r#\"// group\"#)"
+transform_stub_names = ["wrap_widget", "zip_widget"]
+transform_stub_param_names = ["value", "extra"]
+zip_source = "2024-01-15"
+zip_input_format = "yaml"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_hash_raw_prefix"
+prefix = "r"
+marker = "#"
+[[call_examples]]
+example = "unused_zip_date"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "new"
+call_transform_group = {body = "wrap_widget({call}, r#\"// group\"#)", suffix = ""}
+call_transform = "{call}"
+transform_stub_names = ["wrap_widget"]
+transform_stub_param_names = ["value", "extra"]
+zip_source = "2024-01-15"
+zip_input_format = "yaml"
+followup_source = "{\"$ref\": \"my_data\"}"
+followup_target_function = "consume"
+
+[[call_examples.gates]]
+kind = "call_hash_raw_prefix"
+prefix = "r"
+marker = "#"
