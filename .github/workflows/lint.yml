@@ -2060,7 +2060,20 @@ jobs:
           done < <(find tests/integration/cases -name '*.cpp' -print0 | sort -z) \
             > /tmp/files-cpp-tidy
           test -s /tmp/files-cpp-tidy
-          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
+          # Alternating owning containers spend most of their budget in
+          # recursive exception analysis. Give these fixtures the runner
+          # before starting the parallel pool, keeping every check and
+          # the existing per-fixture deadline.
+          : > /tmp/files-cpp-tidy-parallel
+          while IFS= read -r -d '' fixture; do
+            case "$fixture" in
+              tests/integration/cases/deep_alternating_singleton_containers/*)
+                bash scripts/lint-cpp-fixture.sh tidy "$fixture"
+                ;;
+              *) printf '%s\0' "$fixture" >> /tmp/files-cpp-tidy-parallel ;;
+            esac
+          done < /tmp/files-cpp-tidy
+          xargs -0 -r -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy-parallel
 
   lint-cobol:
     runs-on: ubuntu-24.04
