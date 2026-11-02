@@ -1,0 +1,68 @@
+# Unwrapped result views are embedded in compiling integration goldens.
+# Caller-owned collections consume record preambles and expression views.
+record_input_case = "dict_mixed_scalars"
+attributes = ["code", "bare_code"]
+
+[prefix]
+languages = ["Elm", "FSharp", "Haskell", "PureScript"]
+input_case = "comment_scalar"
+variable_name = "my_data"
+
+[[record_consumers]]
+language = "Cpp"
+template = '''#include <vector>
+{preamble}
+int main() {{
+{body_preamble}
+    auto my_data = std::vector<Record0>{{{code}}};
+    (void)my_data;
+    return 0;
+}}
+'''
+
+[[record_consumers]]
+language = "Go"
+template = '''{preamble}
+func main() {{
+{body_preamble}
+    my_data := []Record0{{{code}}}
+    _ = my_data
+}}
+'''
+
+[[record_consumers]]
+language = "Java"
+template = '''{preamble}
+class Main {{
+    public static void main() {{
+{body_preamble}
+        var my_data = java.util.List.of({code});
+    }}
+}}
+'''
+
+[[record_consumers]]
+language = "Kotlin"
+template = '''{preamble}
+{body_preamble}
+val my_data = listOf({code})
+'''
+
+[[record_consumers]]
+language = "Rust"
+template = '''{preamble}
+fn main() {{
+{body_preamble}
+    let my_data = vec![{code}];
+    let _ = &my_data;
+}}
+'''
+
+[[record_consumers]]
+language = "Scala"
+template = '''object {module_name} {{
+{preamble}
+{body_preamble}
+val my_data = List({code})
+}}
+'''
