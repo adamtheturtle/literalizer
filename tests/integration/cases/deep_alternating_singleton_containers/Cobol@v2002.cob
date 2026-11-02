@@ -1,0 +1,23 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. CHECK.
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 MY-DATA.
+    05 F-A.
+    10 FILLER.
+        15 F-A.
+            20 FILLER.
+                25 F-A.
+                    30 FILLER.
+                        35 F-A.
+                            36 FILLER.
+                                37 F-A.
+                                    38 FILLER.
+                                        39 F-A.
+                                            40 FILLER.
+                                                41 F-A.
+                                                    42 FILLER.
+                                                        43 F-A.
+                                                            44 FILLER PIC S9(18) COMP-5 VALUE 1.
+PROCEDURE DIVISION.
+    STOP RUN.
