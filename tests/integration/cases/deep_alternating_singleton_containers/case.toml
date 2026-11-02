@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+
+# Sixteen alternating mapping/list levels complement the canonical
+# 30-level sequence-only case and the separate 400-level unwrapped guard.
+# Each container has one child, so nesting crosses both native types
+# without requiring heterogeneous siblings or language-specific gates.

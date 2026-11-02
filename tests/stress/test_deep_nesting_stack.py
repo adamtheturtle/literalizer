@@ -6,8 +6,9 @@ walk must not call itself: a beartype-wrapped call costs several
 interpreter frames per level, so such a walk runs out of stack long
 before the guard is reached (issue #4560).
 
-The depths here are far too large for a golden fixture, so this stays an
-ordinary test.
+This pins the unwrapped API at 400 levels. Wrapped rendering and golden
+fixture loading have separate depth limits, so this boundary remains a
+direct test alongside shallower compiling cases.
 """
 
 import pytest
