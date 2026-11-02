@@ -1,0 +1,11 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Roc's dbg is intrinsic: a real call without generated declarations
+# exercises the wrapper's empty-preamble path and its separator lines.
+[call]
+gates = [{kind = "enum_member_present", option = "language_version", member = "V0"}]
+target_function = "dbg"
+parameter_names = ["value"]
+per_element = false
+include_target_stub = false
