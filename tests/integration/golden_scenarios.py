@@ -579,7 +579,7 @@ def _variant_renderings(
             ),
             extra_preamble=variant_case.variant.extra_preamble,
             initialize_variable=variant_case.variant.initialize_variable,
-            apply_fixture_module_name=True,
+            apply_fixture_module_name=variant_case.apply_fixture_module_name,
             skip=(
                 SkipPolicy(
                     reasons=(

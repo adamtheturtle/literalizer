@@ -377,6 +377,8 @@ class ManifestVariant(  # noqa: NOD001
     suffix: str = ""
     # Generate a declaration before an existing-variable assignment.
     initialize_variable: bool = False
+    # Keep explicit module-name options instead of the compiler fixture name.
+    apply_fixture_module_name: bool = True
     wrap_in_file: bool = True
     # Some shape-mapping cases deliberately never use the external type.
     include_extra_preamble: bool = True

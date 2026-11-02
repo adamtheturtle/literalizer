@@ -92,6 +92,7 @@ def build_json_type_variable_form_cases(
                 name = f"{json_variant.name}_final"
                 cases.append(
                     VariantCase(
+                        apply_fixture_module_name=True,
                         expected_errors=(),
                         variant_name=name,
                         variant=dataclasses.replace(json_variant, name=name),
@@ -108,6 +109,7 @@ def build_json_type_variable_form_cases(
             name = f"{json_variant.name}_existing"
             cases.append(
                 VariantCase(
+                    apply_fixture_module_name=True,
                     expected_errors=(),
                     variant_name=name,
                     variant=compact_variant(
@@ -150,6 +152,7 @@ def build_json_type_variable_form_cases(
             )
             cases.append(
                 VariantCase(
+                    apply_fixture_module_name=True,
                     expected_errors=(),
                     variant_name=name,
                     variant=variant,
@@ -197,6 +200,7 @@ def build_multiline_string_context_cases(
             name = f"{base_variant.name}{combined_suffix}"
             cases.append(
                 VariantCase(
+                    apply_fixture_module_name=True,
                     expected_errors=(),
                     variant_name=name,
                     variant=dataclasses.replace(
@@ -222,6 +226,7 @@ def build_multiline_string_context_cases(
             )
             cases.append(
                 VariantCase(
+                    apply_fixture_module_name=True,
                     expected_errors=(),
                     variant_name=name,
                     variant=dataclasses.replace(base_variant, name=name),
@@ -320,6 +325,7 @@ def case_for_manifest_variant(
             record_null_substitutions=substitutions,
         )
     return VariantCase(
+        apply_fixture_module_name=manifest_variant.apply_fixture_module_name,
         variant_name=f"{variant.name}{manifest_variant.suffix}",
         variant=variant,
         case_dir_name=case_dir_name,

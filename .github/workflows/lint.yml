@@ -1544,44 +1544,14 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
 
-      # Compile every fixture in a single erlc invocation to pay the
-      # BEAM VM startup cost once. Each fixture already carries a unique
-      # module name derived from its case directory and stem, so a plain
-      # copy suffices; no sed rewriting needed.
-      - name: Lint Erlang
-        env:
-          ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
+      # Compile to binary and load modules in memory so explicit module names
+      # need not match fixture filenames. In particular, a valid 255-character
+      # module atom cannot fit in a filesystem component with a .beam suffix.
+      # Keep compiler warnings fatal and execute every x/0 entry point.
+      - name: Compile and run Erlang files
         run: |-
           python3 -m tests.integration.list_fixtures .erl "$ERLANG_FIXTURE_TAG" > /tmp/files-erlang && test -s /tmp/files-erlang
-          mkdir -p "$ERLANG_FIXTURE_DIR"
-          while IFS= read -r -d '' f; do
-            dir=${f%/*}; dir=${dir##*/}
-            stem=$(basename "$f" .erl)
-            stem="${stem%@*}"  # strip @version so filename matches -module(...)
-            name="fixture_${dir,,}_${stem,,}"
-            cp "$f" "$ERLANG_FIXTURE_DIR/$name.erl"
-          done < /tmp/files-erlang
-          (cd "$ERLANG_FIXTURE_DIR" && erlc -Werror fixture_*.erl)
-
-      # `erlc` only compiles; runtime errors (undefined functions, missing
-      # imports, failed assertions) slip past unless each fixture is
-      # actually executed. Every module name starts with ``fixture_``;
-      # invoke each in a single BEAM VM and collect failures so one bad
-      # fixture does not mask others.
-      - name: Run Erlang files
-        env:
-          ERLANG_FIXTURE_DIR: ${{ runner.temp }}/lint-erlang
-        run: |-
-          modules=$(find "$ERLANG_FIXTURE_DIR" -maxdepth 1 -name '*.beam' -printf '%f\n' | sed 's|\.beam$||' | paste -sd, -)
-          test -n "$modules"
-          erl -noshell -pa "$ERLANG_FIXTURE_DIR" -eval "
-            Run = fun(M) ->
-                try M:x(), ok
-                catch K:R:S -> io:format(\"FAIL ~p: ~p:~p~n~p~n\", [M,K,R,S]), error
-                end
-            end,
-            Results = [Run(M) || M <- [$modules]],
-            case lists:member(error, Results) of true -> halt(1); false -> halt(0) end."
+          escript scripts/run_erlang.escript /tmp/files-erlang
 
       # `uv` is needed by the `Erlang roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.

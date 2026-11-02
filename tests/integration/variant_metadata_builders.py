@@ -69,6 +69,7 @@ def build_modifier_variant_cases(
             )
             cases.extend(
                 VariantCase(
+                    apply_fixture_module_name=True,
                     expected_errors=(),
                     variant_name=variant.name,
                     variant=variant,
@@ -129,6 +130,7 @@ def build_modifier_variant_cases(
                 )
                 cases.append(
                     VariantCase(
+                        apply_fixture_module_name=True,
                         expected_errors=(),
                         variant_name=variant.name,
                         variant=variant,
