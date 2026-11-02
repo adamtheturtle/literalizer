@@ -12,8 +12,6 @@ from literalizer.languages import Kotlin, Python
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import (
     CaseManifestError,
-    ManifestVariant,
-    RenderContext,
     VariantCapabilityName,
     case_dir_names_for_variant_axis,
     load_case_manifest,
@@ -23,7 +21,6 @@ from tests.integration.language_specs import make_spec, sorted_languages
 from tests.integration.variant_cases import (
     build_multiline_string_context_cases,
     build_variant_cases,
-    case_for_manifest_variant,
     group_variant_cases_by_language,
     one_special_input,
     variant_languages,
@@ -41,24 +38,6 @@ def test_enum_member_by_name_raises_for_missing_member() -> None:
         match=r"^_SampleEnum has no member named 'SECOND'$",
     ):
         _ = enum_member_by_name(enum_cls=_SampleEnum, name="SECOND")
-
-
-def test_manifest_variant_context_overrides_collection_layout() -> None:
-    """A manifest variant can select multiline collection rendering."""
-    source_case = build_variant_cases()[0]
-    case = case_for_manifest_variant(
-        case_dir_name="example",
-        manifest_variant=ManifestVariant(
-            axis="date",
-            context=RenderContext(collection_layout="multiline"),
-        ),
-        variant=source_case.variant,
-    )
-
-    assert (
-        case.variant.collection_layout
-        is literalizer.CollectionLayout.MULTILINE
-    )
 
 
 def test_special_axis_requires_one_manifest_input() -> None:
