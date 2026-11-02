@@ -27,7 +27,6 @@ from literalizer.exceptions import (
     ReservedVariableNameError,
 )
 
-from .case_inputs import CaseInput
 from .case_manifests import load_case_manifest
 from .golden_checks import GoldenSkips, check_golden, cleanup_stale_golden
 from .golden_scenarios import (
@@ -37,43 +36,8 @@ from .golden_scenarios import (
 )
 from .language_metadata import language_metadata
 from .language_specs import make_golden_path, with_per_fixture_module_name
+from .literalize_rendering import literalize_rendering
 from .yaml_warnings import expected_yaml_warnings
-
-
-@beartype
-def _literalize(
-    *,
-    rendering: GoldenRendering,
-    spec: literalizer.Language,
-    input_info: CaseInput,
-    source_text: str,
-    variable_form: literalizer.VariableForm | None,
-) -> literalizer.LiteralizeResult:
-    """Render one case input under *spec*.
-
-    *variable_form* is passed rather than read off *rendering* so the
-    caller can retry without one, which is the only way a language that
-    cannot name a variable reaches its golden.
-    """
-    render = rendering.render
-    with expected_yaml_warnings(
-        expectation=input_info.expected_reused_anchor_warning,
-    ):
-        return literalizer.literalize(
-            source=source_text,
-            input_format=input_info.input_format,
-            language=spec,
-            pre_indent_level=render.pre_indent_level,
-            include_delimiters=True,
-            variable_form=variable_form,
-            wrap_in_file=(
-                render.wrap_in_file
-                and len(rendering.extra_preamble) == 0
-                and not rendering.initialize_variable
-            ),
-            collection_layout=render.collection_layout,
-            record_null_substitutions=render.record_null_substitutions,
-        )
 
 
 @beartype
@@ -150,7 +114,7 @@ def _check_rendering(
         with pytest.raises(
             expected_exception=expected_error, match=expected_message
         ):
-            _ = _literalize(
+            _ = literalize_rendering(
                 rendering=rendering,
                 spec=spec,
                 input_info=input_info,
@@ -167,7 +131,7 @@ def _check_rendering(
         prefix=rendering.lang_cls.__name__,
         config=file_regression.request.config,
     ):
-        result = _literalize(
+        result = literalize_rendering(
             rendering=rendering,
             spec=spec,
             input_info=input_info,
@@ -181,7 +145,7 @@ def _check_rendering(
                 rendering.render.variable_form, literalizer.ExistingVariable
             )
             declarations.append(
-                _literalize(
+                literalize_rendering(
                     rendering=rendering,
                     spec=spec,
                     input_info=input_info,
