@@ -1,3 +1,5 @@
+module Module
+
 type Val =
     | FInt of int64
 // note
