@@ -280,6 +280,7 @@ type _RefData = (
     dict[str, _RefData]
     | list[_RefData]
     | set[str | int | float | bool | None]
+    | bytes
     | str
     | int
     | float
@@ -870,6 +871,7 @@ def run_literalize_ref_golden_case(
             bound_refs=(effective_bound_refs),
             ref_values=(effective_ref_values),
             ref_key=config.ref_key,
+            include_delimiters=config.include_delimiters,
             pre_indent_level=config.pre_indent_level,
             collection_layout=literalizer.CollectionLayout(
                 value=config.collection_layout

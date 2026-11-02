@@ -652,6 +652,7 @@ class RefCaseSpec(  # noqa: NOD001
     variable_name: str = "my_data"
     variable_modifiers: StringTuple = Field(default_factory=_empty_names)
     collection_layout: CollectionLayoutName = "compact"
+    include_delimiters: bool = True
     pre_indent_level: int = 0
     heterogeneous_strategy: str | None = None
     sequence_format: str | None = None

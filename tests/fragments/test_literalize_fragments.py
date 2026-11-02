@@ -1,6 +1,6 @@
-"""TOML-driven public API tests for incomplete literal fragments.
+"""TOML-driven public API tests for incomplete call fragments.
 
-These fragments omit delimiters or reference externally declared names,
+These fragments contain incomplete syntax or externally declared names,
 so they cannot use the compiling whole-file golden suite. The manifest
 owns their sources, API arguments, and exact result expectations.
 """
@@ -17,7 +17,6 @@ from literalizer import (
     NewVariable,
     ValueInput,
     VariableForm,
-    literalize,
     literalize_call,
 )
 from tests.integration.case_manifests import (
@@ -55,13 +54,6 @@ class _FragmentCase(  # noqa: NOD001
         return None
 
 
-class _LiteralCase(_FragmentCase, frozen=True):
-    """One delimiter and indentation configuration for a literal."""
-
-    pre_indent_level: int
-    include_delimiters: bool
-
-
 class _CallCase(_FragmentCase, frozen=True):  # noqa: NOD001
     """One externally defined call target and its argument
     configuration.
@@ -76,7 +68,6 @@ class _CallCase(_FragmentCase, frozen=True):  # noqa: NOD001
 class _FragmentCases(BaseModel, extra="forbid", frozen=True):
     """All declarative literal and call fragment cases."""
 
-    literals: tuple[_LiteralCase, ...]
     calls: tuple[_CallCase, ...]
 
 
@@ -91,9 +82,6 @@ _CASE_DOCUMENTS = tuple(
     )
 )
 _CASES = _FragmentCases(
-    literals=tuple(
-        case for document in _CASE_DOCUMENTS for case in document.literals
-    ),
     calls=tuple(
         case for document in _CASE_DOCUMENTS for case in document.calls
     ),
@@ -104,24 +92,6 @@ def _check_result(*, case: _FragmentCase, result: LiteralizeResult) -> None:
     """Compare the declared result views."""
     views = {"code": result.code, "bare_code": result.bare_code}
     assert {name: views[name] for name in case.expected} == case.expected
-
-
-@pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES.literals, ids=lambda case: case.name
-)
-def test_literal_fragment(case: _LiteralCase) -> None:
-    """Each literal fragment preserves its manifest-owned expectations."""
-    result = literalize(
-        source=case.source,
-        input_format=case.input_format,
-        language=case.language(),
-        pre_indent_level=case.pre_indent_level,
-        include_delimiters=case.include_delimiters,
-        variable_form=case.resolved_variable_form(),
-        ref_key="$ref",
-        ref_values=case.ref_values,
-    )
-    _check_result(case=case, result=result)
 
 
 @pytest.mark.parametrize(

@@ -1,15 +1,3 @@
-# Incomplete fragments stay in the unit suite: no whole-file golden can
-# preserve omitted delimiters or externally defined identifiers.
-
-[[literals]]
-name = "binary_without_sequence_delimiters"
-language = "Python"
-source = "- !!binary SGVsbG8=\n"
-input_format = "yaml"
-pre_indent_level = 0
-include_delimiters = false
-expected = { code = '"48656c6c6f",' }
-
 # Capitalized module names are valid call targets but cannot be declared
 # by these languages' wrapped-file stub grammar. Elm flattens the dotted
 # target to a capitalized identifier, which is not a valid value name.

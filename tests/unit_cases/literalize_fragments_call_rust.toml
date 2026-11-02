@@ -1,5 +1,3 @@
-literals = []
-
 [[calls]]
 name = "rust_incomplete_character_new"
 language = "Rust"
