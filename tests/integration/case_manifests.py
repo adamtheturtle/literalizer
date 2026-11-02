@@ -816,6 +816,11 @@ class CallCaseSpec(  # noqa: NOD001
     per_element: bool
     # Native built-ins need no synthetic target declaration in a manual file.
     include_target_stub: bool = True
+    # Preserve the returned code prefix instead of reconciling its metadata.
+    use_unwrapped_code: bool = False
+    # Caller-owned imports and declarations in manually composed fixtures.
+    caller_imports: StringTuple = Field(default_factory=_empty_names)
+    caller_body_preamble: StringTuple = Field(default_factory=_empty_names)
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None

@@ -83,8 +83,20 @@ ARGONAUT_PARSER_JS = textwrap.dedent(
 )
 
 
+# A caller-owned module for qualified function targets in golden files.
+CALL_TARGET_PURS = textwrap.dedent(
+    text="""\
+    module LiteralizerSupport.CallTarget where
+    import Prelude (Unit)
+    foreign import func :: forall a. a -> Unit
+    """,
+)
+
+CALL_TARGET_JS = "export const func = _value => ({});\n"
+
+
 def write_lint_environment(tmpdir: Path) -> list[Path]:
-    """Write the Prelude + Argonaut/Either shim modules to *tmpdir*.
+    """Write the native support modules to *tmpdir*.
 
     Returns the list of ``.purs`` paths to pass to ``purs compile``
     alongside the fixture under check.  The matching ``.js`` files are
@@ -93,6 +105,7 @@ def write_lint_environment(tmpdir: Path) -> list[Path]:
     """
     modules: list[tuple[str, str, str]] = [
         ("Prelude.purs", PRELUDE_PURS, PRELUDE_JS),
+        ("CallTarget.purs", CALL_TARGET_PURS, CALL_TARGET_JS),
         ("Either.purs", EITHER_PURS, EITHER_JS),
         ("ArgonautCore.purs", ARGONAUT_CORE_PURS, ARGONAUT_CORE_JS),
         ("ArgonautParser.purs", ARGONAUT_PARSER_PURS, ARGONAUT_PARSER_JS),

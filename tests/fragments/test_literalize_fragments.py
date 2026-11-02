@@ -29,7 +29,7 @@ from tests.toml_cases import load_toml_cases
 type _ResultView = Literal["code", "bare_code"]
 
 
-# Omitted TOML keys leave optional reference values and binding forms unset.
+# Omitted TOML keys leave optional reference values unset.
 class _FragmentCase(  # noqa: NOD001
     BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
 ):
@@ -43,15 +43,13 @@ class _FragmentCase(  # noqa: NOD001
     input_format: CallInputFormat
     expected: dict[_ResultView, str] = Field(min_length=1)
     ref_values: dict[str, ValueInput] | None = None
-    variable_form: Literal["new", "existing"] | None = None
+    variable_form: Literal["new", "existing"]
 
-    def resolved_variable_form(self) -> VariableForm | None:
+    def resolved_variable_form(self) -> VariableForm:
         """Select the declared binding form used by this fragment."""
         if self.variable_form == "new":
             return NewVariable(name="my_data", modifiers=frozenset())
-        if self.variable_form == "existing":
-            return ExistingVariable(name="my_data")
-        return None
+        return ExistingVariable(name="my_data")
 
 
 class _CallCase(_FragmentCase, frozen=True):  # noqa: NOD001

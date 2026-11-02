@@ -1,0 +1,24 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Preserve Module.func from the unwrapped OCaml/PureScript unit cases.
+# The caller supplies its native module instead of declaring a dotted
+# lowercase helper, so both the reference and its real scope compile.
+[call]
+gates = [{kind = "enum_member_present", option = "date_format", member = "OCAML"}]
+target_function = "Module.func"
+parameter_names = ["a"]
+per_element = true
+include_target_stub = false
+use_unwrapped_code = true
+caller_body_preamble = ["module Module = struct\n  let func _ = ()\nend"]
+
+[[call_examples]]
+example = "import_alias"
+gates = [{kind = "enum_member_present", option = "language_version", member = "V0_15"}]
+target_function = "Module.func"
+parameter_names = ["a"]
+per_element = true
+include_target_stub = false
+use_unwrapped_code = true
+caller_imports = ["import LiteralizerSupport.CallTarget as Module"]
