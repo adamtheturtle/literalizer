@@ -11,3 +11,35 @@ variable_form = "new"
 call_transform_arguments = {arguments = ['''r"a\ // payload"'''], suffix = " // note"}
 followup_source = '{"$ref": "my_data"}'
 followup_target_function = "consume"
+
+# Rust hash-delimited raw operands remain intact through the outer
+# wrapper; its newline keeps the inner trailing comment scoped.
+[[call_examples]]
+example = "outer_plain"
+gates = [{kind = "call_hash_raw_prefix", prefix = "r", marker = "#"}]
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "new"
+call_transform_arguments = {arguments = ['r#"a\ // payload"#'], suffix = " // note"}
+transform_stub_names = ["wrap_widget"]
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"
+transform_stub_param_names = ["value"]
+call_transform = "wrap_widget(\n    {call}\n)"
+
+[[call_examples]]
+example = "outer_zip"
+gates = [{kind = "call_hash_raw_prefix", prefix = "r", marker = "#"}]
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "new"
+call_transform_arguments = {arguments = ['r#"a\ // payload"#'], suffix = " // note"}
+transform_stub_names = ["wrap_widget"]
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"
+transform_stub_param_names = ["value", "zipped"]
+call_transform = "wrap_widget(\n    {call}\n    , {zipped}\n)"
+zip_source = "true"
+zip_input_format = "json"

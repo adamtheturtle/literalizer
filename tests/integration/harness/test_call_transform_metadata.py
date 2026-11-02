@@ -5,7 +5,6 @@ syntax.
 import pytest
 from pydantic import BaseModel, TypeAdapter
 
-from literalizer import CallContext
 from tests.integration.call_cases import (
     GroupedCallTransform,
     LiteralArgumentsTransform,
@@ -22,7 +21,6 @@ class _GroupCase(BaseModel, extra="forbid", frozen=True):
     outer: str
     suffix: str
     uses_zipped: bool
-    expected: str
 
 
 class _GroupCases(BaseModel, extra="forbid", frozen=True):
@@ -36,29 +34,20 @@ _CASES = TypeAdapter(type=_GroupCases).validate_python(
 )
 
 
-def _group_marker(expression: str, /) -> str:
-    """Use abstract markers rather than any language's expression
-    syntax.
-    """
-    return f"<group>{expression}</group>"
-
-
 @pytest.mark.parametrize(
     argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
 )
 def test_grouped_transform_preserves_operand_usage(case: _GroupCase) -> None:
-    """An outer transform receives the grouped value and retains zip usage."""
+    """Pin operand metadata; native expression order has compiling
+    coverage.
+    """
     transform = GroupedCallTransform(
         body=CallTransform(template=case.body),
         suffix=case.suffix,
         outer=CallTransform(template=case.outer),
-        group=_group_marker,
-    )
-    context = CallContext(
-        call="call-value", index=0, row=(42,), zipped="zip-value"
+        group=str,
     )
     assert transform.uses_zipped is case.uses_zipped
-    assert transform(context) == case.expected
 
 
 class _ArgumentCase(BaseModel, extra="forbid", frozen=True):
@@ -70,7 +59,6 @@ class _ArgumentCase(BaseModel, extra="forbid", frozen=True):
     outer: str
     suffix: str
     uses_zipped: bool
-    expected: str
 
 
 class _ArgumentCases(BaseModel, extra="forbid", frozen=True):
@@ -98,8 +86,4 @@ def test_literal_arguments_preserve_outer_operand_usage(
         suffix=case.suffix,
         outer=None if case.outer == "" else CallTransform(template=case.outer),
     )
-    context = CallContext(
-        call="original-value", index=0, row=(42,), zipped="zip-value"
-    )
     assert transform.uses_zipped is case.uses_zipped
-    assert transform(context) == case.expected
