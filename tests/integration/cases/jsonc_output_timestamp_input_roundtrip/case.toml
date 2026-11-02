@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+
+# JSONC emits the YAML timestamp as text before the target renders it.
+[input_roundtrip]
+language = "Jsonc"
+input_format = "jsonc"
