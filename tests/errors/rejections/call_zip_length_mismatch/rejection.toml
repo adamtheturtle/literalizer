@@ -4,7 +4,12 @@ exceptions = ["ZipValuesLengthMismatchError"]
 
 [call]
 api = "literalize_call"
-sources = ["[[1], [2]]"]
+sources = [
+    "[[1], [2]]",
+    "[]",
+    "[[1]]",
+    "[[1], [2], [3], [4]]",
+]
 input_format = "json"
 target_function = "process"
 parameter_names = ["value"]
