@@ -1,0 +1,26 @@
+# Regression provenance: prefixed_identifier_inside_incomplete_expression.
+# A macro identifier before an operator does not hide the final line comment.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "call_identifier_prefix", prefix = "`"}]
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "new"
+call_transform = '''(`__LINE__ + 1 > 0) ? {call} : {call} // note'''
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"
+
+[[call_examples]]
+example = "existing"
+gates = [{kind = "call_identifier_prefix", prefix = "`"}]
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+ref_declarations = {my_data = "42"}
+call_transform = '''(`__LINE__ + 1 > 0) ? {call} : {call} // note'''
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"

@@ -1,1 +1,1 @@
-"""Direct formatter and scanner contracts outside public rendering."""
+"""Direct formatter contracts outside public rendering."""

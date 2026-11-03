@@ -1,0 +1,28 @@
+# Regression provenance: prefix_without_identifier.
+# An escaped identifier may contain a backtick followed by a non-identifier character.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "call_identifier_prefix", prefix = "`"}]
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "new"
+call_transform = '''(\`+ == 1) ? {call} : {call} // note'''
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"
+caller_body_preamble = ['''localparam int \`+ = 1;''']
+
+[[call_examples]]
+example = "existing"
+gates = [{kind = "call_identifier_prefix", prefix = "`"}]
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+ref_declarations = {my_data = "42"}
+call_transform = '''(\`+ == 1) ? {call} : {call} // note'''
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"
+caller_body_preamble = ['''localparam int \`+ = 1;''']
