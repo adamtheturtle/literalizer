@@ -9,7 +9,13 @@ gates = [{ kind = "capability_flag", flag = "declares_call_styles" }]
 
 [call]
 api = "literalize_call"
-sources = ["[[1]]", "[[1, 2], [3]]"]
+sources = [
+    "[[1]]",
+    "[[1, 2], [3]]",
+    "[[]]",
+    "[[1, 2, 3]]",
+    "[[1, 2], [3, 4, 5]]",
+]
 input_format = "json"
 target_function = "process"
 parameter_names = ["a", "b"]
