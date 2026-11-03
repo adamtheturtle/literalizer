@@ -61,6 +61,7 @@ type ApiName = Literal[
     "constructor",
     "sequence_type_annotation",
     "declaration_formatter",
+    "wrap_combined_in_file",
 ]
 type VariableFormName = Literal["new", "existing", "both", "none"]
 type SupplementalArgument = Literal[
