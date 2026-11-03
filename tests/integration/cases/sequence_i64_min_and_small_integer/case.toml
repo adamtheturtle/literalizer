@@ -4,3 +4,6 @@ suites = ["base"]
 
 [[variants]]
 axis = "kotlin_widened_i64_min"
+
+[[variants]]
+axis = "i64_min_integer_format"
