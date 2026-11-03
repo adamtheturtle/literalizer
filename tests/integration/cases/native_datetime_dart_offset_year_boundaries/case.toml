@@ -1,0 +1,21 @@
+# Dart exact offset arithmetic, including UTC year overflow (#6603).
+schema_version = 1
+suites = ["base"]
+gates = [{kind = "enum_member_present", option = "datetime_format", member = "DART"}]
+
+[base_context.record_null_value_sources.stamps]
+kind = "sequence"
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 0001-01-01T00:00:00
+offset_microseconds = 1
+
+[[base_context.record_null_value_sources.stamps.items]]
+kind = "scalar"
+
+[base_context.record_null_value_sources.stamps.items.value]
+wall_time = 9999-12-31T23:59:59.999999
+offset_microseconds = -1
