@@ -12,3 +12,6 @@ axis = "type_hints"
 
 [[variants]]
 axis = "sequence"
+
+[[variants]]
+axis = "string_format_date_cross"
