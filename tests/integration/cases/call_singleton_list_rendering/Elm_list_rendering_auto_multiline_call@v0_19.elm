@@ -11,7 +11,11 @@ consume _ = ()
 main : Program () () Never
 main =
     let
-        _ = consume (EList (EList (EInt 1 :: []) :: []))
+        _ = consume (EList (
+            EList (
+                EInt 1
+                 :: [])
+             :: []))
     in
     Platform.worker
         { init = \_ -> ( (), Cmd.none )

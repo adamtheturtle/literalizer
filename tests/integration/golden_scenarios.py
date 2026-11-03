@@ -17,6 +17,7 @@ test body there.
 
 import dataclasses
 import enum
+import functools
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 
@@ -65,8 +66,10 @@ from .golden_checks import (
 )
 from .language_specs import (
     find_redefinition_styles,
+    make_golden_path,
     make_spec,
     sorted_languages,
+    with_per_fixture_module_name,
 )
 from .variant_cases import group_variant_cases_by_language
 
@@ -374,6 +377,117 @@ class GoldenGroup:
         if self.batch_index is None:
             return prefix
         return f"{prefix}-batch{self.batch_index:03d}"
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class GoldenAlias:
+    """An intended option label covered by an identical retained
+    request.
+    """
+
+    original: GoldenRendering
+    witness: GoldenRendering
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class GoldenPlan:
+    """Compiler-owned requests and the additional labels they cover."""
+
+    renderings: tuple[GoldenRendering, ...]
+    aliases: tuple[GoldenAlias, ...]
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _RenderingContract:
+    """Everything a request executes, after fixture naming and
+    defaults.
+    """
+
+    specs: tuple[literalizer.Language, ...]
+    render: RenderArguments
+    extra_preamble: tuple[str, ...]
+    initialize_variable: bool
+    apply_fixture_module_name: bool
+    skip: SkipPolicy
+
+
+@beartype
+def _rendering_contract(*, rendering: GoldenRendering) -> _RenderingContract:
+    """Resolve the complete spec, preserving custom implementation
+    types.
+    """
+    specs: list[literalizer.Language] = []
+    for version in rendering.versions:
+        spec = rendering.spec_for(version=version)
+        if rendering.apply_fixture_module_name:
+            path = make_golden_path(
+                parent=rendering.golden_parent,
+                name=rendering.golden_name,
+                extension=rendering.extension,
+                lang_cls=rendering.lang_cls,
+                version=version,
+            )
+            spec = with_per_fixture_module_name(spec=spec, golden_path=path)
+        specs.append(spec)
+    return _RenderingContract(
+        specs=tuple(specs),
+        render=rendering.render,
+        extra_preamble=rendering.extra_preamble,
+        initialize_variable=rendering.initialize_variable,
+        apply_fixture_module_name=rendering.apply_fixture_module_name,
+        skip=rendering.skip,
+    )
+
+
+@beartype
+def plan_renderings(*, renderings: tuple[GoldenRendering, ...]) -> GoldenPlan:
+    """Retain the first complete request and record every equivalent label.
+
+    Requests share a witness only within the same input and language.
+    Spec equality includes the concrete implementation, all constructor
+    fields and the actual fixture module name. Different versions, caller
+    context or expected failures therefore keep independent compiler work.
+    No output hashing or renderer exceptions decide which requests survive.
+    """
+    buckets: dict[
+        tuple[Path, str, literalizer.LanguageCls],
+        list[tuple[_RenderingContract, GoldenRendering]],
+    ] = {}
+    retained: list[GoldenRendering] = []
+    aliases: list[GoldenAlias] = []
+    for rendering in renderings:
+        key = (
+            rendering.golden_parent,
+            rendering.case_dir_name,
+            rendering.lang_cls,
+        )
+        bucket = buckets.setdefault(key, [])
+        contract = _rendering_contract(rendering=rendering)
+        witness = next(
+            (
+                previous
+                for existing, previous in bucket
+                if existing == contract
+            ),
+            None,
+        )
+        if witness is None:
+            retained.append(rendering)
+            bucket.append((contract, rendering))
+        else:
+            aliases.append(GoldenAlias(original=rendering, witness=witness))
+    return GoldenPlan(renderings=tuple(retained), aliases=tuple(aliases))
+
+
+@functools.cache
+@beartype
+def golden_plan(
+    *, scenario: GoldenScenario, lang_cls: literalizer.LanguageCls
+) -> GoldenPlan:
+    """Expose each scenario's retained requests and option-label
+    coverage.
+    """
+    return plan_renderings(renderings=scenario.build(lang_cls=lang_cls))
 
 
 @beartype
@@ -846,7 +960,9 @@ def golden_groups() -> tuple[GoldenGroup, ...]:
     groups: list[GoldenGroup] = []
     for scenario in GOLDEN_SCENARIOS:
         for lang_cls in sorted_languages():
-            renderings = scenario.build(lang_cls=lang_cls)
+            renderings = golden_plan(
+                scenario=scenario, lang_cls=lang_cls
+            ).renderings
             batches = batch_renderings(
                 renderings=renderings, max_versions=GOLDEN_BATCH_VERSION_LIMIT
             )

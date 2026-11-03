@@ -74,6 +74,7 @@ from .language_specs import (
     with_per_fixture_module_name,
 )
 from .variant_cases import Variant, variants_for_axis
+from .variant_context import config_with_variant_layout
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -223,7 +224,9 @@ def _reference_variant_case(
         reference_case = reference_case_for_declaration_style(
             lang_cls=lang_cls, spec=spec
         )
-    selected_config = config.model_copy(
+    selected_config = config_with_variant_layout(
+        config=config, layout=variant.collection_layout
+    ).model_copy(
         update={
             "declaration_style": spec.declaration_style.name,
             "variable_name": names.get(

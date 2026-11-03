@@ -4,55 +4,80 @@ variants.
 
 import dataclasses
 from collections.abc import Callable
-from functools import cached_property
-from typing import ClassVar, override
+from functools import cache, cached_property
+from typing import ClassVar
 
 from beartype import beartype
 
+import literalizer
 from literalizer import DictFormatConfig
 from literalizer._formatters.collection_openers import typed_collection_open
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._types import Scalar, Value
-from literalizer.languages import Go, Zig
+from literalizer.languages import Zig
 
+from .language_specs import make_spec, sorted_languages
 from .variant_types import Variant, compact_variant
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class CallbackGo(Go):
-    """Use ordinary callbacks through the language extension
-    contract.
+@cache
+@beartype
+def callback_language(
+    *, lang_cls: literalizer.LanguageCls, plain_callbacks: bool
+) -> literalizer.LanguageCls:
+    """Extend each native spec through the same collection hook contract.
+
+    Inheriting the native dataclass keeps its constructor and per-fixture
+    module configuration intact. Only the two public callbacks change;
+    the native implementation supplies valid language delimiters.
     """
 
-    plain_callbacks: bool
+    def native_spec(spec: literalizer.Language) -> literalizer.Language:
+        """Rebuild the caller's complete native configuration."""
+        return lang_cls(
+            **{
+                field.name: vars(spec)[field.name]
+                for field in dataclasses.fields(class_or_instance=spec)
+                if field.init
+            }
+        )
 
-    @cached_property
-    @override
-    def sequence_open(self) -> Callable[[list[Value]], str]:
+    def sequence_open(
+        self: literalizer.Language,
+    ) -> Callable[[list[Value]], str]:
         """Expose an ordinary sequence callback."""
-        native = Go(language_version=self.language_version)
-        if self.plain_callbacks:
+        native = native_spec(spec=self)
+        if plain_callbacks:
             return lambda items: str(object=native.sequence_open(items))
 
         def _type_open(_element_type: type | ListType | DictType) -> str:
             """Provide the extension's integer collection opener."""
-            return "[]int{"
+            return str(object=native.sequence_open([1]))
 
         return typed_collection_open(
-            type_to_opener=_type_open, fallback="[]any{"
+            type_to_opener=_type_open,
+            fallback=str(object=native.sequence_open([])),
         )
 
-    @cached_property
-    @override
-    def dict_format_config(self) -> DictFormatConfig:
+    def dict_format_config(self: literalizer.Language) -> DictFormatConfig:
         """Expose an ordinary mapping callback."""
-        native = Go(language_version=self.language_version)
+        native = native_spec(spec=self)
 
         def _open(items: dict[Scalar, Value], /) -> str:
             """Keep the callback result as plain source text."""
             return str(object=native.dict_format_config.dict_open(items))
 
         return dataclasses.replace(native.dict_format_config, dict_open=_open)
+
+    return literalizer.LanguageCls.__new__(
+        mcs=type(lang_cls),
+        name=f"Callback{lang_cls.__name__}",
+        bases=(lang_cls,),
+        namespace={
+            "sequence_open": cached_property(func=sequence_open),
+            "dict_format_config": cached_property(func=dict_format_config),
+        },
+    )
 
 
 class SkipNullZig(Zig):
@@ -85,12 +110,15 @@ def variants_for_custom_language_axis(*, axis_key: str) -> list[Variant]:
             return []
     return [
         compact_variant(
-            name=f"Go_{axis_key}",
-            spec=CallbackGo(
+            name=f"{lang_cls.__name__}_{axis_key}",
+            spec=make_spec(
+                lang_cls=callback_language(
+                    lang_cls=lang_cls, plain_callbacks=plain_callbacks
+                ),
                 language_version=version,
-                plain_callbacks=plain_callbacks,
             ),
-            lang_cls=Go,
+            lang_cls=lang_cls,
         )
-        for version in Go.VersionFormats
+        for lang_cls in sorted_languages()
+        for version in lang_cls.VersionFormats
     ]
