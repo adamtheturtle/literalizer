@@ -63,12 +63,4 @@ class VariantCase:
     pre_indent_level: int
     expected_errors: tuple[VariantExpectedError, ...]
     apply_fixture_module_name: bool
-
-    @property
-    def extension(self) -> str:
-        """Keep intentionally indented fragments out of compiler
-        inputs.
-        """
-        if self.pre_indent_level > 0 and not self.variant.wrap_in_file:
-            return ".txt"
-        return self.variant.spec.extension
+    consumer_template: str | None

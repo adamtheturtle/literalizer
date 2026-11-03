@@ -71,7 +71,7 @@ def _check_rendering(
     golden_path = make_golden_path(
         parent=rendering.golden_parent,
         name=rendering.golden_name,
-        extension=rendering.extension,
+        extension=rendering.lang_cls.extension,
         lang_cls=rendering.lang_cls,
         version=version,
     )
@@ -176,9 +176,19 @@ def _check_rendering(
         )
         else ()
     )
+    contents = "\n".join((*identifier_preamble, result.code, ""))
+    if rendering.consumer_template is not None:
+        contents = rendering.consumer_template.format(
+            code=result.code,
+            preamble="\n".join(result.preamble),
+            module_name=(
+                f"Fixture_{golden_path.parent.name}_"
+                f"{golden_path.stem.rsplit(sep='@', maxsplit=1)[0]}"
+            ),
+        )
     check_golden(
-        contents="\n".join((*identifier_preamble, result.code, "")),
-        extension=rendering.extension,
+        contents=contents,
+        extension=rendering.lang_cls.extension,
         golden_path=golden_path,
         file_regression=file_regression,
     )
