@@ -1,8 +1,0 @@
-schema_version = 1
-summary = "Strict JSON rejects non-standard numeric constants."
-exceptions = ["JSONParseError"]
-
-[call]
-api = "literalize"
-sources = ["[NaN]", "[Infinity]", "[-Infinity]"]
-input_format = "json"

@@ -1,16 +1,8 @@
 schema_version = 1
-summary = "Malformed JSON and duplicate object keys raise typed parse errors."
+summary = "Malformed JSON and duplicate object keys raise typed parse errors.\n\nStrict JSON rejects non-standard numeric constants."
 exceptions = ["JSONParseError"]
 
 [call]
 api = "literalize"
-sources = [
-    "not json",
-    '{"a": 1, "a": 2}',
-    '{"outer": {"a": 1, "a": 2}}',
-    "[1,]",
-    "{\"a\":1,}",
-    "[1 2]",
-    "{\"a\" 1}",
-]
+sources = ["not json", "{\"a\": 1, \"a\": 2}", "{\"outer\": {\"a\": 1, \"a\": 2}}", "[1,]", "{\"a\":1,}", "[1 2]", "{\"a\" 1}", "[NaN]", "[Infinity]", "[-Infinity]"]
 input_format = "json"
