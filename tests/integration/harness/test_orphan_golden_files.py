@@ -41,7 +41,6 @@ from tests.integration.literalize_ref_cases import (
     ref_language_versions,
 )
 from tests.integration.unwrapped_result_cases import result_view_golden_paths
-from tests.integration.variant_cases import build_variant_cases
 
 
 @beartype
@@ -66,11 +65,16 @@ def _paths_for_versions(
 
 
 @beartype
-def _expected_strategy_golden_files(*, cases_dir: Path) -> set[Path]:
-    """Follow the strategy runner's effective language versions."""
+def _expected_planned_golden_files(*, cases_dir: Path) -> set[Path]:
+    """Follow retained strategy and variant requests and their
+    versions.
+    """
     expected: set[Path] = set()
     for group in golden_groups():
-        if group.scenario_name != "heterogeneous_strategy":
+        if group.scenario_name not in {
+            "heterogeneous_strategy",
+            "format_variant",
+        }:
             continue
         for rendering in group.renderings:
             for version in rendering.versions:
@@ -81,7 +85,7 @@ def _expected_strategy_golden_files(*, cases_dir: Path) -> set[Path]:
                     make_golden_path(
                         parent=cases_dir / rendering.case_dir_name,
                         name=rendering.golden_name,
-                        extension=spec.extension,
+                        extension=rendering.extension,
                         lang_cls=rendering.lang_cls,
                         version=version,
                     )
@@ -95,18 +99,7 @@ def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
     and
     pre-indent golden files.
     """
-    expected = _expected_strategy_golden_files(cases_dir=cases_dir)
-
-    for variant_case in build_variant_cases():
-        expected.add(
-            make_golden_path(
-                parent=cases_dir / variant_case.case_dir_name,
-                name=variant_case.variant_name,
-                extension=variant_case.extension,
-                lang_cls=variant_case.variant.lang_cls,
-                version=variant_case.variant.spec.language_version,
-            )
-        )
+    expected = _expected_planned_golden_files(cases_dir=cases_dir)
 
     for case in build_statement_terminator_combined_cases():
         statement_terminator_style_spec = make_spec(
