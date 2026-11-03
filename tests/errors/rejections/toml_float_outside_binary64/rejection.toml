@@ -4,5 +4,12 @@ exceptions = ["ParseError"]
 
 [call]
 api = "literalize"
-sources = ["value = 1e309", "value = -1e-4000"]
+sources = [
+    "value = 1e309",
+    "value = -1e-4000",
+    "value = -1e309",
+    "value = 1e-4000",
+    "values = [1e309]",
+    "[limits]\nvalue = -1e-4000",
+]
 input_format = "toml"
