@@ -8,7 +8,9 @@ type Val
 
 shared : Val
 shared = EList [
-    EList [EInt 1]
+    EList [
+        EInt 1
+        ]
     ]
 my_data : Val
 my_data = shared
