@@ -82,7 +82,7 @@ dev = [
     "pyroma==5.0.1",
     "pytest==9.2.0",
     "pytest-beartype==0.3.0",
-    "pytest-codspeed==5.0.3",
+    "pytest-codspeed==5.0.4",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.11.0",
     "pytest-xdist==3.8.0",
@@ -142,7 +142,7 @@ test = [
 ]
 benchmark = [
     "pytest==9.2.0",
-    "pytest-codspeed==5.0.3",
+    "pytest-codspeed==5.0.4",
     # Splits the benchmarks across the CI shards defined by the
     # ``benchmarks`` matrix in ``.github/workflows/ci.yml``.  CodSpeed
     # aggregates the shards back into a single report as long as they run
