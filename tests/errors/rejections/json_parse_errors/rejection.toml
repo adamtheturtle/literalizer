@@ -5,8 +5,12 @@ exceptions = ["JSONParseError"]
 [call]
 api = "literalize"
 sources = [
-  "not json",
-  '{"a": 1, "a": 2}',
-  '{"outer": {"a": 1, "a": 2}}',
+    "not json",
+    '{"a": 1, "a": 2}',
+    '{"outer": {"a": 1, "a": 2}}',
+    "[1,]",
+    "{\"a\":1,}",
+    "[1 2]",
+    "{\"a\" 1}",
 ]
 input_format = "json"
