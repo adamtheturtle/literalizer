@@ -84,7 +84,7 @@ def _call_bindings() -> dict[Path, str]:
             bindings[golden.resolve()] = _binding_name(
                 variable_form=call_case.config.variable_form
             )
-    for variant_case in build_call_variant_cases():
+    for variant_case in build_call_variant_cases(cases_dir=_CASES_DIR):
         if variant_case.variant.lang_cls is not Dart:
             continue
         golden = make_golden_path(

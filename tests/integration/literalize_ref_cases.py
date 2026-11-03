@@ -18,6 +18,7 @@ from typing import assert_never
 
 import json5_document
 import jsonc_document
+import pytest
 from beartype import beartype
 from pydantic import TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -780,6 +781,7 @@ def run_literalize_ref_golden_case(
     file_regression: FileRegressionFixture,
     ref_case: literalizer.IdentifierCase | None,
     version: enum.Enum,
+    pytest_config: pytest.Config,
 ) -> None:
     """Run a literalize ``$ref`` golden-file case against *golden_name*.
 
@@ -825,7 +827,7 @@ def run_literalize_ref_golden_case(
         policy=_REF_SKIPS,
         golden_path=golden_path,
         prefix=lang_cls.__name__,
-        config=file_regression.request.config,
+        config=pytest_config,
     ):
         try:
             _ = literalizer.literalize(

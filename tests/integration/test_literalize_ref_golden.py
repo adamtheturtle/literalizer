@@ -28,6 +28,7 @@ def test_literalize_ref_golden_file(
     cases_dir: Path,
     file_regression: FileRegressionFixture,
     subtests: pytest.Subtests,
+    pytestconfig: pytest.Config,
 ) -> None:
     """``$ref`` markers render as bare identifiers across all
     languages.
@@ -55,6 +56,7 @@ def test_literalize_ref_golden_file(
                 file_regression=file_regression,
                 ref_case=effective_ref_case,
                 version=version_format,
+                pytest_config=pytestconfig,
             )
 
 
@@ -68,6 +70,7 @@ def test_literalize_ref_variant_golden_file(
     cases_dir: Path,
     file_regression: FileRegressionFixture,
     subtests: pytest.Subtests,
+    pytestconfig: pytest.Config,
 ) -> None:
     """Render reference cases under the exact specs selected by each
     axis.
@@ -86,4 +89,5 @@ def test_literalize_ref_variant_golden_file(
             file_regression=file_regression,
             ref_case=effective_ref_case,
             version=spec.language_version,
+            pytest_config=pytestconfig,
         )
