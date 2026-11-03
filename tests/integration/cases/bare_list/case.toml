@@ -3,5 +3,6 @@ owner = "variant"
 roles = ["no-variable-form-input"]
 
 # Regression provenance: Go custom typed collection callbacks.
+# The public collection hook is exercised with every native implementation.
 [[variants]]
 axis = "typed_collection_callback"
