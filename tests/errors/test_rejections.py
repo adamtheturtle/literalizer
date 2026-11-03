@@ -346,6 +346,25 @@ def _run(
     lang_cls = case.lang_cls
     if call.api in {"sequence_type_annotation", "declaration_formatter"}:
         return _run_formatter(case=case, call=call)
+    if call.api == "wrap_combined_in_file":
+        return lang_cls(**case.kwargs).wrap_combined_in_file(
+            declaration="x = 1",
+            assignment="x = 2",
+            context=literalizer.FileWrapperContext(
+                line_prefix="",
+                bound_variable_names=(),
+                variable_name="x",
+                modifiers=frozenset(),
+                body_preamble=(),
+                class_preamble=(),
+                has_literal_declarations=True,
+                generated_body_preamble=(),
+                call_stub_names=frozenset(),
+                root_is_object_literal=False,
+                root_mapping_entries=None,
+                has_existing_bindings=False,
+            ),
+        )
     variable_form = _variable_form(
         call=call,
         lang_cls=lang_cls,
