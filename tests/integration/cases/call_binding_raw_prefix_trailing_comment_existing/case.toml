@@ -12,3 +12,5 @@ call_transform_arguments = {arguments = ['''r"a\ // payload"'''], suffix = " // 
 ref_declarations = {my_data = "42"}
 followup_source = '{"$ref": "my_data"}'
 followup_target_function = "consume"
+zip_source = "2024-01-15"
+zip_input_format = "yaml"
