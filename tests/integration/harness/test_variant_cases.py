@@ -1,5 +1,6 @@
 """Focused tests for small variant-case helpers."""
 
+import dataclasses
 import enum
 from collections import Counter
 from pathlib import Path
@@ -17,6 +18,9 @@ from tests.integration.case_manifests import (
     load_case_manifest,
     load_case_manifests,
 )
+from tests.integration.custom_languages import (
+    variants_for_custom_language_axis,
+)
 from tests.integration.language_specs import make_spec, sorted_languages
 from tests.integration.variant_cases import (
     build_multiline_string_context_cases,
@@ -29,6 +33,37 @@ from tests.integration.variant_cases import (
 from tests.integration.variant_types import VariantCase
 
 _SampleEnum = enum.Enum(value="_SampleEnum", names=["FIRST"])
+
+
+@pytest.mark.parametrize(
+    argnames="axis",
+    argvalues=["plain_collection_callbacks", "typed_collection_callback"],
+)
+def test_collection_callback_extensions_cover_every_language_version(
+    axis: str,
+) -> None:
+    """Collection hooks retain native configuration across the matrix."""
+    variants = variants_for_custom_language_axis(axis_key=axis)
+    assert {
+        (variant.lang_cls, variant.spec.language_version)
+        for variant in variants
+    } == {
+        (lang_cls, version)
+        for lang_cls in sorted_languages()
+        for version in lang_cls.VersionFormats
+    }
+    for variant in variants:
+        native = make_spec(
+            lang_cls=variant.lang_cls,
+            language_version=variant.spec.language_version,
+        )
+        for field in dataclasses.fields(class_or_instance=native):
+            assert vars(variant.spec)[field.name] == vars(native)[field.name]
+        assert variant.spec.sequence_open is not native.sequence_open
+        assert (
+            variant.spec.dict_format_config.dict_open
+            is not native.dict_format_config.dict_open
+        )
 
 
 def test_enum_member_by_name_raises_for_missing_member() -> None:

@@ -1,5 +1,6 @@
 schema_version = 1
 # Regression provenance: Go ordinary collection callbacks retain child types.
+# Every native implementation supplies its own valid collection delimiters.
 suites = ["base"]
 
 [[variants]]
