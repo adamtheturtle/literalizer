@@ -1,0 +1,15 @@
+# Backtick raw strings keep comment markers inside the bound call expression.
+# Regression provenance: the scanner-only backtick_strings option.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "call_literal_flag", flag = "backtick_strings"}]
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+call_transform_arguments = {arguments = ['`// payload`'], suffix = " // note"}
+ref_declarations = {my_data = "42"}
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"

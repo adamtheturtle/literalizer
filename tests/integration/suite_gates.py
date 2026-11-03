@@ -221,7 +221,7 @@ class CallLiteralFlagGate(BaseModel, extra="forbid", frozen=True, strict=True):
     """Require a literal grammar handled by the actual comment scanner."""
 
     kind: Literal["call_literal_flag"]
-    flag: Literal["regex_literals", "verbatim_strings"]
+    flag: Literal["regex_literals", "verbatim_strings", "backtick_strings"]
 
 
 class CallRawStringPrefixGate(
@@ -308,11 +308,11 @@ def call_literal_gate_admits(
         return False
     match gate:
         case CallLiteralFlagGate():
-            admitted = (
-                syntax.regex_literals
-                if gate.flag == "regex_literals"
-                else syntax.verbatim_strings
-            )
+            admitted = {
+                "regex_literals": syntax.regex_literals,
+                "verbatim_strings": syntax.verbatim_strings,
+                "backtick_strings": syntax.backtick_strings,
+            }[gate.flag]
         case CallRawStringPrefixGate():
             span = syntax.literal_span_end
             admitted = gate.prefix in syntax.raw_string_prefixes or (
