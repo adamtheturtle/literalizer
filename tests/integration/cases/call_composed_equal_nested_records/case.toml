@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "literalize-call"
+
+# C++14 regression (#6646): std::vector element inference must keep equal
+# nested record types equal across the passes for separate bound references.
+[call]
+target_function = "consume"
+parameter_names = ["first", "second"]
+per_element = true
+variant_only = true
+ref_declarations = { first = '{"payload":[[{"name":"first","values":[1,2]}],[{"name":"third","values":[5,6]}]]}', second = '{"payload":[[{"name":"second","values":[3,4]}],[{"name":"fourth","values":[7,8]}]]}' }
+
+[[call.variants]]
+axis = "cpp14_heterogeneous_strategy_record"
