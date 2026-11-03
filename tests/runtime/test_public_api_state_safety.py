@@ -13,24 +13,6 @@ from literalizer import InputFormat, Language, NewVariable, literalize
 from literalizer.languages import C, Python, Rust
 
 
-def test_yaml_parsing_is_thread_safe() -> None:
-    """Concurrent comment-preserving parses do not share parser state."""
-    render_count = 200
-
-    def render(index: int) -> str:
-        """Render one YAML document."""
-        return literalize(
-            source=f"value: {index}\n# comment {index}\n",
-            input_format=InputFormat.YAML,
-            language=Python(),
-        ).code
-
-    with ThreadPoolExecutor(max_workers=16) as pool:
-        results = list(pool.map(render, range(render_count)))
-
-    assert len(results) == render_count
-
-
 @pytest.mark.parametrize(
     argnames="language",
     argvalues=[

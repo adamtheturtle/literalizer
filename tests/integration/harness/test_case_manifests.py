@@ -257,7 +257,7 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
         ),
         (
             'schema_version = 1\nsuites = ["base"]\nroles = ["mascot"]\n',
-            "Input should be 'heterogeneous-strategy-default-input'",
+            "Input should be .*'heterogeneous-strategy-default-input'",
         ),
         (
             (

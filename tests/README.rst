@@ -12,6 +12,7 @@ The Python tests below retain contracts that a fixed compiling example cannot re
 * ``runtime`` checks generated round-trip properties, concurrent calls, and mutation of caller-owned state.
 * ``stress`` generates large inputs and checks invariants at depth limits without checking in a large fixed output.
 * ``integration`` contains the golden rendering drivers and the multiline golden execution oracle.
+  Concurrent YAML renders are compared against those same compiling goldens.
   Its supporting modules build the cases, while ``integration/harness`` checks discovery, manifests, ownership, version selection, and regeneration behavior.
 * ``benchmarks`` measures rendering performance.
 

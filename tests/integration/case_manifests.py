@@ -70,6 +70,7 @@ type OwnerName = Literal[
 # Spelled as an assignment rather than a ``type`` statement so the
 # accepted names can be read back out with ``get_args``.
 _CaseRoleNameLiteral = Literal[
+    "concurrent-yaml-input",
     "heterogeneous-strategy-default-input",
     "heterogeneous-strategy-tuple-input",
     "indent-input",
@@ -91,6 +92,8 @@ the case tells you it is load-bearing.
 CASE_ROLE_NAMES = frozenset[CaseRoleName](
     get_args(tp=_CaseRoleNameLiteral),
 )
+
+CONCURRENT_YAML_ROLE: CaseRoleName = "concurrent-yaml-input"
 
 HETEROGENEOUS_STRATEGY_DEFAULT_ROLE: CaseRoleName = (
     "heterogeneous-strategy-default-input"
