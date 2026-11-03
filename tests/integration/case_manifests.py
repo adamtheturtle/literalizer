@@ -1057,6 +1057,8 @@ class ConstructorCaseSpec(  # noqa: NOD001
     parameter_names: tuple[str, ...] = ()
     # A native caller can provide an externally declared constructor.
     consumer_template: str | None = None
+    # Native syntax can consume a target even without a call-binding API.
+    target_template: str | None = None
     variable_name: Annotated[str, Field(min_length=1)] = "p"
 
 
