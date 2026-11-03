@@ -2,7 +2,9 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-# Shared coverage retains call_existing_binding_fortran.
+# Shared coverage retains call_existing_binding_fortran, call_existing_binding_ada,
+# call_existing_binding_bash and call_existing_binding_nim. The former
+# call_existing_binding_seed_and_result duplicated these exact API arguments.
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
