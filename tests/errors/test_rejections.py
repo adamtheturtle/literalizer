@@ -197,6 +197,11 @@ def _variable_form(
     an omitted form preserves the legacy default declaration.
     """
     name = substituted(template=call.variable_name, value=value)
+    if call.record_variable_index is not None:
+        prefix = lang_cls.__dataclass_fields__[
+            "record_struct_name_prefix"
+        ].default
+        name = f"{prefix}{call.record_variable_index}"
     modifiers = frozenset(
         enum_member_by_name(
             enum_cls=modifier_cls.Modifiers, name=modifier_name
