@@ -1,0 +1,19 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "metadata_field", field = "language_id", value = "v"}]
+
+# Compile the target with a native one-argument constructor. The old
+# zero-argument fragment did not declare a constructor or check its arity.
+[constructor]
+class_name = "Playlist"
+parameter_names = ["value"]
+variable_name = "created"
+consumer_template = '''module main
+{preamble}
+type Playlist = int
+fn main() {{
+{body_preamble}
+{bare_code}
+    assert int(created) == 1
+}}
+'''
