@@ -61,6 +61,7 @@ type ApiName = Literal[
     "constructor",
     "sequence_type_annotation",
     "declaration_formatter",
+    "wrap_combined_in_file",
 ]
 type VariableFormName = Literal["new", "existing", "both", "none"]
 type SupplementalArgument = Literal[
@@ -463,6 +464,7 @@ class CallSpec(  # noqa: NOD001
     include_delimiters: bool = True
     variable_form: VariableFormName | None = None
     variable_name: str = "my_data"
+    record_variable_index: Annotated[int, Field(ge=0)] | None = None
     kwargs: Annotated[tuple[RejectionKwarg, ...], Field(strict=False)] = Field(
         default_factory=_no_kwargs
     )

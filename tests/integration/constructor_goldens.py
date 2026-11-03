@@ -40,6 +40,16 @@ def run_constructor_binding_golden_case(
         config = ConstructorCaseSpec.model_validate(obj=manifest.constructor)
         source = manifest.input.path.read_text(encoding="utf-8")
         input_format = manifest.input.input_format
+    if config.target_template is not None:
+        check_golden(
+            contents=config.target_template.format(
+                target=language.format_constructor_target(config.class_name)
+            ),
+            extension=golden_path.suffix,
+            golden_path=golden_path,
+            file_regression=file_regression,
+        )
+        return
     with GoldenSkips(
         policy=case.skip,
         golden_path=golden_path,
