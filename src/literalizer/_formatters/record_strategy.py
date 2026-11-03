@@ -989,6 +989,12 @@ class _RecordStrategyState:
 
     def compute_shapes(self, data: Value) -> Mapping[int, RecordShape]:
         """Assign record shapes and reset the per-pass caches."""
+        # Field inference may look up record names through the renderer.
+        # Clear prior identities before those callbacks inspect the new data.
+        self.name_by_shape.clear()
+        self.id_to_shape.clear()
+        self.request_by_shape.clear()
+        self.emit_order.clear()
         shapes_by_id = _collect_strategy_shapes(
             data=data,
             renderer=self.renderer,
@@ -996,10 +1002,6 @@ class _RecordStrategyState:
                 self.widen_unrecordizable_nested_sibling_maps
             ),
         )
-        self.name_by_shape.clear()
-        self.id_to_shape.clear()
-        self.request_by_shape.clear()
-        self.emit_order.clear()
         self.id_to_shape.update(shapes_by_id)
         ordered = _ordered_record_shapes(
             data=data,
