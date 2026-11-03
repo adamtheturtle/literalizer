@@ -5,7 +5,6 @@ styles and variable modifiers. Languages without a compiling binding
 retain a fragment snapshot of the target helper.
 """
 
-import dataclasses
 import enum
 from pathlib import Path
 
@@ -14,27 +13,26 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer import InputFormat, literalize_call
 
-from .case_manifests import ConstructorCaseSpec
 from .constructor_cases import (
+    CASES_DIR,
     ConstructorBindingCase,
     constructor_binding_cases,
     constructor_golden_path,
 )
-from .golden_checks import GoldenSkips, check_golden
+from .constructor_goldens import run_constructor_binding_golden_case
+from .golden_checks import check_golden
 from .language_specs import (
     make_golden_path,
     make_spec,
     sorted_languages,
-    with_per_fixture_module_name,
 )
 
 _CONSTRUCTOR_NAME = "Playlist"
 _GOLDEN_DIR = Path(__file__).parent / "constructor_targets"
 _COMPILING_CONSTRUCTOR_LANGUAGES = {
     case.lang_cls
-    for case in constructor_binding_cases()
+    for case in constructor_binding_cases(cases_dir=CASES_DIR)
     if case.manifest is not None
 }
 
@@ -94,7 +92,7 @@ def test_constructor_targets_golden_file(
 
 @pytest.mark.parametrize(
     argnames="case",
-    argvalues=constructor_binding_cases(),
+    argvalues=constructor_binding_cases(cases_dir=CASES_DIR),
     ids=lambda case: (
         case.name
         if case.manifest is None
@@ -111,74 +109,13 @@ def test_constructor_binding_golden_file(
     for version_format in case.lang_cls.VersionFormats:
         with subtests.test(version=version_format.name):
             golden_path = constructor_golden_path(
-                case=case, version=version_format
+                case=case,
+                version=version_format,
+                fragments_dir=_GOLDEN_DIR,
             )
-            language = make_spec(
-                lang_cls=case.lang_cls,
-                language_version=version_format,
-                **case.spec_overrides,
-            )
-            manifest = case.manifest
-            config = ConstructorCaseSpec()
-            source = "[[]]"
-            input_format = InputFormat.JSON
-            if manifest is not None:
-                language = with_per_fixture_module_name(
-                    spec=language, golden_path=golden_path
-                )
-                assert manifest.constructor is not None
-                config = manifest.constructor
-                source = manifest.input.path.read_text(encoding="utf-8")
-                input_format = manifest.input.input_format
-            if config.target_template is not None:
-                check_golden(
-                    contents=config.target_template.format(
-                        target=language.format_constructor_target(
-                            config.class_name
-                        )
-                    ),
-                    extension=golden_path.suffix,
-                    golden_path=golden_path,
-                    file_regression=file_regression,
-                )
-                continue
-            with GoldenSkips(
-                policy=case.skip,
-                golden_path=golden_path,
-                prefix=case.lang_cls.__name__,
-                config=file_regression.request.config,
-            ):
-                result = literalize_call(
-                    source=source,
-                    input_format=input_format,
-                    language=language,
-                    target_function=language.format_constructor_target(
-                        config.class_name,
-                    ),
-                    parameter_names=config.parameter_names,
-                    wrap_in_file=(
-                        manifest is not None
-                        and config.consumer_template is None
-                    ),
-                    variable_form=dataclasses.replace(
-                        case.variable_form, name=config.variable_name
-                    ),
-                )
-            contents = result.code + "\n"
-            if config.consumer_template is not None:
-                contents = config.consumer_template.format(
-                    preamble="\n".join(result.preamble),
-                    code=result.code,
-                    bare_code=result.bare_code,
-                    body_preamble="\n".join(result.body_preamble),
-                    module_name=(
-                        f"Fixture_{golden_path.parent.name}_"
-                        f"{golden_path.stem.rsplit(sep='@', maxsplit=1)[0]}"
-                    ),
-                )
-            check_golden(
-                contents=contents,
-                extension=golden_path.suffix,
+            run_constructor_binding_golden_case(
+                case=case,
+                version=version_format,
                 golden_path=golden_path,
                 file_regression=file_regression,
             )

@@ -48,10 +48,13 @@ class ConstructorBindingCase:
 
 @beartype
 def constructor_golden_path(
-    *, case: ConstructorBindingCase, version: enum.Enum
+    *,
+    case: ConstructorBindingCase,
+    version: enum.Enum,
+    fragments_dir: Path,
 ) -> Path:
     """Locate a compiling fixture or a remaining legacy fragment."""
-    parent = Path(__file__).parent / "constructor_targets"
+    parent = fragments_dir
     extension = ".txt"
     if case.manifest is not None:
         parent = case.manifest.case_dir
@@ -164,11 +167,13 @@ def _modifier_binding_cases() -> list[ConstructorBindingCase]:
 
 
 @beartype
-def constructor_binding_cases() -> list[ConstructorBindingCase]:
+def constructor_binding_cases(
+    *, cases_dir: Path
+) -> list[ConstructorBindingCase]:
     """Return every declared constructor call-binding variant."""
     manifests = [
         manifest
-        for manifest in load_case_manifests(cases_dir=CASES_DIR)
+        for manifest in load_case_manifests(cases_dir=cases_dir)
         if manifest.owner == "constructor-binding"
     ]
     cases: list[ConstructorBindingCase] = []

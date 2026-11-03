@@ -215,8 +215,12 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         expected.add(manifest.input.path)
 
     expected.update(
-        constructor_golden_path(case=case, version=version)
-        for case in constructor_binding_cases()
+        constructor_golden_path(
+            case=case,
+            version=version,
+            fragments_dir=cases_dir.parent / "constructor_targets",
+        )
+        for case in constructor_binding_cases(cases_dir=cases_dir)
         if case.manifest is not None
         for version in case.lang_cls.VersionFormats
     )
