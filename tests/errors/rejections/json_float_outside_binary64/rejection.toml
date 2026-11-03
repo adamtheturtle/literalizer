@@ -4,5 +4,12 @@ exceptions = ["ParseError"]
 
 [call]
 api = "literalize"
-sources = ["1e309", "-1e-4000"]
+sources = [
+    "1e309",
+    "-1e-4000",
+    "-1e309",
+    "1e-4000",
+    "[1e309]",
+    "{\"value\":-1e-4000}",
+]
 input_format = "json"
