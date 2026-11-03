@@ -181,10 +181,27 @@ def constructor_binding_cases() -> list[ConstructorBindingCase]:
             manifest
             for manifest in manifests
             if manifest.selection.admits_language(lang_cls=case.lang_cls)
+            and manifest.constructor is not None
+            and manifest.constructor.target_template is None
         )
         if len(owners) == 0:
             owners = (None,)
         cases.extend(
             dataclasses.replace(case, manifest=manifest) for manifest in owners
         )
+    for manifest in manifests:
+        config = manifest.constructor
+        if config is not None and config.target_template is not None:
+            cases.extend(
+                ConstructorBindingCase(
+                    name=f"{lang_cls.__name__}_constructor_target",
+                    lang_cls=lang_cls,
+                    spec_overrides={},
+                    variable_form=NewVariable(name="p", modifiers=frozenset()),
+                    skip=NO_SKIPS,
+                    manifest=manifest,
+                )
+                for lang_cls in sorted_languages()
+                if manifest.selection.admits_language(lang_cls=lang_cls)
+            )
     return cases
