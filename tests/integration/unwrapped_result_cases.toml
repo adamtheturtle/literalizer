@@ -66,3 +66,88 @@ template = '''object {module_name} {{
 val my_data = List({code})
 }}
 '''
+
+[[record_consumers]]
+language = "C"
+template = '''{preamble}
+int main(void) {{
+{body_preamble}
+    struct Record0 my_data[] = {{{code}}};
+    (void)my_data;
+    return 0;
+}}
+'''
+
+[[record_consumers]]
+language = "CSharp"
+template = '''{preamble}
+class MainClass {{
+    static void Main() {{
+{body_preamble}
+        var my_data = new Record0[] {{{code}}};
+        _ = my_data;
+    }}
+}}
+'''
+
+[[record_consumers]]
+language = "D"
+template = '''{preamble}
+void main() {{
+{body_preamble}
+    Record0[] my_data = [{code}];
+    cast(void)my_data;
+}}
+'''
+
+[[record_consumers]]
+language = "Nim"
+template = '''{preamble}
+{body_preamble}
+let my_data = @[{code}]
+discard my_data
+'''
+
+[[record_consumers]]
+language = "Odin"
+template = '''{preamble}
+main :: proc() {{
+{body_preamble}
+    my_data := []Record0{{{code}}}
+    _ = my_data
+}}
+'''
+
+[[record_consumers]]
+language = "Python"
+template = '''{preamble}
+{body_preamble}
+my_data = [{code}]
+'''
+
+[[record_consumers]]
+language = "Swift"
+template = '''{preamble}
+{body_preamble}
+let my_data = [{code}]
+'''
+
+[[record_consumers]]
+language = "V"
+template = '''{preamble}
+fn main() {{
+{body_preamble}
+    my_data := [{code}]
+    _ = my_data
+}}
+'''
+
+[[record_consumers]]
+language = "Zig"
+template = '''{preamble}
+pub fn main() void {{
+{body_preamble}
+    const my_data = [_]Record0{{{code}}};
+    _ = &my_data;
+}}
+'''
