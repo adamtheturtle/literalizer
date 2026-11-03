@@ -1,6 +1,8 @@
 """Typed scaffold refusals must not leave executable stale fixtures."""
 
+from functools import cached_property
 from pathlib import Path
+from typing import override
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -14,13 +16,23 @@ from tests.integration.language_specs import make_golden_path, make_spec
 from tests.integration.literalize_ref_cases import external_assignment_spec
 
 
+class _FixedLengthCSharp(CSharp):
+    """A synthetic spec with only fixed-length sequence types."""
+
+    @cached_property
+    @override
+    def sequence_format_config(self) -> SequenceFormatConfig:
+        """Keep the fixed default when trying alternative formats."""
+        return CSharp().sequence_format_config
+
+
 @pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
 def test_refused_scaffold_handles_stale_fixture(
     *,
     tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
     file_regression: FileRegressionFixture,
     regenerate: bool,
+    regeneration_config: pytest.Config,
 ) -> None:
     """Verification reports stale output; regeneration removes it."""
     case_dir = tmp_path / "external"
@@ -50,11 +62,6 @@ def test_refused_scaffold_handles_stale_fixture(
     )
     _ = golden_path.write_text(data="stale fixture\n", encoding="utf-8")
 
-    monkeypatch.setattr(
-        target=file_regression.request.config.option,
-        name="regen_all",
-        value=regenerate,
-    )
     outcome = pytest.skip.Exception if regenerate else pytest.fail.Exception
     with pytest.raises(expected_exception=outcome):
         literalize_ref_cases.run_literalize_ref_golden_case(
@@ -66,18 +73,19 @@ def test_refused_scaffold_handles_stale_fixture(
             file_regression=file_regression,
             ref_case=None,
             version=version,
+            pytest_config=regeneration_config,
         )
     assert golden_path.exists() is not regenerate
 
 
 @pytest.mark.parametrize(argnames="explicit_choice", argvalues=[False, True])
 def test_fixed_length_destination_refuses_different_arity(
-    *, monkeypatch: pytest.MonkeyPatch, explicit_choice: bool
+    *, explicit_choice: bool
 ) -> None:
     """Neither a forced tuple nor fixed-only formats can change native
     type.
     """
-    spec = CSharp()
+    spec = CSharp() if explicit_choice else _FixedLengthCSharp()
     config = RefCaseSpec.model_validate(
         obj={
             "variable_form": "existing",
@@ -86,18 +94,6 @@ def test_fixed_length_destination_refuses_different_arity(
         },
         context={"case_dir_name": "external"},
     )
-    if not explicit_choice:
-        fixed_config = spec.sequence_format_config
-
-        def fixed_only_config(_spec: object, /) -> SequenceFormatConfig:
-            """Model a producer with no length-independent sequence option."""
-            return fixed_config
-
-        monkeypatch.setattr(
-            target=CSharp,
-            name="sequence_format_config",
-            value=property(fget=fixed_only_config),
-        )
     with pytest.raises(
         expected_exception=UnrepresentableInputError,
         match="cannot change length on reassignment",

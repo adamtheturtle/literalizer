@@ -264,7 +264,7 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
             )
         )
 
-    for call_variant_case in build_call_variant_cases():
+    for call_variant_case in build_call_variant_cases(cases_dir=cases_dir):
         expected.add(
             make_golden_path(
                 parent=cases_dir / call_variant_case.config.case_dir_name,
