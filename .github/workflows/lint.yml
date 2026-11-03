@@ -924,9 +924,12 @@ jobs:
       # `import literalizer` resolves. ``JSON::PP`` and ``Math::BigInt``
       # are core in the pinned 5.36 interpreter so no extra ``cpanm``
       # step is needed. See `scripts/run_perl_roundtrip.py`.
+      - name: Install Perl roundtrip dependencies
+        timeout-minutes: 10
+        run: uv sync --no-dev --group=roundtrip
       - name: Perl roundtrip
         timeout-minutes: 3
-        run: uv run --no-dev --group=roundtrip python -m scripts.run_perl_roundtrip
+        run: uv run --no-sync --no-dev --group=roundtrip python -m scripts.run_perl_roundtrip
 
   # Fixture languages linted by small tools fetched via `go install`.
   lint-go-installed:
@@ -1754,7 +1757,7 @@ jobs:
         run: |-
           cat > "$CABAL_CONFIG" <<EOF
           repository hackage.haskell.org
-            url: https://hackage.haskell.org/
+            url: https://hackage-content.haskell.org/
             secure: true
           remote-repo-cache: ${HOME}/.cabal/packages
           store-dir: ${HOME}/.cabal/store
