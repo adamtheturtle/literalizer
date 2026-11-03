@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "metadata_field", field = "language_id", value = "elm"}]
+
+# Check the helper's spelling in a complete native document. This target
+# has no zero-argument call binding, so it does not fabricate a call.
+[constructor]
+target_template = '''module Check exposing (..)
+
+
+type Playlist
+    = {target}
+
+
+my_data : Playlist
+my_data = {target}
+'''
