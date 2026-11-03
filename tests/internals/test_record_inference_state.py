@@ -25,7 +25,7 @@ def test_record_inference_does_not_split_equal_shapes_after_a_prior_pass(
     language = make_spec(
         lang_cls=Cpp,
         language_version=version,
-        heterogeneous_strategy=Cpp.HeterogeneousStrategies.RECORD,
+        heterogeneous_strategy=Cpp.HeterogeneousStrategies["RECORD"],
     )
     compute = language.heterogeneous_behavior.compute_record_shapes
     fresh_compute = dataclasses.replace(
