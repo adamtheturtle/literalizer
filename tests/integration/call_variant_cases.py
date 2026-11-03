@@ -19,6 +19,7 @@ from literalizer._enums import enum_payload
 from .call_cases import CASES_DIR
 from .case_manifests import CallCaseSpec, call_case_specs
 from .variant_cases import Variant, variants_for_axis
+from .variant_context import config_with_variant_layout
 
 
 @dataclasses.dataclass(frozen=True)
@@ -42,7 +43,12 @@ def build_call_variant_cases() -> list[CallVariantCase]:
     statement terminator or a JSON-aware result binding.
     """
     return [
-        CallVariantCase(config=config, variant=variant)
+        CallVariantCase(
+            config=config_with_variant_layout(
+                config=config, layout=variant.collection_layout
+            ),
+            variant=variant,
+        )
         for config in call_case_specs(cases_dir=CASES_DIR)
         for manifest_variant in config.variants
         for variant in variants_for_axis(axis_key=manifest_variant.axis)
