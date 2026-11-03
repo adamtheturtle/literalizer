@@ -8,7 +8,7 @@ The Python tests below retain contracts that a fixed compiling example cannot re
   Its manifest validation checks stay with the rejection runner and data.
 * ``metadata`` checks language options, constructor boundaries, result metadata, round-trip capability declarations, and project configuration.
 * ``fragments`` checks incomplete public call output.
-* ``internals`` checks formatter composition and scanner behavior that is unreachable as a complete public rendering.
+* ``internals`` checks formatter composition that public rendering cannot exercise.
 * ``runtime`` checks generated round-trip properties, concurrent calls, and mutation of caller-owned state.
 * ``stress`` generates large inputs and checks invariants at depth limits without checking in a large fixed output.
 * ``integration`` contains the golden rendering drivers and the multiline golden execution oracle.

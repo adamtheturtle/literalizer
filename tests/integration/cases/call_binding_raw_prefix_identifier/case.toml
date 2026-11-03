@@ -1,0 +1,26 @@
+# Regression provenance: raw_prefix_in_identifier.
+# Raw string prefixes inside ordinary call identifiers do not hide a trailing comment.
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "call_raw_string_prefix", prefix = "r"}]
+target_function = "raw_value"
+parameter_names = ["value"]
+per_element = false
+variable_form = "new"
+call_transform = '''{call} // note'''
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"
+
+[[call_examples]]
+example = "existing"
+gates = [{kind = "call_raw_string_prefix", prefix = "r"}]
+target_function = "raw_value"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+ref_declarations = {my_data = "42"}
+call_transform = '''{call} // note'''
+followup_source = '{"$ref": "my_data"}'
+followup_target_function = "consume"
