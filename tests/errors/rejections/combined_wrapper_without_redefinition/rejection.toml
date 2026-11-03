@@ -1,0 +1,6 @@
+schema_version = 1
+summary = "The direct combined-file wrapper refuses languages without redefinition."
+exceptions = ["WrapCombinedInFileNotSupportedError"]
+
+[call]
+api = "wrap_combined_in_file"

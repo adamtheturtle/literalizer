@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "A declaration cannot shadow a record type generated from the default prefix."
+exceptions = ["ReservedVariableNameError"]
+gates = [{kind = "capability_flag", flag = "supports_record_struct_name_prefix"}]
+
+[call]
+api = "literalize"
+sources = ['[{"id": 1}]']
+input_format = "json"
+variable_form = "new"
+record_variable_index = 0
+wrap_in_file = true
+kwargs = [{kind = "option_member", option = "heterogeneous_strategy", member = "RECORD"}]

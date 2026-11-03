@@ -130,6 +130,18 @@ def test_constructor_binding_golden_file(
                 config = manifest.constructor
                 source = manifest.input.path.read_text(encoding="utf-8")
                 input_format = manifest.input.input_format
+            if config.target_template is not None:
+                check_golden(
+                    contents=config.target_template.format(
+                        target=language.format_constructor_target(
+                            config.class_name
+                        )
+                    ),
+                    extension=golden_path.suffix,
+                    golden_path=golden_path,
+                    file_regression=file_regression,
+                )
+                continue
             with GoldenSkips(
                 policy=case.skip,
                 golden_path=golden_path,
@@ -143,7 +155,7 @@ def test_constructor_binding_golden_file(
                     target_function=language.format_constructor_target(
                         config.class_name,
                     ),
-                    parameter_names=[],
+                    parameter_names=config.parameter_names,
                     wrap_in_file=(
                         manifest is not None
                         and config.consumer_template is None
