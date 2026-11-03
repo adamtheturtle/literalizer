@@ -144,13 +144,28 @@ def test_constructor_binding_golden_file(
                         config.class_name,
                     ),
                     parameter_names=[],
-                    wrap_in_file=manifest is not None,
+                    wrap_in_file=(
+                        manifest is not None
+                        and config.consumer_template is None
+                    ),
                     variable_form=dataclasses.replace(
                         case.variable_form, name=config.variable_name
                     ),
                 )
+            contents = result.code + "\n"
+            if config.consumer_template is not None:
+                contents = config.consumer_template.format(
+                    preamble="\n".join(result.preamble),
+                    code=result.code,
+                    bare_code=result.bare_code,
+                    body_preamble="\n".join(result.body_preamble),
+                    module_name=(
+                        f"Fixture_{golden_path.parent.name}_"
+                        f"{golden_path.stem.rsplit(sep='@', maxsplit=1)[0]}"
+                    ),
+                )
             check_golden(
-                contents=result.code + "\n",
+                contents=contents,
                 extension=golden_path.suffix,
                 golden_path=golden_path,
                 file_regression=file_regression,

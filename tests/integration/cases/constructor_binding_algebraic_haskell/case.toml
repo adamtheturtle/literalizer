@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "metadata_field", field = "language_id", value = "haskell"}]
+
+[constructor]
+class_name = "Playlist"
+variable_name = "created"
+consumer_template = '''module {module_name} where
+{preamble}
+data Playlist = Playlist ()
+{body_preamble}
+main :: IO ()
+main = do
+    let {bare_code}
+    seq created (pure ())
+'''
