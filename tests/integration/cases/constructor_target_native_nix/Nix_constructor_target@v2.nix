@@ -1,0 +1,4 @@
+let
+  Playlist = {};
+in
+Playlist
