@@ -1,0 +1,10 @@
+schema_version = 1
+summary = "JSON has no syntax for infinity, so a JSON value type built from a JSON\ndocument cannot carry one.\n\nJSON has no syntax for NaN, so a JSON value type built from a JSON\ndocument cannot carry one."
+exceptions = ["UnrepresentableSpecialFloatError"]
+option = "json_type"
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize"
+sources = ["[Infinity]", "[NaN]"]
+input_format = "json5"
