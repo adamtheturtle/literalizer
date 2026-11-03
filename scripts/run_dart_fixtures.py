@@ -148,7 +148,7 @@ def _ref_bindings() -> dict[Path, str]:
 def _constructor_bindings() -> dict[Path, str]:
     """Read constructor roots from their owning manifest metadata."""
     bindings: dict[Path, str] = {}
-    for case in constructor_binding_cases():
+    for case in constructor_binding_cases(cases_dir=_CASES_DIR):
         if case.lang_cls is not Dart or case.manifest is None:
             continue
         config = case.manifest.constructor
@@ -156,7 +156,11 @@ def _constructor_bindings() -> dict[Path, str]:
             msg = f"Missing constructor metadata for {case.name}."
             raise ValueError(msg)
         for version in Dart.VersionFormats:
-            golden = constructor_golden_path(case=case, version=version)
+            golden = constructor_golden_path(
+                case=case,
+                version=version,
+                fragments_dir=_CASES_DIR.parent / "constructor_targets",
+            )
             bindings[golden.resolve()] = config.variable_name
     return bindings
 
