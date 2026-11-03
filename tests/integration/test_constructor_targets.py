@@ -1,10 +1,8 @@
 """Golden-file coverage for constructor call targets.
 
-Two things are checked here: how each language spells a constructor as
-a call target, and what binding that call to a variable looks like.
-The bindings vary by call style and by variable modifier, so they are
-declared as cases and driven through the one runner below rather than
-written out a test body at a time.
+Complete constructor bindings check the target spelling alongside call
+styles and variable modifiers. Languages without a compiling binding
+retain a fragment snapshot of the target helper.
 """
 
 import dataclasses
@@ -34,6 +32,11 @@ from .language_specs import (
 
 _CONSTRUCTOR_NAME = "Playlist"
 _GOLDEN_DIR = Path(__file__).parent / "constructor_targets"
+_COMPILING_CONSTRUCTOR_LANGUAGES = {
+    case.lang_cls
+    for case in constructor_binding_cases()
+    if case.manifest is not None
+}
 
 
 @beartype
@@ -55,7 +58,11 @@ def _golden_path(
 
 @pytest.mark.parametrize(
     argnames="lang_cls",
-    argvalues=sorted_languages(),
+    argvalues=[
+        lang_cls
+        for lang_cls in sorted_languages()
+        if lang_cls not in _COMPILING_CONSTRUCTOR_LANGUAGES
+    ],
     ids=lambda lang_cls: lang_cls.__name__,
 )
 def test_constructor_targets_golden_file(
@@ -64,7 +71,7 @@ def test_constructor_targets_golden_file(
     file_regression: FileRegressionFixture,
     subtests: pytest.Subtests,
 ) -> None:
-    """Every language's constructor target helper is golden-checked."""
+    """Retain helper snapshots without compiling constructor bindings."""
     for version_format in lang_cls.VersionFormats:
         with subtests.test(version=version_format.name):
             spec = make_spec(
