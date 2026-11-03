@@ -155,7 +155,7 @@ def test_constructor_binding_golden_file(
                     target_function=language.format_constructor_target(
                         config.class_name,
                     ),
-                    parameter_names=[],
+                    parameter_names=config.parameter_names,
                     wrap_in_file=(
                         manifest is not None
                         and config.consumer_template is None
