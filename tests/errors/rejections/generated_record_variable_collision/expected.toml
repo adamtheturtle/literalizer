@@ -1,0 +1,17 @@
+# languages rejecting: 14; languages accepting: 0
+
+[ReservedVariableNameError]
+Cpp = "Cpp cannot use NewVariable name 'Record0': it is a reserved identifier"
+Crystal = "Crystal cannot use NewVariable name 'Record0': it is a reserved identifier"
+D = "D cannot use NewVariable name 'Record0': it is a reserved identifier"
+Go = "Go cannot use NewVariable name 'Record0': it is a reserved identifier"
+Java = "Java cannot use NewVariable name 'Record0': it is a reserved identifier"
+Kotlin = "Kotlin cannot use NewVariable name 'Record0': it is a reserved identifier"
+Nim = "Nim cannot use NewVariable name 'Record0': it is a reserved identifier"
+Odin = "Odin cannot use NewVariable name 'Record0': it is a reserved identifier"
+Python = "Python cannot use NewVariable name 'Record0': it is a reserved identifier"
+Rust = "Rust cannot use NewVariable name 'Record0': it is a reserved identifier"
+Scala = "Scala cannot use NewVariable name 'Record0': it is a reserved identifier"
+Swift = "Swift cannot use NewVariable name 'Record0': it is a reserved identifier"
+V = "V cannot use NewVariable name 'Record0': it is a reserved identifier"
+Zig = "Zig cannot use NewVariable name 'Record0': it is a reserved identifier"

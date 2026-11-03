@@ -463,6 +463,7 @@ class CallSpec(  # noqa: NOD001
     include_delimiters: bool = True
     variable_form: VariableFormName | None = None
     variable_name: str = "my_data"
+    record_variable_index: Annotated[int, Field(ge=0)] | None = None
     kwargs: Annotated[tuple[RejectionKwarg, ...], Field(strict=False)] = Field(
         default_factory=_no_kwargs
     )
