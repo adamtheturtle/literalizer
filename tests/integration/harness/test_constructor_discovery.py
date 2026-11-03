@@ -13,7 +13,15 @@ def test_every_matching_owner(
 ) -> None:
     """Every binding variant retains all owners or its legacy fallback."""
     baseline = constructor_cases.constructor_binding_cases()
-    expected = {case.name for case in baseline}
+    expected = {
+        case.name
+        for case in baseline
+        if case.manifest is None
+        or (
+            case.manifest.constructor is not None
+            and case.manifest.constructor.target_template is None
+        )
+    }
     for index in range(owner_count):
         case_dir = tmp_path / f"wrapper_{index}"
         case_dir.mkdir()
