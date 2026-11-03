@@ -92,6 +92,7 @@ def build_json_type_variable_form_cases(
                 name = f"{json_variant.name}_final"
                 cases.append(
                     VariantCase(
+                        consumer_template=None,
                         apply_fixture_module_name=True,
                         expected_errors=(),
                         variant_name=name,
@@ -109,6 +110,7 @@ def build_json_type_variable_form_cases(
             name = f"{json_variant.name}_existing"
             cases.append(
                 VariantCase(
+                    consumer_template=None,
                     apply_fixture_module_name=True,
                     expected_errors=(),
                     variant_name=name,
@@ -152,6 +154,7 @@ def build_json_type_variable_form_cases(
             )
             cases.append(
                 VariantCase(
+                    consumer_template=None,
                     apply_fixture_module_name=True,
                     expected_errors=(),
                     variant_name=name,
@@ -200,6 +203,7 @@ def build_multiline_string_context_cases(
             name = f"{base_variant.name}{combined_suffix}"
             cases.append(
                 VariantCase(
+                    consumer_template=None,
                     apply_fixture_module_name=True,
                     expected_errors=(),
                     variant_name=name,
@@ -226,6 +230,7 @@ def build_multiline_string_context_cases(
             )
             cases.append(
                 VariantCase(
+                    consumer_template=None,
                     apply_fixture_module_name=True,
                     expected_errors=(),
                     variant_name=name,
@@ -331,6 +336,9 @@ def case_for_manifest_variant(
         case_dir_name=case_dir_name,
         variable_form=variable_form_for_context(context=context),
         pre_indent_level=context.pre_indent_level,
+        consumer_template=manifest_variant.consumer_templates.get(
+            variant.lang_cls
+        ),
         expected_errors=tuple(manifest_variant.expected_errors),
     )
 

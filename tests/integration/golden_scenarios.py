@@ -282,15 +282,7 @@ class GoldenRendering:
     initialize_variable: bool
     apply_fixture_module_name: bool
     skip: SkipPolicy
-
-    @property
-    def extension(self) -> str:
-        """Use text fixtures for deliberately unwrapped indented
-        fragments.
-        """
-        if self.render.pre_indent_level > 0 and not self.render.wrap_in_file:
-            return ".txt"
-        return self.lang_cls.extension
+    consumer_template: str | None
 
     @property
     def versions(self) -> tuple[enum.Enum, ...]:
@@ -329,6 +321,7 @@ def unprefixed_rendering(
 ) -> GoldenRendering:
     """Return a rendering needing no supporting preamble or initialization."""
     return GoldenRendering(
+        consumer_template=None,
         lang_cls=lang_cls,
         case_dir_name=case_dir_name,
         golden_name=golden_name,
@@ -432,6 +425,7 @@ def _default_module_name_renderings(
     manifests = case_manifests_by_name(cases_dir=_CASES_DIR)
     return tuple(
         GoldenRendering(
+            consumer_template=None,
             lang_cls=lang_cls,
             case_dir_name=case_name,
             golden_name=f"{lang_cls.__name__}_default_module_name",
@@ -577,6 +571,7 @@ def _variant_renderings(
                 ),
                 wrap_in_file=variant_case.variant.wrap_in_file,
             ),
+            consumer_template=variant_case.consumer_template,
             extra_preamble=variant_case.variant.extra_preamble,
             initialize_variable=variant_case.variant.initialize_variable,
             apply_fixture_module_name=variant_case.apply_fixture_module_name,

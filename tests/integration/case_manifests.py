@@ -366,6 +366,11 @@ class RenderContext(  # noqa: NOD001
         return substitutions
 
 
+def _empty_consumer_templates() -> dict[literalizer.LanguageCls, str]:
+    """Return native caller templates indexed by language class."""
+    return {}
+
+
 # Defaults stand in for omitted keys, as above.
 class ManifestVariant(  # noqa: NOD001
     BaseModel,
@@ -383,6 +388,10 @@ class ManifestVariant(  # noqa: NOD001
     # Keep explicit module-name options instead of the compiler fixture name.
     apply_fixture_module_name: bool = True
     wrap_in_file: bool = True
+    # Native caller syntax around an unwrapped result, by language.
+    consumer_templates: dict[ManifestLanguage, str] = Field(
+        default_factory=_empty_consumer_templates
+    )
     # Some shape-mapping cases deliberately never use the external type.
     include_extra_preamble: bool = True
     context: RenderContext = Field(default_factory=RenderContext)

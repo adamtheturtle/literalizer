@@ -35,9 +35,9 @@ def _binding_name(*, variable_form: VariableForm | None) -> str:
 
 
 @beartype
-def _literalize_bindings() -> dict[Path, str]:
-    """Read regular rendering bindings from the golden registry."""
-    bindings: dict[Path, str] = {}
+def _literalize_bindings() -> dict[Path, str | None]:
+    """Read roots, using None for native programs with a main function."""
+    bindings: dict[Path, str | None] = {}
     for group in golden_groups():
         for rendering in group.renderings:
             if rendering.lang_cls is not Dart:
@@ -53,8 +53,12 @@ def _literalize_bindings() -> dict[Path, str]:
                     lang_cls=Dart,
                     version=version,
                 )
-                bindings[golden.resolve()] = _binding_name(
-                    variable_form=rendering.render.variable_form
+                bindings[golden.resolve()] = (
+                    None
+                    if rendering.consumer_template is not None
+                    else _binding_name(
+                        variable_form=rendering.render.variable_form
+                    )
                 )
     return bindings
 
@@ -158,7 +162,7 @@ def _constructor_bindings() -> dict[Path, str]:
 
 
 @beartype
-def dart_fixture_bindings() -> dict[Path, str]:
+def dart_fixture_bindings() -> dict[Path, str | None]:
     """Read bindings from the same registries that own golden files."""
     return (
         _literalize_bindings()
@@ -181,10 +185,13 @@ def _fresh_getter_name(*, source: str) -> str:
 
 @beartype
 def write_dart_driver(*, fixtures: Sequence[Path], target: Path) -> None:
-    """Copy owned fixtures and reference their actual top-level roots."""
+    """Copy fixtures and invoke native programs or read top-level
+    roots.
+    """
     bindings = dart_fixture_bindings()
     imports: list[str] = []
     roots: list[str] = []
+    entrypoints: list[str] = []
     for index, fixture in enumerate(iterable=fixtures):
         try:
             binding = bindings[fixture.resolve()]
@@ -193,13 +200,17 @@ def write_dart_driver(*, fixtures: Sequence[Path], target: Path) -> None:
             raise ValueError(msg) from exc
         copied_name = f"fixture_{index}.dart"
         source = fixture.read_bytes()
-        getter = _fresh_getter_name(source=source.decode(encoding="utf-8"))
-        accessor = f"\nget {getter} => {binding};\n"
+        accessor = ""
+        if binding is None:
+            entrypoints.append(f"  f{index}.main();")
+        else:
+            getter = _fresh_getter_name(source=source.decode(encoding="utf-8"))
+            accessor = f"\nget {getter} => {binding};\n"
+            roots.append(f"    f{index}.{getter},")
         _ = (target / copied_name).write_bytes(
             data=source + accessor.encode(encoding="utf-8")
         )
         imports.append(f'import "{copied_name}" as f{index};')
-        roots.append(f"    f{index}.{getter},")
         _ = sys.stdout.write(f"{copied_name} <- {fixture}\n")
     _ = sys.stdout.flush()
     # The lower version bound selects the declared Dart language grammar.
@@ -212,10 +223,14 @@ def write_dart_driver(*, fixtures: Sequence[Path], target: Path) -> None:
             [
                 *imports,
                 "void main() {",
+                *entrypoints,
                 "  final sink = <Object?>[",
                 *roots,
                 "  ];",
-                "  if (sink.isEmpty) throw StateError('unreachable');",
+                (
+                    "  if (sink.length != "
+                    f"{len(roots)}) throw StateError('unreachable');"
+                ),
                 "}",
                 "",
             ]

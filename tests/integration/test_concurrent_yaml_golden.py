@@ -55,7 +55,7 @@ def test_concurrent_yaml_golden_files(cases_dir: Path) -> None:
             path = make_golden_path(
                 parent=rendering.golden_parent,
                 name=rendering.golden_name,
-                extension=rendering.extension,
+                extension=rendering.lang_cls.extension,
                 lang_cls=rendering.lang_cls,
                 version=version,
             )

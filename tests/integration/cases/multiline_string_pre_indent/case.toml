@@ -1,7 +1,7 @@
 schema_version = 1
 input = "input.json"
 owner = "variant"
-# Original regression: Python's pre-indented assignment is intentionally checked as an unwrapped text fragment.
+# Preserve the unwrapped assignment verbatim inside a native caller scope.
 
 [[variants]]
 axis = "multiline_string"
@@ -10,3 +10,120 @@ wrap_in_file = false
 
 [variants.context]
 pre_indent_level = 1
+
+# Each native caller checks the complete source string at runtime.
+[variants.consumer_templates]
+Cpp = '''#include <string>
+{preamble}
+int main() {{
+{code}
+    return std::string(my_data) == "\nfirst line\n  indented\n\nlast line\n" ? 0 : 1;
+}}
+'''
+
+Crystal = '''{preamble}
+begin
+{code}
+    raise "changed multiline string" unless my_data == "\nfirst line\n  indented\n\nlast line\n"
+end
+'''
+
+D = '''{preamble}
+void main() {{
+{code}
+    assert(my_data.str == "\nfirst line\n  indented\n\nlast line\n");
+}}
+'''
+
+Dart = '''{preamble}
+void main() {{
+{code}
+    if (my_data != "\nfirst line\n  indented\n\nlast line\n") {{ throw StateError("changed multiline string"); }}
+}}
+'''
+
+Go = '''{preamble}
+func main() {{
+{code}
+    if my_data != "\nfirst line\n  indented\n\nlast line\n" {{ panic("changed multiline string") }}
+}}
+'''
+
+Groovy = '''{preamble}
+if (true) {{
+{code}
+    assert my_data == "\nfirst line\n  indented\n\nlast line\n"
+}}
+'''
+
+Java = '''{preamble}
+class Main {{
+    public static void main() {{
+{code}
+        if (!my_data.equals("\nfirst line\n  indented\n\nlast line\n")) {{ throw new AssertionError(); }}
+    }}
+}}
+'''
+
+JavaScript = '''{preamble}
+{{
+{code}
+    if (my_data !== "\nfirst line\n  indented\n\nlast line\n") {{ throw new Error("changed multiline string"); }}
+}}
+'''
+
+Kotlin = '''{preamble}
+run {{
+{code}
+    check(my_data == "\nfirst line\n  indented\n\nlast line\n")
+}}
+'''
+
+Lua = '''{preamble}
+do
+{code}
+    assert(my_data == "\nfirst line\n  indented\n\nlast line\n")
+end
+'''
+
+Nim = '''{preamble}
+block:
+{code}
+    doAssert my_data.getStr == "\nfirst line\n  indented\n\nlast line\n"
+'''
+
+Python = '''{preamble}
+if True:
+{code}
+    assert my_data == "\nfirst line\n  indented\n\nlast line\n"
+'''
+
+Rust = '''{preamble}
+fn main() {{
+{code}
+    assert_eq!(my_data, "\nfirst line\n  indented\n\nlast line\n");
+}}
+'''
+
+Scala = '''object {module_name} {{
+{preamble}
+    def main(args: Array[String]): Unit = {{
+{code}
+        assert(my_data == "\nfirst line\n  indented\n\nlast line\n")
+    }}
+}}
+'''
+
+Swift = '''{preamble}
+do {{
+{code}
+    precondition(my_data == "\nfirst line\n  indented\n\nlast line\n")
+}}
+'''
+
+TypeScript = '''{preamble}
+{{
+{code}
+    if (my_data !== "\nfirst line\n  indented\n\nlast line\n") {{ throw new Error("changed multiline string"); }}
+}}
+'''
