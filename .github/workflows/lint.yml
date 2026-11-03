@@ -2540,6 +2540,9 @@ jobs:
   lint-scala:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      # Mirror app-descriptor repositories as well as compiler dependencies.
+      COURSIER_MIRRORS: ${{ github.workspace }}/.github/coursier-mirror.properties
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2550,6 +2553,9 @@ jobs:
           && test -s /tmp/files-to-lint
       - name: Cache Coursier artifacts
         uses: coursier/cache-action@v9
+        with:
+          # Refresh the cache when tool versions or repositories change.
+          extraFiles: '[".github/workflows/lint.yml", ".github/coursier-mirror.properties"]'
       - name: Install scala-cli
         timeout-minutes: 10
         uses: VirtusLab/scala-cli-setup@v1.18.0
