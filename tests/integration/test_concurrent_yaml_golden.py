@@ -32,8 +32,8 @@ class _ConcurrentGolden:
 def test_concurrent_yaml_golden_files(cases_dir: Path) -> None:
     """Preserve values and comments across 200 parses on sixteen threads.
 
-    Compare each result with the ordinary renderer's existing golden
-    file to detect crossed values or comment streams (issue #4699).
+    Compare each result with the existing golden file for ordinary
+    rendering to detect crossed values or comment streams (issue #4699).
     """
     names = set(
         case_dir_names_for_role(cases_dir=cases_dir, role=CONCURRENT_YAML_ROLE)
