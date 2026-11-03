@@ -1,0 +1,7 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "metadata_field", field = "language_id", value = "norg"}]
+
+[constructor]
+class_name = "Playlist"
+target_template = "* {target}\n"
