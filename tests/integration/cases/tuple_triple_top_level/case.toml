@@ -12,3 +12,13 @@ axis = "heterogeneous_value_union_name"
 
 [[variants]]
 axis = "heterogeneous_value_variant_name"
+
+# Check explicit root types and sequence representations for heterogeneous pair and triple documents.
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"
+
+[[variants]]
+axis = "record_eager_field_annotations"
