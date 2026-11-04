@@ -9,7 +9,7 @@ import math
 import re
 import sys
 import threading
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Iterable, Mapping
 from typing import Protocol, assert_never, runtime_checkable
 
 import json5_document
@@ -22,6 +22,7 @@ from ruamel.yaml.comments import (
     CommentedSet,
     TaggedScalar,
 )
+from ruamel.yaml.constructor import RoundTripConstructor, SafeConstructor
 from ruamel.yaml.error import YAMLError
 from ruamel.yaml.events import (
     AliasEvent,
@@ -93,20 +94,23 @@ class _YamlScalarNode(Protocol):
     value: str
 
 
+@runtime_checkable
 class _YamlConstructor(Protocol):
-    """Constructor operations Literalizer configures on a YAML parser."""
+    """The integer dispatch table exposed by a YAML constructor class."""
 
-    yaml_constructors: Mapping[
-        str,
-        Callable[[object, _YamlScalarNode], object],
-    ]
+    yaml_constructors: Mapping[str | None, object]
 
-    def add_constructor(
-        self,
-        tag: str,
-        constructor: Callable[[object, _YamlScalarNode], object],
-    ) -> None:
-        """Register *constructor* for *tag*."""
+
+@runtime_checkable
+class _YamlIntegerConstructor(Protocol):
+    """The two-argument integer handler stored in a constructor table."""
+
+    def __call__(
+        self, constructor: object, node: _YamlScalarNode, /
+    ) -> object:
+        """Construct one integer scalar through ruamel's original
+        handler.
+        """
         raise NotImplementedError
 
 
@@ -114,7 +118,7 @@ class _YamlConstructor(Protocol):
 class _Yaml(Protocol):
     """The ruamel parsing operations used by Literalizer."""
 
-    constructor: _YamlConstructor
+    Constructor: type[SafeConstructor]
 
     def scan(self, stream: object) -> Iterable[object]:
         """Yield tokens from *stream*."""
@@ -733,12 +737,19 @@ def _parse_json_document(
     )
 
 
+_YAML_INT_TAG = "tag:yaml.org,2002:int"
+
+
 @beartype
-def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: _Yaml) -> None:
-    """Teach a ruamel loader to retain signed integer zero as ``-0.0``."""
-    tag = "tag:yaml.org,2002:int"
-    constructor = ruamel_yaml.constructor
-    original = constructor.yaml_constructors[tag]
+def _signed_zero_yaml_constructors(
+    *, constructor: object
+) -> dict[str | None, object]:
+    """Copy a constructor table, retaining signed integer zero."""
+    if not isinstance(constructor, _YamlConstructor):
+        raise NotImplementedError
+    original = constructor.yaml_constructors[_YAML_INT_TAG]
+    if not isinstance(original, _YamlIntegerConstructor):
+        raise NotImplementedError
 
     @beartype
     def _construct(constructor_obj: object, node: _YamlScalarNode) -> object:
@@ -754,9 +765,36 @@ def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: _Yaml) -> None:
         reject_excessive_decimal_token(token=value)
         return original(constructor_obj, node)
 
-    constructor.add_constructor(
-        tag=tag,
-        constructor=_construct,
+    return {**constructor.yaml_constructors, _YAML_INT_TAG: _construct}
+
+
+class _SignedZeroSafeConstructor(SafeConstructor):
+    """Safe loader with its own signed-zero integer dispatch table."""
+
+
+_SignedZeroSafeConstructor.yaml_constructors = _signed_zero_yaml_constructors(
+    constructor=SafeConstructor
+)
+
+
+class _SignedZeroRoundTripConstructor(RoundTripConstructor):
+    """Round-trip loader with its own signed-zero integer dispatch
+    table.
+    """
+
+
+_SignedZeroRoundTripConstructor.yaml_constructors = (
+    _signed_zero_yaml_constructors(constructor=RoundTripConstructor)
+)
+
+
+@beartype
+def _configure_negative_zero_yaml_constructor(*, ruamel_yaml: _Yaml) -> None:
+    """Select the private constructor matching this loader's parser."""
+    ruamel_yaml.Constructor = (
+        _SignedZeroRoundTripConstructor
+        if issubclass(ruamel_yaml.Constructor, RoundTripConstructor)
+        else _SignedZeroSafeConstructor
     )
 
 

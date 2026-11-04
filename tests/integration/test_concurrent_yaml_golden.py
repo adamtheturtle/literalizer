@@ -30,7 +30,7 @@ class _ConcurrentGolden:
 
 
 def test_concurrent_yaml_golden_files(cases_dir: Path) -> None:
-    """Preserve values and comments across 200 parses on sixteen threads.
+    """Preserve values and comments across shared and fresh threads.
 
     Compare each result with the existing golden file for ordinary
     rendering to detect crossed values or comment streams (issue #4699).
@@ -87,3 +87,8 @@ def test_concurrent_yaml_golden_files(cases_dir: Path) -> None:
 
     with ThreadPoolExecutor(max_workers=16) as pool:
         _ = tuple(pool.map(render, range(200)))
+
+    # Repeated thread lifetimes must not accumulate global constructors.
+    for index in range(1024):
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            pool.submit(render, index).result()
