@@ -146,7 +146,12 @@ def _operand(
     if "input" in fields:
         _keys(fields, {"input"}, {"input"})
         index = fields["input"]
-        if type(index) is not int or index < 0 or index >= len(values):
+        if (
+            not isinstance(index, int)
+            or isinstance(index, bool)
+            or index < 0
+            or index >= len(values)
+        ):
             msg = "Native input index is outside the source row"
             raise NativeCallError(msg)
         return NativeLiteral(value=values[index])
@@ -155,7 +160,7 @@ def _operand(
         if fields["zipped"] is not True or zipped is _MISSING:
             msg = "Native zipped operand requires a companion value"
             raise NativeCallError(msg)
-        # Literal values are validated by the upstream materializer.
+        # The upstream literal conversion validates these values.
         return NativeLiteral(value=_value(zipped))
     if "literal" in fields:
         _keys(fields, {"literal"}, {"literal"})

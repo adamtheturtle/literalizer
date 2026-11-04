@@ -1,4 +1,4 @@
-"""Compile-ready goldens for caller-owned native message signatures."""
+"""Executable fixtures for caller-owned native message signatures."""
 
 import enum
 import json

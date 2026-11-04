@@ -1,7 +1,7 @@
 """Structured, explicitly typed native invocation expressions.
 
-Callees are caller-owned: native renderers never invent stub receivers or
-infer a callee's signature from its input values.
+Called functions and classes belong to the caller: native output never
+invents stub receivers or infers signatures from input values.
 """
 
 from __future__ import annotations
@@ -435,7 +435,8 @@ def _objc_literal(
         return "YES" if value else "NO"
     if (
         expected in {ScalarType.INTEGER, ScalarType.UNSIGNED}
-        and type(value) is int
+        and isinstance(value, int)
+        and not isinstance(value, bool)
     ):
         minimum = 0 if expected is ScalarType.UNSIGNED else -(1 << 63)
         maximum = (
@@ -462,7 +463,7 @@ def _objc_argument(
     expected: NativeType,
     /,
 ) -> str:
-    """Render an operand in its callee's declared type context."""
+    """Render an operand using the declared parameter type."""
     _ = objective_c_type(expected)
     if expected is ScalarType.VOID:
         msg = "A parameter cannot have void type"
