@@ -3,81 +3,12 @@ name: Release
 
 on: workflow_dispatch
 
+permissions: {}
+
 jobs:
-  build:
-    name: Publish a release
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    environment: release
-
-    permissions:
-      id-token: write
-      contents: write
-
+  runner-probe:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
-        with:
-          token: ${{ secrets.RELEASE_PAT }}
-          fetch-depth: 0
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v10.3.2
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
-
-      - name: Calver calculate version
-        uses: StephaneBour/actions-calver@master
-        id: calver
-        with:
-          date_format: '%Y.%m.%d'
-          release: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Assemble native Markdown release notes
-        env:
-          RELEASE: ${{ steps.calver.outputs.release }}
-        run: |
-          uv run --group=release towncrier build --yes --version "$RELEASE"
-          uv run --group=dev snapper --native --max-width 0 --in-place "docs/source/changelog/$RELEASE.md"
-          cp "docs/source/changelog/$RELEASE.md" release-notes.md
-
-      - uses: stefanzweifel/git-auto-commit-action@v7
-        id: commit
-        with:
-          commit_message: Bump CHANGELOG
-          file_pattern: CHANGELOG.md docs/source/changelog newsfragments
-          skip_dirty_check: true
-
-      - name: Bump version and push tag
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v7
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          custom_tag: ${{ steps.calver.outputs.release }}
-          tag_prefix: ''
-          commit_sha: ${{ steps.commit.outputs.commit_hash }}
-
-      - name: Create a GitHub release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ steps.tag_version.outputs.new_tag }}
-          makeLatest: true
-          name: Release ${{ steps.tag_version.outputs.new_tag }}
-          bodyFile: release-notes.md
-
-      - name: Build a binary wheel and a source tarball
-        env:
-          NEW_TAG: ${{ steps.tag_version.outputs.new_tag }}
-        run: |
-          git fetch --tags
-          git checkout "$NEW_TAG"
-          uv build --sdist --wheel --out-dir dist/
-          uv run --group=release check-wheel-contents dist/*.whl
-
-      - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          verbose: true
+      - name: Verify ARM runner availability
+        run: uname -m
