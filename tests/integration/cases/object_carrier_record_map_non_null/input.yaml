@@ -1,0 +1,3 @@
+---
+- payload: {flag: true}
+- payload: {text: ""}

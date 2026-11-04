@@ -1,4 +1,4 @@
-var my_data = new object?[] {
+var my_data = new object[] {
     new object?[] {(object?)null},
     new object?[] {}
 };

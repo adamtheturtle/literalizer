@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System;
-var my_data = new Dictionary<string, object?> {
+var my_data = new Dictionary<string, object> {
     //
     // document heading
     // before the first entry
@@ -24,7 +24,7 @@ var my_data = new Dictionary<string, object?> {
     // after the root
     // after the document
 };
-my_data = new Dictionary<string, object?> {
+my_data = new Dictionary<string, object> {
     //
     // document heading
     // before the first entry

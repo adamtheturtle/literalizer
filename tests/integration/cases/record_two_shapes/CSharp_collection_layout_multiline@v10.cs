@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var my_data = new Dictionary<string, object?> {
+var my_data = new Dictionary<string, object> {
     ["metrics"] = new Dictionary<string, int> {
         ["count"] = 100,
         ["rate"] = 50

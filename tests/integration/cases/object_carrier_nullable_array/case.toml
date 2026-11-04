@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "variant"
+gates = [{kind = "metadata_field", field = "language_id", value = "csharp"}]
+
+[[variants]]
+axis = "csharp_object_carrier"
+wrap_in_file = false
+
+[variants.consumer_templates]
+CSharp = '''{preamble}
+{code}
+object?[] values = my_data;
+if (values.Length != 2 || values[0] is not true || values[1] is not null) {{ throw new System.InvalidOperationException("changed collection values"); }}
+'''

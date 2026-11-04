@@ -5,11 +5,11 @@ var Shared = new int[] {
     2
 };
 var Second = "two";
-var my_data = new object?[] {
+var my_data = new object[] {
     Shared,
     Second
 };
-my_data = new object?[] {
+my_data = new object[] {
     Shared,
     Second
 };

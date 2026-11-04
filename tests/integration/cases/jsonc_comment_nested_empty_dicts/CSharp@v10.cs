@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-var my_data = new Dictionary<string, object?> {
+var my_data = new Dictionary<string, object> {
     // outer heading
     // first empty
     ["a"] = new Dictionary<string, object?> {},

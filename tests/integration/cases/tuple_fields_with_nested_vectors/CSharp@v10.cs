@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System;
-var my_data = new Dictionary<string, object?> {
+var my_data = new Dictionary<string, object> {
     ["lint"] = (2, ValueTuple.Create()),
     ["test"] = (5, ValueTuple.Create("compile")),
     ["package"] = (7, ("link", "test"))
