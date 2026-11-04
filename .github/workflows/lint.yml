@@ -2101,7 +2101,7 @@ jobs:
           scripts/retry.sh sudo apt-get install -y libcjson-dev
       - name: Install GnuCOBOL
         timeout-minutes: 10
-        uses: fabasoad/setup-cobol-action@v1.6.3
+        uses: fabasoad/setup-cobol-action@v1.7.0
         with:
           version: ${{ env.GNUCOBOL_VERSION }}
       - name: Install uv
