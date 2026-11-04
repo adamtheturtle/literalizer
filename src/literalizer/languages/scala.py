@@ -256,7 +256,7 @@ def _format_scala_bigint_literal(value: int) -> str:
 def _format_datetime_scala(value: dt.datetime) -> str:
     """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call.
 
-    Preserve the instant in UTC when the JVM cannot represent its
+    Preserve the instant in UTC when Java cannot represent its
     fractional or wider-than-eighteen-hour offset.
     """
     offset = value.utcoffset()
