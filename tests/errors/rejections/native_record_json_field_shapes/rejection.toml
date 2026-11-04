@@ -1,18 +1,10 @@
 schema_version = 1
-summary = "Exercise invalid field names and incompatible field shapes in native records."
+summary = "Exercise invalid field names and incompatible field shapes in native records.\n\nExercise empty and deeply nested list fields in native records.\n\nUnsupported shapes fail before invalid SML is emitted.\n\nUnsupported shapes fail before producing invalid code.\n\nExercise JSON object keys outside the native record field grammar."
 exceptions = ["UnrepresentableInputError"]
 
 [call]
 api = "literalize"
-sources = [
-    '{"not-a-field": 1}',
-    '{"if": 1}',
-    '{"Bad": 1}',
-    '{}',
-    '{"x": null}',
-    '[{"x": 1}, {"x": "one"}]',
-    '[{"x": 1}, {"y": 1}]',
-]
+sources = ["{\"not-a-field\": 1}", "{\"if\": 1}", "{\"Bad\": 1}", "{}", "{\"x\": null}", "[{\"x\": 1}, {\"x\": \"one\"}]", "[{\"x\": 1}, {\"y\": 1}]", "{\"bad-key\":1}", "{\"case\":1}", "{\"x\":null}", "{\"x\":[]}", "{\"x\":[[{\"y\":1}]]}", "{\"val\":1}", "[{\"x\":1},{\"x\":\"one\"}]", "[{\"x\":1},{\"y\":1}]", "[1,\"one\"]", "{\"x\":2147483648}", "{\"case\": 1}", "[1, 2147483648]", "{\"outer\": {\"Bad\": 1}}"]
 input_format = "json"
 variable_form = "none"
 kwargs = [
