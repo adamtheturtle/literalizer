@@ -1,8 +1,8 @@
 schema_version = 1
-summary = "Malformed JSON5 and duplicate object keys raise typed parse errors."
+summary = "Malformed JSON5 and duplicate object keys raise typed parse errors.\n\nTwo JSON5 keys spelled differently -- one as the astral character,\none as its surrogate escape pair -- name the same member once the\npair is combined, which the JSON parser calls a duplicate (#4519)."
 exceptions = ["JSON5ParseError"]
 
 [call]
 api = "literalize"
-sources = ["{invalid", "{a: 1, a: 2}", "{outer: {a: 1, a: 2}}"]
+sources = ["{invalid", "{a: 1, a: 2}", "{outer: {a: 1, a: 2}}", "{ \"😀\": 1, \"\\ud83d\\ude00\": 2 }"]
 input_format = "json5"
