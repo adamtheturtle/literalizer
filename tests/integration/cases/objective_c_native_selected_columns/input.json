@@ -1,0 +1,45 @@
+[
+  {
+    "rows": [
+      [
+        "first",
+        true
+      ],
+      [
+        42,
+        false
+      ]
+    ],
+    "invocation": {
+      "function": "consume",
+      "parameter-types": [
+        "id"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "input": 0
+        }
+      ]
+    },
+    "expected_metadata": {
+      "source_data": [
+        [
+          "first"
+        ],
+        [
+          42
+        ]
+      ],
+      "required_types": [
+        "str",
+        "int"
+      ],
+      "excluded_types": [
+        "bool"
+      ],
+      "is_call_statement": true,
+      "uses_existing_variable": false
+    }
+  }
+]
