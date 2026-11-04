@@ -1,0 +1,76 @@
+# Invalid test-owned language metadata and expected diagnostics.
+
+[[cases]]
+name = "unsupported_schema_version"
+contents = '''schema_version = 2
+'''
+message = "schema_version"
+
+[[cases]]
+name = "schema_version_must_be_integer"
+contents = '''schema_version = "1"
+'''
+message = "Input should be 1"
+
+[[cases]]
+name = "unknown_top_level_field"
+contents = '''schema_version = 1
+extra = true
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "unknown_golden_field"
+contents = '''schema_version = 1
+[golden]
+mystery = true
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "unknown_record_variant"
+contents = '''schema_version = 1
+[variants]
+record = ["made_up"]
+'''
+message = "Input should be 'empty_dict_field'"
+
+[[cases]]
+name = "duplicate_record_variant"
+contents = '''schema_version = 1
+[variants]
+record = ["keyword_field", "keyword_field"]
+'''
+message = "record contains a duplicate entry"
+
+[[cases]]
+name = "unknown_map_widening_policy"
+contents = '''schema_version = 1
+[variants]
+nested_map_widening = "sometimes"
+'''
+message = "Input should be 'none'"
+
+[[cases]]
+name = "empty_layout_category"
+contents = '''schema_version = 1
+[golden]
+collection_layout_category = ""
+'''
+message = "at least 1 character"
+
+[[cases]]
+name = "empty_sample_type_name"
+contents = '''schema_version = 1
+[variants.non_default_kwargs]
+type_name = ""
+'''
+message = "at least 1 character"
+
+[[cases]]
+name = "non_string_declaration_sequence_override"
+contents = '''schema_version = 1
+[variants.declaration_style_sequence_format_overrides]
+CONST = 3
+'''
+message = "Input should be a valid string"

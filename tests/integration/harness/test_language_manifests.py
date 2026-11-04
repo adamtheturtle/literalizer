@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from pydantic import BaseModel, TypeAdapter
 
 from tests.integration.language_metadata import (
     LANGUAGES_DIR,
@@ -12,6 +13,26 @@ from tests.integration.language_metadata import (
     load_language_metadata,
 )
 from tests.integration.language_specs import make_spec, sorted_languages
+from tests.toml_cases import load_toml_cases
+
+
+class _MetadataErrorCase(BaseModel, extra="forbid", frozen=True):
+    """One named manifest-owned regression scenario."""
+
+    name: str
+    contents: str
+    message: str
+
+
+class _Cases(BaseModel, extra="forbid", frozen=True):
+    """The complete declarative regression corpus."""
+
+    cases: tuple[_MetadataErrorCase, ...]
+
+
+_CASES = TypeAdapter(type=_Cases).validate_python(
+    load_toml_cases(name="language_metadata_validation")
+)
 
 _DEFAULT_TYPE_CAPABILITY_FIELDS = (
     "default_set_element_type",
@@ -29,71 +50,18 @@ def _write_metadata(*, tmp_path: Path, contents: str) -> Path:
 
 
 @pytest.mark.parametrize(
-    argnames=("contents", "message"),
-    argvalues=[
-        ("schema_version = 2\n", "schema_version"),
-        ('schema_version = "1"\n', "Input should be 1"),
-        (
-            "schema_version = 1\nextra = true\n",
-            "Extra inputs are not permitted",
-        ),
-        (
-            "schema_version = 1\n[golden]\nmystery = true\n",
-            "Extra inputs are not permitted",
-        ),
-        (
-            'schema_version = 1\n[variants]\nrecord = ["made_up"]\n',
-            "Input should be 'empty_dict_field'",
-        ),
-        (
-            (
-                "schema_version = 1\n[variants]\n"
-                'record = ["keyword_field", "keyword_field"]\n'
-            ),
-            "record contains a duplicate entry",
-        ),
-        (
-            (
-                "schema_version = 1\n[variants]\n"
-                'nested_map_widening = "sometimes"\n'
-            ),
-            "Input should be 'none'",
-        ),
-        (
-            'schema_version = 1\n[golden]\ncollection_layout_category = ""\n',
-            "at least 1 character",
-        ),
-        (
-            (
-                "schema_version = 1\n[variants.non_default_kwargs]\n"
-                'type_name = ""\n'
-            ),
-            "at least 1 character",
-        ),
-        (
-            (
-                "schema_version = 1\n"
-                "[variants.declaration_style_sequence_format_overrides]\n"
-                "CONST = 3\n"
-            ),
-            "Input should be a valid string",
-        ),
-    ],
+    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
 )
 def test_invalid_metadata_is_actionable(
-    tmp_path: Path,
-    contents: str,
-    message: str,
+    tmp_path: Path, case: _MetadataErrorCase
 ) -> None:
     """Invalid schema data reports the file and the specific problem."""
-    languages_dir = _write_metadata(tmp_path=tmp_path, contents=contents)
+    languages_dir = _write_metadata(tmp_path=tmp_path, contents=case.contents)
     with pytest.raises(
-        expected_exception=LanguageMetadataError,
-        match=message,
+        expected_exception=LanguageMetadataError, match=case.message
     ):
         _ = load_language_metadata(
-            languages_dir=languages_dir,
-            language_id="example",
+            languages_dir=languages_dir, language_id="example"
         )
 
 
