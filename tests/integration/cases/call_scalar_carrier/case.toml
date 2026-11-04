@@ -21,3 +21,10 @@ axis = "cpp14_tuple_carrier_name"
 
 [[call.variants]]
 axis = "cpp14_heterogeneous_strategy_record"
+
+# Keep synthetic return carriers independent of scalar argument types across explicit annotations and compact or multiline call layouts.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
