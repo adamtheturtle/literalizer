@@ -1,5 +1,4 @@
 #include <array>
-#include <initializer_list>
 #include <variant>
 template <typename... Args> auto f(Args...) { return 0; }
 int main() {

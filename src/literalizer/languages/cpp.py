@@ -5391,7 +5391,11 @@ class Cpp(metaclass=LanguageCls):
             if isinstance(initializer_type, _CppTypeDependencies)
             else frozenset[str]().union(
                 *(
-                    self._native_argument_headers(value, argument_types)
+                    self._native_argument_headers(
+                        value,
+                        argument_types,
+                        is_call_argument=isinstance(data, CallPreambleData),
+                    )
                     for value in values
                 )
             )
@@ -5400,14 +5404,6 @@ class Cpp(metaclass=LanguageCls):
             *(_cpp_type_headers(entry) for entry in declarations)
         )
         if isinstance(data, CallPreambleData):
-            value_headers |= frozenset[str]().union(
-                *(
-                    _cpp_type_headers(type_name)
-                    for value in values
-                    if (type_name := self._call_array_initializer_type(value))
-                    is not None
-                )
-            )
             # Calls can widen the same container parameter across rows.
             # The row and argument lists themselves are not C++ vectors.
             value_headers |= frozenset[str]().union(
@@ -5438,10 +5434,17 @@ class Cpp(metaclass=LanguageCls):
         )
 
     def _native_argument_headers(
-        self, value: Value, argument_types: Mapping[int, str | None], /
+        self,
+        value: Value,
+        argument_types: Mapping[int, str | None],
+        /,
+        *,
+        is_call_argument: bool,
     ) -> frozenset[str]:
         """Prefer the type actually selected for an opaque argument."""
         type_name = argument_types.get(id(value))
+        if type_name is None and is_call_argument:
+            type_name = self._call_array_initializer_type(value)
         if type_name is not None:
             return _cpp_type_headers(type_name)
         return self._native_value_headers(value)

@@ -1,5 +1,4 @@
 #include <array>
-#include <initializer_list>
 #include <variant>
 auto f(auto...) { return 0; }
 int main() {

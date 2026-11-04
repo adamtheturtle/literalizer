@@ -1,5 +1,4 @@
 #include <array>
-#include <initializer_list>
 #include <cstddef>
 #include <memory>
 #include <string>
