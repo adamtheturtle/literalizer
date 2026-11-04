@@ -832,7 +832,7 @@ def neutralize_inline_comment(
     the comment sits beside (issue #4466).  A comment with a closing
     delimiter ends where that delimiter says, so it needs no guard.
     """
-    escaped = neutralize_comment_terminator(
+    escaped = _neutralize_comment_terminator(
         text=text,
         comment_prefix=comment_prefix,
         comment_suffix=comment_suffix,
@@ -877,7 +877,7 @@ def _mark_code_points(*, text: str, characters: str) -> str:
 
 
 @beartype
-def neutralize_comment_terminator(
+def _neutralize_comment_terminator(
     *,
     text: str,
     comment_prefix: str,
@@ -1155,7 +1155,7 @@ def literalize_scalar_comments(
 
 
 @beartype
-def literalize_yaml_collection(
+def _literalize_yaml_collection(
     *,
     ctx: YamlCollectionContext,
 ) -> str:
@@ -1270,7 +1270,7 @@ def apply_collection_comments(
         comment_suffix=comment_suffix,
         comment_line_prefix=comment_line_prefix,
     )
-    return literalize_yaml_collection(ctx=ctx)
+    return _literalize_yaml_collection(ctx=ctx)
 
 
 @beartype
