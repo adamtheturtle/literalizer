@@ -10,3 +10,13 @@ axis = "nested_tuple_strategy"
 axis = "nested_tuple_strategy"
 suffix = "_multiline"
 context = { collection_layout = "multiline" }
+
+# Check nominal record alternatives for sibling tuple fields whose inferred element types conflict.
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"
+
+[[variants]]
+axis = "record_eager_field_annotations"
