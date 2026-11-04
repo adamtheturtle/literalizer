@@ -4395,7 +4395,38 @@ class Cpp(metaclass=LanguageCls):
             return _format_cpp_json_inline_call_arg
         if self._json_type_active:
             return _format_cpp_json_call_arg
-        return identity_call_arg
+        if not self._type_ctx.sequence_is_array:
+            return identity_call_arg
+
+        @beartype
+        def _formatter(raw_value: Value, formatted: str) -> str:
+            """Give a fallback array initializer its deducible type."""
+            type_name = self._call_array_initializer_type(raw_value)
+            if type_name is None:
+                return formatted
+            return f"{type_name}{formatted}"
+
+        return _formatter
+
+    def _call_array_initializer_type(self, value: Value, /) -> str | None:
+        """Name a native array argument whose opener has no type."""
+        if not self._type_ctx.sequence_is_array or not isinstance(value, list):
+            return None
+        if (
+            _cpp_array_type(items=value, type_ctx=self._type_ctx) is not None
+            or (self._tuple_strategy_active and is_tuple_eligible(value=value))
+            or _cpp_nested_record_sequence_type(
+                value=value,
+                record_name_for_value=self._type_ctx.record_name_for_value,
+            )
+            is not None
+        ):
+            return None
+        return _compute_cpp_type(
+            item=value,
+            element_to_type=self._type_ctx.element_to_type(int_type="int"),
+            type_ctx=self._type_ctx,
+        )
 
     call_data_dependent_preamble = default_call_data_dependent_preamble
 
@@ -5361,7 +5392,11 @@ class Cpp(metaclass=LanguageCls):
             if isinstance(initializer_type, _CppTypeDependencies)
             else frozenset[str]().union(
                 *(
-                    self._native_argument_headers(value, argument_types)
+                    self._native_argument_headers(
+                        value,
+                        argument_types,
+                        is_call_argument=isinstance(data, CallPreambleData),
+                    )
                     for value in values
                 )
             )
@@ -5400,10 +5435,17 @@ class Cpp(metaclass=LanguageCls):
         )
 
     def _native_argument_headers(
-        self, value: Value, argument_types: Mapping[int, str | None], /
+        self,
+        value: Value,
+        argument_types: Mapping[int, str | None],
+        /,
+        *,
+        is_call_argument: bool,
     ) -> frozenset[str]:
         """Prefer the type actually selected for an opaque argument."""
         type_name = argument_types.get(id(value))
+        if type_name is None and is_call_argument:
+            type_name = self._call_array_initializer_type(value)
         if type_name is not None:
             return _cpp_type_headers(type_name)
         return self._native_value_headers(value)

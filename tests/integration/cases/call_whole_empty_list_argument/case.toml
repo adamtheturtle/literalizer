@@ -9,3 +9,13 @@ target_function = "f"
 parameter_names = ["a"]
 per_element = false
 wrap_in_file = true
+
+# Keep a whole collection as one typed call argument across empty, populated and nested inputs and layout modes.
+[[call.variants]]
+axis = "sequence"
+
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
