@@ -477,3 +477,103 @@ Languages with no line comment fall back to that language's block-comment form (
 A trailing comment is only safe where each generated call is a self-contained line.
 Languages that assemble the call sequence into a single clause, list or expression -- so a separator, terminator or closer would follow the call on the same line and the line comment would swallow it (Erlang's clause-terminating ``.``, a Jsonnet list ``,``, a Roc ``dbg ( ... )`` wrapper) -- reject a non-empty ``comment_source`` with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
 The supported set is exactly the languages whose :attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls` is ``True``.
+
+Typed native invocations
+------------------------
+
+``literalize_call`` retains its existing string-target calling conventions.
+Use :func:`~literalizer.literalize_native_call` when a call needs a native receiver, selector, constructor, or explicit scalar/object signature.
+The first backend declaring ``supports_native_invocations`` is Objective-C.
+Unsupported backends raise :class:`~literalizer.exceptions.NativeCallError` rather than approximating the requested syntax.
+
+A native expression uses :class:`~literalizer.FunctionTarget`, :class:`~literalizer.MessageTarget`, or :class:`~literalizer.ConstructorTarget`.
+For message receivers, use a typed :class:`~literalizer.NativeReference`, a :class:`~literalizer.NativeClass`, a literal, or a nested invocation.
+Selectors include all colons: ``accept:timestamp:`` has exactly two arguments, while ``reset`` has none.
+The receiver name is emitted unchanged; no synthetic global or function-pointer struct is introduced.
+
+.. code-block:: python
+
+   """Render a typed native notification method call."""
+
+   from literalizer import (
+       MessageTarget,
+       NativeInvocation,
+       NativeLiteral,
+       NativeReference,
+       ObjectType,
+       ScalarType,
+       literalize_native_call,
+   )
+   from literalizer.languages import ObjectiveC
+
+   invocation = NativeInvocation(
+       target=MessageTarget(
+           receiver=NativeReference(
+               name="throttler", type=ObjectType(name="NotificationThrottler")
+           ),
+           selector="shouldSendNotification:notificationTimestamp:",
+           parameter_types=(ObjectType(name="NSString"), ScalarType.FLOAT),
+           return_type=ScalarType.BOOL,
+       ),
+       arguments=(NativeLiteral(value="user_1"), NativeLiteral(value=100.0)),
+   )
+   result = literalize_native_call(language=ObjectiveC(), invocation=invocation)
+   print(result.code)
+
+The expression is rendered as:
+
+.. code-block:: objective-c
+
+   [throttler shouldSendNotification:@"user_1" notificationTimestamp:100.0];
+
+The timestamp is a scalar ``double`` because the signature requests ``ScalarType.FLOAT``.
+An object parameter such as ``ObjectType(name="NSNumber")`` instead boxes the literal.
+The other scalar roles are ``BOOL``, ``INTEGER``, ``UNSIGNED``, and ``VOID``; Objective-C spells these as ``BOOL``, ``NSInteger``, ``NSUInteger``, and ``void``.
+``ObjectType`` can describe generic collections, for example ``ObjectType(name="NSArray", arguments=(ObjectType(name="NSString"),))``.
+Literal element types are checked against the requested generic arguments.
+Null data is ``NSNull``, not a nil object reference.
+
+A ``ConstructorTarget(class_name="NotificationThrottler")`` produces ``[[NotificationThrottler alloc] init]``.
+Use its ``selector`` and ``parameter_types`` for an initializer with arguments.
+``NewVariable`` emits a declaration using the declared result type; ``ExistingVariable`` emits one assignment and invokes the target once.
+Binding a void result or supplying unrelated declaration modifiers is rejected.
+A ``NativeInvocation`` can be an argument of another invocation, allowing typed result checks without source-string interpolation.
+
+The caller supplies the actual class/function declarations and places the returned executable fragment in the appropriate function scope.
+Preamble and executable-placement metadata support composition with :func:`~literalizer.literalize_call_with_declarations`; external declarations remain caller-owned.
+
+Declarative invocation recipes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`~literalizer.literalize_native_calls` applies a recipe to source rows parsed by the same input parsers as the existing rendering APIs.
+The recipe is a mapping, independent of the data being rendered.
+For example:
+
+.. code-block:: json
+
+   {
+     "function": "checkTestCase",
+     "parameter-types": ["bool", "NSArray"],
+     "return-type": "void",
+     "arguments": [
+       {
+         "receiver": {"reference": "throttler", "type": "NotificationThrottler"},
+         "selector": "shouldSendNotification:notificationTimestamp:",
+         "parameter-types": ["NSString", "float"],
+         "return-type": "bool",
+         "arguments": [{"input": 0}, {"input": 1}]
+       },
+       {"zipped": true}
+     ]
+   }
+
+``input`` selects an argument by its zero-based index in the current source row.
+``zipped`` selects the matching companion value supplied through ``zip_source`` and ``zip_input_format``.
+``literal`` embeds a data value, and ``reference`` with ``type`` names an existing value.
+A receiver of ``{"class": "Counter"}`` sends a class message; ``{"constructor": "Counter"}`` allocates and initializes an instance.
+Object type names are strings, while scalar roles use ``bool``, ``integer``, ``unsigned``, ``float``, or ``void``.
+Generic types use ``{"object": "NSArray", "arguments": ["NSString"]}``.
+
+Unknown fields, invalid selectors, out-of-range input indexes, incompatible types, and mismatched companion lengths raise located native-call errors.
+Native recipes select data values; source comments are not interpolated into expressions.
+Keep explanatory prose in the surrounding document or in explicit expected-result data.

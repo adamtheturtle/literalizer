@@ -1640,6 +1640,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     supports_typed_dict_open: bool
     supports_variable_names: bool
     supports_no_variable_wrap_in_file: bool
+    supports_native_invocations: bool
     supports_dotted_calls: bool
     has_free_function_calls: bool
     reserved_identifiers: frozenset[str]

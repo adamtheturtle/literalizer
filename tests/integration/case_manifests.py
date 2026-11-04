@@ -65,6 +65,7 @@ type OwnerName = Literal[
     "new-variable-prime",
     "variant",
     "constructor-binding",
+    "native-invocation",
 ]
 
 # Spelled as an assignment rather than a ``type`` statement so the
@@ -1073,6 +1074,12 @@ def _empty_ref_examples() -> list[RefCaseSpec]:
 
 
 # Defaults stand in for omitted keys, as above.
+class NativeInvocationCaseSpec(BaseModel, extra="forbid", frozen=True):
+    """A real caller program for a native invocation recipe sequence."""
+
+    consumer_template: str
+
+
 class _CaseManifestData(  # noqa: NOD001
     CapabilitySelection,
     frozen=True,
@@ -1092,6 +1099,7 @@ class _CaseManifestData(  # noqa: NOD001
     base_context: RenderContext = Field(default_factory=RenderContext)
     variants: list[ManifestVariant] = Field(default_factory=_empty_variants)
     constructor: ConstructorCaseSpec | None = None
+    native_invocation: NativeInvocationCaseSpec | None = None
     call: CallCaseSpec | None = None
     ref: RefCaseSpec | None = None
     call_examples: list[CallCaseSpec] = Field(
@@ -1151,6 +1159,11 @@ class _CaseManifestData(  # noqa: NOD001
         if self.input_roundtrip is not None and self.owner is not None:
             msg = "input_roundtrip requires a literal rendering suite"
             raise ValueError(msg)
+        self._validate_owned_table(
+            table_name="native_invocation",
+            table=self.native_invocation,
+            owners=frozenset({"native-invocation"}),
+        )
         self._validate_owned_table(
             table_name="constructor",
             table=self.constructor,
@@ -1212,6 +1225,7 @@ class CaseManifest:
     base_context: RenderContext
     variants: tuple[ManifestVariant, ...]
     constructor: ConstructorCaseSpec | None
+    native_invocation: NativeInvocationCaseSpec | None
     call: CallCaseSpec | None
     ref: RefCaseSpec | None
     call_examples: tuple[CallCaseSpec, ...]
@@ -1300,6 +1314,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         base_context=data.base_context,
         variants=tuple(data.variants),
         constructor=data.constructor,
+        native_invocation=data.native_invocation,
         call=data.call,
         ref=data.ref,
         call_examples=tuple(data.call_examples),

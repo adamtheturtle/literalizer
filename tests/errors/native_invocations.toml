@@ -1,0 +1,314 @@
+[[case]]
+name = "unknown-field"
+recipe = "{\"constructor\": \"NSObject\", \"typo\": true}"
+match = "Invalid native fields"
+source = "[[]]"
+
+[[case]]
+name = "missing-function-signature"
+recipe = "{\"function\": \"consume\"}"
+match = "string-keyed object"
+source = "[[]]"
+
+[[case]]
+name = "invalid-schema-object"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"id\"], \"return-type\": \"void\", \"arguments\": [17]}"
+match = "string-keyed object"
+source = "[[]]"
+
+[[case]]
+name = "invalid-type-name"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"not a type\", \"arguments\": []}"
+match = "Invalid native identifier"
+source = "[[]]"
+
+[[case]]
+name = "invalid-function-name"
+recipe = "{\"function\": \"bad;source\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "Invalid native identifier"
+source = "[[]]"
+
+[[case]]
+name = "reserved-function-name"
+recipe = "{\"function\": \"while\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "Reserved native identifier"
+source = "[[]]"
+
+[[case]]
+name = "argument-count"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"bool\"], \"return-type\": \"void\", \"arguments\": []}"
+match = "argument count"
+source = "[[]]"
+
+[[case]]
+name = "selector-arity"
+recipe = "{\"receiver\": {\"reference\": \"receiver\", \"type\": \"NSObject\"}, \"selector\": \"accept:\", \"parameter-types\": [\"NSString\", \"float\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": \"user\"}, {\"literal\": 1.0}]}"
+match = "argument labels"
+source = "[[]]"
+
+[[case]]
+name = "selector-label"
+recipe = "{\"receiver\": {\"reference\": \"receiver\", \"type\": \"NSObject\"}, \"selector\": \"accept::\", \"parameter-types\": [\"NSString\", \"float\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": \"user\"}, {\"literal\": 1.0}]}"
+match = "Invalid native identifier"
+source = "[[]]"
+
+[[case]]
+name = "zero-arg-selector"
+recipe = "{\"receiver\": {\"reference\": \"receiver\", \"type\": \"NSObject\"}, \"selector\": \"accept:\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "Invalid native identifier"
+source = "[[]]"
+
+[[case]]
+name = "scalar-receiver"
+recipe = "{\"receiver\": {\"reference\": \"count\", \"type\": \"integer\"}, \"selector\": \"reset\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "receiver must be an object"
+source = "[[]]"
+
+[[case]]
+name = "scalar-call-receiver"
+recipe = "{\"receiver\": {\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"integer\", \"arguments\": []}, \"selector\": \"reset\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "receiver must return an object"
+source = "[[]]"
+
+[[case]]
+name = "invalid-constructor-selector"
+recipe = "{\"constructor\": \"NSObject\", \"initializer\": \"initialize\"}"
+match = "must be an initializer"
+source = "[[]]"
+
+[[case]]
+name = "void-parameter"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"void\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": 0}]}"
+match = "parameter cannot have void"
+source = "[[]]"
+
+[[case]]
+name = "scalar-type-mismatch"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"bool\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": 1}]}"
+match = "declared scalar type"
+source = "[[]]"
+
+[[case]]
+name = "bool-is-not-integer"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"integer\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": true}]}"
+match = "declared scalar type"
+source = "[[]]"
+
+[[case]]
+name = "unsigned-negative"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"unsigned\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": -1}]}"
+match = "scalar range"
+source = "[[]]"
+
+[[case]]
+name = "signed-overflow"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"integer\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": 9223372036854775808}]}"
+match = "scalar range"
+source = "[[]]"
+
+[[case]]
+name = "unsigned-overflow"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"unsigned\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": 18446744073709551616}]}"
+match = "scalar range"
+source = "[[]]"
+
+[[case]]
+name = "null-is-not-string"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"NSString\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": null}]}"
+match = "NSNull is not a typed object"
+source = "[[]]"
+
+[[case]]
+name = "wrong-object-type"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"NSString\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": 1}]}"
+match = "declared object type"
+source = "[[]]"
+
+[[case]]
+name = "wrong-reference-type"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"NSString\"], \"return-type\": \"void\", \"arguments\": [{\"reference\": \"count\", \"type\": \"integer\"}]}"
+match = "incompatible"
+source = "[[]]"
+
+[[case]]
+name = "invalid-reference-name"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"id\"], \"return-type\": \"void\", \"arguments\": [{\"reference\": \"bad.name\", \"type\": \"id\"}]}"
+match = "Invalid native identifier"
+source = "[[]]"
+
+[[case]]
+name = "invalid-reference-type"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"id\"], \"return-type\": \"void\", \"arguments\": [{\"reference\": \"value\", \"type\": \"bad type\"}]}"
+match = "Invalid native identifier"
+source = "[[]]"
+
+[[case]]
+name = "scalar-generic"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": {\"object\": \"NSArray\", \"arguments\": [\"integer\"]}, \"arguments\": []}"
+match = "must be object types"
+source = "[[]]"
+
+[[case]]
+name = "generic-id"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": {\"object\": \"id\", \"arguments\": [\"NSString\"]}, \"arguments\": []}"
+match = "cannot have generic arguments"
+source = "[[]]"
+
+[[case]]
+name = "generic-elements"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [{\"object\": \"NSArray\", \"arguments\": [\"NSString\"]}], \"return-type\": \"void\", \"arguments\": [{\"literal\": [1]}]}"
+match = "declared object type"
+source = "[[]]"
+
+[[case]]
+name = "generic-arity"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [{\"object\": \"NSDictionary\", \"arguments\": [\"NSString\"]}], \"return-type\": \"void\", \"arguments\": [{\"literal\": {\"x\": \"value\"}}]}"
+match = "wrong arity"
+source = "[[]]"
+
+[[case]]
+name = "input-negative"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"id\"], \"return-type\": \"void\", \"arguments\": [{\"input\": -1}]}"
+match = "outside the source row"
+source = "[[]]"
+
+[[case]]
+name = "input-boolean"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"id\"], \"return-type\": \"void\", \"arguments\": [{\"input\": true}]}"
+match = "outside the source row"
+source = "[[]]"
+
+[[case]]
+name = "input-missing"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"id\"], \"return-type\": \"void\", \"arguments\": [{\"input\": 0}]}"
+match = "outside the source row"
+source = "[[]]"
+
+[[case]]
+name = "zipped-missing"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"id\"], \"return-type\": \"void\", \"arguments\": [{\"zipped\": true}]}"
+match = "requires a companion"
+source = "[[]]"
+
+[[case]]
+name = "zipped-false"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"id\"], \"return-type\": \"void\", \"arguments\": [{\"zipped\": false}]}"
+match = "requires a companion"
+source = "[[]]"
+zip_source = "[null]"
+
+[[case]]
+name = "argument-list-required"
+recipe = "{\"constructor\": \"NSObject\", \"arguments\": 1}"
+match = "argument/type list"
+source = "[[]]"
+
+[[case]]
+name = "name-string-required"
+recipe = "{\"constructor\": false}"
+match = "name or type string"
+source = "[[]]"
+
+[[case]]
+name = "generic-schema-required"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": {\"object\": \"NSArray\"}, \"arguments\": []}"
+match = "Invalid native fields"
+source = "[[]]"
+
+[[case]]
+name = "class-schema-unknown"
+recipe = "{\"receiver\": {\"class\": \"NSObject\", \"typo\": true}, \"selector\": \"new\", \"parameter-types\": [], \"return-type\": \"NSObject\", \"arguments\": []}"
+match = "Invalid native fields"
+source = "[[]]"
+
+[[case]]
+name = "reference-schema-unknown"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"id\"], \"return-type\": \"void\", \"arguments\": [{\"reference\": \"value\", \"type\": \"id\", \"typo\": true}]}"
+match = "Invalid native fields"
+source = "[[]]"
+
+[[case]]
+name = "literal-schema-unknown"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [\"id\"], \"return-type\": \"void\", \"arguments\": [{\"literal\": 1, \"typo\": true}]}"
+match = "Invalid native fields"
+source = "[[]]"
+
+[[case]]
+name = "rows-list-required"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "require a list of rows"
+source = "{}"
+
+[[case]]
+name = "row-list-required"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "row 0 must be a list"
+source = "[1]"
+
+[[case]]
+name = "empty-rows"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "at least one call row"
+source = "[]"
+
+[[case]]
+name = "zip-count"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "must match the source row count"
+source = "[[]]"
+zip_source = "[]"
+
+[[case]]
+name = "zip-format-without-source"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "must be supplied together"
+source = "[[]]"
+zip_format_only = true
+
+[[case]]
+name = "binding-multiple"
+recipe = "{\"constructor\": \"NSObject\"}"
+match = "requires exactly one call"
+source = "[[],[]]"
+bind = "value"
+
+[[case]]
+name = "bind-void"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "Cannot bind a void"
+source = "[[]]"
+bind = "value"
+
+[[case]]
+name = "bind-keyword"
+recipe = "{\"constructor\": \"NSObject\"}"
+match = "Reserved native identifier"
+source = "[[]]"
+bind = "while"
+
+[[case]]
+name = "negative-indent"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "must be non-negative"
+source = "[[]]"
+indent = -1
+
+[[case]]
+name = "unsupported-language"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
+match = "does not support native invocations"
+source = "[[]]"
+language = "python"
+
+[[case]]
+name = "generic-noncollection"
+recipe = "{\"function\": \"consume\", \"parameter-types\": [{\"object\": \"NSString\", \"arguments\": [\"NSString\"]}], \"return-type\": \"void\", \"arguments\": [{\"literal\": \"value\"}]}"
+match = "require a collection"
+source = "[[]]"
+
+[[case]]
+name = "reserved-binding"
+recipe = '{"constructor": "NSObject"}'
+match = "Reserved native binding"
+source = "[[]]"
+bind = "nil"

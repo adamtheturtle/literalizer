@@ -809,6 +809,7 @@ class Scala(metaclass=LanguageCls):
     # across cases.
     wraps_data_dependent_preamble_in_body = True
     dict_supports_heterogeneous_values = True
+    supports_native_invocations = False
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = (

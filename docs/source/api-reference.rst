@@ -14,6 +14,42 @@ Core functions
 
 .. autofunction:: literalize_call_with_declarations
 
+Native invocations
+------------------
+
+.. autofunction:: literalize_native_call
+
+.. autofunction:: literalize_native_calls
+
+.. autofunction:: native_invocation_from_data
+
+.. autoclass:: ScalarType
+   :members:
+
+.. autoclass:: ObjectType
+   :members:
+
+.. autoclass:: NativeLiteral
+   :members:
+
+.. autoclass:: NativeReference
+   :members:
+
+.. autoclass:: NativeClass
+   :members:
+
+.. autoclass:: FunctionTarget
+   :members:
+
+.. autoclass:: MessageTarget
+   :members:
+
+.. autoclass:: ConstructorTarget
+   :members:
+
+.. autoclass:: NativeInvocation
+   :members:
+
 Result type
 -----------
 
