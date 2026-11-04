@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Reject a fractional native UTC offset whose normalization exceeds Python's maximum datetime year (#6603)."
+exceptions = ["UnrepresentableInputError"]
+gates = [{kind = "enum_member_present", option = "datetime_format", member = "SCALA"}]
+
+[call]
+api = "literalize"
+sources = ['{"$ref":"stamp"}']
+input_format = "json"
+ref_key = "$ref"
+wrap_in_file = true
+bound_ref_datetimes = {stamp = {wall_time = 9999-12-31T23:59:59.999999, offset_microseconds = -1}}

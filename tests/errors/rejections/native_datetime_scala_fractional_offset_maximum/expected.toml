@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[UnrepresentableInputError]
+Scala = "Scala cannot normalize datetime to UTC within Python's supported year range: 9999-12-31T23:59:59.999999-00:00:00.000001"

@@ -254,9 +254,15 @@ def _format_scala_bigint_literal(value: int) -> str:
 
 @beartype
 def _format_datetime_scala(value: dt.datetime) -> str:
-    """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call."""
+    """Format a datetime as a Scala ``ZonedDateTime.of(...)`` call.
+
+    Preserve the instant in UTC when the JVM cannot represent its
+    fractional or wider-than-eighteen-hour offset.
+    """
     offset = value.utcoffset()
-    if offset is not None and abs(offset) > dt.timedelta(hours=18):
+    if offset is not None and (
+        abs(offset) > dt.timedelta(hours=18) or offset.microseconds != 0
+    ):
         value = normalize_datetime_utc(value=value, language_name="Scala")
     raw_timezone_name = value.tzname()
     timezone_name = "UTC"
