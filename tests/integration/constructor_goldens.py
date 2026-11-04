@@ -7,7 +7,7 @@ from pathlib import Path
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import InputFormat, literalize_call
+from literalizer import literalize_call
 
 from .case_manifests import ConstructorCaseSpec
 from .constructor_cases import ConstructorBindingCase
@@ -30,16 +30,12 @@ def run_constructor_binding_golden_case(
         **case.spec_overrides,
     )
     manifest = case.manifest
-    config = ConstructorCaseSpec()
-    source = "[[]]"
-    input_format = InputFormat.JSON
-    if manifest is not None:
-        language = with_per_fixture_module_name(
-            spec=language, golden_path=golden_path
-        )
-        config = ConstructorCaseSpec.model_validate(obj=manifest.constructor)
-        source = manifest.input.path.read_text(encoding="utf-8")
-        input_format = manifest.input.input_format
+    language = with_per_fixture_module_name(
+        spec=language, golden_path=golden_path
+    )
+    config = ConstructorCaseSpec.model_validate(obj=manifest.constructor)
+    source = manifest.input.path.read_text(encoding="utf-8")
+    input_format = manifest.input.input_format
     if config.target_template is not None:
         check_golden(
             contents=config.target_template.format(
@@ -64,9 +60,7 @@ def run_constructor_binding_golden_case(
                 config.class_name,
             ),
             parameter_names=config.parameter_names,
-            wrap_in_file=(
-                manifest is not None and config.consumer_template is None
-            ),
+            wrap_in_file=config.consumer_template is None,
             variable_form=dataclasses.replace(
                 case.variable_form, name=config.variable_name
             ),

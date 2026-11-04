@@ -12,7 +12,11 @@ from literalizer import NewVariable
 from literalizer._enums import enum_payload
 from literalizer.exceptions import IncompatibleFormatsError
 
-from .case_manifests import CaseManifest, load_case_manifests
+from .case_manifests import (
+    CaseManifest,
+    CaseManifestError,
+    load_case_manifests,
+)
 from .golden_checks import NO_SKIPS, SkipPolicy, SkipReason
 from .language_specs import make_golden_path, make_spec, sorted_languages
 
@@ -35,15 +39,21 @@ _MODIFIER_SKIPS = SkipPolicy(
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class ConstructorBindingCase:
-    """A constructor call-binding golden-file variant."""
+class ConstructorBindingSpec:
+    """A constructor binding configuration before selecting its owner."""
 
     name: str
     lang_cls: literalizer.LanguageCls
     spec_overrides: Mapping[str, object]
     variable_form: literalizer.VariableForm
     skip: SkipPolicy
-    manifest: CaseManifest | None
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class ConstructorBindingCase(ConstructorBindingSpec):
+    """A constructor variant owned by a native fixture manifest."""
+
+    manifest: CaseManifest
 
 
 @beartype
@@ -51,18 +61,12 @@ def constructor_golden_path(
     *,
     case: ConstructorBindingCase,
     version: enum.Enum,
-    fragments_dir: Path,
 ) -> Path:
-    """Locate a compiling fixture or a remaining legacy fragment."""
-    parent = fragments_dir
-    extension = ".txt"
-    if case.manifest is not None:
-        parent = case.manifest.case_dir
-        extension = case.lang_cls.extension
+    """Locate the variant's native golden file."""
     return make_golden_path(
-        parent=parent,
+        parent=case.manifest.case_dir,
         name=case.name,
-        extension=extension,
+        extension=case.lang_cls.extension,
         lang_cls=case.lang_cls,
         version=version,
     )
@@ -94,25 +98,24 @@ def _binding_languages() -> list[literalizer.LanguageCls]:
 
 
 @beartype
-def _default_binding_cases() -> list[ConstructorBindingCase]:
+def _default_binding_cases() -> list[ConstructorBindingSpec]:
     """Return the plain constructor binding for each language."""
     return [
-        ConstructorBindingCase(
+        ConstructorBindingSpec(
             name=f"{lang_cls.__name__}_constructor_call",
             lang_cls=lang_cls,
             spec_overrides={},
             variable_form=NewVariable(name="p", modifiers=frozenset()),
             skip=NO_SKIPS,
-            manifest=None,
         )
         for lang_cls in _binding_languages()
     ]
 
 
 @beartype
-def _call_style_binding_cases() -> list[ConstructorBindingCase]:
+def _call_style_binding_cases() -> list[ConstructorBindingSpec]:
     """Return all non-default call-style constructor binding variants."""
-    cases: list[ConstructorBindingCase] = []
+    cases: list[ConstructorBindingSpec] = []
     for lang_cls in _binding_languages():
         spec = make_spec(lang_cls=lang_cls)
         call_styles: list[enum.Enum] = list(spec.call_styles)
@@ -120,7 +123,7 @@ def _call_style_binding_cases() -> list[ConstructorBindingCase]:
             continue
         default_call_style_config = spec.call_style_config
         cases.extend(
-            ConstructorBindingCase(
+            ConstructorBindingSpec(
                 name=(
                     f"{lang_cls.__name__}_constructor_call_"
                     f"{call_style.name.lower()}"
@@ -129,7 +132,6 @@ def _call_style_binding_cases() -> list[ConstructorBindingCase]:
                 spec_overrides={"call_style": call_style},
                 variable_form=NewVariable(name="p", modifiers=frozenset()),
                 skip=NO_SKIPS,
-                manifest=None,
             )
             for call_style in call_styles
             if enum_payload(member=call_style, payload_type=object)
@@ -139,9 +141,9 @@ def _call_style_binding_cases() -> list[ConstructorBindingCase]:
 
 
 @beartype
-def _modifier_binding_cases() -> list[ConstructorBindingCase]:
+def _modifier_binding_cases() -> list[ConstructorBindingSpec]:
     """Return constructor binding variants for every language modifier."""
-    cases: list[ConstructorBindingCase] = []
+    cases: list[ConstructorBindingSpec] = []
     for lang_cls in _binding_languages():
         spec = make_spec(lang_cls=lang_cls)
         entries: list[tuple[str, frozenset[enum.Enum]]] = [
@@ -153,13 +155,12 @@ def _modifier_binding_cases() -> list[ConstructorBindingCase]:
             for combo in lang_cls.modifier_combinations
         )
         cases.extend(
-            ConstructorBindingCase(
+            ConstructorBindingSpec(
                 name=f"{lang_cls.__name__}_constructor_call_{modifier_name}",
                 lang_cls=lang_cls,
                 spec_overrides={},
                 variable_form=NewVariable(name="p", modifiers=modifiers),
                 skip=_MODIFIER_SKIPS,
-                manifest=None,
             )
             for modifier_name, modifiers in entries
         )
@@ -182,7 +183,7 @@ def constructor_binding_cases(
         *_call_style_binding_cases(),
         *_modifier_binding_cases(),
     ]:
-        owners: tuple[CaseManifest | None, ...] = tuple(
+        owners = tuple(
             manifest
             for manifest in manifests
             if manifest.selection.admits_language(lang_cls=case.lang_cls)
@@ -190,9 +191,21 @@ def constructor_binding_cases(
             and manifest.constructor.target_template is None
         )
         if len(owners) == 0:
-            owners = (None,)
+            msg = (
+                f"constructor binding {case.name!r} "
+                "has no native fixture owner"
+            )
+            raise CaseManifestError(msg)
         cases.extend(
-            dataclasses.replace(case, manifest=manifest) for manifest in owners
+            ConstructorBindingCase(
+                name=case.name,
+                lang_cls=case.lang_cls,
+                spec_overrides=case.spec_overrides,
+                variable_form=case.variable_form,
+                skip=case.skip,
+                manifest=manifest,
+            )
+            for manifest in owners
         )
     for manifest in manifests:
         config = manifest.constructor

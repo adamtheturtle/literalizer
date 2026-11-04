@@ -149,7 +149,7 @@ def _constructor_bindings() -> dict[Path, str]:
     """Read constructor roots from their owning manifest metadata."""
     bindings: dict[Path, str] = {}
     for case in constructor_binding_cases(cases_dir=_CASES_DIR):
-        if case.lang_cls is not Dart or case.manifest is None:
+        if case.lang_cls is not Dart:
             continue
         config = case.manifest.constructor
         if config is None:
@@ -159,7 +159,6 @@ def _constructor_bindings() -> dict[Path, str]:
             golden = constructor_golden_path(
                 case=case,
                 version=version,
-                fragments_dir=_CASES_DIR.parent / "constructor_targets",
             )
             bindings[golden.resolve()] = config.variable_name
     return bindings
