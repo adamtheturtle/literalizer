@@ -8,7 +8,7 @@ var my_data = new[] {
         new Dictionary<string, object?> {
             ["scalar"] = 1,
             ["empty"] = new HashSet<object?>(),
-            ["mixed"] = new HashSet<object?> {
+            ["mixed"] = new HashSet<object> {
                 2,
                 "word"
             }
