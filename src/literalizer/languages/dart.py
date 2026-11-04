@@ -143,7 +143,11 @@ def _format_date_dart(value: dt.date) -> str:
 @beartype
 def _format_datetime_dart(value: dt.datetime) -> str:
     """Format a datetime without consulting the runtime time zone."""
-    if value.utcoffset() is not None:
+    offset = value.utcoffset()
+    if (
+        offset is not None
+        and offset % dt.timedelta(minutes=1) == dt.timedelta()
+    ):
         return f'DateTime.parse("{value.isoformat()}")'
     args = (
         f"{value.year}, {value.month}, {value.day}, {value.hour}, "
@@ -152,7 +156,14 @@ def _format_datetime_dart(value: dt.datetime) -> str:
     if value.microsecond != 0:
         milliseconds, microseconds = divmod(value.microsecond, 1000)
         args += f", {milliseconds}, {microseconds}"
-    return f"DateTime.utc({args})"
+    formatted = f"DateTime.utc({args})"
+    if offset is not None:
+        # DateTime.parse accepts offset hours and minutes. Duration
+        # arithmetic also preserves seconds and microseconds, including
+        # instants outside Python's UTC year range.
+        microseconds = offset // dt.timedelta(microseconds=1)
+        return f"{formatted}.subtract(Duration(microseconds: {microseconds}))"
+    return formatted
 
 
 # Dart interpolates ``$`` in both single- and double-quoted strings.
