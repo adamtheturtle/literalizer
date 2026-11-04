@@ -33,14 +33,66 @@ message = "valid string"
 [[versions]]
 name = "python_3_12"
 version = "3.12"
-active = "3.12"
+source = '''[Error]
+variant = { default = "modern", "3.12" = "older" }
+plain = "old"
+stale = "deleted case"
+[StaleError]
+case = "deleted exception"
+'''
+rejecting = 1
+accepting = 0
+expected_document = '''[Error]
+variant = { default = "modern", "3.12" = "actual" }
+plain = "actual"
+new = "actual"
+'''
 
+[versions.actual_messages.Error]
+variant = "actual"
+plain = "actual"
+new = "actual"
 [[versions]]
 name = "python_3_13"
 version = "3.13"
-active = "default"
+source = '''[Error]
+variant = { default = "modern", "3.12" = "older" }
+plain = "old"
+stale = "deleted case"
+[StaleError]
+case = "deleted exception"
+'''
+rejecting = 1
+accepting = 0
+expected_document = '''[Error]
+variant = { default = "actual", "3.12" = "older" }
+plain = "actual"
+new = "actual"
+'''
 
+[versions.actual_messages.Error]
+variant = "actual"
+plain = "actual"
+new = "actual"
 [[versions]]
 name = "python_3_99"
 version = "3.99"
-active = "default"
+source = '''[Error]
+variant = { default = "modern", "3.12" = "older" }
+plain = "old"
+stale = "deleted case"
+[StaleError]
+case = "deleted exception"
+'''
+rejecting = 1
+accepting = 0
+expected_document = '''[Error]
+variant = { default = "actual", "3.12" = "older" }
+plain = "actual"
+new = "actual"
+'''
+
+[versions.actual_messages.Error]
+variant = "actual"
+plain = "actual"
+new = "actual"
