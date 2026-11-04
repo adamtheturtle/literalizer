@@ -1,0 +1,135 @@
+# Call and reference layout precedence with explicit and omitted settings.
+
+[[cases]]
+name = "call_omitted_over_compact"
+kind = "call"
+axis_layout = "compact"
+expected_layout = "compact"
+original_layout = "compact"
+
+[cases.settings]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+
+[[cases]]
+name = "call_omitted_over_multiline"
+kind = "call"
+axis_layout = "multiline"
+expected_layout = "multiline"
+original_layout = "compact"
+
+[cases.settings]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+
+[[cases]]
+name = "ref_omitted_over_compact"
+kind = "ref"
+axis_layout = "compact"
+expected_layout = "compact"
+original_layout = "compact"
+
+[cases.settings]
+
+[[cases]]
+name = "ref_omitted_over_multiline"
+kind = "ref"
+axis_layout = "multiline"
+expected_layout = "multiline"
+original_layout = "compact"
+
+[cases.settings]
+
+[[cases]]
+name = "call_compact_over_compact"
+kind = "call"
+axis_layout = "compact"
+expected_layout = "compact"
+original_layout = "compact"
+
+[cases.settings]
+collection_layout = "compact"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+
+[[cases]]
+name = "call_compact_over_multiline"
+kind = "call"
+axis_layout = "multiline"
+expected_layout = "compact"
+original_layout = "compact"
+
+[cases.settings]
+collection_layout = "compact"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+
+[[cases]]
+name = "ref_compact_over_compact"
+kind = "ref"
+axis_layout = "compact"
+expected_layout = "compact"
+original_layout = "compact"
+
+[cases.settings]
+collection_layout = "compact"
+
+[[cases]]
+name = "ref_compact_over_multiline"
+kind = "ref"
+axis_layout = "multiline"
+expected_layout = "compact"
+original_layout = "compact"
+
+[cases.settings]
+collection_layout = "compact"
+
+[[cases]]
+name = "call_multiline_over_compact"
+kind = "call"
+axis_layout = "compact"
+expected_layout = "multiline"
+original_layout = "multiline"
+
+[cases.settings]
+collection_layout = "multiline"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+
+[[cases]]
+name = "call_multiline_over_multiline"
+kind = "call"
+axis_layout = "multiline"
+expected_layout = "multiline"
+original_layout = "multiline"
+
+[cases.settings]
+collection_layout = "multiline"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+
+[[cases]]
+name = "ref_multiline_over_compact"
+kind = "ref"
+axis_layout = "compact"
+expected_layout = "multiline"
+original_layout = "multiline"
+
+[cases.settings]
+collection_layout = "multiline"
+
+[[cases]]
+name = "ref_multiline_over_multiline"
+kind = "ref"
+axis_layout = "multiline"
+expected_layout = "multiline"
+original_layout = "multiline"
+
+[cases.settings]
+collection_layout = "multiline"
