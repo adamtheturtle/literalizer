@@ -1537,8 +1537,8 @@ class Swift(metaclass=LanguageCls):
         A field whose value is itself a nested record-shaped dict uses
         that record's generated name.  A field whose value is a list
         whose every element is a record-shaped dict of one shared shape
-        is typed ``[RecordN]`` to match the element type Swift infers
-        from the homogeneous array of ``RecordN`` literals.  Every other
+        uses the configured array or tuple representation of the generated
+        record names. Every other
         value is typed by the same :func:`_swift_type_hint` machinery
         the typed variable declaration uses, with the active record-name
         lookup propagated through maps, lists, and tuples.  A record-eligible
@@ -1552,8 +1552,6 @@ class Swift(metaclass=LanguageCls):
         """
         if request.record_name is not None:
             return request.record_name
-        if request.element_record_name is not None:
-            return f"[{request.element_record_name}]"
         if (
             isinstance(request.value, dict)
             and not isinstance(request.value, OrderedMap)

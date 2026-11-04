@@ -1542,15 +1542,10 @@ class Crystal(metaclass=LanguageCls):
     def _crystal_record_field_type(self, request: RecordFieldType, /) -> str:
         """Return the Crystal ``record`` field type for a record field.
 
-        A field whose value is itself a nested record-shaped dict uses
-        that record's generated name.  A field whose value is a list of
-        single-shape record dicts is an ``Array`` of that record's
-        name: Crystal infers the element type from the generated
-        ``Name.new(...)`` literals, and ``Array`` is invariant, so the
-        declared element type must be the record name (not the widened
-        ``Array(Nil)`` :meth:`_crystal_type_for_value` would derive
-        from the raw dicts).  Every other value is typed by
-        :meth:`_crystal_type_for_value`.  A record-eligible dict with no
+        A nested record uses its generated name. Lists of records use
+        the configured array or tuple representation, retaining each
+        element's generated record name through
+        :meth:`_crystal_type_for_value`. A record-eligible dict with no
         ``record_name`` was widened out of record inference because its
         nested sibling maps cannot share one shape; it uses a ``Hash``
         over the generated native value union (#2919).  A set or
@@ -1560,8 +1555,6 @@ class Crystal(metaclass=LanguageCls):
         """
         if request.record_name is not None:
             return request.record_name
-        if request.element_record_name is not None:
-            return f"Array({request.element_record_name})"
         if (
             isinstance(request.value, dict)
             and not isinstance(request.value, OrderedMap)
