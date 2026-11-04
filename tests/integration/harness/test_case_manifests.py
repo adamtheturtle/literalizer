@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 import pytest
+from pydantic import BaseModel, TypeAdapter
 
 import literalizer.languages
 from tests.integration.case_discovery import load_case_data
@@ -24,6 +25,35 @@ from tests.integration.case_manifests import (
 from tests.integration.variant_cases import (
     build_variant_cases,
     validate_unique_variant_targets,
+)
+from tests.toml_cases import load_toml_cases
+
+
+class _ManifestErrorCase(BaseModel, extra="forbid", frozen=True):
+    """One invalid manifest and its diagnostic."""
+
+    name: str
+    manifest: str
+    message: str
+
+
+class _ReferenceErrorCase(BaseModel, extra="forbid", frozen=True):
+    """One invalid typed reference source."""
+
+    name: str
+    field: str
+    source: str
+
+
+class _Cases(BaseModel, extra="forbid", frozen=True):
+    """Manifest validation scenarios declared in TOML."""
+
+    cases: tuple[_ManifestErrorCase, ...]
+    references: tuple[_ReferenceErrorCase, ...]
+
+
+_CASES = TypeAdapter(type=_Cases).validate_python(
+    load_toml_cases(name="case_manifest_validation")
 )
 
 
@@ -87,611 +117,18 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
 
 
 @pytest.mark.parametrize(
-    argnames=("manifest", "message"),
-    argvalues=[
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n[call]\n'
-                'target_function = "target"\nparameter_names = ["value"]\n'
-                "per_element = false\n"
-                "call_transform_add_one = true\n"
-                "call_transform_nullable_conditional = true\n"
-            ),
-            (
-                "call_transform_add_one and "
-                "call_transform_nullable_conditional "
-                "are mutually exclusive"
-            ),
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n[call]\n'
-                'target_function = "target"\nparameter_names = ["value"]\n'
-                "per_element = false\n"
-                "call_transform_sequence = true\n"
-                "call_transform_add_one = true\n"
-            ),
-            (
-                "call_transform_sequence and call_transform_add_one "
-                "are mutually exclusive"
-            ),
-        ),
-        (
-            (
-                "schema_version = 1\n"
-                'owner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "target"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = false\n"
-                'call_transform_wrapper = {target = "emit", arguments'
-                ' = ["call"]}\n'
-            ),
-            ("call_transform_wrapper requires a declared transform stub"),
-        ),
-        (
-            (
-                "schema_version = 1\n"
-                'owner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "target"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = false\n"
-                'transform_stub_names = ["emit"]\n'
-                'call_transform_wrapper = {target = "emit", arguments'
-                ' = ["call", "call"]}\n'
-            ),
-            ("wrapper operands must match transform_stub_param_names"),
-        ),
-        (
-            (
-                "schema_version = 1\n"
-                'owner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "target"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = false\n"
-                'transform_stub_names = ["emit"]\n'
-                'call_transform_wrapper = {target = "emit", arguments'
-                ' = ["zipped"]}\n'
-            ),
-            ("a zipped wrapper operand requires zip_source"),
-        ),
-        (
-            (
-                "schema_version = 1\n"
-                'owner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "target"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = false\n"
-                'transform_stub_names = ["emit"]\n'
-                'call_transform_wrapper = {target = "emit", arguments'
-                ' = ["call"]}\n'
-                "call_transform_sequence = true\n"
-            ),
-            (
-                "call_transform_wrapper and call_transform_sequence a"
-                "re mutually exclusive"
-            ),
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n[call]\n'
-                'target_function = "target"\nparameter_names = ["value"]\n'
-                "per_element = false\n"
-                'call_transform_group = {body = "{call}", suffix = ""}\n'
-                "call_transform_sequence = true\n"
-            ),
-            (
-                "call_transform_group and call_transform_sequence "
-                "are mutually exclusive"
-            ),
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n[call]\n'
-                'target_function = "target"\nparameter_names = ["value"]\n'
-                "per_element = false\n"
-                'call_transform_group = {body = "{call}", suffix = ""}\n'
-                "call_transform_arguments = "
-                '{arguments = ["token"], suffix = ""}\n'
-            ),
-            (
-                "call_transform_group and call_transform_arguments "
-                "are mutually exclusive"
-            ),
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                '[[variants]]\naxis = "string_format"\n'
-                'expected_errors = ["RuntimeError"]\n'
-            ),
-            "InvalidDictKeyError",
-        ),
-        ('schema_version = 2\nsuites = ["base"]\n', "schema_version"),
-        ('schema_version = "1"\nsuites = ["base"]\n', "Input should be 1"),
-        (
-            'schema_version = 1\nsuites = ["base"]\nextra = true\n',
-            "Extra inputs are not permitted",
-        ),
-        (
-            'schema_version = 1\nowner = "mystery"\n',
-            "Input should be 'literalize-call'",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                '[[variants]]\naxis = "made_up"\n'
-            ),
-            "unknown variant axis",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                '[[variants]]\naxis = "date"\n'
-                '[[variants]]\naxis = "date"\n'
-            ),
-            "duplicate logical variant case",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                '[[variants]]\naxis = "date"\n'
-                'requires = ["teleportation"]\n'
-            ),
-            "Input should be 'collection_comments'",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                '[[variants]]\naxis = "date"\n'
-                'requires = ["special_floats", "special_floats"]\n'
-            ),
-            "requires contains a duplicate entry",
-        ),
-        (
-            'schema_version = 1\nsuites = ["base", "base"]\n',
-            "suites contains a duplicate entry",
-        ),
-        (
-            'schema_version = 1\nsuites = ["base"]\nroles = ["mascot"]\n',
-            "Input should be .*'heterogeneous-strategy-default-input'",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                'roles = ["indent-input", "indent-input"]\n'
-            ),
-            "roles contains a duplicate entry",
-        ),
-        (
-            ('schema_version = 1\nsuites = ["base"]\nowner = "variant"\n'),
-            "suites and owner are mutually exclusive",
-        ),
-        (
-            "schema_version = 1\n",
-            "declare suites or a specialized owner",
-        ),
-        (
-            ('schema_version = 1\nsuites = ["combined"]\n[base_context]\n'),
-            "base_context requires participation in the base suite",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref-default"\n'
-                '[ref.consumer]\ntarget_function = "consume_widget"\n'
-            ),
-            "consumer requires external_declarations",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref-default"\n'
-                '[ref]\nexternal_declarations = {my_data = "0"}\n'
-                '[ref.consumer]\ntarget_function = "consume_widget"\n'
-                "before_assignment = true\n"
-            ),
-            "before_assignment requires an existing my_data binding",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref-default"\n'
-                '[ref]\nvariable_form = "existing"\n'
-                'external_declarations = {other = "0"}\n'
-                '[ref.consumer]\ntarget_function = "consume_widget"\n'
-                "before_assignment = true\n"
-            ),
-            "before_assignment requires an existing my_data binding",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref-default"\n'
-                '[ref]\nexpected_value_source = "[0, 1]"\n'
-            ),
-            "expected_value_source requires external_declarations",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref-default"\n'
-                '[ref]\nvariable_form = "none"\n'
-                'expected_value_source = "1"\n'
-            ),
-            "expected_value_source requires a variable binding",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref-default"\n'
-                "[ref]\n"
-                'external_declarations = {a = "0"}\n'
-                'expected_value_source = "[0, 1]"\n'
-                '[ref.consumer]\ntarget_function = "consume_widget"\n'
-            ),
-            "consumer and expected_value_source are mutually exclusive",
-        ),
-        (
-            'schema_version = 1\nowner = "constructor-binding"\n',
-            r"requires a \[constructor\] table",
-        ),
-        (
-            'schema_version = 1\nsuites = ["base"]\n[constructor]\n',
-            r"a \[constructor\] table requires owner",
-        ),
-        (
-            'schema_version = 1\nowner = "literalize-call"\n',
-            r"requires a \[call\] table",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-            ),
-            r"a \[call\] table requires owner",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                'call_transform = "emit({bogus})"\n'
-            ),
-            "unknown call_transform placeholder 'bogus'",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                'followup_target_function = "consume"\n'
-            ),
-            "followup_target_function requires followup_source",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                'followup_source = "1"\n'
-                'followup_target_function = "process"\n'
-            ),
-            "followup_target_function must differ from target_function",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                'followup_source = "1"\n'
-                "followup_target_function = 1\n"
-            ),
-            "Input should be a valid string",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                'call_style = "mystery"\n'
-            ),
-            ("Input should be 'command', 'keyword', 'object', 'positional'"),
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                "call_style = 1\n"
-            ),
-            "call_style",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                "call_transform = 1\n"
-            ),
-            "call_transform",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                'zip_input_format = "mystery"\n'
-            ),
-            "Input should be 'json', 'json5', 'jsonc', 'toml', 'yaml'",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                'ref_input_format = "mystery"\n'
-            ),
-            "Input should be 'json', 'json5', 'jsonc', 'toml', 'yaml'",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                'variable_form = "mystery"\n'
-            ),
-            "Input should be 'existing', 'new'",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                '[[call.variants]]\naxis = "made_up"\n'
-            ),
-            "unknown variant axis 'made_up'",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                '[[call.variants]]\naxis = "json_type"\n'
-                '[[call.variants]]\naxis = "json_type"\n'
-            ),
-            "duplicate call variant axis",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                "variant_only = true\n"
-            ),
-            "variant_only requires at least one call variant axis",
-        ),
-        (
-            'schema_version = 1\nowner = "literalize-ref"\n',
-            r"requires a \[ref\] table",
-        ),
-        (
-            'schema_version = 1\nowner = "literalize-ref-default"\n',
-            r"requires a \[ref\] table",
-        ),
-        (
-            'schema_version = 1\nsuites = ["base"]\n[ref]\n',
-            (
-                r"a \[ref\] table requires owner = 'literalize-ref' or "
-                "'literalize-ref-default'"
-            ),
-        ),
-        (
-            'schema_version = 1\nowner = "variant"\n[ref]\n',
-            r"a \[ref\] table requires owner",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref"\n'
-                "[ref]\n"
-                'ref_case_override = "mystery"\n'
-            ),
-            (
-                "Input should be 'camel', 'kebab', 'pascal', 'snake', "
-                "'upper_snake'"
-            ),
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref"\n'
-                "[ref]\n"
-                "ref_case_override = 1\n"
-            ),
-            "ref_case_override",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref"\n'
-                "[ref]\n"
-                "extra = true\n"
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            'schema_version = 1\nsuites = ["base"]\nlanguages = ["Python"]\n',
-            "Extra inputs are not permitted",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                'languages_reason = "sampled"\n'
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                'languages = ["Python"]\nlanguages_reason = "sampled"\n'
-                'gates = [{ kind = "capability_flag", '
-                'flag = "supports_comments" }]\n'
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                'gates = [{ kind = "vibes", name = "x" }]\n'
-            ),
-            "does not match any of the expected tags",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                'gates = [{ kind = "capability_flag", '
-                'flag = "supports_vibes" }]\n'
-            ),
-            "gates: unknown capability flag 'supports_vibes'",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                'gates = [{ kind = "enum_member_present", option = "vibe", '
-                'member = "RECORD" }]\n'
-            ),
-            "gates: unknown option 'vibe'",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-ref"\n'
-                "[ref]\n"
-                'languages = ["Python"]\n'
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            (
-                'schema_version = 1\nowner = "literalize-call"\n'
-                "[call]\n"
-                'target_function = "process"\n'
-                'parameter_names = ["value"]\n'
-                "per_element = true\n"
-                'languages = ["Python"]\n'
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                'languages = ["Pythonic"]\nlanguages_reason = "sampled"\n'
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                '[expected_reused_anchor_warning]\nanchor = ""\ncount = 1\n'
-            ),
-            "String should have at least 1 character",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                '[expected_reused_anchor_warning]\nanchor = "x"\ncount = 0\n'
-            ),
-            "Input should be greater than 0",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                '[expected_reused_anchor_warning]\nanchor = "x"\n'
-                "count = true\n"
-            ),
-            "Input should be a valid integer",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                '[expected_reused_anchor_warning]\nanchor = "x"\n'
-            ),
-            "Field required",
-        ),
-        (
-            (
-                'schema_version = 1\nsuites = ["base"]\n'
-                '[expected_reused_anchor_warning]\nanchor = "x"\ncount = 1\n'
-                'category = "UserWarning"\n'
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            (
-                "schema_version = 1\n"
-                'owner = "literalize-ref"\n'
-                "[ref]\n"
-                "variant_only = true\n"
-            ),
-            "variant_only requires at least one ref variant axis",
-        ),
-        (
-            (
-                "schema_version = 1\n"
-                'owner = "literalize-ref"\n'
-                "[ref]\n"
-                "[[ref.variants]]\n"
-                'axis = "json_type"\n'
-                "[[ref.variants]]\n"
-                'axis = "json_type"\n'
-            ),
-            "duplicate ref variant axis",
-        ),
-        (
-            (
-                "schema_version = 1\n"
-                'owner = "literalize-ref"\n'
-                "[ref]\n"
-                "[[ref.variants]]\n"
-                'axis = "imaginary"\n'
-            ),
-            "unknown variant axis 'imaginary'",
-        ),
-    ],
+    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
 )
 def test_invalid_manifest_is_actionable(
-    tmp_path: Path,
-    manifest: str,
-    message: str,
+    tmp_path: Path, case: _ManifestErrorCase
 ) -> None:
     """Invalid schema data reports the manifest and specific problem."""
     case_dir = _write_case(
-        tmp_path=tmp_path, manifest=manifest, input_name="input.yaml"
+        tmp_path=tmp_path, manifest=case.manifest, input_name="input.yaml"
     )
-    with pytest.raises(expected_exception=CaseManifestError, match=message):
+    with pytest.raises(
+        expected_exception=CaseManifestError, match=case.message
+    ):
         _ = load_case_manifest(case_dir=case_dir)
 
 
@@ -1000,41 +437,10 @@ def test_duplicate_golden_target_is_actionable() -> None:
 
 
 @pytest.mark.parametrize(
-    argnames=("field", "source"),
-    argvalues=[
-        ("bound_ref_times", '"not-a-time"'),
-        ("bound_ref_times", "42"),
-        ("bound_ref_datetimes", '"not-a-datetime"'),
-        ("bound_ref_datetimes", "42"),
-        ("bound_ref_values", '{kind = "unknown", value = 1}'),
-        ("bound_ref_values", '{kind = "scalar"}'),
-        ("bound_ref_values", '{kind = "sequence", items = "wrong"}'),
-        (
-            "bound_ref_values",
-            (
-                '{kind = "mapping", entries = [{key = [], '
-                'value = {kind = "scalar", value = 1}}]}'
-            ),
-        ),
-        (
-            "bound_ref_datetimes",
-            ("{wall_time = 1970-01-01T00:00:00Z, offset_microseconds = 1}"),
-        ),
-        (
-            "bound_ref_datetimes",
-            ("{wall_time = 1970-01-01T00:00:00, offset_microseconds = true}"),
-        ),
-        (
-            "bound_ref_datetimes",
-            (
-                "{wall_time = 1970-01-01T00:00:00, "
-                "offset_microseconds = 86400000000}"
-            ),
-        ),
-    ],
+    argnames="case", argvalues=_CASES.references, ids=lambda case: case.name
 )
 def test_invalid_reference_value_source(
-    tmp_path: Path, field: str, source: str
+    tmp_path: Path, case: _ReferenceErrorCase
 ) -> None:
     """Malformed native bindings fail with their owning manifest path."""
     case_dir = _write_case(
@@ -1043,12 +449,12 @@ def test_invalid_reference_value_source(
             "schema_version = 1\n"
             'owner = "literalize-ref-default"\n'
             "[ref]\n"
-            f"{field} = {{ value = {source} }}\n"
+            f"{case.field} = {{ value = {case.source} }}\n"
         ),
         input_name="input.json",
     )
     with pytest.raises(
-        expected_exception=CaseManifestError, match=rf"{field}\.value"
+        expected_exception=CaseManifestError, match=rf"{case.field}\.value"
     ):
         _ = load_case_manifest(case_dir=case_dir)
 

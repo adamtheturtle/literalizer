@@ -1,0 +1,762 @@
+# Validation scenarios for case-local golden manifests.
+
+[[cases]]
+name = "call_transform_add_one_and_call_transform_nullable_conditional_are_mutually_exclusive"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+call_transform_add_one = true
+call_transform_nullable_conditional = true
+'''
+message = "call_transform_add_one and call_transform_nullable_conditional are mutually exclusive"
+
+[[cases]]
+name = "call_transform_sequence_and_call_transform_add_one_are_mutually_exclusive"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+call_transform_sequence = true
+call_transform_add_one = true
+'''
+message = "call_transform_sequence and call_transform_add_one are mutually exclusive"
+
+[[cases]]
+name = "call_transform_wrapper_requires_a_declared_transform_stub"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+call_transform_wrapper = {target = "emit", arguments = ["call"]}
+'''
+message = "call_transform_wrapper requires a declared transform stub"
+
+[[cases]]
+name = "wrapper_operands_must_match_transform_stub_param_names"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+transform_stub_names = ["emit"]
+call_transform_wrapper = {target = "emit", arguments = ["call", "call"]}
+'''
+message = "wrapper operands must match transform_stub_param_names"
+
+[[cases]]
+name = "a_zipped_wrapper_operand_requires_zip_source"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+transform_stub_names = ["emit"]
+call_transform_wrapper = {target = "emit", arguments = ["zipped"]}
+'''
+message = "a zipped wrapper operand requires zip_source"
+
+[[cases]]
+name = "call_transform_wrapper_and_call_transform_sequence_are_mutually_exclusive"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+transform_stub_names = ["emit"]
+call_transform_wrapper = {target = "emit", arguments = ["call"]}
+call_transform_sequence = true
+'''
+message = "call_transform_wrapper and call_transform_sequence are mutually exclusive"
+
+[[cases]]
+name = "call_transform_group_and_call_transform_sequence_are_mutually_exclusive"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+call_transform_group = {body = "{call}", suffix = ""}
+call_transform_sequence = true
+'''
+message = "call_transform_group and call_transform_sequence are mutually exclusive"
+
+[[cases]]
+name = "call_transform_group_and_call_transform_arguments_are_mutually_exclusive"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+call_transform_group = {body = "{call}", suffix = ""}
+call_transform_arguments = {arguments = ["token"], suffix = ""}
+'''
+message = "call_transform_group and call_transform_arguments are mutually exclusive"
+
+[[cases]]
+name = "expected_error_must_be_public_literalizer_error"
+manifest = '''schema_version = 1
+suites = ["base"]
+[[variants]]
+axis = "string_format"
+expected_errors = ["RuntimeError"]
+'''
+message = "InvalidDictKeyError"
+
+[[cases]]
+name = "schema_version"
+manifest = '''schema_version = 2
+suites = ["base"]
+'''
+message = "schema_version"
+
+[[cases]]
+name = "schema_version_must_be_integer"
+manifest = '''schema_version = "1"
+suites = ["base"]
+'''
+message = "Input should be 1"
+
+[[cases]]
+name = "unknown_top_level_field"
+manifest = '''schema_version = 1
+suites = ["base"]
+extra = true
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "unknown_owner"
+manifest = '''schema_version = 1
+owner = "mystery"
+'''
+message = "Input should be 'literalize-call'"
+
+[[cases]]
+name = "unknown_variant_axis"
+manifest = '''schema_version = 1
+suites = ["base"]
+[[variants]]
+axis = "made_up"
+'''
+message = "unknown variant axis"
+
+[[cases]]
+name = "duplicate_logical_variant_case"
+manifest = '''schema_version = 1
+suites = ["base"]
+[[variants]]
+axis = "date"
+[[variants]]
+axis = "date"
+'''
+message = "duplicate logical variant case"
+
+[[cases]]
+name = "unknown_variant_requirement"
+manifest = '''schema_version = 1
+suites = ["base"]
+[[variants]]
+axis = "date"
+requires = ["teleportation"]
+'''
+message = "Input should be 'collection_comments'"
+
+[[cases]]
+name = "requires_contains_a_duplicate_entry"
+manifest = '''schema_version = 1
+suites = ["base"]
+[[variants]]
+axis = "date"
+requires = ["special_floats", "special_floats"]
+'''
+message = "requires contains a duplicate entry"
+
+[[cases]]
+name = "suites_contains_a_duplicate_entry"
+manifest = '''schema_version = 1
+suites = ["base", "base"]
+'''
+message = "suites contains a duplicate entry"
+
+[[cases]]
+name = "unknown_case_role"
+manifest = '''schema_version = 1
+suites = ["base"]
+roles = ["mascot"]
+'''
+message = "Input should be .*'heterogeneous-strategy-default-input'"
+
+[[cases]]
+name = "roles_contains_a_duplicate_entry"
+manifest = '''schema_version = 1
+suites = ["base"]
+roles = ["indent-input", "indent-input"]
+'''
+message = "roles contains a duplicate entry"
+
+[[cases]]
+name = "suites_and_owner_are_mutually_exclusive"
+manifest = '''schema_version = 1
+suites = ["base"]
+owner = "variant"
+'''
+message = "suites and owner are mutually exclusive"
+
+[[cases]]
+name = "declare_suites_or_a_specialized_owner"
+manifest = '''schema_version = 1
+'''
+message = "declare suites or a specialized owner"
+
+[[cases]]
+name = "base_context_requires_participation_in_the_base_suite"
+manifest = '''schema_version = 1
+suites = ["combined"]
+[base_context]
+'''
+message = "base_context requires participation in the base suite"
+
+[[cases]]
+name = "consumer_requires_external_declarations"
+manifest = '''schema_version = 1
+owner = "literalize-ref-default"
+[ref.consumer]
+target_function = "consume_widget"
+'''
+message = "consumer requires external_declarations"
+
+[[cases]]
+name = "consumer_before_new_binding"
+manifest = '''schema_version = 1
+owner = "literalize-ref-default"
+[ref]
+external_declarations = {my_data = "0"}
+[ref.consumer]
+target_function = "consume_widget"
+before_assignment = true
+'''
+message = "before_assignment requires an existing my_data binding"
+
+[[cases]]
+name = "consumer_without_named_existing_binding"
+manifest = '''schema_version = 1
+owner = "literalize-ref-default"
+[ref]
+variable_form = "existing"
+external_declarations = {other = "0"}
+[ref.consumer]
+target_function = "consume_widget"
+before_assignment = true
+'''
+message = "before_assignment requires an existing my_data binding"
+
+[[cases]]
+name = "expected_value_source_requires_external_declarations"
+manifest = '''schema_version = 1
+owner = "literalize-ref-default"
+[ref]
+expected_value_source = "[0, 1]"
+'''
+message = "expected_value_source requires external_declarations"
+
+[[cases]]
+name = "expected_value_source_requires_a_variable_binding"
+manifest = '''schema_version = 1
+owner = "literalize-ref-default"
+[ref]
+variable_form = "none"
+expected_value_source = "1"
+'''
+message = "expected_value_source requires a variable binding"
+
+[[cases]]
+name = "consumer_and_expected_value_source_are_mutually_exclusive"
+manifest = '''schema_version = 1
+owner = "literalize-ref-default"
+[ref]
+external_declarations = {a = "0"}
+expected_value_source = "[0, 1]"
+[ref.consumer]
+target_function = "consume_widget"
+'''
+message = "consumer and expected_value_source are mutually exclusive"
+
+[[cases]]
+name = "requires_a_constructor_table"
+manifest = '''schema_version = 1
+owner = "constructor-binding"
+'''
+message = "requires a \\[constructor\\] table"
+
+[[cases]]
+name = "a_constructor_table_requires_owner"
+manifest = '''schema_version = 1
+suites = ["base"]
+[constructor]
+'''
+message = "a \\[constructor\\] table requires owner"
+
+[[cases]]
+name = "requires_a_call_table"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+'''
+message = "requires a \\[call\\] table"
+
+[[cases]]
+name = "a_call_table_requires_owner"
+manifest = '''schema_version = 1
+suites = ["base"]
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+'''
+message = "a \\[call\\] table requires owner"
+
+[[cases]]
+name = "unknown_call_transform_placeholder_bogus"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+call_transform = "emit({bogus})"
+'''
+message = "unknown call_transform placeholder 'bogus'"
+
+[[cases]]
+name = "followup_target_function_requires_followup_source"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+followup_target_function = "consume"
+'''
+message = "followup_target_function requires followup_source"
+
+[[cases]]
+name = "followup_target_function_must_differ_from_target_function"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+followup_source = "1"
+followup_target_function = "process"
+'''
+message = "followup_target_function must differ from target_function"
+
+[[cases]]
+name = "followup_target_must_be_string"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+followup_source = "1"
+followup_target_function = 1
+'''
+message = "Input should be a valid string"
+
+[[cases]]
+name = "unknown_call_style"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+call_style = "mystery"
+'''
+message = "Input should be 'command', 'keyword', 'object', 'positional'"
+
+[[cases]]
+name = "call_style_must_be_string"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+call_style = 1
+'''
+message = "call_style"
+
+[[cases]]
+name = "call_transform_must_be_string"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+call_transform = 1
+'''
+message = "call_transform"
+
+[[cases]]
+name = "unknown_zip_input_format"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+zip_input_format = "mystery"
+'''
+message = "Input should be 'json', 'json5', 'jsonc', 'toml', 'yaml'"
+
+[[cases]]
+name = "unknown_ref_input_format"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+ref_input_format = "mystery"
+'''
+message = "Input should be 'json', 'json5', 'jsonc', 'toml', 'yaml'"
+
+[[cases]]
+name = "unknown_call_variable_form"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+variable_form = "mystery"
+'''
+message = "Input should be 'existing', 'new'"
+
+[[cases]]
+name = "unknown_variant_axis_made_up"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+[[call.variants]]
+axis = "made_up"
+'''
+message = "unknown variant axis 'made_up'"
+
+[[cases]]
+name = "duplicate_call_variant_axis"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+[[call.variants]]
+axis = "json_type"
+[[call.variants]]
+axis = "json_type"
+'''
+message = "duplicate call variant axis"
+
+[[cases]]
+name = "variant_only_requires_at_least_one_call_variant_axis"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+variant_only = true
+'''
+message = "variant_only requires at least one call variant axis"
+
+[[cases]]
+name = "literalize_ref_requires_ref_table"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+'''
+message = "requires a \\[ref\\] table"
+
+[[cases]]
+name = "literalize_ref_default_requires_ref_table"
+manifest = '''schema_version = 1
+owner = "literalize-ref-default"
+'''
+message = "requires a \\[ref\\] table"
+
+[[cases]]
+name = "ref_table_under_literalize_call_owner"
+manifest = '''schema_version = 1
+suites = ["base"]
+[ref]
+'''
+message = "a \\[ref\\] table requires owner = 'literalize-ref' or 'literalize-ref-default'"
+
+[[cases]]
+name = "ref_table_without_owner"
+manifest = '''schema_version = 1
+owner = "variant"
+[ref]
+'''
+message = "a \\[ref\\] table requires owner"
+
+[[cases]]
+name = "unknown_ref_case_override"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+ref_case_override = "mystery"
+'''
+message = "Input should be 'camel', 'kebab', 'pascal', 'snake', 'upper_snake'"
+
+[[cases]]
+name = "ref_case_override_must_be_string"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+ref_case_override = 1
+'''
+message = "ref_case_override"
+
+[[cases]]
+name = "unknown_ref_field"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+extra = true
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "legacy_language_list"
+manifest = '''schema_version = 1
+suites = ["base"]
+languages = ["Python"]
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "legacy_language_reason"
+manifest = '''schema_version = 1
+suites = ["base"]
+languages_reason = "sampled"
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "legacy_selection_with_capability_gate"
+manifest = '''schema_version = 1
+suites = ["base"]
+languages = ["Python"]
+languages_reason = "sampled"
+gates = [{ kind = "capability_flag", flag = "supports_comments" }]
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "unknown_gate_tag"
+manifest = '''schema_version = 1
+suites = ["base"]
+gates = [{ kind = "vibes", name = "x" }]
+'''
+message = "does not match any of the expected tags"
+
+[[cases]]
+name = "unknown_capability_gate_flag"
+manifest = '''schema_version = 1
+suites = ["base"]
+gates = [{ kind = "capability_flag", flag = "supports_vibes" }]
+'''
+message = "gates: unknown capability flag 'supports_vibes'"
+
+[[cases]]
+name = "unknown_gate_option"
+manifest = '''schema_version = 1
+suites = ["base"]
+gates = [{ kind = "enum_member_present", option = "vibe", member = "RECORD" }]
+'''
+message = "gates: unknown option 'vibe'"
+
+[[cases]]
+name = "legacy_ref_language_list"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+languages = ["Python"]
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "legacy_call_language_list"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+languages = ["Python"]
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "unknown_legacy_language"
+manifest = '''schema_version = 1
+suites = ["base"]
+languages = ["Pythonic"]
+languages_reason = "sampled"
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "empty_rebound_anchor_name"
+manifest = '''schema_version = 1
+suites = ["base"]
+[expected_reused_anchor_warning]
+anchor = ""
+count = 1
+'''
+message = "String should have at least 1 character"
+
+[[cases]]
+name = "zero_rebound_anchor_count"
+manifest = '''schema_version = 1
+suites = ["base"]
+[expected_reused_anchor_warning]
+anchor = "x"
+count = 0
+'''
+message = "Input should be greater than 0"
+
+[[cases]]
+name = "boolean_rebound_anchor_count"
+manifest = '''schema_version = 1
+suites = ["base"]
+[expected_reused_anchor_warning]
+anchor = "x"
+count = true
+'''
+message = "Input should be a valid integer"
+
+[[cases]]
+name = "missing_rebound_anchor_count"
+manifest = '''schema_version = 1
+suites = ["base"]
+[expected_reused_anchor_warning]
+anchor = "x"
+'''
+message = "Field required"
+
+[[cases]]
+name = "unknown_rebound_anchor_field"
+manifest = '''schema_version = 1
+suites = ["base"]
+[expected_reused_anchor_warning]
+anchor = "x"
+count = 1
+category = "UserWarning"
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "variant_only_requires_at_least_one_ref_variant_axis"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+variant_only = true
+'''
+message = "variant_only requires at least one ref variant axis"
+
+[[cases]]
+name = "duplicate_ref_variant_axis"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+[[ref.variants]]
+axis = "json_type"
+[[ref.variants]]
+axis = "json_type"
+'''
+message = "duplicate ref variant axis"
+
+[[cases]]
+name = "unknown_variant_axis_imaginary"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+[[ref.variants]]
+axis = "imaginary"
+'''
+message = "unknown variant axis 'imaginary'"
+
+[[references]]
+name = "time_binding_invalid_string"
+field = "bound_ref_times"
+source = "\"not-a-time\""
+
+[[references]]
+name = "time_binding_integer"
+field = "bound_ref_times"
+source = "42"
+
+[[references]]
+name = "datetime_binding_invalid_string"
+field = "bound_ref_datetimes"
+source = "\"not-a-datetime\""
+
+[[references]]
+name = "datetime_binding_integer"
+field = "bound_ref_datetimes"
+source = "42"
+
+[[references]]
+name = "unknown_binding_recipe"
+field = "bound_ref_values"
+source = "{kind = \"unknown\", value = 1}"
+
+[[references]]
+name = "scalar_binding_missing_value"
+field = "bound_ref_values"
+source = "{kind = \"scalar\"}"
+
+[[references]]
+name = "sequence_binding_non_array_items"
+field = "bound_ref_values"
+source = "{kind = \"sequence\", items = \"wrong\"}"
+
+[[references]]
+name = "mapping_binding_non_scalar_key"
+field = "bound_ref_values"
+source = "{kind = \"mapping\", entries = [{key = [], value = {kind = \"scalar\", value = 1}}]}"
+
+[[references]]
+name = "offset_wall_time_already_aware"
+field = "bound_ref_datetimes"
+source = "{wall_time = 1970-01-01T00:00:00Z, offset_microseconds = 1}"
+
+[[references]]
+name = "boolean_datetime_offset"
+field = "bound_ref_datetimes"
+source = "{wall_time = 1970-01-01T00:00:00, offset_microseconds = true}"
+
+[[references]]
+name = "datetime_offset_outside_day"
+field = "bound_ref_datetimes"
+source = "{wall_time = 1970-01-01T00:00:00, offset_microseconds = 86400000000}"
