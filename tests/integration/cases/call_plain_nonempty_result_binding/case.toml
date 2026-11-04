@@ -16,3 +16,10 @@ axis = "json_type_call_result"
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
+
+# Check result declarations and generated helper return types independently of empty or populated argument inference.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"

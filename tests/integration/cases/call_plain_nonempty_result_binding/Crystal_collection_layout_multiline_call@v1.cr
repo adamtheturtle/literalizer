@@ -1,0 +1,7 @@
+module Fixture_call_plain_nonempty_result_binding_Crystal_collection_layout_multiline_call
+extend self
+def make_widget(value = nil); 0; end
+my_data = make_widget(value: [
+    1,
+])
+end
