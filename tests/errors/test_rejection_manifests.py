@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 from beartype import beartype
+from pydantic import BaseModel, TypeAdapter
 
 from literalizer.languages import ALL_LANGUAGES
 from tests.errors.rejection_cases import selected_languages
@@ -15,10 +16,27 @@ from tests.errors.rejection_manifests import (
     load_rejection_manifest,
     load_rejection_manifests,
 )
+from tests.toml_cases import load_toml_cases
 
-_JSON_TYPE_GATE = (
-    'gates = [{ kind = "spec_field_present", field = "json_type" }]'
+
+class _ManifestErrorCase(BaseModel, extra="forbid", frozen=True):
+    """One named manifest-owned regression scenario."""
+
+    name: str
+    manifest: str
+    message: str
+
+
+class _Cases(BaseModel, extra="forbid", frozen=True):
+    """The complete declarative regression corpus."""
+
+    cases: tuple[_ManifestErrorCase, ...]
+
+
+_CASES = TypeAdapter(type=_Cases).validate_python(
+    load_toml_cases(name="rejection_manifest_validation")
 )
+
 _NO_EXTRA = ""
 _CONSTRUCTOR = 'api = "constructor"'
 
@@ -52,373 +70,15 @@ def _write_manifest(*, tmp_path: Path, manifest: str) -> Path:
 
 
 @pytest.mark.parametrize(
-    argnames=("manifest", "message"),
-    argvalues=[
-        (
-            _manifest(
-                selection="",
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "constructor"\nmodifier_language = "LegacyLanguage"'
-                ),
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            _manifest(
-                selection='languages = ["LegacyLanguage"]',
-                extra=_NO_EXTRA,
-                call=_CONSTRUCTOR,
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            _manifest(
-                selection="",
-                extra=(
-                    '[[accepts]]\nlanguages = ["LegacyLanguage"]\n'
-                    'reason = "renders"'
-                ),
-                call=_CONSTRUCTOR,
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            _manifest(
-                selection="",
-                extra='values = ["a", "a"]',
-                call=_CONSTRUCTOR,
-            ),
-            "values contains a duplicate entry",
-        ),
-        (
-            _manifest(
-                selection="",
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize"\n'
-                    'sources = ["1"]\n'
-                    'input_format = "json"\n'
-                    'variable_form = "new"\n'
-                    'modifier_source = "all"'
-                ),
-            ),
-            "modifier_source = 'all' requires modifiers",
-        ),
-        (
-            _manifest(
-                selection="",
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize"\n'
-                    'sources = ["1"]\n'
-                    'input_format = "json"\n'
-                    'variable_form = "new"\n'
-                    'modifiers = ["FINAL"]\n'
-                    'modifier_source = "Missing"'
-                ),
-            ),
-            "Input should be 'target' or 'all'",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                call=_CONSTRUCTOR,
-                extra="mystery = true",
-            ),
-            "Extra inputs are not permitted",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE, extra=_NO_EXTRA, call=_CONSTRUCTOR
-            ).replace(
-                '"IncompatibleFormatsError"',
-                '"NoSuchError"',
-            ),
-            "Input should be 'BoundRefOutputCollisionError'",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE, extra=_NO_EXTRA, call=_CONSTRUCTOR
-            ).replace('"IncompatibleFormatsError"', "7"),
-            "Input should be a subclass of Exception",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                call=_CONSTRUCTOR,
-                extra='option = "sorcery"',
-            ),
-            "unknown option 'sorcery'",
-        ),
-        (
-            _manifest(
-                selection=(
-                    'gates = [{ kind = "capability_flag", flag = "sorcery" }]'
-                ),
-                call=_CONSTRUCTOR,
-                extra=_NO_EXTRA,
-            ),
-            "unknown capability flag 'sorcery'",
-        ),
-        (
-            _manifest(
-                selection=(
-                    'gates = [{ kind = "enum_member_present", '
-                    'option = "sorcery", member = "MAGIC" }]'
-                ),
-                call=_CONSTRUCTOR,
-                extra=_NO_EXTRA,
-            ),
-            "unknown gate option 'sorcery'",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra='values = ["b", "a"]',
-                call=(
-                    'api = "constructor"\nkwargs = [{ kind = "text", '
-                    'kwarg = "module_name", value = "{value}" }]'
-                ),
-            ),
-            "values is not in sorted order",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                call=_CONSTRUCTOR,
-                extra='values = ["a"]',
-            ),
-            "declare values exactly when an argument substitutes one",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "constructor"\nkwargs = [{ kind = "text", '
-                    'kwarg = "module_name", value = "{value}" }]'
-                ),
-            ),
-            "declare values exactly when an argument substitutes one",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "constructor"\nkwargs = [{ kind = "text", '
-                    'kwarg = "module_name", value = "{module}" }]'
-                ),
-            ),
-            r"unknown placeholder\(s\) \['module'\]",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "constructor"\nkwargs = [{ kind = '
-                    '"record_shape_names", key_sets = [["id"]], '
-                    'names = ["A", "B"] }]'
-                ),
-            ),
-            "key_sets and names must be the same length",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call='api = "constructor"\nsources = ["1"]',
-            ),
-            "requires exactly sources",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call='api = "literalize"\ninput_format = "yaml"',
-            ),
-            "requires exactly sources",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call='api = "literalize"\nsources = ["1"]',
-            ),
-            "requires exactly an input_format",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize"\nsources = ["1"]\n'
-                    'input_format = "json"\ntarget_function = "process"'
-                ),
-            ),
-            "requires exactly a target_function",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize_call"\nsources = ["1"]\n'
-                    'input_format = "json"\ntarget_function = "process"'
-                ),
-            ),
-            "requires exactly parameter_names or parameter_names_bare",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize_call"\nsources = ["1"]\n'
-                    'input_format = "json"\ntarget_function = "process"\n'
-                    'parameter_names = ["x"]\nparameter_names_bare = "ab"'
-                ),
-            ),
-            "declare parameter_names or parameter_names_bare, not both",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize_call"\nsources = ["1"]\n'
-                    'input_format = "json"\ntarget_function = "process"\n'
-                    'parameter_names = ["x"]\n'
-                    'comment_source = ["note"]\ncomment_source_bare = "ok"'
-                ),
-            ),
-            "declare comment_source or comment_source_bare, not both",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize_call"\nsources = ["1"]\n'
-                    'input_format = "json"\ntarget_function = "process"\n'
-                    'parameter_names = ["x"]\nmodifiers = ["CONST"]'
-                ),
-            ),
-            "modifiers require a new or both variable form",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize"\nsources = ["1"]\n'
-                    'input_format = "json"\ninput_root_key = "calls"'
-                ),
-            ),
-            "input_root_key applies to api = 'literalize_call'",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize"\nsources = ["1"]\n'
-                    'input_format = "json"\nzip_source = "[]"'
-                ),
-            ),
-            "zip_source applies to api = 'literalize_call'",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize_call"\nsources = ["[1]"]\n'
-                    'input_format = "json"\ntarget_function = "f"\n'
-                    'parameter_names = ["value"]\n'
-                    'call_transform = "emit({bogus})"'
-                ),
-            ),
-            "unknown call_transform placeholder 'bogus'",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize"\nsources = ["1"]\ninput_format = "csv"'
-                ),
-            ),
-            "Input should be 'json', 'json5', 'jsonc', 'toml', 'yaml'",
-        ),
-        (
-            _manifest(
-                selection=_JSON_TYPE_GATE,
-                extra=_NO_EXTRA,
-                call=(
-                    'api = "literalize"\nsources = ["1", "1"]\n'
-                    'input_format = "json"'
-                ),
-            ),
-            "sources contains a duplicate entry",
-        ),
-    ],
+    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
 )
 def test_invalid_manifest_is_rejected(
-    manifest: str,
-    message: str,
-    tmp_path: Path,
+    case: _ManifestErrorCase, tmp_path: Path
 ) -> None:
     """Every declared inconsistency fails when the manifest loads."""
-    manifest_path = _write_manifest(tmp_path=tmp_path, manifest=manifest)
+    manifest_path = _write_manifest(tmp_path=tmp_path, manifest=case.manifest)
     with pytest.raises(
-        expected_exception=RejectionManifestError,
-        match=message,
-    ):
-        _ = load_rejection_manifest(manifest_path=manifest_path)
-
-
-@pytest.mark.parametrize(
-    argnames="call",
-    argvalues=[
-        'api = "constructor"',
-        (
-            'api = "literalize"\nsources = ["1"]\ninput_format = "json"\n'
-            'variable_form = "none"'
-        ),
-        (
-            'api = "literalize"\nsources = ["1"]\ninput_format = "json"\n'
-            'variable_form = "existing"'
-        ),
-        (
-            'api = "literalize_call"\nsources = ["1"]\ninput_format = "json"\n'
-            'target_function = "f"\nparameter_names = ["item"]\n'
-            'variable_form = "none"'
-        ),
-        (
-            'api = "literalize_call"\nsources = ["1"]\ninput_format = "json"\n'
-            'target_function = "f"\nparameter_names = ["item"]\n'
-            'variable_form = "existing"'
-        ),
-    ],
-)
-def test_modifiers_require_a_declaration(call: str, tmp_path: Path) -> None:
-    """Do not silently discard modifiers for forms without
-    declarations.
-    """
-    manifest_path = _write_manifest(
-        tmp_path=tmp_path,
-        manifest=_manifest(
-            selection="",
-            extra=_NO_EXTRA,
-            call=f'{call}\nmodifiers = ["CONST"]',
-        ),
-    )
-    with pytest.raises(
-        expected_exception=RejectionManifestError,
-        match="modifiers require a new or both variable form",
+        expected_exception=RejectionManifestError, match=case.message
     ):
         _ = load_rejection_manifest(manifest_path=manifest_path)
 
@@ -469,104 +129,3 @@ def test_scenario_without_gates_admits_every_language(tmp_path: Path) -> None:
         ),
     )
     assert set(selected_languages(manifest=manifest)) == set(ALL_LANGUAGES)
-
-
-@pytest.mark.parametrize(
-    argnames=("selection", "extra", "call", "message"),
-    argvalues=[
-        (
-            "",
-            "",
-            'api = "sequence_type_annotation"',
-            "requires option = 'sequence_format'",
-        ),
-        (
-            'option = "sequence_format"',
-            "",
-            'api = "declaration_formatter"',
-            "requires option = 'declaration_style'",
-        ),
-        (
-            "",
-            "",
-            (
-                'api = "literalize_call_with_declarations"\n'
-                'sources = ["0"]\ninput_format = "json"\n'
-                'target_function = "f"\nparameter_names = []'
-            ),
-            "composition requires declarations",
-        ),
-        (
-            'option = "declaration_style"',
-            "",
-            (
-                'api = "declaration_formatter"\n'
-                'kwargs = [{kind = "boolean", kwarg = "unused", value = true}]'
-            ),
-            "formatter operations do not construct a language",
-        ),
-        (
-            "",
-            "record_output = true",
-            _CONSTRUCTOR,
-            "record_output requires an operation that returns code",
-        ),
-        (
-            "",
-            "integer_digit_limit = 639",
-            _CONSTRUCTOR,
-            "integer_digit_limit must be zero or at least",
-        ),
-        (
-            "",
-            "integer_digit_limit = -1",
-            _CONSTRUCTOR,
-            "greater than or equal to 0",
-        ),
-        (
-            "",
-            "integer_digit_limit = true",
-            _CONSTRUCTOR,
-            "valid integer",
-        ),
-    ],
-)
-def test_invalid_operation_is_rejected(
-    selection: str, extra: str, call: str, message: str, tmp_path: Path
-) -> None:
-    """Reject ambiguous operations and invalid interpreter settings."""
-    manifest_path = _write_manifest(
-        tmp_path=tmp_path,
-        manifest=_manifest(selection=selection, extra=extra, call=call),
-    )
-    with pytest.raises(
-        expected_exception=RejectionManifestError, match=message
-    ):
-        _ = load_rejection_manifest(manifest_path=manifest_path)
-
-
-@pytest.mark.parametrize(
-    argnames="argument",
-    argvalues=[
-        "declarations = []",
-        'element_type = "Element"',
-        "length = 2",
-        'formatted_value = "v"',
-        'formatter_data = "metadata"',
-        "record_null_substitutions = {}",
-    ],
-)
-def test_operation_arguments_require_their_api(
-    argument: str, tmp_path: Path
-) -> None:
-    """An explicitly supplied operation argument cannot be ignored."""
-    manifest_path = _write_manifest(
-        tmp_path=tmp_path,
-        manifest=_manifest(
-            selection="", extra="", call=f"{_CONSTRUCTOR}\n{argument}"
-        ),
-    )
-    with pytest.raises(
-        expected_exception=RejectionManifestError, match="applies to api ="
-    ):
-        _ = load_rejection_manifest(manifest_path=manifest_path)

@@ -1,0 +1,677 @@
+# Invalid rejection manifests, operations, declarations, and arguments.
+
+[[cases]]
+name = "legacy_modifier_language"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "constructor"
+modifier_language = "LegacyLanguage"
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "legacy_language_list"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+languages = ["LegacyLanguage"]
+
+[call]
+api = "constructor"
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "legacy_acceptance_language_list"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+[[accepts]]
+languages = ["LegacyLanguage"]
+reason = "renders"
+[call]
+api = "constructor"
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "values_contains_a_duplicate_entry"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+values = ["a", "a"]
+[call]
+api = "constructor"
+'''
+message = "values contains a duplicate entry"
+
+[[cases]]
+name = "modifier_source_all_requires_modifiers"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "new"
+modifier_source = "all"
+'''
+message = "modifier_source = 'all' requires modifiers"
+
+[[cases]]
+name = "unknown_modifier_source"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "new"
+modifiers = ["FINAL"]
+modifier_source = "Missing"
+'''
+message = "Input should be 'target' or 'all'"
+
+[[cases]]
+name = "unknown_top_level_field"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+mystery = true
+[call]
+api = "constructor"
+'''
+message = "Extra inputs are not permitted"
+
+[[cases]]
+name = "unknown_exception_name"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["NoSuchError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "constructor"
+'''
+message = "Input should be 'BoundRefOutputCollisionError'"
+
+[[cases]]
+name = "non_exception_value"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = [7]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "constructor"
+'''
+message = "Input should be a subclass of Exception"
+
+[[cases]]
+name = "unknown_option_sorcery"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+option = "sorcery"
+[call]
+api = "constructor"
+'''
+message = "unknown option 'sorcery'"
+
+[[cases]]
+name = "unknown_capability_flag_sorcery"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "capability_flag", flag = "sorcery" }]
+
+[call]
+api = "constructor"
+'''
+message = "unknown capability flag 'sorcery'"
+
+[[cases]]
+name = "unknown_gate_option_sorcery"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "enum_member_present", option = "sorcery", member = "MAGIC" }]
+
+[call]
+api = "constructor"
+'''
+message = "unknown gate option 'sorcery'"
+
+[[cases]]
+name = "values_is_not_in_sorted_order"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+values = ["b", "a"]
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "{value}" }]
+'''
+message = "values is not in sorted order"
+
+[[cases]]
+name = "declared_values_without_placeholder"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+values = ["a"]
+[call]
+api = "constructor"
+'''
+message = "declare values exactly when an argument substitutes one"
+
+[[cases]]
+name = "value_placeholder_without_values"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "{value}" }]
+'''
+message = "declare values exactly when an argument substitutes one"
+
+[[cases]]
+name = "unknown_placeholder_s_module"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "text", kwarg = "module_name", value = "{module}" }]
+'''
+message = "unknown placeholder\\(s\\) \\['module'\\]"
+
+[[cases]]
+name = "key_sets_and_names_must_be_the_same_length"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "constructor"
+kwargs = [{ kind = "record_shape_names", key_sets = [["id"]], names = ["A", "B"] }]
+'''
+message = "key_sets and names must be the same length"
+
+[[cases]]
+name = "literalize_missing_sources"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "constructor"
+sources = ["1"]
+'''
+message = "requires exactly sources"
+
+[[cases]]
+name = "constructor_with_sources"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize"
+input_format = "yaml"
+'''
+message = "requires exactly sources"
+
+[[cases]]
+name = "literalize_missing_input_format"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize"
+sources = ["1"]
+'''
+message = "requires exactly an input_format"
+
+[[cases]]
+name = "call_missing_target"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+target_function = "process"
+'''
+message = "requires exactly a target_function"
+
+[[cases]]
+name = "call_missing_parameters"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = "process"
+'''
+message = "requires exactly parameter_names or parameter_names_bare"
+
+[[cases]]
+name = "conflicting_parameter_name_forms"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["x"]
+parameter_names_bare = "ab"
+'''
+message = "declare parameter_names or parameter_names_bare, not both"
+
+[[cases]]
+name = "conflicting_comment_source_forms"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["x"]
+comment_source = ["note"]
+comment_source_bare = "ok"
+'''
+message = "declare comment_source or comment_source_bare, not both"
+
+[[cases]]
+name = "modifiers_require_a_new_or_both_variable_form"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = "process"
+parameter_names = ["x"]
+modifiers = ["CONST"]
+'''
+message = "modifiers require a new or both variable form"
+
+[[cases]]
+name = "input_root_key_applies_to_api_literalize_call"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+input_root_key = "calls"
+'''
+message = "input_root_key applies to api = 'literalize_call'"
+
+[[cases]]
+name = "zip_source_applies_to_api_literalize_call"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+zip_source = "[]"
+'''
+message = "zip_source applies to api = 'literalize_call'"
+
+[[cases]]
+name = "unknown_call_transform_placeholder_bogus"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize_call"
+sources = ["[1]"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["value"]
+call_transform = "emit({bogus})"
+'''
+message = "unknown call_transform placeholder 'bogus'"
+
+[[cases]]
+name = "unknown_input_format"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "csv"
+'''
+message = "Input should be 'json', 'json5', 'jsonc', 'toml', 'yaml'"
+
+[[cases]]
+name = "sources_contains_a_duplicate_entry"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+gates = [{ kind = "spec_field_present", field = "json_type" }]
+
+[call]
+api = "literalize"
+sources = ["1", "1"]
+input_format = "json"
+'''
+message = "sources contains a duplicate entry"
+
+[[cases]]
+name = "requires_option_sequence_format"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "sequence_type_annotation"
+'''
+message = "requires option = 'sequence_format'"
+
+[[cases]]
+name = "requires_option_declaration_style"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+option = "sequence_format"
+
+[call]
+api = "declaration_formatter"
+'''
+message = "requires option = 'declaration_style'"
+
+[[cases]]
+name = "composition_requires_declarations"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "literalize_call_with_declarations"
+sources = ["0"]
+input_format = "json"
+target_function = "f"
+parameter_names = []
+'''
+message = "composition requires declarations"
+
+[[cases]]
+name = "formatter_operations_do_not_construct_a_language"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+option = "declaration_style"
+
+[call]
+api = "declaration_formatter"
+kwargs = [{kind = "boolean", kwarg = "unused", value = true}]
+'''
+message = "formatter operations do not construct a language"
+
+[[cases]]
+name = "record_output_requires_an_operation_that_returns_code"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+record_output = true
+[call]
+api = "constructor"
+'''
+message = "record_output requires an operation that returns code"
+
+[[cases]]
+name = "integer_digit_limit_must_be_zero_or_at_least"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+integer_digit_limit = 639
+[call]
+api = "constructor"
+'''
+message = "integer_digit_limit must be zero or at least"
+
+[[cases]]
+name = "greater_than_or_equal_to_0"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+integer_digit_limit = -1
+[call]
+api = "constructor"
+'''
+message = "greater than or equal to 0"
+
+[[cases]]
+name = "valid_integer"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+integer_digit_limit = true
+[call]
+api = "constructor"
+'''
+message = "valid integer"
+
+[[cases]]
+name = "constructor_modifiers"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "constructor"
+modifiers = ["CONST"]
+'''
+message = "modifiers require a new or both variable form"
+
+[[cases]]
+name = "bare_literal_modifiers"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "none"
+modifiers = ["CONST"]
+'''
+message = "modifiers require a new or both variable form"
+
+[[cases]]
+name = "existing_literal_modifiers"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "literalize"
+sources = ["1"]
+input_format = "json"
+variable_form = "existing"
+modifiers = ["CONST"]
+'''
+message = "modifiers require a new or both variable form"
+
+[[cases]]
+name = "bare_call_modifiers"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["item"]
+variable_form = "none"
+modifiers = ["CONST"]
+'''
+message = "modifiers require a new or both variable form"
+
+[[cases]]
+name = "existing_call_modifiers"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = "f"
+parameter_names = ["item"]
+variable_form = "existing"
+modifiers = ["CONST"]
+'''
+message = "modifiers require a new or both variable form"
+
+[[cases]]
+name = "misplaced_declarations"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "constructor"
+declarations = []
+'''
+message = "applies to api ="
+
+[[cases]]
+name = "misplaced_element_type"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "constructor"
+element_type = "Element"
+'''
+message = "applies to api ="
+
+[[cases]]
+name = "misplaced_length"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "constructor"
+length = 2
+'''
+message = "applies to api ="
+
+[[cases]]
+name = "misplaced_formatted_value"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "constructor"
+formatted_value = "v"
+'''
+message = "applies to api ="
+
+[[cases]]
+name = "misplaced_formatter_data"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "constructor"
+formatter_data = "metadata"
+'''
+message = "applies to api ="
+
+[[cases]]
+name = "misplaced_record_null_substitutions"
+manifest = '''schema_version = 1
+summary = "example"
+exceptions = ["IncompatibleFormatsError"]
+
+
+[call]
+api = "constructor"
+record_null_substitutions = {}
+'''
+message = "applies to api ="
