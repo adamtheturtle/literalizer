@@ -7,3 +7,10 @@ axis = "record_nested_map_fallback"
 
 [variants.context]
 variable_name = "ZVal"
+
+# Retain helper-name collision regressions when explicit and eagerly evaluated annotations refer to generated types.
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_eager_field_annotations"
