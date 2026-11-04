@@ -108,7 +108,7 @@ class _YamlIntegerConstructor(Protocol):
     def __call__(
         self, constructor: object, node: _YamlScalarNode, /
     ) -> object:
-        """Construct one integer scalar through ruamel's original
+        """Construct one integer scalar through the original ruamel
         handler.
         """
         raise NotImplementedError
