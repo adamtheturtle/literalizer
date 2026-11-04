@@ -8,3 +8,13 @@ axis = "native_record"
 axis = "native_record"
 suffix = "_multiline"
 context = { collection_layout = "multiline" }
+
+# Check overflow and wide-integer field types against the actual literals and imports emitted in complete programs.
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"
+
+[[variants]]
+axis = "record_eager_field_annotations"
