@@ -3,3 +3,13 @@ owner = "variant"
 
 [[variants]]
 axis = "native_record_iso_temporal"
+
+# Check native date, datetime and time field declarations and required imports under alternate record annotation modes.
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"
+
+[[variants]]
+axis = "record_eager_field_annotations"
