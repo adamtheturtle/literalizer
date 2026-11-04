@@ -38,3 +38,10 @@ my_data = "42"
 
 [[call_examples.variants]]
 axis = "declaration_style"
+
+# Keep existing integer and nullable result bindings valid when their values are passed to a later call.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
