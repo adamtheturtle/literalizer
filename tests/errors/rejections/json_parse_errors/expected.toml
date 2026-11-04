@@ -8,6 +8,9 @@
 "Ada['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Ada['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Ada['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Ada['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Ada['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Ada['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Bash['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Bash['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Bash['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -15,6 +18,9 @@
 "Bash['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Bash['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Bash['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Bash['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Bash['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Bash['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "C['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "C['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "C['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -22,6 +28,9 @@
 "C['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "C['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "C['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"C['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"C['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"C['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "CSharp['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "CSharp['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "CSharp['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -29,6 +38,9 @@
 "CSharp['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "CSharp['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "CSharp['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"CSharp['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"CSharp['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"CSharp['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Clojure['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Clojure['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Clojure['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -36,6 +48,9 @@
 "Clojure['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Clojure['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Clojure['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Clojure['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Clojure['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Clojure['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Cobol['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Cobol['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Cobol['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -43,6 +58,9 @@
 "Cobol['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Cobol['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Cobol['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Cobol['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Cobol['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Cobol['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "CommonLisp['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "CommonLisp['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "CommonLisp['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -50,6 +68,9 @@
 "CommonLisp['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "CommonLisp['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "CommonLisp['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"CommonLisp['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"CommonLisp['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"CommonLisp['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Cpp['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Cpp['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Cpp['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -57,6 +78,9 @@
 "Cpp['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Cpp['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Cpp['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Cpp['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Cpp['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Cpp['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Crystal['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Crystal['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Crystal['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -64,6 +88,9 @@
 "Crystal['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Crystal['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Crystal['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Crystal['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Crystal['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Crystal['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "D['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "D['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "D['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -71,6 +98,9 @@
 "D['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "D['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "D['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"D['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"D['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"D['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Dart['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Dart['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Dart['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -78,6 +108,9 @@
 "Dart['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Dart['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Dart['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Dart['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Dart['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Dart['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Dhall['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Dhall['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Dhall['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -85,6 +118,9 @@
 "Dhall['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Dhall['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Dhall['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Dhall['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Dhall['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Dhall['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Elixir['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Elixir['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Elixir['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -92,6 +128,9 @@
 "Elixir['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Elixir['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Elixir['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Elixir['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Elixir['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Elixir['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Elm['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Elm['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Elm['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -99,6 +138,9 @@
 "Elm['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Elm['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Elm['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Elm['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Elm['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Elm['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Erlang['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Erlang['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Erlang['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -106,6 +148,9 @@
 "Erlang['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Erlang['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Erlang['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Erlang['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Erlang['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Erlang['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "FSharp['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "FSharp['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "FSharp['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -113,6 +158,9 @@
 "FSharp['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "FSharp['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "FSharp['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"FSharp['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"FSharp['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"FSharp['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Forth['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Forth['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Forth['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -120,6 +168,9 @@
 "Forth['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Forth['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Forth['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Forth['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Forth['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Forth['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Fortran['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Fortran['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Fortran['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -127,6 +178,9 @@
 "Fortran['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Fortran['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Fortran['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Fortran['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Fortran['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Fortran['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Gleam['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Gleam['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Gleam['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -134,6 +188,9 @@
 "Gleam['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Gleam['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Gleam['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Gleam['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Gleam['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Gleam['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Go['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Go['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Go['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -141,6 +198,9 @@
 "Go['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Go['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Go['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Go['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Go['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Go['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Groovy['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Groovy['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Groovy['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -148,6 +208,9 @@
 "Groovy['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Groovy['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Groovy['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Groovy['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Groovy['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Groovy['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Haskell['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Haskell['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Haskell['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -155,6 +218,9 @@
 "Haskell['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Haskell['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Haskell['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Haskell['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Haskell['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Haskell['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Haxe['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Haxe['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Haxe['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -162,6 +228,9 @@
 "Haxe['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Haxe['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Haxe['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Haxe['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Haxe['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Haxe['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Hcl['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Hcl['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Hcl['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -169,6 +238,9 @@
 "Hcl['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Hcl['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Hcl['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Hcl['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Hcl['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Hcl['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Java['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Java['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Java['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -176,6 +248,9 @@
 "Java['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Java['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Java['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Java['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Java['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Java['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "JavaScript['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "JavaScript['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "JavaScript['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -183,6 +258,9 @@
 "JavaScript['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "JavaScript['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "JavaScript['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"JavaScript['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"JavaScript['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"JavaScript['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Json5['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Json5['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Json5['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -190,6 +268,9 @@
 "Json5['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Json5['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Json5['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Json5['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Json5['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Json5['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Jsonc['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Jsonc['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Jsonc['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -197,6 +278,9 @@
 "Jsonc['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Jsonc['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Jsonc['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Jsonc['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Jsonc['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Jsonc['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Jsonnet['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Jsonnet['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Jsonnet['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -204,6 +288,9 @@
 "Jsonnet['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Jsonnet['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Jsonnet['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Jsonnet['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Jsonnet['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Jsonnet['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Julia['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Julia['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Julia['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -211,6 +298,9 @@
 "Julia['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Julia['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Julia['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Julia['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Julia['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Julia['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Kotlin['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Kotlin['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Kotlin['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -218,6 +308,9 @@
 "Kotlin['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Kotlin['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Kotlin['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Kotlin['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Kotlin['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Kotlin['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Lua['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Lua['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Lua['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -225,6 +318,9 @@
 "Lua['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Lua['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Lua['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Lua['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Lua['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Lua['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Matlab['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Matlab['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Matlab['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -232,6 +328,9 @@
 "Matlab['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Matlab['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Matlab['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Matlab['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Matlab['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Matlab['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Mojo['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Mojo['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Mojo['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -239,6 +338,9 @@
 "Mojo['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Mojo['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Mojo['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Mojo['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Mojo['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Mojo['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Nim['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Nim['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Nim['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -246,6 +348,9 @@
 "Nim['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Nim['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Nim['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Nim['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Nim['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Nim['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Nix['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Nix['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Nix['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -253,6 +358,9 @@
 "Nix['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Nix['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Nix['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Nix['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Nix['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Nix['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Norg['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Norg['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Norg['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -260,6 +368,9 @@
 "Norg['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Norg['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Norg['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Norg['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Norg['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Norg['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "OCaml['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "OCaml['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "OCaml['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -267,6 +378,9 @@
 "OCaml['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "OCaml['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "OCaml['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"OCaml['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"OCaml['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"OCaml['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "ObjectiveC['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "ObjectiveC['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "ObjectiveC['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -274,6 +388,9 @@
 "ObjectiveC['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "ObjectiveC['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "ObjectiveC['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"ObjectiveC['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"ObjectiveC['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"ObjectiveC['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Occam['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Occam['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Occam['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -281,6 +398,9 @@
 "Occam['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Occam['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Occam['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Occam['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Occam['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Occam['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Odin['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Odin['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Odin['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -288,6 +408,9 @@
 "Odin['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Odin['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Odin['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Odin['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Odin['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Odin['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Perl['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Perl['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Perl['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -295,6 +418,9 @@
 "Perl['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Perl['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Perl['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Perl['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Perl['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Perl['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Php['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Php['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Php['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -302,6 +428,9 @@
 "Php['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Php['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Php['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Php['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Php['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Php['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "PowerShell['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "PowerShell['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "PowerShell['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -309,6 +438,9 @@
 "PowerShell['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "PowerShell['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "PowerShell['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"PowerShell['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"PowerShell['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"PowerShell['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "PureScript['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "PureScript['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "PureScript['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -316,6 +448,9 @@
 "PureScript['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "PureScript['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "PureScript['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"PureScript['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"PureScript['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"PureScript['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Python['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Python['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Python['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -323,6 +458,9 @@
 "Python['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Python['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Python['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Python['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Python['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Python['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "R['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "R['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "R['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -330,6 +468,9 @@
 "R['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "R['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "R['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"R['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"R['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"R['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Racket['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Racket['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Racket['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -337,6 +478,9 @@
 "Racket['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Racket['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Racket['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Racket['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Racket['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Racket['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Raku['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Raku['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Raku['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -344,6 +488,9 @@
 "Raku['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Raku['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Raku['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Raku['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Raku['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Raku['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Roc['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Roc['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Roc['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -351,6 +498,9 @@
 "Roc['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Roc['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Roc['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Roc['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Roc['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Roc['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Ruby['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Ruby['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Ruby['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -358,6 +508,9 @@
 "Ruby['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Ruby['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Ruby['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Ruby['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Ruby['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Ruby['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Rust['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Rust['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Rust['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -365,6 +518,9 @@
 "Rust['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Rust['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Rust['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Rust['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Rust['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Rust['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Scala['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Scala['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Scala['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -372,6 +528,9 @@
 "Scala['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Scala['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Scala['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Scala['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Scala['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Scala['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Scheme['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Scheme['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Scheme['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -379,6 +538,9 @@
 "Scheme['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Scheme['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Scheme['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Scheme['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Scheme['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Scheme['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Sml['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Sml['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Sml['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -386,6 +548,9 @@
 "Sml['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Sml['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Sml['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Sml['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Sml['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Sml['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Swift['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Swift['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Swift['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -393,6 +558,9 @@
 "Swift['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Swift['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Swift['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Swift['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Swift['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Swift['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "SystemVerilog['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "SystemVerilog['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "SystemVerilog['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -400,6 +568,9 @@
 "SystemVerilog['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "SystemVerilog['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "SystemVerilog['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"SystemVerilog['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"SystemVerilog['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"SystemVerilog['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Tcl['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Tcl['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Tcl['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -407,6 +578,9 @@
 "Tcl['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Tcl['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Tcl['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Tcl['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Tcl['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Tcl['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Toml['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Toml['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Toml['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -414,6 +588,9 @@
 "Toml['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Toml['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Toml['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Toml['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Toml['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Toml['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "TypeScript['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "TypeScript['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "TypeScript['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -421,6 +598,9 @@
 "TypeScript['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "TypeScript['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "TypeScript['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"TypeScript['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"TypeScript['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"TypeScript['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "V['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "V['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "V['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -428,6 +608,9 @@
 "V['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "V['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "V['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"V['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"V['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"V['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "VisualBasic['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "VisualBasic['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "VisualBasic['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -435,6 +618,9 @@
 "VisualBasic['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "VisualBasic['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "VisualBasic['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"VisualBasic['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"VisualBasic['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"VisualBasic['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Wren['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Wren['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Wren['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -442,6 +628,9 @@
 "Wren['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Wren['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Wren['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Wren['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Wren['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Wren['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Yaml['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Yaml['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Yaml['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -449,6 +638,9 @@
 "Yaml['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Yaml['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Yaml['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Yaml['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Yaml['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Yaml['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
 "Zig['not json']" = "Invalid JSON: Expecting value at line 1 column 1"
 "Zig['{\"a\": 1, \"a\": 2}']" = "Invalid JSON: duplicate key 'a'"
 "Zig['{\"outer\": {\"a\": 1, \"a\": 2}}']" = "Invalid JSON: duplicate key 'a'"
@@ -456,3 +648,6 @@
 "Zig['{\"a\":1,}']" = {default = "Invalid JSON: Illegal trailing comma before end of object at line 1 column 7", "3.12" = "Invalid JSON: Expecting property name enclosed in double quotes at line 1 column 8"}
 "Zig['[1 2]']" = "Invalid JSON: Expecting ',' delimiter at line 1 column 4"
 "Zig['{\"a\" 1}']" = "Invalid JSON: Expecting ':' delimiter at line 1 column 6"
+"Zig['[NaN]']" = "Invalid JSON: Invalid JSON constant: NaN"
+"Zig['[Infinity]']" = "Invalid JSON: Invalid JSON constant: Infinity"
+"Zig['[-Infinity]']" = "Invalid JSON: Invalid JSON constant: -Infinity"
