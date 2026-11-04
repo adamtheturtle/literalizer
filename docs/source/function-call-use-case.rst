@@ -217,7 +217,7 @@ For example, passing the JSON source ``[[{"$ref": "my_var"}, 42]]`` to :func:`~l
 This composes with :class:`~literalizer.NewVariable`: declare the data once with :func:`~literalizer.literalize` and then refer to it from a call rendered by :func:`~literalizer.literalize_call`, without repeating the literal value at the call site.
 
 When the referenced value contains types that affect generated declarations or imports, pass those source values via ``ref_values``.
-The referenced value participates in preamble inference without being inlined into the call:
+The referenced value participates in preamble inference without inserting that value into the call:
 
 .. code-block:: python
 
