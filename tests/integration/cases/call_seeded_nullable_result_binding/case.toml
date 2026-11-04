@@ -34,3 +34,10 @@ quotes = "\""
 
 [call_examples.ref_declarations]
 my_data = "null"
+
+# Keep existing integer and nullable result bindings valid when their values are passed to a later call.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
