@@ -583,8 +583,10 @@ def compute_preamble(
     if has_variable_declaration and bool(present_collection_types):
         effective_annotated_collection_types = present_collection_types
         if not _annotates_every_declaration(language=language):
+            # Record-shaped mappings name nominal types, not mapping aliases.
             effective_annotated_collection_types = (
                 _collect_annotated_collection_types(data=data)
+                & present_collection_types
             )
         annotated_collection_types = (
             effective_annotated_collection_types
