@@ -305,3 +305,10 @@ name = "generic-noncollection"
 recipe = "{\"function\": \"consume\", \"parameter-types\": [{\"object\": \"NSString\", \"arguments\": [\"NSString\"]}], \"return-type\": \"void\", \"arguments\": [{\"literal\": \"value\"}]}"
 match = "require a collection"
 source = "[[]]"
+
+[[case]]
+name = "reserved-binding"
+recipe = '{"constructor": "NSObject"}'
+match = "Reserved native binding"
+source = "[[]]"
+bind = "nil"

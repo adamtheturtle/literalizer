@@ -13,7 +13,11 @@ from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
-from literalizer._language import CollectionLayout, Language
+from literalizer._language import (
+    CollectionLayout,
+    Language,
+    is_reserved_identifier,
+)
 from literalizer._literalize import (
     ExistingVariable,
     LiteralizeResult,
@@ -243,6 +247,13 @@ def literalize_native_call(
     code = language.render_native_invocation(language, invocation)
     if variable_form is not None:
         _ = _identifier(variable_form.name)
+        if is_reserved_identifier(
+            case_sensitive=language.reserved_variable_identifiers_case_sensitive,
+            name=variable_form.name,
+            reserved_identifiers=language.reserved_variable_identifiers,
+        ):
+            msg = f"Reserved native binding identifier: {variable_form.name!r}"
+            raise NativeCallError(msg)
         if invocation.target.return_type is ScalarType.VOID:
             msg = "Cannot bind a void invocation"
             raise NativeCallError(msg)
@@ -530,6 +541,7 @@ def objective_c_invocation(
             if not isinstance(target.receiver.type, ObjectType):
                 msg = "A message receiver must be an object"
                 raise NativeCallError(msg)
+            _ = objective_c_type(target.receiver.type)
             receiver = _identifier(target.receiver.name)
         else:
             if not isinstance(target.receiver.target.return_type, ObjectType):
