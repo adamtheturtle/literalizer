@@ -1,0 +1,58 @@
+[[refusals]]
+name = "immutable_external_binding"
+directory = "external"
+input_name = "input.json"
+source = '''{"$ref": "shared"}
+'''
+manifest = '''schema_version = 1
+owner = "literalize-ref-default"
+[ref]
+'''
+language = "Elm"
+version = "V0_19"
+golden_name = "Elm_ref_default"
+stale_contents = '''stale fixture
+'''
+
+[refusals.configuration]
+variable_form = "existing"
+
+[refusals.configuration.external_declarations]
+my_data = "1"
+shared = "1"
+
+[refusals.configuration.explicit_ref_value_sources]
+shared = "1"
+
+[[arities]]
+name = "fixed_only_destination"
+directory = "external"
+explicit_choice = false
+message = "cannot change length on reassignment"
+
+[arities.configuration]
+variable_form = "existing"
+
+[arities.configuration.external_declarations]
+my_data = "[0]"
+shared = "[1, 2]"
+
+[arities.raw_data]
+"$ref" = "shared"
+
+[[arities]]
+name = "explicit_tuple"
+directory = "external"
+explicit_choice = true
+message = "cannot change length on reassignment"
+
+[arities.configuration]
+variable_form = "existing"
+sequence_format = "TUPLE"
+
+[arities.configuration.external_declarations]
+my_data = "[0]"
+shared = "[1, 2]"
+
+[arities.raw_data]
+"$ref" = "shared"
