@@ -217,7 +217,7 @@ For example, passing the JSON source ``[[{"$ref": "my_var"}, 42]]`` to :func:`~l
 This composes with :class:`~literalizer.NewVariable`: declare the data once with :func:`~literalizer.literalize` and then refer to it from a call rendered by :func:`~literalizer.literalize_call`, without repeating the literal value at the call site.
 
 When the referenced value contains types that affect generated declarations or imports, pass those source values via ``ref_values``.
-The call still renders only the identifier, but the referenced value participates in preamble inference:
+The referenced value participates in preamble inference without inserting that value into the call:
 
 .. code-block:: python
 
@@ -247,7 +247,45 @@ The call still renders only the identifier, but the referenced value participate
 If a ref name is omitted from ``ref_values``, its marker is ignored for preamble inference as before.
 ``ref_values`` keys are the names from the input data before any ``ref_case`` conversion.
 
-By default the identifier is emitted verbatim.
+Preserving external bindings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Calls preserve external bindings unless the caller explicitly permits consumption through ``consumable_refs``.
+The preserving expression depends on the language and the binding representation.
+Rust copies known ``Copy`` values directly and clones owned containers so later calls can still use them.
+For an unknown external reference, Rust conservatively emits ``name.clone()``; removing that clone without knowing the binding type can introduce a move error.
+
+Supply ``ref_values`` when composing separately generated declarations and calls:
+
+.. code-block:: python
+
+   """Preserve a reusable map without cloning Copy scalar bindings."""
+
+   from literalizer import InputFormat, literalize_call
+   from literalizer.languages import Rust
+
+   result = literalize_call(
+       source='[[{"$ref": "comments"}, {"$ref": "keyword"}, {"$ref": "depth"}]]',
+       input_format=InputFormat.JSON,
+       language=Rust(),
+       target_function="search",
+       parameter_names=["comments", "keyword", "depth"],
+       ref_key="$ref",
+       ref_values={"comments": {"a": "hello"}, "keyword": "tech", "depth": 2},
+   )
+   assert result.code == "search(comments.clone(), keyword, depth);"
+
+The values must describe compatible external declarations rendered with the same representation options.
+For example, a Rust string rendered as a JSON value has different ownership behavior from a native ``&str`` binding.
+``ref_values`` supplies inference hints; it neither emits declarations nor grants consumption permission.
+Use ``bound_refs`` when Literalizer should own the declaration and its representation as well.
+An explicit hint for a bound reference may guide inference, while copying still follows the actual binding representation.
+
+``consumable_refs`` permits a consuming expression only for references used exactly once in the call input.
+Repeated references continue to preserve their bindings.
+Leave a name out of that set whenever the surrounding program needs it later.
+
+By default the identifier's spelling is unchanged, independently of any copy or clone expression around it.
 Pass ``ref_case`` to :func:`~literalizer.literalize_call` to convert the name to the target language's idiomatic case.
 
 Case conversion

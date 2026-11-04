@@ -794,13 +794,22 @@ def literalize_call(
             may move from.  Refs in this set may be rendered with a
             consuming form (e.g. C++ ``std::move``) when they appear in
             exactly one call argument; refs used by more than one call
-            -- or omitted from this set -- are emitted as the bare
-            identifier so subsequent uses of the variable remain valid.
+            -- or omitted from this set -- preserve the binding for later
+            uses. The preserving form depends on the language and binding
+            representation: Rust copies known Copy values and clones owned
+            values. Unknown external Rust references are conservatively
+            cloned, even when they appear only once in this call input.
             Names should match the identifiers used in *source* before
             any *ref_case* conversion.  Defaults to an empty set (no
             refs are consumed).
         ref_values: Optional mapping from ref identifier to the source
-            value declared elsewhere.  When supplied, values for refs
+            value declared elsewhere. This also informs reference
+            preservation: for example, Rust can emit a known string or
+            integer binding directly while cloning a vector or map.
+            Supply values compatible with the actual external declaration
+            and the language's representation options; these are inference
+            hints, not declarations or permission to consume bindings.
+            When supplied, values for refs
             used in *source* are included in data-driven preamble
             inference, so languages with generated body types (for
             example Haskell's ``data Val = ...``) declare constructors
