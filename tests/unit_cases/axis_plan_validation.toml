@@ -1,0 +1,603 @@
+# Axis registry loading and metadata-dependent expansion diagnostics.
+
+[[cases]]
+name = "schema_version"
+contents = '''schema_version = 2
+[axes]
+'''
+message = "schema_version"
+
+[[cases]]
+name = "unknown_plan_tag"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "invent"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+'''
+message = "does not match any of the expected tags"
+
+[[cases]]
+name = "unknown_gate_tag"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+gates = [{ kind = "vibes", name = "x" }]
+'''
+message = "does not match any of the expected tags"
+
+[[cases]]
+name = "unknown_override_tag"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+overrides = [{ kind = "vibes", name = "x" }]
+'''
+message = "does not match any of the expected tags"
+
+[[cases]]
+name = "unknown_name_template_placeholder_s_mystery"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_{mystery}"
+option = "date_format"
+'''
+message = "unknown name-template placeholder\\(s\\) \\['mystery'\\]"
+
+[[cases]]
+name = "name_value_without_override"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_{value}"
+'''
+message = "needs exactly one override marked 'name_value'"
+
+[[cases]]
+name = "unknown_primary_option"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "vibe"
+'''
+message = "unknown option 'vibe'"
+
+[[cases]]
+name = "unknown_capability_flag_supports_vibes"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+gates = [{ kind = "capability_flag", flag = "supports_vibes" }]
+'''
+message = "unknown capability flag 'supports_vibes'"
+
+[[cases]]
+name = "unknown_spec_field_vibe"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+gates = [{ kind = "spec_field_present", field = "vibe" }]
+'''
+message = "unknown spec field 'vibe'"
+
+[[cases]]
+name = "unknown_metadata_field_vibe"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+overrides = [{ kind = "metadata_enum_member", option = "language_version", field = "vibe" }]
+'''
+message = "unknown metadata field 'vibe'"
+
+[[cases]]
+name = "unknown_override_option"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+overrides = [{ kind = "enum_member", option = "vibe", member = "RECORD" }]
+'''
+message = "unknown option 'vibe'"
+
+[[cases]]
+name = "name_value_override_without_template"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+overrides = [{ kind = "non_default_kwarg", kwarg = "type_name", name_value = true }]
+'''
+message = "needs exactly one override marked 'name_value'"
+
+[[cases]]
+name = "name_template_omits_placeholder_s_secondary_tag"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "cross_product"
+name_template = "{lang}_example_{format}"
+primary = "date_format"
+secondaries = [{ tag = "dt", option = "datetime_format" }]
+'''
+message = "name template omits placeholder\\(s\\) \\['secondary', 'tag'\\]"
+
+[[cases]]
+name = "cross_product_without_primary"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "cross_product"
+name_template = "{lang}_example_{format}_{tag}_{secondary}"
+secondaries = [{ tag = "dt", option = "datetime_format" }]
+'''
+message = "unknown name-template placeholder\\(s\\) \\['format'\\]"
+
+[[cases]]
+name = "unknown_secondary_option"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "cross_product"
+name_template = "{lang}_example_{format}_{tag}_{secondary}"
+primary = "date_format"
+secondaries = [{ tag = "dt", option = "vibe" }]
+'''
+message = "unknown option 'vibe'"
+
+[[cases]]
+name = "unknown_member_name_source_vibes"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+member_name_source = "vibes"
+'''
+message = "unknown member name source 'vibes'"
+
+[[cases]]
+name = "unknown_member_flag_vibes"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+member_flags = ["vibes"]
+'''
+message = "unknown member flag 'vibes'"
+
+[[cases]]
+name = "unknown_sole_member_name_template_placeholder_s_format"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+sole_member_name_template = "{lang}_{format}"
+'''
+message = "unknown sole-member name-template placeholder\\(s\\) \\['format'\\]"
+
+[[cases]]
+name = "unknown_metadata_field_vibe_19"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+gates = [{ kind = "metadata_field", field = "vibe", value = "default" }]
+'''
+message = "unknown metadata field 'vibe'"
+
+[[cases]]
+name = "unknown_spec_config_field_vibe_config_vibe"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+gates = [{ kind = "spec_config_field_present", field = "vibe_config.vibe" }]
+'''
+message = "unknown spec config field 'vibe_config.vibe'"
+
+[[cases]]
+name = "unknown_behavior_flag_vibes"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+gates = [{ kind = "behavior_flag", flag = "vibes" }]
+'''
+message = "unknown behavior flag 'vibes'"
+
+[[cases]]
+name = "unknown_behavior_flag_vibes_22"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+overrides = [{ kind = "behavior_flag_member", option = "heterogeneous_strategy", flag = "vibes" }]
+'''
+message = "unknown behavior flag 'vibes'"
+
+[[cases]]
+name = "unknown_metadata_table_vibes"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+overrides = [{ kind = "metadata_table", kwarg = "vibes", table = "vibes" }]
+'''
+message = "unknown metadata table 'vibes'"
+
+[[cases]]
+name = "name_template_omits_placeholder_s_format"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "kwarg_values"
+name_template = "{lang}_example"
+kwarg = "multiline_raw_string_delimiter_base"
+values = [{ name = "punctuation", value = "!?" }]
+'''
+message = "name template omits placeholder\\(s\\) \\['format'\\]"
+
+[[cases]]
+name = "unknown_collection_layout"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "every_non_default_member"
+name_template = "{lang}_example_{format}"
+option = "date_format"
+layouts = [{ layout = "SIDEWAYS" }]
+'''
+message = "unknown layout 'SIDEWAYS'"
+
+[[cases]]
+name = "unknown_name_metadata_field_vibes"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+name_metadata_field = "vibes"
+'''
+message = "unknown name metadata field 'vibes'"
+
+[[cases]]
+name = "metadata_category_without_template_placeholder"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+name_metadata_field = "collection_layout_category"
+'''
+message = "name template omits placeholder\\(s\\) \\['category'\\]"
+
+[[cases]]
+name = "category_placeholder_without_metadata"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_{category}"
+'''
+message = "unknown name-template placeholder\\(s\\) \\['category'\\]"
+
+[[cases]]
+name = "conflicting_primary_sources"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "cross_product"
+name_template = "{lang}_example_{format}_{tag}_{secondary}"
+primary = "date_format"
+secondaries = [{ tag = "dt", option = "datetime_format" }]
+primary_axis = "date"
+'''
+message = "declares both a 'primary' option and a 'primary_axis'"
+
+[[cases]]
+name = "paired_axis_template_missing_format"
+contents = '''
+
+schema_version = 1
+
+[axes.base]
+plan = "every_non_default_member"
+name_template = "{lang}_base_{format}"
+option = "date_format"
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_x"
+primary_axis = "base"
+'''
+message = "name template omits placeholder\\(s\\) \\['format'\\]"
+
+[[cases]]
+name = "paired_axis_without_primary"
+contents = '''
+
+schema_version = 1
+
+[axes.base]
+plan = "every_non_default_member"
+name_template = "{lang}_base_{format}"
+option = "date_format"
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example_{format}"
+
+'''
+message = "unknown name-template placeholder\\(s\\) \\['format'\\]"
+
+[[cases]]
+name = "paired_axis_unknown_primary"
+contents = '''
+
+schema_version = 1
+
+[axes.base]
+plan = "every_non_default_member"
+name_template = "{lang}_base_{format}"
+option = "date_format"
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example_{format}"
+primary_axis = "vibes"
+'''
+message = "primary axis 'vibes' is not a declared"
+
+[[cases]]
+name = "paired_primary_with_overrides"
+contents = '''
+
+schema_version = 1
+
+[axes.base]
+plan = "every_non_default_member"
+name_template = "{lang}_base_{format}"
+option = "date_format"
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example_{format}"
+primary_axis = "base"
+[[axes.base.overrides]]
+kind = "true_flag"
+kwarg = "record_unify_optional_fields"
+'''
+message = "primary axis 'base' declares overrides"
+
+[[cases]]
+name = "unknown_overrides_source_vibes"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+overrides_from = "vibes"
+'''
+message = "unknown overrides source 'vibes'"
+
+[[cases]]
+name = "chained_override_sources"
+contents = '''
+
+schema_version = 1
+
+[axes.source]
+plan = "fixed_overrides"
+name_template = "{lang}_source"
+overrides = [
+  { kind = "true_flag", kwarg = "record_unify_optional_fields" },
+]
+
+[axes.other]
+plan = "fixed_overrides"
+name_template = "{lang}_other"
+overrides_from = "source"
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+overrides_from = "other"
+'''
+message = "overrides source 'other' reuses overrides itself"
+
+[[cases]]
+name = "filtered_axis_unknown_base"
+contents = '''
+
+schema_version = 1
+
+[axes.date]
+plan = "every_non_default_member"
+name_template = "{lang}_date_{format}"
+option = "date_format"
+
+[axes.example]
+plan = "filtered"
+base = "vibes"
+'''
+message = "unknown base axis 'vibes'"
+
+[[cases]]
+name = "filtered_axis_self_reference"
+contents = '''
+
+schema_version = 1
+
+[axes.date]
+plan = "every_non_default_member"
+name_template = "{lang}_date_{format}"
+option = "date_format"
+
+[axes.example]
+plan = "filtered"
+base = "example"
+'''
+message = "base axis is itself"
+
+[[cases]]
+name = "filtered_axis_unknown_capability"
+contents = '''
+
+schema_version = 1
+
+[axes.date]
+plan = "every_non_default_member"
+name_template = "{lang}_date_{format}"
+option = "date_format"
+
+[axes.example]
+plan = "filtered"
+base = "date"
+gates = [{ kind = "capability_flag", flag = "supports_vibes" }]
+'''
+message = "unknown capability flag 'supports_vibes'"
+
+[[missing_metadata]]
+name = "declares_no_sample_value_for_type_name"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+overrides = [{ kind = "non_default_kwarg", kwarg = "type_name" }]
+'''
+message = "declares no sample value for 'type_name'"
+
+[[missing_metadata]]
+name = "declares_no_heterogeneous_value_variant_name_strategy"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+
+[[axes.example.overrides]]
+kind = "metadata_enum_member"
+option = "heterogeneous_strategy"
+field = "heterogeneous_value_variant_name_strategy"
+'''
+message = "declares no 'heterogeneous_value_variant_name_strategy'"
+
+[[missing_metadata]]
+name = "declares_no_empty_container_type_hint_heterogeneous_strategy"
+contents = '''
+
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+
+[[axes.example.overrides]]
+kind = "metadata_enum_member"
+option = "heterogeneous_strategy"
+field = "empty_container_type_hint_heterogeneous_strategy"
+'''
+message = "declares no 'empty_container_type_hint_heterogeneous_strategy'"

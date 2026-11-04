@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from pydantic import BaseModel, TypeAdapter
 
 from literalizer import CollectionLayout, CommentConfig
 from literalizer._enums import enum_payload
@@ -27,15 +28,28 @@ from tests.integration.variant_plans import (
     variants_for_declared_axis,
     variants_for_registry_axis,
 )
+from tests.toml_cases import load_toml_cases
 
-_VALID_AXIS = """
-schema_version = 1
 
-[axes.example]
-plan = "every_non_default_member"
-name_template = "{lang}_example_{format}"
-option = "date_format"
-"""
+class _AxisErrorCase(BaseModel, extra="forbid", frozen=True):
+    """One named manifest-owned regression scenario."""
+
+    name: str
+    contents: str
+    message: str
+
+
+class _Cases(BaseModel, extra="forbid", frozen=True):
+    """The complete declarative regression corpus."""
+
+    cases: tuple[_AxisErrorCase, ...]
+    missing_metadata: tuple[_AxisErrorCase, ...]
+
+
+_CASES = TypeAdapter(type=_Cases).validate_python(
+    load_toml_cases(name="axis_plan_validation")
+)
+
 
 _VALID_FIXED_AXIS = """
 schema_version = 1
@@ -43,74 +57,6 @@ schema_version = 1
 [axes.example]
 plan = "fixed_overrides"
 name_template = "{lang}_example"
-"""
-
-_VALID_KWARG_VALUES_AXIS = """
-schema_version = 1
-
-[axes.example]
-plan = "kwarg_values"
-name_template = "{lang}_example_{format}"
-kwarg = "multiline_raw_string_delimiter_base"
-values = [{ name = "punctuation", value = "!?" }]
-"""
-
-_VALID_FILTERED_AXIS = """
-schema_version = 1
-
-[axes.date]
-plan = "every_non_default_member"
-name_template = "{lang}_date_{format}"
-option = "date_format"
-
-[axes.example]
-plan = "filtered"
-base = "date"
-"""
-
-_VALID_CROSS_AXIS = """
-schema_version = 1
-
-[axes.example]
-plan = "cross_product"
-name_template = "{lang}_example_{format}_{tag}_{secondary}"
-primary = "date_format"
-secondaries = [{ tag = "dt", option = "datetime_format" }]
-"""
-
-_VALID_PAIRED_AXES = """
-schema_version = 1
-
-[axes.base]
-plan = "every_non_default_member"
-name_template = "{lang}_base_{format}"
-option = "date_format"
-
-[axes.example]
-plan = "fixed_overrides"
-name_template = "{lang}_example_{format}"
-primary_axis = "base"
-"""
-
-_CHAINED_OVERRIDES_AXES = """
-schema_version = 1
-
-[axes.source]
-plan = "fixed_overrides"
-name_template = "{lang}_source"
-overrides = [
-  { kind = "true_flag", kwarg = "record_unify_optional_fields" },
-]
-
-[axes.other]
-plan = "fixed_overrides"
-name_template = "{lang}_other"
-overrides_from = "source"
-
-[axes.example]
-plan = "fixed_overrides"
-name_template = "{lang}_example"
-overrides_from = "other"
 """
 
 
@@ -452,215 +398,16 @@ def test_unknown_axis_is_actionable() -> None:
 
 
 @pytest.mark.parametrize(
-    argnames=("contents", "message"),
-    argvalues=[
-        ("schema_version = 2\n[axes]\n", "schema_version"),
-        (
-            _VALID_AXIS.replace(
-                'plan = "every_non_default_member"',
-                'plan = "invent"',
-            ),
-            "does not match any of the expected tags",
-        ),
-        (
-            _VALID_AXIS + 'gates = [{ kind = "vibes", name = "x" }]\n',
-            "does not match any of the expected tags",
-        ),
-        (
-            _VALID_AXIS + 'overrides = [{ kind = "vibes", name = "x" }]\n',
-            "does not match any of the expected tags",
-        ),
-        (
-            _VALID_AXIS.replace("{lang}_example_{format}", "{lang}_{mystery}"),
-            r"unknown name-template placeholder\(s\) \['mystery'\]",
-        ),
-        (
-            _VALID_FIXED_AXIS.replace("{lang}_example", "{lang}_{value}"),
-            "needs exactly one override marked 'name_value'",
-        ),
-        (
-            _VALID_AXIS.replace('option = "date_format"', 'option = "vibe"'),
-            "unknown option 'vibe'",
-        ),
-        (
-            _VALID_AXIS
-            + (
-                'gates = [{ kind = "capability_flag", '
-                'flag = "supports_vibes" }]\n'
-            ),
-            "unknown capability flag 'supports_vibes'",
-        ),
-        (
-            _VALID_AXIS
-            + 'gates = [{ kind = "spec_field_present", field = "vibe" }]\n',
-            "unknown spec field 'vibe'",
-        ),
-        (
-            _VALID_AXIS
-            + (
-                'overrides = [{ kind = "metadata_enum_member", '
-                'option = "language_version", field = "vibe" }]\n'
-            ),
-            "unknown metadata field 'vibe'",
-        ),
-        (
-            _VALID_AXIS
-            + (
-                'overrides = [{ kind = "enum_member", '
-                'option = "vibe", member = "RECORD" }]\n'
-            ),
-            "unknown option 'vibe'",
-        ),
-        (
-            _VALID_AXIS
-            + (
-                'overrides = [{ kind = "non_default_kwarg", '
-                'kwarg = "type_name", name_value = true }]\n'
-            ),
-            "needs exactly one override marked 'name_value'",
-        ),
-        (
-            _VALID_CROSS_AXIS.replace("_{tag}_{secondary}", ""),
-            r"name template omits placeholder\(s\) \['secondary', 'tag'\]",
-        ),
-        (
-            _VALID_CROSS_AXIS.replace('primary = "date_format"\n', ""),
-            r"unknown name-template placeholder\(s\) \['format'\]",
-        ),
-        (
-            _VALID_CROSS_AXIS.replace(
-                'option = "datetime_format"',
-                'option = "vibe"',
-            ),
-            "unknown option 'vibe'",
-        ),
-        (
-            _VALID_AXIS + 'member_name_source = "vibes"\n',
-            "unknown member name source 'vibes'",
-        ),
-        (
-            _VALID_AXIS + 'member_flags = ["vibes"]\n',
-            "unknown member flag 'vibes'",
-        ),
-        (
-            _VALID_AXIS + 'sole_member_name_template = "{lang}_{format}"\n',
-            r"unknown sole-member name-template placeholder\(s\) \['format'\]",
-        ),
-        (
-            _VALID_AXIS
-            + 'gates = [{ kind = "metadata_field", field = "vibe", '
-            'value = "default" }]\n',
-            "unknown metadata field 'vibe'",
-        ),
-        (
-            _VALID_AXIS + 'gates = [{ kind = "spec_config_field_present", '
-            'field = "vibe_config.vibe" }]\n',
-            "unknown spec config field 'vibe_config.vibe'",
-        ),
-        (
-            _VALID_AXIS
-            + 'gates = [{ kind = "behavior_flag", flag = "vibes" }]\n',
-            "unknown behavior flag 'vibes'",
-        ),
-        (
-            _VALID_AXIS
-            + (
-                'overrides = [{ kind = "behavior_flag_member", '
-                'option = "heterogeneous_strategy", flag = "vibes" }]\n'
-            ),
-            "unknown behavior flag 'vibes'",
-        ),
-        (
-            _VALID_AXIS
-            + (
-                'overrides = [{ kind = "metadata_table", kwarg = "vibes", '
-                'table = "vibes" }]\n'
-            ),
-            "unknown metadata table 'vibes'",
-        ),
-        (
-            _VALID_KWARG_VALUES_AXIS.replace("_{format}", ""),
-            r"name template omits placeholder\(s\) \['format'\]",
-        ),
-        (
-            _VALID_AXIS + 'layouts = [{ layout = "SIDEWAYS" }]\n',
-            "unknown layout 'SIDEWAYS'",
-        ),
-        (
-            _VALID_FIXED_AXIS + 'name_metadata_field = "vibes"\n',
-            "unknown name metadata field 'vibes'",
-        ),
-        (
-            _VALID_FIXED_AXIS
-            + 'name_metadata_field = "collection_layout_category"\n',
-            r"name template omits placeholder\(s\) \['category'\]",
-        ),
-        (
-            _VALID_FIXED_AXIS.replace("{lang}_example", "{lang}_{category}"),
-            r"unknown name-template placeholder\(s\) \['category'\]",
-        ),
-        (
-            _VALID_CROSS_AXIS + 'primary_axis = "date"\n',
-            "declares both a 'primary' option and a 'primary_axis'",
-        ),
-        (
-            _VALID_PAIRED_AXES.replace("{lang}_example_{format}", "{lang}_x"),
-            r"name template omits placeholder\(s\) \['format'\]",
-        ),
-        (
-            _VALID_PAIRED_AXES.replace('primary_axis = "base"', ""),
-            r"unknown name-template placeholder\(s\) \['format'\]",
-        ),
-        (
-            _VALID_PAIRED_AXES.replace(
-                'primary_axis = "base"', 'primary_axis = "vibes"'
-            ),
-            "primary axis 'vibes' is not a declared",
-        ),
-        (
-            _VALID_PAIRED_AXES
-            + (
-                '[[axes.base.overrides]]\nkind = "true_flag"\n'
-                'kwarg = "record_unify_optional_fields"\n'
-            ),
-            "primary axis 'base' declares overrides",
-        ),
-        (
-            _VALID_FIXED_AXIS + 'overrides_from = "vibes"\n',
-            "unknown overrides source 'vibes'",
-        ),
-        (
-            _CHAINED_OVERRIDES_AXES,
-            "overrides source 'other' reuses overrides itself",
-        ),
-        (
-            _VALID_FILTERED_AXIS.replace('base = "date"', 'base = "vibes"'),
-            "unknown base axis 'vibes'",
-        ),
-        (
-            _VALID_FILTERED_AXIS.replace('base = "date"', 'base = "example"'),
-            "base axis is itself",
-        ),
-        (
-            _VALID_FILTERED_AXIS
-            + (
-                'gates = [{ kind = "capability_flag", '
-                'flag = "supports_vibes" }]\n'
-            ),
-            "unknown capability flag 'supports_vibes'",
-        ),
-    ],
+    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
 )
 def test_invalid_registry_is_actionable(
-    tmp_path: Path,
-    contents: str,
-    message: str,
+    tmp_path: Path, case: _AxisErrorCase
 ) -> None:
     """Bad plan data fails when the registry loads, not at render
     time.
     """
-    path = _write_registry(tmp_path=tmp_path, contents=contents)
-    with pytest.raises(expected_exception=AxisPlanError, match=message):
+    path = _write_registry(tmp_path=tmp_path, contents=case.contents)
+    with pytest.raises(expected_exception=AxisPlanError, match=case.message):
         _ = load_axis_registry(path=path)
 
 
@@ -686,61 +433,13 @@ def test_axis_coverage_gaps_are_actionable() -> None:
         )
 
 
-_UNDECLARED_SAMPLE_AXIS = """
-schema_version = 1
-
-[axes.example]
-plan = "fixed_overrides"
-name_template = "{lang}_example"
-overrides = [{ kind = "non_default_kwarg", kwarg = "type_name" }]
-"""
-
-_UNDECLARED_METADATA_AXIS = """
-schema_version = 1
-
-[axes.example]
-plan = "fixed_overrides"
-name_template = "{lang}_example"
-
-[[axes.example.overrides]]
-kind = "metadata_enum_member"
-option = "heterogeneous_strategy"
-field = "heterogeneous_value_variant_name_strategy"
-"""
-
-
-_UNDECLARED_TABLE_MEMBER_AXIS = """
-schema_version = 1
-
-[axes.example]
-plan = "fixed_overrides"
-name_template = "{lang}_example"
-
-[[axes.example.overrides]]
-kind = "metadata_enum_member"
-option = "heterogeneous_strategy"
-field = "empty_container_type_hint_heterogeneous_strategy"
-"""
-
-
 @pytest.mark.parametrize(
-    argnames=("contents", "message"),
-    argvalues=[
-        (_UNDECLARED_SAMPLE_AXIS, "declares no sample value for 'type_name'"),
-        (
-            _UNDECLARED_METADATA_AXIS,
-            "declares no 'heterogeneous_value_variant_name_strategy'",
-        ),
-        (
-            _UNDECLARED_TABLE_MEMBER_AXIS,
-            "declares no 'empty_container_type_hint_heterogeneous_strategy'",
-        ),
-    ],
+    argnames="case",
+    argvalues=_CASES.missing_metadata,
+    ids=lambda case: case.name,
 )
 def test_missing_language_metadata_is_actionable(
-    tmp_path: Path,
-    contents: str,
-    message: str,
+    tmp_path: Path, case: _AxisErrorCase
 ) -> None:
     """A plan reading absent metadata names the file that lacks it.
 
@@ -749,10 +448,8 @@ def test_missing_language_metadata_is_actionable(
     Expansion says which language file is missing what, rather than
     building a spec from a silently dropped setting.
     """
-    path = _write_registry(tmp_path=tmp_path, contents=contents)
-    with pytest.raises(expected_exception=AxisPlanError, match=message):
+    path = _write_registry(tmp_path=tmp_path, contents=case.contents)
+    with pytest.raises(expected_exception=AxisPlanError, match=case.message):
         _ = variants_for_registry_axis(
-            path=path,
-            axis_key="example",
-            resolve_axis=variants_for_axis,
+            path=path, axis_key="example", resolve_axis=variants_for_axis
         )
