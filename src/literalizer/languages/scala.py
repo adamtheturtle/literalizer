@@ -78,6 +78,7 @@ from literalizer._formatters.type_inference import (
     ListType,
     MixedNumeric,
     WideInt,
+    infer_element_type,
     record_shape_for_dict,
     single_concrete_type,
 )
@@ -299,6 +300,27 @@ def _list_sequence_open(
         ),
         fallback="List(",
     )
+
+
+@beartype
+def _scala_record_sequence_opener(
+    *,
+    items: list[Value],
+    sequence_is_array: bool,
+    plain_open: Callable[[list[Value]], str],
+) -> Callable[[list[Value]], str]:
+    """Retain inference for uniform records and widen mixed nested
+    arrays.
+    """
+    if not sequence_is_array or not all(
+        isinstance(item, list) for item in items
+    ):
+        return plain_open
+    if any(isinstance(item, list) and len(item) == 0 for item in items) or (
+        infer_element_type(items=items) is None
+    ):
+        return fixed_open(open_str="Array[Any](")
+    return plain_open
 
 
 @beartype
@@ -1992,6 +2014,21 @@ class Scala(metaclass=LanguageCls):
             )
 
         @beartype
+        def _record_open(
+            items: list[Value],
+            /,
+        ) -> Callable[[list[Value]], str]:
+            """Select a concrete carrier for nested record array
+            siblings.
+            """
+            return _scala_record_sequence_opener(
+                items=items,
+                sequence_is_array=self.sequence_format
+                is self.sequence_formats.ARRAY,
+                plain_open=plain_open,
+            )
+
+        @beartype
         def _open(items: list[Value], /) -> str:
             """Use the plain opener for lists of record-shaped dicts.
 
@@ -1999,14 +2036,14 @@ class Scala(metaclass=LanguageCls):
             keeps the typed opener.
             """
             if _contains_record_dict(items):
-                return plain_open(items)
+                return _record_open(items)(items)
             return base(items)
 
         @beartype
         def _signature(items: list[Value], /) -> CollectionSignature:
             """Retain the record or ordinary producer's selected type."""
             if _contains_record_dict(items):
-                return collection_signature(plain_open, items)
+                return collection_signature(_record_open(items), items)
             return collection_signature(base, items)
 
         return signature_open(render=_open, infer=_signature)
