@@ -3,3 +3,13 @@ owner = "variant"
 
 [[variants]]
 axis = "record_nested_map_fallback"
+
+# Check that value-derived integer map fields agree with their declared record and sequence types.
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"
+
+[[variants]]
+axis = "record_eager_field_annotations"
