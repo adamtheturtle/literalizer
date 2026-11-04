@@ -51,11 +51,22 @@ jobs:
 
       - name: Create the test environment
         shell: bash
-        run: |
-          uv venv --python "$UV_PYTHON"
-          uv pip install --group=test dist/*.whl
+        run: uv venv --python "$UV_PYTHON"
         env:
           UV_PYTHON: ${{ matrix.python-version }}
+
+      # PyPI may expose metadata before every transitive artifact is ready.
+      # Retry installation in this matrix cell, refreshing index metadata
+      # while retaining downloaded wheels and the existing environment.
+      - name: Install test dependencies
+        timeout-minutes: 13
+        uses: nick-fields/retry@v4.0.0
+        with:
+          timeout_minutes: 3
+          max_attempts: 3
+          retry_wait_seconds: 60
+          shell: bash
+          command: uv pip install --refresh --group=test dist/*.whl
 
       - name: Check the installed wheel
         run: >-
@@ -156,12 +167,17 @@ jobs:
           path: dist
 
       - name: Create the benchmark environment
-        # Install the wheel and the pinned benchmark dependency group without
-        # building the project again.
-        run: |
-          uv venv --python 3.14.8 --managed-python
-          uv pip install "$(echo dist/*.whl)"
-          uv pip install --group=benchmark
+        run: uv venv --python 3.14.8 --managed-python
+
+      - name: Install benchmark dependencies
+        timeout-minutes: 13
+        uses: nick-fields/retry@v4.0.0
+        with:
+          timeout_minutes: 3
+          max_attempts: 3
+          retry_wait_seconds: 60
+          shell: bash
+          command: uv pip install --refresh --group=benchmark dist/*.whl
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v5.6.1
