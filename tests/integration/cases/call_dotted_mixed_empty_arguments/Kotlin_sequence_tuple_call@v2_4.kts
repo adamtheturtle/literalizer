@@ -1,0 +1,6 @@
+class _ThingType { fun go(before: Any? = null, populated: Any? = null, after: Any? = null): Any? = listOf<Any?>(before, populated, after) }
+val thing = _ThingType()
+thing.go(before = listOf<Any?>(), populated = listOf<Any?>(1), after = listOf<Any?>())
+thing.go(before = listOf<Any?>("text"), populated = listOf<Any?>(2), after = listOf<Any?>())
+thing.go(before = listOf<Any?>(), populated = listOf<Any?>("text"), after = listOf<Any?>())
+thing.go(before = listOf<Any?>("text"), populated = listOf<Any?>(2), after = listOf<Any?>(3))

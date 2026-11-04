@@ -1,0 +1,5 @@
+fun make_widget(before: Any? = null, populated: Any? = null, after: Any? = null): Any? = listOf<Any?>(before, populated, after)
+make_widget(before = arrayOf<Any?>(), populated = arrayOf<Any?>(1), after = arrayOf<Any?>())
+make_widget(before = arrayOf<Any?>("text"), populated = arrayOf<Any?>(2), after = arrayOf<Any?>())
+make_widget(before = arrayOf<Any?>(), populated = arrayOf<Any?>("text"), after = arrayOf<Any?>())
+make_widget(before = arrayOf<Any?>("text"), populated = arrayOf<Any?>(2), after = arrayOf<Any?>(3))

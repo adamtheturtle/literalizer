@@ -16,3 +16,13 @@ axis = "json_type"
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
+
+# Check generated plain and dotted helper parameter types with empty arguments surrounding a populated collection.
+[[call.variants]]
+axis = "sequence"
+
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
