@@ -21,7 +21,7 @@ from typing import assert_never
 import pytest
 import tomlkit
 from beartype import beartype
-from pydantic import ConfigDict, TypeAdapter
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML
 from tomlkit.items import InlineTable
@@ -31,6 +31,7 @@ from literalizer.exceptions import LiteralizerError, ParseError
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import CallTransform
 from tests.integration.golden_checks import check_golden
+from tests.toml_cases import load_toml_cases
 from tests.yaml_support import as_yaml_parser
 
 from .rejection_cases import (
@@ -50,6 +51,35 @@ from .rejection_manifests import (
     load_rejection_manifests,
     substituted,
 )
+
+
+class _InvalidMessageCase(BaseModel, extra="forbid", frozen=True):
+    """One malformed expected-message document."""
+
+    name: str
+    source: str
+    message: str
+
+
+class _VersionCase(BaseModel, extra="forbid", frozen=True):
+    """The active message entry for one Python version."""
+
+    name: str
+    version: str
+    active: str
+
+
+class _MessageCases(BaseModel, extra="forbid", frozen=True):
+    """Versioned diagnostic regressions declared in TOML."""
+
+    invalid: tuple[_InvalidMessageCase, ...]
+    versions: tuple[_VersionCase, ...]
+
+
+_MESSAGE_CASES = TypeAdapter(type=_MessageCases).validate_python(
+    load_toml_cases(name="versioned_messages")
+)
+
 
 _MANIFESTS = load_rejection_manifests(rejections_dir=REJECTIONS_DIR)
 
@@ -611,34 +641,17 @@ def test_explicit_absence_preserves_omitted_default(
 
 
 @pytest.mark.parametrize(
-    argnames=("source", "error", "message"),
-    argvalues=[
-        (
-            '[Error]\ncase = { "3.12" = "old" }',
-            ValueError,
-            "requires a default",
-        ),
-        (
-            '[Error]\ncase = { default = "new", py312 = "old" }',
-            ValueError,
-            "invalid Python version key",
-        ),
-        (
-            '[Error]\ncase = { default = "new", "3.12.1" = "old" }',
-            ValueError,
-            "invalid Python version key",
-        ),
-        ("[Error]\ncase = { default = 1 }", ValueError, "valid string"),
-        ("[Error]\ncase = 1", ValueError, "valid string"),
-    ],
+    argnames="case",
+    argvalues=_MESSAGE_CASES.invalid,
+    ids=lambda case: case.name,
 )
 def test_invalid_versioned_message_is_rejected(
-    source: str, error: type[Exception], message: str, tmp_path: Path
+    case: _InvalidMessageCase, tmp_path: Path
 ) -> None:
     """Malformed message variants cannot silently bypass comparison."""
     golden_path = tmp_path / "expected.toml"
-    _ = golden_path.write_text(data=source, encoding="utf-8")
-    with pytest.raises(expected_exception=error, match=message):
+    _ = golden_path.write_text(data=case.source, encoding="utf-8")
+    with pytest.raises(expected_exception=ValueError, match=case.message):
         _ = _load_expected_messages(golden_path=golden_path)
 
 
@@ -650,11 +663,12 @@ def test_missing_message_golden_can_be_generated(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    argnames=("version", "active"),
-    argvalues=[("3.12", "3.12"), ("3.13", "default"), ("3.99", "default")],
+    argnames="case",
+    argvalues=_MESSAGE_CASES.versions,
+    ids=lambda case: case.name,
 )
 def test_versioned_messages_preserve_inactive_variants(
-    version: str, active: str, tmp_path: Path
+    case: _VersionCase, tmp_path: Path
 ) -> None:
     """Regeneration changes only the active exact message and drops stale
     cases.
@@ -676,10 +690,10 @@ def test_versioned_messages_preserve_inactive_variants(
         expected=expected,
         rejecting=1,
         accepting=0,
-        python_version=version,
+        python_version=case.version,
     )
     variants = {"default": "modern", "3.12": "older"}
-    variants[active] = "actual"
+    variants[case.active] = "actual"
     assert tomllib.loads(document) == {
         "Error": {"variant": variants, "plain": "actual", "new": "actual"}
     }
