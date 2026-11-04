@@ -9,3 +9,13 @@ consumable_refs = ["item"]
 
 [call.ref_declarations]
 item = '[1,2]'
+
+# Keep repeated and nested references usable under alternate sequence types, annotations and call layouts.
+[[call.variants]]
+axis = "sequence"
+
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
