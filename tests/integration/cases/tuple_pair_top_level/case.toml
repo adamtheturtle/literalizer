@@ -15,3 +15,13 @@ axis = "heterogeneous_value_variant_name"
 
 [[variants]]
 axis = "cpp14_heterogeneous_strategy_tuple"
+
+# Check explicit root types and sequence representations for heterogeneous pair and triple documents.
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"
+
+[[variants]]
+axis = "record_eager_field_annotations"
