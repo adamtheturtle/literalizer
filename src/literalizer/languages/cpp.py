@@ -4394,7 +4394,38 @@ class Cpp(metaclass=LanguageCls):
             return _format_cpp_json_inline_call_arg
         if self._json_type_active:
             return _format_cpp_json_call_arg
-        return identity_call_arg
+        if not self._type_ctx.sequence_is_array:
+            return identity_call_arg
+
+        @beartype
+        def _formatter(raw_value: Value, formatted: str) -> str:
+            """Give a fallback array initializer its deducible type."""
+            type_name = self._call_array_initializer_type(raw_value)
+            if type_name is None:
+                return formatted
+            return f"{type_name}{formatted}"
+
+        return _formatter
+
+    def _call_array_initializer_type(self, value: Value, /) -> str | None:
+        """Name a native array argument whose opener has no type."""
+        if not self._type_ctx.sequence_is_array or not isinstance(value, list):
+            return None
+        if (
+            _cpp_array_type(items=value, type_ctx=self._type_ctx) is not None
+            or (self._tuple_strategy_active and is_tuple_eligible(value=value))
+            or _cpp_nested_record_sequence_type(
+                value=value,
+                record_name_for_value=self._type_ctx.record_name_for_value,
+            )
+            is not None
+        ):
+            return None
+        return _compute_cpp_type(
+            item=value,
+            element_to_type=self._type_ctx.element_to_type(int_type="int"),
+            type_ctx=self._type_ctx,
+        )
 
     call_data_dependent_preamble = default_call_data_dependent_preamble
 
@@ -5369,6 +5400,14 @@ class Cpp(metaclass=LanguageCls):
             *(_cpp_type_headers(entry) for entry in declarations)
         )
         if isinstance(data, CallPreambleData):
+            value_headers |= frozenset[str]().union(
+                *(
+                    _cpp_type_headers(type_name)
+                    for value in values
+                    if (type_name := self._call_array_initializer_type(value))
+                    is not None
+                )
+            )
             # Calls can widen the same container parameter across rows.
             # The row and argument lists themselves are not C++ vectors.
             value_headers |= frozenset[str]().union(
