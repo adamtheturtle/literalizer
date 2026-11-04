@@ -6,3 +6,10 @@ axis = "sequence"
 
 [[variants]]
 axis = "collection_layout"
+
+# Retain the former nested_singleton_list_rendering option regressions here.
+[[variants]]
+axis = "list_rendering_policy"
+
+[[variants]]
+axis = "list_rendering_policy_prefix"

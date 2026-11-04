@@ -45,6 +45,12 @@ jobs:
           uv run --group=dev snapper --native --max-width 0 --in-place "docs/source/changelog/$RELEASE.md"
           cp "docs/source/changelog/$RELEASE.md" release-notes.md
 
+      - name: Synchronize release notes with main
+        run: |
+          git fetch origin main
+          git diff --exit-code HEAD origin/main -- src pyproject.toml uv.lock .github
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' pull --rebase --autostash origin main
+
       - uses: stefanzweifel/git-auto-commit-action@v7
         id: commit
         with:
