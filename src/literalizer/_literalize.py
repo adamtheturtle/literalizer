@@ -9983,3 +9983,26 @@ def literalize_call_with_declarations(
         sections=(),
         data_dependent_preamble=(),
     )
+
+
+@beartype
+def render_value_literal(
+    *, value: Value, language: Language, collection_layout: CollectionLayout
+) -> str:
+    """Render a materialized value for a structured expression operand."""
+    return _literalize(
+        preserve_ref_values=False,
+        data=value,
+        language=language,
+        line_prefix="",
+        include_delimiters=True,
+        ref_case=None,
+        ref_values=None,
+        ref_key=_DISABLED_REF_KEY,
+        collection_layout=collection_layout,
+        json_comments=None,
+        raw_yaml_data=None,
+        toml_comment_doc=None,
+        validate_data=True,
+        record_context_data=None,
+    )

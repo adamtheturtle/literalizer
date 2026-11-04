@@ -1177,3 +1177,8 @@ class ConflictingVariableModifiersError(LiteralizerError):
         self.language_name = language_name
         self.group_name = group_name
         self.keywords = keywords
+
+
+@beartype
+class NativeCallError(LiteralizerError):
+    """A native invocation cannot satisfy its declared contract."""

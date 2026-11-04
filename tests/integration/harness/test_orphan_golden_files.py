@@ -40,6 +40,7 @@ from tests.integration.literalize_ref_cases import (
     discover_literalize_ref_cases,
     ref_language_versions,
 )
+from tests.integration.native_invocation_cases import native_invocation_cases
 from tests.integration.unwrapped_result_cases import result_view_golden_paths
 from tests.integration.variant_cases import build_variant_cases
 
@@ -225,6 +226,9 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         for version in case.lang_cls.VersionFormats
     )
 
+    expected.update(
+        path for _, _, _, path in native_invocation_cases(cases_dir=cases_dir)
+    )
     expected.update(_expected_default_module_name_golden_files())
     expected.update(result_view_golden_paths(cases_dir=cases_dir))
 

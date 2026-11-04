@@ -1,0 +1,435 @@
+[
+  {
+    "rows": [
+      [
+        5
+      ]
+    ],
+    "invocation": {
+      "constructor": "NativeCounter",
+      "initializer": "initWithCount:",
+      "parameter-types": [
+        "integer"
+      ],
+      "arguments": [
+        {
+          "input": 0
+        }
+      ]
+    },
+    "variable": "counter"
+  },
+  {
+    "rows": [
+      [
+        "user_1",
+        100.0
+      ]
+    ],
+    "invocation": {
+      "receiver": {
+        "reference": "counter",
+        "type": "NativeCounter"
+      },
+      "selector": "accept:timestamp:",
+      "parameter-types": [
+        "NSString",
+        "float"
+      ],
+      "return-type": "bool",
+      "arguments": [
+        {
+          "input": 0
+        },
+        {
+          "input": 1
+        }
+      ]
+    },
+    "variable": "allowed"
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "function": "verifyObject",
+      "parameter-types": [
+        "NSNumber"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "reference": "allowed",
+          "type": "bool"
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      [
+        "user_2",
+        101.0
+      ]
+    ],
+    "invocation": {
+      "receiver": {
+        "reference": "counter",
+        "type": "NativeCounter"
+      },
+      "selector": "accept:timestamp:",
+      "parameter-types": [
+        "NSString",
+        "float"
+      ],
+      "return-type": "bool",
+      "arguments": [
+        {
+          "input": 0
+        },
+        {
+          "input": 1
+        }
+      ]
+    },
+    "variable": "allowed",
+    "existing": true
+  },
+  {
+    "rows": [
+      [
+        "user_1",
+        100.0
+      ]
+    ],
+    "zipped": [
+      [
+        true,
+        "native selector"
+      ]
+    ],
+    "invocation": {
+      "function": "verifyResult",
+      "parameter-types": [
+        "bool",
+        "NSArray"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "receiver": {
+            "reference": "counter",
+            "type": "NativeCounter"
+          },
+          "selector": "accept:timestamp:",
+          "parameter-types": [
+            "NSString",
+            "float"
+          ],
+          "return-type": "bool",
+          "arguments": [
+            {
+              "input": 0
+            },
+            {
+              "input": 1
+            }
+          ]
+        },
+        {
+          "zipped": true
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      [
+        "user_1",
+        100.0
+      ]
+    ],
+    "invocation": {
+      "function": "verifyObject",
+      "parameter-types": [
+        "NSNumber"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "receiver": {
+            "reference": "counter",
+            "type": "NativeCounter"
+          },
+          "selector": "accept:timestamp:",
+          "parameter-types": [
+            "NSString",
+            "float"
+          ],
+          "return-type": "bool",
+          "arguments": [
+            {
+              "input": 0
+            },
+            {
+              "input": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "receiver": {
+        "class": "NativeCounter"
+      },
+      "selector": "label",
+      "parameter-types": [],
+      "return-type": "NSString",
+      "arguments": []
+    },
+    "variable": "label"
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "function": "verifyBoxes",
+      "parameter-types": [
+        "NSNumber",
+        "NSNumber"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "literal": 42
+        },
+        {
+          "literal": true
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "receiver": {
+        "reference": "counter",
+        "type": "NativeCounter"
+      },
+      "selector": "reset",
+      "parameter-types": [],
+      "return-type": "void",
+      "arguments": []
+    }
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "receiver": {
+        "reference": "counter",
+        "type": "NativeCounter"
+      },
+      "selector": "count",
+      "parameter-types": [],
+      "return-type": "integer",
+      "arguments": []
+    },
+    "variable": "finalCount"
+  },
+  {
+    "rows": [
+      [
+        3
+      ]
+    ],
+    "invocation": {
+      "receiver": {
+        "constructor": "NativeCounter",
+        "initializer": "initWithCount:",
+        "parameter-types": [
+          "integer"
+        ],
+        "arguments": [
+          {
+            "input": 0
+          }
+        ]
+      },
+      "selector": "count",
+      "parameter-types": [],
+      "return-type": "integer",
+      "arguments": []
+    },
+    "variable": "nestedCount"
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "function": "makeNames",
+      "parameter-types": [],
+      "return-type": {
+        "object": "NSArray",
+        "arguments": [
+          "NSString"
+        ]
+      },
+      "arguments": []
+    },
+    "variable": "names"
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "receiver": {
+        "literal": [
+          "native"
+        ]
+      },
+      "selector": "mutableCopy",
+      "parameter-types": [],
+      "return-type": {
+        "object": "NSMutableArray",
+        "arguments": [
+          "NSString"
+        ]
+      },
+      "arguments": []
+    },
+    "variable": "mutableNames"
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "function": "verifyNull",
+      "parameter-types": [
+        "id"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "literal": null
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "function": "verifyBool",
+      "parameter-types": [
+        "bool"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "literal": true
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "function": "verifyDictionary",
+      "parameter-types": [
+        {
+          "object": "NSDictionary",
+          "arguments": [
+            "NSString",
+            {
+              "object": "NSArray",
+              "arguments": [
+                "NSString"
+              ]
+            }
+          ]
+        }
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "literal": {
+            "group": [
+              "native"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      42
+    ],
+    "per_element": false,
+    "invocation": {
+      "function": "verifyScalar",
+      "parameter-types": [
+        "integer"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "input": 0
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "function": "verifyDouble",
+      "parameter-types": [
+        "float"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "reference": "nestedCount",
+          "type": "integer"
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "function": "verifyLabel",
+      "parameter-types": [
+        "NSString"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "reference": "label",
+          "type": "id"
+        }
+      ]
+    }
+  }
+]

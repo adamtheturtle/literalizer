@@ -485,6 +485,7 @@ def _default_allows_empty_ordered_map_keys(
 
 
 CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
+    "supports_native_invocations": lambda cls: cls.supports_native_invocations,
     "supports_default_sequence_element_type": lambda lang_cls: (
         lang_cls.supports_default_sequence_element_type
     ),

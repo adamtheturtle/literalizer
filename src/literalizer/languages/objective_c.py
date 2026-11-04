@@ -64,6 +64,7 @@ from literalizer._language import (
     HeterogeneousBehavior,
     IdentifierCase,
     JsonType,
+    Language,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
@@ -103,6 +104,12 @@ from literalizer._statements import (
     CallLiteralSyntax,
 )
 from literalizer._types import Value
+from literalizer.native_calls import (
+    NativeInvocation,
+    NativeType,
+    objective_c_invocation,
+    objective_c_type,
+)
 
 _NULL_OBJECT_STUB = NullableObjectCallStubResult(
     type_name="id",
@@ -692,6 +699,7 @@ class ObjectiveC(metaclass=LanguageCls):
     supports_no_variable_wrap_in_file = False
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = True
+    supports_native_invocations = True
     supports_dotted_calls = True
     has_free_function_calls = True
     reserved_identifiers: ClassVar[frozenset[str]] = frozenset()
@@ -1149,6 +1157,20 @@ class ObjectiveC(metaclass=LanguageCls):
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
     call_style: CallStyles = CallStyles.POSITIONAL
+
+    @staticmethod
+    @beartype
+    def render_native_invocation(
+        language: Language, invocation: NativeInvocation, /
+    ) -> str:
+        """Render an explicitly typed native call expression."""
+        return objective_c_invocation(language, invocation)
+
+    @staticmethod
+    @beartype
+    def native_type_name(native_type: NativeType, /) -> str:
+        """Spell a declared native scalar or object type."""
+        return objective_c_type(native_type)
 
     @cached_property
     @beartype

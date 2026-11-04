@@ -46,7 +46,24 @@ from literalizer.api import (
     literalize_call,
     literalize_call_with_declarations,
 )
-from literalizer.exceptions import LiteralizerError
+from literalizer.exceptions import LiteralizerError, NativeCallError
+from literalizer.native_call_data import (
+    literalize_native_calls,
+    native_invocation_from_data,
+)
+from literalizer.native_calls import (
+    ConstructorTarget,
+    FunctionTarget,
+    MessageTarget,
+    NativeClass,
+    NativeInvocation,
+    NativeLiteral,
+    NativeReference,
+    NativeType,
+    ObjectType,
+    ScalarType,
+    literalize_native_call,
+)
 
 __all__ = [
     "ALL_REF_CASES",
@@ -57,12 +74,14 @@ __all__ = [
     "CollectionLayout",
     "CommandCallStyle",
     "CommentConfig",
+    "ConstructorTarget",
     "DateFormatConfig",
     "DatetimeFormatConfig",
     "DictFormatConfig",
     "ExistingVariable",
     "FileSection",
     "FileWrapperContext",
+    "FunctionTarget",
     "IdentifierCase",
     "InputFormat",
     "KeywordCallStyle",
@@ -70,14 +89,23 @@ __all__ = [
     "LanguageCls",
     "LiteralizeResult",
     "LiteralizerError",
+    "MessageTarget",
     "ModifierCombination",
+    "NativeCallError",
+    "NativeClass",
+    "NativeInvocation",
+    "NativeLiteral",
+    "NativeReference",
+    "NativeType",
     "NewVariable",
     "ObjectCallStyle",
+    "ObjectType",
     "OrderedMapFormatConfig",
     "PositionalCallStyle",
     "PostfixCallStyle",
     "PrefixCallStyle",
     "RoundTripCapability",
+    "ScalarType",
     "SequenceFormatConfig",
     "SetFormatConfig",
     "StubReturn",
@@ -88,4 +116,7 @@ __all__ = [
     "literalize",
     "literalize_call",
     "literalize_call_with_declarations",
+    "literalize_native_call",
+    "literalize_native_calls",
+    "native_invocation_from_data",
 ]
