@@ -2043,9 +2043,12 @@ class CSharp(metaclass=LanguageCls):
             )
             for scalar in scalars
         }
-        return single_concrete_type(
+        concrete_type = single_concrete_type(
             types=scalar_types, fallback_type="object?"
         )
+        if concrete_type is not None:
+            return concrete_type
+        return _csharp_object_fallback(items=scalars, fallback="object?")
 
     @cached_property
     @beartype
@@ -2336,7 +2339,7 @@ class CSharp(metaclass=LanguageCls):
 
         @beartype
         def _set_open(items: list[Value]) -> str:
-            """Keep nullability and epoch carriers consistent with
+            """Keep object and epoch carriers consistent with the
             values.
             """
             selected = typed

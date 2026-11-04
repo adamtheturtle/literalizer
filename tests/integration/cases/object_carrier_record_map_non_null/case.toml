@@ -1,0 +1,19 @@
+schema_version = 1
+owner = "variant"
+gates = [{kind = "metadata_field", field = "language_id", value = "csharp"}]
+
+[[variants]]
+axis = "csharp_object_carrier_records"
+wrap_in_file = false
+
+[variants.consumer_templates]
+CSharp = '''{preamble}
+class Example {{
+    static void Main() {{
+{code}
+        System.Collections.Generic.Dictionary<string, object> first = my_data[0].Payload;
+        System.Collections.Generic.Dictionary<string, object> second = my_data[1].Payload;
+        if (first["flag"] is not true || second["text"] is not "") {{ throw new System.InvalidOperationException("changed record maps"); }}
+    }}
+}}
+'''

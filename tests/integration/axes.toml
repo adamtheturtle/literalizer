@@ -96,6 +96,14 @@ gates = [{ kind = "metadata_field", field = "language_id", value = "csharp" }]
 overrides = [{ kind = "enum_member", option = "sequence_format", member = "ARRAY" }]
 layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
 
+[axes.csharp_object_carrier_records]
+plan = "fixed_overrides"
+name_template = "{lang}_object_carrier_records"
+overrides_from = "csharp_object_carrier"
+gates = [{ kind = "metadata_field", field = "language_id", value = "csharp" }]
+overrides = [{ kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" }]
+layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
+
 [axes.csharp_object_array_fallback]
 plan = "kwarg_values"
 name_template = "{lang}_object_array_fallback_{format}"
