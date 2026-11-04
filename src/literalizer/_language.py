@@ -4081,7 +4081,7 @@ def parenthesize_bare_object(
 
 
 @beartype
-def wrap_combined_in_file_noop(
+def _wrap_combined_in_file_noop(
     declaration: str,
     assignment: str,
     context: FileWrapperContext,
@@ -4115,7 +4115,7 @@ else:
     )
 _wrap_combined_in_file_noop_callable: Callable[
     [str, str, FileWrapperContext], str
-] = wrap_combined_in_file_noop
+] = _wrap_combined_in_file_noop
 #: Static descriptor for the shared combined file wrapper.
 if TYPE_CHECKING:
     wrap_combined_in_file_noop_static: (

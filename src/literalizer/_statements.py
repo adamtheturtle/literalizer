@@ -128,7 +128,7 @@ class CallLiteralSyntax:
         """Separate final comments using this producer's actual
         grammar.
         """
-        return split_trailing_line_comments(
+        return _split_trailing_line_comments(
             statement=statement,
             prefix=self.prefix,
             quotes=self.quotes,
@@ -334,7 +334,7 @@ class _CommentScanner:
 
 
 @beartype
-def split_trailing_line_comments(
+def _split_trailing_line_comments(
     *,
     statement: str,
     prefix: str,

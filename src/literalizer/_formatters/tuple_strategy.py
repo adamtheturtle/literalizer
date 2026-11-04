@@ -65,7 +65,7 @@ def is_tuple_eligible(*, value: list[Value]) -> bool:
 
     This is the structural half of tuple-eligibility (the positional
     half -- a list must be a dict value or the document root -- is
-    enforced by :func:`collect_tuple_lists` and by the caller's
+    enforced by :func:`_collect_tuple_lists` and by the caller's
     position when a language's type inference reuses this predicate
     directly).
     """
@@ -152,7 +152,7 @@ def _accumulate_tuple_lists(
 
 
 @beartype
-def collect_tuple_lists(*, data: Value) -> list[list[Value]]:
+def _collect_tuple_lists(*, data: Value) -> list[list[Value]]:
     """Return every tuple-eligible list in *data*, in document order.
 
     The document root is eligible when it is itself a tuple-eligible
@@ -169,7 +169,7 @@ def collect_tuple_lists(*, data: Value) -> list[list[Value]]:
 @beartype
 def collect_tuple_list_ids(*, data: Value) -> frozenset[int]:
     """Return ``id(list)`` for every tuple-eligible list in *data*."""
-    return frozenset(id(lst) for lst in collect_tuple_lists(data=data))
+    return frozenset(id(lst) for lst in _collect_tuple_lists(data=data))
 
 
 @beartype
@@ -251,7 +251,7 @@ def build_tuple_strategy(
         """Return the tuple-eligible list ids, raising for any whose
         length the language has no native tuple for.
         """
-        lists = collect_tuple_lists(data=data)
+        lists = _collect_tuple_lists(data=data)
         for lst in lists:
             if not tuple_renderer.representable_arity(len(lst)):
                 raise TupleArityNotRepresentableError(arity=len(lst))

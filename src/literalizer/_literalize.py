@@ -2773,7 +2773,7 @@ def _reference_binding_values(
     """
     if isinstance(ref_values, _ReferenceValues):
         return ref_values.binding_values
-    return reference_values_or_empty(values=ref_values)
+    return _reference_values_or_empty(values=ref_values)
 
 
 @runtime_checkable
@@ -2828,7 +2828,9 @@ def _format_literal_ref_identifier(
     hints.
     """
     ref_value = _reference_binding_values(ref_values).get(raw_ref_name)
-    hint_value = reference_values_or_empty(values=ref_values).get(raw_ref_name)
+    hint_value = _reference_values_or_empty(values=ref_values).get(
+        raw_ref_name
+    )
     alias_record_ids = language.heterogeneous_behavior.alias_record_ids
     if alias_record_ids is not None and ref_value is not hint_value:
         alias_record_ids(
@@ -3202,7 +3204,7 @@ def _opener_inference_value(
     effective_ref_values_5: Mapping[str, Value]
     if ctx.expand_refs:
         ref_values = ctx.ref_values
-        effective_ref_values_5 = reference_values_or_empty(values=ref_values)
+        effective_ref_values_5 = _reference_values_or_empty(values=ref_values)
         return _strip_direct_refs_for_opener(
             value=_substitute_known_refs_in_container(
                 data=data,
@@ -3309,7 +3311,7 @@ def _unknown_reference_sequence_open_for_language(
             _extract_call_arg_ref_name(value=value, ref_key=ref_key)
             for value in data
         )
-        hints = reference_values_or_empty(values=ref_values)
+        hints = _reference_values_or_empty(values=ref_values)
         unknown = [
             name
             for name in references
@@ -5099,7 +5101,7 @@ def _reference_preamble(
             tuple(values.get(name) for name in sorted(names - known_nulls)),
             has_known_null=bool(names & known_nulls),
         )
-    if names.issubset(reference_values_or_empty(values=ref_values)):
+    if names.issubset(_reference_values_or_empty(values=ref_values)):
         return ()
     return language.unresolved_reference_preamble
 
@@ -5318,7 +5320,7 @@ def _literalize_pre_form_impl(
     effective_ref_values_3: Mapping[str, Value]
     effective_ref_values_4: Mapping[str, Value]
     if active_ref_key is not disabled_ref_key():
-        effective_ref_values_3 = reference_values_or_empty(values=ref_values)
+        effective_ref_values_3 = _reference_values_or_empty(values=ref_values)
         data_for_declaration = _substitute_known_refs(
             value=data,
             ref_values=(effective_ref_values_3),
@@ -5328,7 +5330,7 @@ def _literalize_pre_form_impl(
         # in place, so preamble inference never sees the marker's own
         # ``{str: str}`` shape and an unrelated ``ref_values`` entry
         # cannot change the preamble of identical code (issue #4480).
-        effective_ref_values_4 = reference_values_or_empty(values=ref_values)
+        effective_ref_values_4 = _reference_values_or_empty(values=ref_values)
         resolution = _resolve_ref_for_preamble(
             value=data,
             ref_values=(effective_ref_values_4),
@@ -5409,7 +5411,7 @@ def literalize_pre_form(
         )
     except RecursionError as exc:
         raise recursion_parse_error(input_format=input_format) from exc
-    reject_unbound_refs_in_file(
+    _reject_unbound_refs_in_file(
         data=pre_form.data,
         ref_key=ref_key,
         ref_case=ref_case,
@@ -5568,7 +5570,7 @@ class _SelfContainedAssignmentValidationLanguage(Protocol):
 
 
 @beartype
-def reject_undeclared_assignment(
+def _reject_undeclared_assignment(
     *,
     pre_form: _PreFormState,
     language: Language,
@@ -5637,7 +5639,7 @@ def literalize_apply_form(
         variable_form=variable_form,
     )
     if wrap_in_file:
-        reject_undeclared_assignment(
+        _reject_undeclared_assignment(
             pre_form=pre_form,
             language=language,
             variable_form=variable_form,
@@ -6034,7 +6036,7 @@ def literalize_bound_refs(
     Haskell ``seq name``) is preserved.
     """
     ordered_names = list(bound_refs)
-    explicit_hint_values = reference_values_or_empty(
+    explicit_hint_values = _reference_values_or_empty(
         values=explicit_ref_values
     )
     effective_ref_values = merged_reference_values(
@@ -6070,7 +6072,7 @@ def literalize_bound_refs(
     # This route is reached only for a wrapped file, and the wrapping
     # happens in the composer below, so the self-containment guard runs
     # here rather than through ``literalize_apply_form`` (issue #4465).
-    reject_undeclared_assignment(
+    _reject_undeclared_assignment(
         pre_form=pre_form,
         language=language,
         variable_form=declaration_form,
@@ -6596,7 +6598,7 @@ def _collect_ref_names(*, value: Value, ref_key: str) -> frozenset[str]:
 
 
 @beartype
-def reject_unbound_refs_in_file(
+def _reject_unbound_refs_in_file(
     *,
     data: Value,
     ref_key: str,
@@ -8972,7 +8974,7 @@ def materialize_value_mapping(
 
 
 @beartype
-def reference_values_or_empty(
+def _reference_values_or_empty(
     *,
     values: Mapping[str, Value] | None,
 ) -> Mapping[str, Value]:
@@ -9518,7 +9520,7 @@ def literalize_call_parsed(
     effective_bound_ref_names = frozenset(
         reference_inputs_or_empty(values=bound_refs)
     )
-    reject_unbound_refs_in_file(
+    _reject_unbound_refs_in_file(
         data=data,
         ref_key=ref_key,
         ref_case=ref_case,
