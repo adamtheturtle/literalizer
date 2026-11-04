@@ -3689,10 +3689,10 @@ jobs:
       # runs in a separate job (`lint-objectivec-tidy`) and deliberately
       # skips the PCH — see the note on `lint-cpp-tidy`.
       - name: Build precompiled header
-        run: clang -x objective-c-header scripts/lint-objc-pch.h -o /tmp/pch.h.pch
+        run: clang -fobjc-arc -x objective-c-header scripts/lint-objc-pch.h -o /tmp/pch.h.pch
       - name: Check Objective-C syntax
-        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fsyntax-only -Werror -include-pch
-          /tmp/pch.h.pch < /tmp/files-to-lint
+        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fobjc-arc -fsyntax-only
+          -Werror -include-pch /tmp/pch.h.pch < /tmp/files-to-lint
       # Each fixture defines its own main, so compile and run directly.
       # Link against Foundation and execute to surface runtime errors.
       # Each invocation gets a private tmpdir so parallel builds don't
@@ -3702,7 +3702,7 @@ jobs:
           cat > /tmp/run-objc.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang -framework Foundation -Werror -include-pch /tmp/pch.h.pch "$1" \
+          clang -fobjc-arc -framework Foundation -Werror -include-pch /tmp/pch.h.pch "$1" \
             -o "$tmpdir/out" || exit 1
           "$tmpdir/out" || exit 1
           SCRIPT
@@ -3755,7 +3755,8 @@ jobs:
           brew install --quiet llvm
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
       - name: Run clang-tidy
-        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy < /tmp/files-to-lint
+        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy --extra-arg=-fobjc-arc
+          < /tmp/files-to-lint
 
   completion-lint:
     needs:
