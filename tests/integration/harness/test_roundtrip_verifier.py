@@ -1,83 +1,59 @@
-"""The shared semantic verifier preserves JSON value distinctions."""
+"""Shared semantic verification preserves JSON value distinctions."""
 
 import pytest
+from pydantic import BaseModel, TypeAdapter
 
 from scripts.roundtrip_common import verify
+from tests.toml_cases import load_toml_cases
+
+
+class _RoundtripCase(BaseModel, extra="forbid", frozen=True):
+    """One named manifest-owned regression scenario."""
+
+    name: str
+    expected_json: str
+    produced_json: str
+    exclude_keys: tuple[str, ...]
+
+
+class _Cases(BaseModel, extra="forbid", frozen=True):
+    """The complete declarative regression corpus."""
+
+    mismatches: tuple[_RoundtripCase, ...]
+    equivalent: tuple[_RoundtripCase, ...]
+
+
+_CASES = TypeAdapter(type=_Cases).validate_python(
+    load_toml_cases(name="roundtrip_verifier")
+)
 
 
 @pytest.mark.parametrize(
-    argnames=("expected_json", "produced_json"),
-    argvalues=[
-        ('{"value": true}', '{"value": 1}'),
-        ('{"value": 1}', '{"value": true}'),
-        ('{"value": false}', '{"value": 0}'),
-        ('{"value": 0}', '{"value": false}'),
-        ('{"value": [true]}', '{"value": [1.0]}'),
-        ('{"value": [0.0]}', '{"value": [false]}'),
-        (
-            '{"value": {"nested": [1, false]}}',
-            '{"value": {"nested": [true, 0]}}',
-        ),
-        (
-            '{"value": {"nested": [true, 0]}}',
-            '{"value": {"nested": [1, false]}}',
-        ),
-        ('{"value": [1, 2]}', '{"value": [2, 1]}'),
-        ('{"value": [1]}', '{"value": [1, 2]}'),
-        ('{"value": null}', '{"value": 0}'),
-        ('{"value": "true"}', '{"value": true}'),
-        ('{"value": {"a": 1}}', '{"value": {"b": 1}}'),
-    ],
+    argnames="case", argvalues=_CASES.mismatches, ids=lambda case: case.name
 )
 def test_roundtrip_mismatch(
-    expected_json: str,
-    produced_json: str,
-    capsys: pytest.CaptureFixture[str],
+    case: _RoundtripCase, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """Changed JSON values fail with the existing mismatch diagnostic."""
     with pytest.raises(expected_exception=SystemExit) as exc_info:
         verify(
             label="negative-control",
-            produced_json=produced_json,
-            exclude_keys=(),
-            expected_json=expected_json,
+            produced_json=case.produced_json,
+            exclude_keys=case.exclude_keys,
+            expected_json=case.expected_json,
         )
     assert exc_info.value.code == 1
     assert "negative-control: round-trip mismatch" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(
-    argnames=("expected_json", "produced_json", "exclude_keys"),
-    argvalues=[
-        (
-            '{"value": [true, false, 0, 1]}',
-            '{"value": [true, false, 0, 1]}',
-            (),
-        ),
-        ('{"value": 1}', '{"value": 1.0}', ()),
-        ('{"value": [0.0, 1.0]}', '{"value": [0, 1]}', ()),
-        (
-            '{"a": {"x": false, "y": [1]}, "b": null}',
-            '{"b": null, "a": {"y": [1.0], "x": false}}',
-            (),
-        ),
-        (
-            '{"keep": true, "skip": 1}',
-            '{"keep": true, "skip": false}',
-            ("skip",),
-        ),
-        ('{"keep": true}', '{"keep": true, "skip": 0}', ("skip",)),
-    ],
+    argnames="case", argvalues=_CASES.equivalent, ids=lambda case: case.name
 )
-def test_roundtrip_equivalent(
-    expected_json: str,
-    produced_json: str,
-    exclude_keys: tuple[str, ...],
-) -> None:
+def test_roundtrip_equivalent(case: _RoundtripCase) -> None:
     """Retain numeric equivalence, object ordering and key exclusions."""
     verify(
         label="passing-control",
-        produced_json=produced_json,
-        exclude_keys=exclude_keys,
-        expected_json=expected_json,
+        produced_json=case.produced_json,
+        exclude_keys=case.exclude_keys,
+        expected_json=case.expected_json,
     )
