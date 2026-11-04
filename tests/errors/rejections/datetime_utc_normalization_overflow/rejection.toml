@@ -1,8 +1,8 @@
 schema_version = 1
-summary = "Exercise UTC normalization outside the native datetime range."
+summary = "Exercise UTC normalization outside the native datetime range.\n\nNative datetime constructors reject extreme offsets whose equivalent UTC instant overflows the supported year range."
 exceptions = ["UnrepresentableInputError"]
 
 [call]
 api = "literalize"
-sources = ["0001-01-01T00:00:00+01:00", "9999-12-31T23:59:59-01:00"]
+sources = ["0001-01-01T00:00:00+01:00", "9999-12-31T23:59:59-01:00", "0001-01-01T00:00:00+23:59", "9999-12-31T23:59:59-23:59"]
 input_format = "yaml"

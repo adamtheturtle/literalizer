@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "variant"
+gates = [{kind = "metadata_field", field = "language_id", value = "csharp"}]
+
+[[variants]]
+axis = "csharp_object_carrier"
+wrap_in_file = false
+
+[variants.consumer_templates]
+CSharp = '''{preamble}
+{code}
+System.Collections.Generic.HashSet<object> values = my_data;
+if (values.Count != 2 || !values.Contains(true) || !values.Contains("")) {{ throw new System.InvalidOperationException("changed collection values"); }}
+'''

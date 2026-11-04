@@ -14,17 +14,12 @@ from beartype import beartype
 from literalizer._checks import reject_aware_datetimes
 from literalizer._formatters.call_stubs import dotted_helper_type_names
 from literalizer._formatters.collection_openers import (
-    CollectionSignature,
     CollectionType,
     TypedOpenerConfig,
     TypeOpeners,
-    collection_signature,
     collection_type_open,
     fixed_open,
     infer_collection_type,
-    make_type_to_opener,
-    signature_open,
-    typed_dict_open,
 )
 from literalizer._formatters.format_dates import (
     date_ymd_formatter,
@@ -350,6 +345,23 @@ def _csharp_scalar_type(
 
 
 @beartype
+def _csharp_object_fallback(*, items: Sequence[Value], fallback: str) -> str:
+    """Narrow the built-in object carrier when its values cannot be null.
+
+    Inspect only this collection level. A container remains non-null even
+    when one of its children is null. Empty inputs and custom fallback
+    types retain the caller's configured uncertainty.
+    """
+    if (
+        fallback == "object?"
+        and len(items) > 0
+        and all(item is not None for item in items)
+    ):
+        return "object"
+    return fallback
+
+
+@beartype
 def _csharp_common_element_type(
     *,
     items: list[Value],
@@ -376,7 +388,7 @@ def _csharp_common_element_type(
         return next(iter(types))
     if types == {"int", "double"}:
         return "object" if preserve_numeric_kinds else "double"
-    return "object?"
+    return _csharp_object_fallback(items=items, fallback="object?")
 
 
 @beartype
@@ -2031,9 +2043,12 @@ class CSharp(metaclass=LanguageCls):
             )
             for scalar in scalars
         }
-        return single_concrete_type(
+        concrete_type = single_concrete_type(
             types=scalar_types, fallback_type="object?"
         )
+        if concrete_type is not None:
+            return concrete_type
+        return _csharp_object_fallback(items=scalars, fallback="object?")
 
     @cached_property
     @beartype
@@ -2170,13 +2185,31 @@ class CSharp(metaclass=LanguageCls):
             effective_set_opener_template = (
                 self._base_set_format_config.set_opener_template
             )
-        return cfg.build(
+        base = cfg.build(
             date_type=cfg.type_name(py_type=self._date_tp),
             datetime_type=cfg.type_name(py_type=self._dt_tp),
             set_opener_template=(effective_set_opener_template),
             narrow_dict_values=False,
             narrow_list_values=True,
             dict_key_type=self.default_dict_key_type,
+        )
+
+        @beartype
+        def _sequence_element_type(
+            element_type: type | ListType | DictType,
+        ) -> str | None:
+            """Give nested maps the same carrier as their literal
+            opener.
+            """
+            if isinstance(element_type, DictType):
+                return self._dict_type(list(element_type.values)).declared_type
+            if isinstance(element_type, ListType):
+                inner = _sequence_element_type(element_type=element_type.inner)
+                return None if inner is None else f"{inner}[]"
+            return base.seq_element_type(element_type)
+
+        return dataclasses.replace(
+            base, seq_element_type=_sequence_element_type
         )
 
     @cached_property
@@ -2296,17 +2329,32 @@ class CSharp(metaclass=LanguageCls):
             type_to_opener=type_to_opener,
             fallback=base.set_open([]),
         )
-        if self._dt_tp is not int:
-            return typed
+
+        non_nullable = self.set_format(
+            default_type="object"
+        ).with_typed_opener(
+            type_to_opener=type_to_opener,
+            fallback=self.set_format(default_type="object").set_open([]),
+        )
 
         @beartype
-        def _epoch_set_open(items: list[Value]) -> str:
-            """Infer set carriers from the rendered epoch integers."""
-            return typed.set_open(
-                [_csharp_epoch_array_item(item) for item in items]
-            )
+        def _set_open(items: list[Value]) -> str:
+            """Keep object and epoch carriers consistent with the
+            values.
+            """
+            selected = typed
+            if (
+                _csharp_object_fallback(
+                    items=items, fallback=self.default_set_element_type
+                )
+                != self.default_set_element_type
+            ):
+                selected = non_nullable
+            if self._dt_tp is int:
+                items = [_csharp_epoch_array_item(item) for item in items]
+            return selected.set_open(items)
 
-        return dataclasses.replace(typed, set_open=_epoch_set_open)
+        return dataclasses.replace(typed, set_open=_set_open)
 
     @cached_property
     @beartype
@@ -2342,7 +2390,9 @@ class CSharp(metaclass=LanguageCls):
                     return CollectionType(
                         opener="new[] {", declared_type=name + "[]" * depth
                     )
-            fallback_type = self.default_sequence_element_type
+            fallback_type = _csharp_object_fallback(
+                items=items, fallback=self.default_sequence_element_type
+            )
             # Object carriers can box arrays of any rank. A typed leaf
             # fallback must retain the native array dimensions instead.
             if (
@@ -2378,14 +2428,49 @@ class CSharp(metaclass=LanguageCls):
 
         return _infer
 
-    def _ordered_map_type(self, _value: Value, /) -> CollectionType:
+    def _ordered_map_type(
+        self, value: Mapping[Scalar, Value], /
+    ) -> CollectionType:
         """Resolve ordered-map defaults before adding literal syntax."""
+        value_type = _csharp_object_fallback(
+            items=list(value.values()), fallback=self.default_dict_value_type
+        )
         declared_type = (
-            f"Dictionary<{self.default_dict_key_type}, "
-            f"{self.default_dict_value_type}>"
+            f"Dictionary<{self.default_dict_key_type}, {value_type}>"
         )
         return CollectionType(
             opener=f"new {declared_type} {{", declared_type=declared_type
+        )
+
+    def _dict_type(self, values: list[Value], /) -> CollectionType:
+        """Infer a map's literal and nested declared type together."""
+        cfg = self._opener_config
+        if self._dt_tp is int:
+            values = [_csharp_epoch_array_item(value) for value in values]
+        fallback = _csharp_object_fallback(
+            items=values, fallback=self.default_dict_value_type
+        )
+        declared_template = (
+            f"Dictionary<{self.default_dict_key_type}, {{type_name}}>"
+        )
+        return infer_collection_type(
+            items=values,
+            element_to_type=cfg.element_to_type(
+                dict_value_to_type=None,
+                list_template=None,
+                enable_list_type=self.sequence_format
+                is self.sequence_formats.ARRAY,
+                date_type=cfg.type_name(py_type=self._date_tp),
+                datetime_type=cfg.type_name(py_type=self._dt_tp),
+                enable_dict_type=False,
+                dict_key_type=self.default_dict_key_type,
+            ),
+            opener_template=self._resolved_dict_opener,
+            declared_type_template=declared_template,
+            fallback=CollectionType(
+                opener=self._resolved_dict_opener.format(type_name=fallback),
+                declared_type=declared_template.format(type_name=fallback),
+            ),
         )
 
     @cached_property
@@ -2415,52 +2500,20 @@ class CSharp(metaclass=LanguageCls):
                 supports_trailing_comma=True,
                 narrowed_empty_form=None,
             )
-        cfg = self._opener_config
-        resolved = self._resolved_dict_opener
-        base_open = typed_dict_open(
-            type_to_opener=make_type_to_opener(
-                element_to_type=cfg.element_to_type(
-                    dict_value_to_type=None,
-                    list_template=None,
-                    enable_list_type=(
-                        self.sequence_format is self.sequence_formats.ARRAY
-                    ),
-                    date_type=cfg.type_name(py_type=self._date_tp),
-                    datetime_type=cfg.type_name(py_type=self._dt_tp),
-                    enable_dict_type=False,
-                    dict_key_type=self.default_dict_key_type,
-                ),
-                opener_template=resolved,
-            ),
-            fallback=resolved.format(
-                type_name=self.default_dict_value_type,
-            ),
-        )
 
         @beartype
-        def _normalized(data: dict[Scalar, Value]) -> dict[Scalar, Value]:
-            """Infer epoch values from their rendered integer widths."""
-            if self._dt_tp is not int:
-                return data
-            return {
-                key: _csharp_epoch_array_item(value)
-                for key, value in data.items()
-            }
-
-        @beartype
-        def _open(data: dict[Scalar, Value], /) -> str:
-            """Spell the map after normalizing epoch values."""
-            return base_open(_normalized(data=data))
-
-        @beartype
-        def _signature(data: dict[Scalar, Value], /) -> CollectionSignature:
-            """Infer from the same normalized values as the map
-            renderer.
-            """
-            return collection_signature(base_open, _normalized(data=data))
+        def _infer(data: dict[Scalar, Value], /) -> CollectionType:
+            """Resolve a map from its immediate values."""
+            return self._dict_type(list(data.values()))
 
         return DictFormatConfig(
-            dict_open=signature_open(render=_open, infer=_signature),
+            dict_open=collection_type_open(
+                infer=_infer,
+                fallback_type=(
+                    f"Dictionary<{self.default_dict_key_type}, "
+                    f"{self.default_dict_value_type}>"
+                ),
+            ),
             close="}",
             format_entry=dict_entry_with_template(
                 template="[{key}] = {value}",

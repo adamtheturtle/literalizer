@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-record Record0(Dictionary<string, object?> Values, bool Flag, long[][] DirectArrays);
+record Record0(Dictionary<string, object> Values, bool Flag, long[][] DirectArrays);
 class Check {
     public static void Main() {
 var my_data = new Record0(
-    new Dictionary<string, object?> {
+    new Dictionary<string, object> {
         ["wide"] = new object?[] {
             new long[] {
                 2208988800

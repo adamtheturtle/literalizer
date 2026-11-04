@@ -4,10 +4,10 @@ var SharedValues = (
     1,
     2
 );
-var my_data = new Dictionary<string, object?> {
+var my_data = new Dictionary<string, object> {
     ["a"] = SharedValues
 };
-my_data = new Dictionary<string, object?> {
+my_data = new Dictionary<string, object> {
     ["a"] = SharedValues
 };
     _ = my_data;

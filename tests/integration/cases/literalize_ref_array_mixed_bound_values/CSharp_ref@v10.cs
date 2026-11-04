@@ -3,7 +3,7 @@ var ArrayValue = new int[] {
     2
 };
 var ScalarValue = 3;
-var my_data = new object?[] {
+var my_data = new object[] {
     ArrayValue,
     ScalarValue
 };

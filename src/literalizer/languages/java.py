@@ -363,9 +363,15 @@ UTC instant rather than as code that throws (issue #4517).
 
 @beartype
 def _within_java_zone_offset(value: dt.datetime) -> dt.datetime:
-    """Return *value* in a form Java's ``ZoneOffset`` can hold."""
+    """Preserve the instant when ``ZoneOffset`` cannot hold its offset.
+
+    Java supports whole-second offsets within eighteen hours. Normalize
+    fractional or wider offsets to UTC before constructing native values.
+    """
     offset = value.utcoffset()
-    if offset is None or abs(offset) <= _JAVA_MAX_ZONE_OFFSET:
+    if offset is None or (
+        abs(offset) <= _JAVA_MAX_ZONE_OFFSET and offset.microseconds == 0
+    ):
         return value
     return normalize_datetime_utc(value=value, language_name="Java")
 

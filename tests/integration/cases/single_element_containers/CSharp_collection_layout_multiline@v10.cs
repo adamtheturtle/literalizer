@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System;
-var my_data = new Dictionary<string, object?> {
+var my_data = new Dictionary<string, object> {
     ["single_map"] = ValueTuple.Create(
         new Dictionary<string, object?> {}
     ),

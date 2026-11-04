@@ -88,6 +88,34 @@ plan = "every_non_default_member"
 name_template = "{lang}_bytes_format_{format}"
 option = "bytes_format"
 
+# These caller contracts exercise C# nullable reference annotations specifically.
+[axes.csharp_object_carrier]
+plan = "fixed_overrides"
+name_template = "{lang}_object_carrier"
+gates = [{ kind = "metadata_field", field = "language_id", value = "csharp" }]
+overrides = [{ kind = "enum_member", option = "sequence_format", member = "ARRAY" }]
+layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
+
+[axes.csharp_object_carrier_records]
+plan = "fixed_overrides"
+name_template = "{lang}_object_carrier_records"
+overrides_from = "csharp_object_carrier"
+gates = [{ kind = "metadata_field", field = "language_id", value = "csharp" }]
+overrides = [{ kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" }]
+layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
+
+[axes.csharp_object_array_fallback]
+plan = "kwarg_values"
+name_template = "{lang}_object_array_fallback_{format}"
+kwarg = "default_sequence_element_type"
+values = [
+  { name = "qualified_nullable", value = "System.Object?" },
+  { name = "non_nullable", value = "object" },
+  { name = "dynamic", value = "dynamic" },
+]
+gates = [{ kind = "metadata_field", field = "language_id", value = "csharp" }]
+overrides = [{ kind = "enum_member", option = "sequence_format", member = "ARRAY" }]
+
 [axes.custom_value_field_names]
 plan = "fixed_overrides"
 name_template = "{lang}_field_names_custom"
