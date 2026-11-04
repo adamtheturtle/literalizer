@@ -21,3 +21,13 @@ context = { collection_layout = "multiline" }
 axis = "anonymous_record_mutable"
 suffix = "_both"
 context = { variable_form = "both" }
+
+# Keep boolean and numeric field types distinct in explicitly annotated record declarations.
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"
+
+[[variants]]
+axis = "record_eager_field_annotations"
