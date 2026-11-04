@@ -16,3 +16,13 @@ context = { collection_layout = "multiline" }
 axis = "anonymous_record"
 suffix = "_multiline"
 context = { collection_layout = "multiline" }
+
+# Exercise compact and multiline root annotations around native record expressions and separators.
+[[variants]]
+axis = "record_type_hints_always"
+
+[[variants]]
+axis = "record_sequence_format"
+
+[[variants]]
+axis = "record_eager_field_annotations"
