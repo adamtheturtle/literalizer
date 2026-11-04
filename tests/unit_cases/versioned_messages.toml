@@ -1,0 +1,46 @@
+# Versioned rejection-message validation and active-entry selection.
+
+[[invalid]]
+name = "missing_default"
+source = '''[Error]
+case = { "3.12" = "old" }'''
+message = "requires a default"
+
+[[invalid]]
+name = "invalid_named_version"
+source = '''[Error]
+case = { default = "new", py312 = "old" }'''
+message = "invalid Python version key"
+
+[[invalid]]
+name = "patch_version_not_supported"
+source = '''[Error]
+case = { default = "new", "3.12.1" = "old" }'''
+message = "invalid Python version key"
+
+[[invalid]]
+name = "non_string_default"
+source = '''[Error]
+case = { default = 1 }'''
+message = "valid string"
+
+[[invalid]]
+name = "non_string_message"
+source = '''[Error]
+case = 1'''
+message = "valid string"
+
+[[versions]]
+name = "python_3_12"
+version = "3.12"
+active = "3.12"
+
+[[versions]]
+name = "python_3_13"
+version = "3.13"
+active = "default"
+
+[[versions]]
+name = "python_3_99"
+version = "3.99"
+active = "default"
