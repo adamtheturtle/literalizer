@@ -1,5 +1,5 @@
 schema_version = 1
-summary = "Exercise integer values outside the signed 64-bit range. (#4503)"
+summary = "Exercise integer values outside the signed 64-bit range, including the failed unsigned fallback. (#4503, #2713)"
 exceptions = ["UnrepresentableIntegerError"]
 
 [call]
