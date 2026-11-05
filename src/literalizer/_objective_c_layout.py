@@ -653,8 +653,9 @@ class Layout:
         broken_first = len(parts) > 1 and (
             (
                 first_flat is not None
-                and anchor + 4 + len(first_flat) + 1 <= width
-                and col + len(first_flat) + 4 > width
+                and anchor + 4 + len(first_flat) + 1
+                <= width
+                < col + len(first_flat) + 4
             )
             or (
                 first_array

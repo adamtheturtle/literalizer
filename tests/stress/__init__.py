@@ -1,1 +1,1 @@
-"""Generated stress invariants beyond the fixed golden corpus."""
+"""Generated stress properties beyond the fixed golden corpus."""
