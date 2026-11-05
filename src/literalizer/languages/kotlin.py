@@ -80,9 +80,12 @@ from literalizer._formatters.tuple_strategy import (
     build_tuple_strategy,
 )
 from literalizer._formatters.type_inference import (
+    BeyondI64,
     DictType,
     ListType,
+    WideInt,
     infer_element_type,
+    int_widening_tier,
     record_shape_for_dict,
     single_concrete_type,
 )
@@ -1742,13 +1745,25 @@ class Kotlin(metaclass=LanguageCls):
         tuple-eligible ``RECORD`` field, one type parameter per
         position.
 
-        The length is validated at check time, so *elements* is length
-        2 or 3; each position's type reuses
+        Homogeneous integers use the same width tier as the emitted
+        literals. The length is validated at check time, so *elements*
+        is length 2 or 3; other position types reuse
         :meth:`_kotlin_value_field_type` (the same scalar resolution a
         plain field value uses), so e.g. ``[1, "email"]`` types
         ``Pair<Int, String>``.
         """
-        elem_types = [self._kotlin_value_field_type(e) for e in elements]
+        integer_types: dict[type | None, str | None] = {
+            None: None,
+            WideInt: "Long",
+            BeyondI64: "BigInteger",
+        }
+        widened_integer_type = integer_types[int_widening_tier(items=elements)]
+        elem_types = [
+            self._kotlin_value_field_type(e)
+            if widened_integer_type is None
+            else widened_integer_type
+            for e in elements
+        ]
         constructor = {2: "Pair", 3: "Triple"}[len(elements)]
         return f"{constructor}<{', '.join(elem_types)}>"
 
