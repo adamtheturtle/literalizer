@@ -1,0 +1,21 @@
+# These are the three contracts previously checked as standalone expressions.
+[[contracts]]
+name = "array"
+strategy = "array"
+case_name = "coercion_heterogeneous_array_json"
+golden_name = "Python_sequence_list"
+include_delimiters = true
+
+[[contracts]]
+name = "scalar"
+strategy = "scalar"
+case_name = "scalar_string"
+golden_name = "Python"
+include_delimiters = false
+
+[[contracts]]
+name = "object"
+strategy = "object"
+case_name = "dict_mixed_scalars"
+golden_name = "Python"
+include_delimiters = true
