@@ -525,6 +525,7 @@ def _compose_ref_consumer(
     )
 
     if expression:
+        spec.validate_call_arg(stub_data)
         style = TypeAdapter[CallStyle](type=CallStyle).validate_python(
             spec.call_style_config
         )
