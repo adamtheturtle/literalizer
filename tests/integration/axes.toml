@@ -1757,3 +1757,23 @@ name_template = "{lang}_dict_entry_spaced_multiline"
 gates = [{ kind = "enum_member_present", option = "dict_entry_style", member = "SPACED" }]
 overrides = [{ kind = "enum_member", option = "dict_entry_style", member = "SPACED" }]
 layouts = [{ layout = "MULTILINE" }]
+
+[axes.indent_file_body]
+plan = "fixed_overrides"
+name_template = "{lang}_indent_file_body_enabled"
+gates = [{ kind = "spec_field_present", field = "indent_file_body" }]
+overrides = [{ kind = "true_flag", kwarg = "indent_file_body" }]
+
+[axes.expand_call_stubs]
+plan = "fixed_overrides"
+name_template = "{lang}_expand_call_stubs_enabled"
+gates = [{ kind = "spec_field_present", field = "expand_call_stubs" }]
+overrides = [{ kind = "true_flag", kwarg = "expand_call_stubs" }]
+
+[axes.expanded_call_file]
+plan = "kwarg_values"
+name_template = "{lang}_expanded_call_file_{format}"
+kwarg = "indent"
+values = [{ name = "two_spaces", value = "  " }, { name = "four_spaces", value = "    " }]
+gates = [{ kind = "spec_field_present", field = "indent_file_body" }, { kind = "spec_field_present", field = "expand_call_stubs" }]
+overrides = [{ kind = "true_flag", kwarg = "indent_file_body" }, { kind = "true_flag", kwarg = "expand_call_stubs" }]

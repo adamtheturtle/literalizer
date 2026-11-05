@@ -291,6 +291,7 @@ def literalize_native_calls(
     zip_input_format: InputFormat | None = None,
     variable_form: NewVariable | ExistingVariable | None = None,
     pre_indent_level: int = 0,
+    initial_column: int = 0,
 ) -> LiteralizeResult:
     """Render source rows through an explicit native invocation recipe.
 
@@ -322,6 +323,7 @@ def literalize_native_calls(
                     invocation=native,
                     variable_form=variable_form,
                     pre_indent_level=pre_indent_level,
+                    initial_column=initial_column,
                 )
             )
         except NativeCallError as exc:

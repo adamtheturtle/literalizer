@@ -312,3 +312,24 @@ recipe = '{"constructor": "NSObject"}'
 match = "Reserved native binding"
 source = "[[]]"
 bind = "nil"
+
+[[case]]
+name = "negative_initial_column"
+source = "[[]]"
+recipe = '{"constructor":"NSObject","arguments":[]}'
+initial_column = -1
+match = "initial_column must be non-negative"
+
+[[case]]
+name = "negative_native_continuation"
+source = "[[]]"
+recipe = '{"constructor":"NSObject","arguments":[]}'
+continuation_indent = -1
+match = "Native continuation"
+
+[[case]]
+name = "zero_native_column_limit"
+source = "[[]]"
+recipe = '{"constructor":"NSObject","arguments":[]}'
+column_limit = 0
+match = "column limit positive"
