@@ -7,7 +7,6 @@ from literalizer import InputFormat, Language, literalize
 
 from .case_manifests import case_input
 from .golden_scenarios import GoldenRendering
-from .language_specs import make_golden_path
 
 _CASES_DIR = Path(__file__).with_name(name="cases")
 
@@ -28,13 +27,7 @@ def read_state_golden(
 ) -> StateGolden:
     """Load input and expected native output before state is exercised."""
     input_info = case_input(case_dir=_CASES_DIR / rendering.case_dir_name)
-    path = make_golden_path(
-        parent=rendering.golden_parent,
-        name=rendering.golden_name,
-        extension=rendering.lang_cls.extension,
-        lang_cls=rendering.lang_cls,
-        version=language.language_version,
-    )
+    path = rendering.golden_path(version=language.language_version)
     return StateGolden(
         rendering=rendering,
         language=language,
