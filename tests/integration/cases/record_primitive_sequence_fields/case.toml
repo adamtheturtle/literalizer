@@ -10,3 +10,10 @@ axis = "record_tuple_sequence"
 # Explicit root annotations must retain the inferred record field types.
 [[variants]]
 axis = "record_type_hints_always"
+
+# Check primitive sequence field aliases and root record containers under eager evaluation and alternate sequences.
+[[variants]]
+axis = "record_eager_field_annotations"
+
+[[variants]]
+axis = "record_sequence_format"

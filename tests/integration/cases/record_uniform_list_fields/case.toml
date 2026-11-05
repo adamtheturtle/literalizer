@@ -6,3 +6,10 @@ axis = "dict_format"
 
 [[variants]]
 axis = "type_hints"
+
+# Check primitive sequence field aliases and root record containers under eager evaluation and alternate sequences.
+[[variants]]
+axis = "record_eager_field_annotations"
+
+[[variants]]
+axis = "record_sequence_format"
