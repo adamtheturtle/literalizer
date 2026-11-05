@@ -581,7 +581,7 @@ class TypeScript(metaclass=LanguageCls):
     print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
         prefix="console.log(",
         suffix=")",
-        imports=(),
+        imports=('/// <reference lib="dom" />',),
     )
 
     format_call_class_scope_stub = default_format_call_stub

@@ -59,8 +59,15 @@ def test_native_printing(*, language: Language, expected: str) -> None:
     assert result.code.count("calculate(") == 1
 
 
-@pytest.mark.parametrize(argnames="language", argvalues=[Cpp(), Go()])
-def test_print_imports(*, language: Language) -> None:
+@pytest.mark.parametrize(
+    argnames=("language", "expected"),
+    argvalues=[
+        (Cpp(), "#include <iostream>"),
+        (Go(), 'import "fmt"'),
+        (TypeScript(), '/// <reference lib="dom" />'),
+    ],
+)
+def test_print_imports(*, language: Language, expected: str) -> None:
     """Printing dependencies survive as structured import metadata."""
     printed = literalize_call(
         source="[[1], [2]]",
@@ -76,9 +83,6 @@ def test_print_imports(*, language: Language) -> None:
         language=language,
         target_function="calculate",
         parameter_names=["value"],
-    )
-    expected = (
-        "#include <iostream>" if isinstance(language, Cpp) else 'import "fmt"'
     )
     assert printed.preamble.count(expected) == 1
     assert expected in preamble_imports(printed.preamble)

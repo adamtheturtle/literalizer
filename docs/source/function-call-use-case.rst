@@ -588,6 +588,7 @@ These dependencies are omitted for empty call sequences to avoid unused imports 
 
 Supported languages are Python, Java, C++, C#, Go, JavaScript, TypeScript, Kotlin, Ruby, Scala, and Rust.
 Each operation writes a newline and uses native formatting; Rust uses debug formatting.
+TypeScript includes a DOM library reference for the host-provided ``console`` types when the preamble is emitted; place this reference at file scope before statements.
 Because argument data provides no return-type information, callers must supply a function whose result supports native printing (such as C++ stream insertion), with custom transforms providing any extra serialization behavior.
 Boolean, numeric, and collection representations can differ between languages.
 
