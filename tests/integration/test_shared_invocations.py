@@ -2,9 +2,9 @@
 
 import subprocess
 import sys
-from typing import TypedDict
 
 import pytest
+from typing_extensions import TypedDict
 
 from literalizer import (
     CallContext,
@@ -54,7 +54,7 @@ _CALL: dict[str, object] = {
 }
 
 
-class _CallOptions(TypedDict):
+class _CallOptions(TypedDict, closed=True):
     """Shared typed arguments to both public APIs."""
 
     source: str
@@ -62,23 +62,34 @@ class _CallOptions(TypedDict):
     language: Language
 
 
-class _ZippedOptions(_CallOptions):
+class _ZippedOptions(TypedDict, closed=True):
     """A paired expected-value source."""
 
+    source: str
+    input_format: InputFormat
+    language: Language
     zip_source: str
     zip_input_format: InputFormat
 
 
-class _NativeOptions(_ZippedOptions):
+class _NativeOptions(TypedDict, closed=True):
     """Native placement arguments shared by the two APIs."""
 
+    source: str
+    input_format: InputFormat
+    language: Language
+    zip_source: str
+    zip_input_format: InputFormat
     pre_indent_level: int
     initial_column: int
 
 
-class _BindingOptions(_CallOptions):
+class _BindingOptions(TypedDict, closed=True):
     """A caller-owned result binding."""
 
+    source: str
+    input_format: InputFormat
+    language: Language
     variable_form: NewVariable | ExistingVariable
 
 
@@ -140,7 +151,7 @@ def test_generic_recipe_matches_existing_call_api(
         )
     except LiteralizerError as exc:
         with pytest.raises(expected_exception=type(exc)):
-            literalize_invocations(
+            _ = literalize_invocations(
                 **kwargs,
                 invocation={
                     "default": {
@@ -216,7 +227,7 @@ def test_constructor_recipe_reuses_backend_syntax(
         )
     except LiteralizerError as exc:
         with pytest.raises(expected_exception=type(exc)):
-            literalize_invocations(**kwargs, invocation=invocation)
+            _ = literalize_invocations(**kwargs, invocation=invocation)
     else:
         assert (
             literalize_invocations(**kwargs, invocation=invocation) == expected
@@ -296,7 +307,7 @@ def test_invalid_shared_recipes(
 ) -> None:
     """Malformed metadata is rejected before input rendering."""
     with pytest.raises(expected_exception=NativeCallError, match=message):
-        literalize_invocations(
+        _ = literalize_invocations(
             source="[[]]",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -310,7 +321,7 @@ def test_invalid_generic_placement(indent: int) -> None:
     with pytest.raises(
         expected_exception=NativeCallError, match="nonnegative indent"
     ):
-        literalize_invocations(
+        _ = literalize_invocations(
             source="[[]]",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -331,7 +342,7 @@ def test_expected_values_are_required_and_paired(
 ) -> None:
     """Checks cannot drop missing or mismatched expected results."""
     with pytest.raises(expected_exception=LiteralizerError, match=message):
-        literalize_invocations(
+        _ = literalize_invocations(
             source='[["user",1.0]]',
             input_format=InputFormat.JSON,
             language=Python(),
@@ -346,7 +357,7 @@ def test_empty_checked_calls_still_require_expected_source() -> None:
     with pytest.raises(
         expected_exception=NativeCallError, match="requires zipped"
     ):
-        literalize_invocations(
+        _ = literalize_invocations(
             source="[]",
             input_format=InputFormat.JSON,
             language=Python(),
@@ -359,7 +370,7 @@ def test_checker_rejects_non_expression_call_backend() -> None:
     with pytest.raises(
         expected_exception=NativeCallError, match="positional expression"
     ):
-        literalize_invocations(
+        _ = literalize_invocations(
             source="[[1]]",
             input_format=InputFormat.JSON,
             zip_source="[true]",

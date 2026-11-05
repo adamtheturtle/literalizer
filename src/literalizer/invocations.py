@@ -6,6 +6,7 @@ from typing import ClassVar
 
 from beartype import beartype
 
+from literalizer._enums import enum_payload
 from literalizer._language import Language, PositionalCallStyle
 from literalizer._literalize import (
     CallContext,
@@ -68,11 +69,12 @@ def _select_recipe(
     overrides = native_recipe_mapping(recipe.get("languages", {}))
     language_id = language.pygments_name
     known = {spec.pygments_name for spec in ALL_LANGUAGES} | {language_id}
-    if unknown := set(overrides) - known:
+    unknown = set(overrides) - known
+    if len(unknown) > 0:
         msg = f"Unknown invocation languages: {sorted(unknown)}"
         raise NativeCallError(msg)
     # Native recipes replace the generic default; generic overrides amend it.
-    selected = (
+    selected: dict[str, object] = (
         {}
         if language_id is None
         else native_recipe_mapping(overrides.get(language_id, {}))
@@ -104,7 +106,7 @@ def literalize_invocations(
     calls a caller-owned positional checker with the actual and zipped
     expected values. Existing call-style and data-conversion rules apply.
     """
-    selected = (
+    selected: dict[str, object] = (
         _select_recipe(invocation, language)
         if "default" in invocation or "languages" in invocation
         else {"native": dict(invocation)}
@@ -161,14 +163,12 @@ def literalize_invocations(
             target_function=name,
             target_function_parts=parts,
         )
-        style = next(
-            (
-                member.value
-                for member in language.call_styles
-                if isinstance(member.value, PositionalCallStyle)
-            ),
-            None,
-        )
+        style: PositionalCallStyle | None = None
+        for member in language.call_styles:
+            payload = enum_payload(member=member, payload_type=object)
+            if isinstance(payload, PositionalCallStyle):
+                style = payload
+                break
         if style is None:
             msg = (
                 "A result-function requires a positional expression call style"
@@ -196,7 +196,7 @@ def literalize_invocations(
     return dataclasses.replace(
         result,
         declaration_code="\n".join(
-            prefix + line if line else line
+            prefix + line if line != "" else line
             for line in result.declaration_code.split(sep="\n")
         ),
     )
