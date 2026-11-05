@@ -12,27 +12,50 @@ direct test alongside shallower compiling cases.
 """
 
 import pytest
+from pydantic import BaseModel, TypeAdapter
 
-from literalizer import InputFormat, literalize
-from literalizer.languages import PureScript
+from literalizer import literalize
+from tests.integration.case_manifests import CallInputFormat, ManifestLanguage
+from tests.toml_cases import load_toml_cases
 
-_BELOW_GUARD_DEPTH = 400
-"""A nesting depth the shared parse-depth guard admits."""
+
+class _DepthCase(
+    BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
+):
+    """A compact recipe for a deep input and its rendering invariant."""
+
+    name: str
+    opener: str
+    closer: str
+    depth: int
+    payload: str
+    input_format: CallInputFormat
+    language: ManifestLanguage
+    expected_fragment: str
+    expected_count: int
+
+
+class _Cases(BaseModel, extra="forbid", frozen=True):
+    """The declarative depth-limit controls."""
+
+    cases: tuple[_DepthCase, ...]
+
+
+_CASES = TypeAdapter(type=_Cases).validate_python(
+    load_toml_cases(name="deep_nesting_controls")
+)
 
 
 @pytest.mark.parametrize(
-    argnames=("opener", "closer"),
-    argvalues=[
-        pytest.param("[", "]", id="lists"),
-        pytest.param('{"a":', "}", id="mappings"),
-    ],
+    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
 )
-def test_below_guard_depth_renders(opener: str, closer: str) -> None:
+def test_below_guard_depth_renders(case: _DepthCase) -> None:
     """Input the guard admits renders rather than exhausting the stack."""
-    source = opener * _BELOW_GUARD_DEPTH + "1" + closer * _BELOW_GUARD_DEPTH
+    source = case.opener * case.depth + case.payload + case.closer * case.depth
     result = literalize(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=PureScript(),
+        source=source, input_format=case.input_format, language=case.language()
     )
-    assert result.declaration_code.count("PInt 1") == 1
+    assert (
+        result.declaration_code.count(case.expected_fragment)
+        == case.expected_count
+    )
