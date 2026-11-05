@@ -4,3 +4,13 @@ suites = ["base", "combined"]
 
 [[variants]]
 axis = "language_version"
+
+# Cover comments on dotted keys and table-array entries under alternate comment styles, layouts, and map/record formats.
+[[variants]]
+axis = "comment"
+
+[[variants]]
+axis = "collection_layout"
+
+[[variants]]
+axis = "dict_format"
