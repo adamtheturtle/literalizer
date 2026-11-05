@@ -11,29 +11,13 @@ from literalizer.languages import Cpp, Java
 from tests.enum_members import enum_member_by_name
 from tests.integration.call_cases import discover_call_cases
 from tests.integration.call_variant_cases import build_call_variant_cases
-from tests.integration.case_discovery import (
-    build_indent_cases,
-    build_no_variable_form_cases,
-    build_pre_indent_cases,
-    build_statement_terminator_combined_cases,
-    discover_cases,
-    discover_combined_cases,
-    kebab_new_variable_languages,
-    primed_new_variable_languages,
-)
-from tests.integration.case_manifests import (
-    KEBAB_NEW_VARIABLE_OWNER,
-    PRIMED_NEW_VARIABLE_OWNER,
-    RefCaseSpec,
-    case_dir_name_for_owner,
-    load_case_manifests,
-)
+from tests.integration.case_manifests import RefCaseSpec, load_case_manifests
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
     constructor_golden_path,
 )
-from tests.integration.golden_scenarios import golden_groups
-from tests.integration.language_specs import make_golden_path, make_spec
+from tests.integration.golden_scenarios import GOLDEN_SCENARIOS, golden_groups
+from tests.integration.language_specs import make_golden_path
 from tests.integration.literalize_ref_cases import (
     build_literalize_ref_variant_cases,
     discover_literalize_default_ref_cases,
@@ -42,7 +26,6 @@ from tests.integration.literalize_ref_cases import (
 )
 from tests.integration.native_invocation_cases import native_invocation_cases
 from tests.integration.unwrapped_result_cases import result_view_golden_paths
-from tests.integration.variant_cases import build_variant_cases
 
 
 @beartype
@@ -67,141 +50,23 @@ def _paths_for_versions(
 
 
 @beartype
-def _expected_strategy_golden_files(*, cases_dir: Path) -> set[Path]:
-    """Follow the strategy runner's effective language versions."""
-    expected: set[Path] = set()
-    for group in golden_groups():
-        if group.scenario_name != "heterogeneous_strategy":
-            continue
-        for rendering in group.renderings:
-            for version in rendering.versions:
-                spec = rendering.spec_for(version=version)
-                if spec.language_version is not version:
-                    continue
-                expected.add(
-                    make_golden_path(
-                        parent=cases_dir / rendering.case_dir_name,
-                        name=rendering.golden_name,
-                        extension=spec.extension,
-                        lang_cls=rendering.lang_cls,
-                        version=version,
-                    )
-                )
-    return expected
+def _expected_literalize_golden_files(*, cases_dir: Path) -> set[Path]:
+    """Read the fixture inventory directly from the golden runner's cases.
 
-
-@beartype
-def _expected_variant_golden_files(cases_dir: Path) -> set[Path]:
-    """Return expected paths for variant, statement-terminator, strategy,
-    and
-    pre-indent golden files.
+    Place paths under *cases_dir*'s parent so temporary inventory tests
+    also cover fixtures in the sibling default_module_names directory.
     """
-    expected = _expected_strategy_golden_files(cases_dir=cases_dir)
-
-    for variant_case in build_variant_cases():
-        expected.add(
-            make_golden_path(
-                parent=cases_dir / variant_case.case_dir_name,
-                name=variant_case.variant_name,
-                extension=variant_case.variant.spec.extension,
-                lang_cls=variant_case.variant.lang_cls,
-                version=variant_case.variant.spec.language_version,
-            )
+    integration_dir = Path(__file__).parents[1]
+    return {
+        cases_dir.parent
+        / os.path.relpath(
+            path=rendering.golden_path(version=spec.language_version),
+            start=integration_dir,
         )
-
-    for case in build_statement_terminator_combined_cases():
-        statement_terminator_style_spec = make_spec(
-            lang_cls=case.lang_cls,
-            statement_terminator_style=case.statement_terminator_style,
-        )
-        expected.update(
-            _paths_for_versions(
-                parent=cases_dir / case.case_dir_name,
-                name=case.name,
-                extension=statement_terminator_style_spec.extension,
-                lang_cls=case.lang_cls,
-            )
-        )
-
-    for indent_case in build_indent_cases():
-        expected.update(
-            _paths_for_versions(
-                parent=cases_dir / indent_case.case_dir_name,
-                name=indent_case.name,
-                extension=indent_case.lang_cls.extension,
-                lang_cls=indent_case.lang_cls,
-            )
-        )
-
-    for pre_indent_case in build_pre_indent_cases():
-        expected.update(
-            _paths_for_versions(
-                parent=cases_dir / pre_indent_case.case_dir_name,
-                name=pre_indent_case.name,
-                extension=pre_indent_case.lang_cls.extension,
-                lang_cls=pre_indent_case.lang_cls,
-            )
-        )
-
-    for no_variable_form_case in build_no_variable_form_cases():
-        expected.update(
-            _paths_for_versions(
-                parent=cases_dir / no_variable_form_case.case_dir_name,
-                name=no_variable_form_case.name,
-                extension=no_variable_form_case.lang_cls.extension,
-                lang_cls=no_variable_form_case.lang_cls,
-            )
-        )
-
-    return expected
-
-
-@beartype
-def _expected_specialized_new_variable_golden_files(
-    cases_dir: Path,
-) -> set[Path]:
-    """Return expected paths for specialized NewVariable fixtures."""
-    expected: set[Path] = set()
-    for owner, languages in (
-        (KEBAB_NEW_VARIABLE_OWNER, kebab_new_variable_languages()),
-        (PRIMED_NEW_VARIABLE_OWNER, primed_new_variable_languages()),
-    ):
-        case_dir_name = case_dir_name_for_owner(
-            cases_dir=cases_dir,
-            owner=owner,
-        )
-        for lang_cls in languages:
-            expected.update(
-                _paths_for_versions(
-                    parent=cases_dir / case_dir_name,
-                    name=lang_cls.__name__,
-                    extension=lang_cls.extension,
-                    lang_cls=lang_cls,
-                )
-            )
-    return expected
-
-
-@beartype
-def _expected_default_module_name_golden_files() -> set[Path]:
-    """Return the default-name paths declared by the shared runner."""
-    expected: set[Path] = set()
-    for group in golden_groups():
-        if group.scenario_name != "default_module_name":
-            continue
-        for rendering in group.renderings:
-            for version in rendering.versions:
-                expected.add(
-                    make_golden_path(
-                        parent=rendering.golden_parent,
-                        name=rendering.golden_name,
-                        extension=rendering.lang_cls.extension,
-                        lang_cls=rendering.lang_cls,
-                        version=version,
-                    )
-                )
-
-    return expected
+        for group in golden_groups()
+        for rendering in group.renderings
+        for spec in rendering.specs
+    }
 
 
 @beartype
@@ -227,34 +92,8 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     expected.update(
         path for _, _, _, path in native_invocation_cases(cases_dir=cases_dir)
     )
-    expected.update(_expected_default_module_name_golden_files())
+    expected.update(_expected_literalize_golden_files(cases_dir=cases_dir))
     expected.update(result_view_golden_paths(cases_dir=cases_dir))
-
-    for case_name, lang_cls in discover_cases(cases_dir=cases_dir):
-        expected.update(
-            _paths_for_versions(
-                parent=cases_dir / case_name,
-                name=lang_cls.__name__,
-                extension=lang_cls.extension,
-                lang_cls=lang_cls,
-            )
-        )
-
-    for combined_case in discover_combined_cases(cases_dir=cases_dir):
-        expected.update(
-            _paths_for_versions(
-                parent=cases_dir / combined_case.case_name,
-                name=combined_case.golden_file_name,
-                extension=combined_case.lang_cls.extension,
-                lang_cls=combined_case.lang_cls,
-            )
-        )
-
-    expected.update(_expected_variant_golden_files(cases_dir=cases_dir))
-
-    expected.update(
-        _expected_specialized_new_variable_golden_files(cases_dir=cases_dir),
-    )
 
     for call_case in discover_call_cases():
         if call_case.expected_exception is not None:
@@ -359,6 +198,47 @@ def test_no_dead_golden_files(cases_dir: Path) -> None:
     )
 
 
+@pytest.mark.parametrize(
+    argnames="scenario_name",
+    argvalues=[scenario.name for scenario in GOLDEN_SCENARIOS],
+)
+def test_removed_scenario_leaves_orphan(
+    scenario_name: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Removing any runner scenario must orphan its existing fixtures."""
+    groups = golden_groups()
+    original = next(
+        path
+        for group in groups
+        if group.scenario_name == scenario_name
+        for rendering in group.renderings
+        for spec in rendering.specs
+        if (
+            path := rendering.golden_path(version=spec.language_version)
+        ).is_file()
+    )
+    cases_dir = tmp_path / "cases"
+    orphan = tmp_path / os.path.relpath(
+        path=original, start=Path(__file__).parents[1]
+    )
+    orphan.parent.mkdir(parents=True)
+    _ = orphan.write_bytes(data=original.read_bytes())
+    monkeypatch.setattr(
+        target=f"{__name__}.golden_groups",
+        name=lambda: tuple(
+            group for group in groups if group.scenario_name != scenario_name
+        ),
+    )
+    expected = _expected_literalize_golden_files(cases_dir=cases_dir)
+    with pytest.raises(
+        expected_exception=AssertionError,
+        match=orphan.name,
+    ):
+        _check_golden_inventory(cases_dir=cases_dir, expected=expected)
+
+
 def test_base_cases_own_effective_golden(cases_dir: Path) -> None:
     """A declared success case must not silently skip every target."""
     empty = [
@@ -377,7 +257,7 @@ def test_effective_language_version_owns_golden(tmp_path: Path) -> None:
     cases_dir = tmp_path / "cases"
     case_dir = cases_dir / "dict_mixed_scalars"
     case_dir.mkdir(parents=True)
-    expected = _expected_variant_golden_files(cases_dir=cases_dir)
+    expected = _expected_literalize_golden_files(cases_dir=cases_dir)
     java_prefix = "Java_heterogeneous_strategy_record_combined@"
     cpp_prefix = "Cpp_heterogeneous_strategy_record_combined@"
     java_golden = case_dir / f"{java_prefix}jdk_16.java"
@@ -418,7 +298,7 @@ def test_variant_version_inventory_preserves_coverage_and_rejects_phantoms(
     cases_dir = tmp_path / "cases"
     case_dir = cases_dir / "binary"
     case_dir.mkdir(parents=True)
-    expected = _expected_variant_golden_files(cases_dir=cases_dir)
+    expected = _expected_literalize_golden_files(cases_dir=cases_dir)
     ordinary_name = "Cpp_bytes_format_base64@"
     pinned_name = "Cpp_version_cpp14@"
     ordinary = {

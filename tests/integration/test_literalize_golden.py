@@ -13,7 +13,6 @@ set of golden files.
 """
 
 import dataclasses
-import enum
 from pathlib import Path
 
 import pytest
@@ -35,7 +34,7 @@ from .golden_scenarios import (
     golden_groups,
 )
 from .language_metadata import language_metadata
-from .language_specs import make_golden_path, with_per_fixture_module_name
+from .language_specs import with_per_fixture_module_name
 from .literalize_rendering import literalize_rendering
 from .yaml_warnings import expected_yaml_warnings
 
@@ -45,7 +44,6 @@ def _check_rendering(
     *,
     rendering: GoldenRendering,
     spec: literalizer.Language,
-    version: enum.Enum,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
@@ -68,13 +66,7 @@ def _check_rendering(
             input_format=roundtrip.input_format,
             expected_reused_anchor_warning=None,
         )
-    golden_path = make_golden_path(
-        parent=rendering.golden_parent,
-        name=rendering.golden_name,
-        extension=rendering.lang_cls.extension,
-        lang_cls=rendering.lang_cls,
-        version=version,
-    )
+    golden_path = rendering.golden_path(version=spec.language_version)
     if rendering.apply_fixture_module_name:
         spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     variable_form = (
@@ -207,23 +199,15 @@ def test_golden_file(
 ) -> None:
     """Every declared rendering matches its checked-in golden file."""
     for rendering in group.renderings:
-        for version in rendering.versions:
-            spec = rendering.spec_for(version=version)
-            # A spec keyword may pin a required version (Java ``RECORD``
-            # needs ``JDK_16``); skip the iterations it overrides so
-            # only the pinned version's golden is generated and
-            # lint-checked.
-            if spec.language_version is not version:
-                continue
+        for spec in rendering.specs:
             with subtests.test(
                 golden_name=rendering.golden_name,
                 case_dir_name=rendering.case_dir_name,
-                version=version.name,
+                version=spec.language_version.name,
             ):
                 _check_rendering(
                     rendering=rendering,
                     spec=spec,
-                    version=version,
                     cases_dir=cases_dir,
                     file_regression=file_regression,
                 )

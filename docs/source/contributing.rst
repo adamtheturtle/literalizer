@@ -76,6 +76,10 @@ An axis that explicitly selects ``language_version`` stays pinned to that versio
 To exercise only its default version, a typed axis can declare ``per_version = false``.
 The orphan check uses those same effective specs for ordinary and call variants, so a compiling file still needs a rendering that compares its contents.
 
+The ``literalize`` runner and orphan check share the rendering definitions in :file:`tests/integration/golden_scenarios.py`.
+Each ``GoldenRendering`` supplies its effective ``specs`` and versioned ``golden_path``.
+Adding a scenario there also adds its fixtures to the inventory; no separate orphan-check registration is needed.
+
 An ordinary case participates in the base and combined suites.
 Its ``input.yaml`` is inferred because it is the directory's sole input:
 
