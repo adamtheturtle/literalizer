@@ -66,6 +66,8 @@ type OwnerName = Literal[
     "variant",
     "constructor-binding",
     "native-invocation",
+    "deep-input",
+    "shared-invocation",
 ]
 
 # Spelled as an assignment rather than a ``type`` statement so the
@@ -825,6 +827,7 @@ class CallCaseSpec(  # noqa: NOD001
     """
 
     target_function: str
+    shared_invocation: bool = False
     parameter_names: StringTuple
     per_element: bool
     # Native built-ins need no synthetic target declaration in a manual file.

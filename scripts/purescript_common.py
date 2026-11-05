@@ -83,6 +83,20 @@ ARGONAUT_PARSER_JS = textwrap.dedent(
 )
 
 
+# The standard Partial.Unsafe interface permits native consumer assertions.
+PARTIAL_UNSAFE_PURS = textwrap.dedent(
+    text="""\
+    module Partial.Unsafe where
+    foreign import unsafeCrashWith :: forall a. String -> a
+    """,
+)
+PARTIAL_UNSAFE_JS = (
+    "export const unsafeCrashWith = message => {\n"
+    "  throw new Error(message);\n"
+    "};\n"
+)
+
+
 # A caller-owned module for qualified function targets in golden files.
 CALL_TARGET_PURS = textwrap.dedent(
     text="""\
@@ -105,6 +119,7 @@ def write_lint_environment(tmpdir: Path) -> list[Path]:
     """
     modules: list[tuple[str, str, str]] = [
         ("Prelude.purs", PRELUDE_PURS, PRELUDE_JS),
+        ("PartialUnsafe.purs", PARTIAL_UNSAFE_PURS, PARTIAL_UNSAFE_JS),
         ("CallTarget.purs", CALL_TARGET_PURS, CALL_TARGET_JS),
         ("Either.purs", EITHER_PURS, EITHER_JS),
         ("ArgonautCore.purs", ARGONAUT_CORE_PURS, ARGONAUT_CORE_JS),

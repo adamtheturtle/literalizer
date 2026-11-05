@@ -1,9 +1,12 @@
 #import <Foundation/Foundation.h>
-static NSUInteger calls = 0;
+static NSUInteger *callCount(void) {
+    static NSUInteger count = 0;
+    return &count;
+}
 static BOOL emitValues(NSString *first, NSString *second) {
     NSCAssert([first isEqualToString:@"first"], @"first argument changed");
     NSCAssert([second isEqualToString:@"second"], @"second argument changed");
-    calls++;
+    (*callCount())++;
     return YES;
 }
 int main(void) {
@@ -11,7 +14,7 @@ int main(void) {
 emitValues(@"first", @"second");
 BOOL allowed = emitValues(@"first",
                           @"second");
-        NSCAssert(allowed && calls == 2, @"bound call did not execute");
+        NSCAssert(allowed && *callCount() == 2, @"bound call did not execute");
     }
     return 0;
 }

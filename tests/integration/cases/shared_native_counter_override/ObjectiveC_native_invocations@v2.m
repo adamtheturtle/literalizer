@@ -9,11 +9,14 @@
     return [user isEqualToString:@"user_1"] && timestamp == 100.0;
 }
 @end
-static NSUInteger checks = 0;
+static NSUInteger *checkCount(void) {
+    static NSUInteger count = 0;
+    return &count;
+}
 static void checkResult(BOOL actual, NSArray *expected) {
     NSCAssert(actual == [expected[0] boolValue], @"result changed");
     NSCAssert([expected[1] isEqualToString:@"first"], @"expected row changed");
-    checks++;
+    (*checkCount())++;
 }
 int main(void) {
     @autoreleasepool {
@@ -22,7 +25,7 @@ int main(void) {
             @YES,
             @"first",
         ]);
-        NSCAssert(counter.calls == 1 && checks == 1, @"native call was skipped");
+        NSCAssert(counter.calls == 1 && *checkCount() == 1, @"native call was skipped");
     }
     return 0;
 }
