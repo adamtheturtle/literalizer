@@ -1,0 +1,10 @@
+module Fixture_call_ref_nested_in_dict_Crystal_collection_layout_multiline_call
+extend self
+def process(data = nil); 0; end
+my_var = 42
+process(data: {
+    "key" => my_var,
+    "count" => 42,
+    "label" => "example",
+});
+end

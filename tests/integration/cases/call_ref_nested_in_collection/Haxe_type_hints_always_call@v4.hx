@@ -1,0 +1,9 @@
+class Fixture_call_ref_nested_in_collection_Haxe_type_hints_always_call {
+    public static function main() {
+        function process(a:Dynamic, b:Dynamic):Dynamic return null;
+        final big_list:Array<Dynamic> = ([
+            "x",
+        ] : Array<Dynamic>);
+        process((["k" => big_list] : Map<String, Dynamic>), 2);
+    }
+}

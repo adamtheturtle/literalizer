@@ -10,3 +10,10 @@ parameter_names = ["a"]
 per_element = true
 ref_declarations = { big_list = "[\"x\"]" }
 consumable_refs = ["big_list"]
+
+# Check nested reusable bindings and ordered map call arguments under explicit annotations and both layouts.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
