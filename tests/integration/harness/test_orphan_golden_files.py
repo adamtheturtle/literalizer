@@ -6,11 +6,13 @@ from pathlib import Path
 import pytest
 from beartype import beartype
 
-import literalizer
 from literalizer.languages import Cpp, Java
 from tests.enum_members import enum_member_by_name
-from tests.integration.call_cases import discover_call_cases
-from tests.integration.call_variant_cases import build_call_variant_cases
+from tests.integration.call_cases import CallCase
+from tests.integration.call_variant_cases import (
+    CallVariantCase,
+    call_golden_cases,
+)
 from tests.integration.case_manifests import RefCaseSpec, load_case_manifests
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
@@ -29,23 +31,13 @@ from tests.integration.unwrapped_result_cases import result_view_golden_paths
 
 
 @beartype
-def _paths_for_versions(
-    *,
-    parent: Path,
-    name: str,
-    extension: str,
-    lang_cls: literalizer.LanguageCls,
-) -> set[Path]:
-    """Return one ``make_golden_path`` result per language version."""
+def _expected_call_golden_files(*, cases_dir: Path) -> set[Path]:
+    """Only successful call renderings can own golden fixtures."""
     return {
-        make_golden_path(
-            parent=parent,
-            name=name,
-            extension=extension,
-            lang_cls=lang_cls,
-            version=version_format,
-        )
-        for version_format in lang_cls.VersionFormats
+        rendering.golden_path(cases_dir=cases_dir)
+        for case in call_golden_cases(cases_dir=cases_dir)
+        for rendering in case.renderings
+        if rendering.expected_exception is None
     }
 
 
@@ -95,32 +87,7 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     expected.update(_expected_literalize_golden_files(cases_dir=cases_dir))
     expected.update(result_view_golden_paths(cases_dir=cases_dir))
 
-    for call_case in discover_call_cases():
-        if call_case.expected_exception is not None:
-            continue
-        expected.update(
-            _paths_for_versions(
-                parent=cases_dir / call_case.config.case_dir_name,
-                name=call_case.config.golden_name(
-                    name=f"{call_case.lang_cls.__name__}_call"
-                ),
-                extension=call_case.lang_cls.extension,
-                lang_cls=call_case.lang_cls,
-            )
-        )
-
-    for call_variant_case in build_call_variant_cases(cases_dir=cases_dir):
-        expected.add(
-            make_golden_path(
-                parent=cases_dir / call_variant_case.config.case_dir_name,
-                name=call_variant_case.config.golden_name(
-                    name=f"{call_variant_case.variant.name}_call"
-                ),
-                extension=call_variant_case.variant.spec.extension,
-                lang_cls=call_variant_case.variant.lang_cls,
-                version=call_variant_case.variant.spec.language_version,
-            )
-        )
+    expected.update(_expected_call_golden_files(cases_dir=cases_dir))
 
     for literalize_ref_case in discover_literalize_ref_cases():
         expected.update(
@@ -237,6 +204,61 @@ def test_removed_scenario_leaves_orphan(
         match=orphan.name,
     ):
         _check_golden_inventory(cases_dir=cases_dir, expected=expected)
+
+
+@pytest.mark.parametrize(argnames="variant", argvalues=[False, True])
+def test_removed_call_case_leaves_orphan(
+    *,
+    variant: bool,
+    cases_dir: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Both call families take their inventory from the runner's cases."""
+    cases = call_golden_cases(cases_dir=cases_dir)
+    selected, original = next(
+        (case, path)
+        for case in cases
+        if isinstance(case, CallVariantCase) is variant
+        for rendering in case.renderings
+        if rendering.expected_exception is None
+        if (path := rendering.golden_path(cases_dir=cases_dir)).is_file()
+    )
+    orphan = tmp_path / os.path.relpath(path=original, start=cases_dir)
+    orphan.parent.mkdir(parents=True)
+    _ = orphan.write_bytes(data=original.read_bytes())
+
+    def remaining_cases(
+        *, cases_dir: Path
+    ) -> tuple[CallCase | CallVariantCase, ...]:
+        """Remove one collected case without changing any manifests."""
+        assert cases_dir == tmp_path
+        return tuple(case for case in cases if case is not selected)
+
+    monkeypatch.setattr(
+        target=f"{__name__}.call_golden_cases", name=remaining_cases
+    )
+    expected = _expected_call_golden_files(cases_dir=tmp_path)
+    with pytest.raises(expected_exception=AssertionError, match=orphan.name):
+        _check_golden_inventory(cases_dir=tmp_path, expected=expected)
+
+
+@pytest.mark.parametrize(argnames="variant", argvalues=[False, True])
+def test_rejected_call_renderings_do_not_own_goldens(
+    *, variant: bool, cases_dir: Path
+) -> None:
+    """A call that checks an error cannot keep an unverified fixture alive."""
+    rejected = {
+        rendering.golden_path(cases_dir=cases_dir)
+        for case in call_golden_cases(cases_dir=cases_dir)
+        if isinstance(case, CallVariantCase) is variant
+        for rendering in case.renderings
+        if rendering.expected_exception is not None
+    }
+    assert len(rejected) > 0
+    assert rejected.isdisjoint(
+        _expected_call_golden_files(cases_dir=cases_dir)
+    )
 
 
 def test_base_cases_own_effective_golden(cases_dir: Path) -> None:
