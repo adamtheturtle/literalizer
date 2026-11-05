@@ -8,3 +8,10 @@ per_element = true
 ref_declarations = { big_list = '["x"]' }
 # Keep the binding external to the API call, as in the original fragment.
 explicit_ref_value_sources = { big_list = '["x"]' }
+
+# Check nested reusable bindings and ordered map call arguments under explicit annotations and both layouts.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
