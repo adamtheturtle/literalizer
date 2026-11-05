@@ -1,0 +1,25 @@
+[[cases]]
+name = "bound_list_without_source_hint"
+source = "{\"$ref\": \"item\"}"
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+ref_key = "$ref"
+bound_refs = "{\"item\": [1, 2]}"
+ref_values = "{\"item\": null}"
+consumable_refs = ["item"]
+expected_source_data = "null"
+
+[[cases]]
+name = "bound_null_with_list_hint"
+source = "{\"$ref\": \"item\"}"
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+ref_key = "$ref"
+bound_refs = "{\"item\": null}"
+ref_values = "{\"item\": [1, 2]}"
+consumable_refs = ["item"]
+expected_source_data = "[1, 2]"
