@@ -5,6 +5,33 @@ owner = "literalize-ref"
 [ref.value_sources]
 ref_data = "[1, 2]"
 
+# Omitted and explicit layout choices are checked in complete native
+# programs, replacing the helper-only variant_layout controls.
+[[ref.variants]]
+axis = "collection_layout"
+
+[[ref_examples]]
+example = "layout_forced_compact"
+variant_only = true
+collection_layout = "compact"
+
+[ref_examples.value_sources]
+ref_data = "[1, 2]"
+
+[[ref_examples.variants]]
+axis = "collection_layout"
+
+[[ref_examples]]
+example = "layout_forced_multiline"
+variant_only = true
+collection_layout = "multiline"
+
+[ref_examples.value_sources]
+ref_data = "[1, 2]"
+
+[[ref_examples.variants]]
+axis = "collection_layout"
+
 [[ref_examples]]
 # Regression provenance: literalize_ref_const_bound_list
 # Original regression (literalize_ref_const_rvalue): C++ reference declaration modifiers must accept the rendered value category.

@@ -3,3 +3,13 @@ owner = "variant"
 
 [[variants]]
 axis = "float_format"
+
+# Check extreme and subnormal floating values in explicitly typed and alternate native containers.
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "numeric_separator"

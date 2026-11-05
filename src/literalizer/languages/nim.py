@@ -2782,7 +2782,7 @@ class Nim(metaclass=LanguageCls):
             )
         if self._uses_native_nim_collections:
             return OrderedMapFormatConfig(
-                ordered_map_open=fixed_open(open_str="{"),
+                ordered_map_open=self._native_ordered_map_open,
                 close="}.toOrderedTable",
                 preamble_lines=(import_preamble(code="import tables"),),
             )
@@ -2791,6 +2791,23 @@ class Nim(metaclass=LanguageCls):
             close="}",
             preamble_lines=(),
         )
+
+    def _native_ordered_map_open(self, data: dict[Scalar, Value], /) -> str:
+        """Require one generated record type for native table values."""
+        if self._uses_record:
+            lookup = self._record_strategy.record_name_for_value
+            names = {
+                name
+                for value in data.values()
+                if (name := lookup(value)) is not None
+            }
+            if len(names) > 1:
+                msg = (
+                    "Nim ordered tables require one value type; record "
+                    "values with distinct generated types have no common type"
+                )
+                raise UnrepresentableInputError(msg)
+        return "{"
 
     @cached_property
     @beartype

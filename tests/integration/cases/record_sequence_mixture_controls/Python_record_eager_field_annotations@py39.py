@@ -1,5 +1,6 @@
 from typing import Any, Union
 import dataclasses
+from typing import Union
 @dataclasses.dataclass(frozen=True)
 class Record0:
     x: int

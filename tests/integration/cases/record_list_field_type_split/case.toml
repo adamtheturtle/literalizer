@@ -6,3 +6,14 @@ axis = "record_list_field_type_split"
 
 [[variants]]
 axis = "record_type_hints_always"
+
+# Keep refined scalar and sequence record field declarations valid under eager evaluation and alternate native sequences.
+[[variants]]
+axis = "record_eager_field_annotations"
+
+[[variants]]
+axis = "record_sequence_format"
+
+# A native value-carrier control retains representable heterogeneous maps.
+[[variants]]
+axis = "object_variant_containers"

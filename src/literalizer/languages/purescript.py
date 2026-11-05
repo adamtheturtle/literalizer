@@ -353,11 +353,21 @@ def _build_purescript_integer_formatter(
 
 
 @beartype
+def _purescript_float_literal(formatted: str, /) -> str:
+    """Remove exponent padding rejected by the numeric grammar."""
+    mantissa, marker, exponent = formatted.partition("e")
+    if marker == "":
+        return formatted
+    sign = "+" if exponent.startswith("+") else ""
+    return f"{mantissa}e{sign}{int(exponent)}"
+
+
+@beartype
 def _apply_purescript_float_wrapper(
     value: float, prefix: str, inner: Callable[[float], str]
 ) -> str:
     """Format a float with a constructor prefix."""
-    formatted = inner(value)
+    formatted = _purescript_float_literal(inner(value))
     if math.copysign(1, value) < 0:
         return f"{prefix}Float ({formatted})"
     return f"{prefix}Float {formatted}"
@@ -841,7 +851,7 @@ def _build_purescript_native_float(
             return "(-(1.0 / 0.0))" if value < 0 else "(1.0 / 0.0)"
         if math.isnan(value):
             return "(0.0 / 0.0)"
-        return finite(value)
+        return _purescript_float_literal(finite(value))
 
     return _format
 

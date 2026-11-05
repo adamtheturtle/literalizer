@@ -13,6 +13,7 @@ from literalizer import VariableForm
 from literalizer.languages import Dart
 from tests.integration.call_cases import discover_call_cases
 from tests.integration.call_variant_cases import build_call_variant_cases
+from tests.integration.case_manifests import RefCaseSpec
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
     constructor_golden_path,
@@ -103,18 +104,27 @@ def _call_bindings() -> dict[Path, str]:
 
 
 @beartype
-def _ref_bindings() -> dict[Path, str]:
-    """Read declared roots for explicit, default and option references."""
-    bindings: dict[Path, str] = {}
+def _ref_binding_name(*, config: RefCaseSpec) -> str | None:
+    """Run composed reference programs, otherwise read their root
+    binding.
+    """
+    if config.consumer is not None or len(config.external_declarations) > 0:
+        return None
+    return _binding_name(variable_form=config.resolved_variable_form())
+
+
+@beartype
+def _ref_bindings() -> dict[Path, str | None]:
+    """Read roots or native entry points for all reference golden
+    owners.
+    """
+    bindings: dict[Path, str | None] = {}
     for cases, name in (
         (discover_literalize_ref_cases(), "Dart_ref"),
         (discover_literalize_default_ref_cases(), "Dart_ref_default"),
     ):
         for ref_case in cases:
             if ref_case.lang_cls is not Dart:
-                continue
-            variable_form = ref_case.config.resolved_variable_form()
-            if variable_form is None:
                 continue
             for version in Dart.VersionFormats:
                 golden = make_golden_path(
@@ -124,12 +134,11 @@ def _ref_bindings() -> dict[Path, str]:
                     lang_cls=Dart,
                     version=version,
                 )
-                bindings[golden.resolve()] = variable_form.name
+                bindings[golden.resolve()] = _ref_binding_name(
+                    config=ref_case.config
+                )
     for variant_case in build_literalize_ref_variant_cases():
         if variant_case.variant.lang_cls is not Dart:
-            continue
-        variable_form = variant_case.config.resolved_variable_form()
-        if variable_form is None:
             continue
         golden = make_golden_path(
             parent=_CASES_DIR / variant_case.config.case_dir_name,
@@ -140,7 +149,9 @@ def _ref_bindings() -> dict[Path, str]:
             lang_cls=Dart,
             version=variant_case.variant.spec.language_version,
         )
-        bindings[golden.resolve()] = variable_form.name
+        bindings[golden.resolve()] = _ref_binding_name(
+            config=variant_case.config
+        )
     return bindings
 
 

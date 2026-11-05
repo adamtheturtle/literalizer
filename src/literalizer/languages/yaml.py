@@ -280,7 +280,9 @@ class Yaml(metaclass=LanguageCls):
         BASE64 = _BytesEnumMember(value=format_bytes_base64)
 
         def __call__(self, data: bytes, /) -> str:
-            """Format bytes."""
+            """Format bytes, tagging empty string literals explicitly."""
+            if len(data) == 0:
+                return '!!str ""'
             return self.value(data)
 
     class SequenceFormats(enum.Enum):
@@ -673,6 +675,8 @@ class Yaml(metaclass=LanguageCls):
         @beartype
         def _format(value: str) -> str:
             """Format a string as a YAML quoted literal."""
+            if value == "":
+                return '!!str ""'
             if "\ufffe" in value or "\uffff" in value:
                 raise UnrepresentableStringError(
                     language_name="Yaml",

@@ -1,0 +1,7 @@
+object Fixture_literalize_ref_bound_sequence_Scala_collection_layout_compact_ref_layout_forced_compact {
+val refData = List[Int](
+    1,
+    2,
+)
+val my_data = refData
+}

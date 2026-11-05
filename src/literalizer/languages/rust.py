@@ -63,9 +63,11 @@ from literalizer._formatters.format_strings import (
 )
 from literalizer._formatters.tuple_strategy import collect_tuple_list_ids
 from literalizer._formatters.type_inference import (
+    BeyondI64,
     RecordShape,
     collect_record_shapes,
     drop_unrecordizable_nested_sibling_maps,
+    int_widening_tier,
     unify_record_shapes,
 )
 from literalizer._heterogeneous import (
@@ -1902,6 +1904,18 @@ def _rust_scalar_record_field_type(
 
 
 @beartype
+def _rust_widen_tuple_integer_types(
+    *, values: list[Value], element_types: list[str]
+) -> list[str]:
+    """Match tuple fields to the integer suffixes emitted for the
+    values.
+    """
+    if int_widening_tier(items=values) is BeyondI64:
+        return ["i128"] * len(values)
+    return element_types
+
+
+@beartype
 def _rust_record_field_type(
     *,
     value: Value,
@@ -1964,6 +1978,9 @@ def _rust_record_field_type(
                 )
                 for item in value
             ]
+            element_types = _rust_widen_tuple_integer_types(
+                values=value, element_types=element_types
+            )
             trailing_comma = ""
             if len(element_types) == 1:
                 trailing_comma = ","

@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Encoded empty bytes must not collapse to padded spaces in fixed-width text storage."
+exceptions = ["UnrepresentableStringError"]
+option = "bytes_format"
+
+[call]
+api = "literalize"
+sources = ['!!binary ""', '- !!binary ""', 'empty: !!binary ""']
+input_format = "yaml"

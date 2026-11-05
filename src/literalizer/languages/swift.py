@@ -1262,8 +1262,7 @@ class Swift(metaclass=LanguageCls):
                         and not is_reference_binding
                     )
                     heterogeneous_ordered_map = (
-                        isinstance(data, OrderedMap)
-                        and len({type(item) for item in data.values()}) > 1
+                        isinstance(data, OrderedMap) and hint.needs_context
                     )
                     needs_context = (
                         data is None

@@ -2,7 +2,6 @@
 
 import ast
 import json
-import re
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
@@ -11,7 +10,7 @@ from literalizer import (
     InputFormat,
     literalize,
 )
-from literalizer.languages import Erlang, Python
+from literalizer.languages import Python
 
 # Use LIST sequence format so that ast.literal_eval returns plain lists,
 # matching the JSON input directly without any conversion step.
@@ -20,14 +19,6 @@ PYTHON = Python(
     datetime_format=Python.datetime_formats.PYTHON,
     bytes_format=Python.bytes_formats.HEX,
     sequence_format=Python.sequence_formats.LIST,
-    set_format=Python.set_formats.SET,
-    variable_type_hints=Python.variable_type_hints_formats.NEVER,
-)
-PYTHON_BYTES = Python(
-    date_format=Python.date_formats.PYTHON,
-    datetime_format=Python.datetime_formats.PYTHON,
-    bytes_format=Python.bytes_formats.PYTHON,
-    sequence_format=Python.sequence_formats.TUPLE,
     set_format=Python.set_formats.SET,
     variable_type_hints=Python.variable_type_hints_formats.NEVER,
 )
@@ -131,38 +122,3 @@ def test_roundtrip_dict(data: dict[str, _JSONValue]) -> None:
     )
     parsed = ast.literal_eval(node_or_string=result.code)
     assert parsed == data
-
-
-@given(data=st.binary())
-def test_roundtrip_bytes_python(data: bytes) -> None:
-    """Format_bytes_python -> ast.literal_eval round-trips."""
-    result = PYTHON_BYTES.format_bytes(data)
-    assert ast.literal_eval(node_or_string=result) == data
-
-
-@given(data=st.binary())
-def test_roundtrip_bytes_hex(data: bytes) -> None:
-    """Format_bytes_hex -> bytes.fromhex round-trips."""
-    result = PYTHON.format_bytes(data)
-    assert result.startswith('"')
-    assert result.endswith('"')
-    assert bytes.fromhex(result[1:-1]) == data
-
-
-# YAML ``!!binary`` parsing and per-language bytes-format wiring are covered
-# across the language/version matrix by ``tests/integration/cases/binary``.
-# Keep only unique formatter semantics in this property-test module.
-ERLANG_LANG = Erlang()
-
-
-@given(data=st.binary())
-def test_roundtrip_bytes_erlang_binary(data: bytes) -> None:
-    """Erlang binary literal round-trips."""
-    result = ERLANG_LANG.format_bytes(data)
-    if not bool(data):
-        assert result == "<<>>"
-        return
-    match = re.fullmatch(pattern=r"<<(.+)>>", string=result)
-    assert match is not None
-    byte_values = [int(x.strip()) for x in match.group(1).split(sep=",")]
-    assert bytes(byte_values) == data

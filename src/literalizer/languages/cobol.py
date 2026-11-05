@@ -215,13 +215,15 @@ def _first_cobol_unrepresentable_control(*, data: Value) -> str | None:
 
 @beartype
 def _data_has_empty_string_value(data: Value) -> bool:
-    """Return whether a value position contains an empty string."""
+    """Return whether a value produces an empty alphanumeric string."""
     if isinstance(data, dict):
         return any(
             _data_has_empty_string_value(data=value) for value in data.values()
         )
     if isinstance(data, (list, set)):
         return any(_data_has_empty_string_value(data=value) for value in data)
+    if isinstance(data, bytes):
+        return len(data) == 0
     return data == ""
 
 

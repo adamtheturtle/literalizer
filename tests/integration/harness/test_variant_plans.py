@@ -91,6 +91,9 @@ def test_special_axes_are_declared() -> None:
                 "plain_collection_callbacks",
                 "typed_collection_callback",
                 "custom_zig_null_policy",
+                "copied_json_to_native",
+                "copied_native_to_record",
+                "copied_native_to_json",
             }
         )
         == SPECIAL_VARIANT_AXES

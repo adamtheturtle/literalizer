@@ -8,6 +8,7 @@ set to the language's default identifier case.  The runner
 ``test_literalize_ref_golden_file``.
 """
 
+import copy
 import dataclasses
 import enum
 import functools
@@ -525,6 +526,7 @@ def _compose_ref_consumer(
     )
 
     if expression:
+        spec.validate_call_arg(stub_data)
         style = TypeAdapter[CallStyle](type=CallStyle).validate_python(
             spec.call_style_config
         )
@@ -535,7 +537,7 @@ def _compose_ref_consumer(
             allows_empty_call_parens=True,
         )
         call_expression = assemble_call_expression(
-            target_function=consumer.target_function,
+            target_function=stub_spec.format_call_target(target),
             args_str=arguments,
             style=style,
         )
@@ -864,6 +866,7 @@ def run_literalize_ref_golden_case_profile(
                 name: json.loads(s=source)
                 for name, source in (config.explicit_ref_value_sources.items())
             }
+        original_ref_values = copy.deepcopy(x=effective_ref_values)
         result = literalizer.literalize(
             source=input_source,
             input_format=input_info.input_format,
@@ -882,6 +885,9 @@ def run_literalize_ref_golden_case_profile(
             collection_layout=literalizer.CollectionLayout(
                 value=config.collection_layout
             ),
+        )
+        assert effective_ref_values == original_ref_values, (  # noqa: S101
+            "literalize mutated caller-owned ref_values"
         )
         if (
             len(config.external_declarations) > 0

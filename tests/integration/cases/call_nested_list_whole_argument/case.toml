@@ -16,3 +16,29 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+# Explicit case choices override both members of the layout axis. The
+# original call above leaves the choice omitted and inherits each member.
+[[call_examples]]
+example = "layout_forced_compact"
+target_function = "f"
+parameter_names = ["a"]
+per_element = false
+wrap_in_file = true
+variant_only = true
+collection_layout = "compact"
+
+[[call_examples.variants]]
+axis = "collection_layout"
+
+[[call_examples]]
+example = "layout_forced_multiline"
+target_function = "f"
+parameter_names = ["a"]
+per_element = false
+wrap_in_file = true
+variant_only = true
+collection_layout = "multiline"
+
+[[call_examples.variants]]
+axis = "collection_layout"

@@ -9,3 +9,8 @@ gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
 std = '{"a":1}'
 arena = '{"a":1}'
 allocator = '{"a":1}'
+
+# A copied JSON specification must release std and allocator before binding
+# and consuming those names in a native program.
+[[ref.variants]]
+axis = "copied_json_to_native"

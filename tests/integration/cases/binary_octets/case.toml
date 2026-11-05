@@ -1,0 +1,11 @@
+schema_version = 1
+suites = ["base"]
+
+# Replaces direct Python and Erlang byte-formatter controls with complete
+# native programs covering empty bytes, every octet and ordering.
+[[variants]]
+axis = "bytes_format"
+
+# JSON carriers can retain an empty encoded byte string without padding.
+[[variants]]
+axis = "json_type"

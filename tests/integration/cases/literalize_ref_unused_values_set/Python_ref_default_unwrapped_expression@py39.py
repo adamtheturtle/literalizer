@@ -1,0 +1,5 @@
+def consume_widget(*_args: object, **_kwargs: object) -> object: ...
+consume_widget(arg_value={
+    1,
+    2,
+})

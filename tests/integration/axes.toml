@@ -1683,6 +1683,15 @@ overrides = [
 [special_axes.custom_zig_null_policy]
 reason = "A caller-defined Zig subclass overrides the null dictionary-field policy in JSON mode."
 
+[special_axes.copied_json_to_native]
+reason = "A copied Zig JSON spec releases its parser helper names in native mode."
+
+[special_axes.copied_native_to_record]
+reason = "A copied Zig native spec releases its union carrier names in record mode."
+
+[special_axes.copied_native_to_json]
+reason = "A copied Zig native spec releases its union carrier names in JSON mode."
+
 [axes.default_empty_dict_key]
 plan = "fixed_overrides"
 name_template = "{lang}_default_empty_dict_key"
