@@ -1,0 +1,34 @@
+[[cases]]
+name = "json"
+input_format = "json"
+error = "JSONParseError"
+source = ""
+message = "input exceeds the supported nesting depth"
+
+[[cases]]
+name = "json5"
+input_format = "json5"
+error = "JSON5ParseError"
+source = ""
+message = "input exceeds the supported nesting depth"
+
+[[cases]]
+name = "jsonc"
+input_format = "jsonc"
+error = "JSONCParseError"
+source = ""
+message = "input exceeds the supported nesting depth"
+
+[[cases]]
+name = "toml"
+input_format = "toml"
+error = "TOMLParseError"
+source = ""
+message = "input exceeds the supported nesting depth"
+
+[[cases]]
+name = "yaml"
+input_format = "yaml"
+error = "YAMLParseError"
+source = ""
+message = "input exceeds the supported nesting depth"
