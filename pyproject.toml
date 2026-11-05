@@ -585,6 +585,8 @@ ignore_names = [
     "SORTED_DICTIONARY",
     "SORTED_SET",
     "source_suffix",
+    # Selected through the manifest enum axis.
+    "SPACED",
     "spelling_word_list_filename",
     "STATIC",
     "supports_call_style",
