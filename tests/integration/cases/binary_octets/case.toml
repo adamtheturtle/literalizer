@@ -1,0 +1,7 @@
+schema_version = 1
+suites = ["base"]
+
+# Replaces direct Python and Erlang byte-formatter controls with complete
+# native programs covering empty bytes, every octet and ordering.
+[[variants]]
+axis = "bytes_format"
