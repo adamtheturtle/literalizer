@@ -278,9 +278,12 @@ check_axis_coverage(
 def variants_for_axis(*, axis_key: str) -> list[Variant]:
     """Return the variants for an axis key.
 
-    Each axis names a typed plan in ``axes.toml``.  A declared plan
-    that narrows another axis resolves its base through here too.
+    Custom spec operations and typed plans share the same resolver,
+    including when a call or reference case selects the axis.
     """
+    custom = variants_for_custom_language_axis(axis_key=axis_key)
+    if len(custom) > 0:
+        return custom
     return variants_for_declared_axis(
         axis_key=axis_key,
         resolve_axis=variants_for_axis,

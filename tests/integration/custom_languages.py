@@ -90,6 +90,40 @@ class SkipNullZig(Zig):
 def variants_for_custom_language_axis(*, axis_key: str) -> list[Variant]:
     """Build the custom language variants for an axis, if it has any."""
     match axis_key:
+        case "copied_json_to_native":
+            return [
+                compact_variant(
+                    name=f"Zig_{axis_key}",
+                    spec=dataclasses.replace(
+                        Zig(
+                            language_version=version,
+                            json_type=Zig.JsonTypes["STD_JSON_VALUE"],
+                        ),
+                        json_type=None,
+                    ),
+                    lang_cls=Zig,
+                )
+                for version in Zig.VersionFormats
+            ]
+        case "copied_native_to_record" | "copied_native_to_json":
+            return [
+                compact_variant(
+                    name=f"Zig_{axis_key}",
+                    spec=dataclasses.replace(
+                        Zig(language_version=version),
+                        heterogeneous_strategy=Zig.HeterogeneousStrategies[
+                            "RECORD"
+                        ],
+                    )
+                    if axis_key == "copied_native_to_record"
+                    else dataclasses.replace(
+                        Zig(language_version=version),
+                        json_type=Zig.JsonTypes["STD_JSON_VALUE"],
+                    ),
+                    lang_cls=Zig,
+                )
+                for version in Zig.VersionFormats
+            ]
         case "custom_zig_null_policy":
             return [
                 compact_variant(

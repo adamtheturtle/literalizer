@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "literalize-ref-default"
+
+[ref]
+variant_only = true
+
+# dataclasses.replace must release the previous mode's carrier names.
+# Bind and consume both names in complete record and JSON programs.
+[ref.value_sources]
+ZVal = '{"a":1}'
+ZKV = '{"a":2}'
+
+[[ref.variants]]
+axis = "copied_native_to_record"
+
+[[ref.variants]]
+axis = "copied_native_to_json"
