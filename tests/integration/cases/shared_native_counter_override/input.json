@@ -1,0 +1,50 @@
+[
+  {
+    "rows": [
+      [
+        "user_1",
+        100.0
+      ]
+    ],
+    "zipped": [
+      [
+        true,
+        "first"
+      ]
+    ],
+    "initial_column": 3,
+    "invocation": {
+      "function": "checkResult",
+      "parameter-types": [
+        "bool",
+        "NSArray"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "receiver": {
+            "reference": "counter",
+            "type": "Counter"
+          },
+          "selector": "accept:timestamp:",
+          "parameter-types": [
+            "NSString",
+            "float"
+          ],
+          "return-type": "bool",
+          "arguments": [
+            {
+              "input": 0
+            },
+            {
+              "input": 1
+            }
+          ]
+        },
+        {
+          "zipped": true
+        }
+      ]
+    }
+  }
+]
