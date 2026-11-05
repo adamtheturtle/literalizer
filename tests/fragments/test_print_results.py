@@ -178,5 +178,5 @@ def test_custom_transform_remains_available() -> None:
         parameter_names=["value"],
         call_transform=_identity,
     )
-    assert result.code == "calculate(1);"
+    assert result.code == "static_cast<void>(calculate(1));"
     assert "#include <iostream>" not in result.preamble
