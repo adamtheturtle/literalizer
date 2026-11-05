@@ -35,14 +35,16 @@ def _run_program(
     *, program: str, values: tuple[bytes, ...], shape: str
 ) -> None:
     """Compile the actual module with fatal warnings and check x/0's value."""
-    escript = shutil.which(cmd="escript") or "escript"
+    escript = shutil.which(cmd="escript")
+    if escript is None or escript == "":
+        escript = "escript"
     with tempfile.TemporaryDirectory() as temporary:
         directory = Path(temporary)
         source = directory / "module.erl"
         driver = directory / "check.escript"
         _ = source.write_text(data=program, encoding="utf-8")
         _ = driver.write_text(data=_DRIVER, encoding="utf-8")
-        subprocess.run(
+        _ = subprocess.run(
             args=[
                 escript,
                 str(object=driver),
