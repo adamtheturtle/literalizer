@@ -1,0 +1,6 @@
+schema_version = 1
+suites = ["base"]
+
+# Retain full byte-range compiler coverage in fixed-width text carriers.
+[[variants]]
+axis = "bytes_format"
