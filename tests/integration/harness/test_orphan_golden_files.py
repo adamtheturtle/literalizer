@@ -30,6 +30,7 @@ from tests.integration.native_invocation_cases import native_invocation_cases
 from tests.integration.record_snapshot_cases import (
     record_snapshot_golden_paths,
 )
+from tests.integration.shared_checked_cases import shared_checked_cases
 from tests.integration.unwrapped_result_cases import result_view_golden_paths
 
 
@@ -90,6 +91,9 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     expected.update(_expected_literalize_golden_files(cases_dir=cases_dir))
     expected.update(result_view_golden_paths(cases_dir=cases_dir))
     expected.update(record_snapshot_golden_paths(cases_dir=cases_dir))
+    expected.update(
+        case.golden_path for case in shared_checked_cases(cases_dir=cases_dir)
+    )
 
     expected.update(_expected_call_golden_files(cases_dir=cases_dir))
 

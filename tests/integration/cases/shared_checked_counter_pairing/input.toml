@@ -1,0 +1,39 @@
+source = '[["user_1", 100.0], ["user_2", 101.0]]'
+zip_source = '[[true, "first"], [false, "second"]]'
+pre_indent_level = 1
+consumer_template = '''{preamble}
+from typing import List, Tuple
+class Counter:
+    def __init__(self) -> None:
+        self.seen: List[Tuple[str, float]] = []
+    def accept(self, user: str, timestamp: float, /) -> bool:
+        self.seen.append((user, timestamp))
+        return user == "user_1"
+counter = Counter()
+reasons: List[str] = []
+def check_result(actual: bool, expected: Tuple[bool, str], /) -> None:
+    assert actual is expected[0]
+    reasons.append(expected[1])
+def run() -> None:
+{code}
+run()
+assert counter.seen == [('user_1', 100.0), ('user_2', 101.0)]
+assert reasons == ['first', 'second']
+'''
+
+[invocation.default]
+target-function = "counter.accept"
+parameter-names = ["user", "timestamp"]
+result-function = "checkResult"
+
+[invocation.languages.python]
+result-function = "check_result"
+
+[invocation.languages.objective-c.native]
+function = "checkResult"
+parameter-types = ["bool", "NSArray"]
+return-type = "void"
+arguments = [
+    {receiver = {reference = "counter", type = "Counter"}, selector = "accept:timestamp:", parameter-types = ["NSString", "float"], return-type = "bool", arguments = [{input = 0}, {input = 1}]},
+    {zipped = true},
+]
