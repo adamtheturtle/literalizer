@@ -122,7 +122,9 @@ def test_native_invocation_golden(
 def test_native_width_accounts_for_caller_and_binding(
     initial_column: int,
 ) -> None:
-    """A binding or caller prefix can make an otherwise short call wrap."""
+    """A binding or caller prefix can make an otherwise short call
+    wrap.
+    """
     column_limit = 40
     language = ObjectiveC(
         indent="  ",
@@ -177,7 +179,9 @@ def test_original_objective_c_native_callback() -> None:
 
 
 class _LegacyNativeBackend(Python):
-    """An existing native backend implementing only the original callback."""
+    """An existing native backend implementing only the original
+    callback.
+    """
 
     supports_native_invocations = True
 
@@ -197,7 +201,9 @@ class _LegacyNativeBackend(Python):
 
 
 def test_native_legacy_callback_still_works() -> None:
-    """Existing backend callbacks need not implement positioned rendering."""
+    """Existing backend callbacks need not implement positioned
+    rendering.
+    """
     result = literalizer.literalize_native_call(
         language=_LegacyNativeBackend(),
         invocation=literalizer.NativeInvocation(

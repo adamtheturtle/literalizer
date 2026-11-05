@@ -143,7 +143,9 @@ class _NativeEmitterLanguage(Language, _NativeInvocationLanguage, Protocol):
 
 @runtime_checkable
 class _PositionedNativeInvocationLanguage(Protocol):
-    """An emitter accepting caller-owned columns without parsing source."""
+    """An emitter accepting caller-owned columns without parsing
+    source.
+    """
 
     @staticmethod
     def render_native_invocation_at_column(
@@ -349,7 +351,9 @@ def _render_native_expression(
     initial_column: int,
     scope_indent: int,
 ) -> str:
-    """Use an optional positioned emitter while retaining legacy backends."""
+    """Use an optional positioned emitter while retaining legacy
+    backends.
+    """
     if isinstance(language, _PositionedNativeInvocationLanguage):
         return language.render_native_invocation_at_column(
             language,
@@ -641,7 +645,9 @@ def _objc_argument(
 
 @beartype
 def _native_width(code: str, column: int, scope: int, /) -> int:
-    """Measure emitted lines without interpreting their source contents."""
+    """Measure emitted lines without interpreting their source
+    contents.
+    """
     first, *rest = code.split(sep="\n")
     return (
         scope + max(column + len(first), *(len(line) for line in rest))
@@ -799,7 +805,9 @@ def _flat_arguments(
     initial_column: int,
     line_indent: int,
 ) -> tuple[str, tuple[bool, ...]]:
-    """Emit the inline argument choice before deciding optional wrapping."""
+    """Emit the inline argument choice before deciding optional
+    wrapping.
+    """
     cursor = (
         initial_column + len(head)
         if "\n" not in head

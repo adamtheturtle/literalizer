@@ -1194,7 +1194,9 @@ class ObjectiveC(metaclass=LanguageCls):
         initial_column: int,
         scope_indent: int,
     ) -> str:
-        """Emit native syntax with the caller's binding and scope columns."""
+        """Emit native syntax with the caller's binding and scope
+        columns.
+        """
         return objective_c_invocation(
             language,
             invocation,
