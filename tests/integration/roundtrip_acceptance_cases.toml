@@ -1,0 +1,35 @@
+[[cases]]
+name = "identical_scalar_types"
+case_name = "roundtrip_verifier_identical_scalar_types"
+expected_json = "{\"value\": [true, false, 0, 1]}"
+exclude_keys = []
+
+[[cases]]
+name = "integer_as_float"
+case_name = "roundtrip_verifier_integer_as_float"
+expected_json = "{\"value\": 1}"
+exclude_keys = []
+
+[[cases]]
+name = "float_array_as_integers"
+case_name = "roundtrip_verifier_float_array_as_integers"
+expected_json = "{\"value\": [0.0, 1.0]}"
+exclude_keys = []
+
+[[cases]]
+name = "object_order_and_numeric_equivalence"
+case_name = "roundtrip_verifier_object_order_and_numeric_equivalence"
+expected_json = "{\"a\": {\"x\": false, \"y\": [1]}, \"b\": null}"
+exclude_keys = []
+
+[[cases]]
+name = "excluded_value_changed"
+case_name = "roundtrip_verifier_excluded_value_changed"
+expected_json = "{\"keep\": true, \"skip\": 1}"
+exclude_keys = ["skip"]
+
+[[cases]]
+name = "excluded_key_added"
+case_name = "roundtrip_verifier_excluded_key_added"
+expected_json = "{\"keep\": true}"
+exclude_keys = ["skip"]

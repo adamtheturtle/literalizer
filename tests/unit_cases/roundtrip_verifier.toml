@@ -77,39 +77,3 @@ name = "object_key_changed"
 expected_json = "{\"value\": {\"a\": 1}}"
 produced_json = "{\"value\": {\"b\": 1}}"
 exclude_keys = []
-
-[[equivalent]]
-name = "identical_scalar_types"
-expected_json = "{\"value\": [true, false, 0, 1]}"
-produced_json = "{\"value\": [true, false, 0, 1]}"
-exclude_keys = []
-
-[[equivalent]]
-name = "integer_as_float"
-expected_json = "{\"value\": 1}"
-produced_json = "{\"value\": 1.0}"
-exclude_keys = []
-
-[[equivalent]]
-name = "float_array_as_integers"
-expected_json = "{\"value\": [0.0, 1.0]}"
-produced_json = "{\"value\": [0, 1]}"
-exclude_keys = []
-
-[[equivalent]]
-name = "object_order_and_numeric_equivalence"
-expected_json = "{\"a\": {\"x\": false, \"y\": [1]}, \"b\": null}"
-produced_json = "{\"b\": null, \"a\": {\"y\": [1.0], \"x\": false}}"
-exclude_keys = []
-
-[[equivalent]]
-name = "excluded_value_changed"
-expected_json = "{\"keep\": true, \"skip\": 1}"
-produced_json = "{\"keep\": true, \"skip\": false}"
-exclude_keys = ["skip"]
-
-[[equivalent]]
-name = "excluded_key_added"
-expected_json = "{\"keep\": true}"
-produced_json = "{\"keep\": true, \"skip\": 0}"
-exclude_keys = ["skip"]
