@@ -660,3 +660,14 @@ Objective-C keeps ``dict_entry_style=ObjectiveC.dict_entry_styles.DEFAULT`` by d
 Select ``ObjectiveC.dict_entry_styles.SPACED`` to emit ``@"key" : value`` directly.
 The option applies to dictionaries and ordered maps, including nested values and delimiter-free fragments.
 Use the existing ``CollectionLayout`` and ``indent`` options independently to control line breaks and indentation.
+
+Objective-C native argument layout
+----------------------------------
+
+Typed native invocations keep ``native_argument_layout=ObjectiveC.native_argument_layouts.INLINE`` by default.
+Select ``MULTILINE`` for one argument per line or ``AUTO`` to wrap against ``native_column_limit`` (80 by default).
+``native_align_selectors`` selects aligned selector colons (the default) or fixed continuation indentation.
+``native_continuation_indent`` counts indent units for fixed continuations; ``native_collection_layout`` independently selects compact or multiline literal arguments.
+The native APIs accept ``initial_column`` for text owned by the caller before a fragment, in addition to ``pre_indent_level`` for its scope.
+New and existing variable binding prefixes are accounted for automatically.
+These choices are applied while traversing the typed invocation tree; no generated program is parsed or formatted afterward.

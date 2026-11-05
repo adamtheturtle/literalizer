@@ -51,6 +51,7 @@ from literalizer._language import (
     BareIntegerWidthStrategies,
     CallParameterShadowing,
     CallStubResult,
+    CollectionLayout,
     CommentConfig,
     DateFormatConfig,
     DateFormatEnum,
@@ -688,6 +689,22 @@ class ObjectiveC(metaclass=LanguageCls):
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
+    class NativeArgumentLayouts(enum.Enum):
+        """Line breaks selected by the typed invocation emitter."""
+
+        INLINE = enum.auto()
+        MULTILINE = enum.auto()
+        AUTO = enum.auto()
+
+    native_argument_layouts = NativeArgumentLayouts
+    native_argument_layout: NativeArgumentLayouts = (
+        NativeArgumentLayouts.INLINE
+    )
+    native_align_selectors: bool = True
+    native_continuation_indent: int = 1
+    native_column_limit: int = 80
+    native_collection_layout: CollectionLayout = CollectionLayout.COMPACT
+
     module_name: str = "Module"
 
     leading_preamble = no_leading_preamble
@@ -1166,6 +1183,24 @@ class ObjectiveC(metaclass=LanguageCls):
     ) -> str:
         """Render an explicitly typed native call expression."""
         return objective_c_invocation(language, invocation)
+
+    @staticmethod
+    @beartype
+    def render_native_invocation_at_column(
+        language: Language,
+        invocation: NativeInvocation,
+        /,
+        *,
+        initial_column: int,
+        scope_indent: int,
+    ) -> str:
+        """Emit native syntax with the caller's binding and scope columns."""
+        return objective_c_invocation(
+            language,
+            invocation,
+            initial_column=initial_column,
+            scope_indent=scope_indent,
+        )
 
     @staticmethod
     @beartype

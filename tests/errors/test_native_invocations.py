@@ -40,7 +40,14 @@ def test_native_invocation_rejections(case: dict[str, object]) -> None:
             input_format=literalizer.InputFormat.JSON,
             language=Python()
             if case.get("language") == "python"
-            else ObjectiveC(),
+            else ObjectiveC(
+                native_continuation_indent=int(
+                    str(object=case.get("continuation_indent", 1))
+                ),
+                native_column_limit=int(
+                    str(object=case.get("column_limit", 80))
+                ),
+            ),
             invocation=spec,
             variable_form=variable,
             zip_source=None if zip_source is None else str(object=zip_source),
@@ -48,6 +55,7 @@ def test_native_invocation_rejections(case: dict[str, object]) -> None:
             if zip_source is not None or case.get("zip_format_only") is True
             else None,
             pre_indent_level=int(str(object=case.get("indent", 0))),
+            initial_column=int(str(object=case.get("initial_column", 0))),
         )
 
 
