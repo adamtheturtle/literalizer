@@ -380,7 +380,7 @@ def _bound_native_expression(
         language, invocation, initial_column=column, scope_indent=scope_indent
     )
     if (
-        binding
+        binding != ""
         and isinstance(language, _ObjectiveCNativeOptions)
         and language.native_argument_layout.name != "INLINE"
         and scope_indent + column + len(expression.split(sep="\n")[0])
@@ -572,7 +572,10 @@ def _indent_operand(code: str, column: int, /) -> str:
     """Place continuation lines of a freshly emitted literal operand."""
     first, *rest = code.split(sep="\n")
     return "\n".join(
-        [first, *(" " * column + line if line else line for line in rest)]
+        [
+            first,
+            *(" " * column + line if line != "" else line for line in rest),
+        ]
     )
 
 
@@ -651,7 +654,7 @@ def _native_width(code: str, column: int, scope: int, /) -> int:
     first, *rest = code.split(sep="\n")
     return (
         scope + max(column + len(first), *(len(line) for line in rest))
-        if rest
+        if len(rest) != 0
         else scope + column + len(first)
     )
 
@@ -816,7 +819,7 @@ def _flat_arguments(
     pieces: list[str] = []
     multiline: list[bool] = []
     for i in range(count):
-        label = labels[i] + ":" if labels else ""
+        label = labels[i] + ":" if len(labels) != 0 else ""
         value = argument(i, cursor + len(label), line_indent)
         multiline.append("\n" in value)
         if "\n" in value:
@@ -829,10 +832,10 @@ def _flat_arguments(
             if "\n" in value
             else cursor + len(piece)
         )
-        cursor += 1 if labels else 2
-    return head + (" " if labels else ", ").join(pieces) + close, tuple(
-        multiline
-    )
+        cursor += 1 if len(labels) != 0 else 2
+    return head + (" " if len(labels) != 0 else ", ").join(
+        pieces
+    ) + close, tuple(multiline)
 
 
 @beartype
@@ -909,7 +912,7 @@ def objective_c_invocation(
         line_indent=line_indent,
     )
     if count == 0:
-        return head + (labels[0] if labels else "") + close
+        return head + (labels[0] if len(labels) != 0 else "") + close
 
     def argument(index: int, column: int, leading: int, /) -> str:
         """Render one operand at the position chosen by its parent."""
@@ -949,7 +952,7 @@ def objective_c_invocation(
     )
     if not split:
         return flat
-    if not labels:
+    if len(labels) == 0:
         return _function_arguments(
             language,
             head,
