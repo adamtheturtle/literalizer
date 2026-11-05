@@ -6,3 +6,10 @@ axis = "string_format"
 
 [[variants]]
 axis = "json_type"
+
+# Keep byte-order marks, closing delimiters, null escapes, and Unicode sibling strings valid across declaration contexts.
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "collection_layout"

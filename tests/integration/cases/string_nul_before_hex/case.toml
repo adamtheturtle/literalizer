@@ -3,3 +3,13 @@ suites = ["base"]
 
 [[variants]]
 axis = "string_format"
+
+# Keep byte-order marks, closing delimiters, null escapes, and Unicode sibling strings valid across declaration contexts.
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "collection_layout"
