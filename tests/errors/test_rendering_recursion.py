@@ -5,17 +5,34 @@ error.
 from typing import Never
 
 import pytest
+from pydantic import BaseModel, TypeAdapter
 
 import literalizer
-from literalizer.exceptions import (
-    JSON5ParseError,
-    JSONCParseError,
-    JSONParseError,
-    ParseError,
-    TOMLParseError,
-    YAMLParseError,
-)
 from literalizer.languages import ALL_LANGUAGES
+from tests.errors.rejection_manifests import ExceptionType
+from tests.integration.case_manifests import CallInputFormat
+from tests.toml_cases import load_toml_cases
+
+
+class _RecursionCase(BaseModel, extra="forbid", frozen=True):
+    """One input format and its public stack-exhaustion diagnostic."""
+
+    name: str
+    input_format: CallInputFormat
+    error: ExceptionType
+    source: str
+    message: str
+
+
+class _Cases(BaseModel, extra="forbid", frozen=True):
+    """The input-format error boundary matrix."""
+
+    cases: tuple[_RecursionCase, ...]
+
+
+_CASES = TypeAdapter(type=_Cases).validate_python(
+    load_toml_cases(name="rendering_recursion_errors")
+)
 
 
 def _exhaust_stack(**_kwargs: object) -> Never:
@@ -25,19 +42,10 @@ def _exhaust_stack(**_kwargs: object) -> Never:
 
 
 @pytest.mark.parametrize(
-    argnames=("input_format", "error"),
-    argvalues=[
-        (literalizer.InputFormat.JSON, JSONParseError),
-        (literalizer.InputFormat.JSON5, JSON5ParseError),
-        (literalizer.InputFormat.JSONC, JSONCParseError),
-        (literalizer.InputFormat.TOML, TOMLParseError),
-        (literalizer.InputFormat.YAML, YAMLParseError),
-    ],
+    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
 )
 def test_rendering_recursion_has_a_typed_error(
-    input_format: literalizer.InputFormat,
-    error: type[ParseError],
-    monkeypatch: pytest.MonkeyPatch,
+    case: _RecursionCase, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Every language translates stack failures at the API boundary."""
     monkeypatch.setattr(
@@ -45,12 +53,9 @@ def test_rendering_recursion_has_a_typed_error(
         name=_exhaust_stack,
     )
     for language in ALL_LANGUAGES:
-        with pytest.raises(
-            expected_exception=error,
-            match="input exceeds the supported nesting depth",
-        ):
+        with pytest.raises(expected_exception=case.error, match=case.message):
             _ = literalizer.literalize(
-                source="",
-                input_format=input_format,
+                source=case.source,
+                input_format=case.input_format,
                 language=language(),
             )
