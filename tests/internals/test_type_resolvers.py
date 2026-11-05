@@ -58,6 +58,10 @@ def test_resolvers_keep_independent_options_and_live_callbacks() -> None:
     custom = _MappingValueType(name="First")
     first = _element_resolver(int_type="Small", dict_value_to_type=custom)
     second = _element_resolver(int_type="Large", dict_value_to_type=None)
+    same_options = _element_resolver(
+        int_type="Small", dict_value_to_type=custom
+    )
+    assert same_options not in {first, second}
     descriptor = ListType(inner=DictType(value_type=int, values=(1,)))
     assert first(descriptor) == "List<Map<First>>"
     assert second(descriptor) == "List<Map<Large>>"

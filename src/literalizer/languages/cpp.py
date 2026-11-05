@@ -558,7 +558,7 @@ def _format_datetime_cpp(value: dt.datetime) -> str:
 
 
 @beartype
-@dataclasses.dataclass(frozen=True, kw_only=True)
+@dataclasses.dataclass(frozen=True, kw_only=True, eq=False)
 class _CppElementToType:
     """Retain C++ type dependencies with methods checked once at
     import.

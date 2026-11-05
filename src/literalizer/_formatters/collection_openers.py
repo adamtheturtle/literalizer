@@ -302,7 +302,7 @@ def fixed_open(
 
 
 @beartype
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, eq=False)
 class _ElementToType:
     """Bind resolver options without creating a checked function per
     call.
