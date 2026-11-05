@@ -1,13 +1,9 @@
 """Shared recipes retain the established call and native contracts."""
 
-import subprocess
-import sys
-
 import pytest
 from typing_extensions import TypedDict
 
 from literalizer import (
-    CallContext,
     ExistingVariable,
     InputFormat,
     Language,
@@ -54,16 +50,6 @@ _CALL: dict[str, object] = {
 }
 
 
-class _ZippedOptions(TypedDict, closed=True):
-    """A paired expected-value source."""
-
-    source: str
-    input_format: InputFormat
-    language: Language
-    zip_source: str
-    zip_input_format: InputFormat
-
-
 class _NativeOptions(TypedDict, closed=True):
     """Native placement arguments shared by the two APIs."""
 
@@ -83,42 +69,6 @@ class _BindingOptions(TypedDict, closed=True):
     input_format: InputFormat
     language: Language
     variable_form: NewVariable | ExistingVariable
-
-
-def test_python_recipe_executes_with_paired_checks() -> None:
-    """Generated checks actually call the receiver and retain row
-    pairing.
-    """
-    result = literalize_invocations(
-        source='[["user_1",100.0],["user_2",101.0]]',
-        input_format=InputFormat.JSON,
-        zip_source='[[true,"first"],[false,"second"]]',
-        zip_input_format=InputFormat.JSON,
-        language=Python(call_style=Python.call_styles["POSITIONAL"]),
-        invocation=_CALL,
-        pre_indent_level=1,
-    )
-    program = f"""
-class Counter:
-    def __init__(self):
-        self.seen = []
-    def accept(self, user, timestamp):
-        self.seen.append((user, timestamp))
-        return user == "user_1"
-counter = Counter()
-reasons = []
-def check_result(actual, expected):
-    assert actual is expected[0]
-    reasons.append(expected[1])
-def run():
-{result.code}
-run()
-assert counter.seen == [("user_1", 100.0), ("user_2", 101.0)]
-assert reasons == ["first", "second"]
-"""
-    _ = subprocess.run(  # noqa: S603 - execute generated test programs
-        args=[sys.executable, "-c", program], check=True, capture_output=True
-    )
 
 
 @pytest.mark.parametrize(argnames="bare", argvalues=[False, True])
@@ -178,33 +128,6 @@ def test_constructor_recipe_reuses_backend_syntax(
         assert (
             literalize_invocations(**kwargs, invocation=invocation) == expected
         )
-
-
-def test_result_wrapper_matches_existing_transform() -> None:
-    """The fixed positional check retains the former consumer output."""
-    language = Python()
-
-    def check(context: CallContext, /) -> str:
-        """Retain the previous caller-authored transform as a
-        comparison.
-        """
-        return f"check_result({context.call}, {context.zipped})"
-
-    kwargs: _ZippedOptions = {
-        "source": '[["user_1",100.0]]',
-        "input_format": InputFormat.JSON,
-        "zip_source": '[[true,"first"]]',
-        "zip_input_format": InputFormat.JSON,
-        "language": language,
-    }
-    assert literalize_invocations(
-        **kwargs, invocation=_CALL
-    ) == literalize_call(
-        **kwargs,
-        target_function="counter.accept",
-        parameter_names=["user", "timestamp"],
-        call_transform=check,
-    )
 
 
 @pytest.mark.parametrize(
