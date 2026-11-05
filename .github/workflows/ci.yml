@@ -193,15 +193,44 @@ jobs:
           # Keep string hashing consistent across benchmark processes.
           PYTHONHASHSEED: '0'
 
+  objectivec-format:
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.3
+      - name: Install tests and the pinned independent formatter
+        run: uv sync --no-dev --group=test --group=source-format --python=3.14
+      - name: Check freshly generated canonical programs
+        run: >-
+          uv run --no-sync python -m pytest
+          tests/integration/test_literalize_golden.py
+          tests/integration/test_calls.py
+          tests/integration/test_literalize_ref_golden.py
+          tests/integration/test_literalize_ref_default.py
+          tests/integration/test_native_invocations.py
+          tests/integration/test_constructor_targets.py
+          -m canonical_source --check-source-format
+      - name: Prove rendering needs no formatter
+        run: uv run --no-sync python -m pytest tests/errors/test_source_layout.py
+      - name: Prove the oracle rejects a syntax-preserving defect
+        run: uv run --no-sync python -m scripts.check_objective_c_format_negative_control
+
   completion-ci:
-    needs: [build, benchmark-wheel, benchmarks]
+    needs: [build, benchmark-wheel, benchmarks, objectivec-format]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: ${{ !cancelled() }}
     steps:
       - name: Check matrix job status
         run: |-
-          if ! ${{ needs.build.result == 'success' && needs['benchmark-wheel'].result == 'success' && needs.benchmarks.result == 'success' }}; then
+          if ! ${{ needs.build.result == 'success' && needs['benchmark-wheel'].result == 'success' && needs.benchmarks.result == 'success' && needs['objectivec-format'].result == 'success' }}; then
             echo "One or more matrix jobs failed"
             exit 1
           fi
