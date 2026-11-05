@@ -1,0 +1,9 @@
+with A_Stub; use A_Stub;
+procedure Main is
+    my_data : A_Val := AMap'[
+        AEntry ("keep", ABool (True)),
+        AEntry ("skip", ABool (False))
+    ];
+begin
+    null;
+end Main;

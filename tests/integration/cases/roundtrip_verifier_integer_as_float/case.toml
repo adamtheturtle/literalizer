@@ -1,0 +1,4 @@
+schema_version = 1
+suites = ["base"]
+
+# Native input for the former round-trip verifier acceptance control.
