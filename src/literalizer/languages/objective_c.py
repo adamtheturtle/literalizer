@@ -1326,7 +1326,7 @@ class ObjectiveC(metaclass=LanguageCls):
         """Shared dict-entry formatter used by dict and ordered-map."""
         return dict_entry_with_separator(
             separator=" : "
-            if self.dict_entry_style is self.DictEntryStyles.SPACED
+            if self.dict_entry_style.name == "SPACED"
             else ": ",
             format_value=self._entry_formatter,
         )
