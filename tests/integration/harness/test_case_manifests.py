@@ -1,7 +1,6 @@
 """Validation tests for case-local golden coverage manifests."""
 
 from pathlib import Path
-from typing import Literal
 
 import pytest
 from pydantic import BaseModel, TypeAdapter
@@ -57,56 +56,6 @@ _CASES = TypeAdapter(type=_Cases).validate_python(
 )
 
 
-@pytest.mark.parametrize(argnames="table", argvalues=["call", "ref"])
-@pytest.mark.parametrize(
-    argnames=("failure", "message"),
-    argvalues=[
-        ("missing_primary", "requires its primary API table"),
-        ("unnamed", "requires an example name"),
-        ("duplicate", "contains a duplicate example name"),
-        ("primary_named", "primary API tables cannot name an example"),
-        ("invalid_name", "String should match pattern"),
-    ],
-)
-def test_api_examples_reject_ambiguous_ownership(
-    tmp_path: Path,
-    table: Literal["call", "ref"],
-    failure: str,
-    message: str,
-) -> None:
-    """Examples must have one shared input owner and unique golden
-    names.
-    """
-    fields = (
-        'target_function = "target"\nparameter_names = ["value"]\n'
-        "per_element = false\n"
-        if table == "call"
-        else 'variable_name = "result"\n'
-    )
-    primary = f"[{table}]\n{fields}"
-    example = f'[[{table}_examples]]\nexample = "native"\n{fields}'
-    if failure == "missing_primary":
-        primary = ""
-    elif failure == "unnamed":
-        example = f"[[{table}_examples]]\n{fields}"
-    elif failure == "duplicate":
-        example += example
-    elif failure == "primary_named":
-        primary = f'[{table}]\nexample = "native"\n{fields}'
-    else:
-        example = example.replace('"native"', '"invalid-name"')
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest=(
-            f'schema_version = 1\nowner = "literalize-{table}"\n'
-            f"{primary}{example}"
-        ),
-        input_name="input.yaml",
-    )
-    with pytest.raises(expected_exception=CaseManifestError, match=message):
-        _ = load_case_manifest(case_dir=case_dir)
-
-
 def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
     """Create one temporary case directory and return its path."""
     case_dir = tmp_path / "example"
@@ -128,20 +77,6 @@ def test_invalid_manifest_is_actionable(
     )
     with pytest.raises(
         expected_exception=CaseManifestError, match=case.message
-    ):
-        _ = load_case_manifest(case_dir=case_dir)
-
-
-def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
-    """TOML syntax errors retain the manifest path and parser detail."""
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest="schema_version = [\n",
-        input_name="input.yaml",
-    )
-    with pytest.raises(
-        expected_exception=CaseManifestError,
-        match="invalid TOML",
     ):
         _ = load_case_manifest(case_dir=case_dir)
 
@@ -176,38 +111,6 @@ def test_manifest_inventory_is_keyed_in_directory_order(
     manifests = case_manifests_by_name(cases_dir=tmp_path)
     assert tuple(manifests) == ("first", "second")
     assert manifests["first"].case_dir == tmp_path / "first"
-
-
-def test_declared_input_must_exist(tmp_path: Path) -> None:
-    """An explicit input cannot silently fall back to another file."""
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest=(
-            'schema_version = 1\ninput = "input.json"\nsuites = ["base"]\n'
-        ),
-        input_name="input.yaml",
-    )
-    with pytest.raises(
-        expected_exception=CaseManifestError,
-        match="declared input does not exist",
-    ):
-        _ = load_case_manifest(case_dir=case_dir)
-
-
-def test_declared_input_name_must_be_supported(tmp_path: Path) -> None:
-    """An explicit input must use one of the supported file names."""
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest=(
-            'schema_version = 1\ninput = "data.yaml"\nsuites = ["base"]\n'
-        ),
-        input_name="input.yaml",
-    )
-    with pytest.raises(
-        expected_exception=CaseManifestError,
-        match="input must name one of",
-    ):
-        _ = load_case_manifest(case_dir=case_dir)
 
 
 def test_input_inference_requires_a_candidate(tmp_path: Path) -> None:
@@ -285,27 +188,6 @@ def test_anchor_warning_requires_yaml(tmp_path: Path) -> None:
     with pytest.raises(
         expected_exception=CaseManifestError,
         match="expected_reused_anchor_warning requires YAML input",
-    ):
-        _ = load_case_manifest(case_dir=case_dir)
-
-
-def test_input_roundtrip_rejects_non_literal_owner(tmp_path: Path) -> None:
-    """Other runners cannot silently ignore a declared roundtrip."""
-    case_dir = _write_case(
-        tmp_path=tmp_path,
-        manifest=(
-            "schema_version = 1\n"
-            'owner = "literalize-ref"\n'
-            "[ref]\n"
-            "[input_roundtrip]\n"
-            'language = "Jsonc"\n'
-            'input_format = "jsonc"\n'
-        ),
-        input_name="input.yaml",
-    )
-    with pytest.raises(
-        expected_exception=CaseManifestError,
-        match="input_roundtrip requires a literal rendering suite",
     ):
         _ = load_case_manifest(case_dir=case_dir)
 

@@ -706,6 +706,167 @@ axis = "imaginary"
 '''
 message = "unknown variant axis 'imaginary'"
 
+[[cases]]
+name = "call_example_missing_primary"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[[call_examples]]
+example = "native"
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+'''
+message = "requires its primary API table"
+[[cases]]
+name = "call_example_unnamed"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+[[call_examples]]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+'''
+message = "requires an example name"
+[[cases]]
+name = "call_example_duplicate"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+[[call_examples]]
+example = "native"
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+[[call_examples]]
+example = "native"
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+'''
+message = "contains a duplicate example name"
+[[cases]]
+name = "call_example_primary_named"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+example = "native"
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+[[call_examples]]
+example = "native"
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+'''
+message = "primary API tables cannot name an example"
+[[cases]]
+name = "call_example_invalid_name"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+[[call_examples]]
+example = "invalid-name"
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+'''
+message = "String should match pattern"
+[[cases]]
+name = "ref_example_missing_primary"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[[ref_examples]]
+example = "native"
+variable_name = "result"
+'''
+message = "requires its primary API table"
+[[cases]]
+name = "ref_example_unnamed"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+variable_name = "result"
+[[ref_examples]]
+variable_name = "result"
+'''
+message = "requires an example name"
+[[cases]]
+name = "ref_example_duplicate"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+variable_name = "result"
+[[ref_examples]]
+example = "native"
+variable_name = "result"
+[[ref_examples]]
+example = "native"
+variable_name = "result"
+'''
+message = "contains a duplicate example name"
+[[cases]]
+name = "ref_example_primary_named"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+example = "native"
+variable_name = "result"
+[[ref_examples]]
+example = "native"
+variable_name = "result"
+'''
+message = "primary API tables cannot name an example"
+[[cases]]
+name = "ref_example_invalid_name"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+variable_name = "result"
+[[ref_examples]]
+example = "invalid-name"
+variable_name = "result"
+'''
+message = "String should match pattern"
+[[cases]]
+name = "invalid_toml_syntax"
+manifest = '''schema_version = [
+'''
+message = "invalid TOML"
+[[cases]]
+name = "declared_input_missing"
+manifest = '''schema_version = 1
+input = "input.json"
+suites = ["base"]
+'''
+message = "declared input does not exist"
+[[cases]]
+name = "unsupported_declared_input_name"
+manifest = '''schema_version = 1
+input = "data.yaml"
+suites = ["base"]
+'''
+message = "input must name one of"
+[[cases]]
+name = "input_roundtrip_for_reference_owner"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+[input_roundtrip]
+language = "Jsonc"
+input_format = "jsonc"
+'''
+message = "input_roundtrip requires a literal rendering suite"
 [[references]]
 name = "time_binding_invalid_string"
 field = "bound_ref_times"
