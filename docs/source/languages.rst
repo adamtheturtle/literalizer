@@ -671,3 +671,12 @@ Select ``MULTILINE`` for one argument per line or ``AUTO`` to wrap against ``nat
 The native APIs accept ``initial_column`` for text owned by the caller before a fragment, in addition to ``pre_indent_level`` for its scope.
 New and existing variable binding prefixes are accounted for automatically.
 These choices are applied while traversing the typed invocation tree; no generated program is parsed or formatted afterward.
+
+Objective-C wrappers and helpers
+--------------------------------
+
+``indent_file_body=True`` indents generated statements inside ``main`` and its autorelease pool, using the configured ``indent`` for each scope.
+It also applies to wrappers containing a declaration and reassignment.
+``expand_call_stubs=True`` emits generated helper function bodies with one statement per line, again using ``indent``.
+Both options default to ``False`` and can be selected independently.
+These options affect their owning emitters directly; they do not parse or reformat generated code.

@@ -143,6 +143,8 @@ SPEC_FIELDS = frozenset(
         "json_type",
         "list_rendering_policy",
         "native_argument_layout",
+        "indent_file_body",
+        "expand_call_stubs",
         "record_map_value_typing",
         "union_format",
     }

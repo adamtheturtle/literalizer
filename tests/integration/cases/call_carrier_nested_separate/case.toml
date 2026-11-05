@@ -11,3 +11,9 @@ wrap_in_file = true
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
+
+[[call.variants]]
+axis = "expand_call_stubs"
+
+[[call.variants]]
+axis = "expanded_call_file"
