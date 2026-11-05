@@ -61,7 +61,7 @@ def test_native_invocation_golden(
     for step in steps:
         kwargs: dict[str, object] = {}
         for name, value in step.get("options", {}).items():
-            current = getattr(spec, name)
+            current = vars(spec)[name]
             kwargs[name] = (
                 type(current)[value]
                 if isinstance(current, enum.Enum)
@@ -161,7 +161,7 @@ def test_native_width_accounts_for_caller_and_binding(
 
 
 def test_original_objective_c_native_callback() -> None:
-    """Existing integrations can still invoke the original backend hook."""
+    """Existing consumers can still invoke the original backend hook."""
     invocation = literalizer.NativeInvocation(
         target=literalizer.FunctionTarget(
             name="notify",
