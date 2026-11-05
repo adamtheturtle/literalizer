@@ -5,3 +5,13 @@ suites = ["base"]
 
 [[variants]]
 axis = "python_toml_dotted_key_comments"
+
+# Keep the canonical dotted-key regression and extend its comment attachment coverage across styles, layouts, and map/record formats.
+[[variants]]
+axis = "comment"
+
+[[variants]]
+axis = "collection_layout"
+
+[[variants]]
+axis = "dict_format"

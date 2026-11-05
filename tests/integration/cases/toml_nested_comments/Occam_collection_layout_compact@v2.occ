@@ -1,0 +1,28 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        -- About the first dotted key.
+        -- About the second dotted key.
+        MOBILE LIT(lit.pair; MOBILE []BYTE "dotted"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "first"; MOBILE LIT(lit.int; 1)), MOBILE LIT(lit.pair; MOBILE []BYTE "second"; MOBILE LIT(lit.int; 2))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "plain"; MOBILE LIT(lit.int; 3)),  -- About the plain key.
+        -- Before the first entry.
+        -- Before the second entry.
+        MOBILE LIT(lit.pair; MOBILE []BYTE "entries"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "name"; MOBILE LIT(lit.str; MOBILE []BYTE "one"))]), MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "name"; MOBILE LIT(lit.str; MOBILE []BYTE "two"))])])),
+        -- Inside the table.
+        MOBILE LIT(lit.pair; MOBILE []BYTE "table"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "inner"; MOBILE LIT(lit.int; 4))]))
+    ]):
+    SEQ
+        SKIP
+:

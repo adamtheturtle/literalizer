@@ -31,7 +31,7 @@ import json
 import pytest
 from pytest_codspeed import BenchmarkFixture
 
-from literalizer import InputFormat, Language, literalize
+from literalizer import InputFormat, Language, literalize, literalize_call
 from literalizer._preamble import compute_preamble
 from literalizer.languages import (
     C,
@@ -195,6 +195,22 @@ def test_json_large_flat_records(benchmark: BenchmarkFixture) -> None:
         source=_JSON_LARGE_FLAT_RECORDS,
         input_format=InputFormat.JSON,
     )
+
+
+def _run_small_cpp_call() -> str:
+    """Render the small calls repeated throughout generated guides."""
+    return literalize_call(
+        source="[[2, 200]]",
+        input_format=InputFormat.JSON,
+        language=Cpp(),
+        target_function="update_score",
+        parameter_names=["player_id", "score"],
+    ).code
+
+
+def test_cpp_small_call(benchmark: BenchmarkFixture) -> None:
+    """Include checked resolver construction in the per-render cost."""
+    _ = benchmark(_run_small_cpp_call)
 
 
 # Every language registered on the shared JSON-native fast path, each

@@ -4,3 +4,13 @@ suites = ["base", "combined"]
 
 [[variants]]
 axis = "language_version"
+
+# Exercise nested TOML tables through native map formats, both layouts, and explicit type annotations.
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "collection_layout"
+
+[[variants]]
+axis = "type_hints"

@@ -8,3 +8,13 @@ axis = "string_format"
 
 [[variants]]
 axis = "type_hints"
+
+# Cover empty strings under JSON value types, custom constructor prefixes, and native declaration styles.
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "constructor_prefix"
+
+[[variants]]
+axis = "declaration_style"

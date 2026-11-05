@@ -4,3 +4,13 @@ suites = ["base"]
 # Retain full byte-range compiler coverage in fixed-width text carriers.
 [[variants]]
 axis = "bytes_format"
+
+# Exercise every octet in forward and reversed order with alternate sequence representations, annotations, and constructor prefixes.
+[[variants]]
+axis = "sequence"
+
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "constructor_prefix"

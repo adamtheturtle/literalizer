@@ -49,3 +49,6 @@ axis = "language_version"
 
 [[variants]]
 axis = "modifiers"
+
+[[variants]]
+axis = "dict_entry_spaced_multiline"

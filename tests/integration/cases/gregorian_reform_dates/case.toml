@@ -6,3 +6,13 @@ axis = "type_hints"
 
 [[variants]]
 axis = "date"
+
+# Cover mixed dates, naive datetimes, and large offsets through datetime formats, native map/record formats, and JSON carriers.
+[[variants]]
+axis = "datetime"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "json_type"

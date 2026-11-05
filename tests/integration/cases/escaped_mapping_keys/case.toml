@@ -13,3 +13,6 @@ axis = "json_type"
 [[variants]]
 axis = "type_hints"
 expected_errors = ["InvalidDictKeyError"]
+
+[[variants]]
+axis = "dict_entry_spaced_multiline"

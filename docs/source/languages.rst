@@ -652,3 +652,11 @@ Built-in languages
 .. automodule:: literalizer.languages
    :members:
    :undoc-members:
+
+Objective-C dictionary spacing
+------------------------------
+
+Objective-C keeps ``dict_entry_style=ObjectiveC.dict_entry_styles.DEFAULT`` by default (``@"key": value``).
+Select ``ObjectiveC.dict_entry_styles.SPACED`` to emit ``@"key" : value`` directly.
+The option applies to dictionaries and ordered maps, including nested values and delimiter-free fragments.
+Use the existing ``CollectionLayout`` and ``indent`` options independently to control line breaks and indentation.
