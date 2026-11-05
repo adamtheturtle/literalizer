@@ -1,0 +1,2 @@
+consume() { :; }
+consume 1

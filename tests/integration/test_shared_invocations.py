@@ -54,14 +54,6 @@ _CALL: dict[str, object] = {
 }
 
 
-class _CallOptions(TypedDict, closed=True):
-    """Shared typed arguments to both public APIs."""
-
-    source: str
-    input_format: InputFormat
-    language: Language
-
-
 class _ZippedOptions(TypedDict, closed=True):
     """A paired expected-value source."""
 
@@ -127,52 +119,6 @@ assert reasons == ["first", "second"]
     _ = subprocess.run(  # noqa: S603 - execute generated test programs
         args=[sys.executable, "-c", program], check=True, capture_output=True
     )
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_LANGUAGES,
-)
-def test_generic_recipe_matches_existing_call_api(
-    language_cls: LanguageCls,
-) -> None:
-    """Dispatch preserves existing backend output and rejection
-    behavior.
-    """
-    language = language_cls()
-    kwargs: _CallOptions = {
-        "source": "[[1]]",
-        "input_format": InputFormat.JSON,
-        "language": language,
-    }
-    try:
-        expected = literalize_call(
-            **kwargs, target_function="consume", parameter_names=["value"]
-        )
-    except LiteralizerError as exc:
-        with pytest.raises(expected_exception=type(exc)):
-            _ = literalize_invocations(
-                **kwargs,
-                invocation={
-                    "default": {
-                        "target-function": "consume",
-                        "parameter-names": ["value"],
-                    },
-                },
-            )
-    else:
-        assert (
-            literalize_invocations(
-                **kwargs,
-                invocation={
-                    "default": {
-                        "target-function": "consume",
-                        "parameter-names": ["value"],
-                    },
-                },
-            )
-            == expected
-        )
 
 
 @pytest.mark.parametrize(argnames="bare", argvalues=[False, True])
