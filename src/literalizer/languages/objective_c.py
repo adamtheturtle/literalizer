@@ -1121,7 +1121,7 @@ class ObjectiveC(metaclass=LanguageCls):
         )
         if self.indent_file_body:
             body = "\n".join(
-                self.indent * 2 + line if line else line
+                self.indent * 2 + line if line != "" else line
                 for line in content.split(sep="\n")
             )
             use = (
