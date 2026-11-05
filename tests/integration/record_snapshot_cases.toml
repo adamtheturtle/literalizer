@@ -1,0 +1,18 @@
+[[cases]]
+name = "nested_record_names"
+case_name = "record_named_nested_record"
+seed_golden_name = "Rust_record_shape_names_NamedType"
+golden_name = "Rust_caller_owned_record_names"
+parent_fields = ["collection", "featured_entry"]
+parent_name = "Parent"
+child_name = "Replacement"
+consumer_template = '''{preamble}
+fn main() {{
+{before}
+    let _: &Record0 = &my_data;
+    let _: &NamedType = &my_data.featured_entry;
+{after}
+    let _: &Record0 = &my_data;
+    let _: &NamedType = &my_data.featured_entry;
+}}
+'''
