@@ -4,3 +4,13 @@ suites = ["base", "combined"]
 
 [[variants]]
 axis = "language_version"
+
+# Exercise exact-millisecond and submillisecond local times under annotations, map/record formats, and JSON value types.
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "json_type"
