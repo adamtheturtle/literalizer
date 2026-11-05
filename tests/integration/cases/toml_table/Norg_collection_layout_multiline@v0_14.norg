@@ -1,0 +1,8 @@
+* my_data
+@code javascript
+{
+    "section": {
+        "value": 1
+    }
+}
+@end
