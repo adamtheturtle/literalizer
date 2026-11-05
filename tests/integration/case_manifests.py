@@ -66,6 +66,7 @@ type OwnerName = Literal[
     "variant",
     "constructor-binding",
     "native-invocation",
+    "shared-invocation",
 ]
 
 # Spelled as an assignment rather than a ``type`` statement so the
