@@ -1,0 +1,14 @@
+#include <map>
+#include <string>
+#include <vector>
+int main() {
+auto my_data = std::map<std::string, std::vector<std::string>>{
+    {"times", std::vector<std::string>{
+        "09:30:00",
+        "17:45:00",
+        "23:59:59",
+    }},
+};
+    (void)my_data;
+    return 0;
+}

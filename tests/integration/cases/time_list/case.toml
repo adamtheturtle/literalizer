@@ -14,3 +14,13 @@ axis = "sequence"
 
 [[variants]]
 axis = "type_hints"
+
+# Retain ordered local-time lists within their TOML table under JSON types, map/record representations, and both layouts.
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "collection_layout"
