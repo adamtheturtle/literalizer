@@ -16,6 +16,8 @@ Core functions
 
 .. autofunction:: literalize_invocations
 
+.. autofunction:: describe_callable
+
 Native invocations
 ------------------
 
@@ -150,3 +152,39 @@ Exceptions
 
 .. automodule:: literalizer.exceptions
    :members:
+
+Callable description recipes
+----------------------------
+
+``describe_callable`` renders a short reference for prose, not a function declaration.
+It does not generate argument values, receivers, or stubs.
+For example:
+
+.. code-block:: python
+
+    """Describe one callable in two languages."""
+
+    from literalizer import describe_callable
+    from literalizer.languages import ObjectiveC, Python
+
+    description = {
+        "default": {
+            "name": "accept",
+            "parameter-names": ["value"],
+        },
+        "languages": {"objective-c": {"selector": "accept:"}},
+    }
+    assert (
+        describe_callable(language=Python(), description=description)
+        == "accept(value)"
+    )
+    assert (
+        describe_callable(language=ObjectiveC(), description=description)
+        == "accept:"
+    )
+
+Generic language overrides amend the default.
+Use explicit display spellings for ``name``, ``parameter-names``, and optional ``return-annotation``.
+Optional boolean ``space-before-paren`` and ``space-after-paren`` settings preserve the presentation of existing prose.
+A ``selector`` requires a native-message backend and exactly one label per parameter.
+Unknown fields and language keys, malformed names, and multiline descriptions are rejected.
