@@ -1,0 +1,13 @@
+-module(fixture_float_extreme_magnitudes_erlang_sequence_tuple).
+-export([x/0]).
+x() ->
+    My_data = {
+        5.0e-324,
+        2.2250738585072014e-308,
+        1.0e-307,
+        1.0e+21,
+        -1.5e+300,
+        1.7976931348623157e+308,
+        -1.7976931348623157e+308
+    },
+    My_data.
