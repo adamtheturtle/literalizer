@@ -2599,15 +2599,15 @@ def _build_cpp_record_preamble(
             # scalar in the carrier type, so the alias must name the
             # carrier even when the widened scalars share one concrete
             # C++ type.
+            value_type = _compute_element_type_for_items(
+                items=list(iter_wrapped_values(data=data, wrap_ids=wrap_ids)),
+                type_ctx=type_ctx,
+                in_mapping_value=True,
+            )
             if type_ctx.variant_type_name != "std::variant":
-                value_type = type_ctx.variant_type_name
-            else:
-                value_type = _compute_element_type_for_items(
-                    items=list(
-                        iter_wrapped_values(data=data, wrap_ids=wrap_ids),
-                    ),
-                    type_ctx=type_ctx,
-                    in_mapping_value=True,
+                value_type = _CppTypeDependencies(
+                    type_ctx.variant_type_name,
+                    headers=_cpp_type_headers(value_type),
                 )
             value_alias = (
                 _CppTypeDependencies(

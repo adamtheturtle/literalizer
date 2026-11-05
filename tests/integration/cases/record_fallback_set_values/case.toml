@@ -7,3 +7,10 @@ axis = "record_nested_map_fallback"
 # Explicit root annotations retain this input's record schema (#5236).
 [[variants]]
 axis = "record_type_hints_always"
+
+# Cover fallback mappings and set-valued record fields with eager annotations and alternate native sequences.
+[[variants]]
+axis = "record_eager_field_annotations"
+
+[[variants]]
+axis = "record_sequence_format"
