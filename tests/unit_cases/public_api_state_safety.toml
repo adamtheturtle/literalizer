@@ -17,19 +17,3 @@ golden_name = "Rust_record_shape_names_NamedType"
 parent_fields = ["collection", "featured_entry"]
 parent_name = "Parent"
 child_name = "Replacement"
-
-[[unused_references]]
-name = "set_with_unused_binding"
-source = '''!!set
-1:
-2:
-'''
-input_format = "yaml"
-language = "Python"
-ref_key = "$ref"
-
-[unused_references.ref_values]
-unused = [3]
-
-[unused_references.expected]
-unused = [3]

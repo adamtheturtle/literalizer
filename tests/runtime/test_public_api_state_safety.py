@@ -11,9 +11,8 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from pydantic import BaseModel, TypeAdapter
 
-from literalizer import literalize
 from literalizer.languages import Rust
-from tests.integration.case_manifests import CallInputFormat, ManifestLanguage
+from tests.integration.case_manifests import ManifestLanguage
 from tests.integration.golden_scenarios import golden_groups
 from tests.integration.state_goldens import (
     StateGolden,
@@ -45,26 +44,11 @@ class _SnapshotCase(BaseModel, extra="forbid", frozen=True):
     child_name: str
 
 
-class _UnusedReferenceCase(
-    BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
-):
-    """A rendering input and its independent caller-state expectation."""
-
-    name: str
-    source: str
-    input_format: CallInputFormat
-    language: ManifestLanguage
-    ref_key: str
-    ref_values: dict[str, list[int]]
-    expected: dict[str, list[int]]
-
-
 class _Cases(BaseModel, extra="forbid", frozen=True):
     """Manifest-owned public state-safety scenarios."""
 
     threads: tuple[_ThreadCase, ...]
     snapshots: tuple[_SnapshotCase, ...]
-    unused_references: tuple[_UnusedReferenceCase, ...]
 
 
 _CASES = TypeAdapter(type=_Cases).validate_python(
@@ -149,22 +133,3 @@ def test_record_shape_names_are_snapshotted(scenario: _SnapshotCase) -> None:
         caller_names[scenario.parent_fields] = scenario.parent_name
         caller_names[next(iter(caller_names))] = scenario.child_name
         assert render_state_golden(case=case) == case.expected
-
-
-@pytest.mark.parametrize(
-    argnames="scenario",
-    argvalues=_CASES.unused_references,
-    ids=lambda scenario: scenario.name,
-)
-def test_unrelated_reference_values_are_not_mutated(
-    scenario: _UnusedReferenceCase,
-) -> None:
-    """Rendering a set leaves unused caller-owned bindings unchanged."""
-    _ = literalize(
-        source=scenario.source,
-        input_format=scenario.input_format,
-        language=scenario.language(),
-        ref_key=scenario.ref_key,
-        ref_values=scenario.ref_values,
-    )
-    assert scenario.ref_values == scenario.expected

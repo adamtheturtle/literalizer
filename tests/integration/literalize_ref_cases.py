@@ -8,6 +8,7 @@ set to the language's default identifier case.  The runner
 ``test_literalize_ref_golden_file``.
 """
 
+import copy
 import dataclasses
 import enum
 import functools
@@ -863,6 +864,7 @@ def run_literalize_ref_golden_case(
                 name: json.loads(s=source)
                 for name, source in (config.explicit_ref_value_sources.items())
             }
+        original_ref_values = copy.deepcopy(x=effective_ref_values)
         result = literalizer.literalize(
             source=input_source,
             input_format=input_info.input_format,
@@ -881,6 +883,9 @@ def run_literalize_ref_golden_case(
             collection_layout=literalizer.CollectionLayout(
                 value=config.collection_layout
             ),
+        )
+        assert effective_ref_values == original_ref_values, (  # noqa: S101
+            "literalize mutated caller-owned ref_values"
         )
         if (
             len(config.external_declarations) > 0
