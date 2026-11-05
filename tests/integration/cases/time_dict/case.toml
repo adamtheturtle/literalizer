@@ -7,3 +7,13 @@ axis = "declaration_style"
 
 [[variants]]
 axis = "language_version"
+
+# Cover morning, afternoon, and end-of-day local times in annotated native maps/records and JSON value types.
+[[variants]]
+axis = "type_hints"
+
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "json_type"
