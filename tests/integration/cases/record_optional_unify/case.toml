@@ -6,3 +6,10 @@ axis = "record_unify_optional_fields"
 
 [[variants]]
 axis = "language_version"
+
+# Retain optional input shapes and declared null substitutions under eager fields and alternate native sequences.
+[[variants]]
+axis = "record_eager_field_annotations"
+
+[[variants]]
+axis = "record_sequence_format"
