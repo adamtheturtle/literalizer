@@ -353,7 +353,9 @@ def test_expected_values_are_required_and_paired(
 
 
 def test_empty_checked_calls_still_require_expected_source() -> None:
-    """An empty input cannot hide an incomplete expected-value contract."""
+    """An empty input cannot hide an incomplete expected-value
+    contract.
+    """
     with pytest.raises(
         expected_exception=NativeCallError, match="requires zipped"
     ):
@@ -366,7 +368,9 @@ def test_empty_checked_calls_still_require_expected_source() -> None:
 
 
 def test_checker_rejects_non_expression_call_backend() -> None:
-    """A positional checker cannot be guessed for a prefix-call backend."""
+    """A positional checker cannot be guessed for a prefix-call
+    backend.
+    """
     with pytest.raises(
         expected_exception=NativeCallError, match="positional expression"
     ):
