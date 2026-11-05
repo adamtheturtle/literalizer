@@ -42,13 +42,15 @@ def describe_callable(
 ) -> str:
     """Describe a callable without sample data or an implementation.
 
-    Accept a description or a shared ``default``/``languages`` recipe.
+    Accept a description or a shared recipe with ``default`` and
+    ``languages`` mappings.
     ``name`` and ``parameter-names`` are required. Optional fields are
     ``selector``, ``return-annotation``, ``space-before-paren``, and
     ``space-after-paren``. Names and annotations are caller-owned display
     spellings; this is a short reference, not a function declaration.
     A selector requires a native-message backend and must have exactly
-    one label per parameter. Return annotations are appended with `` -> ``.
+    one label per parameter. An arrow separates a return annotation from
+    the reference.
     """
     selected = (
         select_language_recipe(description, language)
