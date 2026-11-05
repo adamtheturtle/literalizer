@@ -1,0 +1,29 @@
+[[cases]]
+name = "no_workers"
+expected = 0.0
+
+[cases.arrivals]
+
+[[cases]]
+name = "single_worker"
+expected = 0.0
+
+[cases.arrivals]
+gw0 = 10.0
+
+[[cases]]
+name = "simultaneous_release"
+expected = 0.0
+
+[cases.arrivals]
+gw0 = 10.0
+gw1 = 10.0
+
+[[cases]]
+name = "staggered_release"
+expected = 25.0
+
+[cases.arrivals]
+gw0 = 10.0
+gw1 = 25.0
+gw2 = 30.0
