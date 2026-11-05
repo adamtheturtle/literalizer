@@ -908,9 +908,10 @@ class ObjectiveC(metaclass=LanguageCls):
         )
 
     class DictEntryStyles(enum.Enum):
-        """Dict entry style options."""
+        """Spacing around an Objective-C dictionary entry colon."""
 
         DEFAULT = enum.auto()
+        SPACED = enum.auto()
 
     class DictFormats(enum.Enum):
         """Dict/map format options."""
@@ -1324,7 +1325,9 @@ class ObjectiveC(metaclass=LanguageCls):
     def _dict_entry(self) -> Callable[[str, Value, str], str]:
         """Shared dict-entry formatter used by dict and ordered-map."""
         return dict_entry_with_separator(
-            separator=": ",
+            separator=" : "
+            if self.dict_entry_style is self.DictEntryStyles.SPACED
+            else ": ",
             format_value=self._entry_formatter,
         )
 
