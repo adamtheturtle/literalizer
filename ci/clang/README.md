@@ -39,8 +39,9 @@ Compile fixtures without a precompiled standard-library header.
 Loading that header makes Clang's `TemplateArgumentHasher` recursively expand the same nested types while looking up specializations in the serialized AST.
 Direct header parsing avoids this separate exponential path and retains the existing fixture deadlines.
 
-Reduced reports, five independently applicable patches, regression tests and measured commands are in the [upstream review bundle](../llvm-upstream/README.md).
-The original exception cache is under review in [LLVM PR 235716](https://github.com/llvm/llvm-project/pull/235716); the bundle also contains the recursive-component follow-up.
+Reduced reports, local patches, regression tests, measured commands and upstream status are in the [upstream review bundle](../llvm-upstream/README.md).
+As of 2026-11-05, the WebKit and ADL fixes are merged into LLVM main but absent from LLVM 23.1.5.
+The SFINAE, exception-analysis and shared-initializer fixes remain under review.
 
 Remove a patch after an upstream release contains its fix and the complete compiler-backed C and C++ corpora passes within the existing fixture budgets.
 
