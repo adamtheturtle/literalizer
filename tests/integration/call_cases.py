@@ -1163,7 +1163,7 @@ def _literalize_call_case(
         and not config.call_transform_reports_zip_usage
     ):
         call_transform = functools.partial(call_transform)
-    return literalizer.literalize_call(
+    result = literalizer.literalize_call(
         source=source,
         input_format=input_info.input_format,
         input_root_key=config.input_root_key,
@@ -1186,6 +1186,13 @@ def _literalize_call_case(
         ),
         variable_form=variable_form,
     )
+    if config.expected_source_data is not None:
+        expected = parse_input(
+            source=config.expected_source_data,
+            input_format=literalizer.InputFormat.JSON,
+        ).data
+        assert result.source_data == expected  # noqa: S101
+    return result
 
 
 @beartype

@@ -1,0 +1,16 @@
+schema_version = 1
+owner = "literalize-call"
+
+[call]
+gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
+ref_declarations = {item = "[1, 2]"}
+explicit_ref_value_sources = {item = "null"}
+consumable_refs = ["item"]
+expected_source_data = "null"
+
+# Preserve the caller's null source hint while compiling a call that consumes
+# the actual sequence binding (original C++ source-metadata regression).
