@@ -80,6 +80,11 @@ The ``literalize`` runner and orphan check share the rendering definitions in :f
 Each ``GoldenRendering`` supplies its effective ``specs`` and versioned ``golden_path``.
 Adding a scenario there also adds its fixtures to the inventory; no separate orphan-check registration is needed.
 
+Default and variant ``literalize_call`` cases share the ``call_golden_cases`` collection in :file:`tests/integration/call_variant_cases.py`.
+Each case supplies ``CallRendering`` objects with its effective spec, golden path and expected exception.
+The call runner checks these renderings, and the orphan check accepts only paths whose rendering expects success.
+Expected rejections check the exception and apply the same regeneration-only cleanup policy in both call families.
+
 An ordinary case participates in the base and combined suites.
 Its ``input.yaml`` is inferred because it is the directory's sole input:
 

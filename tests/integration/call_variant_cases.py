@@ -13,16 +13,17 @@ import dataclasses
 import functools
 from pathlib import Path
 
-import pytest
 from beartype import beartype
-from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer._enums import enum_payload
 
-from .call_cases import expected_call_shape_exception, run_call_golden_case
+from .call_cases import (
+    CallCase,
+    CallRendering,
+    discover_call_cases,
+    expected_call_shape_exception,
+)
 from .case_manifests import CallCaseSpec, call_case_specs
-from .golden_checks import cleanup_stale_golden
-from .language_specs import make_golden_path
 from .variant_cases import Variant, variants_for_axis
 from .variant_context import config_with_variant_layout
 
@@ -36,6 +37,28 @@ class CallVariantCase:
     config: CallCaseSpec
     variant: Variant
 
+    @property
+    def test_id(self) -> str:
+        """Return the manifest and variant identity of this case."""
+        return f"{self.config.coverage_id}/{self.variant.name}"
+
+    @property
+    def renderings(self) -> tuple[CallRendering, ...]:
+        """Exercise the plan's effective version and rejection policy once."""
+        return (
+            CallRendering(
+                config=self.config,
+                lang_cls=self.variant.lang_cls,
+                spec=self.variant.spec,
+                golden_name=f"{self.variant.name}_call",
+                expected_exception=expected_call_shape_exception(
+                    lang_cls=self.variant.lang_cls,
+                    config=self.config,
+                    spec=self.variant.spec,
+                ),
+            ),
+        )
+
 
 @functools.cache
 @beartype
@@ -43,7 +66,7 @@ def build_call_variant_cases(*, cases_dir: Path) -> list[CallVariantCase]:
     """Return call-test cases for the variant axes cases declare.
 
     A case names an axis when the default spec cannot represent its
-    input -- which makes :func:`test_call_golden_file` skip -- or when
+    input -- which makes the default rendering skip -- or when
     the call is only interesting under a non-default option, such as a
     statement terminator or a JSON-aware result binding.
     """
@@ -70,53 +93,13 @@ def build_call_variant_cases(*, cases_dir: Path) -> list[CallVariantCase]:
 
 
 @beartype
-def run_call_variant_golden_case(
-    *,
-    call_variant_case: CallVariantCase,
-    cases_dir: Path,
-    file_regression: FileRegressionFixture,
-    pytest_config: pytest.Config,
-) -> None:
-    """Run a variant with an explicit stale-file policy."""
-    lang_cls = call_variant_case.variant.lang_cls
-    # The plan already expands supported versions and resolves explicit
-    # pins and syntax floors. Render each effective spec once.
-    version_format = call_variant_case.variant.spec.language_version
-    expected_exception = expected_call_shape_exception(
-        lang_cls=lang_cls,
-        config=call_variant_case.config,
-        spec=call_variant_case.variant.spec,
-    )
-    if expected_exception is not None:
-        with pytest.raises(expected_exception=expected_exception):
-            run_call_golden_case(
-                config=call_variant_case.config,
-                spec=call_variant_case.variant.spec,
-                lang_cls=lang_cls,
-                golden_name=f"{call_variant_case.variant.name}_call",
-                cases_dir=cases_dir,
-                file_regression=file_regression,
-                version=version_format,
-            )
-        cleanup_stale_golden(
-            golden_path=make_golden_path(
-                parent=cases_dir / call_variant_case.config.case_dir_name,
-                name=call_variant_case.config.golden_name(
-                    name=f"{call_variant_case.variant.name}_call"
-                ),
-                extension=lang_cls.extension,
-                lang_cls=lang_cls,
-                version=version_format,
-            ),
-            config=pytest_config,
-        )
-        return
-    run_call_golden_case(
-        config=call_variant_case.config,
-        spec=call_variant_case.variant.spec,
-        lang_cls=lang_cls,
-        golden_name=f"{call_variant_case.variant.name}_call",
-        cases_dir=cases_dir,
-        file_regression=file_regression,
-        version=version_format,
+def call_golden_cases(
+    *, cases_dir: Path
+) -> tuple[CallCase | CallVariantCase, ...]:
+    """Return the cases shared by the call runner and fixture
+    inventory.
+    """
+    return (
+        *discover_call_cases(),
+        *build_call_variant_cases(cases_dir=cases_dir),
     )

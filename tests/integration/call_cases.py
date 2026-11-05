@@ -2,13 +2,11 @@
 
 Each ``cases/call_*`` directory declares in its own ``case.toml`` how it
 is driven through :func:`literalizer.literalize_call`; this module turns
-those declarations into per-language cases.  The runner
-(``run_call_golden_case``) is shared by ``test_call_golden_file`` and
-``test_call_variant_golden_file``.
+those declarations into per-language renderings. Default and variant
+cases share one runner and the same versioned fixture paths.
 """
 
 import dataclasses
-import enum
 import functools
 import re
 from collections.abc import Callable, Mapping, Sequence
@@ -77,6 +75,7 @@ from .golden_checks import (
     SkipPolicy,
     SkipReason,
     check_golden,
+    cleanup_stale_golden,
     skip_golden,
 )
 from .language_metadata import language_metadata
@@ -197,6 +196,29 @@ _PREAMBLE_STUB_SKIPS: SkipPolicy = SkipPolicy(
 )
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class CallRendering:
+    """One call configuration, effective spec and expected outcome."""
+
+    config: CallCaseSpec
+    lang_cls: literalizer.LanguageCls
+    spec: literalizer.Language
+    golden_name: str
+    expected_exception: type[Exception] | None
+
+    def golden_path(self, *, cases_dir: Path) -> Path:
+        """Return the fixture used for comparison and stale-file
+        cleanup.
+        """
+        return make_golden_path(
+            parent=cases_dir / self.config.case_dir_name,
+            name=self.config.golden_name(name=self.golden_name),
+            extension=self.lang_cls.extension,
+            lang_cls=self.lang_cls,
+            version=self.spec.language_version,
+        )
+
+
 @dataclasses.dataclass(frozen=True)
 class CallCase:
     """A parameterized call-style golden-file test case."""
@@ -204,6 +226,29 @@ class CallCase:
     config: CallCaseSpec
     lang_cls: literalizer.LanguageCls
     expected_exception: type[Exception] | None
+
+    @property
+    def test_id(self) -> str:
+        """Return the manifest and language identity of this case."""
+        return f"{self.config.coverage_id}/{self.lang_cls.__name__}"
+
+    @property
+    def renderings(self) -> tuple[CallRendering, ...]:
+        """Exercise the default call once per supported language
+        version.
+        """
+        return tuple(
+            CallRendering(
+                config=self.config,
+                lang_cls=self.lang_cls,
+                spec=make_spec(
+                    lang_cls=self.lang_cls, language_version=version
+                ),
+                golden_name=f"{self.lang_cls.__name__}_call",
+                expected_exception=self.expected_exception,
+            )
+            for version in self.lang_cls.VersionFormats
+        )
 
 
 _SUBSTITUTION_CALL_STYLES = (
@@ -1650,32 +1695,19 @@ def _wrap_unwrapped_call(
 
 
 @beartype
-def run_call_golden_case(
+def _render_call_golden_case(
     *,
-    config: CallCaseSpec,
-    spec: literalizer.Language,
-    lang_cls: literalizer.LanguageCls,
-    golden_name: str,
+    rendering: CallRendering,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
-    version: enum.Enum,
 ) -> None:
-    """Assemble a literalize_call golden-file case against *golden_name*.
-
-    Shared by ``test_call_golden_file`` (default-spec per language)
-    and ``test_call_variant_golden_file`` (non-default language
-    variants, e.g. Rust's ``TAGGED_ENUM`` on an input the default
-    ``ERROR`` strategy rejects).
-    """
+    """Assemble one call rendering and compare its native golden file."""
+    config = rendering.config
+    spec = rendering.spec
+    lang_cls = rendering.lang_cls
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
     source = input_info.path.read_text(encoding="utf-8")
-    golden_path = make_golden_path(
-        parent=input_info.path.parent,
-        name=config.golden_name(name=golden_name),
-        extension=lang_cls.extension,
-        lang_cls=lang_cls,
-        version=version,
-    )
+    golden_path = rendering.golden_path(cases_dir=cases_dir)
     _skip_if_wrapper_unsupported(
         config=config,
         lang_cls=lang_cls,
@@ -1852,4 +1884,32 @@ def run_call_golden_case(
         extension=lang_cls.extension,
         golden_path=golden_path,
         file_regression=file_regression,
+    )
+
+
+@beartype
+def run_call_golden_case(
+    *,
+    rendering: CallRendering,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+    pytest_config: pytest.Config,
+) -> None:
+    """Check a call rendering, including its declared rejection policy."""
+    if rendering.expected_exception is None:
+        _render_call_golden_case(
+            rendering=rendering,
+            cases_dir=cases_dir,
+            file_regression=file_regression,
+        )
+        return
+    with pytest.raises(expected_exception=rendering.expected_exception):
+        _render_call_golden_case(
+            rendering=rendering,
+            cases_dir=cases_dir,
+            file_regression=file_regression,
+        )
+    cleanup_stale_golden(
+        golden_path=rendering.golden_path(cases_dir=cases_dir),
+        config=pytest_config,
     )

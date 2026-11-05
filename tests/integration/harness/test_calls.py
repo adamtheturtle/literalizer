@@ -11,23 +11,25 @@ from literalizer import InputFormat, LanguageCls, literalize_call
 from literalizer.exceptions import InvalidCallTargetError
 from literalizer.languages import Bash, Cpp, Elm, Hcl, PureScript, Sml, V
 from tests.integration.call_cases import (
+    CallRendering,
     default_call_case_specs,
+    discover_call_cases,
     run_call_golden_case,
     run_wrap_in_file_case,
 )
 from tests.integration.call_variant_cases import (
     build_call_variant_cases,
-    run_call_variant_golden_case,
 )
 from tests.integration.case_inputs import CaseInput
 from tests.integration.case_manifests import CaseManifestError
-from tests.integration.language_specs import make_golden_path, make_spec
+from tests.integration.language_specs import make_spec
 
 
 def test_manual_scaffold_rejects_declaration_only_target_error(
     *,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    pytestconfig: pytest.Config,
 ) -> None:
     """A valid V fragment must not become an invalid method scaffold."""
     config = next(
@@ -47,13 +49,16 @@ def test_manual_scaffold_rejects_declaration_only_target_error(
     assert fragment.code == "obj.ZKV(1);"
     with pytest.raises(expected_exception=InvalidCallTargetError):
         run_call_golden_case(
-            config=config,
-            spec=spec,
-            lang_cls=V,
-            golden_name="V_call",
+            rendering=CallRendering(
+                config=config,
+                spec=spec,
+                lang_cls=V,
+                golden_name="V_call",
+                expected_exception=None,
+            ),
             cases_dir=cases_dir,
             file_regression=file_regression,
-            version=spec.language_version,
+            pytest_config=pytestconfig,
         )
 
 
@@ -63,6 +68,7 @@ def test_seeded_scaffold_rejects_immutable_binding(
     lang_cls: LanguageCls,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
+    pytestconfig: pytest.Config,
 ) -> None:
     """A synthetic seed cannot precede a second immutable binding."""
     config = next(
@@ -76,13 +82,16 @@ def test_seeded_scaffold_rejects_immutable_binding(
         match="cannot redefine the seeded binding",
     ):
         run_call_golden_case(
-            config=config,
-            spec=spec,
-            lang_cls=lang_cls,
-            golden_name=f"{lang_cls.__name__}_call",
+            rendering=CallRendering(
+                config=config,
+                spec=spec,
+                lang_cls=lang_cls,
+                golden_name=f"{lang_cls.__name__}_call",
+                expected_exception=None,
+            ),
             cases_dir=cases_dir,
             file_regression=file_regression,
-            version=spec.language_version,
+            pytest_config=pytestconfig,
         )
 
 
@@ -149,38 +158,42 @@ def _copy_call_inputs(*, source_dir: Path, target_dir: Path) -> None:
 
 
 @pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
-def test_variant_rejection_handles_stale_fixture(
+@pytest.mark.parametrize(argnames="variant", argvalues=[False, True])
+def test_call_rejection_handles_stale_fixture(
     *,
+    variant: bool,
     tmp_path: Path,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
     regenerate: bool,
     regeneration_config: pytest.Config,
 ) -> None:
-    """Expected variant refusals use the regeneration-only cleanup
-    policy.
-    """
-    case = next(
-        case
-        for case in build_call_variant_cases(cases_dir=cases_dir)
-        if case.config.case_dir_name == "call_generated_helper_member_zval"
-        and case.variant.name == "V_heterogeneous_strategy_record"
-    )
-    case_dir = tmp_path / case.config.case_dir_name
+    """Default and variant refusals share regeneration-only cleanup."""
+    if variant:
+        rendering = next(
+            case.renderings[0]
+            for case in build_call_variant_cases(cases_dir=cases_dir)
+            if case.config.case_dir_name == "call_generated_helper_member_zval"
+            and case.variant.name == "V_heterogeneous_strategy_record"
+        )
+    else:
+        rendering = next(
+            case.renderings[0]
+            for case in discover_call_cases()
+            if case.config.case_dir_name == "call_generated_helper_member_zkv"
+            and case.lang_cls is V
+        )
+    assert rendering.expected_exception is not None
+    case_dir = tmp_path / rendering.config.case_dir_name
     _copy_call_inputs(
-        source_dir=cases_dir / case.config.case_dir_name, target_dir=case_dir
+        source_dir=cases_dir / rendering.config.case_dir_name,
+        target_dir=case_dir,
     )
-    golden_path = make_golden_path(
-        parent=case_dir,
-        name=f"{case.variant.name}_call",
-        extension=V.extension,
-        lang_cls=V,
-        version=case.variant.spec.language_version,
-    )
+    golden_path = rendering.golden_path(cases_dir=tmp_path)
     _ = golden_path.write_text(data="stale\n")
     if regenerate:
-        run_call_variant_golden_case(
-            call_variant_case=case,
+        run_call_golden_case(
+            rendering=rendering,
             cases_dir=tmp_path,
             file_regression=file_regression,
             pytest_config=regeneration_config,
@@ -190,8 +203,8 @@ def test_variant_rejection_handles_stale_fixture(
         with pytest.raises(
             expected_exception=pytest.fail.Exception, match="Stale golden file"
         ):
-            run_call_variant_golden_case(
-                call_variant_case=case,
+            run_call_golden_case(
+                rendering=rendering,
                 cases_dir=tmp_path,
                 file_regression=file_regression,
                 pytest_config=regeneration_config,
@@ -223,8 +236,8 @@ def test_variant_rejection_preserves_unexpected_errors(
         expected_exception=CaseManifestError,
         match="exactly one inferable input",
     ):
-        run_call_variant_golden_case(
-            call_variant_case=case,
+        run_call_golden_case(
+            rendering=case.renderings[0],
             cases_dir=tmp_path,
             file_regression=file_regression,
             pytest_config=pytestconfig,
