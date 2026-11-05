@@ -1,0 +1,16 @@
+module Check where
+
+
+import Prelude
+make_widget :: Val -> Unit
+make_widget _ = unit
+data Val
+    = PList (Array Val)
+
+
+main :: Unit
+main =
+    let
+        _ = make_widget (PList [])
+    in
+    unit
