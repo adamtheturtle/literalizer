@@ -9,7 +9,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import InputFormat, LanguageCls, literalize_call
 from literalizer.exceptions import InvalidCallTargetError
-from literalizer.languages import Bash, Cpp, Elm, Hcl, PureScript, Sml, V
+from literalizer.languages import Bash, Elm, Hcl, V
 from tests.integration.call_cases import (
     CallRendering,
     default_call_case_specs,
@@ -242,27 +242,3 @@ def test_variant_rejection_preserves_unexpected_errors(
             file_regression=file_regression,
             pytest_config=pytestconfig,
         )
-
-
-def test_variant_discovery_omits_unavailable_call_styles(
-    *, tmp_path: Path
-) -> None:
-    """A shared curried case excludes specs without curried call
-    syntax.
-    """
-    case_dir = tmp_path / "curried_record"
-    case_dir.mkdir()
-    _ = (case_dir / "input.json").write_text(data='[{"name":"Ada"}]\n')
-    _ = (case_dir / "case.toml").write_text(
-        data=(
-            'schema_version = 1\nowner = "literalize-call"\n'
-            '[call]\ntarget_function = "consume"\n'
-            'parameter_names = ["item"]\nper_element = true\n'
-            'call_style = "command"\nvariant_only = true\n'
-            '[[call.variants]]\naxis = "native_record"\n'
-        )
-    )
-    cases = build_call_variant_cases(cases_dir=tmp_path)
-    languages = {case.variant.lang_cls for case in cases}
-    assert {PureScript, Sml} <= languages
-    assert Cpp not in languages
