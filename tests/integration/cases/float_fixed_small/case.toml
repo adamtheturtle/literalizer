@@ -13,3 +13,10 @@ axis = "sequence"
 
 [[variants]]
 axis = "numeric_separator"
+
+# Compile small exponents in native containers and custom constructors.
+[[variants]]
+axis = "dict_format"
+
+[[variants]]
+axis = "constructor_prefix"

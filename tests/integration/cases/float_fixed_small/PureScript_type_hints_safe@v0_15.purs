@@ -9,6 +9,6 @@ data Val
 
 my_data :: Val
 my_data = PList [
-    PFloat 1.0e-09,
-    PFloat (-1.0e-09)
+    PFloat 1.0e-9,
+    PFloat (-1.0e-9)
 ]
