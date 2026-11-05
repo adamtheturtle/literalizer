@@ -3,7 +3,7 @@ class Consume_widget_ {
     call(arg_value) {}
 }
 var consume_widget = Consume_widget_.new()
-consume_widget({
+consume_widget.call({
     1: true,
     2: true,
 })

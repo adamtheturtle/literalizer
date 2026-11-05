@@ -536,7 +536,7 @@ def _compose_ref_consumer(
             allows_empty_call_parens=True,
         )
         call_expression = assemble_call_expression(
-            target_function=consumer.target_function,
+            target_function=stub_spec.format_call_target(target),
             args_str=arguments,
             style=style,
         )
