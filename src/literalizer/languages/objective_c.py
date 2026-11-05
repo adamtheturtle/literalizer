@@ -719,7 +719,6 @@ class ObjectiveC(metaclass=LanguageCls):
     indent_file_body: bool = False
     expand_call_stubs: bool = False
 
-    native_argument_layouts = NativeArgumentLayouts
     native_argument_layout: NativeArgumentLayouts = (
         NativeArgumentLayouts.INLINE
     )
