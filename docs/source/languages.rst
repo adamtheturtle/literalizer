@@ -675,7 +675,7 @@ These choices are applied while traversing the typed invocation tree; no generat
 Objective-C wrappers and helpers
 --------------------------------
 
-``indent_file_body=True`` indents generated statements inside ``main`` and its autorelease pool, using the configured ``indent`` for each scope.
+``indent_file_body=True`` indents generated statements inside ``main`` and its ``@autoreleasepool`` block, using the configured ``indent`` for each scope.
 It also applies to wrappers containing a declaration and reassignment.
 ``expand_call_stubs=True`` emits generated helper function bodies with one statement per line, again using ``indent``.
 Both options default to ``False`` and can be selected independently.
