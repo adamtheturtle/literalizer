@@ -696,7 +696,6 @@ class ObjectiveC(metaclass=LanguageCls):
         MULTILINE = enum.auto()
         AUTO = enum.auto()
 
-    native_argument_layouts = NativeArgumentLayouts
     native_argument_layout: NativeArgumentLayouts = (
         NativeArgumentLayouts.INLINE
     )
