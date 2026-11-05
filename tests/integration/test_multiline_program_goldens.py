@@ -1,10 +1,8 @@
-"""Python multiline golden fixtures preserve their declared input
-values.
-"""
+"""Complete Python multiline golden programs retain their input values."""
 
-import ast
 import json
-import runpy
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -19,23 +17,31 @@ from .language_specs import make_golden_path
 from .variant_cases import build_variant_cases
 from .variant_types import VariantCase
 
+_CHECK_PROGRAM = """\
+import json
+import sys
+from pathlib import Path
 
-def _assignment_values(
-    *, tree: ast.Module, evaluation_path: Path, variable_name: str
-) -> list[object]:
-    """Execute each assignment or enclosing block with its preceding
-    imports and bindings.
-    """
-    values: list[object] = []
-    for index, node in enumerate(iterable=tree.body):
-        if isinstance(node, (ast.Assign, ast.If)):
-            prefix = ast.Module(body=tree.body[: index + 1], type_ignores=[])
-            _ = evaluation_path.write_text(
-                data=ast.unparse(ast_obj=prefix), encoding="utf-8"
-            )
-            namespace = runpy.run_path(path_name=str(object=evaluation_path))
-            values.append(namespace[variable_name])
-    return values
+path, variable_name, expected_json, assignment_count, sequence_format = (
+    sys.argv[1:]
+)
+expected = json.loads(expected_json)
+values = []
+
+class Namespace(dict):
+    def __setitem__(self, name, value):
+        super().__setitem__(name, value)
+        if name == variable_name:
+            values.append(value)
+
+namespace = Namespace(__name__="__main__", __file__=path)
+source = Path(path).read_text(encoding="utf-8").lstrip()
+exec(compile(source, path, "exec"), namespace)
+if sequence_format == "LIST":
+    assert values == [expected] * int(assignment_count)
+else:
+    assert json.loads(json.dumps(values)) == [expected] * int(assignment_count)
+"""
 
 
 @pytest.mark.parametrize(
@@ -48,17 +54,16 @@ def _assignment_values(
     ],
     ids=lambda case: f"{case.case_dir_name}/{case.variant_name}",
 )
-def test_multiline_string_golden_roundtrip(
+def test_multiline_string_program_values(
     case: VariantCase,
     cases_dir: Path,
-    tmp_path: Path,
 ) -> None:
     """Every emitted assignment retains leading, nested and trailing
     whitespace.
 
     The rendering suite compares public API output with these same files.
-    Executing their assignments also prevents accepting a regenerated golden
-    that changes the source value while remaining valid Python.
+    Executing the complete programs also rejects a regenerated golden that
+    changes the source value while remaining valid Python.
     """
     input_info = case_input(case_dir=cases_dir / case.case_dir_name)
     source = input_info.path.read_text(encoding="utf-8")
@@ -75,21 +80,24 @@ def test_multiline_string_golden_roundtrip(
         lang_cls=case.variant.lang_cls,
         version=spec.language_version,
     )
-    # Remove the initial statement margin without changing literal contents.
-    tree = ast.parse(source=golden_path.read_text(encoding="utf-8").lstrip())
-    values = _assignment_values(
-        tree=tree,
-        evaluation_path=tmp_path / "roundtrip.py",
-        variable_name=case.variable_form.name,
-    )
     assignment_count = (
         2 if isinstance(case.variable_form, BothVariableForms) else 1
     )
-    if spec.sequence_format is Python.sequence_formats.LIST:
-        assert values == [expected] * assignment_count
-    else:
-        # Default tuple output preserves the source's JSON/YAML array shape.
-        assert (
-            json.loads(s=json.dumps(obj=values))
-            == [expected] * assignment_count
-        )
+    completed = subprocess.run(  # noqa: S603 - execute complete checked-in programs
+        args=[
+            sys.executable,
+            "-I",
+            "-c",
+            _CHECK_PROGRAM,
+            str(object=golden_path),
+            case.variable_form.name,
+            json.dumps(obj=expected),
+            str(object=assignment_count),
+            spec.sequence_format.name,
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
