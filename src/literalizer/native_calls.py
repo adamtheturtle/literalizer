@@ -761,7 +761,7 @@ def _selector_arguments(
     )
     if receiver_break:
         head = head.rstrip() + "\n"
-        colon = continuation + max(map(len, labels))
+        colon = continuation + max(len(label) for label in labels)
     rendered: list[str] = []
     for i, label in enumerate(iterable=labels):
         start = (

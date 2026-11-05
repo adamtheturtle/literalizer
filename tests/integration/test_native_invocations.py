@@ -160,6 +160,22 @@ def test_native_width_accounts_for_caller_and_binding(
     )
 
 
+def test_original_objective_c_native_callback() -> None:
+    """Existing integrations can still invoke the original backend hook."""
+    invocation = literalizer.NativeInvocation(
+        target=literalizer.FunctionTarget(
+            name="notify",
+            parameter_types=(),
+            return_type=literalizer.ScalarType.VOID,
+        ),
+        arguments=(),
+    )
+    assert (
+        ObjectiveC.render_native_invocation(ObjectiveC(), invocation)
+        == "notify()"
+    )
+
+
 class _LegacyNativeBackend(Python):
     """An existing native backend implementing only the original callback."""
 
