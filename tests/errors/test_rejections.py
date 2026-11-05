@@ -66,7 +66,11 @@ class _VersionCase(BaseModel, extra="forbid", frozen=True):
 
     name: str
     version: str
-    active: str
+    source: str
+    rejecting: int
+    accepting: int
+    expected_document: str
+    actual_messages: dict[str, dict[str, str]]
 
 
 class _MessageCases(BaseModel, extra="forbid", frozen=True):
@@ -670,37 +674,21 @@ def test_missing_message_golden_can_be_generated(tmp_path: Path) -> None:
 def test_versioned_messages_preserve_inactive_variants(
     case: _VersionCase, tmp_path: Path
 ) -> None:
-    """Regeneration changes only the active exact message and drops stale
+    """Regeneration preserves inactive messages and removes stale
     cases.
     """
     golden_path = tmp_path / "expected.toml"
-    _ = golden_path.write_text(
-        data=(
-            '[Error]\nvariant = { default = "modern", "3.12" = "older" }\n'
-            'plain = "old"\nstale = "deleted case"\n'
-            '[StaleError]\ncase = "deleted exception"\n'
-        ),
-        encoding="utf-8",
-    )
+    _ = golden_path.write_text(data=case.source, encoding="utf-8")
     expected = _load_expected_messages(golden_path=golden_path)
     document = _rejection_document(
-        messages_by_exception={
-            "Error": {"variant": "actual", "plain": "actual", "new": "actual"}
-        },
+        messages_by_exception=case.actual_messages,
         expected=expected,
-        rejecting=1,
-        accepting=0,
+        rejecting=case.rejecting,
+        accepting=case.accepting,
         python_version=case.version,
     )
-    variants = {"default": "modern", "3.12": "older"}
-    variants[case.active] = "actual"
-    assert tomllib.loads(document) == {
-        "Error": {"variant": variants, "plain": "actual", "new": "actual"}
-    }
-    assert expected["Error"]["variant"] == {
-        "default": "modern",
-        "3.12": "older",
-    }
+    assert tomllib.loads(document) == tomllib.loads(case.expected_document)
+    assert expected == tomllib.loads(case.source)
 
 
 @pytest.mark.parametrize(argnames="limit", argvalues=[None, 0, 640])
