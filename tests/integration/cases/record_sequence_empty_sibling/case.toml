@@ -7,3 +7,10 @@ axis = "heterogeneous_strategy_record"
 # Explicit root annotations retain this input's record schema (#5236).
 [[variants]]
 axis = "record_type_hints_always"
+
+# Check empty and populated record array siblings against their emitted field and container types.
+[[variants]]
+axis = "record_eager_field_annotations"
+
+[[variants]]
+axis = "record_sequence_format"

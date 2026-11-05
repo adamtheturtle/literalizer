@@ -631,6 +631,8 @@ def _add_type_hint_imports(
         return
     if outer in {"List", "Tuple", "Set", "FrozenSet", "Dict"}:
         imports.add(outer)
+    if outer == "TypingOrderedDict":
+        imports.add("OrderedDict as TypingOrderedDict")
     if "Any" in arguments:
         imports.add("Any")
 
@@ -997,6 +999,8 @@ def _build_type_hint_preamble_py38(
                 imports.add(set_typing_name)
             if dict in annotated_collection_types:
                 imports.add("Dict")
+            if OrderedMap in annotated_collection_types:
+                imports.add("OrderedDict as TypingOrderedDict")
         if (
             use_typing_union
             and HeterogeneousElements in annotated_collection_types
@@ -2128,6 +2132,10 @@ class Python(metaclass=LanguageCls):
             if (
                 self.variable_type_hints
                 is self.variable_type_hints_formats.ALWAYS
+                or _needs_type_annotation(
+                    data=data,
+                    record_eligible=self._record_eligible_for_annotation,
+                )
             ):
                 requires_union = (
                     requires_union
@@ -2402,12 +2410,7 @@ class Python(metaclass=LanguageCls):
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(open_str="OrderedDict(["),
             close="])",
-            preamble_lines=("from collections import OrderedDict",)
-            + (
-                ("from typing import OrderedDict as TypingOrderedDict",)
-                if self._uses_typing_collection_aliases
-                else ()
-            ),
+            preamble_lines=("from collections import OrderedDict",),
         )
 
     @cached_property

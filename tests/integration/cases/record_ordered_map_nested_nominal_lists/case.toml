@@ -9,3 +9,7 @@ axis = "record_type_hints_always"
 
 [[variants]]
 axis = "record_sequence_format"
+
+# Keep ordered-map and list field aliases available when record annotations are evaluated.
+[[variants]]
+axis = "record_eager_field_annotations"
