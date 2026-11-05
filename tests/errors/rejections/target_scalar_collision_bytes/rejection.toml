@@ -4,7 +4,10 @@ exceptions = ["TargetScalarCollisionError"]
 
 [call]
 api = "literalize"
-sources = ["? !!binary /w==\n: bytes\n? ff\n: string\n"]
+sources = [
+    "? !!binary /w==\n: bytes\n? ff\n: string\n",
+    '? !!binary ""\n: bytes\n? ""\n: string\n',
+]
 input_format = "yaml"
 kwargs = [
   { kind = "option_member", option = "bytes_format", member = "HEX" },
