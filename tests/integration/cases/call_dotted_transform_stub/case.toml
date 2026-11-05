@@ -11,3 +11,10 @@ requires_call_returns_expression = true
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
+
+# Compile the shared call in annotation and collection-layout contexts.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
