@@ -3,3 +3,13 @@ suites = ["base"]
 
 [[variants]]
 axis = "type_hints"
+
+# Check that TOML negative integer zero remains integer data under binary/octal/hex formats and alternate record/JSON carriers.
+[[variants]]
+axis = "integer_format"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "dict_format"
