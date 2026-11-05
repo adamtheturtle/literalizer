@@ -1,0 +1,6 @@
+schema_version = 1
+owner = "variant"
+
+# Retain positional field types when native tuples widen integer literals.
+[[variants]]
+axis = "record_sequence_format"
