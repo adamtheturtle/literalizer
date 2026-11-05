@@ -34,7 +34,7 @@ from literalizer.languages import (
     argvalues=[
         (Python(), "print(calculate(value=1))"),
         (Java(), "System.out.println(calculate(1));"),
-        (Cpp(), "std::cout << calculate(1) << std::endl;"),
+        (Cpp(), "std::cout << calculate(1) << '\\n';"),
         (CSharp(), "System.Console.WriteLine(calculate(1));"),
         (Go(), "fmt.Println(calculate(1))"),
         (JavaScript(), "console.log(calculate({ value: 1 }));"),
@@ -119,11 +119,6 @@ def test_incompatible_print_options(
     zip_source: str | None,
 ) -> None:
     """Result handling conflicts are rejected rather than ignored."""
-    assert (
-        transform is None
-        or transform(CallContext(call="value", index=0, row=[], zipped=None))
-        == "value"
-    )
     with pytest.raises(
         expected_exception=UnsupportedCallShapeError,
         match="print_result cannot be combined",
@@ -170,4 +165,18 @@ def test_wrapped_print_preamble() -> None:
         wrap_in_file=True,
     )
     assert result.code.count("#include <iostream>") == 1
-    assert "std::cout << calculate(1) << std::endl;" in result.code
+    assert "std::cout << calculate(1) << '\\n';" in result.code
+
+
+def test_custom_transform_remains_available() -> None:
+    """Custom expressions retain their original dependency contract."""
+    result = literalize_call(
+        source="[[1]]",
+        input_format=InputFormat.JSON,
+        language=Cpp(),
+        target_function="calculate",
+        parameter_names=["value"],
+        call_transform=_identity,
+    )
+    assert result.code == "calculate(1);"
+    assert "#include <iostream>" not in result.preamble

@@ -3293,7 +3293,7 @@ class Cpp(metaclass=LanguageCls):
 
     print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
         prefix="std::cout << ",
-        suffix=" << std::endl",
+        suffix=" << '\\n'",
         imports=("#include <iostream>",),
     )
 

@@ -583,7 +583,7 @@ Printing call results
 
 Use ``literalize_call(..., print_result=True)`` to print each result through its language's native printing operation.
 Required imports are returned in ``result.preamble`` and participate in normal preamble composition.
-For example, C++14 emits ``std::cout << calculate(1) << std::endl;`` with ``#include <iostream>`` in the preamble; Go emits ``fmt.Println(calculate(1))`` with ``import "fmt"``.
+For example, C++14 emits ``std::cout << calculate(1) << '\n';`` with ``#include <iostream>`` in the preamble; Go emits ``fmt.Println(calculate(1))`` with ``import "fmt"``.
 These dependencies are omitted for empty call sequences to avoid unused imports in languages such as Go.
 
 Supported languages are Python, Java, C++, C#, Go, JavaScript, TypeScript, Kotlin, Ruby, Scala, and Rust.
