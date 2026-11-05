@@ -46,6 +46,7 @@ from literalizer._parsing import (
     ParsedPlain,
     parse_input,
 )
+from literalizer._print_result import print_result_transform
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
     BoundRefOutputCollisionError,
@@ -640,6 +641,7 @@ def literalize_call(
     target_function: str,
     parameter_names: Sequence[str],
     call_transform: Callable[[CallContext], str] | None = None,
+    print_result: bool = False,
     zip_source: str | None = None,
     zip_input_format: InputFormat | None = None,
     comment_source: Sequence[str] | None = None,
@@ -698,6 +700,13 @@ def literalize_call(
             object call style); prefix/postfix/command-style languages
             reject it with
             :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+        print_result: Print each call's result using the language's native
+            printing operation, retaining its imports in the result preamble.
+            The caller supplies a callee whose result supports that operation;
+            return types are not inferred from arguments. Formatting is native
+            to the language (Rust uses debug formatting), not serialization.
+            Cannot be combined with call_transform, variable_form,
+            or zip_source.
         zip_source: Optional companion source whose parsed top-level
             elements pair positionally with the generated calls.  It is
             parsed with the *same* parser as *source* (so YAML
@@ -953,6 +962,20 @@ def literalize_call(
                 "invoke the target function twice"
             ),
         )
+    if print_result:
+        if (
+            call_transform is not None
+            or variable_form is not None
+            or zip_source is not None
+        ):
+            raise UnsupportedCallShapeError(
+                language_name=type(language).__name__,
+                reason=(
+                    "print_result cannot be combined with call_transform, "
+                    "variable_form, or zip_source"
+                ),
+            )
+        call_transform = print_result_transform(language=language)
     return literalize_call_parsed(
         parsed=_select_input_root(
             parsed=parse_input(source=source, input_format=input_format),

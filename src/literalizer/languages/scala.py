@@ -148,6 +148,7 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     InvalidRecordNameError,
@@ -755,6 +756,12 @@ class Scala(metaclass=LanguageCls):
     Splitting the document and combining the parts at run time is the
     way past it.
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix="println(",
+        suffix=")",
+        imports=(),
+    )
 
     format_call_class_scope_stub = default_format_call_stub
 

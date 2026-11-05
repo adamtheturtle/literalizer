@@ -1,0 +1,3 @@
+def calculate(*_args: object, **_kwargs: object) -> object: ...
+print(calculate(value=7))
+print(calculate(value=9))

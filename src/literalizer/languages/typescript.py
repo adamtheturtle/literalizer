@@ -116,6 +116,7 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._types import OrderedMap, Scalar, Value
 
 # An object literal reads a ``__proto__`` property key -- quoted or
@@ -576,6 +577,12 @@ class TypeScript(metaclass=LanguageCls):
               e.g. ``[1, 2, 3] as const``.  TypeScript infers
               per-element types instead of a union array type.
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix="console.log(",
+        suffix=")",
+        imports=(),
+    )
 
     format_call_class_scope_stub = default_format_call_stub
 

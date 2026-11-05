@@ -154,6 +154,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop_static,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -769,6 +770,12 @@ class Kotlin(metaclass=LanguageCls):
             the output produces a ``kotlinx.serialization.json.JsonElement``
             instead of Kotlin's narrow ``List`` / ``Map`` / array types.
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix="println(",
+        suffix=")",
+        imports=(),
+    )
 
     format_call_class_scope_stub = default_format_call_stub
 

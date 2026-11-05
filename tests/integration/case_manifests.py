@@ -837,6 +837,7 @@ class CallCaseSpec(  # noqa: NOD001
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
+    print_result: bool = False
     call_transform_group: CallGroupSpec | None = None
     call_transform_arguments: CallArgumentsSpec | None = None
     call_transform_wrapper: CallWrapperSpec | None = None
@@ -967,7 +968,8 @@ class CallCaseSpec(  # noqa: NOD001
         calls.
         """
         return (
-            self.call_transform is not None
+            self.print_result
+            or self.call_transform is not None
             or self.call_transform_group is not None
             or self.call_transform_arguments is not None
             or self.call_transform_wrapper is not None

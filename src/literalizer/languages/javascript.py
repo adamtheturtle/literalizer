@@ -112,6 +112,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._types import Value
 
 # An object literal reads a ``__proto__`` property key -- quoted or
@@ -287,6 +288,12 @@ class JavaScript(metaclass=LanguageCls):
             * ``datetime_formats.ISO`` — ISO 8601 quoted string,
               e.g. ``"2024-01-15T12:30:00"``.
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix="console.log(",
+        suffix=")",
+        imports=(),
+    )
 
     format_call_class_scope_stub = default_format_call_stub
 

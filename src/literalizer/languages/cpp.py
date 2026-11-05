@@ -161,6 +161,7 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._statements import (
     CallLiteralSyntax,
 )
@@ -3289,6 +3290,12 @@ class Cpp(metaclass=LanguageCls):
             carrier provides ``is<T>()`` and ``get<T>()`` for inspecting and
             retrieving its active value.
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix="std::cout << ",
+        suffix=" << std::endl",
+        imports=("#include <iostream>",),
+    )
 
     format_call_class_scope_stub = default_format_call_stub
 

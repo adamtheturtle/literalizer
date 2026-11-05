@@ -139,6 +139,7 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._statements import (
     CallLiteralSyntax,
     CharacterAndHashRawLiterals,
@@ -3305,6 +3306,12 @@ class Rust(metaclass=LanguageCls):
               identically, so one input's literals compile against the
               other's ``struct``.
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix='println!("{:?}", ',
+        suffix=")",
+        imports=(),
+    )
 
     format_call_class_scope_stub = default_format_call_stub
 

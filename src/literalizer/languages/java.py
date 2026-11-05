@@ -132,6 +132,7 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._statements import (
     CallLiteralSyntax,
 )
@@ -1111,6 +1112,12 @@ class Java(metaclass=LanguageCls):
     Splitting the document and combining the parts at run time is the
     way past it.
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix="System.out.println(",
+        suffix=")",
+        imports=(),
+    )
 
     wrap_in_file_tolerates_pre_indent = True
     uses_resolved_ref_declaration_data = True

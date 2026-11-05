@@ -125,6 +125,7 @@ from literalizer._preamble import (
     EmptySet,
     HeterogeneousElements,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._types import CallStubData, OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     IncompatibleFormatsError,
@@ -1184,6 +1185,12 @@ class Python(metaclass=LanguageCls):
             ``@dataclasses.dataclass`` names under the ``RECORD``
             strategy (``"Record"`` -> ``Record0``, ``Record1``, ...).
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix="print(",
+        suffix=")",
+        imports=(),
+    )
 
     format_call_class_scope_stub = default_format_call_stub
 

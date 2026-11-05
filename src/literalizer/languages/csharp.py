@@ -142,6 +142,7 @@ from literalizer._language import (
     requires_declared_binding,
     wrap_in_file_noop,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._statements import (
     CallLiteralSyntax,
 )
@@ -851,6 +852,12 @@ class CSharp(metaclass=LanguageCls):
             the ``const`` modifier is rejected because the JSON
             constructors are not constant expressions.
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix="System.Console.WriteLine(",
+        suffix=")",
+        imports=(),
+    )
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     wrap_in_file_tolerates_pre_indent = True

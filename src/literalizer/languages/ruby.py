@@ -105,6 +105,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop_static,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._types import Value
 from literalizer.exceptions import CallArgNotSupportedError
 
@@ -310,6 +311,12 @@ class Ruby(metaclass=LanguageCls):
             * ``dict_entry_styles.SYMBOL`` — symbol notation,
               e.g. ``name: "Alice"``.
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix="puts ",
+        suffix="",
+        imports=(),
+    )
 
     format_call_class_scope_stub = default_format_call_stub
 

@@ -577,3 +577,20 @@ Generic types use ``{"object": "NSArray", "arguments": ["NSString"]}``.
 Unknown fields, invalid selectors, out-of-range input indexes, incompatible types, and mismatched companion lengths raise located native-call errors.
 Native recipes select data values; source comments are not interpolated into expressions.
 Keep explanatory prose in the surrounding document or in explicit expected-result data.
+
+Printing call results
+---------------------
+
+Use ``literalize_call(..., print_result=True)`` to print each result through its language's native printing operation.
+Required imports are returned in ``result.preamble`` and participate in normal preamble composition.
+For example, C++14 emits ``std::cout << calculate(1) << std::endl;`` with ``#include <iostream>`` in the preamble; Go emits ``fmt.Println(calculate(1))`` with ``import "fmt"``.
+These dependencies are omitted for empty call sequences to avoid unused imports in languages such as Go.
+
+Supported languages are Python, Java, C++, C#, Go, JavaScript, TypeScript, Kotlin, Ruby, Scala, and Rust.
+Each operation writes a newline and uses native formatting; Rust uses debug formatting.
+Because argument data provides no return-type information, callers must supply a function whose result supports native printing (such as C++ stream insertion), with custom transforms providing any extra serialization behavior.
+Boolean, numeric, and collection representations can differ between languages.
+
+Printing cannot be combined with ``call_transform``, ``variable_form``, or ``zip_source``.
+Keep a custom transform for application-specific formatting; its dependencies remain the caller's responsibility.
+Printing works with ``wrap_in_file`` and with separately composed declarations.

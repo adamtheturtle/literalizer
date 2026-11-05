@@ -8591,6 +8591,26 @@ def _is_value_sequence(value: ValueInput, /) -> TypeIs[Sequence[ValueInput]]:
 
 
 @runtime_checkable
+class _TransformWithCallPreamble(Protocol):
+    """A transform whose generated expression owns import dependencies."""
+
+    @property
+    def call_preamble(self) -> tuple[str, ...]:
+        """Imports required by the generated expression."""
+        ...
+
+
+@beartype
+def _transform_call_preamble(
+    transform: Callable[[CallContext], str] | None,
+) -> tuple[str, ...]:
+    """Read explicit dependencies without scanning transformed source."""
+    if isinstance(transform, _TransformWithCallPreamble):
+        return transform.call_preamble
+    return ()
+
+
+@runtime_checkable
 class _TransformWithCallDeclarations(Protocol):
     """A transform that retains the declarations needed by its
     expression.
@@ -9695,6 +9715,11 @@ def literalize_call_parsed(
             + computed.header
             + data_dependent_preamble
             + reference_preamble
+            + (
+                _transform_call_preamble(transform=call_transform)
+                if len(arg_values) > 0
+                else ()
+            )
         )
     )
 

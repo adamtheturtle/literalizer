@@ -135,6 +135,7 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._print_result import PrintResultFormat
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
     InvalidRecordNameError,
@@ -564,6 +565,12 @@ class Go(metaclass=LanguageCls):
               then declare the field identically, so one input's
               literals compile against the other's ``struct``.
     """
+
+    print_result_format: ClassVar[PrintResultFormat] = PrintResultFormat(
+        prefix="fmt.Println(",
+        suffix=")",
+        imports=('import "fmt"',),
+    )
 
     format_call_class_scope_stub = default_format_call_stub
 

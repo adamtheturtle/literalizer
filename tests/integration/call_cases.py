@@ -45,6 +45,7 @@ from literalizer._literalize import (
     format_rendered_call_arguments,
 )
 from literalizer._parsing import parse_input
+from literalizer._print_result import _PrintResultLanguage
 from literalizer._types import CallStubData
 from literalizer.exceptions import (
     CallArgNotSupportedError,
@@ -581,6 +582,7 @@ def expected_call_shape_exception(
         config.requires_standalone_wrapped_comments
         and not lang_cls.supports_standalone_comments_in_wrapped_calls,
         _call_transform_style_unsupported(spec=spec, config=config),
+        config.print_result and not isinstance(spec, _PrintResultLanguage),
     )
     if any(unsupported_signals):
         return UnsupportedCallShapeError
@@ -1171,6 +1173,7 @@ def _literalize_call_case(
         target_function=config.target_function,
         parameter_names=config.parameter_names,
         call_transform=call_transform,
+        print_result=config.print_result,
         zip_source=config.zip_source,
         zip_input_format=config.zip_input_format,
         comment_source=config.comment_source,
