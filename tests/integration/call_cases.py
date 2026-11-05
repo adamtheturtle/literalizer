@@ -89,6 +89,7 @@ from .language_specs import (
     with_per_fixture_module_name,
 )
 from .parsed_values import ParsedValue
+from .source_profiles import source_profiles
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -1643,7 +1644,7 @@ def _wrap_unwrapped_call(
 
 
 @beartype
-def run_call_golden_case(
+def run_call_golden_case_profile(
     *,
     config: CallCaseSpec,
     spec: literalizer.Language,
@@ -1846,3 +1847,31 @@ def run_call_golden_case(
         golden_path=golden_path,
         file_regression=file_regression,
     )
+
+
+@beartype
+def run_call_golden_case(
+    *,
+    config: CallCaseSpec,
+    spec: literalizer.Language,
+    lang_cls: literalizer.LanguageCls,
+    golden_name: str,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+    version: enum.Enum,
+) -> None:
+    """Render legacy and canonical requests with the same case
+    ownership.
+    """
+    for profile in source_profiles(
+        spec=spec, lang_cls=lang_cls, name=golden_name
+    ):
+        run_call_golden_case_profile(
+            config=config,
+            spec=profile.spec,
+            lang_cls=lang_cls,
+            golden_name=profile.name,
+            cases_dir=cases_dir,
+            file_regression=file_regression,
+            version=version,
+        )

@@ -1,0 +1,181 @@
+[
+  {
+    "literal": [
+      {
+        "name": "a long escaped value with a quote \" and Unicode café 😀 abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij",
+        "count": 42
+      },
+      {
+        "name": "second",
+        "count": 2
+      }
+    ],
+    "include_delimiters": false,
+    "source_context": {
+      "indent_level": 3
+    },
+    "prefix": "    NSArray<NSDictionary<NSString *, id> *> *rows = @[\n",
+    "suffix": "\n    ];"
+  },
+  {
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "constructor": "PlacementWitness",
+      "initializer": "init",
+      "parameter-types": [],
+      "arguments": []
+    },
+    "variable": "witness"
+  },
+  {
+    "rows": [
+      [
+        "é😀",
+        7.5
+      ]
+    ],
+    "source_context": {
+      "indent_level": 2,
+      "initial_column": 26,
+      "continuation_column": 4
+    },
+    "prefix": "    double inlineResult = ",
+    "invocation": {
+      "receiver": {
+        "reference": "witness",
+        "type": "PlacementWitness"
+      },
+      "selector": "cost:includingEstimatedRuntimeInMilliseconds:",
+      "parameter-types": [
+        "NSString",
+        "float"
+      ],
+      "return-type": "float",
+      "arguments": [
+        {
+          "input": 0
+        },
+        {
+          "input": 1
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      [
+        "é😀",
+        7.5
+      ]
+    ],
+    "zipped": [
+      [
+        7.5,
+        "a nested call with a long selector"
+      ]
+    ],
+    "invocation": {
+      "function": "verifyCost",
+      "parameter-types": [
+        "float",
+        "NSArray"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "receiver": {
+            "reference": "witness",
+            "type": "PlacementWitness"
+          },
+          "selector": "cost:includingEstimatedRuntimeInMilliseconds:",
+          "parameter-types": [
+            "NSString",
+            "float"
+          ],
+          "return-type": "float",
+          "arguments": [
+            {
+              "input": 0
+            },
+            {
+              "input": 1
+            }
+          ]
+        },
+        {
+          "zipped": true
+        }
+      ]
+    }
+  },
+  {
+    "rows": [
+      [
+        42,
+        7.5
+      ]
+    ],
+    "invocation": {
+      "function": "verifyNumbers",
+      "parameter-types": [
+        "integer",
+        "float"
+      ],
+      "return-type": "void",
+      "arguments": [
+        {
+          "input": 0
+        },
+        {
+          "input": 1
+        }
+      ]
+    },
+    "source_context": {
+      "indent_level": 2
+    },
+    "prefix": ""
+  },
+  {
+    "literal": 9223372036854775807,
+    "variable": "value_with_a_long_identifier_used_to_check_assignment_wrapping_here",
+    "source_context": {
+      "indent_level": 2
+    }
+  },
+  {
+    "rows": [
+      []
+    ],
+    "variable": "groupNames",
+    "invocation": {
+      "function": "makeGroups",
+      "parameter-types": [],
+      "return-type": {
+        "object": "NSDictionary",
+        "arguments": [
+          "NSString",
+          {
+            "object": "NSArray",
+            "arguments": [
+              "NSString"
+            ]
+          }
+        ]
+      },
+      "arguments": []
+    }
+  },
+  {
+    "literal_source": "!!set {alpha: null, beta: null}",
+    "literal_format": "YAML",
+    "include_delimiters": false,
+    "source_context": {
+      "indent_level": 3
+    },
+    "prefix": "    NSArray<NSString *> *setEntries = @[\n",
+    "suffix": "\n    ];"
+  }
+]

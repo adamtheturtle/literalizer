@@ -262,6 +262,7 @@ Reference
    :caption: Guides
 
    understanding-the-result
+   canonical-source
    json-api-use-case
    function-call-use-case
    heterogeneous-strategies

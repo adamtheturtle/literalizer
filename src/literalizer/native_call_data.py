@@ -15,7 +15,7 @@ from literalizer._literalize import (
 )
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._types import Scalar, Value, ValueInput
-from literalizer.exceptions import NativeCallError
+from literalizer.exceptions import NativeCallError, SourceLayoutError
 from literalizer.native_calls import (
     ConstructorTarget,
     FunctionTarget,
@@ -30,6 +30,7 @@ from literalizer.native_calls import (
     ScalarType,
     literalize_native_call,
 )
+from literalizer.source_format import SourceContext
 
 _MISSING = object()
 
@@ -291,6 +292,7 @@ def literalize_native_calls(
     zip_input_format: InputFormat | None = None,
     variable_form: NewVariable | ExistingVariable | None = None,
     pre_indent_level: int = 0,
+    source_context: SourceContext | None = None,
 ) -> LiteralizeResult:
     """Render source rows through an explicit native invocation recipe.
 
@@ -304,6 +306,13 @@ def literalize_native_calls(
         zip_source=zip_source,
         zip_input_format=zip_input_format,
     )
+    if (
+        source_context is not None
+        and source_context.initial_column != 0
+        and len(rows) != 1
+    ):
+        message = "An initial-column context requires exactly one native call"
+        raise SourceLayoutError(message)
     if variable_form is not None and len(rows) != 1:
         msg = "A native result binding requires exactly one call"
         raise NativeCallError(msg)
@@ -322,6 +331,7 @@ def literalize_native_calls(
                     invocation=native,
                     variable_form=variable_form,
                     pre_indent_level=pre_indent_level,
+                    source_context=source_context,
                 )
             )
         except NativeCallError as exc:

@@ -22,3 +22,12 @@ def fixture_lazy_datadir(
         basename="file_regression_obtained",
         numbered=False,
     )
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Keep the independent formatter opt-in outside rendering tests."""
+    parser.addoption(
+        "--check-source-format",
+        action="store_true",
+        help="Compare fresh canonical output with the pinned oracle",
+    )

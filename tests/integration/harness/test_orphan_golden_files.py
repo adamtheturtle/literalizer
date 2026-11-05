@@ -7,7 +7,7 @@ import pytest
 from beartype import beartype
 
 import literalizer
-from literalizer.languages import Cpp, Java
+from literalizer.languages import ALL_LANGUAGES, Cpp, Java
 from tests.enum_members import enum_member_by_name
 from tests.integration.call_cases import discover_call_cases
 from tests.integration.call_variant_cases import build_call_variant_cases
@@ -330,6 +330,21 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
             )
         )
 
+    canonical = {
+        path.with_name(
+            name=path.name.replace(
+                language.__name__, f"{language.__name__}_canonical"
+            )
+        )
+        for path in expected
+        for language in ALL_LANGUAGES
+        if language.supports_canonical_source_format
+        and path.name.split(sep="_", maxsplit=1)[0].split(sep="@", maxsplit=1)[
+            0
+        ]
+        == language.__name__
+    }
+    expected.update(canonical)
     return expected
 
 

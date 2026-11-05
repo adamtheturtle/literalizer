@@ -10,11 +10,15 @@ from .constructor_cases import (
     constructor_golden_path,
 )
 from .constructor_goldens import run_constructor_binding_golden_case
+from .source_profiles import source_format_marks
 
 
 @pytest.mark.parametrize(
     argnames="case",
-    argvalues=constructor_binding_cases(cases_dir=CASES_DIR),
+    argvalues=[
+        pytest.param(case, marks=source_format_marks(lang_cls=case.lang_cls))
+        for case in constructor_binding_cases(cases_dir=CASES_DIR)
+    ],
     ids=lambda case: f"{case.manifest.case_dir.name}/{case.name}",
 )
 def test_constructor_binding_golden_file(

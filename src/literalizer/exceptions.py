@@ -30,6 +30,10 @@ class LiteralizerError(Exception):
         self.path = path
 
 
+class SourceLayoutError(LiteralizerError, ValueError):
+    """The selected source policy cannot represent the requested placement."""
+
+
 @beartype
 class UnsupportedOptionError(LiteralizerError):
     """Raised when a language does not accept a known constructor option.

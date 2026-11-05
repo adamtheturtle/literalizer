@@ -100,16 +100,19 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._objective_c_layout import Layout
 from literalizer._statements import (
     CallLiteralSyntax,
 )
 from literalizer._types import Value
+from literalizer.exceptions import SourceLayoutError
 from literalizer.native_calls import (
     NativeInvocation,
     NativeType,
     objective_c_invocation,
     objective_c_type,
 )
+from literalizer.source_format import SourceContext, SourceFormat
 
 _NULL_OBJECT_STUB = NullableObjectCallStubResult(
     type_name="id",
@@ -688,6 +691,8 @@ class ObjectiveC(metaclass=LanguageCls):
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
 
+    source_format: SourceFormat = SourceFormat.PRESERVE
+
     module_name: str = "Module"
 
     leading_preamble = no_leading_preamble
@@ -699,6 +704,7 @@ class ObjectiveC(metaclass=LanguageCls):
     supports_no_variable_wrap_in_file = False
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = True
+    supports_canonical_source_format = True
     supports_native_invocations = True
     supports_dotted_calls = True
     has_free_function_calls = True
@@ -1157,6 +1163,50 @@ class ObjectiveC(metaclass=LanguageCls):
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
     call_style: CallStyles = CallStyles.POSITIONAL
+
+    @beartype
+    def layout_source(
+        self,
+        code: str,
+        /,
+        *,
+        context: SourceContext,
+        include_delimiters: bool,
+        data: Value,
+    ) -> str:
+        """Lay out generated syntax in its actual caller scope."""
+        if self.indent == "" or self.indent.strip(" ") != "":
+            message = (
+                "Canonical Objective-C requires indentation made of spaces"
+            )
+            raise SourceLayoutError(message)
+        layout = Layout(indent_width=len(self.indent))
+        base = context.indent_level * len(self.indent)
+        if not include_delimiters and isinstance(data, (list, dict, set)):
+            opening, closing = (
+                ("@{", "}") if isinstance(data, dict) else ("@[", "]")
+            )
+            result = layout.format_code(
+                code=opening + code + closing,
+                base=base - len(self.indent),
+                width=context.column_limit,
+            )
+            return "\n".join(result.split(sep="\n")[1:-1])
+        if (
+            context.initial_column != 0
+            or context.continuation_column is not None
+        ):
+            return layout.format_expression(
+                code=code,
+                start=context.initial_column,
+                anchor=base
+                if context.continuation_column is None
+                else context.continuation_column,
+                width=context.column_limit,
+            )
+        return layout.format_code(
+            code=code, base=base, width=context.column_limit
+        )
 
     @staticmethod
     @beartype

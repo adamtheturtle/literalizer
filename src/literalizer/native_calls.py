@@ -25,8 +25,10 @@ from literalizer._literalize import (
     materialize_value_input,
     render_value_literal,
 )
+from literalizer._source_layout import format_result
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import NativeCallError
+from literalizer.source_format import SourceContext
 
 
 class ScalarType(enum.Enum):
@@ -227,6 +229,7 @@ def literalize_native_call(
     invocation: NativeInvocation,
     variable_form: NewVariable | ExistingVariable | None = None,
     pre_indent_level: int = 0,
+    source_context: SourceContext | None = None,
 ) -> LiteralizeResult:
     """Render a typed native invocation using caller-owned declarations.
 
@@ -272,19 +275,26 @@ def literalize_native_call(
         for line in (code + ";").splitlines()
     )
     values = _invocation_values(invocation)
-    return LiteralizeResult(
-        declaration_code=code,
-        preamble=tuple(language.static_preamble),
-        body_preamble=(),
-        pre_declaration_comments=(),
-        types_present=_value_types(values),
-        contains_standalone_comments=False,
-        source_data=values,
-        sections=(),
-        data_dependent_preamble=(),
-        uses_existing_variable=isinstance(variable_form, ExistingVariable),
-        # Native object initializers are runtime expressions even when bound.
-        is_call_statement=True,
+    return format_result(
+        result=LiteralizeResult(
+            declaration_code=code,
+            preamble=tuple(language.static_preamble),
+            body_preamble=(),
+            pre_declaration_comments=(),
+            types_present=_value_types(values),
+            contains_standalone_comments=False,
+            source_data=values,
+            sections=(),
+            data_dependent_preamble=(),
+            uses_existing_variable=isinstance(variable_form, ExistingVariable),
+            # Native initializers remain runtime expressions when bound.
+            is_call_statement=True,
+        ),
+        language=language,
+        source_context=source_context,
+        pre_indent_level=pre_indent_level,
+        include_delimiters=True,
+        wrapped=False,
     )
 
 

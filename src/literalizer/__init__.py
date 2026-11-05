@@ -64,6 +64,7 @@ from literalizer.native_calls import (
     ScalarType,
     literalize_native_call,
 )
+from literalizer.source_format import SourceContext, SourceFormat
 
 __all__ = [
     "ALL_REF_CASES",
@@ -108,6 +109,8 @@ __all__ = [
     "ScalarType",
     "SequenceFormatConfig",
     "SetFormatConfig",
+    "SourceContext",
+    "SourceFormat",
     "StubReturn",
     "TrailingCommaConfig",
     "ValueInput",

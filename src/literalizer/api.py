@@ -46,6 +46,7 @@ from literalizer._parsing import (
     ParsedPlain,
     parse_input,
 )
+from literalizer._source_layout import format_result
 from literalizer._types import Value, ValueInput
 from literalizer.exceptions import (
     BoundRefOutputCollisionError,
@@ -64,6 +65,7 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
 )
+from literalizer.source_format import SourceContext
 
 
 @beartype
@@ -75,6 +77,7 @@ def literalize_call_with_declarations(
     extra_body_preamble: tuple[str | RenderedCallStub, ...] = (),
     extra_class_preamble: tuple[str, ...] = (),
     extra_preamble: tuple[str, ...] = (),
+    source_context: SourceContext | None = None,
 ) -> LiteralizeResult:
     r"""Compose declarations and a call into one complete source file.
 
@@ -93,13 +96,20 @@ def literalize_call_with_declarations(
     lower-level composition boundary is for callers that already have
     separate render results or need to supply additional file scaffolding.
     """
-    return _literalize_call_with_declarations(
+    return format_result(
+        result=_literalize_call_with_declarations(
+            language=language,
+            declarations=declarations,
+            call=call,
+            extra_body_preamble=extra_body_preamble,
+            extra_class_preamble=extra_class_preamble,
+            extra_preamble=extra_preamble,
+        ),
         language=language,
-        declarations=declarations,
-        call=call,
-        extra_body_preamble=extra_body_preamble,
-        extra_class_preamble=extra_class_preamble,
-        extra_preamble=extra_preamble,
+        source_context=source_context,
+        pre_indent_level=0,
+        include_delimiters=True,
+        wrapped=True,
     )
 
 
@@ -358,6 +368,7 @@ def literalize(
     ref_key: str | None = None,
     record_null_substitutions: Mapping[str, ValueInput] | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
+    source_context: SourceContext | None = None,
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSONC, JSON5, YAML, or TOML string to a native
     language literal.
@@ -377,6 +388,10 @@ def literalize(
             argument (``Java(module_name="Foo")``); languages whose
             wrappers do not introduce a named scope take no such
             argument.
+        source_context: Explicit placement and available width for canonical
+            source formatting. Requires a supporting language with its
+            canonical policy selected. Do not combine with nonzero
+            ``pre_indent_level``.
         pre_indent_level: Number of ``indent`` steps to prepend to
             every output line.  For example, ``2`` with a 4-space
             indent produces an 8-space margin.  Defaults to ``0``.
@@ -565,20 +580,27 @@ def literalize(
         effective_explicit_ref_values = nonempty_mapping(
             values=explicit_ref_values
         )
-        return literalize_both_forms(
-            source=source,
-            input_format=input_format,
+        return format_result(
+            result=literalize_both_forms(
+                source=source,
+                input_format=input_format,
+                language=language,
+                pre_indent_level=pre_indent_level,
+                include_delimiters=include_delimiters,
+                variable_form=variable_form,
+                ref_case=ref_case,
+                ref_values=materialized_ref_values,
+                explicit_ref_values=(effective_explicit_ref_values),
+                bound_refs=materialized_bound_refs,
+                ref_key=effective_ref_key,
+                record_null_substitutions=materialized_record_null_substitutions,
+                collection_layout=collection_layout,
+            ),
             language=language,
+            source_context=source_context,
             pre_indent_level=pre_indent_level,
             include_delimiters=include_delimiters,
-            variable_form=variable_form,
-            ref_case=ref_case,
-            ref_values=materialized_ref_values,
-            explicit_ref_values=(effective_explicit_ref_values),
-            bound_refs=materialized_bound_refs,
-            ref_key=effective_ref_key,
-            record_null_substitutions=materialized_record_null_substitutions,
-            collection_layout=collection_layout,
+            wrapped=wrap_in_file,
         )
 
     if (
@@ -589,19 +611,26 @@ def literalize(
         effective_explicit_ref_values_2 = nonempty_mapping(
             values=explicit_ref_values
         )
-        return literalize_bound_refs(
-            source=source,
-            input_format=input_format,
+        return format_result(
+            result=literalize_bound_refs(
+                source=source,
+                input_format=input_format,
+                language=language,
+                pre_indent_level=pre_indent_level,
+                include_delimiters=include_delimiters,
+                variable_form=variable_form,
+                ref_case=ref_case,
+                explicit_ref_values=(effective_explicit_ref_values_2),
+                bound_refs=materialized_bound_refs,
+                ref_key=effective_ref_key,
+                record_null_substitutions=materialized_record_null_substitutions,
+                collection_layout=collection_layout,
+            ),
             language=language,
+            source_context=source_context,
             pre_indent_level=pre_indent_level,
             include_delimiters=include_delimiters,
-            variable_form=variable_form,
-            ref_case=ref_case,
-            explicit_ref_values=(effective_explicit_ref_values_2),
-            bound_refs=materialized_bound_refs,
-            ref_key=effective_ref_key,
-            record_null_substitutions=materialized_record_null_substitutions,
-            collection_layout=collection_layout,
+            wrapped=wrap_in_file,
         )
 
     pre_form = literalize_pre_form(
@@ -622,11 +651,18 @@ def literalize(
         # returned above, so nothing declares one here (issue #4499).
         bound_ref_names=frozenset(),
     )
-    return literalize_apply_form(
-        pre_form=pre_form,
+    return format_result(
+        result=literalize_apply_form(
+            pre_form=pre_form,
+            language=language,
+            variable_form=variable_form,
+            wrap_in_file=wrap_in_file,
+        ),
         language=language,
-        variable_form=variable_form,
-        wrap_in_file=wrap_in_file,
+        source_context=source_context,
+        pre_indent_level=pre_indent_level,
+        include_delimiters=include_delimiters,
+        wrapped=wrap_in_file,
     )
 
 
@@ -652,6 +688,7 @@ def literalize_call(
     ref_key: str | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
     variable_form: VariableForm | None = None,
+    source_context: SourceContext | None = None,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
 
@@ -660,6 +697,9 @@ def literalize_call(
     language's :attr:`~Language.call_style_config`.
 
     Args:
+        source_context: Explicit placement and available width for canonical
+            source formatting. Requires a supporting language with its
+            canonical policy selected.
         source: The input string to convert.
         input_format: The serialization format of *source*.
         input_root_key: Optional key selecting the value to render from a
@@ -953,25 +993,32 @@ def literalize_call(
                 "invoke the target function twice"
             ),
         )
-    return literalize_call_parsed(
-        parsed=_select_input_root(
-            parsed=parse_input(source=source, input_format=input_format),
-            input_root_key=input_root_key,
+    return format_result(
+        result=literalize_call_parsed(
+            parsed=_select_input_root(
+                parsed=parse_input(source=source, input_format=input_format),
+                input_root_key=input_root_key,
+            ),
+            language=language,
+            target_function=target_function,
+            parameter_names=parameter_names,
+            call_transform=call_transform,
+            zip_source=zip_source,
+            zip_input_format=zip_input_format,
+            comment_source=comment_source,
+            per_element=per_element,
+            wrap_in_file=wrap_in_file,
+            ref_case=ref_case,
+            consumable_refs=consumable_refs,
+            ref_values=ref_values,
+            bound_refs=bound_refs,
+            ref_key=effective_ref_key,
+            collection_layout=collection_layout,
+            variable_form=variable_form,
         ),
         language=language,
-        target_function=target_function,
-        parameter_names=parameter_names,
-        call_transform=call_transform,
-        zip_source=zip_source,
-        zip_input_format=zip_input_format,
-        comment_source=comment_source,
-        per_element=per_element,
-        wrap_in_file=wrap_in_file,
-        ref_case=ref_case,
-        consumable_refs=consumable_refs,
-        ref_values=ref_values,
-        bound_refs=bound_refs,
-        ref_key=effective_ref_key,
-        collection_layout=collection_layout,
-        variable_form=variable_form,
+        source_context=source_context,
+        pre_indent_level=0,
+        include_delimiters=True,
+        wrapped=wrap_in_file,
     )

@@ -206,6 +206,7 @@ literalizer's
 literalizing
 localhost
 luac
+macOS
 matlab
 misclassifies
 misclassify

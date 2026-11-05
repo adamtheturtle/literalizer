@@ -74,6 +74,7 @@ from .language_specs import (
     sorted_languages,
     with_per_fixture_module_name,
 )
+from .source_profiles import source_profiles
 from .variant_cases import Variant, variants_for_axis
 from .variant_context import config_with_variant_layout
 
@@ -771,7 +772,7 @@ def _ref_fixture_contents(
 
 
 @beartype
-def run_literalize_ref_golden_case(
+def run_literalize_ref_golden_case_profile(
     *,
     config: RefCaseSpec,
     lang_cls: literalizer.LanguageCls,
@@ -903,3 +904,35 @@ def run_literalize_ref_golden_case(
         golden_path=golden_path,
         file_regression=file_regression,
     )
+
+
+@beartype
+def run_literalize_ref_golden_case(
+    *,
+    config: RefCaseSpec,
+    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
+    golden_name: str,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+    ref_case: literalizer.IdentifierCase | None,
+    version: enum.Enum,
+    pytest_config: pytest.Config,
+) -> None:
+    """Render legacy and canonical requests with the same case
+    ownership.
+    """
+    for profile in source_profiles(
+        spec=spec, lang_cls=lang_cls, name=golden_name
+    ):
+        run_literalize_ref_golden_case_profile(
+            config=config,
+            lang_cls=lang_cls,
+            spec=profile.spec,
+            golden_name=profile.name,
+            cases_dir=cases_dir,
+            file_regression=file_regression,
+            ref_case=ref_case,
+            version=version,
+            pytest_config=pytest_config,
+        )

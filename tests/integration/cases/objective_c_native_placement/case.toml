@@ -1,0 +1,52 @@
+schema_version = 1
+owner = "native-invocation"
+gates = [{kind = "capability_flag", flag = "supports_native_invocations"}]
+
+[native_invocation]
+consumer_template = '''#import <Foundation/Foundation.h>
+@interface PlacementWitness : NSObject
+- (double)cost:(NSString *)name
+    includingEstimatedRuntimeInMilliseconds:(double)value;
+@end
+@implementation PlacementWitness
+- (double)cost:(NSString *)name
+    includingEstimatedRuntimeInMilliseconds:(double)value {{
+  NSCAssert([name isEqualToString:@"é😀"], @"native string changed");
+  return value;
+}}
+@end
+static void verifyCost(double actual, NSArray *expected) {{
+  NSCAssert(actual == [expected[0] doubleValue],
+            @"nested selector call changed");
+}}
+static void verifyNumbers(NSInteger integer, double real) {{
+  NSCAssert(integer == 42 && real == 7.5, @"native scalar types changed");
+}}
+static NSDictionary<NSString *, NSArray<NSString *> *> *makeGroups(void) {{
+  return @{{@"team" : @[ @"native" ]}};
+}}
+int main(void) {{
+  @autoreleasepool {{
+{code}
+    NSCAssert(setEntries.count == 2 && [setEntries containsObject:@"beta"],
+              @"delimiter-free set changed");
+    NSCAssert(rows.count == 2 && [rows[1][@"count"] integerValue] == 2,
+              @"collection changed");
+    NSCAssert(
+        [rows[0][@"name"]
+            isEqualToString:
+                @"a long escaped value with a quote \" and Unicode café 😀 "
+                @"abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij "
+                @"abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij"],
+        @"escaping or string layout changed");
+    NSCAssert(
+        [value_with_a_long_identifier_used_to_check_assignment_wrapping_here
+            longLongValue] == 9223372036854775807LL,
+        @"long binding changed");
+    NSCAssert([groupNames[@"team"][0] isEqualToString:@"native"],
+              @"generic binding changed");
+    NSCAssert(inlineResult == 7.5, @"inline message result changed");
+  }}
+  return 0;
+}}
+'''

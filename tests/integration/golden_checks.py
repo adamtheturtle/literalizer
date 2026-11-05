@@ -21,6 +21,8 @@ import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
+from .source_format_oracle import check_source_format, has_canonical_profile
+
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SkipReason:
@@ -184,6 +186,10 @@ def check_golden(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Compare *contents* against the fixture at *golden_path*."""
+    if file_regression.request.config.getoption(
+        name="check_source_format"
+    ) and has_canonical_profile(path=golden_path):
+        check_source_format(contents=contents, path=golden_path)
     # newline="" prevents Python text-mode from converting \r\n to \n on
     # Windows, which would corrupt golden files containing literal CR
     # bytes (e.g. CommonLisp string_control_chars).

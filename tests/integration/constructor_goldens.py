@@ -7,7 +7,7 @@ from pathlib import Path
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import literalize_call
+from literalizer import SourceFormat, literalize_call
 
 from .case_manifests import ConstructorCaseSpec
 from .constructor_cases import ConstructorBindingCase
@@ -16,10 +16,11 @@ from .language_specs import make_spec, with_per_fixture_module_name
 
 
 @beartype
-def run_constructor_binding_golden_case(
+def _run_constructor_binding_golden_case(
     *,
     case: ConstructorBindingCase,
     version: enum.Enum,
+    canonical: bool,
     golden_path: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
@@ -29,6 +30,10 @@ def run_constructor_binding_golden_case(
         language_version=version,
         **case.spec_overrides,
     )
+    if canonical:
+        language = dataclasses.replace(
+            language, source_format=SourceFormat.CANONICAL, indent="  "
+        )
     manifest = case.manifest
     language = with_per_fixture_module_name(
         spec=language, golden_path=golden_path
@@ -83,3 +88,33 @@ def run_constructor_binding_golden_case(
         golden_path=golden_path,
         file_regression=file_regression,
     )
+
+
+def run_constructor_binding_golden_case(
+    *,
+    case: ConstructorBindingCase,
+    version: enum.Enum,
+    golden_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Check every declared profile of the same constructor request."""
+    _run_constructor_binding_golden_case(
+        case=case,
+        version=version,
+        golden_path=golden_path,
+        file_regression=file_regression,
+        canonical=False,
+    )
+    if case.lang_cls.supports_canonical_source_format:
+        _run_constructor_binding_golden_case(
+            case=case,
+            version=version,
+            golden_path=golden_path.with_name(
+                name=golden_path.name.replace(
+                    case.lang_cls.__name__,
+                    f"{case.lang_cls.__name__}_canonical",
+                )
+            ),
+            file_regression=file_regression,
+            canonical=True,
+        )

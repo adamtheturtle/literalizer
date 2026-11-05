@@ -16,11 +16,15 @@ from .literalize_ref_cases import (
     ref_language_versions,
     run_literalize_ref_golden_case,
 )
+from .source_profiles import source_format_marks
 
 
 @pytest.mark.parametrize(
     argnames="ref_case",
-    argvalues=discover_literalize_ref_cases(),
+    argvalues=[
+        pytest.param(case, marks=source_format_marks(lang_cls=case.lang_cls))
+        for case in discover_literalize_ref_cases()
+    ],
     ids=lambda case: f"{case.config.coverage_id}/{case.lang_cls.__name__}",
 )
 def test_literalize_ref_golden_file(
@@ -62,7 +66,12 @@ def test_literalize_ref_golden_file(
 
 @pytest.mark.parametrize(
     argnames="ref_variant_case",
-    argvalues=build_literalize_ref_variant_cases(),
+    argvalues=[
+        pytest.param(
+            case, marks=source_format_marks(lang_cls=case.variant.lang_cls)
+        )
+        for case in build_literalize_ref_variant_cases()
+    ],
     ids=lambda case: f"{case.config.coverage_id}/{case.variant.name}",
 )
 def test_literalize_ref_variant_golden_file(

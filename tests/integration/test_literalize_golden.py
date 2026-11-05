@@ -37,11 +37,12 @@ from .golden_scenarios import (
 from .language_metadata import language_metadata
 from .language_specs import make_golden_path, with_per_fixture_module_name
 from .literalize_rendering import literalize_rendering
+from .source_profiles import source_format_marks, source_profiles
 from .yaml_warnings import expected_yaml_warnings
 
 
 @beartype
-def _check_rendering(
+def _check_rendering_profile(
     *,
     rendering: GoldenRendering,
     spec: literalizer.Language,
@@ -194,9 +195,36 @@ def _check_rendering(
     )
 
 
+@beartype
+def _check_rendering(
+    *,
+    rendering: GoldenRendering,
+    spec: literalizer.Language,
+    version: enum.Enum,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Render legacy and canonical requests with the same case
+    ownership.
+    """
+    for profile in source_profiles(
+        spec=spec, lang_cls=rendering.lang_cls, name=rendering.golden_name
+    ):
+        _check_rendering_profile(
+            rendering=dataclasses.replace(rendering, golden_name=profile.name),
+            spec=profile.spec,
+            version=version,
+            cases_dir=cases_dir,
+            file_regression=file_regression,
+        )
+
+
 @pytest.mark.parametrize(
     argnames="group",
-    argvalues=golden_groups(),
+    argvalues=[
+        pytest.param(group, marks=source_format_marks(lang_cls=group.lang_cls))
+        for group in golden_groups()
+    ],
     ids=lambda group: group.test_id,
 )
 def test_golden_file(

@@ -1640,6 +1640,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     supports_typed_dict_open: bool
     supports_variable_names: bool
     supports_no_variable_wrap_in_file: bool
+    supports_canonical_source_format: bool
     supports_native_invocations: bool
     supports_dotted_calls: bool
     has_free_function_calls: bool
@@ -1892,6 +1893,7 @@ class LanguageCls(type, _LanguageMetadata):
             "reserved_module_identifiers",
             "reserved_variable_identifier_pattern",
             "supports_multiline_dict_layout",
+            "supports_canonical_source_format",
             "type_hint_collection_preamble_lines",
             "validate_call_arg",
             "wrap_combined_in_file",
