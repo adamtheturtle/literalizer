@@ -14,3 +14,10 @@ transform_stub_param_names = ["_call", "_zip"]
 zip_source = "--- true\n"
 zip_input_format = "yaml"
 requires_call_returns_expression = true
+
+# Check zipped scalar, mapping, and wrapper operands against generated helper signatures across call options.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"

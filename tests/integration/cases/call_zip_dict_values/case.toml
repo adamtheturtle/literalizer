@@ -24,3 +24,10 @@ requires_call_returns_expression = true
 # The two-parameter wrapper stub is gated generically via
 # ``supports_multi_param_call_wrapper_stub``.
 requires_dict_literal_as_free_expression = true
+
+# Check zipped scalar, mapping, and wrapper operands against generated helper signatures across call options.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
