@@ -3,3 +3,13 @@ suites = ["base"]
 
 [[variants]]
 axis = "type_hints"
+
+# Cover zero with an extreme exponent through alternate float formats and record/JSON carriers.
+[[variants]]
+axis = "float_format"
+
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "dict_format"
