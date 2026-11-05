@@ -8,14 +8,9 @@ my_data = {
   "reform_gap_date" => Date.new(1582, 10, 10, Date::GREGORIAN),
   "reform_day_date" => Date.new(1582, 10, 15),
   "modern_date" => Date.new(2024, 1, 15),
+  "expected" => {"ancient" => [1500, 3, 1], "reform_gap" => [1582, 10, 10], "reform_day" => [1582, 10, 15], "modern" => [2024, 1, 15]},
 }
-expected = {
-  "ancient" => [1500, 3, 1],
-  "reform_gap" => [1582, 10, 10],
-  "reform_day" => [1582, 10, 15],
-  "modern" => [2024, 1, 15]
-}
-expected.each do |field, parts|
+my_data.fetch("expected").each do |field, parts|
   wanted = Date.new(parts[0], parts[1], parts[2], Date::GREGORIAN)
   actual = my_data.fetch(field)
   date_value = my_data.fetch("#{field}_date")
