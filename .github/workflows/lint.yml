@@ -1573,6 +1573,9 @@ jobs:
       - name: Erlang roundtrip
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_erlang_roundtrip
+      - name: Erlang binary property programs
+        timeout-minutes: 5
+        run: uv run --no-dev --group=test python -m scripts.check_erlang_binary_programs
 
   lint-gleam:
     runs-on: ubuntu-24.04
