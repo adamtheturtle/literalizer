@@ -8151,7 +8151,7 @@ def _is_constructor_target(
 
 
 @beartype
-def _validate_call_target(
+def validate_call_target(
     *,
     language: Language,
     target_function: str,
@@ -8498,7 +8498,7 @@ def _validate_call_preconditions(
         names=parameter_names,
         reject_reserved=(isinstance(style, KeywordCallStyle) or wrap_in_file),
     )
-    _validate_call_target(
+    validate_call_target(
         language=language,
         target_function=target_function,
         target_function_parts=target_function_parts,

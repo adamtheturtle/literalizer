@@ -14,7 +14,6 @@ from .case_manifests import (
     case_input,
 )
 from .golden_scenarios import GoldenRendering, golden_groups
-from .language_specs import make_golden_path
 from .literalize_rendering import literalize_rendering
 
 
@@ -50,15 +49,8 @@ def test_concurrent_yaml_golden_files(cases_dir: Path) -> None:
     for rendering in renderings:
         input_info = case_input(case_dir=cases_dir / rendering.case_dir_name)
         assert input_info.input_format is InputFormat.YAML
-        for version in rendering.versions:
-            spec = rendering.spec_for(version=version)
-            path = make_golden_path(
-                parent=rendering.golden_parent,
-                name=rendering.golden_name,
-                extension=rendering.lang_cls.extension,
-                lang_cls=rendering.lang_cls,
-                version=version,
-            )
+        for spec in rendering.specs:
+            path = rendering.golden_path(version=spec.language_version)
             cases.append(
                 _ConcurrentGolden(
                     rendering=rendering,

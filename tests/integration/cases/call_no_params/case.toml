@@ -5,3 +5,9 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = []
 per_element = true
+
+[[call.variants]]
+axis = "expand_call_stubs"
+
+[[call.variants]]
+axis = "expanded_call_file"

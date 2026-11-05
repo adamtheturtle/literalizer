@@ -52,3 +52,11 @@ axis = "modifiers"
 
 [[variants]]
 axis = "dict_entry_spaced_multiline"
+
+[[variants]]
+axis = "indent_file_body"
+[variants.context]
+variable_form = "both"
+
+[[variants]]
+axis = "expanded_call_file"

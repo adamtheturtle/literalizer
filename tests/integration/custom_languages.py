@@ -3,18 +3,23 @@ variants.
 """
 
 import dataclasses
+import datetime as dt
 from collections.abc import Callable
 from functools import cache, cached_property
-from typing import ClassVar
+from typing import ClassVar, override
 
 from beartype import beartype
 
 import literalizer
 from literalizer import DictFormatConfig
 from literalizer._formatters.collection_openers import typed_collection_open
+from literalizer._formatters.format_integers import (
+    format_integer_hex,
+    make_negative_nondecimal_i64_formatter,
+)
 from literalizer._formatters.type_inference import DictType, ListType
 from literalizer._types import Scalar, Value
-from literalizer.languages import Zig
+from literalizer.languages import Cpp, Ruby, Zig
 
 from .language_specs import make_spec, sorted_languages
 from .variant_types import Variant, compact_variant
@@ -86,9 +91,89 @@ class SkipNullZig(Zig):
     skip_null_dict_values: ClassVar[bool] = True
 
 
+@cache
+@beartype
+def existing_suffix_cpp(*, base_suffix: str) -> literalizer.LanguageCls:
+    """Compose a real C++ literal with a suffix already supplied by its
+    base.
+    """
+
+    def format_integer(_self: Cpp) -> Callable[[int], str]:
+        """Keep the factory's actual expression in the native program."""
+
+        def base(value: int) -> str:
+            """Supply the caller-owned suffix before composition."""
+            return format_integer_hex(value=value) + base_suffix
+
+        return make_negative_nondecimal_i64_formatter(
+            base=base, suffix="LL", base_suffix=base_suffix
+        )
+
+    return literalizer.LanguageCls.__new__(
+        mcs=type(Cpp),
+        name=f"ExistingSuffix{base_suffix}Cpp",
+        bases=(Cpp,),
+        namespace={"format_integer": cached_property(func=format_integer)},
+    )
+
+
+class DatetimeDateRuby(Ruby):
+    """Exercise the date interface with the original datetime
+    arguments.
+    """
+
+    @cached_property
+    @override
+    def format_datetime(self) -> Callable[[dt.datetime], str]:
+        """Pass the datetime itself through the selected date enum
+        member.
+        """
+        return self.date_format
+
+
+@beartype
+def _formatter_contract_variants(*, axis_key: str) -> list[Variant]:
+    """Build native consumers of the former direct formatter contracts."""
+    match axis_key:
+        case "existing_integer_suffix":
+            return [
+                compact_variant(
+                    name=f"Cpp_existing_integer_suffix_{suffix.lower()}",
+                    spec=make_spec(
+                        lang_cls=existing_suffix_cpp(base_suffix=suffix),
+                        language_version=version,
+                        variable_type_hints=Cpp.variable_type_hints_formats.NEVER,
+                    ),
+                    lang_cls=Cpp,
+                )
+                for suffix in ("LL", "L")
+                for version in Cpp.VersionFormats
+            ]
+        case "date_formatter_datetime_view":
+            return [
+                compact_variant(
+                    name=f"Ruby_date_formatter_datetime_{member.name.lower()}",
+                    spec=make_spec(
+                        lang_cls=DatetimeDateRuby,
+                        language_version=version,
+                        date_format=member,
+                    ),
+                    lang_cls=Ruby,
+                )
+                for member in Ruby.DateFormats
+                if member.value.type_produced is dt.date
+                for version in Ruby.VersionFormats
+            ]
+        case _:
+            return []
+
+
 @beartype
 def variants_for_custom_language_axis(*, axis_key: str) -> list[Variant]:
     """Build the custom language variants for an axis, if it has any."""
+    formatter_contracts = _formatter_contract_variants(axis_key=axis_key)
+    if len(formatter_contracts) > 0:
+        return formatter_contracts
     match axis_key:
         case "copied_json_to_native":
             return [

@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "variant"
+
+# Retain all eight Ruby datetime-as-date enum calls in native consumers.
+[[variants]]
+axis = "date_formatter_datetime_view"
+wrap_in_file = false
+
+[variants.consumer_templates]
+Ruby = '''{preamble}
+{code}
+my_data.fetch("expected").each do |field, parts|
+  wanted = Date.new(parts[0], parts[1], parts[2], Date::GREGORIAN)
+  actual = my_data.fetch(field)
+  date_value = my_data.fetch("#{{field}}_date")
+  raise "incorrect Gregorian date for #{{field}}" unless actual == date_value && actual == wanted
+end
+'''

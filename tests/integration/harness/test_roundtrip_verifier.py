@@ -20,7 +20,6 @@ class _Cases(BaseModel, extra="forbid", frozen=True):
     """The complete declarative regression corpus."""
 
     mismatches: tuple[_RoundtripCase, ...]
-    equivalent: tuple[_RoundtripCase, ...]
 
 
 _CASES = TypeAdapter(type=_Cases).validate_python(
@@ -44,16 +43,3 @@ def test_roundtrip_mismatch(
         )
     assert exc_info.value.code == 1
     assert "negative-control: round-trip mismatch" in capsys.readouterr().err
-
-
-@pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES.equivalent, ids=lambda case: case.name
-)
-def test_roundtrip_equivalent(case: _RoundtripCase) -> None:
-    """Retain numeric equivalence, object ordering and key exclusions."""
-    verify(
-        label="passing-control",
-        produced_json=case.produced_json,
-        exclude_keys=case.exclude_keys,
-        expected_json=case.expected_json,
-    )

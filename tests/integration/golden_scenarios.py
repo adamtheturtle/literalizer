@@ -65,6 +65,7 @@ from .golden_checks import (
 )
 from .language_specs import (
     find_redefinition_styles,
+    make_golden_path,
     make_spec,
     sorted_languages,
 )
@@ -306,6 +307,33 @@ class GoldenRendering:
             lang_cls=self.lang_cls,
             language_version=version,
             **self.spec_source.overrides,
+        )
+
+    @property
+    def specs(self) -> tuple[literalizer.Language, ...]:
+        """Return the effective specs exercised by the golden runner.
+
+        An override may require a newer language version (for example,
+        Java records require JDK16). Keep only the iteration for that
+        effective version, so earlier versions cannot own phantom files.
+        """
+        specs: list[literalizer.Language] = []
+        for version in self.versions:
+            spec = self.spec_for(version=version)
+            if spec.language_version is version:
+                specs.append(spec)
+        return tuple(specs)
+
+    def golden_path(self, *, version: enum.Enum) -> Path:
+        """Return this rendering's fixture path for one effective
+        version.
+        """
+        return make_golden_path(
+            parent=self.golden_parent,
+            name=self.golden_name,
+            extension=self.lang_cls.extension,
+            lang_cls=self.lang_cls,
+            version=version,
         )
 
 

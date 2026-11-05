@@ -9,6 +9,7 @@ from __future__ import annotations
 import dataclasses
 import enum
 import re
+from collections.abc import Callable
 from typing import Protocol, runtime_checkable
 
 from beartype import beartype
@@ -135,6 +136,41 @@ class _NativeInvocationLanguage(Protocol):
         ...
 
 
+@runtime_checkable
+class _NativeEmitterLanguage(Language, _NativeInvocationLanguage, Protocol):
+    """A language with the original native emission callbacks."""
+
+
+@runtime_checkable
+class _PositionedNativeInvocationLanguage(Protocol):
+    """An emitter accepting caller-owned columns without parsing
+    source.
+    """
+
+    @staticmethod
+    def render_native_invocation_at_column(
+        language: Language,
+        invocation: NativeInvocation,
+        /,
+        *,
+        initial_column: int,
+        scope_indent: int,
+    ) -> str:
+        """Render directly at a known insertion point."""
+        ...
+
+
+@runtime_checkable
+class _ObjectiveCNativeOptions(Protocol):
+    """Independent options supplied by the Objective-C backend."""
+
+    native_argument_layout: enum.Enum
+    native_align_selectors: bool
+    native_continuation_indent: int
+    native_column_limit: int
+    native_collection_layout: CollectionLayout
+
+
 @beartype
 def _identifier(name: str, /) -> str:
     """Reject source fragments where a single identifier is required."""
@@ -227,16 +263,19 @@ def literalize_native_call(
     invocation: NativeInvocation,
     variable_form: NewVariable | ExistingVariable | None = None,
     pre_indent_level: int = 0,
+    initial_column: int = 0,
 ) -> LiteralizeResult:
     """Render a typed native invocation using caller-owned declarations.
 
     The returned fragment is executable code, suitable for composition
     inside a caller's function scope. It never synthesizes callee stubs.
     Existing string-target ``literalize_call`` behavior is unchanged.
+    ``initial_column`` counts caller-owned text before the fragment after
+    its scope indentation; binding prefixes are accounted for automatically.
     """
     language = dataclasses.replace(language)
     if (
-        not isinstance(language, _NativeInvocationLanguage)
+        not isinstance(language, _NativeEmitterLanguage)
         or not language.supports_native_invocations
     ):
         msg = f"{type(language).__name__} does not support native invocations"
@@ -244,7 +283,15 @@ def literalize_native_call(
     if pre_indent_level < 0:
         msg = "pre_indent_level must be non-negative"
         raise NativeCallError(msg)
-    code = language.render_native_invocation(language, invocation)
+    if initial_column < 0:
+        msg = "initial_column must be non-negative"
+        raise NativeCallError(msg)
+    if initial_column != 0 and not isinstance(
+        language, _PositionedNativeInvocationLanguage
+    ):
+        msg = "Native backend does not support initial_column"
+        raise NativeCallError(msg)
+    binding = ""
     if variable_form is not None:
         _ = _identifier(variable_form.name)
         if is_reserved_identifier(
@@ -263,10 +310,17 @@ def literalize_native_call(
                 raise NativeCallError(msg)
             spelling = language.native_type_name(invocation.target.return_type)
             separator = "" if spelling.endswith("*") else " "
-            code = f"{spelling}{separator}{variable_form.name} = {code}"
+            binding = f"{spelling}{separator}{variable_form.name} = "
         else:
-            code = f"{variable_form.name} = {code}"
+            binding = f"{variable_form.name} = "
     prefix = language.indent * pre_indent_level
+    code = _bound_native_expression(
+        language,
+        invocation,
+        binding,
+        initial_column=initial_column,
+        scope_indent=len(prefix),
+    )
     code = "\n".join(
         prefix + line if line != "" else line
         for line in (code + ";").splitlines()
@@ -286,6 +340,61 @@ def literalize_native_call(
         # Native object initializers are runtime expressions even when bound.
         is_call_statement=True,
     )
+
+
+@beartype
+def _render_native_expression(
+    language: _NativeEmitterLanguage,
+    invocation: NativeInvocation,
+    /,
+    *,
+    initial_column: int,
+    scope_indent: int,
+) -> str:
+    """Use an optional positioned emitter while retaining legacy
+    backends.
+    """
+    if isinstance(language, _PositionedNativeInvocationLanguage):
+        return language.render_native_invocation_at_column(
+            language,
+            invocation,
+            initial_column=initial_column,
+            scope_indent=scope_indent,
+        )
+    return language.render_native_invocation(language, invocation)
+
+
+@beartype
+def _bound_native_expression(
+    language: _NativeEmitterLanguage,
+    invocation: NativeInvocation,
+    binding: str,
+    /,
+    *,
+    initial_column: int,
+    scope_indent: int,
+) -> str:
+    """Choose a binding break before emitting its expression again."""
+    column = initial_column + len(binding)
+    expression = _render_native_expression(
+        language, invocation, initial_column=column, scope_indent=scope_indent
+    )
+    if (
+        binding != ""
+        and isinstance(language, _ObjectiveCNativeOptions)
+        and language.native_argument_layout.name != "INLINE"
+        and scope_indent + column + len(expression.split(sep="\n")[0])
+        > language.native_column_limit
+    ):
+        continuation = language.indent * language.native_continuation_indent
+        binding = binding.rstrip() + "\n" + continuation
+        expression = _render_native_expression(
+            language,
+            invocation,
+            initial_column=len(continuation),
+            scope_indent=scope_indent,
+        )
+    return binding + expression
 
 
 @beartype
@@ -359,7 +468,9 @@ def _object_literal(language: Language, value: Value, /) -> str:
     code = render_value_literal(
         value=value,
         language=language,
-        collection_layout=CollectionLayout.COMPACT,
+        collection_layout=language.native_collection_layout
+        if isinstance(language, _ObjectiveCNativeOptions)
+        else CollectionLayout.COMPACT,
     )
     return language.format_call_arg(value, code)
 
@@ -457,27 +568,47 @@ def _objc_literal(
 
 
 @beartype
+def _indent_operand(code: str, column: int, /) -> str:
+    """Place continuation lines of a freshly emitted literal operand."""
+    first, *rest = code.split(sep="\n")
+    return "\n".join(
+        [
+            first,
+            *(" " * column + line if line != "" else line for line in rest),
+        ]
+    )
+
+
+@beartype
 def _objc_argument(
     language: Language,
     argument: NativeLiteral | NativeReference | NativeInvocation,
     expected: NativeType,
     /,
+    *,
+    initial_column: int,
+    scope_indent: int,
+    line_indent: int,
 ) -> str:
-    """Render an operand using the declared parameter type."""
+    """Render one typed operand directly at its argument position."""
     _ = objective_c_type(expected)
     if expected is ScalarType.VOID:
         msg = "A parameter cannot have void type"
         raise NativeCallError(msg)
     if isinstance(argument, NativeLiteral):
-        return _objc_literal(language, argument, expected)
-    if isinstance(argument, NativeReference):
-        code = _identifier(argument.name)
-        actual = argument.type
-    else:
-        code = objective_c_invocation(language, argument)
-        actual = argument.target.return_type
+        code = _objc_literal(language, argument, expected)
+        return (
+            _indent_operand(code, line_indent)
+            if _positioned_operands(language)
+            else code
+        )
+    actual = (
+        argument.type
+        if isinstance(argument, NativeReference)
+        else argument.target.return_type
+    )
     _ = objective_c_type(actual)
-    if (
+    box = (
         isinstance(expected, ObjectType)
         and expected.name in {"id", "NSNumber", "NSObject"}
         and actual
@@ -487,42 +618,112 @@ def _objc_argument(
             ScalarType.UNSIGNED,
             ScalarType.FLOAT,
         }
-    ):
-        return f"@({code})"
-    if not _compatible(actual, expected):
+    )
+    if not box and not _compatible(actual, expected):
         msg = (
             f"Native operand type {actual!r} is incompatible with {expected!r}"
         )
         raise NativeCallError(msg)
-    if expected is ScalarType.FLOAT and actual in {
-        ScalarType.INTEGER,
-        ScalarType.UNSIGNED,
-    }:
-        return f"(double){code}"
-    return code
+    prefix = (
+        "@("
+        if box
+        else "(double)"
+        if expected is ScalarType.FLOAT
+        and actual in {ScalarType.INTEGER, ScalarType.UNSIGNED}
+        else ""
+    )
+    code = (
+        _identifier(argument.name)
+        if isinstance(argument, NativeReference)
+        else objective_c_invocation(
+            language,
+            argument,
+            initial_column=initial_column + len(prefix),
+            scope_indent=scope_indent,
+            line_indent=line_indent,
+        )
+    )
+    return prefix + code + (")" if box else "")
 
 
 @beartype
-def objective_c_invocation(
-    language: Language, invocation: NativeInvocation, /
-) -> str:
-    """Lower typed targets to genuine Objective-C expressions."""
-    target = invocation.target
-    _ = objective_c_type(target.return_type)
-    if len(invocation.arguments) != len(target.parameter_types):
-        msg = "Native argument count does not match the declared signature"
-        raise NativeCallError(msg)
-    arguments = tuple(
-        _objc_argument(language, argument, expected)
-        for argument, expected in zip(
-            invocation.arguments, target.parameter_types, strict=True
-        )
+def _native_width(code: str, column: int, scope: int, /) -> int:
+    """Measure emitted lines without interpreting their source
+    contents.
+    """
+    first, *rest = code.split(sep="\n")
+    return (
+        scope + max(column + len(first), *(len(line) for line in rest))
+        if len(rest) != 0
+        else scope + column + len(first)
     )
+
+
+@beartype
+def _positioned_operands(language: Language, /) -> bool:
+    """Keep legacy operands unchanged unless layout is explicitly selected."""
+    return isinstance(language, _ObjectiveCNativeOptions) and (
+        language.native_argument_layout.name != "INLINE"
+        or language.native_collection_layout is not CollectionLayout.COMPACT
+    )
+
+
+@beartype
+def _objective_c_receiver(
+    language: Language,
+    target: MessageTarget,
+    /,
+    *,
+    initial_column: int,
+    scope_indent: int,
+    line_indent: int,
+) -> str:
+    """Emit a receiver from its declared native structure."""
+    receiver = target.receiver
+    if isinstance(receiver, NativeLiteral):
+        code = _objc_literal(language, receiver, ObjectType(name="id"))
+        return (
+            _indent_operand(code, line_indent)
+            if _positioned_operands(language)
+            else code
+        )
+    if isinstance(receiver, NativeClass):
+        return _identifier(receiver.name)
+    if isinstance(receiver, NativeReference):
+        if not isinstance(receiver.type, ObjectType):
+            msg = "A message receiver must be an object"
+            raise NativeCallError(msg)
+        _ = objective_c_type(receiver.type)
+        return _identifier(receiver.name)
+    if not isinstance(receiver.target.return_type, ObjectType):
+        msg = "A message receiver must return an object"
+        raise NativeCallError(msg)
+    return objective_c_invocation(
+        language,
+        receiver,
+        initial_column=initial_column + 1,
+        scope_indent=scope_indent,
+        line_indent=line_indent,
+    )
+
+
+@beartype
+def _objective_c_head(
+    language: Language,
+    invocation: NativeInvocation,
+    /,
+    *,
+    initial_column: int,
+    scope_indent: int,
+    line_indent: int,
+) -> tuple[str, str, tuple[str, ...]]:
+    """Emit a target prefix, closing delimiter, and selector labels."""
+    target = invocation.target
     if isinstance(target, FunctionTarget):
-        return _identifier(target.name) + "(" + ", ".join(arguments) + ")"
+        return _identifier(target.name) + "(", ")", ()
+    labels = _selector(target.selector, len(invocation.arguments))
     if isinstance(target, ConstructorTarget):
         class_name = _identifier(target.class_name)
-        labels = _selector(target.selector, len(arguments))
         if (
             re.fullmatch(pattern=r"init(?:[^a-z].*)?", string=labels[0])
             is None
@@ -531,30 +732,244 @@ def objective_c_invocation(
             raise NativeCallError(msg)
         receiver = f"[{class_name} alloc]"
     else:
-        labels = _selector(target.selector, len(arguments))
-        if isinstance(target.receiver, NativeLiteral):
-            receiver = _objc_literal(
-                language, target.receiver, ObjectType(name="id")
-            )
-        elif isinstance(target.receiver, NativeClass):
-            receiver = _identifier(target.receiver.name)
-        elif isinstance(target.receiver, NativeReference):
-            if not isinstance(target.receiver.type, ObjectType):
-                msg = "A message receiver must be an object"
-                raise NativeCallError(msg)
-            _ = objective_c_type(target.receiver.type)
-            receiver = _identifier(target.receiver.name)
+        receiver = _objective_c_receiver(
+            language,
+            target,
+            initial_column=initial_column,
+            scope_indent=scope_indent,
+            line_indent=line_indent,
+        )
+    return f"[{receiver} ", "]", labels
+
+
+@beartype
+def _selector_arguments(
+    language: Language,
+    head: str,
+    labels: tuple[str, ...],
+    argument: Callable[[int, int, int], str],
+    options: _ObjectiveCNativeOptions,
+    /,
+    *,
+    initial_column: int,
+    line_indent: int,
+) -> str:
+    """Emit selector lines at the selected colon or indent anchor."""
+    continuation = (
+        initial_column
+        + len(language.indent) * options.native_continuation_indent
+    )
+    first_start = (
+        initial_column + len(head)
+        if "\n" not in head
+        else len(head.rsplit(sep="\n", maxsplit=1)[-1])
+    )
+    colon = first_start + len(labels[0])
+    receiver_break = options.native_align_selectors and any(
+        len(label) > colon - initial_column for label in labels
+    )
+    if receiver_break:
+        head = head.rstrip() + "\n"
+        colon = continuation + max(len(label) for label in labels)
+    rendered: list[str] = []
+    for i, label in enumerate(iterable=labels):
+        start = (
+            colon - len(label)
+            if options.native_align_selectors
+            else continuation
+        )
+        if i == 0 and not receiver_break:
+            start = first_start
+            lead = ""
         else:
-            if not isinstance(target.receiver.target.return_type, ObjectType):
-                msg = "A message receiver must return an object"
-                raise NativeCallError(msg)
-            receiver = objective_c_invocation(language, target.receiver)
-    message = (
-        labels[0]
-        if len(arguments) == 0
-        else " ".join(
-            label + ":" + argument
-            for label, argument in zip(labels, arguments, strict=True)
+            lead = " " * start
+        rendered.append(
+            lead
+            + label
+            + ":"
+            + argument(
+                i,
+                start + len(label) + 1,
+                line_indent if i == 0 and not receiver_break else start,
+            )
+        )
+    return head + "\n".join(rendered) + "]"
+
+
+@beartype
+def _flat_arguments(
+    head: str,
+    close: str,
+    labels: tuple[str, ...],
+    count: int,
+    argument: Callable[[int, int, int], str],
+    /,
+    *,
+    initial_column: int,
+    line_indent: int,
+) -> tuple[str, tuple[bool, ...]]:
+    """Emit the inline argument choice before deciding optional
+    wrapping.
+    """
+    cursor = (
+        initial_column + len(head)
+        if "\n" not in head
+        else len(head.rsplit(sep="\n", maxsplit=1)[-1])
+    )
+    pieces: list[str] = []
+    multiline: list[bool] = []
+    for i in range(count):
+        label = labels[i] + ":" if len(labels) != 0 else ""
+        value = argument(i, cursor + len(label), line_indent)
+        multiline.append("\n" in value)
+        if "\n" in value:
+            last = value.rsplit(sep="\n", maxsplit=1)[-1]
+            line_indent = len(last) - len(last.lstrip())
+        piece = label + value
+        pieces.append(piece)
+        cursor = (
+            len(value.rsplit(sep="\n", maxsplit=1)[-1])
+            if "\n" in value
+            else cursor + len(piece)
+        )
+        cursor += 1 if len(labels) != 0 else 2
+    return head + (" " if len(labels) != 0 else ", ").join(
+        pieces
+    ) + close, tuple(multiline)
+
+
+@beartype
+def _function_arguments(
+    language: Language,
+    head: str,
+    close: str,
+    count: int,
+    argument: Callable[[int, int, int], str],
+    /,
+    *,
+    options: _ObjectiveCNativeOptions,
+    initial_column: int,
+    scope_indent: int,
+    line_indent: int,
+) -> str:
+    """Emit function arguments at the caller's prefix and width."""
+    anchor = initial_column + len(head)
+    longest = max(
+        len(argument(i, anchor, line_indent).split(sep="\n")[0])
+        for i in range(count)
+    )
+    if scope_indent + anchor + longest + 2 > options.native_column_limit:
+        anchor = (
+            initial_column
+            + len(language.indent) * options.native_continuation_indent
+        )
+        head += "\n" + " " * anchor
+        line_indent = anchor
+    return (
+        head
+        + (",\n" + " " * anchor).join(
+            argument(i, anchor, line_indent if i == 0 else anchor)
+            for i in range(count)
+        )
+        + close
+    )
+
+
+@beartype
+def objective_c_invocation(
+    language: Language,
+    invocation: NativeInvocation,
+    /,
+    *,
+    initial_column: int = 0,
+    scope_indent: int = 0,
+    line_indent: int = 0,
+) -> str:
+    """Emit a typed call using explicit breaks and alignment choices."""
+    options = (
+        language if isinstance(language, _ObjectiveCNativeOptions) else None
+    )
+    if options is not None and (
+        options.native_continuation_indent < 0
+        or options.native_column_limit < 1
+    ):
+        msg = (
+            "Native continuation indentation must be non-negative "
+            "and column limit positive"
+        )
+        raise NativeCallError(msg)
+    target = invocation.target
+    _ = objective_c_type(target.return_type)
+    count = len(invocation.arguments)
+    if count != len(target.parameter_types):
+        msg = "Native argument count does not match the declared signature"
+        raise NativeCallError(msg)
+    head, close, labels = _objective_c_head(
+        language,
+        invocation,
+        initial_column=initial_column,
+        scope_indent=scope_indent,
+        line_indent=line_indent,
+    )
+    if count == 0:
+        return head + (labels[0] if len(labels) != 0 else "") + close
+
+    def argument(index: int, column: int, leading: int, /) -> str:
+        """Render one operand at the position chosen by its parent."""
+        return _objc_argument(
+            language,
+            invocation.arguments[index],
+            target.parameter_types[index],
+            initial_column=column,
+            scope_indent=scope_indent,
+            line_indent=leading,
+        )
+
+    flat, multiline = _flat_arguments(
+        head,
+        close,
+        labels,
+        count,
+        argument,
+        initial_column=initial_column,
+        line_indent=line_indent,
+    )
+    if options is None or not _positioned_operands(language):
+        return flat
+    split = (
+        (options.native_argument_layout.name == "MULTILINE" and count > 1)
+        or (
+            options.native_argument_layout.name == "AUTO"
+            and _native_width(flat, initial_column, scope_indent) + 1
+            > options.native_column_limit
+        )
+        or any(
+            is_multiline and isinstance(value, NativeInvocation)
+            for is_multiline, value in zip(
+                multiline, invocation.arguments, strict=True
+            )
         )
     )
-    return f"[{receiver} {message}]"
+    if not split:
+        return flat
+    if len(labels) == 0:
+        return _function_arguments(
+            language,
+            head,
+            close,
+            count,
+            argument,
+            options=options,
+            initial_column=initial_column,
+            scope_indent=scope_indent,
+            line_indent=line_indent,
+        )
+    return _selector_arguments(
+        language,
+        head,
+        labels,
+        argument,
+        options,
+        initial_column=initial_column,
+        line_indent=line_indent,
+    )

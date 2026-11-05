@@ -6,7 +6,7 @@ import datetime as dt
 import enum
 import re
 from collections.abc import Callable, Sequence
-from functools import cached_property
+from functools import cached_property, partial
 from typing import TYPE_CHECKING, ClassVar
 
 from beartype import beartype
@@ -51,6 +51,7 @@ from literalizer._language import (
     BareIntegerWidthStrategies,
     CallParameterShadowing,
     CallStubResult,
+    CollectionLayout,
     CommentConfig,
     DateFormatConfig,
     DateFormatEnum,
@@ -340,12 +341,30 @@ def _objc_format_call_target(parts: Sequence[str], /) -> str:
 
 
 @beartype
+def _expanded_objc_stub_body(
+    params: Sequence[str], indent: str, /, *, is_value: bool
+) -> str:
+    """Emit each generated helper statement on its own indented line."""
+    statements = [f"(void)_a{i};" for i in range(len(params))]
+    if is_value:
+        statements.append(f"return {_NULL_OBJECT_STUB.value};")
+    return (
+        "{\n"
+        + "".join(indent + statement + "\n" for statement in statements)
+        + "}"
+    )
+
+
+@beartype
 def _objc_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
     stub_return: StubReturn,
     _args: Sequence[Value],
     /,
+    *,
+    indent: str,
+    expand_body: bool,
 ) -> tuple[str, ...]:
     """Return Objective-C stub declarations for a call name.
 
@@ -386,6 +405,8 @@ def _objc_call_stub(
     stub_body = "{}"
     if has_body:
         stub_body = f"{{{discards}{return_stmt} }}"
+    if expand_body:
+        stub_body = _expanded_objc_stub_body(params, indent, is_value=is_value)
     if len(parts) == 1:
         return (
             (
@@ -687,6 +708,24 @@ class ObjectiveC(metaclass=LanguageCls):
     sequence_binding_declarations = default_sequence_binding_declarations
     format_call_binding_body_preamble = no_call_binding_body_preamble
     format_call_binding_file_pragmas = no_call_binding_file_pragmas
+
+    class NativeArgumentLayouts(enum.Enum):
+        """Line breaks selected by the typed invocation emitter."""
+
+        INLINE = enum.auto()
+        MULTILINE = enum.auto()
+        AUTO = enum.auto()
+
+    indent_file_body: bool = False
+    expand_call_stubs: bool = False
+
+    native_argument_layout: NativeArgumentLayouts = (
+        NativeArgumentLayouts.INLINE
+    )
+    native_align_selectors: bool = True
+    native_continuation_indent: int = 1
+    native_column_limit: int = 80
+    native_collection_layout: CollectionLayout = CollectionLayout.COMPACT
 
     module_name: str = "Module"
 
@@ -1079,6 +1118,21 @@ class ObjectiveC(metaclass=LanguageCls):
             content=content,
             body_preamble=body_preamble,
         )
+        if self.indent_file_body:
+            body = "\n".join(
+                self.indent * 2 + line if line != "" else line
+                for line in content.split(sep="\n")
+            )
+            use = (
+                ""
+                if variable_name == ""
+                else f"\n{self.indent * 2}(void){variable_name};"
+            )
+            return (
+                f"int {self.module_name}(void) {{\n"
+                f"{self.indent}@autoreleasepool {{\n{body}{use}\n"
+                f"{self.indent}}}\n{self.indent}return 0;\n}}"
+            )
         use_line = ""
         if variable_name != "":
             use_line = f"\n{self.indent}(void){variable_name};"
@@ -1166,6 +1220,26 @@ class ObjectiveC(metaclass=LanguageCls):
     ) -> str:
         """Render an explicitly typed native call expression."""
         return objective_c_invocation(language, invocation)
+
+    @staticmethod
+    @beartype
+    def render_native_invocation_at_column(
+        language: Language,
+        invocation: NativeInvocation,
+        /,
+        *,
+        initial_column: int,
+        scope_indent: int,
+    ) -> str:
+        """Emit native syntax with the caller's binding and scope
+        columns.
+        """
+        return objective_c_invocation(
+            language,
+            invocation,
+            initial_column=initial_column,
+            scope_indent=scope_indent,
+        )
 
     @staticmethod
     @beartype
@@ -1272,7 +1346,11 @@ class ObjectiveC(metaclass=LanguageCls):
         tuple[str, ...],
     ]:
         """Return file-scope stubs for a call expression."""
-        return _objc_call_stub
+        return partial(
+            _objc_call_stub,
+            indent=self.indent,
+            expand_body=self.expand_call_stubs,
+        )
 
     @cached_property
     @beartype

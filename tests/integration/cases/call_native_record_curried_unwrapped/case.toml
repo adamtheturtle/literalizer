@@ -1,0 +1,13 @@
+schema_version = 1
+owner = "literalize-call"
+# Replaces the synthetic curried-record discovery check with native callers.
+# The call style itself selects compatible languages, without an earlier gate.
+[call]
+target_function = "consume"
+parameter_names = ["item"]
+per_element = true
+call_style = "command"
+variant_only = true
+
+[[call.variants]]
+axis = "native_record"
