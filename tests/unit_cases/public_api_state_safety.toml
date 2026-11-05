@@ -9,11 +9,3 @@ name = "c_cjson"
 language = "C"
 golden_name = "C_json_type_cjson"
 case_names = ["json_helper_name_arena", "sibling_list_values_same_shape", "rectangular_map_sequence_shapes"]
-
-[[snapshots]]
-name = "nested_record_names"
-case_name = "record_named_nested_record"
-golden_name = "Rust_record_shape_names_NamedType"
-parent_fields = ["collection", "featured_entry"]
-parent_name = "Parent"
-child_name = "Replacement"

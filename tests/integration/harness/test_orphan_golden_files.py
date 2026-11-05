@@ -25,6 +25,9 @@ from tests.integration.literalize_ref_cases import (
     ref_language_versions,
 )
 from tests.integration.native_invocation_cases import native_invocation_cases
+from tests.integration.record_snapshot_cases import (
+    record_snapshot_golden_paths,
+)
 from tests.integration.unwrapped_result_cases import result_view_golden_paths
 
 
@@ -94,6 +97,7 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     )
     expected.update(_expected_literalize_golden_files(cases_dir=cases_dir))
     expected.update(result_view_golden_paths(cases_dir=cases_dir))
+    expected.update(record_snapshot_golden_paths(cases_dir=cases_dir))
 
     for call_case in discover_call_cases():
         if call_case.expected_exception is not None:
