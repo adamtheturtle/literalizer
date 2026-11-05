@@ -128,7 +128,7 @@ def test_native_width_accounts_for_caller_and_binding(
     column_limit = 40
     language = ObjectiveC(
         indent="  ",
-        native_argument_layout=ObjectiveC.NativeArgumentLayouts.AUTO,
+        native_argument_layout=ObjectiveC.native_argument_layouts.AUTO,
         native_column_limit=column_limit,
     )
     invocation = literalizer.NativeInvocation(
