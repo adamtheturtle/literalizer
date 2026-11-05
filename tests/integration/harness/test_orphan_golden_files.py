@@ -32,6 +32,7 @@ from tests.integration.constructor_cases import (
     constructor_binding_cases,
     constructor_golden_path,
 )
+from tests.integration.deep_input_cases import deep_input_golden_paths
 from tests.integration.golden_scenarios import golden_groups
 from tests.integration.language_specs import make_golden_path, make_spec
 from tests.integration.literalize_ref_cases import (
@@ -229,6 +230,7 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     )
     expected.update(_expected_default_module_name_golden_files())
     expected.update(result_view_golden_paths(cases_dir=cases_dir))
+    expected.update(deep_input_golden_paths(cases_dir=cases_dir))
 
     for case_name, lang_cls in discover_cases(cases_dir=cases_dir):
         expected.update(
