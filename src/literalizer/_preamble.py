@@ -509,33 +509,57 @@ def _structural_type_id(*, value: Value) -> str:
 
 
 @beartype
-def _has_union_in_type_hints(*, data: Value) -> bool:
+def _has_union_in_type_hints(
+    *, data: Value, recordized_dict_ids: frozenset[int]
+) -> bool:
     """Return ``True`` if the Python type hints for *data* would contain
     a union (``Union[A, B]`` or ``A | B``).
 
     Walks *data* recursively and applies the same ``merge_dicts=True``
     logic that Python's sequence type-hint formatter uses, so the result
     is accurate without running the full formatter.
+    Generated records retain their own annotation dependencies, so their
+    underlying mappings remain opaque here.
     """
+    if id(data) in recordized_dict_ids:
+        return False
     match data:
         case list():
-            merged = _list_merge_dicts(elements=data)
+            merged = _list_merge_dicts(
+                elements=[
+                    value
+                    for value in data
+                    if id(value) not in recordized_dict_ids
+                ]
+            )
             type_ids = list(
                 dict.fromkeys(_structural_type_id(value=e) for e in merged)
             )
             if len(type_ids) > 1:
                 return True
-            return any(_has_union_in_type_hints(data=e) for e in merged)
+            return any(
+                _has_union_in_type_hints(
+                    data=e, recordized_dict_ids=recordized_dict_ids
+                )
+                for e in merged
+            )
         case dict():
             if len(data) > 0:
                 val_ids = list(
                     dict.fromkeys(
-                        _structural_type_id(value=v) for v in data.values()
+                        _structural_type_id(value=v)
+                        for v in data.values()
+                        if id(v) not in recordized_dict_ids
                     )
                 )
                 if len(val_ids) > 1:
                     return True
-            return any(_has_union_in_type_hints(data=v) for v in data.values())
+            return any(
+                _has_union_in_type_hints(
+                    data=v, recordized_dict_ids=recordized_dict_ids
+                )
+                for v in data.values()
+            )
         case _:
             return False
 
@@ -593,7 +617,9 @@ def compute_preamble(
         ) | _collect_empty_collection_types(
             data=data, recordized_dict_ids=recordized_dict_ids
         )
-    if has_variable_declaration and _has_union_in_type_hints(data=data):
+    if has_variable_declaration and _has_union_in_type_hints(
+        data=data, recordized_dict_ids=recordized_dict_ids
+    ):
         annotated_collection_types = annotated_collection_types | frozenset(
             {HeterogeneousElements}
         )

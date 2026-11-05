@@ -11,3 +11,16 @@ axis = "language_version"
 [[variants]]
 axis = "record_type_hints_always"
 context = { record_null_substitutions = { replacement = -1 } }
+
+# Retain optional input shapes and declared null substitutions under eager fields and alternate native sequences.
+[[variants]]
+axis = "record_eager_field_annotations"
+
+[variants.context.record_null_substitutions]
+replacement = -1
+
+[[variants]]
+axis = "record_sequence_format"
+
+[variants.context.record_null_substitutions]
+replacement = -1

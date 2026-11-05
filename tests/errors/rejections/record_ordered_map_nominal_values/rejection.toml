@@ -7,6 +7,7 @@ api = "literalize"
 sources = [
   "values: !!omap\n  - first: {x: 1}\n  - second: {y: s}\nflag: true\n",
   "values: !!omap\n  - first: {x: 1}\n  - second: {x: 2147483648}\nflag: true\n",
+  "!!omap\n- left:\n    entries:\n      - kind: add\n        urgent: true\n- right:\n    entries:\n      - error: not_found\n",
 ]
 input_format = "yaml"
 wrap_in_file = true

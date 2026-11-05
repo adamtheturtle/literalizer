@@ -9,3 +9,10 @@ axis = "record_type_hints_always"
 
 [[variants]]
 axis = "record_map_value_typing"
+
+# Check nested nominal parent field names and ordered map values in complete eager and sequence consumers.
+[[variants]]
+axis = "record_eager_field_annotations"
+
+[[variants]]
+axis = "record_sequence_format"

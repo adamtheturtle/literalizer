@@ -1,0 +1,6 @@
+struct Record0 { let id: Int; let label: String; let tags: () }
+let my_data = (
+    Record0(id: 1, label: "first", tags: ()),
+    Record0(id: 2, label: "second", tags: ()),
+    Record0(id: 3, label: "third", tags: ()),
+)
