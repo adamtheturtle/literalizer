@@ -10,3 +10,10 @@ consumable_refs = ["item"]
 
 [[call.variants]]
 axis = "json_type"
+
+# Preserve escaped and reused string bindings in complete annotated and alternate-layout call consumers.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
