@@ -37,27 +37,22 @@ class _ResultCheck:
     """
 
     target: str
+    style: PositionalCallStyle
     uses_zipped: ClassVar[bool] = True
 
     def __call__(self, context: CallContext, /) -> str:
         """Compose already-rendered expressions without source
         templates.
         """
-        if context.zipped is None:
-            msg = "A result-function requires zipped expected values"
-            raise NativeCallError(msg)
-        style = PositionalCallStyle(
-            arg_separator=", ", parenthesize_each_arg=False
-        )
         return assemble_call_expression(
             target_function=self.target,
             args_str=format_rendered_call_arguments(
-                formatted=[context.call, context.zipped],
+                formatted=[context.call, f"{context.zipped}"],
                 params=("actual", "expected"),
-                style=style,
+                style=self.style,
                 allows_empty_call_parens=True,
             ),
-            style=style,
+            style=self.style,
         )
 
 
@@ -156,6 +151,9 @@ def literalize_invocations(
     )
     check = None
     if "result-function" in selected:
+        if zip_source is None:
+            msg = "A result-function requires zipped expected values"
+            raise NativeCallError(msg)
         name = native_recipe_text(selected["result-function"])
         parts = tuple(name.split(sep="."))
         validate_call_target(
@@ -163,7 +161,22 @@ def literalize_invocations(
             target_function=name,
             target_function_parts=parts,
         )
-        check = _ResultCheck(target=language.format_call_target(parts))
+        style = next(
+            (
+                member.value
+                for member in language.call_styles
+                if isinstance(member.value, PositionalCallStyle)
+            ),
+            None,
+        )
+        if style is None:
+            msg = (
+                "A result-function requires a positional expression call style"
+            )
+            raise NativeCallError(msg)
+        check = _ResultCheck(
+            target=language.format_call_target(parts), style=style
+        )
     result = literalize_call(
         source=source,
         input_format=input_format,

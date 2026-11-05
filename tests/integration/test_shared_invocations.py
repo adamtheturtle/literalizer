@@ -19,7 +19,7 @@ from literalizer import (
     literalize_native_calls,
 )
 from literalizer.exceptions import LiteralizerError
-from literalizer.languages import ALL_LANGUAGES, ObjectiveC, Python
+from literalizer.languages import ALL_LANGUAGES, Clojure, ObjectiveC, Python
 
 _LANGUAGES: list[LanguageCls] = sorted(
     ALL_LANGUAGES, key=lambda cls: cls.__name__
@@ -338,4 +338,38 @@ def test_expected_values_are_required_and_paired(
             invocation=_CALL,
             zip_source=zip_source,
             zip_input_format=None if zip_source is None else InputFormat.JSON,
+        )
+
+
+def test_empty_checked_calls_still_require_expected_source() -> None:
+    """An empty input cannot hide an incomplete expected-value contract."""
+    with pytest.raises(
+        expected_exception=NativeCallError, match="requires zipped"
+    ):
+        literalize_invocations(
+            source="[]",
+            input_format=InputFormat.JSON,
+            language=Python(),
+            invocation=_CALL,
+        )
+
+
+def test_checker_rejects_non_expression_call_backend() -> None:
+    """A positional checker cannot be guessed for a prefix-call backend."""
+    with pytest.raises(
+        expected_exception=NativeCallError, match="positional expression"
+    ):
+        literalize_invocations(
+            source="[[1]]",
+            input_format=InputFormat.JSON,
+            zip_source="[true]",
+            zip_input_format=InputFormat.JSON,
+            language=Clojure(),
+            invocation={
+                "default": {
+                    "target-function": "consume",
+                    "parameter-names": ["value"],
+                    "result-function": "check_result",
+                },
+            },
         )
