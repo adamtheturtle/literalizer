@@ -1,0 +1,10 @@
+def f(*_args: object, **_kwargs: object) -> object: ...
+f(a=(
+    (
+        1,
+        2,
+    ),
+    (
+        3,
+    ),
+))
