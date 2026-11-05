@@ -17,3 +17,10 @@ axis = "json_type"
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
+
+# Retain empty bindings and statement-only calls under explicit result annotations and alternate layouts.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
