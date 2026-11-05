@@ -1,0 +1,4 @@
+let my_data = [
+  1.0e-09,
+  -1.0e-09,
+] in my_data

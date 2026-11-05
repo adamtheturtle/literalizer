@@ -1,0 +1,7 @@
+* my_data
+@code javascript
+[
+    1.0e-09,
+    -1.0e-09
+]
+@end
