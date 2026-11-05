@@ -3,3 +3,7 @@ suites = ["base"]
 
 [[variants]]
 axis = "type_hints"
+
+# Check native and epoch temporal declarations for midnight and naive millisecond inputs.
+[[variants]]
+axis = "datetime"

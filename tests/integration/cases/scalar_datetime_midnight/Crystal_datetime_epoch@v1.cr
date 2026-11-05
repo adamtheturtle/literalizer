@@ -1,0 +1,4 @@
+module Fixture_scalar_datetime_midnight_Crystal_datetime_epoch
+extend self
+my_data = 1705276800
+end

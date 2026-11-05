@@ -1,0 +1,6 @@
+package main
+
+func main() {
+my_data := "2024-01-15T12:30:01.123000"
+_ = my_data
+}
