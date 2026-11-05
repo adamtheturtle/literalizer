@@ -14,6 +14,8 @@ Core functions
 
 .. autofunction:: literalize_call_with_declarations
 
+.. autofunction:: literalize_invocations
+
 Native invocations
 ------------------
 

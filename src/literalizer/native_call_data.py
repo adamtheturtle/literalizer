@@ -52,18 +52,18 @@ def _is_scalar(value: object, /) -> TypeIs[Scalar]:
 
 
 @beartype
-def _mapping(value: object, /) -> dict[str, object]:
+def native_recipe_mapping(value: object, /) -> dict[str, object]:
     """Require a string-keyed schema object."""
     if not _is_mapping(value) or not all(
         isinstance(key, str) for key in value
     ):
         msg = "Native invocation schema requires a string-keyed object"
         raise NativeCallError(msg)
-    return {_text(key): item for key, item in value.items()}
+    return {native_recipe_text(key): item for key, item in value.items()}
 
 
 @beartype
-def _keys(
+def validate_native_fields(
     value: Mapping[str, object], allowed: set[str], required: set[str], /
 ) -> None:
     """Reject misspelled fields instead of ignoring author intent."""
@@ -76,7 +76,7 @@ def _keys(
 
 
 @beartype
-def _text(value: object, /) -> str:
+def native_recipe_text(value: object, /) -> str:
     """Require a string without implicit coercion."""
     if not isinstance(value, str):
         msg = "Expected a native name or type string"
@@ -85,7 +85,7 @@ def _text(value: object, /) -> str:
 
 
 @beartype
-def _list(value: object, /) -> list[object]:
+def native_recipe_list(value: object, /) -> list[object]:
     """Require an explicit sequence in the declarative schema."""
     if not _is_list(value):
         msg = "Expected a native argument/type list"
@@ -101,20 +101,25 @@ def _native_type(value: object, /) -> NativeType:
             if value == role.value:
                 return role
         return ObjectType(name=value)
-    spec = _mapping(value)
-    _keys(spec, {"object", "arguments"}, {"object", "arguments"})
+    spec = native_recipe_mapping(value)
+    validate_native_fields(
+        spec, {"object", "arguments"}, {"object", "arguments"}
+    )
     return ObjectType(
-        name=_text(spec["object"]),
-        arguments=tuple(_native_type(arg) for arg in _list(spec["arguments"])),
+        name=native_recipe_text(spec["object"]),
+        arguments=tuple(
+            _native_type(arg) for arg in native_recipe_list(spec["arguments"])
+        ),
     )
 
 
 @beartype
 def _reference(spec: Mapping[str, object], /) -> NativeReference:
     """Decode a typed caller-owned reference."""
-    _keys(spec, {"reference", "type"}, {"reference", "type"})
+    validate_native_fields(spec, {"reference", "type"}, {"reference", "type"})
     return NativeReference(
-        name=_text(spec["reference"]), type=_native_type(spec["type"])
+        name=native_recipe_text(spec["reference"]),
+        type=_native_type(spec["type"]),
     )
 
 
@@ -142,9 +147,9 @@ def _operand(
     spec: object, values: Sequence[ValueInput], zipped: object, /
 ) -> NativeLiteral | NativeReference | NativeInvocation:
     """Bind source data to schema operands without string substitution."""
-    fields = _mapping(spec)
+    fields = native_recipe_mapping(spec)
     if "input" in fields:
-        _keys(fields, {"input"}, {"input"})
+        validate_native_fields(fields, {"input"}, {"input"})
         index = fields["input"]
         if (
             not isinstance(index, int)
@@ -156,14 +161,14 @@ def _operand(
             raise NativeCallError(msg)
         return NativeLiteral(value=values[index])
     if "zipped" in fields:
-        _keys(fields, {"zipped"}, {"zipped"})
+        validate_native_fields(fields, {"zipped"}, {"zipped"})
         if fields["zipped"] is not True or zipped is _MISSING:
             msg = "Native zipped operand requires a companion value"
             raise NativeCallError(msg)
         # The upstream literal conversion validates these values.
         return NativeLiteral(value=_value(zipped))
     if "literal" in fields:
-        _keys(fields, {"literal"}, {"literal"})
+        validate_native_fields(fields, {"literal"}, {"literal"})
         return NativeLiteral(value=_value(fields["literal"]))
     if "reference" in fields:
         return _reference(fields)
@@ -188,45 +193,50 @@ def native_invocation_from_data(
     target: NativeTarget
     receiver: NativeLiteral | NativeClass | NativeReference | NativeInvocation
     parameter_types = tuple(
-        _native_type(value) for value in _list(spec.get("parameter-types", []))
+        _native_type(value)
+        for value in native_recipe_list(spec.get("parameter-types", []))
     )
     arguments = tuple(
         _operand(value, values, zipped)
-        for value in _list(spec.get("arguments", []))
+        for value in native_recipe_list(spec.get("arguments", []))
     )
     if "constructor" in spec:
-        _keys(
+        validate_native_fields(
             spec,
             {"constructor", "initializer", "parameter-types", "arguments"},
             {"constructor"},
         )
         target = ConstructorTarget(
-            class_name=_text(spec["constructor"]),
-            selector=_text(spec.get("initializer", "init")),
+            class_name=native_recipe_text(spec["constructor"]),
+            selector=native_recipe_text(spec.get("initializer", "init")),
             parameter_types=parameter_types,
         )
     else:
         required = {"parameter-types", "arguments", "return-type"}
         return_type = _native_type(spec.get("return-type"))
         if "function" in spec:
-            _keys(spec, required | {"function"}, required | {"function"})
+            validate_native_fields(
+                spec, required | {"function"}, required | {"function"}
+            )
             target = FunctionTarget(
-                name=_text(spec["function"]),
+                name=native_recipe_text(spec["function"]),
                 parameter_types=parameter_types,
                 return_type=return_type,
             )
         else:
-            _keys(
+            validate_native_fields(
                 spec,
                 required | {"receiver", "selector"},
                 required | {"receiver", "selector"},
             )
-            receiver_data = _mapping(spec["receiver"])
+            receiver_data = native_recipe_mapping(spec["receiver"])
             if "class" in receiver_data:
-                _keys(receiver_data, {"class"}, {"class"})
-                receiver = NativeClass(name=_text(receiver_data["class"]))
+                validate_native_fields(receiver_data, {"class"}, {"class"})
+                receiver = NativeClass(
+                    name=native_recipe_text(receiver_data["class"])
+                )
             elif "literal" in receiver_data:
-                _keys(receiver_data, {"literal"}, {"literal"})
+                validate_native_fields(receiver_data, {"literal"}, {"literal"})
                 receiver = NativeLiteral(
                     value=_value(receiver_data["literal"])
                 )
@@ -238,7 +248,7 @@ def native_invocation_from_data(
                 )
             target = MessageTarget(
                 receiver=receiver,
-                selector=_text(spec["selector"]),
+                selector=native_recipe_text(spec["selector"]),
                 parameter_types=parameter_types,
                 return_type=return_type,
             )
