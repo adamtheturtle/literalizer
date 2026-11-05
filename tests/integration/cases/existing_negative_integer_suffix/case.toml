@@ -1,0 +1,18 @@
+schema_version = 1
+owner = "variant"
+
+# Replaces both direct make_negative_nondecimal_i64_formatter suffix tests.
+[[variants]]
+axis = "existing_integer_suffix"
+wrap_in_file = false
+
+[variants.consumer_templates]
+Cpp = '''{preamble}
+#include <type_traits>
+int main() {{
+{code}
+    static_assert(std::is_same<decltype(my_data), long long>::value,
+                  "the composed literal must retain its signed LL type");
+    return my_data == -2147483648LL ? 0 : 1;
+}}
+'''

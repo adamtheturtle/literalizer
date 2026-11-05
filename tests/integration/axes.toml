@@ -1744,3 +1744,9 @@ values = [{ name = "255_characters", value = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 gates = [
   { kind = "enum_member_present", option = "language_version", member = "OTP_25" },
 ]
+
+[special_axes.existing_integer_suffix]
+reason = "Compose caller-suffixed negative integer literals inside native C++ type and value checks."
+
+[special_axes.date_formatter_datetime_view]
+reason = "Feed datetime inputs through Ruby date enum members and check native Gregorian dates."

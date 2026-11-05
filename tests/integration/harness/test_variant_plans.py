@@ -91,6 +91,8 @@ def test_special_axes_are_declared() -> None:
                 "plain_collection_callbacks",
                 "typed_collection_callback",
                 "custom_zig_null_policy",
+                "existing_integer_suffix",
+                "date_formatter_datetime_view",
                 "copied_json_to_native",
                 "copied_native_to_record",
                 "copied_native_to_json",
