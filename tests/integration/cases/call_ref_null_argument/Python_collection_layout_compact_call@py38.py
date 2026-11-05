@@ -1,0 +1,3 @@
+def consume(*_args: object, **_kwargs: object) -> object: ...
+value = None
+consume(value=value)

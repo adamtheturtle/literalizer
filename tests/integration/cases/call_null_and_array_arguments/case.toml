@@ -9,3 +9,10 @@ per_element = true
 
 [[call.variants]]
 axis = "sequence"
+
+# Compile the shared call in annotation and collection-layout contexts.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
