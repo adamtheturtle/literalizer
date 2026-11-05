@@ -888,6 +888,9 @@ class CallCaseSpec(  # noqa: NOD001
     # An explicit mapping overrides declaration-derived inference hints.
     # An empty table passes {}, while omission keeps the inferred hints.
     explicit_ref_value_sources: dict[str, str] | None = None
+    # Compare returned source knowledge independently of native bindings.
+    # JSON text distinguishes an expected null from an omitted expectation.
+    expected_source_data: str | None = None
     # Additional sources used to seed ``ref_values`` without
     # emitting declarations.  This covers mappings whose names are not
     # referenced by the input while keeping generated fixtures free of
