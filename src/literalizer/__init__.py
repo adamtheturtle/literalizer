@@ -47,6 +47,7 @@ from literalizer.api import (
     literalize_call_with_declarations,
 )
 from literalizer.exceptions import LiteralizerError, NativeCallError
+from literalizer.invocations import literalize_invocations
 from literalizer.native_call_data import (
     literalize_native_calls,
     native_invocation_from_data,
@@ -116,6 +117,7 @@ __all__ = [
     "literalize",
     "literalize_call",
     "literalize_call_with_declarations",
+    "literalize_invocations",
     "literalize_native_call",
     "literalize_native_calls",
     "native_invocation_from_data",

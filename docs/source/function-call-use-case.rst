@@ -577,3 +577,60 @@ Generic types use ``{"object": "NSArray", "arguments": ["NSString"]}``.
 Unknown fields, invalid selectors, out-of-range input indexes, incompatible types, and mismatched companion lengths raise located native-call errors.
 Native recipes select data values; source comments are not interpolated into expressions.
 Keep explanatory prose in the surrounding document or in explicit expected-result data.
+
+Shared invocation recipes
+-------------------------
+
+Use :func:`~literalizer.literalize_invocations` when one data file drives both ordinary calls and calls requiring an explicit native signature.
+Keep call metadata in one recipe instead of branching in each consumer::
+
+    recipe = {
+        "default": {
+            "target-function": "counter.accept",
+            "parameter-names": ["user", "timestamp"],
+            "result-function": "check_result",
+        },
+        "languages": {
+            "javascript": {"result-function": "checkResult"},
+            "objective-c": {
+                "native": {
+                    "function": "checkResult",
+                    "parameter-types": ["bool", "NSArray"],
+                    "return-type": "void",
+                    "arguments": [
+                        {
+                            "receiver": {
+                                "reference": "counter", "type": "Counter"
+                            },
+                            "selector": "accept:timestamp:",
+                            "parameter-types": ["NSString", "float"],
+                            "return-type": "bool",
+                            "arguments": [{"input": 0}, {"input": 1}],
+                        },
+                        {"zipped": True},
+                    ],
+                },
+            },
+        },
+    }
+
+The default is a generic call description.
+Overrides use Pygments language IDs and amend the generic fields; a ``native`` override replaces the default with a native recipe.
+Unknown language IDs and unknown fields in the selected recipe are errors.
+Names, selectors, and types are explicit caller-owned metadata: the API never derives a native selector or a naming convention from a dotted name.
+A backend without a Pygments ID uses the default.
+Custom backends may override their own Pygments ID.
+
+Generic recipes require ``parameter-names`` and exactly one of ``target-function`` or ``constructor-class``.
+Constructors use the backend's existing constructor syntax.
+``result-function`` is optional and names an external positional checker receiving the generated result and its zipped expected value.
+It replaces the common ``check_result($0, $zipped)`` source template.
+It requires a companion source and an expression-style call backend; prefix, postfix, and command-style calls retain their existing rejection.
+The called functions/classes and checker must be supplied by the consumer.
+The checker always receives positional arguments, independently of the configured style for the inner call.
+
+Existing bare native recipes are also accepted and retain their behavior.
+Generic calls retain the existing :func:`~literalizer.literalize_call` input semantics, literal conversions, bindings, preambles, and errors.
+Native calls retain :func:`~literalizer.literalize_native_calls` behavior.
+Use ``per_element=True`` and list rows for shared examples.
+``pre_indent_level`` places generic fragments in the caller's scope; nonzero ``initial_column`` remains supported only for native invocations.
