@@ -1,0 +1,13 @@
+fun process(data: Any? = null, count: Any? = null): Any? = listOf<Any?>(data, count)
+val myVar: IntArray = intArrayOf(
+    1,
+    2,
+    3,
+)
+val myOther: IntArray = intArrayOf(
+    4,
+    5,
+    6,
+)
+process(data = myVar, count = 42)
+process(data = myOther, count = 7)
