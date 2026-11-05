@@ -7,3 +7,10 @@ parameter_names = ["data", "count"]
 per_element = true
 ref_declarations = { my_var = "[1, 2, 3]", my_other = "[4, 5, 6]" }
 consumable_refs = ["my_other", "my_var"]
+
+# Preserve escaped and reused string bindings in complete annotated and alternate-layout call consumers.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
