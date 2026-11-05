@@ -302,6 +302,35 @@ def fixed_open(
 
 
 @beartype
+@dataclass(frozen=True, kw_only=True)
+class _ElementToType:
+    """Bind resolver options without creating a checked function per
+    call.
+    """
+
+    scalar_types: dict[type, str]
+    list_template: str
+    enable_list_type: bool
+    dict_type_template: str | None
+    dict_value_to_type: (
+        Callable[[type | ListType | DictType], str | None] | None
+    )
+    fallback_value_type: str | None
+
+    def __call__(self, element_type: type | ListType | DictType) -> str | None:
+        """Resolve one descriptor using this instance's configuration."""
+        return _resolve_element_to_type(
+            element_type=element_type,
+            scalar_types=self.scalar_types,
+            list_template=self.list_template,
+            enable_list_type=self.enable_list_type,
+            dict_type_template=self.dict_type_template,
+            dict_value_to_type=self.dict_value_to_type,
+            fallback_value_type=self.fallback_value_type,
+        )
+
+
+@beartype
 def make_element_to_type(
     *,
     str_type: str | None,
@@ -382,22 +411,14 @@ def make_element_to_type(
     collected_scalar_types = collected_collected_scalar_types
     scalar_types: dict[type, str] = collected_scalar_types
 
-    @beartype
-    def element_to_type(
-        element_type: type | ListType | DictType,
-    ) -> str | None:
-        """Delegate to module-level implementation."""
-        return _resolve_element_to_type(
-            element_type=element_type,
-            scalar_types=scalar_types,
-            list_template=list_template,
-            enable_list_type=enable_list_type,
-            dict_type_template=dict_type_template,
-            dict_value_to_type=dict_value_to_type,
-            fallback_value_type=fallback_value_type,
-        )
-
-    return element_to_type
+    return _ElementToType(
+        scalar_types=scalar_types,
+        list_template=list_template,
+        enable_list_type=enable_list_type,
+        dict_type_template=dict_type_template,
+        dict_value_to_type=dict_value_to_type,
+        fallback_value_type=fallback_value_type,
+    )
 
 
 @beartype

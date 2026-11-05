@@ -558,6 +558,47 @@ def _format_datetime_cpp(value: dt.datetime) -> str:
 
 
 @beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _CppElementToType:
+    """Retain C++ type dependencies with methods checked once at
+    import.
+    """
+
+    resolve: Callable[[type | ListType | DictType], str | None]
+    dict_type_name: str
+
+    def _dependencies(
+        self, element_type: type | ListType | DictType | None, /
+    ) -> frozenset[str]:
+        """Retain dependencies from the descriptor before emitting its
+        type.
+        """
+        if isinstance(element_type, ListType):
+            return frozenset({"#include <vector>"}) | self._dependencies(
+                element_type.inner
+            )
+        if isinstance(element_type, DictType):
+            return frozenset(
+                {"#include <string>", _CPP_MAP_HEADERS[self.dict_type_name]}
+            ) | self._dependencies(element_type.value_type)
+        if element_type is None:
+            return frozenset[str]()
+        return _cpp_native_atomic_headers(self.resolve(element_type))
+
+    def __call__(
+        self, element_type: type | ListType | DictType, /
+    ) -> str | None:
+        """Retain the selected type's dependencies and scalar policy."""
+        headers = self._dependencies(element_type)
+        type_name = self.resolve(element_type)
+        if type_name is None:
+            return None
+        if isinstance(element_type, (ListType, DictType)):
+            return _CppTypeDependencies(type_name, headers=headers)
+        return _cpp_owned_atomic_type(type_name)
+
+
+@beartype
 def _make_cpp_element_to_type(
     *,
     enable_list_type: bool,
@@ -591,37 +632,7 @@ def _make_cpp_element_to_type(
         beyond_i64_type=None,
     )
 
-    @beartype
-    def _dependencies(
-        element_type: type | ListType | DictType | None, /
-    ) -> frozenset[str]:
-        """Retain dependencies from the descriptor before emitting its
-        type.
-        """
-        if isinstance(element_type, ListType):
-            return frozenset({"#include <vector>"}) | _dependencies(
-                element_type.inner
-            )
-        if isinstance(element_type, DictType):
-            return frozenset(
-                {"#include <string>", _CPP_MAP_HEADERS[dict_type_name]}
-            ) | _dependencies(element_type.value_type)
-        if element_type is None:
-            return frozenset[str]()
-        return _cpp_native_atomic_headers(resolve(element_type))
-
-    @beartype
-    def _resolve(element_type: type | ListType | DictType, /) -> str | None:
-        """Retain the selected type's dependencies and scalar policy."""
-        headers = _dependencies(element_type)
-        type_name = resolve(element_type)
-        if type_name is None:
-            return None
-        if isinstance(element_type, (ListType, DictType)):
-            return _CppTypeDependencies(type_name, headers=headers)
-        return _cpp_owned_atomic_type(type_name)
-
-    return _resolve
+    return _CppElementToType(resolve=resolve, dict_type_name=dict_type_name)
 
 
 @beartype
