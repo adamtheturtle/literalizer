@@ -15,3 +15,10 @@ axis = "date"
 
 [[variants]]
 axis = "dict_format"
+
+# Retain leading-zero years and early datetime fields when selecting JSON value types and custom constructor prefixes.
+[[variants]]
+axis = "json_type"
+
+[[variants]]
+axis = "constructor_prefix"
