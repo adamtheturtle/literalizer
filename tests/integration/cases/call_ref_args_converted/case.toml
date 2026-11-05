@@ -8,3 +8,10 @@ per_element = true
 ref_case_per_language = true
 ref_declarations = { my_var = "[1, 2, 3]", my_other = "[4, 5, 6]" }
 consumable_refs = ["my_other", "my_var"]
+
+# Keep converted reference names, argument types, and whole-value ownership consistent across call options.
+[[call.variants]]
+axis = "type_hints"
+
+[[call.variants]]
+axis = "collection_layout"
