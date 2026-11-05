@@ -67,6 +67,7 @@ type OwnerName = Literal[
     "constructor-binding",
     "native-invocation",
     "deep-input",
+    "shared-invocation",
 ]
 
 # Spelled as an assignment rather than a ``type`` statement so the
