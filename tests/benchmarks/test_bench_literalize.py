@@ -213,6 +213,24 @@ def test_cpp_small_call(benchmark: BenchmarkFixture) -> None:
     _ = benchmark(_run_small_cpp_call)
 
 
+def _run_small_cpp14_call() -> str:
+    """Render a small call with the C++14 carrier traversal enabled."""
+    return literalize_call(
+        source="[[2, 200]]",
+        input_format=InputFormat.JSON,
+        language=Cpp(language_version=Cpp.VersionFormats["CPP14"]),
+        target_function="update_score",
+        parameter_names=["player_id", "score"],
+    ).code
+
+
+def test_cpp14_small_call(benchmark: BenchmarkFixture) -> None:
+    """Include checked C++14 visitor construction in the per-render
+    cost.
+    """
+    _ = benchmark(_run_small_cpp14_call)
+
+
 # Every language registered on the shared JSON-native fast path, each
 # with the ``json_type`` mode that qualifies for it.  Keep in sync with
 # the ``register_json_native_document_fast`` calls in
