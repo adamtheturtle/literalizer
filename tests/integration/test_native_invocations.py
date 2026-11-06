@@ -44,10 +44,15 @@ _CASES = Path(__file__).parent / "cases"
 
 
 @pytest.mark.parametrize(
+    argnames="api", argvalues=["native", "shared", "bare"]
+)
+@pytest.mark.parametrize(
     argnames=("manifest", "language", "version", "golden_path"),
     argvalues=native_invocation_cases(cases_dir=_CASES),
 )
 def test_native_invocation_golden(
+    *,
+    api: Literal["native", "shared", "bare"],
     manifest: CaseManifest,
     language: literalizer.LanguageCls,
     version: enum.Enum,
@@ -79,20 +84,47 @@ def test_native_invocation_golden(
                 )
             )
         zipped = step.get("zipped")
-        result = literalizer.literalize_native_calls(
-            source=json.dumps(obj=step["rows"]),
-            input_format=literalizer.InputFormat.JSON,
-            language=step_spec,
-            per_element=step.get("per_element", True),
-            invocation=step["invocation"],
-            variable_form=form,
-            zip_source=None if zipped is None else json.dumps(obj=zipped),
-            zip_input_format=None
-            if zipped is None
-            else literalizer.InputFormat.JSON,
-            pre_indent_level=2,
-            initial_column=step.get("initial_column", 0),
-        )
+        if step.get("single", False):
+            result = literalizer.literalize_native_call(
+                language=step_spec,
+                invocation=literalizer.native_invocation_from_data(
+                    spec=step["invocation"], values=()
+                ),
+                variable_form=form,
+                initial_column=step.get("initial_column", 0),
+                pre_indent_level=step.get("pre_indent_level", 2),
+            )
+        else:
+            invocation = step["invocation"]
+            render = literalizer.literalize_native_calls
+            if api != "native":
+                render = literalizer.literalize_invocations
+                if api == "shared":
+                    invocation = {
+                        "default": {
+                            "target-function": "counter.accept",
+                            "parameter-names": ["user", "timestamp"],
+                            "result-function": "checkResult",
+                        },
+                        "languages": {
+                            "python": {"result-function": "check_result"},
+                            step_spec.pygments_name: {"native": invocation},
+                        },
+                    }
+            result = render(
+                source=json.dumps(obj=step["rows"]),
+                input_format=literalizer.InputFormat.JSON,
+                language=step_spec,
+                per_element=step.get("per_element", True),
+                invocation=invocation,
+                variable_form=form,
+                zip_source=None if zipped is None else json.dumps(obj=zipped),
+                zip_input_format=None
+                if zipped is None
+                else literalizer.InputFormat.JSON,
+                pre_indent_level=step.get("pre_indent_level", 2),
+                initial_column=step.get("initial_column", 0),
+            )
         metadata = step.get("expected_metadata")
         if metadata is not None:
             expected = _EXPECTED_METADATA.validate_python(metadata)
@@ -110,56 +142,17 @@ def test_native_invocation_golden(
                 result.uses_existing_variable
                 == expected.uses_existing_variable
             )
-        fragments.append(result.code)
+        prefix = (
+            " " * step.get("initial_column", 0)
+            if step.get("prefix_initial_column", False)
+            else ""
+        )
+        fragments.append(prefix + result.code)
     assert manifest.native_invocation is not None
     program = manifest.native_invocation.consumer_template.format(
         code="\n".join(fragments)
     )
     file_regression.check(contents=program, fullpath=golden_path)
-
-
-@pytest.mark.parametrize(argnames="initial_column", argvalues=[0, 20])
-def test_native_width_accounts_for_caller_and_binding(
-    initial_column: int,
-) -> None:
-    """A binding or caller prefix can make an otherwise short call
-    wrap.
-    """
-    column_limit = 40
-    language = ObjectiveC(
-        indent="  ",
-        native_argument_layout=ObjectiveC.NativeArgumentLayouts.AUTO,
-        native_column_limit=column_limit,
-    )
-    invocation = literalizer.NativeInvocation(
-        target=literalizer.FunctionTarget(
-            name="emitValues",
-            parameter_types=(literalizer.ObjectType(name="NSString"),) * 2,
-            return_type=literalizer.ScalarType.BOOL,
-        ),
-        arguments=(
-            literalizer.NativeLiteral(value="first"),
-            literalizer.NativeLiteral(value="second"),
-        ),
-    )
-    plain = literalizer.literalize_native_call(
-        language=language, invocation=invocation
-    )
-    assert "\n" not in plain.declaration_code
-    bound = literalizer.literalize_native_call(
-        language=language,
-        invocation=invocation,
-        variable_form=literalizer.NewVariable(
-            name="allowed", modifiers=frozenset()
-        ),
-        initial_column=initial_column,
-    )
-    lines = bound.declaration_code.splitlines()
-    assert len(lines) > 1
-    assert (
-        max(initial_column + len(lines[0]), *(len(line) for line in lines[1:]))
-        <= column_limit
-    )
 
 
 def test_original_objective_c_native_callback() -> None:

@@ -1,0 +1,61 @@
+[
+  {
+    "single": true,
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "function": "emitValues",
+      "parameter-types": [
+        "NSString",
+        "NSString"
+      ],
+      "return-type": "bool",
+      "arguments": [
+        {
+          "literal": "first"
+        },
+        {
+          "literal": "second"
+        }
+      ]
+    },
+    "pre_indent_level": 0,
+    "options": {
+      "indent": "  ",
+      "native_argument_layout": "AUTO",
+      "native_column_limit": 40
+    }
+  },
+  {
+    "single": true,
+    "rows": [
+      []
+    ],
+    "invocation": {
+      "function": "emitValues",
+      "parameter-types": [
+        "NSString",
+        "NSString"
+      ],
+      "return-type": "bool",
+      "arguments": [
+        {
+          "literal": "first"
+        },
+        {
+          "literal": "second"
+        }
+      ]
+    },
+    "pre_indent_level": 0,
+    "options": {
+      "indent": "  ",
+      "native_argument_layout": "AUTO",
+      "native_column_limit": 40
+    },
+    "variable": "allowed",
+    "initial_column": 0,
+    "prefix_initial_column": true
+  }
+]

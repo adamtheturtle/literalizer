@@ -12,10 +12,9 @@ from literalizer import (
     NewVariable,
     literalize_call,
     literalize_invocations,
-    literalize_native_calls,
 )
 from literalizer.exceptions import LiteralizerError
-from literalizer.languages import ALL_LANGUAGES, Clojure, ObjectiveC, Python
+from literalizer.languages import ALL_LANGUAGES, Clojure, Python
 
 _LANGUAGES: list[LanguageCls] = sorted(
     ALL_LANGUAGES, key=lambda cls: cls.__name__
@@ -50,18 +49,6 @@ _CALL: dict[str, object] = {
 }
 
 
-class _NativeOptions(TypedDict, closed=True):
-    """Native placement arguments shared by the two APIs."""
-
-    source: str
-    input_format: InputFormat
-    language: Language
-    zip_source: str
-    zip_input_format: InputFormat
-    pre_indent_level: int
-    initial_column: int
-
-
 class _BindingOptions(TypedDict, closed=True):
     """A caller-owned result binding."""
 
@@ -69,25 +56,6 @@ class _BindingOptions(TypedDict, closed=True):
     input_format: InputFormat
     language: Language
     variable_form: NewVariable | ExistingVariable
-
-
-@pytest.mark.parametrize(argnames="bare", argvalues=[False, True])
-def test_native_override_preserves_typed_rendering(*, bare: bool) -> None:
-    """Native overrides and existing bare recipes use the same
-    renderer.
-    """
-    kwargs: _NativeOptions = {
-        "source": '[["user_1",100.0]]',
-        "input_format": InputFormat.JSON,
-        "zip_source": '[[true,"first"]]',
-        "zip_input_format": InputFormat.JSON,
-        "language": ObjectiveC(),
-        "pre_indent_level": 2,
-        "initial_column": 3,
-    }
-    assert literalize_invocations(
-        **kwargs, invocation=_NATIVE if bare else _CALL
-    ) == literalize_native_calls(**kwargs, invocation=_NATIVE)
 
 
 @pytest.mark.parametrize(
