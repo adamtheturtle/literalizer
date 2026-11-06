@@ -1831,6 +1831,84 @@ def _cpp14_widened_sibling_map_ids(
 
 
 @beartype
+def _collect_cpp14_variant_parent_ids(
+    *,
+    value: Value,
+    type_ctx: _CppTypeCtx,
+    excluded_ids: frozenset[int],
+    ids: set[int],
+) -> None:
+    """Collect carrier-typed parents with one reusable checked visitor."""
+    children: list[Value] = []
+    type_children: list[Value]
+    match value:
+        case OrderedMap():
+            children.extend(value.values())
+            type_children = children
+            ids.update(
+                _cpp14_widened_sibling_map_ids(
+                    children=children,
+                    type_ctx=type_ctx,
+                    excluded_ids=excluded_ids,
+                )
+            )
+        case dict():
+            children.extend(value.values())
+            type_children = [
+                child
+                for child in children
+                if not (
+                    isinstance(child, dict)
+                    and len(child) == 1
+                    and isinstance(child.get("$ref"), str)
+                )
+            ]
+            ids.update(
+                _cpp14_widened_sibling_map_ids(
+                    children=children,
+                    type_ctx=type_ctx,
+                    excluded_ids=excluded_ids,
+                )
+            )
+        case list():
+            children.extend(value)
+            type_children = children
+            ids.update(
+                _cpp14_widened_sibling_map_ids(
+                    children=children,
+                    type_ctx=type_ctx,
+                    excluded_ids=excluded_ids,
+                )
+            )
+        case _:
+            return
+    if id(value) not in excluded_ids and len(type_children) > 0:
+        element_type = _compute_element_type_for_items(
+            items=type_children, type_ctx=type_ctx
+        )
+        if element_type == type_ctx.variant_type_name:
+            ids.add(id(value))
+        # A row narrowed from its own values can be widened by its
+        # siblings to a vector of carriers. Its children need the same
+        # explicit construction as children of an independently mixed row.
+        if element_type == type_ctx.sequence_type(
+            inner=type_ctx.variant_type_name, length=0
+        ):
+            ids.update(
+                id(child)
+                for child in children
+                if isinstance(child, list) and id(child) not in excluded_ids
+            )
+    for child in children:
+        _collect_cpp14_variant_parent_ids(
+            value=child,
+            type_ctx=type_ctx,
+            excluded_ids=excluded_ids,
+            ids=ids,
+        )
+
+
+@beartype
 def _cpp14_variant_parent_ids(
     *,
     data: Value,
@@ -1847,74 +1925,12 @@ def _cpp14_variant_parent_ids(
     """
     ids: set[int] = set()
 
-    @beartype
-    def _collect(value: Value) -> None:
-        """Collect carrier-typed parents recursively."""
-        children: list[Value] = []
-        type_children: list[Value]
-        match value:
-            case OrderedMap():
-                children.extend(value.values())
-                type_children = children
-                ids.update(
-                    _cpp14_widened_sibling_map_ids(
-                        children=children,
-                        type_ctx=type_ctx,
-                        excluded_ids=excluded_ids,
-                    )
-                )
-            case dict():
-                children.extend(value.values())
-                type_children = [
-                    child
-                    for child in children
-                    if not (
-                        isinstance(child, dict)
-                        and len(child) == 1
-                        and isinstance(child.get("$ref"), str)
-                    )
-                ]
-                ids.update(
-                    _cpp14_widened_sibling_map_ids(
-                        children=children,
-                        type_ctx=type_ctx,
-                        excluded_ids=excluded_ids,
-                    )
-                )
-            case list():
-                children.extend(value)
-                type_children = children
-                ids.update(
-                    _cpp14_widened_sibling_map_ids(
-                        children=children,
-                        type_ctx=type_ctx,
-                        excluded_ids=excluded_ids,
-                    )
-                )
-            case _:
-                return
-        if id(value) not in excluded_ids and len(type_children) > 0:
-            element_type = _compute_element_type_for_items(
-                items=type_children, type_ctx=type_ctx
-            )
-            if element_type == type_ctx.variant_type_name:
-                ids.add(id(value))
-            # A row narrowed from its own values can be widened by its
-            # siblings to a vector of carriers. Its children need the same
-            # explicit construction as children of an independently mixed row.
-            if element_type == type_ctx.sequence_type(
-                inner=type_ctx.variant_type_name, length=0
-            ):
-                ids.update(
-                    id(child)
-                    for child in children
-                    if isinstance(child, list)
-                    and id(child) not in excluded_ids
-                )
-        for child in children:
-            _collect(value=child)
-
-    _collect(value=data)
+    _collect_cpp14_variant_parent_ids(
+        value=data,
+        type_ctx=type_ctx,
+        excluded_ids=excluded_ids,
+        ids=ids,
+    )
     return frozenset(ids)
 
 
