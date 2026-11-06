@@ -1208,29 +1208,44 @@ def _literalize_call_case(
         and not config.call_transform_reports_zip_usage
     ):
         call_transform = functools.partial(call_transform)
-    result = literalizer.literalize_call(
-        source=source,
-        input_format=input_info.input_format,
-        input_root_key=config.input_root_key,
-        language=spec,
-        target_function=config.target_function,
-        parameter_names=config.parameter_names,
-        call_transform=call_transform,
-        zip_source=config.zip_source,
-        zip_input_format=config.zip_input_format,
-        comment_source=config.comment_source,
-        per_element=config.per_element,
-        wrap_in_file=wrap_in_file,
-        ref_case=effective_ref_case,
-        consumable_refs=config.consumable_refs,
-        ref_values=ref_values,
-        bound_refs=bound_refs,
-        ref_key=config.ref_key,
-        collection_layout=literalizer.CollectionLayout(
-            value=config.collection_layout
-        ),
-        variable_form=variable_form,
-    )
+    if config.shared_invocation:
+        result = literalizer.literalize_invocations(
+            source=source,
+            input_format=input_info.input_format,
+            language=spec,
+            invocation={
+                "default": {
+                    "target-function": config.target_function,
+                    "parameter-names": list(config.parameter_names),
+                },
+            },
+            per_element=config.per_element,
+            variable_form=variable_form,
+        )
+    else:
+        result = literalizer.literalize_call(
+            source=source,
+            input_format=input_info.input_format,
+            input_root_key=config.input_root_key,
+            language=spec,
+            target_function=config.target_function,
+            parameter_names=config.parameter_names,
+            call_transform=call_transform,
+            zip_source=config.zip_source,
+            zip_input_format=config.zip_input_format,
+            comment_source=config.comment_source,
+            per_element=config.per_element,
+            wrap_in_file=wrap_in_file,
+            ref_case=effective_ref_case,
+            consumable_refs=config.consumable_refs,
+            ref_values=ref_values,
+            bound_refs=bound_refs,
+            ref_key=config.ref_key,
+            collection_layout=literalizer.CollectionLayout(
+                value=config.collection_layout
+            ),
+            variable_form=variable_form,
+        )
     if config.expected_source_data is not None:
         expected = parse_input(
             source=config.expected_source_data,
