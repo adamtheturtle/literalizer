@@ -184,7 +184,9 @@ For example:
     )
 
 Generic language overrides amend the default.
-Use explicit display spellings for ``name``, ``parameter-names``, and optional ``return-annotation``.
+Pass ``name_renamer`` and ``parameter_renamer`` callbacks to apply existing naming conventions to default names.
+Explicit language overrides take precedence over these callbacks.
+Selectors and optional ``return-annotation`` display spellings are never renamed.
 Optional boolean ``space-before-paren`` and ``space-after-paren`` settings preserve the presentation of existing prose.
 A ``selector`` requires a native-message backend and exactly one label per parameter.
 Unknown fields and language keys, malformed names, and multiline descriptions are rejected.
