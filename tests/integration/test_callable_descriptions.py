@@ -1,5 +1,7 @@
 """Callable references do not require argument data or implementations."""
 
+from collections.abc import Callable
+
 import pytest
 
 from literalizer import Language, NativeCallError, describe_callable
@@ -110,4 +112,104 @@ def test_selector_capability() -> None:
                 "parameter-names": [],
                 "selector": "accept",
             },
+        )
+
+
+@pytest.mark.parametrize(
+    argnames=("shared", "name_renamer", "parameter_renamer", "expected"),
+    argvalues=[
+        (False, str.upper, None, "ACCEPT_VALUE(item_name) -> bool"),
+        (True, str.upper, None, "ACCEPT_VALUE(item_name) -> bool"),
+        (False, None, str.upper, "accept_value(ITEM_NAME) -> bool"),
+        (True, None, str.upper, "accept_value(ITEM_NAME) -> bool"),
+        (True, str.upper, str.upper, "ACCEPT_VALUE(ITEM_NAME) -> bool"),
+    ],
+)
+def test_renamers(
+    *,
+    shared: bool,
+    name_renamer: Callable[[str], str] | None,
+    parameter_renamer: Callable[[str], str] | None,
+    expected: str,
+) -> None:
+    """Caller naming policies transform canonical names without
+    mutation.
+    """
+    default: dict[str, object] = {
+        "name": "accept_value",
+        "parameter-names": ["item_name"],
+        "return-annotation": "bool",
+    }
+    description = {"default": default} if shared else default
+    assert (
+        describe_callable(
+            language=Python(),
+            description=description,
+            name_renamer=name_renamer,
+            parameter_renamer=parameter_renamer,
+        )
+        == expected
+    )
+    assert default == {
+        "name": "accept_value",
+        "parameter-names": ["item_name"],
+        "return-annotation": "bool",
+    }
+
+
+@pytest.mark.parametrize(
+    argnames=("override", "expected"),
+    argvalues=[
+        ({"name": "acceptValue"}, "acceptValue(ITEM_NAME) -> BOOL"),
+        (
+            {"parameter-names": ["requestURL"]},
+            "ACCEPT_VALUE(requestURL) -> BOOL",
+        ),
+        (
+            {"name": "acceptValue", "parameter-names": ["requestURL"]},
+            "acceptValue(requestURL) -> BOOL",
+        ),
+        ({"selector": "acceptValue:"}, "acceptValue: -> BOOL"),
+    ],
+)
+def test_overrides_after_renaming(
+    override: dict[str, object], expected: str
+) -> None:
+    """Language-specific spellings, selectors and annotations remain exact."""
+    assert (
+        describe_callable(
+            language=ObjectiveC(),
+            description={
+                "default": {
+                    "name": "accept_value",
+                    "parameter-names": ["item_name"],
+                    "return-annotation": "BOOL",
+                },
+                "languages": {"objective-c": override},
+            },
+            name_renamer=str.upper,
+            parameter_renamer=str.upper,
+        )
+        == expected
+    )
+
+
+def _invalid_name(value: str) -> str:
+    """Return an invalid identifier through a well-typed callback."""
+    return value + " invalid"
+
+
+@pytest.mark.parametrize(
+    argnames="field", argvalues=["name", "parameter-names"]
+)
+def test_invalid_renamed_identifier(field: str) -> None:
+    """Callback results receive the same validation as explicit names."""
+    with pytest.raises(expected_exception=LiteralizerError):
+        _ = describe_callable(
+            language=Python(),
+            description={"name": "accept", "parameter-names": ["value"]},
+            name_renamer=_invalid_name if field == "name" else None,
+            parameter_renamer=_invalid_name
+            if field == "parameter-names"
+            else None,
         )
