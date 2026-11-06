@@ -118,7 +118,7 @@ class NativeInvocation:
 
 
 @runtime_checkable
-class _NativeInvocationLanguage(Protocol):
+class NativeInvocationLanguage(Protocol):
     """Optional native syntax renderer, selected through a capability."""
 
     supports_native_invocations: bool
@@ -137,7 +137,7 @@ class _NativeInvocationLanguage(Protocol):
 
 
 @runtime_checkable
-class _NativeEmitterLanguage(Language, _NativeInvocationLanguage, Protocol):
+class _NativeEmitterLanguage(Language, NativeInvocationLanguage, Protocol):
     """A language with the original native emission callbacks."""
 
 
@@ -433,7 +433,7 @@ def objective_c_type(native_type: NativeType, /) -> str:
 
 
 @beartype
-def _selector(selector: str, count: int, /) -> tuple[str, ...]:
+def validate_native_selector(selector: str, count: int, /) -> tuple[str, ...]:
     """Validate selector spelling and its exact argument count."""
     if count == 0:
         return (_identifier(selector),)
@@ -721,7 +721,9 @@ def _objective_c_head(
     target = invocation.target
     if isinstance(target, FunctionTarget):
         return _identifier(target.name) + "(", ")", ()
-    labels = _selector(target.selector, len(invocation.arguments))
+    labels = validate_native_selector(
+        target.selector, len(invocation.arguments)
+    )
     if isinstance(target, ConstructorTarget):
         class_name = _identifier(target.class_name)
         if (

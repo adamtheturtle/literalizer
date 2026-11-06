@@ -46,6 +46,7 @@ from literalizer.api import (
     literalize_call,
     literalize_call_with_declarations,
 )
+from literalizer.callable_descriptions import describe_callable
 from literalizer.exceptions import LiteralizerError, NativeCallError
 from literalizer.invocations import literalize_invocations
 from literalizer.native_call_data import (
@@ -113,6 +114,7 @@ __all__ = [
     "TrailingCommaConfig",
     "ValueInput",
     "VariableForm",
+    "describe_callable",
     "fixed_open",
     "literalize",
     "literalize_call",

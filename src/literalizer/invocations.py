@@ -58,7 +58,7 @@ class _ResultCheck:
 
 
 @beartype
-def _select_recipe(
+def select_language_recipe(
     recipe: Mapping[str, object], language: Language, /
 ) -> dict[str, object]:
     """Resolve explicit overrides without inferring names or
@@ -107,7 +107,7 @@ def literalize_invocations(
     expected values. Existing call-style and data-conversion rules apply.
     """
     selected: dict[str, object] = (
-        _select_recipe(invocation, language)
+        select_language_recipe(invocation, language)
         if "default" in invocation or "languages" in invocation
         else {"native": dict(invocation)}
     )
