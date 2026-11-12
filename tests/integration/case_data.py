@@ -45,6 +45,9 @@ type CaseData = (
 )
 
 
+_CASE_DATA_ADAPTER = TypeAdapter[CaseData](type=CaseData)
+
+
 def _is_object_dict(value: object, /) -> TypeIs[dict[object, object]]:
     """Narrow a dynamically typed mapping for strict type checkers."""
     return isinstance(value, dict)
@@ -121,7 +124,7 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
             source=input_info.path.read_text(encoding="utf-8"),
             input_format=input_info.input_format,
         )
-    return TypeAdapter[CaseData](type=CaseData).validate_python(
+    return _CASE_DATA_ADAPTER.validate_python(
         parsed,
         strict=True,
     )
