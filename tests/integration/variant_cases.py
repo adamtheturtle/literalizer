@@ -576,11 +576,3 @@ def group_variant_cases_by_language() -> dict[
     for case in build_variant_cases():
         groups.setdefault(case.variant.lang_cls, []).append(case)
     return groups
-
-
-@functools.cache
-@beartype
-def variant_languages() -> list[literalizer.LanguageCls]:
-    """Return languages that have at least one format-variant case."""
-    groups = group_variant_cases_by_language()
-    return [cls for cls in sorted_languages() if cls in groups]
