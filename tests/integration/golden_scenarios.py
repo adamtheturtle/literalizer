@@ -526,7 +526,7 @@ def _combined_renderings(
         unprefixed_rendering(
             lang_cls=lang_cls,
             case_dir_name=combined_case.case_name,
-            golden_name=combined_case.golden_file_name,
+            golden_name=combined_case.golden_name,
             spec_source={
                 "declaration_style": combined_case.declaration_style,
             },

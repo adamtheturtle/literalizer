@@ -403,10 +403,9 @@ class CombinedCase:
     """
 
     case_name: str
-    lang_name: str
     lang_cls: literalizer.LanguageCls
     declaration_style: enum.Enum
-    golden_file_name: str
+    golden_name: str
 
 
 @functools.cache
@@ -435,10 +434,9 @@ def discover_combined_cases(
             cases.append(
                 CombinedCase(
                     case_name=case_name,
-                    lang_name=lang_name,
                     lang_cls=lang_cls,
                     declaration_style=style,
-                    golden_file_name=golden_name,
+                    golden_name=golden_name,
                 )
             )
     return cases
