@@ -11,7 +11,6 @@ from literalizer.languages import Rust
 
 from .case_manifests import case_input
 from .golden_checks import check_golden
-from .language_specs import make_golden_path
 from .record_snapshot_cases import (
     RECORD_SNAPSHOT_CASES,
     RecordSnapshotCase,
@@ -72,12 +71,7 @@ def test_record_snapshot_golden(
                 before=before.code,
                 after=after.code,
             )
-            path = make_golden_path(
-                parent=cases_dir / case.case_name,
-                name=case.golden_name,
-                lang_cls=Rust,
-                version=version,
-            )
+            path = case.golden_path(cases_dir=cases_dir, version=version)
             check_golden(
                 contents=contents,
                 golden_path=path,

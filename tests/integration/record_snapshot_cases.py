@@ -1,5 +1,6 @@
 """Declared consumers of caller-owned record-name snapshots."""
 
+import enum
 import tomllib
 from pathlib import Path
 
@@ -22,6 +23,15 @@ class RecordSnapshotCase(BaseModel, extra="forbid", frozen=True):
     parent_name: str
     child_name: str
     consumer_template: str
+
+    def golden_path(self, *, cases_dir: Path, version: enum.Enum) -> Path:
+        """Locate the native fixture for one target version."""
+        return make_golden_path(
+            parent=cases_dir / self.case_name,
+            name=self.golden_name,
+            lang_cls=Rust,
+            version=version,
+        )
 
 
 RECORD_SNAPSHOT_CASES: tuple[RecordSnapshotCase, ...] = TypeAdapter(
@@ -52,12 +62,7 @@ def record_snapshot_golden_paths(*, cases_dir: Path) -> set[Path]:
     cases.
     """
     return {
-        make_golden_path(
-            parent=cases_dir / case.case_name,
-            name=case.golden_name,
-            lang_cls=Rust,
-            version=version,
-        )
+        case.golden_path(cases_dir=cases_dir, version=version)
         for case in RECORD_SNAPSHOT_CASES
         for version in snapshot_rendering(case=case).versions
     }
