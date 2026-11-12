@@ -1,6 +1,5 @@
 schema_version = 1
 owner = "variant"
-gates = [{kind = "metadata_field", field = "language_id", value = "csharp"}]
 
 [[variants]]
 axis = "csharp_object_carrier"
