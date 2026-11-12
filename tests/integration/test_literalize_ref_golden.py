@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
+from .case_manifests import REF_OWNER
 from .language_specs import make_spec
 from .literalize_ref_cases import (
     LiteralizeRefCase,
@@ -20,7 +21,7 @@ from .literalize_ref_cases import (
 
 @pytest.mark.parametrize(
     argnames="ref_case",
-    argvalues=discover_literalize_ref_cases(),
+    argvalues=discover_literalize_ref_cases(owner=REF_OWNER),
     ids=lambda case: f"{case.config.coverage_id}/{case.lang_cls.__name__}",
 )
 def test_literalize_ref_golden_file(

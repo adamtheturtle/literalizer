@@ -157,24 +157,26 @@ class LiteralizeRefCase:
 
 @functools.cache
 @beartype
-def discover_literalize_ref_cases() -> list[LiteralizeRefCase]:
-    """Return literalize-ref test cases for all languages.
+def discover_literalize_ref_cases(
+    *, owner: OwnerName
+) -> list[LiteralizeRefCase]:
+    """Return reference cases for the selected API owner.
 
-    A case carrying a ``ref_case_override`` is filtered to languages
-    whose ``supported_ref_cases`` includes that override; the remaining
-    languages cannot produce a golden file for the forced ref case and
-    are excluded from discovery so the orphan-files check stays
-    accurate.
+    Explicit reference cases require a supported reference spelling and,
+    for combined forms, a redefinition style. Default cases exercise the
+    public defaults without imposing those explicit options.
     """
     return [
         LiteralizeRefCase(config=config, lang_cls=lang_cls)
-        for config in ref_case_specs(cases_dir=CASES_DIR, owner=REF_OWNER)
+        for config in ref_case_specs(cases_dir=CASES_DIR, owner=owner)
         if not config.variant_only
         for lang_cls in sorted_languages()
         if config.admits_language(lang_cls=lang_cls)
-        if config.variable_form != "both"
+        if owner == REF_DEFAULT_OWNER
+        or config.variable_form != "both"
         or bool(find_redefinition_styles(spec=make_spec(lang_cls=lang_cls)))
-        if config.ref_case_for(lang_cls=lang_cls) is None
+        if owner == REF_DEFAULT_OWNER
+        or config.ref_case_for(lang_cls=lang_cls) is None
         or config.ref_case_for(lang_cls=lang_cls)
         in lang_cls.supported_ref_cases
     ]
@@ -262,22 +264,6 @@ def build_literalize_ref_variant_cases() -> list[LiteralizeRefVariantCase]:
             )
         )
         is not None
-    ]
-
-
-@functools.cache
-@beartype
-def discover_literalize_default_ref_cases() -> list[LiteralizeRefCase]:
-    """Return default literalize-ref test cases for all languages."""
-    return [
-        LiteralizeRefCase(config=config, lang_cls=lang_cls)
-        for config in ref_case_specs(
-            cases_dir=CASES_DIR,
-            owner=REF_DEFAULT_OWNER,
-        )
-        if not config.variant_only
-        for lang_cls in sorted_languages()
-        if config.admits_language(lang_cls=lang_cls)
     ]
 
 
