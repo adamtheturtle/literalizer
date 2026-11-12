@@ -23,6 +23,8 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import LiteralizeResult
 
+from .language_specs import fixture_module_name
+
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SkipReason:
@@ -167,8 +169,5 @@ def format_consumer(
         body_preamble="\n".join(result.body_preamble),
         code=result.code,
         bare_code=result.bare_code,
-        module_name=(
-            f"Fixture_{golden_path.parent.name}_"
-            f"{golden_path.stem.rsplit(sep='@', maxsplit=1)[0]}"
-        ),
+        module_name=fixture_module_name(golden_path=golden_path),
     )

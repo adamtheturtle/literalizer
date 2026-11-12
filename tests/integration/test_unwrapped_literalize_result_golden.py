@@ -10,7 +10,11 @@ import literalizer
 from literalizer import FileWrapperContext, InputFormat, NewVariable
 
 from .golden_checks import check_golden
-from .language_specs import make_golden_path, with_per_fixture_module_name
+from .language_specs import (
+    fixture_module_name,
+    make_golden_path,
+    with_per_fixture_module_name,
+)
 from .unwrapped_result_cases import RESULT_CASES as _CASES
 from .unwrapped_result_cases import RecordConsumer, record_consumer_specs
 
@@ -129,10 +133,7 @@ def test_unwrapped_record_collection_golden(
                 if attribute == "bare_code"
                 else "",
                 code=result.code if attribute == "code" else result.bare_code,
-                module_name=(
-                    f"Fixture_{golden_path.parent.name}_"
-                    f"{golden_path.stem.rsplit(sep='@', maxsplit=1)[0]}"
-                ),
+                module_name=fixture_module_name(golden_path=golden_path),
             )
             check_golden(
                 contents=contents,
