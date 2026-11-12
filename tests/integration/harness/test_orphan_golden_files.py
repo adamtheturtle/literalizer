@@ -91,7 +91,8 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
     )
 
     expected.update(
-        path for _, _, _, path in native_invocation_cases(cases_dir=cases_dir)
+        case.golden_path
+        for case in native_invocation_cases(cases_dir=cases_dir)
     )
     expected.update(_expected_literalize_golden_files(cases_dir=cases_dir))
     expected.update(result_view_golden_paths(cases_dir=cases_dir))

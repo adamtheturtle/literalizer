@@ -1,5 +1,6 @@
 """Manifest-owned consumers of genuine native invocation syntax."""
 
+import dataclasses
 import enum
 from pathlib import Path
 
@@ -13,16 +14,34 @@ from .case_manifests import (
 from .language_specs import make_golden_path
 
 
-def native_invocation_cases(
-    *, cases_dir: Path
-) -> list[tuple[CaseManifest, literalizer.LanguageCls, enum.Enum, Path]]:
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class NativeInvocationCase:
+    """A manifest and language version with its native consumer
+    fixture.
+    """
+
+    manifest: CaseManifest
+    lang_cls: literalizer.LanguageCls
+    version: enum.Enum
+    golden_path: Path
+
+    @property
+    def test_id(self) -> str:
+        """Identify the input, language, and version in pytest output."""
+        return (
+            f"{self.manifest.case_dir.name}/"
+            f"{self.lang_cls.__name__}/{self.version.name}"
+        )
+
+
+def native_invocation_cases(*, cases_dir: Path) -> list[NativeInvocationCase]:
     """Discover every manifest/version that declares native support."""
     return [
-        (
-            manifest,
-            language,
-            version,
-            make_golden_path(
+        NativeInvocationCase(
+            manifest=manifest,
+            lang_cls=language,
+            version=version,
+            golden_path=make_golden_path(
                 parent=manifest.case_dir,
                 name=f"{language.__name__}_native_invocations",
                 lang_cls=language,
