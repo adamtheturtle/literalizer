@@ -9,7 +9,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import InputFormat, LanguageCls, literalize_call
 from literalizer.exceptions import InvalidCallTargetError
-from literalizer.languages import Bash, Elm, Hcl, V
+from literalizer.languages import ALL_LANGUAGES, Bash, V
 from tests.integration.call_cases import (
     CallRendering,
     default_call_case_specs,
@@ -22,7 +22,10 @@ from tests.integration.call_variant_cases import (
 )
 from tests.integration.case_inputs import CaseInput
 from tests.integration.case_manifests import CaseManifestError
-from tests.integration.language_specs import make_spec
+from tests.integration.language_specs import (
+    find_redefinition_styles,
+    make_spec,
+)
 
 
 def test_manual_scaffold_rejects_declaration_only_target_error(
@@ -62,7 +65,25 @@ def test_manual_scaffold_rejects_declaration_only_target_error(
         )
 
 
-@pytest.mark.parametrize(argnames="lang_cls", argvalues=[Elm, Hcl])
+def _declares_immutable_call_binding(lang_cls: LanguageCls, /) -> bool:
+    """Select assignments that declare a binding with no mutable style."""
+    spec = make_spec(lang_cls=lang_cls)
+    return (
+        len(lang_cls.CallStyles) > 0
+        and spec.call_assignment_declares_binding
+        and len(find_redefinition_styles(spec=spec)) == 0
+    )
+
+
+@pytest.mark.parametrize(
+    argnames="lang_cls",
+    argvalues=[
+        cls
+        for cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+        if _declares_immutable_call_binding(cls)
+    ],
+    ids=lambda cls: cls.language_id,
+)
 def test_seeded_scaffold_rejects_immutable_binding(
     *,
     lang_cls: LanguageCls,
