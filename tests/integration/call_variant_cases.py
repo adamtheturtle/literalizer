@@ -21,8 +21,8 @@ from .call_cases import (
     CallCase,
     CallRendering,
     discover_call_cases,
-    expected_call_shape_exception,
 )
+from .call_expectations import expected_call_shape_exception
 from .case_manifests import CallCaseSpec, call_case_specs
 from .variant_cases import Variant, variants_for_axis
 from .variant_context import config_with_variant_layout
