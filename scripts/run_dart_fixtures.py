@@ -13,7 +13,11 @@ from literalizer import VariableForm
 from literalizer.languages import Dart
 from tests.integration.call_cases import discover_call_cases
 from tests.integration.call_variant_cases import build_call_variant_cases
-from tests.integration.case_manifests import RefCaseSpec
+from tests.integration.case_manifests import (
+    REF_DEFAULT_OWNER,
+    REF_OWNER,
+    RefCaseSpec,
+)
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
     constructor_golden_path,
@@ -22,7 +26,6 @@ from tests.integration.golden_scenarios import golden_groups
 from tests.integration.language_specs import make_golden_path
 from tests.integration.literalize_ref_cases import (
     build_literalize_ref_variant_cases,
-    discover_literalize_default_ref_cases,
     discover_literalize_ref_cases,
 )
 
@@ -116,11 +119,11 @@ def _ref_bindings() -> dict[Path, str | None]:
     owners.
     """
     bindings: dict[Path, str | None] = {}
-    for cases, name in (
-        (discover_literalize_ref_cases(), "Dart_ref"),
-        (discover_literalize_default_ref_cases(), "Dart_ref_default"),
+    for owner, name in (
+        (REF_OWNER, "Dart_ref"),
+        (REF_DEFAULT_OWNER, "Dart_ref_default"),
     ):
-        for ref_case in cases:
+        for ref_case in discover_literalize_ref_cases(owner=owner):
             if ref_case.lang_cls is not Dart:
                 continue
             for version in Dart.VersionFormats:

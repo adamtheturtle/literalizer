@@ -13,7 +13,12 @@ from tests.integration.call_variant_cases import (
     CallVariantCase,
     call_golden_cases,
 )
-from tests.integration.case_manifests import RefCaseSpec, load_case_manifests
+from tests.integration.case_manifests import (
+    REF_DEFAULT_OWNER,
+    REF_OWNER,
+    RefCaseSpec,
+    load_case_manifests,
+)
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
     constructor_golden_path,
@@ -23,7 +28,6 @@ from tests.integration.golden_scenarios import GOLDEN_SCENARIOS, golden_groups
 from tests.integration.language_specs import make_golden_path
 from tests.integration.literalize_ref_cases import (
     build_literalize_ref_variant_cases,
-    discover_literalize_default_ref_cases,
     discover_literalize_ref_cases,
     ref_language_versions,
 )
@@ -99,21 +103,25 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
 
     expected.update(_expected_call_golden_files(cases_dir=cases_dir))
 
-    for literalize_ref_case in discover_literalize_ref_cases():
-        expected.update(
-            make_golden_path(
-                parent=cases_dir / literalize_ref_case.config.case_dir_name,
-                name=literalize_ref_case.config.golden_name(
-                    name=f"{literalize_ref_case.lang_cls.__name__}_ref"
-                ),
-                lang_cls=literalize_ref_case.lang_cls,
-                version=version,
+    for owner, suffix in (
+        (REF_OWNER, "ref"),
+        (REF_DEFAULT_OWNER, "ref_default"),
+    ):
+        for ref_case in discover_literalize_ref_cases(owner=owner):
+            expected.update(
+                make_golden_path(
+                    parent=cases_dir / ref_case.config.case_dir_name,
+                    name=ref_case.config.golden_name(
+                        name=f"{ref_case.lang_cls.__name__}_{suffix}"
+                    ),
+                    lang_cls=ref_case.lang_cls,
+                    version=version,
+                )
+                for version in ref_language_versions(
+                    config=ref_case.config,
+                    lang_cls=ref_case.lang_cls,
+                )
             )
-            for version in ref_language_versions(
-                config=literalize_ref_case.config,
-                lang_cls=literalize_ref_case.lang_cls,
-            )
-        )
 
     for variant_case in build_literalize_ref_variant_cases():
         expected.add(
@@ -124,22 +132,6 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
                 ),
                 lang_cls=variant_case.variant.lang_cls,
                 version=variant_case.variant.spec.language_version,
-            )
-        )
-
-    for default_ref_case in discover_literalize_default_ref_cases():
-        expected.update(
-            make_golden_path(
-                parent=cases_dir / default_ref_case.config.case_dir_name,
-                name=default_ref_case.config.golden_name(
-                    name=f"{default_ref_case.lang_cls.__name__}_ref_default"
-                ),
-                lang_cls=default_ref_case.lang_cls,
-                version=version,
-            )
-            for version in ref_language_versions(
-                config=default_ref_case.config,
-                lang_cls=default_ref_case.lang_cls,
             )
         )
 
