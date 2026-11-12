@@ -97,7 +97,9 @@ def _binding_languages() -> list[literalizer.LanguageCls]:
 
 
 @beartype
-def _default_binding_cases() -> list[ConstructorBindingSpec]:
+def _default_binding_cases(
+    *, languages: list[literalizer.LanguageCls]
+) -> list[ConstructorBindingSpec]:
     """Return the plain constructor binding for each language."""
     return [
         ConstructorBindingSpec(
@@ -107,15 +109,17 @@ def _default_binding_cases() -> list[ConstructorBindingSpec]:
             variable_form=NewVariable(name="p", modifiers=frozenset()),
             skip=NO_SKIPS,
         )
-        for lang_cls in _binding_languages()
+        for lang_cls in languages
     ]
 
 
 @beartype
-def _call_style_binding_cases() -> list[ConstructorBindingSpec]:
+def _call_style_binding_cases(
+    *, languages: list[literalizer.LanguageCls]
+) -> list[ConstructorBindingSpec]:
     """Return all non-default call-style constructor binding variants."""
     cases: list[ConstructorBindingSpec] = []
-    for lang_cls in _binding_languages():
+    for lang_cls in languages:
         spec = make_spec(lang_cls=lang_cls)
         call_styles: list[enum.Enum] = list(spec.call_styles)
         if len(call_styles) < _MIN_VARIANT_CALL_STYLES:
@@ -140,10 +144,12 @@ def _call_style_binding_cases() -> list[ConstructorBindingSpec]:
 
 
 @beartype
-def _modifier_binding_cases() -> list[ConstructorBindingSpec]:
+def _modifier_binding_cases(
+    *, languages: list[literalizer.LanguageCls]
+) -> list[ConstructorBindingSpec]:
     """Return constructor binding variants for every language modifier."""
     cases: list[ConstructorBindingSpec] = []
-    for lang_cls in _binding_languages():
+    for lang_cls in languages:
         spec = make_spec(lang_cls=lang_cls)
         entries: list[tuple[str, frozenset[enum.Enum]]] = [
             (member.name.lower(), frozenset({member}))
@@ -176,11 +182,12 @@ def constructor_binding_cases(
         for manifest in load_case_manifests(cases_dir=cases_dir)
         if manifest.owner == "constructor-binding"
     ]
+    languages = _binding_languages()
     cases: list[ConstructorBindingCase] = []
     for case in [
-        *_default_binding_cases(),
-        *_call_style_binding_cases(),
-        *_modifier_binding_cases(),
+        *_default_binding_cases(languages=languages),
+        *_call_style_binding_cases(languages=languages),
+        *_modifier_binding_cases(languages=languages),
     ]:
         owners = tuple(
             manifest
