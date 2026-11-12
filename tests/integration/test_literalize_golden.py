@@ -27,7 +27,12 @@ from literalizer.exceptions import (
 )
 
 from .case_manifests import load_case_manifest
-from .golden_checks import GoldenSkips, check_golden, cleanup_stale_golden
+from .golden_checks import (
+    GoldenSkips,
+    check_golden,
+    cleanup_stale_golden,
+    format_consumer,
+)
 from .golden_scenarios import (
     GoldenGroup,
     GoldenRendering,
@@ -170,13 +175,10 @@ def _check_rendering(
     )
     contents = "\n".join((*identifier_preamble, result.code, ""))
     if rendering.consumer_template is not None:
-        contents = rendering.consumer_template.format(
-            code=result.code,
-            preamble="\n".join(result.preamble),
-            module_name=(
-                f"Fixture_{golden_path.parent.name}_"
-                f"{golden_path.stem.rsplit(sep='@', maxsplit=1)[0]}"
-            ),
+        contents = format_consumer(
+            template=rendering.consumer_template,
+            result=result,
+            golden_path=golden_path,
         )
     check_golden(
         contents=contents,

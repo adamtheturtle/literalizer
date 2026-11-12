@@ -21,6 +21,8 @@ import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
+from literalizer import LiteralizeResult
+
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SkipReason:
@@ -153,4 +155,21 @@ def check_golden(
         extension=extension,
         newline="",
         fullpath=golden_path,
+    )
+
+
+@beartype
+def format_consumer(
+    *, template: str, result: LiteralizeResult, golden_path: Path
+) -> str:
+    """Format a native consumer from the result and fixture path."""
+    return template.format(
+        preamble="\n".join(result.preamble),
+        body_preamble="\n".join(result.body_preamble),
+        code=result.code,
+        bare_code=result.bare_code,
+        module_name=(
+            f"Fixture_{golden_path.parent.name}_"
+            f"{golden_path.stem.rsplit(sep='@', maxsplit=1)[0]}"
+        ),
     )

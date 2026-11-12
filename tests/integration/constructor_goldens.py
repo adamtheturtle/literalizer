@@ -11,7 +11,7 @@ from literalizer import literalize_call
 
 from .case_manifests import ConstructorCaseSpec
 from .constructor_cases import ConstructorBindingCase
-from .golden_checks import GoldenSkips, check_golden
+from .golden_checks import GoldenSkips, check_golden, format_consumer
 from .language_specs import make_spec, with_per_fixture_module_name
 
 
@@ -67,15 +67,10 @@ def run_constructor_binding_golden_case(
         )
     contents = result.code + "\n"
     if config.consumer_template is not None:
-        contents = config.consumer_template.format(
-            preamble="\n".join(result.preamble),
-            code=result.code,
-            bare_code=result.bare_code,
-            body_preamble="\n".join(result.body_preamble),
-            module_name=(
-                f"Fixture_{golden_path.parent.name}_"
-                f"{golden_path.stem.rsplit(sep='@', maxsplit=1)[0]}"
-            ),
+        contents = format_consumer(
+            template=config.consumer_template,
+            result=result,
+            golden_path=golden_path,
         )
     check_golden(
         contents=contents,
