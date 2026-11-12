@@ -1,7 +1,7 @@
 """Shared semantic verification preserves JSON value distinctions."""
 
 import pytest
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 
 from scripts.roundtrip_common import verify
 from tests.toml_cases import load_toml_cases
@@ -22,9 +22,7 @@ class _Cases(BaseModel, extra="forbid", frozen=True):
     mismatches: tuple[_RoundtripCase, ...]
 
 
-_CASES = TypeAdapter(type=_Cases).validate_python(
-    load_toml_cases(name="roundtrip_verifier")
-)
+_CASES = _Cases.model_validate(obj=load_toml_cases(name="roundtrip_verifier"))
 
 
 @pytest.mark.parametrize(

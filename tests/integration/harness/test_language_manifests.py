@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import pytest
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 
 from tests.integration.language_metadata import (
     LANGUAGES_DIR,
@@ -30,8 +30,8 @@ class _Cases(BaseModel, extra="forbid", frozen=True):
     cases: tuple[_MetadataErrorCase, ...]
 
 
-_CASES = TypeAdapter(type=_Cases).validate_python(
-    load_toml_cases(name="language_metadata_validation")
+_CASES = _Cases.model_validate(
+    obj=load_toml_cases(name="language_metadata_validation")
 )
 
 _DEFAULT_TYPE_CAPABILITY_FIELDS = (

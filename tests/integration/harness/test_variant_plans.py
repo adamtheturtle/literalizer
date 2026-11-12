@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import pytest
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 
 from literalizer import CollectionLayout, CommentConfig
 from literalizer._enums import enum_payload
@@ -46,8 +46,8 @@ class _Cases(BaseModel, extra="forbid", frozen=True):
     missing_metadata: tuple[_AxisErrorCase, ...]
 
 
-_CASES = TypeAdapter(type=_Cases).validate_python(
-    load_toml_cases(name="axis_plan_validation")
+_CASES = _Cases.model_validate(
+    obj=load_toml_cases(name="axis_plan_validation")
 )
 
 

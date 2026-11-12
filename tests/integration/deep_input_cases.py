@@ -4,7 +4,7 @@ import dataclasses
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field
 
 from .case_manifests import (
     CallInputFormat,
@@ -64,8 +64,10 @@ def deep_input_cases(*, cases_dir: Path) -> tuple[DeepInputCase, ...]:
     return tuple(
         DeepInputCase(
             manifest=manifest,
-            recipe=TypeAdapter(type=DeepInputRecipe).validate_python(
-                tomllib.loads(manifest.input.path.read_text(encoding="utf-8"))
+            recipe=DeepInputRecipe.model_validate(
+                obj=tomllib.loads(
+                    manifest.input.path.read_text(encoding="utf-8")
+                )
             ),
         )
         for manifest in load_case_manifests(cases_dir=cases_dir)

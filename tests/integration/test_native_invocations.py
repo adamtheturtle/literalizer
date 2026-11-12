@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Literal
 
 import pytest
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
@@ -35,9 +35,6 @@ class _ExpectedMetadata(
     excluded_types: frozenset[_MetadataTypeName]
     is_call_statement: bool
     uses_existing_variable: bool
-
-
-_EXPECTED_METADATA = TypeAdapter(type=_ExpectedMetadata)
 
 
 _CASES = Path(__file__).parent / "cases"
@@ -127,7 +124,7 @@ def test_native_invocation_golden(
             )
         metadata = step.get("expected_metadata")
         if metadata is not None:
-            expected = _EXPECTED_METADATA.validate_python(metadata)
+            expected = _ExpectedMetadata.model_validate(obj=metadata)
             assert result.source_data == expected.source_data
             required = {
                 _METADATA_TYPES[name] for name in expected.required_types

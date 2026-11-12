@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import override
 
 import pytest
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import SequenceFormatConfig
@@ -54,8 +54,8 @@ class _Cases(BaseModel, extra="forbid", frozen=True):
     arities: tuple[_ArityCase, ...]
 
 
-_CASES = TypeAdapter(type=_Cases).validate_python(
-    load_toml_cases(name="external_reference_scaffolds")
+_CASES = _Cases.model_validate(
+    obj=load_toml_cases(name="external_reference_scaffolds")
 )
 
 

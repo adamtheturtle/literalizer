@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import pytest
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 
 import literalizer.languages
 from tests.integration.case_discovery import load_case_data
@@ -51,8 +51,8 @@ class _Cases(BaseModel, extra="forbid", frozen=True):
     references: tuple[_ReferenceErrorCase, ...]
 
 
-_CASES = TypeAdapter(type=_Cases).validate_python(
-    load_toml_cases(name="case_manifest_validation")
+_CASES = _Cases.model_validate(
+    obj=load_toml_cases(name="case_manifest_validation")
 )
 
 
