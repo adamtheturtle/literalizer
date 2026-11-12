@@ -2,12 +2,13 @@
 
 import json
 import tomllib
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 import pytest
 
 import literalizer
-from literalizer.languages import Java, ObjectiveC, Python
+from literalizer.languages import ALL_LANGUAGES, Java, ObjectiveC
 
 _CASES = tomllib.loads(
     (Path(__file__).parent / "native_invocations.toml").read_text(
@@ -38,9 +39,7 @@ def test_native_invocation_rejections(case: dict[str, object]) -> None:
         _ = literalizer.literalize_native_calls(
             source=str(object=case["source"]),
             input_format=literalizer.InputFormat.JSON,
-            language=Python()
-            if case.get("language") == "python"
-            else ObjectiveC(
+            language=ObjectiveC(
                 native_continuation_indent=int(
                     str(object=case.get("continuation_indent", 1))
                 ),
@@ -115,4 +114,72 @@ def test_native_capability_can_be_disabled(
                 target=literalizer.ConstructorTarget(class_name="NSObject"),
                 arguments=(),
             ),
+        )
+
+
+_UNSUPPORTED = sorted(
+    (cls for cls in ALL_LANGUAGES if not cls.supports_native_invocations),
+    key=lambda cls: cls.__name__,
+)
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_UNSUPPORTED,
+    ids=lambda cls: cls.language_id,
+)
+def test_native_call_requires_capability(
+    language_cls: literalizer.LanguageCls,
+) -> None:
+    """Every backend that opts out rejects a single native invocation."""
+    invocation = literalizer.NativeInvocation(
+        target=literalizer.FunctionTarget(
+            name="consume",
+            parameter_types=(),
+            return_type=literalizer.ScalarType.VOID,
+        ),
+        arguments=(),
+    )
+    with pytest.raises(
+        expected_exception=literalizer.NativeCallError,
+        match="does not support native invocations",
+    ):
+        _ = literalizer.literalize_native_call(
+            language=language_cls(), invocation=invocation
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_UNSUPPORTED,
+    ids=lambda cls: cls.language_id,
+)
+@pytest.mark.parametrize(
+    argnames="render",
+    argvalues=[
+        literalizer.literalize_native_calls,
+        literalizer.literalize_invocations,
+    ],
+    ids=["native", "shared"],
+)
+def test_native_rows_require_capability(
+    language_cls: literalizer.LanguageCls,
+    render: Callable[..., literalizer.LiteralizeResult],
+) -> None:
+    """Both recipe APIs reject every backend lacking native support."""
+    recipe: Mapping[str, object] = {
+        "function": "consume",
+        "parameter-types": [],
+        "return-type": "void",
+        "arguments": [],
+    }
+    with pytest.raises(
+        expected_exception=literalizer.NativeCallError,
+        match="does not support native invocations",
+    ):
+        _ = render(
+            source="[[]]",
+            input_format=literalizer.InputFormat.JSON,
+            language=language_cls(),
+            invocation=recipe,
         )

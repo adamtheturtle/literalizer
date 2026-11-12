@@ -294,13 +294,6 @@ source = "[[]]"
 indent = -1
 
 [[case]]
-name = "unsupported-language"
-recipe = "{\"function\": \"consume\", \"parameter-types\": [], \"return-type\": \"void\", \"arguments\": []}"
-match = "does not support native invocations"
-source = "[[]]"
-language = "python"
-
-[[case]]
 name = "generic-noncollection"
 recipe = "{\"function\": \"consume\", \"parameter-types\": [{\"object\": \"NSString\", \"arguments\": [\"NSString\"]}], \"return-type\": \"void\", \"arguments\": [{\"literal\": \"value\"}]}"
 match = "require a collection"
