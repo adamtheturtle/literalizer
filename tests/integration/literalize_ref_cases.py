@@ -13,17 +13,12 @@ import dataclasses
 import enum
 import functools
 import json
-import tomllib
 from pathlib import Path
-from typing import assert_never
 
-import json5_document
-import jsonc_document
 import pytest
 from beartype import beartype
 from pydantic import TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
-from ruamel.yaml import YAML
 
 import literalizer
 from literalizer import ValueInput
@@ -48,7 +43,6 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
 )
 from tests.enum_members import enum_member_by_name
-from tests.yaml_support import as_yaml_parser
 
 from .call_cases import call_stub_spec
 from .case_manifests import (
@@ -75,6 +69,7 @@ from .language_specs import (
     sorted_languages,
     with_per_fixture_module_name,
 )
+from .reference_inputs import RefData, bound_ref_inputs, parse_ref_input
 from .variant_cases import Variant, variants_for_axis
 from .variant_context import config_with_variant_layout
 
@@ -265,125 +260,6 @@ def build_literalize_ref_variant_cases() -> list[LiteralizeRefVariantCase]:
         )
         is not None
     ]
-
-
-type _RefData = (
-    dict[str, _RefData]
-    | list[_RefData]
-    | set[str | int | float | bool | None]
-    | bytes
-    | str
-    | int
-    | float
-    | bool
-    | None
-)
-
-
-@beartype
-def collect_ref_names(data: _RefData, *, ref_key: str) -> list[str]:
-    """Recursively collect all ref name values from parsed data.
-
-    Names are returned in first-use (document) order with duplicates
-    removed at their first occurrence, matching the order
-    :func:`literalizer.literalize` emits the ``bound_refs`` bindings.
-    """
-    match data:
-        case dict():
-            if len(data) == 1 and ref_key in data:
-                name = data[ref_key]
-                if isinstance(name, str):
-                    return [name]
-                return []
-            return [
-                n
-                for v in data.values()
-                for n in collect_ref_names(data=v, ref_key=ref_key)
-            ]
-        case list():
-            return [
-                n
-                for item in data
-                for n in collect_ref_names(data=item, ref_key=ref_key)
-            ]
-        case _:
-            return []
-
-
-@beartype
-def _parse_ref_input(
-    *,
-    input_format: literalizer.InputFormat,
-    input_source: str,
-) -> _RefData:
-    """Parse *input_source* into raw data for ref-name collection.
-
-    Mirrors the format dispatch in :func:`literalizer.parse_input` but
-    yields plain Python containers so :func:`collect_ref_names` can
-    walk them structurally.
-    """
-    parsed: object
-    match input_format:
-        case literalizer.InputFormat.JSON:
-            parsed = json.loads(s=input_source)
-        case literalizer.InputFormat.JSONC:
-            parsed = jsonc_document.loads(source=input_source)
-        case literalizer.InputFormat.JSON5:
-            parsed = json5_document.loads(source=input_source)
-        case literalizer.InputFormat.YAML:
-            # Reference discovery needs plain values, including YAML sets;
-            # the public renderer preserves comments from input_source.
-            ruamel_yaml = as_yaml_parser(parser=YAML(typ="safe"))
-            parsed = ruamel_yaml.load(stream=input_source)
-        case literalizer.InputFormat.TOML:
-            parsed = tomllib.loads(input_source)
-        case _ as unreachable:
-            assert_never(unreachable)
-    return TypeAdapter[_RefData](type=_RefData).validate_python(
-        parsed,
-        strict=True,
-    )
-
-
-@beartype
-def _bound_ref_inputs(
-    *,
-    config: RefCaseSpec,
-    raw_data: _RefData,
-    lang_cls: literalizer.LanguageCls,
-) -> dict[str, ValueInput]:
-    """Prepare referenced bindings and the case's additional
-    declarations.
-    """
-    collected_bound_refs_input: dict[str, ValueInput] = {}
-    key_syntax = make_spec(lang_cls=lang_cls).dict_format_config.key_syntax
-    effective_s = '{"_": "_"}'
-    if key_syntax is not None and not key_syntax.accepts(name="_"):
-        effective_s = '{"key": "value"}'
-    for entry_raw_name in collect_ref_names(
-        data=raw_data, ref_key=config.ref_key
-    ):
-        collected_bound_refs_input[entry_raw_name] = json.loads(
-            s=config.value_sources.get(entry_raw_name, effective_s)
-        )
-    bound_refs_input: dict[str, ValueInput] = collected_bound_refs_input
-    bound_refs_input.update(
-        {
-            name: json.loads(s=source)
-            for name, source in config.extra_ref_value_sources.items()
-        },
-    )
-    if config.bound_refs is not None:
-        bound_refs_input.update(config.bound_refs)
-    bound_refs_input.update(config.bound_ref_times)
-    bound_refs_input.update(config.bound_ref_datetimes)
-    bound_refs_input.update(
-        {
-            name: source.to_value()
-            for name, source in config.bound_ref_values.items()
-        }
-    )
-    return bound_refs_input
 
 
 @beartype
@@ -587,7 +463,7 @@ def _external_result_value(*, source: Value, config: RefCaseSpec) -> Value:
 
 @beartype
 def external_assignment_spec(
-    *, spec: literalizer.Language, config: RefCaseSpec, raw_data: _RefData
+    *, spec: literalizer.Language, config: RefCaseSpec, raw_data: RefData
 ) -> literalizer.Language:
     """Use a length-independent sequence for a caller's changing-size
     binding.
@@ -631,7 +507,7 @@ def _with_caller_binding_signature(
     config: RefCaseSpec,
     spec: literalizer.Language,
     result: literalizer.LiteralizeResult,
-    raw_data: _RefData,
+    raw_data: RefData,
 ) -> literalizer.LiteralizeResult:
     """Let the caller annotate a new equation without supplying API
     hints.
@@ -668,7 +544,7 @@ def _compose_external_ref_fixture(
     config: RefCaseSpec,
     spec: literalizer.Language,
     result: literalizer.LiteralizeResult,
-    raw_data: _RefData,
+    raw_data: RefData,
 ) -> literalizer.LiteralizeResult:
     """Compose caller declarations and optional generated checks."""
     result = _with_caller_binding_signature(
@@ -848,14 +724,14 @@ def run_literalize_ref_golden_case(
             )
         except VariableNameNotSupportedError:
             variable_form_obj = None
-        raw_data = _parse_ref_input(
+        raw_data = parse_ref_input(
             input_format=input_info.input_format,
             input_source=input_source,
         )
         spec = external_assignment_spec(
             spec=spec, config=config, raw_data=raw_data
         )
-        bound_refs_input = _bound_ref_inputs(
+        bound_refs_input = bound_ref_inputs(
             config=config,
             raw_data=raw_data,
             lang_cls=lang_cls,
