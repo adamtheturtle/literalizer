@@ -1,4 +1,4 @@
-"""Discover input cases and language contexts for ``literalize`` goldens.
+"""Discover input cases and language contexts for ``literalize`` fixtures.
 
 Input parsing and value predicates live in :mod:`case_data`.
 This module selects languages and collects the contexts used by
