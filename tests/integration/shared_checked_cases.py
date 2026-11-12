@@ -5,7 +5,7 @@ import enum
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 
 from literalizer.languages import Python
 
@@ -38,8 +38,10 @@ def shared_checked_cases(*, cases_dir: Path) -> tuple[SharedCheckedCase, ...]:
     return tuple(
         SharedCheckedCase(
             name=manifest.case_dir.name,
-            recipe=TypeAdapter(type=CheckedRecipe).validate_python(
-                tomllib.loads(manifest.input.path.read_text(encoding="utf-8"))
+            recipe=CheckedRecipe.model_validate(
+                obj=tomllib.loads(
+                    manifest.input.path.read_text(encoding="utf-8")
+                )
             ),
             version=version,
             golden_path=make_golden_path(

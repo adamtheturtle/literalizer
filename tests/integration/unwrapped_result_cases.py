@@ -4,7 +4,7 @@ import tomllib
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 
 import literalizer
 
@@ -42,8 +42,8 @@ class _ResultCases(
     record_consumers: tuple[RecordConsumer, ...]
 
 
-RESULT_CASES: _ResultCases = TypeAdapter(type=_ResultCases).validate_python(
-    tomllib.loads(
+RESULT_CASES: _ResultCases = _ResultCases.model_validate(
+    obj=tomllib.loads(
         Path(__file__).with_suffix(suffix=".toml").read_text(encoding="utf-8")
     ),
 )
