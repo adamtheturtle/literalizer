@@ -44,7 +44,11 @@ def render_state_golden(*, case: StateGolden) -> str:
         source=case.source,
         input_format=case.input_format,
         language=case.language,
-        variable_form=render_args.variable_form,
+        variable_form=(
+            render_args.variable_form
+            if case.language.supports_variable_names
+            else None
+        ),
         wrap_in_file=render_args.wrap_in_file,
         pre_indent_level=render_args.pre_indent_level,
         collection_layout=render_args.collection_layout,

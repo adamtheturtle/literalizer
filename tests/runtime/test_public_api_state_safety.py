@@ -11,8 +11,10 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from pydantic import BaseModel, TypeAdapter
 
+from literalizer.languages import ALL_LANGUAGES
 from tests.integration.case_manifests import ManifestLanguage
-from tests.integration.golden_scenarios import golden_groups
+from tests.integration.golden_scenarios import GOLDEN_SCENARIOS
+from tests.integration.language_specs import with_per_fixture_module_name
 from tests.integration.state_goldens import (
     StateGolden,
     read_state_golden,
@@ -27,6 +29,7 @@ class _ThreadCase(
     """A shared language instance exercised against native golden fixtures."""
 
     name: str
+    scenario_name: str
     language: ManifestLanguage
     golden_name: str
     case_names: tuple[str, ...]
@@ -45,22 +48,34 @@ _CASES = TypeAdapter(type=_Cases).validate_python(
 
 @pytest.mark.parametrize(
     argnames="scenario",
-    argvalues=_CASES.threads,
+    argvalues=[
+        *_CASES.threads,
+        *(
+            _ThreadCase(
+                name=f"{cls.language_id}_default",
+                scenario_name="base",
+                language=cls,
+                golden_name=cls.__name__,
+                case_names=("scalar_int", "simple_sequence", "simple_dict"),
+            )
+            for cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+        ),
+    ],
     ids=lambda scenario: scenario.name,
 )
 def test_language_instance_is_thread_safe(scenario: _ThreadCase) -> None:
     """Compare 300 calls on sixteen threads with native golden programs.
 
-    Reuse one language instance across scalar, sequence and nested
-    mapping documents. Expected output comes from checked-in fixtures,
+    Reuse language instances across scalar, sequence and mapping
+    documents, retaining separate instances for fixture-specific modules.
+    Expected output comes from checked-in fixtures,
     independently of the cached state exercised by these calls (#4699).
     """
     renderings = [
         rendering
-        for group in golden_groups()
-        if group.scenario_name == "format_variant"
-        and group.lang_cls is scenario.language
-        for rendering in group.renderings
+        for family in GOLDEN_SCENARIOS
+        if family.name == scenario.scenario_name
+        for rendering in family.build(lang_cls=scenario.language)
         if rendering.golden_name == scenario.golden_name
         and rendering.case_dir_name in scenario.case_names
     ]
@@ -75,10 +90,21 @@ def test_language_instance_is_thread_safe(scenario: _ThreadCase) -> None:
         cases.extend(
             read_state_golden(
                 rendering=rendering,
-                language=shared_language,
+                language=(
+                    with_per_fixture_module_name(
+                        spec=shared_language,
+                        golden_path=rendering.golden_path(version=version),
+                    )
+                    if rendering.apply_fixture_module_name
+                    else shared_language
+                ),
             )
             for rendering in renderings
+            # The base suite omits shapes a backend cannot represent.
+            # Exercise its complete native fixtures without a language list.
+            if rendering.golden_path(version=version).is_file()
         )
+    assert len(cases) > 0
 
     def render(index: int) -> None:
         """Render one document through the shared language instance."""
