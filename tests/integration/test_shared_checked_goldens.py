@@ -10,7 +10,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from literalizer import InputFormat, literalize_invocations
 from literalizer.languages import Python
 
-from .golden_checks import check_golden
+from .golden_checks import check_golden, format_consumer
 from .language_specs import make_spec
 from .shared_checked_cases import SharedCheckedCase, shared_checked_cases
 
@@ -38,8 +38,10 @@ def test_shared_checked_golden(
         invocation=recipe.invocation,
         pre_indent_level=recipe.pre_indent_level,
     )
-    program = recipe.consumer_template.format(
-        preamble="\n".join(result.preamble), code=result.code
+    program = format_consumer(
+        template=recipe.consumer_template,
+        result=result,
+        golden_path=case.golden_path,
     )
     check_golden(
         contents=program,
