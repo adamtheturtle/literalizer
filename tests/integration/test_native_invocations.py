@@ -13,8 +13,10 @@ from pytest_regressions.file_regression import FileRegressionFixture
 import literalizer
 from literalizer.languages import ObjectiveC, Python
 
-from .case_manifests import CaseManifest
-from .native_invocation_cases import native_invocation_cases
+from .native_invocation_cases import (
+    NativeInvocationCase,
+    native_invocation_cases,
+)
 
 type _MetadataTypeName = Literal["str", "int", "bool"]
 
@@ -44,21 +46,20 @@ _CASES = Path(__file__).parent / "cases"
     argnames="api", argvalues=["native", "shared", "bare"]
 )
 @pytest.mark.parametrize(
-    argnames=("manifest", "language", "version", "golden_path"),
+    argnames="case",
     argvalues=native_invocation_cases(cases_dir=_CASES),
+    ids=lambda case: case.test_id,
 )
 def test_native_invocation_golden(
     *,
     api: Literal["native", "shared", "bare"],
-    manifest: CaseManifest,
-    language: literalizer.LanguageCls,
-    version: enum.Enum,
-    golden_path: Path,
+    case: NativeInvocationCase,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Generate a real class consumer, not function-pointer stand-ins."""
+    manifest = case.manifest
     steps = json.loads(s=manifest.input.path.read_text(encoding="utf-8"))
-    spec = language(language_version=version)
+    spec = case.lang_cls(language_version=case.version)
     fragments: list[str] = []
     for step in steps:
         kwargs: dict[str, object] = {}
@@ -149,7 +150,7 @@ def test_native_invocation_golden(
     program = manifest.native_invocation.consumer_template.format(
         code="\n".join(fragments)
     )
-    file_regression.check(contents=program, fullpath=golden_path)
+    file_regression.check(contents=program, fullpath=case.golden_path)
 
 
 def test_original_objective_c_native_callback() -> None:
