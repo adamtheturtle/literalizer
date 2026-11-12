@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING, Literal
 
 import pytest
 from beartype import beartype
@@ -25,20 +26,23 @@ from tests.integration.constructor_cases import (
 )
 from tests.integration.deep_input_cases import deep_input_golden_paths
 from tests.integration.golden_scenarios import GOLDEN_SCENARIOS, golden_groups
-from tests.integration.literalize_ref_cases import (
-    ref_golden_path,
-)
 from tests.integration.native_invocation_cases import native_invocation_cases
 from tests.integration.record_snapshot_cases import (
     record_snapshot_golden_paths,
 )
 from tests.integration.reference_cases import (
+    LiteralizeRefCase,
+    LiteralizeRefVariantCase,
+    RefRendering,
     build_literalize_ref_variant_cases,
     discover_literalize_ref_cases,
     ref_language_versions,
 )
 from tests.integration.shared_checked_cases import shared_checked_cases
 from tests.integration.unwrapped_result_cases import result_view_golden_paths
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 @beartype
@@ -69,6 +73,21 @@ def _expected_literalize_golden_files(*, cases_dir: Path) -> set[Path]:
         for group in golden_groups()
         for rendering in group.renderings
         for spec in rendering.specs
+    }
+
+
+@beartype
+def _expected_reference_golden_files(*, cases_dir: Path) -> set[Path]:
+    """Read reference ownership from the renderings executed by pytest."""
+    cases: tuple[LiteralizeRefCase | LiteralizeRefVariantCase, ...] = (
+        *discover_literalize_ref_cases(owner=REF_OWNER),
+        *discover_literalize_ref_cases(owner=REF_DEFAULT_OWNER),
+        *build_literalize_ref_variant_cases(),
+    )
+    return {
+        rendering.golden_path(cases_dir=cases_dir)
+        for case in cases
+        for rendering in case.renderings
     }
 
 
@@ -106,35 +125,7 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
 
     expected.update(_expected_call_golden_files(cases_dir=cases_dir))
 
-    for owner, suffix in (
-        (REF_OWNER, "ref"),
-        (REF_DEFAULT_OWNER, "ref_default"),
-    ):
-        for ref_case in discover_literalize_ref_cases(owner=owner):
-            expected.update(
-                ref_golden_path(
-                    config=ref_case.config,
-                    cases_dir=cases_dir,
-                    golden_name=f"{ref_case.lang_cls.__name__}_{suffix}",
-                    lang_cls=ref_case.lang_cls,
-                    version=version,
-                )
-                for version in ref_language_versions(
-                    config=ref_case.config,
-                    lang_cls=ref_case.lang_cls,
-                )
-            )
-
-    for variant_case in build_literalize_ref_variant_cases():
-        expected.add(
-            ref_golden_path(
-                config=variant_case.config,
-                cases_dir=cases_dir,
-                golden_name=variant_case.golden_name,
-                lang_cls=variant_case.variant.lang_cls,
-                version=variant_case.variant.spec.language_version,
-            )
-        )
+    expected.update(_expected_reference_golden_files(cases_dir=cases_dir))
 
     return expected
 
@@ -364,3 +355,59 @@ def test_reference_versions_follow_selected_options() -> None:
     assert ref_language_versions(config=config, lang_cls=Cpp) == tuple(
         Cpp.VersionFormats
     )
+
+
+@pytest.mark.parametrize(
+    argnames="family", argvalues=["ref", "default", "variant"]
+)
+def test_removed_reference_rendering_leaves_orphan(
+    family: Literal["ref", "default", "variant"],
+    cases_dir: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Every reference family follows the runner's individual
+    renderings.
+    """
+    groups: dict[
+        str, Sequence[LiteralizeRefCase | LiteralizeRefVariantCase]
+    ] = {
+        "ref": discover_literalize_ref_cases(owner=REF_OWNER),
+        "default": discover_literalize_ref_cases(owner=REF_DEFAULT_OWNER),
+        "variant": build_literalize_ref_variant_cases(),
+    }
+    original_rows = {
+        id(case): case.renderings
+        for cases in groups.values()
+        for case in cases
+    }
+    selected, original = next(
+        (case, path)
+        for case in groups[family]
+        for rendering in case.renderings
+        if (path := rendering.golden_path(cases_dir=cases_dir)).is_file()
+    )
+    orphan = tmp_path / os.path.relpath(path=original, start=cases_dir)
+    orphan.parent.mkdir(parents=True)
+    _ = orphan.write_bytes(data=original.read_bytes())
+
+    def remaining_renderings(
+        case: LiteralizeRefCase | LiteralizeRefVariantCase,
+        /,
+    ) -> tuple[RefRendering, ...]:
+        """Remove one exercised version without changing its manifest."""
+        return tuple(
+            rendering
+            for rendering in original_rows[id(case)]
+            if case is not selected
+            or rendering.golden_path(cases_dir=tmp_path) != orphan
+        )
+
+    monkeypatch.setattr(
+        target=type(selected),
+        name="renderings",
+        value=property(fget=remaining_renderings),
+    )
+    expected = _expected_reference_golden_files(cases_dir=tmp_path)
+    with pytest.raises(expected_exception=AssertionError, match=orphan.name):
+        _check_golden_inventory(cases_dir=tmp_path, expected=expected)

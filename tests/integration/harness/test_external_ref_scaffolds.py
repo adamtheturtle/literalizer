@@ -21,6 +21,7 @@ from tests.integration.manifest_values import (
     ManifestLanguage,
 )
 from tests.integration.ref_consumers import external_assignment_spec
+from tests.integration.reference_cases import RefRendering
 from tests.toml_cases import load_toml_cases
 
 
@@ -111,14 +112,17 @@ def test_refused_scaffold_handles_stale_fixture(
     outcome = pytest.skip.Exception if regenerate else pytest.fail.Exception
     with pytest.raises(expected_exception=outcome):
         literalize_ref_cases.run_literalize_ref_golden_case(
-            config=config,
-            lang_cls=case.language,
-            spec=make_spec(lang_cls=case.language, language_version=version),
-            golden_name=case.golden_name,
+            rendering=RefRendering(
+                config=config,
+                lang_cls=case.language,
+                spec=make_spec(
+                    lang_cls=case.language, language_version=version
+                ),
+                golden_name=case.golden_name,
+                ref_case=None,
+            ),
             cases_dir=tmp_path,
             file_regression=file_regression,
-            ref_case=None,
-            version=version,
             pytest_config=regeneration_config,
         )
     assert golden_path.exists() is not regenerate

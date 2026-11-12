@@ -10,7 +10,6 @@ set to the language's default identifier case.  The runner
 
 import copy
 import dataclasses
-import enum
 import json
 from pathlib import Path
 
@@ -35,7 +34,6 @@ from literalizer.exceptions import (
 from tests.enum_members import enum_member_by_name
 
 from .case_manifests import (
-    RefCaseSpec,
     case_input,
 )
 from .golden_checks import (
@@ -46,7 +44,6 @@ from .golden_checks import (
 )
 from .language_specs import (
     find_redefinition_styles,
-    make_golden_path,
     with_per_fixture_module_name,
 )
 from .ref_consumers import (
@@ -54,7 +51,7 @@ from .ref_consumers import (
     external_assignment_spec,
     ref_fixture_contents,
 )
-from .reference_cases import ref_language_options
+from .reference_cases import RefRendering, ref_language_options
 from .reference_inputs import bound_ref_inputs, parse_ref_input
 
 CASES_DIR = Path(__file__).parent / "cases"
@@ -127,56 +124,30 @@ _REF_SKIPS: SkipPolicy = SkipPolicy(
 
 
 @beartype
-def ref_golden_path(
-    *,
-    config: RefCaseSpec,
-    lang_cls: literalizer.LanguageCls,
-    golden_name: str,
-    cases_dir: Path,
-    version: enum.Enum,
-) -> Path:
-    """Locate an ordinary or variant reference consumer fixture."""
-    return make_golden_path(
-        parent=cases_dir / config.case_dir_name,
-        name=config.golden_name(name=golden_name),
-        lang_cls=lang_cls,
-        version=version,
-    )
-
-
-@beartype
 def run_literalize_ref_golden_case(
     *,
-    config: RefCaseSpec,
-    lang_cls: literalizer.LanguageCls,
-    spec: literalizer.Language,
-    golden_name: str,
+    rendering: RefRendering,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
-    ref_case: literalizer.IdentifierCase | None,
-    version: enum.Enum,
     pytest_config: pytest.Config,
 ) -> None:
-    """Run a literalize ``$ref`` golden-file case against *golden_name*.
+    """Run one collected reference rendering against its golden file.
 
-    When *ref_case* is set, the ref identifier is spelled idiomatically
-    for each language.  Each referenced identifier is supplied through
-    ``bound_refs`` so a single :func:`literalizer.literalize` call
-    emits the binding before its first use and the golden file is a
-    complete unit that compiles, with per-language declaration
-    sequencing.
+    Selected ref cases use the language's identifier spelling.
+    Each referenced identifier is supplied through ``bound_refs``.
+    Bindings precede their first use so the fixture is a complete
+    program with the language's declaration order.
     """
-    spec = ref_language_options(config=config, lang_cls=lang_cls, spec=spec)
+    config = rendering.config
+    lang_cls = rendering.lang_cls
+    ref_case = rendering.ref_case
+    spec = ref_language_options(
+        config=config, lang_cls=lang_cls, spec=rendering.spec
+    )
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
     input_path = input_info.path
     input_source = input_path.read_text(encoding="utf-8")
-    golden_path = ref_golden_path(
-        config=config,
-        lang_cls=lang_cls,
-        golden_name=golden_name,
-        cases_dir=cases_dir,
-        version=version,
-    )
+    golden_path = rendering.golden_path(cases_dir=cases_dir)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     if (
         config.variable_form == "both"

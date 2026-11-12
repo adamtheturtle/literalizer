@@ -8,7 +8,6 @@ import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from .case_manifests import REF_OWNER
-from .language_specs import make_spec
 from .literalize_ref_cases import (
     run_literalize_ref_golden_case,
 )
@@ -17,7 +16,6 @@ from .reference_cases import (
     LiteralizeRefVariantCase,
     build_literalize_ref_variant_cases,
     discover_literalize_ref_cases,
-    ref_language_versions,
 )
 
 
@@ -36,29 +34,12 @@ def test_literalize_ref_golden_file(
     """``$ref`` markers render as bare identifiers across all
     languages.
     """
-    lang_cls = ref_case.lang_cls
-    for version_format in ref_language_versions(
-        config=ref_case.config, lang_cls=lang_cls
-    ):
-        with subtests.test(version=version_format.name):
-            spec = make_spec(
-                lang_cls=lang_cls,
-                language_version=version_format,
-            )
-            effective_ref_case = ref_case.config.ref_case_for(
-                lang_cls=lang_cls
-            )
-            if effective_ref_case is None:
-                effective_ref_case = spec.identifier_cases[0]
+    for rendering in ref_case.renderings:
+        with subtests.test(version=rendering.spec.language_version.name):
             run_literalize_ref_golden_case(
-                config=ref_case.config,
-                lang_cls=lang_cls,
-                spec=spec,
-                golden_name=f"{lang_cls.__name__}_ref",
+                rendering=rendering,
                 cases_dir=cases_dir,
                 file_regression=file_regression,
-                ref_case=effective_ref_case,
-                version=version_format,
                 pytest_config=pytestconfig,
             )
 
@@ -78,19 +59,11 @@ def test_literalize_ref_variant_golden_file(
     """Render reference cases under the exact specs selected by each
     axis.
     """
-    lang_cls = ref_variant_case.variant.lang_cls
-    spec = ref_variant_case.variant.spec
-    config = ref_variant_case.config
-    effective_ref_case = ref_variant_case.ref_case
-    with subtests.test(version=spec.language_version.name):
-        run_literalize_ref_golden_case(
-            config=config,
-            lang_cls=lang_cls,
-            spec=spec,
-            golden_name=ref_variant_case.golden_name,
-            cases_dir=cases_dir,
-            file_regression=file_regression,
-            ref_case=effective_ref_case,
-            version=spec.language_version,
-            pytest_config=pytestconfig,
-        )
+    for rendering in ref_variant_case.renderings:
+        with subtests.test(version=rendering.spec.language_version.name):
+            run_literalize_ref_golden_case(
+                rendering=rendering,
+                cases_dir=cases_dir,
+                file_regression=file_regression,
+                pytest_config=pytestconfig,
+            )

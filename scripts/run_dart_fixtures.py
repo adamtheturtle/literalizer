@@ -24,7 +24,6 @@ from tests.integration.constructor_cases import (
 )
 from tests.integration.golden_scenarios import golden_groups
 from tests.integration.language_specs import make_golden_path
-from tests.integration.literalize_ref_cases import ref_golden_path
 from tests.integration.reference_cases import (
     build_literalize_ref_variant_cases,
     discover_literalize_ref_cases,
@@ -120,37 +119,21 @@ def _ref_bindings() -> dict[Path, str | None]:
     owners.
     """
     bindings: dict[Path, str | None] = {}
-    for owner, name in (
-        (REF_OWNER, "Dart_ref"),
-        (REF_DEFAULT_OWNER, "Dart_ref_default"),
-    ):
+    for owner in (REF_OWNER, REF_DEFAULT_OWNER):
         for ref_case in discover_literalize_ref_cases(owner=owner):
             if ref_case.lang_cls is not Dart:
                 continue
-            for version in Dart.VersionFormats:
-                golden = ref_golden_path(
-                    config=ref_case.config,
-                    cases_dir=_CASES_DIR,
-                    golden_name=name,
-                    lang_cls=Dart,
-                    version=version,
-                )
-                bindings[golden.resolve()] = _ref_binding_name(
-                    config=ref_case.config
-                )
+            for rendering in ref_case.renderings:
+                bindings[
+                    rendering.golden_path(cases_dir=_CASES_DIR).resolve()
+                ] = _ref_binding_name(config=rendering.config)
     for variant_case in build_literalize_ref_variant_cases():
         if variant_case.variant.lang_cls is not Dart:
             continue
-        golden = ref_golden_path(
-            config=variant_case.config,
-            cases_dir=_CASES_DIR,
-            golden_name=variant_case.golden_name,
-            lang_cls=Dart,
-            version=variant_case.variant.spec.language_version,
-        )
-        bindings[golden.resolve()] = _ref_binding_name(
-            config=variant_case.config
-        )
+        for rendering in variant_case.renderings:
+            bindings[rendering.golden_path(cases_dir=_CASES_DIR).resolve()] = (
+                _ref_binding_name(config=rendering.config)
+            )
     return bindings
 
 
