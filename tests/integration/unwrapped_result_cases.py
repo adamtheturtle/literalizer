@@ -42,7 +42,7 @@ class _ResultCases(
     record_consumers: tuple[RecordConsumer, ...]
 
 
-RESULT_CASES = TypeAdapter(type=_ResultCases).validate_python(
+RESULT_CASES: _ResultCases = TypeAdapter(type=_ResultCases).validate_python(
     tomllib.loads(
         Path(__file__).with_suffix(suffix=".toml").read_text(encoding="utf-8")
     ),

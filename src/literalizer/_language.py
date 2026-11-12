@@ -1397,7 +1397,7 @@ wrapping (every non-Mojo VARIANT-style behavior).
 """
 
 
-NO_HETEROGENEOUS_BEHAVIOR = HeterogeneousBehavior(
+NO_HETEROGENEOUS_BEHAVIOR: HeterogeneousBehavior = HeterogeneousBehavior(
     skip_scalar_checks=False,
     compute_wrap_ids=no_compute_wrap_ids,
     wrap_scalar=None,
@@ -3724,7 +3724,7 @@ class _NoPygmentsName(str):
 # which prevents ABC cache warming and makes repeated ``isinstance(_,
 # Language)`` calls walk every protocol member.
 # Reported upstream as https://github.com/python/cpython/issues/156413.
-no_pygments_name = _NoPygmentsName()
+no_pygments_name: _NoPygmentsName = _NoPygmentsName()
 
 
 @beartype

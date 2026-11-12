@@ -12,7 +12,7 @@ Invoked from CI as
 import sys
 from pathlib import Path
 
-CASES_DIR = Path("tests/integration/cases")
+CASES_DIR: Path = Path("tests/integration/cases")
 
 
 def main(extension: str, version: str) -> int:

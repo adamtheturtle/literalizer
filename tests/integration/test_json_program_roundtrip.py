@@ -49,7 +49,7 @@ _JSON_VALUES = TypeAdapter(type=_JSONValue)
 
 
 # Preserve the original character categories, null exclusion, and bounds.
-json_text = st.text(
+json_text: st.SearchStrategy[str] = st.text(
     alphabet=st.characters(
         categories=("L", "M", "N", "P", "S", "Z"), exclude_characters="\x00"
     ),
@@ -82,8 +82,12 @@ json_values: st.SearchStrategy[_JSONValue] = st.recursive(
     # Preserve the original recursive corpus size and nesting budget.
     max_leaves=15,
 )
-json_arrays = st.lists(elements=json_values, max_size=5)
-json_objects = st.dictionaries(keys=json_text, values=json_values, max_size=5)
+json_arrays: st.SearchStrategy[list[_JSONValue]] = st.lists(
+    elements=json_values, max_size=5
+)
+json_objects: st.SearchStrategy[dict[str, _JSONValue]] = st.dictionaries(
+    keys=json_text, values=json_values, max_size=5
+)
 
 
 def _check_program(

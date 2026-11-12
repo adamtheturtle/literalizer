@@ -8,6 +8,6 @@ about still fails at load, against a set that cannot drift.
 
 from .variant_plans import declared_axis_names, special_axis_names
 
-SPECIAL_VARIANT_AXES = special_axis_names()
+SPECIAL_VARIANT_AXES: frozenset[str] = special_axis_names()
 
 KNOWN_VARIANT_AXES = declared_axis_names() | SPECIAL_VARIANT_AXES

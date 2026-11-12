@@ -136,7 +136,7 @@ def make_backslash_string_formatter(
     return _format
 
 
-format_string_backslash = make_backslash_string_formatter(
+format_string_backslash: _StringFormatter = make_backslash_string_formatter(
     quote_char='"',
     extra_replacements=(),
 )
@@ -148,13 +148,17 @@ prefix, then wraps the result in double quotes.
 Example: ``hello "world"`` -> ``"hello \"world\""``.
 """
 
-format_string_backslash_nul_hex = make_backslash_string_formatter(
-    quote_char='"',
-    extra_replacements=[("\0", "\\x00")],
+format_string_backslash_nul_hex: _StringFormatter = (
+    make_backslash_string_formatter(
+        quote_char='"',
+        extra_replacements=[("\0", "\\x00")],
+    )
 )
-format_string_backslash_single_nul_hex = make_backslash_string_formatter(
-    quote_char="'",
-    extra_replacements=[("\0", r"\x00")],
+format_string_backslash_single_nul_hex: _StringFormatter = (
+    make_backslash_string_formatter(
+        quote_char="'",
+        extra_replacements=[("\0", r"\x00")],
+    )
 )
 r"""Format a double-quoted string and escape the null byte as ``\x00``.
 
@@ -162,9 +166,11 @@ Fixed-width hex avoids digit-greedy octal/decimal escapes such as
 ``\0`` followed by ``0``-``7`` (or Nim's decimal ``\0``).
 """
 
-format_string_backslash_nul_octal = make_backslash_string_formatter(
-    quote_char='"',
-    extra_replacements=[("\0", "\\000")],
+format_string_backslash_nul_octal: _StringFormatter = (
+    make_backslash_string_formatter(
+        quote_char='"',
+        extra_replacements=[("\0", "\\000")],
+    )
 )
 r"""Format a double-quoted string and escape NUL as fixed-width ``\000``."""
 
@@ -185,21 +191,27 @@ def format_string_c(value: str) -> str:
     return format_string_backslash_nul_octal(value=value)
 
 
-format_string_backslash_nul_unicode = make_backslash_string_formatter(
-    quote_char='"',
-    extra_replacements=[("\0", "\\u0000")],
+format_string_backslash_nul_unicode: _StringFormatter = (
+    make_backslash_string_formatter(
+        quote_char='"',
+        extra_replacements=[("\0", "\\u0000")],
+    )
 )
 r"""Format a double-quoted string and escape NUL as ``\u0000``."""
 
-format_string_backslash_nul_braced_unicode = make_backslash_string_formatter(
-    quote_char='"',
-    extra_replacements=[("\0", "\\u{0000}")],
+format_string_backslash_nul_braced_unicode: _StringFormatter = (
+    make_backslash_string_formatter(
+        quote_char='"',
+        extra_replacements=[("\0", "\\u{0000}")],
+    )
 )
 r"""Format a double-quoted string and escape NUL as ``\u{0000}``."""
 
-format_string_backslash_dollar = make_backslash_string_formatter(
-    quote_char='"',
-    extra_replacements=[("$", "\\$")],
+format_string_backslash_dollar: _StringFormatter = (
+    make_backslash_string_formatter(
+        quote_char='"',
+        extra_replacements=[("$", "\\$")],
+    )
 )
 r"""Format a string using backslash escaping, including ``$``.
 
@@ -209,15 +221,19 @@ with a backslash prefix, then wraps the result in double quotes.
 Example: ``price $10`` -> ``"price \$10"``.
 """
 
-format_string_backslash_dollar_nul_hex = make_backslash_string_formatter(
-    quote_char='"',
-    extra_replacements=[("$", "\\$"), ("\0", "\\x00")],
+format_string_backslash_dollar_nul_hex: _StringFormatter = (
+    make_backslash_string_formatter(
+        quote_char='"',
+        extra_replacements=[("$", "\\$"), ("\0", "\\x00")],
+    )
 )
 r"""Escape dollar interpolation and NUL in a double-quoted string."""
 
-format_string_backslash_dollar_nul_unicode = make_backslash_string_formatter(
-    quote_char='"',
-    extra_replacements=[("$", "\\$"), ("\0", "\\u0000")],
+format_string_backslash_dollar_nul_unicode: _StringFormatter = (
+    make_backslash_string_formatter(
+        quote_char='"',
+        extra_replacements=[("$", "\\$"), ("\0", "\\u0000")],
+    )
 )
 r"""Escape dollar interpolation and NUL with a Unicode escape."""
 
