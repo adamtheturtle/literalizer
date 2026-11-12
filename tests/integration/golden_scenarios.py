@@ -79,7 +79,7 @@ _COMBINED_VARIABLE_FORM = literalizer.BothVariableForms(
 )
 
 
-LANGUAGE_SKIP_REASONS: SkipReasons = (
+_COMMON_SKIP_REASONS: SkipReasons = (
     SkipReason(
         error=ExcessiveNestingError,
         reason="exceeds the target's safe collection nesting limit",
@@ -100,6 +100,10 @@ LANGUAGE_SKIP_REASONS: SkipReasons = (
         reason="cannot represent an empty dict",
         unlink=True,
     ),
+)
+
+LANGUAGE_SKIP_REASONS: SkipReasons = (
+    *_COMMON_SKIP_REASONS,
     SkipReason(
         error=HeterogeneousCollectionError,
         reason="cannot represent this heterogeneous input",
@@ -118,26 +122,7 @@ LANGUAGE_SKIP_REASONS: SkipReasons = (
 )
 
 VARIANT_SKIP_REASONS: SkipReasons = (
-    SkipReason(
-        error=ExcessiveNestingError,
-        reason="exceeds the target's safe collection nesting limit",
-        unlink=True,
-    ),
-    SkipReason(
-        error=ExistingVariableNotSelfContainedError,
-        reason="complete file cannot contain an undeclared existing variable",
-        unlink=True,
-    ),
-    SkipReason(
-        error=UnrepresentableIntegerError,
-        reason="cannot represent integer in this input",
-        unlink=True,
-    ),
-    SkipReason(
-        error=UnrepresentableEmptyDictError,
-        reason="cannot represent an empty dict",
-        unlink=True,
-    ),
+    *_COMMON_SKIP_REASONS,
     SkipReason(
         error=NullInCollectionError,
         reason="rejects null elements in this input",
@@ -202,6 +187,19 @@ VARIANT_SKIPS: SkipPolicy = SkipPolicy(
     suffix="",
 )
 """An input the variant's spec cannot represent skips."""
+
+
+_VARIANT_MAPPING_KEY_SKIPS: SkipPolicy = SkipPolicy(
+    reasons=(
+        *VARIANT_SKIP_REASONS,
+        SkipReason(
+            error=InvalidDictKeyError,
+            reason="cannot represent a mapping key",
+            unlink=True,
+        ),
+    ),
+    suffix=VARIANT_SKIPS.suffix,
+)
 
 
 type SpecSource = literalizer.Language | Mapping[str, object]
@@ -570,17 +568,7 @@ def _variant_renderings(
             initialize_variable=variant_case.variant.initialize_variable,
             apply_fixture_module_name=variant_case.apply_fixture_module_name,
             skip=(
-                SkipPolicy(
-                    reasons=(
-                        *VARIANT_SKIP_REASONS,
-                        SkipReason(
-                            error=InvalidDictKeyError,
-                            reason="cannot represent a mapping key",
-                            unlink=True,
-                        ),
-                    ),
-                    suffix=VARIANT_SKIPS.suffix,
-                )
+                _VARIANT_MAPPING_KEY_SKIPS
                 if "InvalidDictKeyError" in variant_case.expected_errors
                 else VARIANT_SKIPS
             ),
