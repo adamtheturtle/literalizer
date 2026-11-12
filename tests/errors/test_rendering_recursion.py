@@ -10,7 +10,9 @@ from pydantic import BaseModel, TypeAdapter
 import literalizer
 from literalizer.languages import ALL_LANGUAGES
 from tests.errors.rejection_manifests import ExceptionType
-from tests.integration.case_manifests import CallInputFormat
+from tests.integration.manifest_values import (
+    CallInputFormat,
+)
 from tests.toml_cases import load_toml_cases
 
 

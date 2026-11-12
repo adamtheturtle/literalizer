@@ -6,7 +6,7 @@ import dataclasses
 import datetime as dt
 import functools
 import tomllib
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Annotated, Literal, Self, get_args
 
@@ -15,18 +15,15 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     Field,
-    InstanceOf,
     model_validator,
 )
 
 import literalizer
 from literalizer import ValueInput
 from literalizer._types import Scalar
-from literalizer.languages import ALL_LANGUAGES
 from tests.native_value_sources import RefDatetimeInput, RefValueSource
 
-from . import call_templates
-from .call_templates import call_transform_from_template
+from . import call_templates, manifest_values
 from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
 from .language_metadata import language_metadata
 from .language_specs import make_spec
@@ -51,7 +48,6 @@ CallTransform = call_templates.CallTransform
 
 MANIFEST_NAME = "case.toml"
 
-type VariableFormName = Literal["new", "existing", "both"]
 type CollectionLayoutName = Literal["compact", "multiline"]
 type SuiteName = Literal["base", "combined", "default-module-name"]
 type VariantCapabilityName = Literal[
@@ -121,119 +117,9 @@ _REF_OWNERS: frozenset[OwnerName] = frozenset({REF_OWNER, REF_DEFAULT_OWNER})
 KEBAB_NEW_VARIABLE_OWNER: OwnerName = "new-variable-kebab"
 PRIMED_NEW_VARIABLE_OWNER: OwnerName = "new-variable-prime"
 
-_CALL_VARIABLE_FORMS_BY_NAME: Mapping[
-    str,
-    literalizer.NewVariable | literalizer.ExistingVariable,
-] = {
-    "new": literalizer.NewVariable(name="my_data", modifiers=frozenset()),
-    "existing": literalizer.ExistingVariable(name="my_data"),
-}
-
-_VARIABLE_FORMS_BY_NAME: Mapping[
-    VariableFormName, literalizer.VariableForm
-] = {
-    "new": _CALL_VARIABLE_FORMS_BY_NAME["new"],
-    "existing": _CALL_VARIABLE_FORMS_BY_NAME["existing"],
-    "both": literalizer.BothVariableForms(
-        name="my_data",
-        modifiers=frozenset(),
-    ),
-}
-
-_CALL_STYLE_TYPES_BY_NAME: Mapping[str, type[literalizer.CallStyle]] = {
-    "keyword": literalizer.KeywordCallStyle,
-    "positional": literalizer.PositionalCallStyle,
-    "object": literalizer.ObjectCallStyle,
-    "command": literalizer.CommandCallStyle,
-}
-
-_IDENTIFIER_CASES_BY_NAME: Mapping[str, literalizer.IdentifierCase] = {
-    member.value: member for member in literalizer.IdentifierCase
-}
-
-_INPUT_FORMATS_BY_NAME: Mapping[str, literalizer.InputFormat] = {
-    "json": literalizer.InputFormat.JSON,
-    "json5": literalizer.InputFormat.JSON5,
-    "jsonc": literalizer.InputFormat.JSONC,
-    "toml": literalizer.InputFormat.TOML,
-    "yaml": literalizer.InputFormat.YAML,
-}
-
 
 class CaseManifestError(ValueError):
     """A case manifest is invalid or internally inconsistent."""
-
-
-@beartype
-def _name_resolver[NamedT](
-    *, values_by_name: Mapping[str, NamedT]
-) -> Callable[[object], object]:
-    """Return a callable resolving a manifest name to its value.
-
-    Names are resolved before the strict-mode type check, so a manifest
-    spells a resolved argument as a string while the model field holds
-    the ``literalizer`` type itself.  Anything that is not a string is
-    passed through for that strict check to reject.
-    """
-
-    def resolve(value: object, /) -> object:
-        """Resolve one manifest name, or list the accepted names."""
-        if not isinstance(value, str):
-            return value
-        if value not in values_by_name:
-            accepted = ", ".join(repr(name) for name in sorted(values_by_name))
-            msg = f"Input should be {accepted}"
-            raise ValueError(msg)
-        return values_by_name[value]
-
-    return resolve
-
-
-# A manifest spells these as TOML arrays, which ``strict=False`` allows
-# to be read as the immutable containers the harness holds.  The item
-# type is still checked.
-type StringTuple = Annotated[tuple[str, ...], Field(strict=False)]
-type StringFrozenSet = Annotated[frozenset[str], Field(strict=False)]
-_LANGUAGES_BY_NAME = {
-    lang_cls.__name__: lang_cls for lang_cls in ALL_LANGUAGES
-}
-type ManifestLanguage = Annotated[
-    literalizer.LanguageCls,
-    BeforeValidator(func=_name_resolver(values_by_name=_LANGUAGES_BY_NAME)),
-]
-type ManifestLanguages = Annotated[
-    tuple[ManifestLanguage, ...],
-    Field(strict=False),
-]
-type CallTransformTemplate = Annotated[
-    InstanceOf[CallTransform],
-    BeforeValidator(func=call_transform_from_template),
-]
-type CallStyleType = Annotated[
-    type[literalizer.CallStyle],
-    BeforeValidator(
-        func=_name_resolver(values_by_name=_CALL_STYLE_TYPES_BY_NAME)
-    ),
-]
-type CallInputFormat = Annotated[
-    literalizer.InputFormat,
-    BeforeValidator(
-        func=_name_resolver(values_by_name=_INPUT_FORMATS_BY_NAME)
-    ),
-]
-type CallVariableForm = Annotated[
-    InstanceOf[literalizer.NewVariable]
-    | InstanceOf[literalizer.ExistingVariable],
-    BeforeValidator(
-        func=_name_resolver(values_by_name=_CALL_VARIABLE_FORMS_BY_NAME)
-    ),
-]
-type RefIdentifierCase = Annotated[
-    literalizer.IdentifierCase,
-    BeforeValidator(
-        func=_name_resolver(values_by_name=_IDENTIFIER_CASES_BY_NAME)
-    ),
-]
 
 
 class InputRoundtripSpec(
@@ -241,8 +127,8 @@ class InputRoundtripSpec(
 ):
     """Render the input once, then parse that output for the golden."""
 
-    language: ManifestLanguage
-    input_format: CallInputFormat
+    language: manifest_values.ManifestLanguage
+    input_format: manifest_values.CallInputFormat
 
 
 class SubstitutionMappingEntry(
@@ -271,7 +157,7 @@ class RenderContext(  # noqa: NOD001
 ):
     """Simple render arguments declared by a case rather than a runner."""
 
-    variable_form: VariableFormName = "new"
+    variable_form: manifest_values.VariableFormName = "new"
     variable_name: str = "my_data"
     collection_layout: CollectionLayoutName | None = None
     pre_indent_level: Annotated[int, Field(ge=0)] = 0
@@ -322,7 +208,7 @@ class ManifestVariant(  # noqa: NOD001
     apply_fixture_module_name: bool = True
     wrap_in_file: bool = True
     # Native caller syntax around an unwrapped result, by language.
-    consumer_templates: dict[ManifestLanguage, str] = Field(
+    consumer_templates: dict[manifest_values.ManifestLanguage, str] = Field(
         default_factory=dict[literalizer.LanguageCls, str]
     )
     # Some shape-mapping cases deliberately never use the external type.
@@ -493,9 +379,11 @@ class RefCaseSpec(  # noqa: NOD001
     """
 
     ref_key: str = "$ref"
-    variable_form: VariableFormName | Literal["none"] = "new"
+    variable_form: manifest_values.VariableFormName | Literal["none"] = "new"
     variable_name: str = "my_data"
-    variable_modifiers: StringTuple = Field(default_factory=tuple[str, ...])
+    variable_modifiers: manifest_values.StringTuple = Field(
+        default_factory=tuple[str, ...]
+    )
     collection_layout: CollectionLayoutName = "compact"
     include_delimiters: bool = True
     pre_indent_level: int = 0
@@ -506,8 +394,10 @@ class RefCaseSpec(  # noqa: NOD001
     variable_type_hints: str | None = None
     json_type: str | None = None
     dict_format: str | None = None
-    ref_case_override: RefIdentifierCase | None = None
-    ref_case_by_language: dict[ManifestLanguage, RefIdentifierCase] = Field(
+    ref_case_override: manifest_values.RefIdentifierCase | None = None
+    ref_case_by_language: dict[
+        manifest_values.ManifestLanguage, manifest_values.RefIdentifierCase
+    ] = Field(
         default_factory=dict[
             literalizer.LanguageCls, literalizer.IdentifierCase
         ],
@@ -534,7 +424,9 @@ class RefCaseSpec(  # noqa: NOD001
         default_factory=dict[str, str],
     )
     # Caller-owned headers are attached only after the API render.
-    caller_preamble: StringTuple = Field(default_factory=tuple[str, ...])
+    caller_preamble: manifest_values.StringTuple = Field(
+        default_factory=tuple[str, ...]
+    )
     explicit_ref_value_sources: dict[str, str] | None = None
     expected_value_source: str | None = None
     consumer: RefConsumerSpec | None = None
@@ -605,7 +497,7 @@ class RefCaseSpec(  # noqa: NOD001
         if self.variable_form == "none":
             return None
         return dataclasses.replace(
-            _VARIABLE_FORMS_BY_NAME[self.variable_form],
+            manifest_values.variable_form_for_name(name=self.variable_form),
             name=self.variable_name,
         )
 
@@ -615,14 +507,14 @@ class CallGroupSpec(BaseModel, extra="forbid", frozen=True):
     syntax.
     """
 
-    body: CallTransformTemplate
+    body: manifest_values.CallTransformTemplate
     suffix: str
 
 
 class CallArgumentsSpec(BaseModel, extra="forbid", frozen=True):
     """Native lexical operands passed using the configured call convention."""
 
-    arguments: StringTuple
+    arguments: manifest_values.StringTuple
     suffix: str
 
 
@@ -660,18 +552,22 @@ class CallCaseSpec(  # noqa: NOD001
 
     target_function: str
     shared_invocation: bool = False
-    parameter_names: StringTuple
+    parameter_names: manifest_values.StringTuple
     per_element: bool
     # Native built-ins need no synthetic target declaration in a manual file.
     include_target_stub: bool = True
     # Preserve the returned code prefix instead of reconciling its metadata.
     use_unwrapped_code: bool = False
     # Caller-owned imports and declarations in manually composed fixtures.
-    caller_imports: StringTuple = Field(default_factory=tuple[str, ...])
-    caller_body_preamble: StringTuple = Field(default_factory=tuple[str, ...])
+    caller_imports: manifest_values.StringTuple = Field(
+        default_factory=tuple[str, ...]
+    )
+    caller_body_preamble: manifest_values.StringTuple = Field(
+        default_factory=tuple[str, ...]
+    )
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
-    call_transform: CallTransformTemplate | None = None
+    call_transform: manifest_values.CallTransformTemplate | None = None
     call_transform_group: CallGroupSpec | None = None
     call_transform_arguments: CallArgumentsSpec | None = None
     call_transform_wrapper: CallWrapperSpec | None = None
@@ -685,18 +581,20 @@ class CallCaseSpec(  # noqa: NOD001
     # that distinguish value-returning functions from procedures.
     followup_source: str | None = None
     followup_target_function: str | None = None
-    transform_stub_names: StringTuple = Field(default_factory=tuple[str, ...])
+    transform_stub_names: manifest_values.StringTuple = Field(
+        default_factory=tuple[str, ...]
+    )
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,
     # so a transform that calls the wrapper with the call *and* the
     # zipped value (two arguments) compiles in fixed-parameter-count
     # languages.
-    transform_stub_param_names: StringTuple = Field(
+    transform_stub_param_names: manifest_values.StringTuple = Field(
         default_factory=_single_stub_parameter,
     )
     # Spelled ``call_style`` in a manifest, which names a style rather
     # than describing the type the harness passes to ``literalize_call``.
-    call_style_type: CallStyleType | None = Field(
+    call_style_type: manifest_values.CallStyleType | None = Field(
         default=None,
         alias="call_style",
     )
@@ -706,18 +604,20 @@ class CallCaseSpec(  # noqa: NOD001
     ref_case_per_language: bool = False
     ref_declarations: dict[str, str] = Field(default_factory=dict[str, str])
     # Use one format for declaration sources and inference-hint sources.
-    ref_input_format: CallInputFormat = literalizer.InputFormat.JSON
+    ref_input_format: manifest_values.CallInputFormat = (
+        literalizer.InputFormat.JSON
+    )
     # Names from ``ref_declarations`` (in their original case) that
     # ``literalize_call`` may treat as consumable.  Empty means no ref
     # is consumed.
-    consumable_refs: StringFrozenSet = Field(
+    consumable_refs: manifest_values.StringFrozenSet = Field(
         default_factory=frozenset[str],
     )
     # Refs that receive declarations in the self-contained golden file
     # but are intentionally omitted from ``ref_values``.  This exercises
     # the historical unknown-ref preamble behavior without leaving the
     # rendered call's identifier undefined for fixture compilation.
-    unknown_ref_names: StringFrozenSet = Field(
+    unknown_ref_names: manifest_values.StringFrozenSet = Field(
         default_factory=frozenset[str],
     )
     # An explicit mapping overrides declaration-derived inference hints.
@@ -738,11 +638,11 @@ class CallCaseSpec(  # noqa: NOD001
     # ``CallContext.zipped``.  Requires ``call_transform``.  Parsed
     # with ``zip_input_format``.
     zip_source: str | None = None
-    zip_input_format: CallInputFormat | None = None
+    zip_input_format: manifest_values.CallInputFormat | None = None
     # Trailing source-code comments, one per generated call, paired
     # positionally and emitted after the statement terminator using the
     # language's comment syntax.  An empty entry emits no comment.
-    comment_source: StringTuple | None = None
+    comment_source: manifest_values.StringTuple | None = None
     # TOML documents necessarily parse to a top-level table.  When set,
     # select this table entry as the root value used for call rendering
     # after parsing.  Other formats normally leave this as ``None``.
@@ -751,8 +651,10 @@ class CallCaseSpec(  # noqa: NOD001
     # exercise the call-binding output mode.  Only meaningful with
     # ``per_element=False`` and (typically) ``wrap_in_file=True`` so
     # the generated file is self-contained around the binding.
-    variable_form: CallVariableForm | None = None
-    variable_modifiers: StringTuple = Field(default_factory=tuple[str, ...])
+    variable_form: manifest_values.CallVariableForm | None = None
+    variable_modifiers: manifest_values.StringTuple = Field(
+        default_factory=tuple[str, ...]
+    )
     # When set (only meaningful with ``wrap_in_file=True`` and a
     # ``variable_form``), emit a golden for a language only when its
     # ``variable_form`` output is byte-identical to its output under
@@ -1066,7 +968,7 @@ def variable_form_for_context(
 ) -> literalizer.VariableForm:
     """Build the API variable form with the manifest's declared name."""
     return dataclasses.replace(
-        _VARIABLE_FORMS_BY_NAME[context.variable_form],
+        manifest_values.variable_form_for_name(name=context.variable_form),
         name=context.variable_name,
     )
 
