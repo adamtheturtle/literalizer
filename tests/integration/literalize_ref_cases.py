@@ -759,6 +759,24 @@ def _ref_fixture_contents(
 
 
 @beartype
+def ref_golden_path(
+    *,
+    config: RefCaseSpec,
+    lang_cls: literalizer.LanguageCls,
+    golden_name: str,
+    cases_dir: Path,
+    version: enum.Enum,
+) -> Path:
+    """Locate an ordinary or variant reference consumer fixture."""
+    return make_golden_path(
+        parent=cases_dir / config.case_dir_name,
+        name=config.golden_name(name=golden_name),
+        lang_cls=lang_cls,
+        version=version,
+    )
+
+
+@beartype
 def run_literalize_ref_golden_case(
     *,
     config: RefCaseSpec,
@@ -784,10 +802,11 @@ def run_literalize_ref_golden_case(
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
     input_path = input_info.path
     input_source = input_path.read_text(encoding="utf-8")
-    golden_path = make_golden_path(
-        parent=input_path.parent,
-        name=config.golden_name(name=golden_name),
+    golden_path = ref_golden_path(
+        config=config,
         lang_cls=lang_cls,
+        golden_name=golden_name,
+        cases_dir=cases_dir,
         version=version,
     )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
