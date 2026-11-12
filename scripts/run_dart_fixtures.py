@@ -24,10 +24,10 @@ from tests.integration.constructor_cases import (
 )
 from tests.integration.golden_scenarios import golden_groups
 from tests.integration.language_specs import make_golden_path
-from tests.integration.literalize_ref_cases import (
+from tests.integration.literalize_ref_cases import ref_golden_path
+from tests.integration.reference_cases import (
     build_literalize_ref_variant_cases,
     discover_literalize_ref_cases,
-    ref_golden_path,
 )
 
 _CASES_DIR = Path(__file__).parent.parent / "tests" / "integration" / "cases"

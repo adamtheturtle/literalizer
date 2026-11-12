@@ -26,14 +26,16 @@ from tests.integration.constructor_cases import (
 from tests.integration.deep_input_cases import deep_input_golden_paths
 from tests.integration.golden_scenarios import GOLDEN_SCENARIOS, golden_groups
 from tests.integration.literalize_ref_cases import (
-    build_literalize_ref_variant_cases,
-    discover_literalize_ref_cases,
     ref_golden_path,
-    ref_language_versions,
 )
 from tests.integration.native_invocation_cases import native_invocation_cases
 from tests.integration.record_snapshot_cases import (
     record_snapshot_golden_paths,
+)
+from tests.integration.reference_cases import (
+    build_literalize_ref_variant_cases,
+    discover_literalize_ref_cases,
+    ref_language_versions,
 )
 from tests.integration.shared_checked_cases import shared_checked_cases
 from tests.integration.unwrapped_result_cases import result_view_golden_paths

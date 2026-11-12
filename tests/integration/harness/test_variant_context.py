@@ -4,7 +4,7 @@ from pathlib import Path
 
 import literalizer
 from tests.integration.call_variant_cases import build_call_variant_cases
-from tests.integration.literalize_ref_cases import (
+from tests.integration.reference_cases import (
     build_literalize_ref_variant_cases,
 )
 
