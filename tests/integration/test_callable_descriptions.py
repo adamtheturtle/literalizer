@@ -57,19 +57,37 @@ def test_shared_description(language: Language, expected: str) -> None:
     argvalues=[
         ({"name": "tasks", "parameter-names": []}, "tasks()"),
         ({"name": "cost", "parameter-names": ["task"]}, "cost(task)"),
-        (
-            {"name": "tasks", "parameter-names": [], "selector": "tasks"},
-            "tasks",
-        ),
     ],
 )
+@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
 def test_direct_description(
-    description: dict[str, object], expected: str
+    description: dict[str, object], expected: str, language_cls: LanguageCls
 ) -> None:
-    """Compact references and zero-argument selectors are supported."""
+    """Compact callable references are portable display contracts."""
     assert (
-        describe_callable(language=ObjectiveC(), description=description)
+        describe_callable(language=language_cls(), description=description)
         == expected
+    )
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=[cls for cls in _LANGUAGES if cls.supports_native_invocations],
+)
+def test_zero_argument_selector(language_cls: LanguageCls) -> None:
+    """Native-capable backends can describe a selector without
+    arguments.
+    """
+    assert (
+        describe_callable(
+            language=language_cls(),
+            description={
+                "name": "tasks",
+                "parameter-names": [],
+                "selector": "tasks",
+            },
+        )
+        == "tasks"
     )
 
 
@@ -82,20 +100,45 @@ def test_direct_description(
         {"parameter-names": "task"},
         {"parameter-names": [2]},
         {"parameter-names": ["bad name"]},
-        {"selector": "accept:"},
-        {"selector": "bad name"},
         {"return-annotation": "bool\rvoid"},
         {"space-before-paren": "true"},
         {"space-after-paren": 1},
         {"typo": True},
     ],
 )
-def test_invalid_description(override: dict[str, object]) -> None:
+@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
+def test_invalid_description(
+    override: dict[str, object], language_cls: LanguageCls
+) -> None:
     """Invalid metadata fails even when no sample values exist."""
     with pytest.raises(expected_exception=LiteralizerError):
         _ = describe_callable(
-            language=ObjectiveC(),
-            description={"name": "accept", "parameter-names": [], **override},
+            language=language_cls(),
+            description={"name": "consume", "parameter-names": [], **override},
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="selector", argvalues=["consume:", "bad name"]
+)
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=[cls for cls in _LANGUAGES if cls.supports_native_invocations],
+)
+def test_invalid_native_selector(
+    selector: str, language_cls: LanguageCls
+) -> None:
+    """Selector grammar and arity are checked where native messages
+    apply.
+    """
+    with pytest.raises(expected_exception=NativeCallError):
+        _ = describe_callable(
+            language=language_cls(),
+            description={
+                "name": "consume",
+                "parameter-names": [],
+                "selector": selector,
+            },
         )
 
 
