@@ -1,7 +1,6 @@
 """Golden coverage for unwrapped :class:`LiteralizeResult` prefixes."""
 
 from pathlib import Path
-from typing import Literal
 
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -12,11 +11,16 @@ from literalizer import FileWrapperContext, InputFormat, NewVariable
 from .golden_checks import check_golden
 from .language_specs import (
     fixture_module_name,
-    make_golden_path,
     with_per_fixture_module_name,
 )
 from .unwrapped_result_cases import RESULT_CASES as _CASES
-from .unwrapped_result_cases import RecordConsumer, record_consumer_specs
+from .unwrapped_result_cases import (
+    RecordConsumer,
+    ResultAttribute,
+    prefix_result_golden_path,
+    record_consumer_specs,
+    record_result_golden_path,
+)
 
 
 @pytest.mark.parametrize(
@@ -28,16 +32,15 @@ from .unwrapped_result_cases import RecordConsumer, record_consumer_specs
 def test_unwrapped_literalize_result_golden(
     *,
     lang_cls: literalizer.LanguageCls,
-    attribute: Literal["code", "bare_code"],
+    attribute: ResultAttribute,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Compile each result view, supplying only its missing preamble."""
-    golden_path = make_golden_path(
-        parent=cases_dir / _CASES.prefix.input_case,
-        name=f"{lang_cls.__name__}_unwrapped_{attribute}",
+    golden_path = prefix_result_golden_path(
+        cases_dir=cases_dir,
         lang_cls=lang_cls,
-        version=lang_cls().language_version,
+        attribute=attribute,
     )
     spec = with_per_fixture_module_name(
         spec=lang_cls(), golden_path=golden_path
@@ -94,7 +97,7 @@ def test_unwrapped_literalize_result_golden(
 def test_unwrapped_record_collection_golden(
     *,
     consumer: RecordConsumer,
-    attribute: Literal["code", "bare_code"],
+    attribute: ResultAttribute,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
     subtests: pytest.Subtests,
@@ -105,14 +108,13 @@ def test_unwrapped_record_collection_golden(
     or reconciling them. A type declaration in the expression breaks the
     consumer (including the Scala regression from issue #3615).
     """
-    lang_cls = consumer.language
     for record_spec in record_consumer_specs(consumer=consumer):
         version = record_spec.language_version
         with subtests.test(version=version.name):
-            golden_path = make_golden_path(
-                parent=cases_dir / _CASES.record_input_case,
-                name=f"{lang_cls.__name__}_unwrapped_record_{attribute}",
-                lang_cls=lang_cls,
+            golden_path = record_result_golden_path(
+                cases_dir=cases_dir,
+                consumer=consumer,
+                attribute=attribute,
                 version=version,
             )
             spec = with_per_fixture_module_name(
