@@ -182,7 +182,6 @@ def _check_rendering(
         )
     check_golden(
         contents=contents,
-        extension=rendering.lang_cls.extension,
         golden_path=golden_path,
         file_regression=file_regression,
     )

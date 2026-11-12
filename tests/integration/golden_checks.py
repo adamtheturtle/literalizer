@@ -141,7 +141,6 @@ class GoldenSkips:
 def check_golden(
     *,
     contents: str,
-    extension: str,
     golden_path: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
@@ -152,7 +151,7 @@ def check_golden(
     file_regression.check(
         contents=contents,
         encoding="utf-8",
-        extension=extension,
+        extension=golden_path.suffix,
         newline="",
         fullpath=golden_path,
     )

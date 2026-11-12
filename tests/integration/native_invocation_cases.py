@@ -26,7 +26,6 @@ def native_invocation_cases(
             make_golden_path(
                 parent=manifest.case_dir,
                 name=f"{language.__name__}_native_invocations",
-                extension=language.extension,
                 lang_cls=language,
                 version=version,
             ),

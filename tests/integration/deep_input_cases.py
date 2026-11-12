@@ -54,7 +54,6 @@ class DeepInputCase:
         return make_golden_path(
             parent=self.manifest.case_dir,
             name=f"{language.__name__}_unwrapped_depth",
-            extension=language.extension,
             lang_cls=language,
             version=language().language_version,
         )

@@ -32,7 +32,6 @@ def test_unwrapped_literalize_result_golden(
     golden_path = make_golden_path(
         parent=cases_dir / _CASES.prefix.input_case,
         name=f"{lang_cls.__name__}_unwrapped_{attribute}",
-        extension=lang_cls.extension,
         lang_cls=lang_cls,
         version=lang_cls().language_version,
     )
@@ -77,7 +76,6 @@ def test_unwrapped_literalize_result_golden(
     )
     check_golden(
         contents=contents + "\n",
-        extension=spec.extension,
         golden_path=golden_path,
         file_regression=file_regression,
     )
@@ -110,7 +108,6 @@ def test_unwrapped_record_collection_golden(
             golden_path = make_golden_path(
                 parent=cases_dir / _CASES.record_input_case,
                 name=f"{lang_cls.__name__}_unwrapped_record_{attribute}",
-                extension=lang_cls.extension,
                 lang_cls=lang_cls,
                 version=version,
             )
@@ -139,7 +136,6 @@ def test_unwrapped_record_collection_golden(
             )
             check_golden(
                 contents=contents,
-                extension=spec.extension,
                 golden_path=golden_path,
                 file_regression=file_regression,
             )

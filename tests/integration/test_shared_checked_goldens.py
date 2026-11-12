@@ -45,7 +45,6 @@ def test_shared_checked_golden(
     )
     check_golden(
         contents=program,
-        extension=Python.extension,
         golden_path=case.golden_path,
         file_regression=file_regression,
     )

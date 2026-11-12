@@ -55,7 +55,6 @@ def record_snapshot_golden_paths(*, cases_dir: Path) -> set[Path]:
         make_golden_path(
             parent=cases_dir / case.case_name,
             name=case.golden_name,
-            extension=Rust.extension,
             lang_cls=Rust,
             version=version,
         )

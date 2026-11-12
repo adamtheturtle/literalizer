@@ -75,13 +75,11 @@ def test_record_snapshot_golden(
             path = make_golden_path(
                 parent=cases_dir / case.case_name,
                 name=case.golden_name,
-                extension=Rust.extension,
                 lang_cls=Rust,
                 version=version,
             )
             check_golden(
                 contents=contents,
-                extension=Rust.extension,
                 golden_path=path,
                 file_regression=file_regression,
             )

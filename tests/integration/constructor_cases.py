@@ -66,7 +66,6 @@ def constructor_golden_path(
     return make_golden_path(
         parent=case.manifest.case_dir,
         name=case.name,
-        extension=case.lang_cls.extension,
         lang_cls=case.lang_cls,
         version=version,
     )

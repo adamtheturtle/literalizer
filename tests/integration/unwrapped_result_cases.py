@@ -74,7 +74,6 @@ def result_view_golden_paths(*, cases_dir: Path) -> set[Path]:
         make_golden_path(
             parent=cases_dir / RESULT_CASES.prefix.input_case,
             name=f"{lang_cls.__name__}_unwrapped_{attribute}",
-            extension=lang_cls.extension,
             lang_cls=lang_cls,
             version=lang_cls().language_version,
         )
@@ -85,7 +84,6 @@ def result_view_golden_paths(*, cases_dir: Path) -> set[Path]:
         make_golden_path(
             parent=cases_dir / RESULT_CASES.record_input_case,
             name=f"{consumer.language.__name__}_unwrapped_record_{attribute}",
-            extension=consumer.language.extension,
             lang_cls=consumer.language,
             version=spec.language_version,
         )

@@ -603,7 +603,6 @@ def test_rejection_messages(
             accepting=len(accepting),
             python_version=f"{sys.version_info.major}.{sys.version_info.minor}",
         ),
-        extension=".toml",
         golden_path=manifest.golden_path,
         file_regression=file_regression,
     )

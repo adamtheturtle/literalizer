@@ -52,7 +52,6 @@ def test_native_golden_roundtrip_acceptance(
     path = make_golden_path(
         parent=cases_dir / case.case_name,
         name="Python",
-        extension=Python.extension,
         lang_cls=Python,
         version=version,
     )

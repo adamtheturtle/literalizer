@@ -36,7 +36,6 @@ def test_deep_input_golden_program(
     )
     check_golden(
         contents=contents,
-        extension=recipe.language.extension,
         golden_path=case.golden_path,
         file_regression=file_regression,
     )

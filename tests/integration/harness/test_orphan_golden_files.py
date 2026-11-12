@@ -106,7 +106,6 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
                 name=literalize_ref_case.config.golden_name(
                     name=f"{literalize_ref_case.lang_cls.__name__}_ref"
                 ),
-                extension=literalize_ref_case.lang_cls.extension,
                 lang_cls=literalize_ref_case.lang_cls,
                 version=version,
             )
@@ -123,7 +122,6 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
                 name=variant_case.config.golden_name(
                     name=variant_case.golden_name
                 ),
-                extension=variant_case.variant.spec.extension,
                 lang_cls=variant_case.variant.lang_cls,
                 version=variant_case.variant.spec.language_version,
             )
@@ -136,7 +134,6 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
                 name=default_ref_case.config.golden_name(
                     name=f"{default_ref_case.lang_cls.__name__}_ref_default"
                 ),
-                extension=default_ref_case.lang_cls.extension,
                 lang_cls=default_ref_case.lang_cls,
                 version=version,
             )
