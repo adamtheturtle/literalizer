@@ -6,7 +6,7 @@ from pathlib import Path
 from literalizer import InputFormat, Language, literalize
 
 from .case_manifests import case_input
-from .golden_scenarios import GoldenRendering
+from .golden_renderings import GoldenRendering
 
 _CASES_DIR = Path(__file__).with_name(name="cases")
 

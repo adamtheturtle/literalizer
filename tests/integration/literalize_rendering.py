@@ -7,7 +7,7 @@ from beartype import beartype
 import literalizer
 
 from .case_inputs import CaseInput
-from .golden_scenarios import GoldenRendering
+from .golden_renderings import GoldenRendering
 from .yaml_warnings import expected_yaml_warnings
 
 
