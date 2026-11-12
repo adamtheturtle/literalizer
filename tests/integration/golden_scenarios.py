@@ -205,36 +205,8 @@ VARIANT_SKIPS: SkipPolicy = SkipPolicy(
 """An input the variant's spec cannot represent skips."""
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class SpecSource:
-    """Where a rendering's spec for one language version comes from.
-
-    ``pinned`` carries a spec that already fixes its own language
-    version -- what a format variant expands to -- and leaves
-    ``overrides`` unused.  Every other scenario names the keywords its
-    spec overrides and lets one spec be built per version.
-    """
-
-    pinned: literalizer.Language | None
-    overrides: Mapping[str, object]
-
-
-@beartype
-def default_spec_source() -> SpecSource:
-    """Return the source of a spec carrying no overrides."""
-    return SpecSource(pinned=None, overrides={})
-
-
-@beartype
-def overridden_spec_source(*, overrides: Mapping[str, object]) -> SpecSource:
-    """Return the source of a spec built with *overrides*."""
-    return SpecSource(pinned=None, overrides=overrides)
-
-
-@beartype
-def pinned_spec_source(*, spec: literalizer.Language) -> SpecSource:
-    """Return the source of an already-built, version-pinned spec."""
-    return SpecSource(pinned=spec, overrides={})
+type SpecSource = literalizer.Language | Mapping[str, object]
+"""A pinned language spec or constructor overrides for every version."""
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -293,20 +265,20 @@ class GoldenRendering:
         else renders a golden per member of the language's
         ``VersionFormats``.
         """
-        pinned = self.spec_source.pinned
-        if pinned is not None:
+        pinned = self.spec_source
+        if isinstance(pinned, literalizer.Language):
             return (pinned.language_version,)
         return tuple(self.lang_cls.VersionFormats)
 
     def spec_for(self, *, version: enum.Enum) -> literalizer.Language:
         """Return the spec this rendering uses for *version*."""
-        pinned = self.spec_source.pinned
-        if pinned is not None:
+        pinned = self.spec_source
+        if isinstance(pinned, literalizer.Language):
             return pinned
         return make_spec(
             lang_cls=self.lang_cls,
             language_version=version,
-            **self.spec_source.overrides,
+            **pinned,
         )
 
     @property
@@ -422,7 +394,7 @@ def _base_renderings(
                 lang_cls=lang_cls,
                 case_dir_name=case_name,
                 golden_name=lang_cls.__name__,
-                spec_source=default_spec_source(),
+                spec_source={},
                 render=RenderArguments(
                     variable_form=variable_form_for_context(context=context),
                     pre_indent_level=context.pre_indent_level,
@@ -458,9 +430,7 @@ def _default_module_name_renderings(
             case_dir_name=case_name,
             golden_name=f"{lang_cls.__name__}_default_module_name",
             golden_parent=_CASES_DIR.parent / "default_module_names",
-            spec_source=pinned_spec_source(
-                spec=lang_cls(language_version=version),
-            ),
+            spec_source=lang_cls(language_version=version),
             render=compact_render(
                 variable_form=literalizer.NewVariable(
                     name="my_data",
@@ -500,7 +470,7 @@ def _new_variable_renderings(
                 owner=owner,
             ),
             golden_name=lang_cls.__name__,
-            spec_source=default_spec_source(),
+            spec_source={},
             render=compact_render(
                 variable_form=literalizer.NewVariable(
                     name=variable_name,
@@ -559,11 +529,9 @@ def _combined_renderings(
             lang_cls=lang_cls,
             case_dir_name=combined_case.case_name,
             golden_name=combined_case.golden_file_name,
-            spec_source=overridden_spec_source(
-                overrides={
-                    "declaration_style": combined_case.declaration_style,
-                },
-            ),
+            spec_source={
+                "declaration_style": combined_case.declaration_style,
+            },
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
             skip=LANGUAGE_SKIPS,
         )
@@ -589,7 +557,7 @@ def _variant_renderings(
             case_dir_name=variant_case.case_dir_name,
             golden_name=variant_case.variant_name,
             golden_parent=_CASES_DIR / variant_case.case_dir_name,
-            spec_source=pinned_spec_source(spec=variant_case.variant.spec),
+            spec_source=variant_case.variant.spec,
             render=RenderArguments(
                 variable_form=variant_case.variable_form,
                 pre_indent_level=variant_case.pre_indent_level,
@@ -651,16 +619,14 @@ def _statement_terminator_renderings(
             lang_cls=lang_cls,
             case_dir_name=case.case_dir_name,
             golden_name=case.name,
-            spec_source=overridden_spec_source(
-                overrides={
-                    "statement_terminator_style": (
-                        case.statement_terminator_style
-                    ),
-                    "declaration_style": _first_redefinition_style(
-                        lang_cls=lang_cls
-                    ),
-                },
-            ),
+            spec_source={
+                "statement_terminator_style": (
+                    case.statement_terminator_style
+                ),
+                "declaration_style": _first_redefinition_style(
+                    lang_cls=lang_cls
+                ),
+            },
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
             skip=NO_SKIPS,
         )
@@ -687,14 +653,12 @@ def _heterogeneous_strategy_renderings(
             lang_cls=lang_cls,
             case_dir_name=case.case_dir_name,
             golden_name=case.name,
-            spec_source=overridden_spec_source(
-                overrides={
-                    "heterogeneous_strategy": case.heterogeneous_strategy,
-                    "declaration_style": _first_redefinition_style(
-                        lang_cls=lang_cls
-                    ),
-                },
-            ),
+            spec_source={
+                "heterogeneous_strategy": case.heterogeneous_strategy,
+                "declaration_style": _first_redefinition_style(
+                    lang_cls=lang_cls
+                ),
+            },
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
             skip=SkipPolicy(
                 reasons=_STRATEGY_SKIP_REASONS,
@@ -723,7 +687,7 @@ def _pre_indent_renderings(
             lang_cls=lang_cls,
             case_dir_name=case.case_dir_name,
             golden_name=case.name,
-            spec_source=default_spec_source(),
+            spec_source={},
             render=RenderArguments(
                 variable_form=literalizer.NewVariable(
                     name="my_data",
@@ -762,7 +726,7 @@ def _no_variable_form_renderings(
             lang_cls=lang_cls,
             case_dir_name=case.case_dir_name,
             golden_name=case.name,
-            spec_source=default_spec_source(),
+            spec_source={},
             render=compact_render(variable_form=None),
             skip=NO_SKIPS,
         )
@@ -789,9 +753,7 @@ def _indent_renderings(
             lang_cls=lang_cls,
             case_dir_name=case.case_dir_name,
             golden_name=case.name,
-            spec_source=overridden_spec_source(
-                overrides={"indent": case.indent},
-            ),
+            spec_source={"indent": case.indent},
             render=compact_render(
                 variable_form=literalizer.NewVariable(
                     name="my_data",
