@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel
 
 import literalizer.languages
-from tests.integration.case_discovery import load_case_data
+from tests.integration.case_data import load_case_data
 from tests.integration.case_manifests import (
     CASE_ROLE_NAMES,
     INDENT_ROLE,
