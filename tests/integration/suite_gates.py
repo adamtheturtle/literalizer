@@ -374,12 +374,6 @@ type SuiteGate = Annotated[
 
 
 @beartype
-def no_gates() -> list[SuiteGate]:
-    """Return a typed empty gate list for the declaring models."""
-    return []
-
-
-@beartype
 def validate_gate_names(
     *,
     subject: str,

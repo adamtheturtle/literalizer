@@ -55,21 +55,6 @@ class LanguageMetadataError(ValueError):
     """A language metadata file is missing or invalid."""
 
 
-def _empty_record_variants() -> list[RecordVariantName]:
-    """Return a typed empty record-variant list for the model."""
-    return []
-
-
-def _empty_string_mapping() -> dict[str, str]:
-    """Return a typed empty string mapping for the model."""
-    return {}
-
-
-def _empty_preamble() -> list[str]:
-    """Return fixture directives without sharing a mutable default."""
-    return []
-
-
 # A field default here is what a language file means by leaving the
 # key out, rather than a value a caller may lean on: a file supplies
 # only what it has an opinion about, and TOML cannot spell the
@@ -86,7 +71,7 @@ class GoldenPolicy(  # noqa: NOD001
     """Whether a whole golden filename is lower-cased on disk."""
 
     intentional_identifier_preamble: list[str] = Field(
-        default_factory=_empty_preamble
+        default_factory=list[str]
     )
     """Fixture directives for caller-selected identifier spellings."""
 
@@ -144,7 +129,7 @@ class VariantPolicy(  # noqa: NOD001
     """Whether the focused pre-indent comment-scalar case runs."""
 
     record: list[RecordVariantName] = Field(
-        default_factory=_empty_record_variants
+        default_factory=list[RecordVariantName]
     )
     """Focused record cases whose inputs this language renders."""
 
@@ -175,7 +160,7 @@ class VariantPolicy(  # noqa: NOD001
     non_default_kwargs: dict[
         Annotated[str, Field(min_length=1)],
         Annotated[str, Field(min_length=1)],
-    ] = Field(default_factory=_empty_string_mapping)
+    ] = Field(default_factory=dict[str, str])
     """Sample non-default values the golden suite passes to a language.
 
     Keys are constructor field names.  These are chosen fixture inputs,
@@ -186,13 +171,13 @@ class VariantPolicy(  # noqa: NOD001
     declaration_style_variable_names: dict[
         Annotated[str, Field(min_length=1)],
         Annotated[str, Field(min_length=1)],
-    ] = Field(default_factory=_empty_string_mapping)
+    ] = Field(default_factory=dict[str, str])
     """Variable names the declaration-style goldens select."""
 
     declaration_style_sequence_format_overrides: dict[
         Annotated[str, Field(min_length=1)],
         Annotated[str, Field(min_length=1)],
-    ] = Field(default_factory=_empty_string_mapping)
+    ] = Field(default_factory=dict[str, str])
     """Sequence formats the declaration-style goldens substitute in.
 
     Production rejects the incompatible pairing itself, in

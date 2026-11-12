@@ -53,7 +53,6 @@ from .suite_gates import (
     SuiteGate,
     SuiteGateError,
     gate_admits,
-    no_gates,
     validate_gate_names,
 )
 from .variant_types import Variant
@@ -284,21 +283,6 @@ type _Override = Annotated[
 ]
 
 
-def _no_overrides() -> list[_Override]:
-    """Return a typed empty override list for the models."""
-    return []
-
-
-def _no_excluded_members() -> list[str]:
-    """Return a typed empty exclusion list for the models."""
-    return []
-
-
-def _no_member_flags() -> list[str]:
-    """Return a typed empty member-flag list for the models."""
-    return []
-
-
 # Defaults stand in for omitted keys, as above.
 class _LayoutChoice(  # noqa: NOD001
     BaseModel,
@@ -348,15 +332,15 @@ class _EveryNonDefaultMemberPlan(  # noqa: NOD001
         None
     )
     include_default: bool = False
-    member_flags: list[str] = Field(default_factory=_no_member_flags)
-    excluded_members: list[str] = Field(default_factory=_no_excluded_members)
+    member_flags: list[str] = Field(default_factory=list[str])
+    excluded_members: list[str] = Field(default_factory=list[str])
     declaration_style_sequence_override: bool = False
     per_version: bool = True
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
-    gates: list[SuiteGate] = Field(default_factory=no_gates)
-    overrides: list[_Override] = Field(default_factory=_no_overrides)
+    gates: list[SuiteGate] = Field(default_factory=list[SuiteGate])
+    overrides: list[_Override] = Field(default_factory=list[_Override])
 
 
 # Defaults stand in for omitted keys, as above.
@@ -387,8 +371,8 @@ class _FixedOverridesPlan(  # noqa: NOD001
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
-    gates: list[SuiteGate] = Field(default_factory=no_gates)
-    overrides: list[_Override] = Field(default_factory=_no_overrides)
+    gates: list[SuiteGate] = Field(default_factory=list[SuiteGate])
+    overrides: list[_Override] = Field(default_factory=list[_Override])
 
 
 # Defaults stand in for omitted keys, as above.
@@ -427,8 +411,8 @@ class _KwargValuesPlan(  # noqa: NOD001
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
-    gates: list[SuiteGate] = Field(default_factory=no_gates)
-    overrides: list[_Override] = Field(default_factory=_no_overrides)
+    gates: list[SuiteGate] = Field(default_factory=list[SuiteGate])
+    overrides: list[_Override] = Field(default_factory=list[_Override])
 
 
 # Defaults stand in for omitted keys, as above.
@@ -474,16 +458,14 @@ class _CrossProductPlan(  # noqa: NOD001
     secondaries: Annotated[list[_CrossSecondary], Field(min_length=1)]
     primary: Annotated[str, Field(min_length=1)] | None = None
     primary_axis: Annotated[str, Field(min_length=1)] | None = None
-    excluded_primary_members: list[str] = Field(
-        default_factory=_no_excluded_members
-    )
+    excluded_primary_members: list[str] = Field(default_factory=list[str])
     skip_incompatible_formats: bool = False
     per_version: bool = True
     layouts: Annotated[list[_LayoutChoice], Field(min_length=1)] = Field(
         default_factory=_compact_layout
     )
-    gates: list[SuiteGate] = Field(default_factory=no_gates)
-    overrides: list[_Override] = Field(default_factory=_no_overrides)
+    gates: list[SuiteGate] = Field(default_factory=list[SuiteGate])
+    overrides: list[_Override] = Field(default_factory=list[_Override])
 
 
 # Defaults stand in for omitted keys, as above.
@@ -503,7 +485,7 @@ class _FilteredPlan(  # noqa: NOD001
 
     plan: Literal["filtered"]
     base: Annotated[str, Field(min_length=1)]
-    gates: list[SuiteGate] = Field(default_factory=no_gates)
+    gates: list[SuiteGate] = Field(default_factory=list[SuiteGate])
 
 
 type _ExpandedAxis = (
@@ -534,11 +516,6 @@ class _SpecialAxis(
     reason: Annotated[str, Field(min_length=1)]
 
 
-def _no_special_axes() -> dict[str, _SpecialAxis]:
-    """Return a typed empty special-axis table for the models."""
-    return {}
-
-
 # Defaults stand in for omitted keys, as above.
 class _AxisRegistryData(  # noqa: NOD001
     BaseModel,
@@ -551,7 +528,7 @@ class _AxisRegistryData(  # noqa: NOD001
     schema_version: Literal[1]
     axes: dict[Annotated[str, Field(min_length=1)], _Axis]
     special_axes: dict[Annotated[str, Field(min_length=1)], _SpecialAxis] = (
-        Field(default_factory=_no_special_axes)
+        Field(default_factory=dict[str, _SpecialAxis])
     )
 
 
