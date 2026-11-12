@@ -50,16 +50,6 @@ class SkipPolicy:
     reasons: SkipReasons
     suffix: str
 
-    @property
-    def errors(self) -> tuple[type[Exception], ...]:
-        """Return the errors that skip rather than fail.
-
-        The tuple is derived from the policy's reasons so an error can
-        never be caught without a message to skip with, nor listed with
-        a message that no ``except`` clause reaches.
-        """
-        return tuple(entry.error for entry in self.reasons)
-
 
 NO_SKIPS: SkipPolicy = SkipPolicy(reasons=(), suffix="")
 """Every error is a real failure."""
@@ -104,49 +94,12 @@ def skip_golden(
     pytest.skip(reason=reason)
 
 
-@beartype
-def _skip_for_error(
-    *,
-    exc: Exception,
-    reasons: SkipReasons,
-    golden_path: Path,
-    prefix: str,
-    suffix: str,
-    config: pytest.Config,
-) -> NoReturn:
-    """Skip the current test with a message keyed off the caught error.
-
-    The message reads ``"{prefix} {reason}{suffix}"``, so a rendering
-    whose skip turns on more than the error type -- the strategy it was
-    rendered under, say -- says so in *suffix* rather than restating the
-    reason.  An error that carries its own ``reason`` -- which argument
-    or identifier the language rejected -- has it appended after the
-    declared one, since only the error knows it.  The ``except`` clause
-    is built from the same table, so the lookup below is total by
-    construction; ``StopIteration`` propagating out of this helper would
-    indicate a divergence between the two.
-    """
-    entry = next(entry for entry in reasons if isinstance(exc, entry.error))
-    detail = ""
-    if isinstance(exc, _ReasonedError):
-        detail = f": {exc.reason}"
-    skip_golden(
-        reason=f"{prefix} {entry.reason}{detail}{suffix}",
-        golden_path=golden_path,
-        unlink=entry.unlink,
-        config=config,
-    )
-
-
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class GoldenSkips:
     """A block whose declared errors skip the golden rather than fail it.
 
-    Wrapping the rendering in this rather than catching *policy*'s
-    errors at each site keeps the table and its ``except`` clause in one
-    place, so a harness cannot catch an error it has no message for.  An
-    error the policy does not name propagates: ``__exit__`` never
-    swallows one, it either skips or returns.
+    The first matching policy entry supplies both the skip message and
+    the stale-fixture policy. Errors without a matching entry propagate.
     """
 
     policy: SkipPolicy
@@ -164,15 +117,22 @@ class GoldenSkips:
         _traceback: TracebackType | None,
     ) -> None:
         """Skip the case when the rendering raised a declared error."""
-        if isinstance(exc, self.policy.errors):
-            _skip_for_error(
-                exc=exc,
-                reasons=self.policy.reasons,
-                golden_path=self.golden_path,
-                prefix=self.prefix,
-                suffix=self.policy.suffix,
-                config=self.config,
-            )
+        for entry in self.policy.reasons:
+            if isinstance(exc, entry.error):
+                detail = (
+                    f": {exc.reason}"
+                    if isinstance(exc, _ReasonedError)
+                    else ""
+                )
+                skip_golden(
+                    reason=(
+                        f"{self.prefix} {entry.reason}"
+                        f"{detail}{self.policy.suffix}"
+                    ),
+                    golden_path=self.golden_path,
+                    unlink=entry.unlink,
+                    config=self.config,
+                )
 
 
 @beartype
