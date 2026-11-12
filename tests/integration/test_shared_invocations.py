@@ -13,40 +13,19 @@ from literalizer import (
     literalize_call,
     literalize_invocations,
 )
+from literalizer._enums import enum_payload
+from literalizer._language import (
+    CallSupport,
+    KeywordCallStyle,
+    ObjectCallStyle,
+    PositionalCallStyle,
+)
 from literalizer.exceptions import LiteralizerError
-from literalizer.languages import ALL_LANGUAGES, Clojure, Python
+from literalizer.languages import ALL_LANGUAGES
 
 _LANGUAGES: list[LanguageCls] = sorted(
     ALL_LANGUAGES, key=lambda cls: cls.__name__
 )
-
-_NATIVE: dict[str, object] = {
-    "function": "checkResult",
-    "parameter-types": ["bool", "NSArray"],
-    "return-type": "void",
-    "arguments": [
-        {
-            "receiver": {"reference": "counter", "type": "Counter"},
-            "selector": "accept:timestamp:",
-            "parameter-types": ["NSString", "float"],
-            "return-type": "bool",
-            "arguments": [{"input": 0}, {"input": 1}],
-        },
-        {"zipped": True},
-    ],
-}
-
-_CALL: dict[str, object] = {
-    "default": {
-        "target-function": "counter.accept",
-        "parameter-names": ["user", "timestamp"],
-        "result-function": "checkResult",
-    },
-    "languages": {
-        "python": {"result-function": "check_result"},
-        "objective-c": {"native": _NATIVE},
-    },
-}
 
 
 class _BindingOptions(TypedDict, closed=True):
@@ -126,7 +105,6 @@ def test_constructor_recipe_reuses_backend_syntax(
             "unknown",
         ),
         ({"default": [], "languages": {}}, "string-keyed"),
-        ({"default": {}, "languages": {"python": []}}, "string-keyed"),
         ({"default": {"target-function": 1, "parameter-names": []}}, "string"),
         (
             {"default": {"target-function": "f", "parameter-names": "value"}},
@@ -139,21 +117,25 @@ def test_constructor_recipe_reuses_backend_syntax(
         ({"default": {"native": {}, "target-function": "f"}}, "unknown"),
     ],
 )
+@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
 def test_invalid_shared_recipes(
-    recipe: dict[str, object], message: str
+    recipe: dict[str, object], message: str, language_cls: LanguageCls
 ) -> None:
     """Malformed metadata is rejected before input rendering."""
     with pytest.raises(expected_exception=NativeCallError, match=message):
         _ = literalize_invocations(
             source="[[]]",
             input_format=InputFormat.JSON,
-            language=Python(),
+            language=language_cls(),
             invocation=recipe,
         )
 
 
 @pytest.mark.parametrize(argnames="indent", argvalues=[-1, 0])
-def test_invalid_generic_placement(indent: int) -> None:
+@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
+def test_invalid_generic_placement(
+    indent: int, language_cls: LanguageCls
+) -> None:
     """Unsupported placement must never be silently ignored."""
     with pytest.raises(
         expected_exception=NativeCallError, match="nonnegative indent"
@@ -161,7 +143,7 @@ def test_invalid_generic_placement(indent: int) -> None:
         _ = literalize_invocations(
             source="[[]]",
             input_format=InputFormat.JSON,
-            language=Python(),
+            language=language_cls(),
             invocation={
                 "default": {"target-function": "f", "parameter-names": []}
             },
@@ -174,22 +156,49 @@ def test_invalid_generic_placement(indent: int) -> None:
     argnames=("zip_source", "message"),
     argvalues=[(None, "requires zipped"), ("[]", "length")],
 )
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=[
+        cls
+        for cls in _LANGUAGES
+        if isinstance(
+            cls().call_style_config,
+            (PositionalCallStyle, KeywordCallStyle, ObjectCallStyle),
+        )
+        and any(
+            isinstance(
+                enum_payload(member=style, payload_type=object),
+                PositionalCallStyle,
+            )
+            for style in cls.CallStyles
+        )
+    ],
+)
 def test_expected_values_are_required_and_paired(
-    zip_source: str | None, message: str
+    zip_source: str | None, message: str, language_cls: LanguageCls
 ) -> None:
     """Checks cannot drop missing or mismatched expected results."""
     with pytest.raises(expected_exception=LiteralizerError, match=message):
         _ = literalize_invocations(
-            source='[["user",1.0]]',
+            source="[[1]]",
             input_format=InputFormat.JSON,
-            language=Python(),
-            invocation=_CALL,
+            language=language_cls(),
+            invocation={
+                "default": {
+                    "target-function": "consume",
+                    "parameter-names": ["value"],
+                    "result-function": "check_result",
+                }
+            },
             zip_source=zip_source,
             zip_input_format=None if zip_source is None else InputFormat.JSON,
         )
 
 
-def test_empty_checked_calls_still_require_expected_source() -> None:
+@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
+def test_empty_checked_calls_still_require_expected_source(
+    language_cls: LanguageCls,
+) -> None:
     """An empty input cannot hide an incomplete expected-value
     contract.
     """
@@ -199,12 +208,35 @@ def test_empty_checked_calls_still_require_expected_source() -> None:
         _ = literalize_invocations(
             source="[]",
             input_format=InputFormat.JSON,
-            language=Python(),
-            invocation=_CALL,
+            language=language_cls(),
+            invocation={
+                "default": {
+                    "target-function": "consume",
+                    "parameter-names": ["value"],
+                    "result-function": "check_result",
+                }
+            },
         )
 
 
-def test_checker_rejects_non_expression_call_backend() -> None:
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=[
+        cls
+        for cls in _LANGUAGES
+        if not isinstance(cls().call_style_config, CallSupport)
+        and not any(
+            isinstance(
+                enum_payload(member=style, payload_type=object),
+                PositionalCallStyle,
+            )
+            for style in cls.CallStyles
+        )
+    ],
+)
+def test_checker_rejects_non_expression_call_backend(
+    language_cls: LanguageCls,
+) -> None:
     """A positional checker cannot be guessed for a prefix-call
     backend.
     """
@@ -216,12 +248,32 @@ def test_checker_rejects_non_expression_call_backend() -> None:
             input_format=InputFormat.JSON,
             zip_source="[true]",
             zip_input_format=InputFormat.JSON,
-            language=Clojure(),
+            language=language_cls(),
             invocation={
                 "default": {
                     "target-function": "consume",
                     "parameter-names": ["value"],
                     "result-function": "check_result",
                 },
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=[cls for cls in _LANGUAGES if cls.pygments_name is not None],
+)
+def test_invalid_selected_override(language_cls: LanguageCls) -> None:
+    """Malformed overrides fail for the backend they actually address."""
+    with pytest.raises(
+        expected_exception=NativeCallError, match="string-keyed"
+    ):
+        _ = literalize_invocations(
+            source="[[]]",
+            input_format=InputFormat.JSON,
+            language=language_cls(),
+            invocation={
+                "default": {},
+                "languages": {language_cls.pygments_name: []},
             },
         )
