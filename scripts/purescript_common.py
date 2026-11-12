@@ -3,7 +3,7 @@
 import textwrap
 from pathlib import Path
 
-PRELUDE_PURS = textwrap.dedent(
+PRELUDE_PURS: str = textwrap.dedent(
     text="""\
     module Prelude where
     foreign import data Unit :: Type
@@ -16,7 +16,7 @@ PRELUDE_PURS = textwrap.dedent(
     """,
 )
 
-PRELUDE_JS = textwrap.dedent(
+PRELUDE_JS: str = textwrap.dedent(
     text="""\
     export const unit = {};
     export const negate = x => -x;
@@ -33,7 +33,7 @@ PRELUDE_JS = textwrap.dedent(
 # fixtures get the same treatment here.  The JS implementations defer
 # to the runtime's ``JSON.parse``, so the round-tripping invariant
 # pinned by the goldens still gets a real compile + run check.
-EITHER_PURS = textwrap.dedent(
+EITHER_PURS: str = textwrap.dedent(
     text="""\
     module Data.Either where
     foreign import data Either :: Type -> Type -> Type
@@ -41,13 +41,13 @@ EITHER_PURS = textwrap.dedent(
     """,
 )
 
-EITHER_JS = textwrap.dedent(
+EITHER_JS: str = textwrap.dedent(
     text="""\
     export const fromRight = d => e => e.tag === "Right" ? e.value : d;
     """,
 )
 
-ARGONAUT_CORE_PURS = textwrap.dedent(
+ARGONAUT_CORE_PURS: str = textwrap.dedent(
     text="""\
     module Data.Argonaut.Core where
     foreign import data Json :: Type
@@ -55,13 +55,13 @@ ARGONAUT_CORE_PURS = textwrap.dedent(
     """,
 )
 
-ARGONAUT_CORE_JS = textwrap.dedent(
+ARGONAUT_CORE_JS: str = textwrap.dedent(
     text="""\
     export const jsonNull = null;
     """,
 )
 
-ARGONAUT_PARSER_PURS = textwrap.dedent(
+ARGONAUT_PARSER_PURS: str = textwrap.dedent(
     text="""\
     module Data.Argonaut.Parser where
     import Data.Argonaut.Core (Json)
@@ -70,7 +70,7 @@ ARGONAUT_PARSER_PURS = textwrap.dedent(
     """,
 )
 
-ARGONAUT_PARSER_JS = textwrap.dedent(
+ARGONAUT_PARSER_JS: str = textwrap.dedent(
     text="""\
     export const jsonParser = s => {
         try {
@@ -84,7 +84,7 @@ ARGONAUT_PARSER_JS = textwrap.dedent(
 
 
 # The standard Partial.Unsafe interface permits native consumer assertions.
-PARTIAL_UNSAFE_PURS = textwrap.dedent(
+PARTIAL_UNSAFE_PURS: str = textwrap.dedent(
     text="""\
     module Partial.Unsafe where
     foreign import unsafeCrashWith :: forall a. String -> a
@@ -98,7 +98,7 @@ PARTIAL_UNSAFE_JS = (
 
 
 # A caller-owned module for qualified function targets in golden files.
-CALL_TARGET_PURS = textwrap.dedent(
+CALL_TARGET_PURS: str = textwrap.dedent(
     text="""\
     module LiteralizerSupport.CallTarget where
     import Prelude (Unit)

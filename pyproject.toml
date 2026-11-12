@@ -652,7 +652,6 @@ ignore_errors = true
 project-excludes = [ "tests/integration/cases" ]
 search_path = [ ".", "src" ]
 errors.non-exhaustive-match = "error"
-coverage.includes = [ "src/**", "tests/**" ]
 # Without this, pyrefly's built-in default `project-excludes` (e.g.
 # `**/__pycache__`, `**/venv/**/*`, the project's `site-packages`) are
 # appended to ours and combine with the `.gitignore`-based ignore files to

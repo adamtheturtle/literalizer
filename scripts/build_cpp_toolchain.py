@@ -15,7 +15,7 @@ import subprocess
 import tarfile
 from pathlib import Path
 
-LOGGER = logging.getLogger(name=__name__)
+LOGGER: logging.Logger = logging.getLogger(name=__name__)
 VERSION = "23.1.4"
 SOURCE_COMMIT = "7a941dfb2877a0b8cf30323fefa85ad019e0b0f5"
 ASSETS = {
@@ -162,7 +162,7 @@ def bootstrap(work: Path, /) -> Path:
                 relative = Path(*parts[1:])
                 if keep_bootstrap_file(relative):
                     member.name = str(object=relative)
-                    archive.extract(member, path=prefix, filter="data")
+                    archive.extract(member=member, path=prefix, filter="data")
         if decoder.wait() != 0:
             message = "LLVM release decompression failed"
             raise RuntimeError(message)

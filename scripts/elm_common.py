@@ -14,7 +14,7 @@ from tenacity.wait import wait_incrementing
 
 from scripts.bounded_command import bounded_command
 
-ELM_JSON = json.dumps(
+ELM_JSON: str = json.dumps(
     obj={
         "type": "application",
         "source-directories": ["src"],
