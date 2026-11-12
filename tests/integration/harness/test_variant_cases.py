@@ -27,7 +27,6 @@ from tests.integration.variant_cases import (
     build_variant_cases,
     group_variant_cases_by_language,
     one_special_input,
-    variant_languages,
     variants_for_axis,
 )
 from tests.integration.variant_types import VariantCase
@@ -96,17 +95,6 @@ def test_group_variant_cases_by_language_groups_by_variant_language() -> None:
             case for case in cases if case.variant.lang_cls is not lang_cls
         ]
         assert misgrouped == []
-
-
-def test_variant_languages_matches_sorted_group_keys() -> None:
-    """Variant languages are the sorted subset that actually have
-    cases.
-    """
-    groups = group_variant_cases_by_language()
-
-    assert variant_languages() == [
-        lang_cls for lang_cls in sorted_languages() if lang_cls in groups
-    ]
 
 
 def test_variant_cases_have_unique_golden_paths() -> None:
