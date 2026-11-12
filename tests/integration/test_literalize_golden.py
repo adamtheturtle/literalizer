@@ -27,6 +27,7 @@ from literalizer.exceptions import (
 )
 
 from .case_manifests import load_case_manifest
+from .golden_batches import GoldenGroup
 from .golden_checks import (
     GoldenSkips,
     check_golden,
@@ -35,7 +36,6 @@ from .golden_checks import (
 )
 from .golden_renderings import GoldenRendering
 from .golden_scenarios import (
-    GoldenGroup,
     golden_groups,
 )
 from .language_metadata import language_metadata

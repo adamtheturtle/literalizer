@@ -4,10 +4,12 @@ corpus.
 
 from collections import Counter
 
-from tests.integration.golden_scenarios import (
+from tests.integration.golden_batches import (
     GOLDEN_BATCH_VERSION_LIMIT,
-    GOLDEN_SCENARIOS,
     batch_renderings,
+)
+from tests.integration.golden_scenarios import (
+    GOLDEN_SCENARIOS,
     golden_groups,
 )
 from tests.integration.language_specs import sorted_languages
