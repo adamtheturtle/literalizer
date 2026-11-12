@@ -47,7 +47,18 @@ def infer_case_input(
     """Resolve a manifest's explicit input or infer its sole input
     file.
     """
-    if input_name is not None:
+    if input_name is None:
+        candidates = [
+            name for name in _INPUT_FORMATS if (case_dir / name).is_file()
+        ]
+        if len(candidates) != 1:
+            msg = (
+                "expected exactly one inferable input file, "
+                f"found {candidates}"
+            )
+            raise ValueError(msg)
+        input_name = candidates[0]
+    else:
         if input_name not in _INPUT_FORMATS:
             msg = (
                 f"input must name one of {sorted(_INPUT_FORMATS)}, "
@@ -58,23 +69,8 @@ def infer_case_input(
         if not path.is_file():
             msg = f"declared input does not exist: {path}"
             raise ValueError(msg)
-        return CaseInput(
-            path=path,
-            input_format=_INPUT_FORMATS[input_name],
-            expected_reused_anchor_warning=expected_reused_anchor_warning,
-        )
-
-    candidates = [
-        CaseInput(
-            path=case_dir / name,
-            input_format=input_format,
-            expected_reused_anchor_warning=expected_reused_anchor_warning,
-        )
-        for name, input_format in _INPUT_FORMATS.items()
-        if (case_dir / name).is_file()
-    ]
-    if len(candidates) != 1:
-        names = [candidate.path.name for candidate in candidates]
-        msg = f"expected exactly one inferable input file, found {names}"
-        raise ValueError(msg)
-    return candidates[0]
+    return CaseInput(
+        path=case_dir / input_name,
+        input_format=_INPUT_FORMATS[input_name],
+        expected_reused_anchor_warning=expected_reused_anchor_warning,
+    )
