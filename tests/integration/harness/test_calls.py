@@ -11,11 +11,13 @@ from literalizer import InputFormat, LanguageCls, literalize_call
 from literalizer.exceptions import InvalidCallTargetError
 from literalizer.languages import ALL_LANGUAGES, Bash, V
 from tests.integration.call_cases import (
+    run_call_golden_case,
+    run_wrap_in_file_case,
+)
+from tests.integration.call_collection import (
     CallRendering,
     default_call_case_specs,
     discover_call_cases,
-    run_call_golden_case,
-    run_wrap_in_file_case,
 )
 from tests.integration.call_variant_cases import (
     build_call_variant_cases,

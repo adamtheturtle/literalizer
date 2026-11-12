@@ -11,7 +11,9 @@ from beartype import beartype
 
 from literalizer import VariableForm
 from literalizer.languages import Dart
-from tests.integration.call_cases import discover_call_cases
+from tests.integration.call_collection import (
+    discover_call_cases,
+)
 from tests.integration.call_variant_cases import build_call_variant_cases
 from tests.integration.case_manifests import (
     REF_DEFAULT_OWNER,
