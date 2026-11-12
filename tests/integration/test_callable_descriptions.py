@@ -4,9 +4,16 @@ from collections.abc import Callable
 
 import pytest
 
-from literalizer import Language, NativeCallError, describe_callable
+from literalizer import (
+    Language,
+    LanguageCls,
+    NativeCallError,
+    describe_callable,
+)
 from literalizer.exceptions import LiteralizerError
-from literalizer.languages import JavaScript, ObjectiveC, Python
+from literalizer.languages import ALL_LANGUAGES, JavaScript, ObjectiveC, Python
+
+_LANGUAGES = sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
 
 
 @pytest.mark.parametrize(
@@ -92,40 +99,59 @@ def test_invalid_description(override: dict[str, object]) -> None:
         )
 
 
-def test_missing_field() -> None:
+@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
+def test_missing_field(language_cls: LanguageCls) -> None:
     """Required parameter metadata is never inferred."""
     with pytest.raises(expected_exception=LiteralizerError):
         _ = describe_callable(
-            language=Python(), description={"name": "accept"}
+            language=language_cls(), description={"name": "accept"}
         )
 
 
-def test_selector_capability() -> None:
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=[
+        cls for cls in _LANGUAGES if not cls.supports_native_invocations
+    ],
+)
+def test_selector_capability(language_cls: LanguageCls) -> None:
     """Positional backends cannot silently emit message selectors."""
     with pytest.raises(
         expected_exception=NativeCallError, match="native message selectors"
     ):
         _ = describe_callable(
-            language=Python(),
+            language=language_cls(),
             description={
-                "name": "accept",
+                "name": "consume",
                 "parameter-names": [],
-                "selector": "accept",
+                "selector": "consume",
             },
         )
+
+
+def _rename(value: str) -> str:
+    """Keep renamed function names valid for languages requiring lowercase."""
+    return "renamed_" + value
 
 
 @pytest.mark.parametrize(
     argnames=("shared", "name_renamer", "parameter_renamer", "expected"),
     argvalues=[
-        (False, str.upper, None, "ACCEPT_VALUE(item_name) -> bool"),
-        (True, str.upper, None, "ACCEPT_VALUE(item_name) -> bool"),
-        (False, None, str.upper, "accept_value(ITEM_NAME) -> bool"),
-        (True, None, str.upper, "accept_value(ITEM_NAME) -> bool"),
-        (True, str.upper, str.upper, "ACCEPT_VALUE(ITEM_NAME) -> bool"),
+        (False, _rename, None, "renamed_accept_value(item_name) -> bool"),
+        (True, _rename, None, "renamed_accept_value(item_name) -> bool"),
+        (False, None, _rename, "accept_value(renamed_item_name) -> bool"),
+        (True, None, _rename, "accept_value(renamed_item_name) -> bool"),
+        (
+            True,
+            _rename,
+            _rename,
+            "renamed_accept_value(renamed_item_name) -> bool",
+        ),
     ],
 )
+@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
 def test_renamers(
+    language_cls: LanguageCls,
     *,
     shared: bool,
     name_renamer: Callable[[str], str] | None,
@@ -143,7 +169,7 @@ def test_renamers(
     description = {"default": default} if shared else default
     assert (
         describe_callable(
-            language=Python(),
+            language=language_cls(),
             description=description,
             name_renamer=name_renamer,
             parameter_renamer=parameter_renamer,
@@ -202,12 +228,15 @@ def _invalid_name(value: str) -> str:
 @pytest.mark.parametrize(
     argnames="field", argvalues=["name", "parameter-names"]
 )
-def test_invalid_renamed_identifier(field: str) -> None:
+@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
+def test_invalid_renamed_identifier(
+    field: str, language_cls: LanguageCls
+) -> None:
     """Callback results receive the same validation as explicit names."""
     with pytest.raises(expected_exception=LiteralizerError):
         _ = describe_callable(
-            language=Python(),
-            description={"name": "accept", "parameter-names": ["value"]},
+            language=language_cls(),
+            description={"name": "consume", "parameter-names": ["value"]},
             name_renamer=_invalid_name if field == "name" else None,
             parameter_renamer=_invalid_name
             if field == "parameter-names"
