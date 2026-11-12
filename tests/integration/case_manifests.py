@@ -1156,14 +1156,6 @@ class CaseManifest:
 
 
 @beartype
-def manifest_admits_language(
-    *, manifest: CaseManifest, lang_cls: literalizer.LanguageCls
-) -> bool:
-    """Return whether a case selects *lang_cls*."""
-    return manifest.selection.admits_language(lang_cls=lang_cls)
-
-
-@beartype
 def variable_form_for_context(
     *, context: RenderContext
 ) -> literalizer.VariableForm:

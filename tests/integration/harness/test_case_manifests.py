@@ -19,7 +19,6 @@ from tests.integration.case_manifests import (
     case_input,
     case_manifests_by_name,
     load_case_manifest,
-    manifest_admits_language,
 )
 from tests.integration.variant_cases import (
     build_variant_cases,
@@ -210,7 +209,7 @@ def test_gates_select_the_languages_declaring_the_property(
     selected = [
         lang_cls.__name__
         for lang_cls in literalizer.languages.ALL_LANGUAGES
-        if manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
+        if manifest.selection.admits_language(lang_cls=lang_cls)
     ]
     assert sorted(selected) == ["Nim", "V"]
 
@@ -224,7 +223,7 @@ def test_an_ungated_case_selects_every_language(tmp_path: Path) -> None:
     )
     manifest = load_case_manifest(case_dir=case_dir)
     assert all(
-        manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
+        manifest.selection.admits_language(lang_cls=lang_cls)
         for lang_cls in literalizer.languages.ALL_LANGUAGES
     )
 
@@ -353,11 +352,11 @@ def test_modifier_gate_selects_supported_declarations(tmp_path: Path) -> None:
         input_name="input.yaml",
     )
     manifest = load_case_manifest(case_dir=case_dir)
-    assert manifest_admits_language(
-        manifest=manifest, lang_cls=literalizer.languages.Java
+    assert manifest.selection.admits_language(
+        lang_cls=literalizer.languages.Java
     )
-    assert not manifest_admits_language(
-        manifest=manifest, lang_cls=literalizer.languages.Python
+    assert not manifest.selection.admits_language(
+        lang_cls=literalizer.languages.Python
     )
 
 
@@ -400,14 +399,12 @@ def test_literal_grammar_gates_compose_with_call_capabilities(
     admitted = {
         lang_cls
         for lang_cls in literalizer.languages.ALL_LANGUAGES
-        if manifest_admits_language(manifest=grammar_only, lang_cls=lang_cls)
+        if grammar_only.selection.admits_language(lang_cls=lang_cls)
     }
     combined_admitted = {
         lang_cls
         for lang_cls in literalizer.languages.ALL_LANGUAGES
-        if manifest_admits_language(
-            manifest=with_capability, lang_cls=lang_cls
-        )
+        if with_capability.selection.admits_language(lang_cls=lang_cls)
     }
     assert len(admitted) > 0
     assert admitted == combined_admitted
@@ -438,6 +435,6 @@ def test_unsupported_token_grammars_admit_no_producers(
     admitted = [
         lang_cls
         for lang_cls in literalizer.languages.ALL_LANGUAGES
-        if manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
+        if manifest.selection.admits_language(lang_cls=lang_cls)
     ]
     assert len(admitted) == 0

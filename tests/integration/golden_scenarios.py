@@ -54,7 +54,6 @@ from .case_manifests import (
     OwnerName,
     case_dir_name_for_owner,
     case_manifests_by_name,
-    manifest_admits_language,
     variable_form_for_context,
 )
 from .golden_checks import (
@@ -443,7 +442,7 @@ def _default_module_name_renderings(
         )
         for case_name, manifest in manifests.items()
         if "default-module-name" in manifest.suites
-        and manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
+        and manifest.selection.admits_language(lang_cls=lang_cls)
         for version in lang_cls.VersionFormats
     )
 

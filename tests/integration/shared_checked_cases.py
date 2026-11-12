@@ -9,7 +9,7 @@ from pydantic import BaseModel, TypeAdapter
 
 from literalizer.languages import Python
 
-from .case_manifests import load_case_manifests, manifest_admits_language
+from .case_manifests import load_case_manifests
 from .language_specs import make_golden_path
 
 
@@ -51,6 +51,6 @@ def shared_checked_cases(*, cases_dir: Path) -> tuple[SharedCheckedCase, ...]:
         )
         for manifest in load_case_manifests(cases_dir=cases_dir)
         if manifest.owner == "shared-invocation"
-        and manifest_admits_language(manifest=manifest, lang_cls=Python)
+        and manifest.selection.admits_language(lang_cls=Python)
         for version in Python.VersionFormats
     )
