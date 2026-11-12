@@ -41,7 +41,6 @@ from .suite_gates import (
     SuiteGate,
     call_literal_gate_admits,
     gates_admit,
-    no_gates,
     validate_gate_names,
 )
 from .variant_axis_names import KNOWN_VARIANT_AXES
@@ -121,26 +120,6 @@ PRIMED_NEW_VARIABLE_OWNER: OwnerName = "new-variable-prime"
 
 CALL_TRANSFORM_PLACEHOLDERS = frozenset({"call", "zipped"})
 """Every name a ``call_transform`` template may substitute."""
-
-
-def _empty_suites() -> list[SuiteName]:
-    """Return a typed empty suite list for the validation model."""
-    return []
-
-
-def _empty_capabilities() -> list[VariantCapabilityName]:
-    """Return a typed empty capability list for the validation model."""
-    return []
-
-
-def _empty_expected_errors() -> list[VariantExpectedError]:
-    """Return an empty list of expected variant errors."""
-    return []
-
-
-def _empty_roles() -> list[CaseRoleName]:
-    """Return a typed empty role list for the validation model."""
-    return []
 
 
 _CALL_VARIABLE_FORMS_BY_NAME: Mapping[
@@ -369,11 +348,6 @@ class RenderContext(  # noqa: NOD001
         return substitutions
 
 
-def _empty_consumer_templates() -> dict[literalizer.LanguageCls, str]:
-    """Return native caller templates indexed by language class."""
-    return {}
-
-
 # Defaults stand in for omitted keys, as above.
 class ManifestVariant(  # noqa: NOD001
     BaseModel,
@@ -393,7 +367,7 @@ class ManifestVariant(  # noqa: NOD001
     wrap_in_file: bool = True
     # Native caller syntax around an unwrapped result, by language.
     consumer_templates: dict[ManifestLanguage, str] = Field(
-        default_factory=_empty_consumer_templates
+        default_factory=dict[literalizer.LanguageCls, str]
     )
     # Some shape-mapping cases deliberately never use the external type.
     include_extra_preamble: bool = True
@@ -402,10 +376,10 @@ class ManifestVariant(  # noqa: NOD001
     # all.  A variant whose language lacks one of them is skipped (no
     # golden) rather than emitting output the language cannot express.
     requires: list[VariantCapabilityName] = Field(
-        default_factory=_empty_capabilities,
+        default_factory=list[VariantCapabilityName],
     )
     expected_errors: list[VariantExpectedError] = Field(
-        default_factory=_empty_expected_errors,
+        default_factory=list[VariantExpectedError],
     )
 
     @model_validator(mode="after")
@@ -432,7 +406,7 @@ class CapabilitySelection(  # noqa: NOD001
     language lists are not part of the root, reference or call schema.
     """
 
-    gates: list[SuiteGate] = Field(default_factory=no_gates)
+    gates: list[SuiteGate] = Field(default_factory=list[SuiteGate])
 
     @model_validator(mode="after")
     def _validate_language_selection(self) -> Self:
@@ -473,11 +447,6 @@ class CapabilitySelection(  # noqa: NOD001
         )
 
 
-def _empty_variants() -> list[ManifestVariant]:
-    """Return a typed empty variant list for the validation model."""
-    return []
-
-
 class ApiManifestVariant(
     BaseModel,
     arbitrary_types_allowed=True,
@@ -501,38 +470,9 @@ class ApiManifestVariant(
         return self
 
 
-def _empty_api_variants() -> list[ApiManifestVariant]:
-    """Return a typed empty API-variant list for the validation
-    model.
-    """
-    return []
-
-
-def _empty_names() -> tuple[str, ...]:
-    """Return a typed empty name tuple for the validation model."""
-    return ()
-
-
-def _empty_name_set() -> frozenset[str]:
-    """Return a typed empty name set for the validation model."""
-    return frozenset[str]()
-
-
 def _single_stub_parameter() -> tuple[str, ...]:
     """Return the default wrapper-stub parameter names."""
     return ("_arg",)
-
-
-def _empty_sources() -> dict[str, str]:
-    """Return a typed empty name-to-source mapping."""
-    return {}
-
-
-def _empty_ref_cases() -> dict[
-    literalizer.LanguageCls, literalizer.IdentifierCase
-]:
-    """Return a typed empty language-to-reference-case mapping."""
-    return {}
 
 
 class _OwnedCaseSpec(
@@ -596,21 +536,6 @@ def _parse_ref_time(value: object, /) -> object:
 type RefTimeInput = Annotated[dt.time, BeforeValidator(func=_parse_ref_time)]
 
 
-def _empty_ref_times() -> dict[str, dt.time]:
-    """Return the default time-valued reference bindings."""
-    return {}
-
-
-def _empty_ref_datetimes() -> dict[str, dt.datetime]:
-    """Return the default datetime-valued reference bindings."""
-    return {}
-
-
-def _empty_ref_values() -> dict[str, RefValueSource]:
-    """Return the default compound native reference sources."""
-    return {}
-
-
 class RefConsumerSpec(  # noqa: NOD001
     BaseModel, extra="forbid", frozen=True, strict=True
 ):
@@ -665,7 +590,7 @@ class RefCaseSpec(  # noqa: NOD001
     ref_key: str = "$ref"
     variable_form: VariableFormName | Literal["none"] = "new"
     variable_name: str = "my_data"
-    variable_modifiers: StringTuple = Field(default_factory=_empty_names)
+    variable_modifiers: StringTuple = Field(default_factory=tuple[str, ...])
     collection_layout: CollectionLayoutName = "compact"
     include_delimiters: bool = True
     pre_indent_level: int = 0
@@ -678,36 +603,38 @@ class RefCaseSpec(  # noqa: NOD001
     dict_format: str | None = None
     ref_case_override: RefIdentifierCase | None = None
     ref_case_by_language: dict[ManifestLanguage, RefIdentifierCase] = Field(
-        default_factory=_empty_ref_cases,
+        default_factory=dict[
+            literalizer.LanguageCls, literalizer.IdentifierCase
+        ],
     )
-    value_sources: dict[str, str] = Field(default_factory=_empty_sources)
+    value_sources: dict[str, str] = Field(default_factory=dict[str, str])
     bound_refs: Mapping[str, ValueInput] | None = None
     # ISO time strings can carry UTC offsets that TOML's native time cannot.
     bound_ref_times: dict[str, RefTimeInput] = Field(
-        default_factory=_empty_ref_times,
+        default_factory=dict[str, dt.time],
     )
     # Native TOML datetimes or exact wall-time/offset tables.
     bound_ref_datetimes: dict[str, RefDatetimeInput] = Field(
-        default_factory=_empty_ref_datetimes,
+        default_factory=dict[str, dt.datetime],
     )
     bound_ref_values: dict[str, RefValueSource] = Field(
-        default_factory=_empty_ref_values,
+        default_factory=dict[str, RefValueSource],
     )
     extra_ref_value_sources: dict[str, str] = Field(
-        default_factory=_empty_sources,
+        default_factory=dict[str, str],
     )
     # Fixture declarations are composed after rendering, so the API still
     # sees external references rather than materialized bound_refs.
     external_declarations: dict[str, str] = Field(
-        default_factory=_empty_sources,
+        default_factory=dict[str, str],
     )
     # Caller-owned headers are attached only after the API render.
-    caller_preamble: StringTuple = Field(default_factory=_empty_names)
+    caller_preamble: StringTuple = Field(default_factory=tuple[str, ...])
     explicit_ref_value_sources: dict[str, str] | None = None
     expected_value_source: str | None = None
     consumer: RefConsumerSpec | None = None
     variants: list[ApiManifestVariant] = Field(
-        default_factory=_empty_api_variants,
+        default_factory=list[ApiManifestVariant],
     )
     variant_only: bool = False
 
@@ -835,8 +762,8 @@ class CallCaseSpec(  # noqa: NOD001
     # Preserve the returned code prefix instead of reconciling its metadata.
     use_unwrapped_code: bool = False
     # Caller-owned imports and declarations in manually composed fixtures.
-    caller_imports: StringTuple = Field(default_factory=_empty_names)
-    caller_body_preamble: StringTuple = Field(default_factory=_empty_names)
+    caller_imports: StringTuple = Field(default_factory=tuple[str, ...])
+    caller_body_preamble: StringTuple = Field(default_factory=tuple[str, ...])
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     call_transform: CallTransformTemplate | None = None
@@ -853,7 +780,7 @@ class CallCaseSpec(  # noqa: NOD001
     # that distinguish value-returning functions from procedures.
     followup_source: str | None = None
     followup_target_function: str | None = None
-    transform_stub_names: StringTuple = Field(default_factory=_empty_names)
+    transform_stub_names: StringTuple = Field(default_factory=tuple[str, ...])
     # Parameter names used when stubbing each ``transform_stub_names``
     # wrapper.  The length sets how many parameters the wrapper takes,
     # so a transform that calls the wrapper with the call *and* the
@@ -872,21 +799,21 @@ class CallCaseSpec(  # noqa: NOD001
     # directly instead of wrapping manually with injected stubs.
     wrap_in_file: bool = False
     ref_case_per_language: bool = False
-    ref_declarations: dict[str, str] = Field(default_factory=_empty_sources)
+    ref_declarations: dict[str, str] = Field(default_factory=dict[str, str])
     # Use one format for declaration sources and inference-hint sources.
     ref_input_format: CallInputFormat = literalizer.InputFormat.JSON
     # Names from ``ref_declarations`` (in their original case) that
     # ``literalize_call`` may treat as consumable.  Empty means no ref
     # is consumed.
     consumable_refs: StringFrozenSet = Field(
-        default_factory=_empty_name_set,
+        default_factory=frozenset[str],
     )
     # Refs that receive declarations in the self-contained golden file
     # but are intentionally omitted from ``ref_values``.  This exercises
     # the historical unknown-ref preamble behavior without leaving the
     # rendered call's identifier undefined for fixture compilation.
     unknown_ref_names: StringFrozenSet = Field(
-        default_factory=_empty_name_set,
+        default_factory=frozenset[str],
     )
     # An explicit mapping overrides declaration-derived inference hints.
     # An empty table passes {}, while omission keeps the inferred hints.
@@ -899,7 +826,7 @@ class CallCaseSpec(  # noqa: NOD001
     # referenced by the input while keeping generated fixtures free of
     # unused declarations.
     extra_ref_value_sources: dict[str, str] = Field(
-        default_factory=_empty_sources,
+        default_factory=dict[str, str],
     )
     # Companion source whose parsed top-level elements pair
     # positionally with the generated calls and are exposed on
@@ -920,7 +847,7 @@ class CallCaseSpec(  # noqa: NOD001
     # ``per_element=False`` and (typically) ``wrap_in_file=True`` so
     # the generated file is self-contained around the binding.
     variable_form: CallVariableForm | None = None
-    variable_modifiers: StringTuple = Field(default_factory=_empty_names)
+    variable_modifiers: StringTuple = Field(default_factory=tuple[str, ...])
     # When set (only meaningful with ``wrap_in_file=True`` and a
     # ``variable_form``), emit a golden for a language only when its
     # ``variable_form`` output is byte-identical to its output under
@@ -957,7 +884,7 @@ class CallCaseSpec(  # noqa: NOD001
     # with, so a case that the default spec rejects names the axis whose
     # specs can represent its input.
     variants: list[ApiManifestVariant] = Field(
-        default_factory=_empty_api_variants,
+        default_factory=list[ApiManifestVariant],
     )
     # When ``True`` the case is driven only by the call *variant*
     # suite, so the default per-language call matrix needs no
@@ -1069,16 +996,6 @@ class ConstructorCaseSpec(  # noqa: NOD001
     variable_name: Annotated[str, Field(min_length=1)] = "p"
 
 
-def _empty_call_examples() -> list[CallCaseSpec]:
-    """Return the explicitly typed default call examples."""
-    return []
-
-
-def _empty_ref_examples() -> list[RefCaseSpec]:
-    """Return the explicitly typed default reference examples."""
-    return []
-
-
 # Defaults stand in for omitted keys, as above.
 class NativeInvocationCaseSpec(BaseModel, extra="forbid", frozen=True):
     """A real caller program for a native invocation recipe sequence."""
@@ -1096,24 +1013,24 @@ class _CaseManifestData(  # noqa: NOD001
     input: str | None = None
     input_roundtrip: InputRoundtripSpec | None = None
     expected_reused_anchor_warning: ReusedAnchorWarningSpec | None = None
-    suites: list[SuiteName] = Field(default_factory=_empty_suites)
+    suites: list[SuiteName] = Field(default_factory=list[SuiteName])
     owner: OwnerName | None = None
     # The load-bearing parts this input plays, beyond its participation
     # in a suite or an axis.  A runner that renders one chosen fixture
     # finds it by role rather than by naming the directory.
-    roles: list[CaseRoleName] = Field(default_factory=_empty_roles)
+    roles: list[CaseRoleName] = Field(default_factory=list[CaseRoleName])
     base_context: RenderContext = Field(default_factory=RenderContext)
-    variants: list[ManifestVariant] = Field(default_factory=_empty_variants)
+    variants: list[ManifestVariant] = Field(
+        default_factory=list[ManifestVariant]
+    )
     constructor: ConstructorCaseSpec | None = None
     native_invocation: NativeInvocationCaseSpec | None = None
     call: CallCaseSpec | None = None
     ref: RefCaseSpec | None = None
     call_examples: list[CallCaseSpec] = Field(
-        default_factory=_empty_call_examples
+        default_factory=list[CallCaseSpec]
     )
-    ref_examples: list[RefCaseSpec] = Field(
-        default_factory=_empty_ref_examples
-    )
+    ref_examples: list[RefCaseSpec] = Field(default_factory=list[RefCaseSpec])
 
     def _validate_examples(self) -> None:
         """Require named, unique examples with a shared API input
