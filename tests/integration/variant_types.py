@@ -54,9 +54,9 @@ def compact_variant(
 
 @dataclasses.dataclass(frozen=True)
 class VariantCase:
-    """A format-variant golden-file test case."""
+    """A format variant paired with its case-owned golden name."""
 
-    variant_name: str
+    golden_name: str
     variant: Variant
     case_dir_name: str
     variable_form: literalizer.VariableForm

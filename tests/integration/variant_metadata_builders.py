@@ -72,7 +72,7 @@ def build_modifier_variant_cases(
                     consumer_template=None,
                     apply_fixture_module_name=True,
                     expected_errors=(),
-                    variant_name=variant.name,
+                    golden_name=variant.name,
                     variant=variant,
                     case_dir_name=case_dir_name,
                     variable_form=(
@@ -134,7 +134,7 @@ def build_modifier_variant_cases(
                         consumer_template=None,
                         apply_fixture_module_name=True,
                         expected_errors=(),
-                        variant_name=variant.name,
+                        golden_name=variant.name,
                         variant=variant,
                         case_dir_name=case_dir_name,
                         variable_form=literalizer.NewVariable(
