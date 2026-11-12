@@ -553,7 +553,7 @@ def _variant_renderings(
         GoldenRendering(
             lang_cls=lang_cls,
             case_dir_name=variant_case.case_dir_name,
-            golden_name=variant_case.variant_name,
+            golden_name=variant_case.golden_name,
             golden_parent=_CASES_DIR / variant_case.case_dir_name,
             spec_source=variant_case.variant.spec,
             render=RenderArguments(

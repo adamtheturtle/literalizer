@@ -52,7 +52,7 @@ else:
         if case.variant.lang_cls is Python
         and case.variant.spec.string_format is Python.string_formats.MULTILINE
     ],
-    ids=lambda case: f"{case.case_dir_name}/{case.variant_name}",
+    ids=lambda case: f"{case.case_dir_name}/{case.golden_name}",
 )
 def test_multiline_string_program_values(
     case: VariantCase,
@@ -75,7 +75,7 @@ def test_multiline_string_program_values(
     spec = case.variant.spec
     golden_path = make_golden_path(
         parent=input_info.path.parent,
-        name=case.variant_name,
+        name=case.golden_name,
         lang_cls=case.variant.lang_cls,
         version=spec.language_version,
     )

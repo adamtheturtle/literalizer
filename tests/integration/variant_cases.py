@@ -95,7 +95,7 @@ def build_json_type_variable_form_cases(
                         consumer_template=None,
                         apply_fixture_module_name=True,
                         expected_errors=(),
-                        variant_name=name,
+                        golden_name=name,
                         variant=dataclasses.replace(json_variant, name=name),
                         case_dir_name=case_dir_name,
                         variable_form=literalizer.NewVariable(
@@ -113,7 +113,7 @@ def build_json_type_variable_form_cases(
                     consumer_template=None,
                     apply_fixture_module_name=True,
                     expected_errors=(),
-                    variant_name=name,
+                    golden_name=name,
                     variant=compact_variant(
                         name=name,
                         spec=spec,
@@ -157,7 +157,7 @@ def build_json_type_variable_form_cases(
                     consumer_template=None,
                     apply_fixture_module_name=True,
                     expected_errors=(),
-                    variant_name=name,
+                    golden_name=name,
                     variant=variant,
                     case_dir_name=case_dir_name,
                     variable_form=literalizer.BothVariableForms(
@@ -206,7 +206,7 @@ def build_multiline_string_context_cases(
                     consumer_template=None,
                     apply_fixture_module_name=True,
                     expected_errors=(),
-                    variant_name=name,
+                    golden_name=name,
                     variant=dataclasses.replace(
                         base_variant,
                         name=name,
@@ -233,7 +233,7 @@ def build_multiline_string_context_cases(
                     consumer_template=None,
                     apply_fixture_module_name=True,
                     expected_errors=(),
-                    variant_name=name,
+                    golden_name=name,
                     variant=dataclasses.replace(base_variant, name=name),
                     case_dir_name=pre_indent_case_dir_name,
                     variable_form=literalizer.NewVariable(
@@ -334,7 +334,7 @@ def case_for_manifest_variant(
         )
     return VariantCase(
         apply_fixture_module_name=manifest_variant.apply_fixture_module_name,
-        variant_name=f"{variant.name}{manifest_variant.suffix}",
+        golden_name=f"{variant.name}{manifest_variant.suffix}",
         variant=variant,
         case_dir_name=case_dir_name,
         variable_form=variable_form_for_context(context=context),
@@ -401,7 +401,7 @@ def validate_unique_variant_targets(cases: list[VariantCase]) -> None:
     for case in cases:
         target = (
             case.case_dir_name,
-            case.variant_name,
+            case.golden_name,
             case.variant.spec.extension,
             case.variant.spec.language_version,
         )
@@ -409,7 +409,7 @@ def validate_unique_variant_targets(cases: list[VariantCase]) -> None:
         if previous is not None:
             msg = (
                 "duplicate golden target from manifest inventory: "
-                f"{case.case_dir_name}/{case.variant_name}"
+                f"{case.case_dir_name}/{case.golden_name}"
                 f"@{case.variant.spec.language_version.name}"
                 f".{case.variant.spec.extension}"
             )

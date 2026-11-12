@@ -102,7 +102,7 @@ def test_variant_cases_have_unique_golden_paths() -> None:
     targets = [
         (
             case.case_dir_name,
-            case.variant_name,
+            case.golden_name,
             case.variant.spec.extension,
             case.variant.spec.language_version,
         )
@@ -277,7 +277,7 @@ def test_multiline_context_cases_follow_capabilities(
         case
         for case in combined_cases
         if case.case_dir_name != combined_case_dir_name
-        or not case.variant_name.endswith(combined_suffix)
+        or not case.golden_name.endswith(combined_suffix)
     ]
     assert misnamed_combined == []
     assert {case.variant.lang_cls for case in combined_cases} == {
@@ -294,7 +294,7 @@ def test_multiline_context_cases_follow_capabilities(
         case
         for case in indented_cases
         if case.case_dir_name != pre_indent_case_dir_name
-        or "_pre_indent_1_" not in case.variant_name
+        or "_pre_indent_1_" not in case.golden_name
     ]
     assert misnamed_indented == []
     assert [case.pre_indent_level for case in indented_cases] == [1] * len(
