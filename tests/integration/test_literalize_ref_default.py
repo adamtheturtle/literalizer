@@ -8,10 +8,12 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from .case_manifests import REF_DEFAULT_OWNER
 from .language_specs import make_spec
 from .literalize_ref_cases import (
+    run_literalize_ref_golden_case,
+)
+from .reference_cases import (
     LiteralizeRefCase,
     discover_literalize_ref_cases,
     ref_language_versions,
-    run_literalize_ref_golden_case,
 )
 
 
