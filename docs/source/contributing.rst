@@ -43,6 +43,47 @@ A stale skipped fixture fails verification with its path.
 To remove it, run the corresponding golden test with ``--regen-all``.
 Regeneration also rewrites supported golden files, so select only the affected test and review its diff.
 
+Find a golden test
+~~~~~~~~~~~~~~~~~~
+
+The manifest declares coverage; the following test modules collect the matching cases.
+
+.. list-table:: Golden test entry points
+   :header-rows: 1
+
+   * - Coverage
+     - Test module
+   * - ``literalize`` scenarios
+     - :file:`tests/integration/test_literalize_golden.py`
+   * - Default and variant calls
+     - :file:`tests/integration/test_calls.py`
+   * - Reference cases and variants
+     - :file:`tests/integration/test_literalize_ref_golden.py`
+   * - Default reference behavior
+     - :file:`tests/integration/test_literalize_ref_default.py`
+
+Collect test names before selecting an affected case.
+These focused commands use ``-n 0`` to run without parallel workers:
+
+.. code-block:: console
+
+   $ uv run --group dev pytest -n 0 tests/integration/test_calls.py --collect-only -q
+
+Use ``-k`` to verify matching cases, for example the Python call cases:
+
+.. code-block:: console
+
+   $ uv run --group dev pytest -n 0 tests/integration/test_calls.py -k Python
+
+After changing coverage, run the shared inventory check:
+
+.. code-block:: console
+
+   $ uv run --group dev pytest -n 0 tests/integration/harness/test_orphan_golden_files.py
+
+The Python tests compare generated source with the stored fixture.
+Native language jobs in :file:`.github/workflows/lint.yml` check those programs with a compiler or runtime.
+
 Changelog entries
 -----------------
 
