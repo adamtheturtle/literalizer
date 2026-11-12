@@ -5,10 +5,8 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import functools
-import string
 import tomllib
 from collections.abc import Callable, Mapping
-from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Literal, Self, get_args
 
@@ -28,6 +26,8 @@ from literalizer._types import Scalar
 from literalizer.languages import ALL_LANGUAGES
 from tests.native_value_sources import RefDatetimeInput, RefValueSource
 
+from . import call_templates
+from .call_templates import call_transform_from_template
 from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
 from .language_metadata import language_metadata
 from .language_specs import make_spec
@@ -45,6 +45,9 @@ from .suite_gates import (
 )
 from .variant_axis_names import KNOWN_VARIANT_AXES
 from .variant_types import VariantExpectedError
+
+# Keep the template type available through the existing manifest API.
+CallTransform = call_templates.CallTransform
 
 MANIFEST_NAME = "case.toml"
 
@@ -118,10 +121,6 @@ _REF_OWNERS: frozenset[OwnerName] = frozenset({REF_OWNER, REF_DEFAULT_OWNER})
 KEBAB_NEW_VARIABLE_OWNER: OwnerName = "new-variable-kebab"
 PRIMED_NEW_VARIABLE_OWNER: OwnerName = "new-variable-prime"
 
-CALL_TRANSFORM_PLACEHOLDERS = frozenset({"call", "zipped"})
-"""Every name a ``call_transform`` template may substitute."""
-
-
 _CALL_VARIABLE_FORMS_BY_NAME: Mapping[
     str,
     literalizer.NewVariable | literalizer.ExistingVariable,
@@ -165,34 +164,6 @@ class CaseManifestError(ValueError):
     """A case manifest is invalid or internally inconsistent."""
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class CallTransform:
-    """A validated ``call_transform`` template, applied per call.
-
-    The template substitutes only :data:`CALL_TRANSFORM_PLACEHOLDERS`,
-    so a manifest describes the wrapper text without carrying code.
-    """
-
-    template: str
-
-    @cached_property
-    def uses_zipped(self) -> bool:
-        """Retain operand usage from the validated substitution
-        template.
-        """
-        return any(
-            field_name == "zipped"
-            for _, field_name, _, _ in string.Formatter().parse(
-                format_string=self.template
-            )
-        )
-
-    @beartype
-    def __call__(self, context: literalizer.CallContext, /) -> str:
-        """Return transformed text and the template's operand usage."""
-        return self.template.format(call=context.call, zipped=context.zipped)
-
-
 @beartype
 def _name_resolver[NamedT](
     *, values_by_name: Mapping[str, NamedT]
@@ -218,22 +189,6 @@ def _name_resolver[NamedT](
     return resolve
 
 
-def _to_call_transform(value: object, /) -> object:
-    """Build a :class:`CallTransform` from a validated template."""
-    if not isinstance(value, str):
-        return value
-    for _, field_name, _, _ in string.Formatter().parse(format_string=value):
-        if field_name is not None and (
-            field_name not in CALL_TRANSFORM_PLACEHOLDERS
-        ):
-            msg = (
-                f"unknown call_transform placeholder {field_name!r}; "
-                f"expected one of {sorted(CALL_TRANSFORM_PLACEHOLDERS)}"
-            )
-            raise ValueError(msg)
-    return CallTransform(template=value)
-
-
 # A manifest spells these as TOML arrays, which ``strict=False`` allows
 # to be read as the immutable containers the harness holds.  The item
 # type is still checked.
@@ -251,7 +206,8 @@ type ManifestLanguages = Annotated[
     Field(strict=False),
 ]
 type CallTransformTemplate = Annotated[
-    InstanceOf[CallTransform], BeforeValidator(func=_to_call_transform)
+    InstanceOf[CallTransform],
+    BeforeValidator(func=call_transform_from_template),
 ]
 type CallStyleType = Annotated[
     type[literalizer.CallStyle],
@@ -738,7 +694,7 @@ class CallCaseSpec(  # noqa: NOD001
     A manifest spells enum- and type-valued arguments as strings, which
     this model resolves to their ``literalizer`` types during
     validation, and ``call_transform`` is a template over
-    :data:`CALL_TRANSFORM_PLACEHOLDERS` rather than evaluated code.
+    validated placeholders rather than evaluated code.
 
     ``ref_declarations`` maps a ``{"$ref": "name"}`` marker in the case
     input to a source in ``ref_input_format`` rendered as a declaration via
