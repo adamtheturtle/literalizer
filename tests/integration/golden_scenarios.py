@@ -303,7 +303,6 @@ class GoldenRendering:
         return make_golden_path(
             parent=self.golden_parent,
             name=self.golden_name,
-            extension=self.lang_cls.extension,
             lang_cls=self.lang_cls,
             version=version,
         )

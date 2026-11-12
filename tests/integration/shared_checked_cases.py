@@ -45,7 +45,6 @@ def shared_checked_cases(*, cases_dir: Path) -> tuple[SharedCheckedCase, ...]:
             golden_path=make_golden_path(
                 parent=manifest.case_dir,
                 name="Python_shared_checked",
-                extension=Python.extension,
                 lang_cls=Python,
                 version=version,
             ),

@@ -153,7 +153,6 @@ def test_json_program_matches_native_golden(
     path = make_golden_path(
         parent=cases_dir / contract.case_name,
         name=contract.golden_name,
-        extension=Python.extension,
         lang_cls=Python,
         version=version,
     )

@@ -41,7 +41,6 @@ def run_constructor_binding_golden_case(
             contents=config.target_template.format(
                 target=language.format_constructor_target(config.class_name)
             ),
-            extension=golden_path.suffix,
             golden_path=golden_path,
             file_regression=file_regression,
         )
@@ -74,7 +73,6 @@ def run_constructor_binding_golden_case(
         )
     check_golden(
         contents=contents,
-        extension=golden_path.suffix,
         golden_path=golden_path,
         file_regression=file_regression,
     )

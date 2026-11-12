@@ -99,7 +99,6 @@ def test_refused_scaffold_handles_stale_fixture(
     golden_path = make_golden_path(
         parent=case_dir,
         name=case.golden_name,
-        extension=case.language.extension,
         lang_cls=case.language,
         version=version,
     )

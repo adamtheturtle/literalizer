@@ -50,7 +50,6 @@ def _literalize_bindings() -> dict[Path, str | None]:
                 golden = make_golden_path(
                     parent=rendering.golden_parent,
                     name=rendering.golden_name,
-                    extension=spec.extension,
                     lang_cls=Dart,
                     version=version,
                 )
@@ -78,7 +77,6 @@ def _call_bindings() -> dict[Path, str]:
             golden = make_golden_path(
                 parent=_CASES_DIR / call_case.config.case_dir_name,
                 name=call_case.config.golden_name(name="Dart_call"),
-                extension=Dart.extension,
                 lang_cls=Dart,
                 version=version,
             )
@@ -93,7 +91,6 @@ def _call_bindings() -> dict[Path, str]:
             name=variant_case.config.golden_name(
                 name=f"{variant_case.variant.name}_call"
             ),
-            extension=Dart.extension,
             lang_cls=Dart,
             version=variant_case.variant.spec.language_version,
         )
@@ -130,7 +127,6 @@ def _ref_bindings() -> dict[Path, str | None]:
                 golden = make_golden_path(
                     parent=_CASES_DIR / ref_case.config.case_dir_name,
                     name=ref_case.config.golden_name(name=name),
-                    extension=Dart.extension,
                     lang_cls=Dart,
                     version=version,
                 )
@@ -145,7 +141,6 @@ def _ref_bindings() -> dict[Path, str | None]:
             name=variant_case.config.golden_name(
                 name=variant_case.golden_name
             ),
-            extension=Dart.extension,
             lang_cls=Dart,
             version=variant_case.variant.spec.language_version,
         )

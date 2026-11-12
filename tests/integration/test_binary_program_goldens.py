@@ -106,7 +106,6 @@ def test_binary_octet_goldens_execute(
     golden = make_golden_path(
         parent=case_dir,
         name=name,
-        extension=Python.extension,
         lang_cls=Python,
         version=version,
     )

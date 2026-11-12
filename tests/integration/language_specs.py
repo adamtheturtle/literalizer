@@ -76,7 +76,6 @@ def make_golden_path(
     *,
     parent: Path,
     name: str,
-    extension: str,
     lang_cls: literalizer.LanguageCls,
     version: enum.Enum,
 ) -> Path:
@@ -94,7 +93,7 @@ def make_golden_path(
     IDs and error messages.
     """
     version_tag = version.name.lower()
-    filename = f"{name}@{version_tag}{extension}"
+    filename = f"{name}@{version_tag}{lang_cls.extension}"
     golden = language_metadata(language_id=lang_cls.language_id).golden
     if golden.filename_lowercase:
         filename = filename.lower()

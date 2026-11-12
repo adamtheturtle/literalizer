@@ -76,7 +76,6 @@ def test_multiline_string_program_values(
     golden_path = make_golden_path(
         parent=input_info.path.parent,
         name=case.variant_name,
-        extension=case.variant.spec.extension,
         lang_cls=case.variant.lang_cls,
         version=spec.language_version,
     )

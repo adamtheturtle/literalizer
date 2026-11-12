@@ -133,7 +133,6 @@ def test_wrap_in_file_case_handles_stale_rejected_call_arg(
             ),
             effective_ref_case=None,
             lang_name="Bash",
-            lang_extension=Bash.extension,
             golden_path=golden_path,
             file_regression=file_regression,
             pytest_config=regeneration_config,

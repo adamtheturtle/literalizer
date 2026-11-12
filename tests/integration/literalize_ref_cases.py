@@ -801,7 +801,6 @@ def run_literalize_ref_golden_case(
     golden_path = make_golden_path(
         parent=input_path.parent,
         name=config.golden_name(name=golden_name),
-        extension=lang_cls.extension,
         lang_cls=lang_cls,
         version=version,
     )
@@ -905,7 +904,6 @@ def run_literalize_ref_golden_case(
             lang_cls=lang_cls,
             ref_case=ref_case,
         ),
-        extension=lang_cls.extension,
         golden_path=golden_path,
         file_regression=file_regression,
     )

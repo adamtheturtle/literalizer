@@ -213,7 +213,6 @@ class CallRendering:
         return make_golden_path(
             parent=cases_dir / self.config.case_dir_name,
             name=self.config.golden_name(name=self.golden_name),
-            extension=self.lang_cls.extension,
             lang_cls=self.lang_cls,
             version=self.spec.language_version,
         )
@@ -1288,7 +1287,6 @@ def run_wrap_in_file_case(
     input_info: CaseInput,
     effective_ref_case: literalizer.IdentifierCase | None,
     lang_name: str,
-    lang_extension: str,
     golden_path: Path,
     file_regression: FileRegressionFixture,
     pytest_config: pytest.Config,
@@ -1333,7 +1331,6 @@ def run_wrap_in_file_case(
         contents=_call_fixture_contents(
             code=wrap_result.code, spec=spec, config=config
         ),
-        extension=lang_extension,
         golden_path=golden_path,
         file_regression=file_regression,
     )
@@ -1768,7 +1765,6 @@ def _render_call_golden_case(
             input_info=input_info,
             effective_ref_case=effective_ref_case,
             lang_name=lang_cls.__name__,
-            lang_extension=lang_cls.extension,
             golden_path=golden_path,
             file_regression=file_regression,
             pytest_config=file_regression.request.config,
@@ -1801,7 +1797,6 @@ def _render_call_golden_case(
             contents=_call_fixture_contents(
                 code=bound.code, spec=spec, config=config
             ),
-            extension=lang_cls.extension,
             golden_path=golden_path,
             file_regression=file_regression,
         )
@@ -1896,7 +1891,6 @@ def _render_call_golden_case(
         )
     check_golden(
         contents=_call_fixture_contents(code=code, spec=spec, config=config),
-        extension=lang_cls.extension,
         golden_path=golden_path,
         file_regression=file_regression,
     )
