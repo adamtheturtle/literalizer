@@ -476,20 +476,12 @@ def build_variant_cases() -> list[VariantCase]:
             )
         )
 
-    modifier_inputs = {
-        case_dir_name: entry.context
-        for case_dir_name, entry in entries
-        if entry.axis == "modifiers"
-    }
-    modifier_sequence_inputs = {
-        entry.suffix.removeprefix("_"): case_dir_name
-        for case_dir_name, entry in entries
-        if entry.axis == "modifier_sequence_format"
-    }
-    cases.extend(
-        case
-        for case in build_modifier_variant_cases(
-            base_variants=tuple(
+    modifier_axes: tuple[
+        tuple[str, tuple[Variant, ...], dict[str, str]], ...
+    ] = (
+        (
+            "modifiers",
+            tuple(
                 compact_variant(
                     name=lang_cls.__name__,
                     spec=make_spec(
@@ -501,49 +493,39 @@ def build_variant_cases() -> list[VariantCase]:
                 for lang_cls in sorted_languages()
                 for version in lang_cls.VersionFormats
             ),
-            case_contexts=modifier_inputs,
-            sequence_case_dirs=modifier_sequence_inputs,
-        )
-        if selection_by_case[case.case_dir_name].admits_language(
-            lang_cls=case.variant.lang_cls,
-        )
+            {
+                entry.suffix.removeprefix("_"): case_dir_name
+                for case_dir_name, entry in entries
+                if entry.axis == "modifier_sequence_format"
+            },
+        ),
+        (
+            "record_modifiers",
+            tuple(variants_for_axis(axis_key="heterogeneous_strategy_record")),
+            {},
+        ),
+        (
+            "json_type_modifiers",
+            tuple(variants_for_axis(axis_key="json_type")),
+            {},
+        ),
     )
-
-    record_modifier_inputs = {
-        case_dir_name: entry.context
-        for case_dir_name, entry in entries
-        if entry.axis == "record_modifiers"
-    }
-    cases.extend(
-        case
-        for case in build_modifier_variant_cases(
-            base_variants=tuple(
-                variants_for_axis(axis_key="heterogeneous_strategy_record")
-            ),
-            case_contexts=record_modifier_inputs,
-            sequence_case_dirs={},
+    for axis, base_variants, sequence_case_dirs in modifier_axes:
+        cases.extend(
+            case
+            for case in build_modifier_variant_cases(
+                base_variants=base_variants,
+                case_contexts={
+                    case_dir_name: entry.context
+                    for case_dir_name, entry in entries
+                    if entry.axis == axis
+                },
+                sequence_case_dirs=sequence_case_dirs,
+            )
+            if selection_by_case[case.case_dir_name].admits_language(
+                lang_cls=case.variant.lang_cls,
+            )
         )
-        if selection_by_case[case.case_dir_name].admits_language(
-            lang_cls=case.variant.lang_cls,
-        )
-    )
-
-    json_modifier_inputs = {
-        case_dir_name: entry.context
-        for case_dir_name, entry in entries
-        if entry.axis == "json_type_modifiers"
-    }
-    cases.extend(
-        case
-        for case in build_modifier_variant_cases(
-            base_variants=tuple(variants_for_axis(axis_key="json_type")),
-            case_contexts=json_modifier_inputs,
-            sequence_case_dirs={},
-        )
-        if selection_by_case[case.case_dir_name].admits_language(
-            lang_cls=case.variant.lang_cls,
-        )
-    )
 
     json_case_dir_name, _ = one_special_input(
         entries=entries,
