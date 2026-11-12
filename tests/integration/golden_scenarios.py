@@ -17,8 +17,9 @@ test body there.
 
 import dataclasses
 import enum
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
@@ -210,6 +211,17 @@ _VARIANT_MAPPING_KEY_SKIPS: SkipPolicy = SkipPolicy(
 )
 
 
+@runtime_checkable
+class _ScenarioBuilder(Protocol):
+    """A scenario builder accepting one language by keyword."""
+
+    def __call__(
+        self, *, lang_cls: literalizer.LanguageCls
+    ) -> tuple[GoldenRendering, ...]:
+        """Build the renderings selected for one language."""
+        ...
+
+
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class GoldenScenario:
     """A named family of golden renderings sharing one runner.
@@ -219,7 +231,7 @@ class GoldenScenario:
     """
 
     name: str
-    build: Callable[..., tuple[GoldenRendering, ...]]
+    build: _ScenarioBuilder
 
 
 @beartype
