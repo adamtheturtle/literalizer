@@ -44,7 +44,6 @@ from .case_manifests import (
     case_input,
     heterogeneous_strategy_role,
     load_case_manifests,
-    manifest_admits_language,
 )
 from .language_metadata import language_metadata
 from .language_specs import (
@@ -65,7 +64,7 @@ def _selected_languages(
     return [
         lang_cls
         for lang_cls in sorted_languages()
-        if manifest_admits_language(manifest=manifest, lang_cls=lang_cls)
+        if manifest.selection.admits_language(lang_cls=lang_cls)
     ]
 
 
@@ -641,13 +640,11 @@ def build_no_variable_form_cases() -> list[NoVariableFormCase]:
     for entry_case_dir_name in case_dir_names_for_role(
         cases_dir=_CASES_DIR, role=NO_VARIABLE_FORM_ROLE
     ):
+        selection = manifests[entry_case_dir_name].selection
         for entry_lang_cls in sorted_languages():
             if (
                 entry_lang_cls.supports_no_variable_wrap_in_file
-                and manifest_admits_language(
-                    manifest=manifests[entry_case_dir_name],
-                    lang_cls=entry_lang_cls,
-                )
+                and selection.admits_language(lang_cls=entry_lang_cls)
             ):
                 if entry_case_dir_name == "scalar_int":
                     effective_name = (

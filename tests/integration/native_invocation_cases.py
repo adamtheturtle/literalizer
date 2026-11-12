@@ -9,7 +9,6 @@ from literalizer.languages import ALL_LANGUAGES
 from .case_manifests import (
     CaseManifest,
     load_case_manifests,
-    manifest_admits_language,
 )
 from .language_specs import make_golden_path
 
@@ -34,6 +33,6 @@ def native_invocation_cases(
         if manifest.native_invocation is not None
         for language in ALL_LANGUAGES
         if language.supports_native_invocations
-        and manifest_admits_language(manifest=manifest, lang_cls=language)
+        and manifest.selection.admits_language(lang_cls=language)
         for version in language.VersionFormats
     ]
