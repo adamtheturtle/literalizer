@@ -13,7 +13,8 @@ from .case_manifests import (
     case_dir_names_for_role,
     case_input,
 )
-from .golden_scenarios import GoldenRendering, golden_groups
+from .golden_renderings import GoldenRendering
+from .golden_scenarios import golden_groups
 from .literalize_rendering import literalize_rendering
 
 

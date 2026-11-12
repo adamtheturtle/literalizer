@@ -8,7 +8,8 @@ from pydantic import BaseModel, TypeAdapter
 
 from literalizer.languages import Rust
 
-from .golden_scenarios import GoldenRendering, golden_groups
+from .golden_renderings import GoldenRendering
+from .golden_scenarios import golden_groups
 from .language_specs import make_golden_path
 
 

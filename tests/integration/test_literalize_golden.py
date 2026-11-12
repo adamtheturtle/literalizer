@@ -33,9 +33,9 @@ from .golden_checks import (
     cleanup_stale_golden,
     format_consumer,
 )
+from .golden_renderings import GoldenRendering
 from .golden_scenarios import (
     GoldenGroup,
-    GoldenRendering,
     golden_groups,
 )
 from .language_metadata import language_metadata
