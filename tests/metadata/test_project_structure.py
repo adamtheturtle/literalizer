@@ -5,7 +5,6 @@ from typing import Annotated
 
 import pytest
 from pydantic import AliasPath, BaseModel, Field
-from pyprojroot import find_root, has_file
 from ruamel.yaml import YAML
 
 from literalizer import LanguageCls
@@ -42,10 +41,7 @@ class _LintWorkflow(BaseModel):
 def fixture_lint_workflow() -> _LintWorkflow:
     """Parse ``.github/workflows/lint.yml`` once per session."""
     lint_yml = (
-        find_root(
-            criterion=has_file(file="pyproject.toml"),
-            start=Path(__file__).resolve(),
-        )
+        Path(__file__).resolve().parents[2]
         / ".github"
         / "workflows"
         / "lint.yml"
