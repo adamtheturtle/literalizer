@@ -1,7 +1,7 @@
 schema_version = 1
 
 [golden]
-fixture_module_name_template = "Fixture_{parent}_{stem}"
+per_fixture_module_name = true
 
 [variants]
 record = ["empty_dict_field", "field_type_split", "keyword_field"]

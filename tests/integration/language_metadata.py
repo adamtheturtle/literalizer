@@ -80,8 +80,8 @@ class GoldenPolicy(  # noqa: NOD001
     )
     """Name segment the collection-layout goldens use."""
 
-    fixture_module_name_template: str | None = None
-    """Per-fixture module name, formatted with ``parent`` and ``stem``."""
+    per_fixture_module_name: bool = False
+    """Whether fixture paths supply unique module names."""
 
     call_seed_declaration_style: Annotated[str, Field(min_length=1)] | None = (
         None

@@ -2,4 +2,4 @@ schema_version = 1
 
 [golden]
 call_seed_declaration_style = "VAR"
-fixture_module_name_template = "Fixture_{parent}_{stem}"
+per_fixture_module_name = true

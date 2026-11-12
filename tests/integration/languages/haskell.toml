@@ -1,7 +1,7 @@
 schema_version = 1
 
 [golden]
-fixture_module_name_template = "Fixture_{parent}_{stem}"
+per_fixture_module_name = true
 
 [variants.non_default_kwargs]
 type_name = "JsonVal"

@@ -21,16 +21,14 @@ from .language_metadata import language_metadata
 
 
 @beartype
-def _logical_stem(*, path: Path) -> str:
-    """Return *path*'s stem with any ``@version`` suffix removed.
+def fixture_module_name(*, golden_path: Path) -> str:
+    """Return a fixture's module name without its version suffix.
 
-    Per-fixture module names embed the stem in the generated source
-    file (``-module(...)``, ``module Fixture_...``).  Version-tagged
-    variants live alongside the base file but identifiers must remain
-    stable across both forms so the same source can resolve to either
-    path.
+    Native consumers and language wrappers share this identifier across
+    every supported version of the same fixture.
     """
-    return path.stem.rsplit(sep="@", maxsplit=1)[0]
+    stem = golden_path.stem.rsplit(sep="@", maxsplit=1)[0]
+    return f"Fixture_{golden_path.parent.name}_{stem}"
 
 
 @beartype
@@ -41,13 +39,9 @@ def with_per_fixture_module_name(
 ) -> literalizer.Language:
     """Apply the test-owned per-fixture module naming policy."""
     golden = language_metadata(language_id=spec.language_id).golden
-    template = golden.fixture_module_name_template
-    if template is None:
+    if not golden.per_fixture_module_name:
         return spec
-    module_name = template.format(
-        parent=golden_path.parent.name,
-        stem=_logical_stem(path=golden_path),
-    )
+    module_name = fixture_module_name(golden_path=golden_path)
     if golden.fixture_module_name_lowercase:
         module_name = module_name.lower()
     return dataclasses.replace(spec, module_name=module_name)
