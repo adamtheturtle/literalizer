@@ -77,8 +77,8 @@ To exercise only its default version, a typed axis can declare ``per_version = f
 The orphan check uses those same effective specs for ordinary and call variants, so a compiling file still needs a rendering that compares its contents.
 
 The ``literalize`` runner and orphan check share the rendering definitions in :file:`tests/integration/golden_scenarios.py`.
-Adding a scenario to that catalogue also adds its fixtures to the inventory; no separate orphan-check registration is needed.
-The shared records in :file:`tests/integration/golden_renderings.py` keep spec and path construction separate from the scenario catalogue.
+Adding a scenario to that list also adds its fixtures to the inventory; no separate orphan-check registration is needed.
+The shared records in :file:`tests/integration/golden_renderings.py` keep spec and path construction separate from the scenario list.
 Each ``GoldenRendering`` supplies its effective ``specs`` and versioned ``golden_path``.
 
 Default and variant ``literalize_call`` cases share the ``call_golden_cases`` collection in :file:`tests/integration/call_variant_cases.py`.
