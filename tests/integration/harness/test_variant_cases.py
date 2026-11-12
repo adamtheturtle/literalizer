@@ -14,7 +14,6 @@ from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import (
     CaseManifestError,
     VariantCapabilityName,
-    case_dir_names_for_variant_axis,
     load_case_manifest,
     load_case_manifests,
 )
@@ -22,6 +21,9 @@ from tests.integration.custom_languages import (
     variants_for_custom_language_axis,
 )
 from tests.integration.language_specs import make_spec, sorted_languages
+from tests.integration.manifest_queries import (
+    case_dir_names_for_variant_axis,
+)
 from tests.integration.variant_cases import (
     build_multiline_string_context_cases,
     build_variant_cases,

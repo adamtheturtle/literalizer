@@ -52,8 +52,6 @@ from .case_manifests import (
     KEBAB_NEW_VARIABLE_OWNER,
     PRIMED_NEW_VARIABLE_OWNER,
     OwnerName,
-    case_dir_name_for_owner,
-    case_manifests_by_name,
     variable_form_for_context,
 )
 from .golden_batches import (
@@ -77,6 +75,10 @@ from .language_specs import (
     find_redefinition_styles,
     make_spec,
     sorted_languages,
+)
+from .manifest_queries import (
+    case_dir_name_for_owner,
+    case_manifests_by_name,
 )
 from .variant_cases import group_variant_cases_by_language
 

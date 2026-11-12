@@ -12,13 +12,15 @@ from tests.integration.case_manifests import (
     INDENT_ROLE,
     KEBAB_NEW_VARIABLE_OWNER,
     CaseManifestError,
+    case_input,
+    load_case_manifest,
+)
+from tests.integration.manifest_queries import (
     case_dir_name_for_owner,
     case_dir_name_for_role,
     case_dir_names_for_role,
     case_dir_names_for_variant_axis,
-    case_input,
     case_manifests_by_name,
-    load_case_manifest,
 )
 from tests.integration.variant_cases import (
     build_variant_cases,
