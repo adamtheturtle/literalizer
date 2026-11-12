@@ -24,19 +24,8 @@ from typing import Protocol, runtime_checkable
 from beartype import beartype
 
 import literalizer
-from literalizer.exceptions import (
-    ExcessiveNestingError,
-    ExistingVariableNotSelfContainedError,
-    HeterogeneousCollectionError,
-    IncompatibleFormatsError,
-    InvalidDictKeyError,
-    NullInCollectionError,
-    UnrepresentableEmptyDictError,
-    UnrepresentableInputError,
-    UnrepresentableIntegerError,
-    UnrepresentableSpecialFloatError,
-)
 
+from . import scenario_skips
 from .case_discovery import (
     build_heterogeneous_strategy_combined_cases,
     build_indent_cases,
@@ -64,8 +53,6 @@ from .golden_batches import (
 from .golden_checks import (
     NO_SKIPS,
     SkipPolicy,
-    SkipReason,
-    SkipReasons,
 )
 from .golden_renderings import (
     GoldenRendering,
@@ -85,129 +72,6 @@ _CASES_DIR = Path(__file__).parent / "cases"
 _COMBINED_VARIABLE_FORM = literalizer.BothVariableForms(
     name="my_data",
     modifiers=frozenset(),
-)
-
-
-_COMMON_SKIP_REASONS: SkipReasons = (
-    SkipReason(
-        error=ExcessiveNestingError,
-        reason="exceeds the target's safe collection nesting limit",
-        unlink=True,
-    ),
-    SkipReason(
-        error=ExistingVariableNotSelfContainedError,
-        reason="complete file cannot contain an undeclared existing variable",
-        unlink=True,
-    ),
-    SkipReason(
-        error=UnrepresentableIntegerError,
-        reason="cannot represent integer in this input",
-        unlink=True,
-    ),
-    SkipReason(
-        error=UnrepresentableEmptyDictError,
-        reason="cannot represent an empty dict",
-        unlink=True,
-    ),
-)
-
-LANGUAGE_SKIP_REASONS: SkipReasons = (
-    *_COMMON_SKIP_REASONS,
-    SkipReason(
-        error=HeterogeneousCollectionError,
-        reason="cannot represent this heterogeneous input",
-        unlink=True,
-    ),
-    SkipReason(
-        error=NullInCollectionError,
-        reason="cannot represent null in a collection",
-        unlink=True,
-    ),
-    SkipReason(
-        error=UnrepresentableInputError,
-        reason="cannot represent this input",
-        unlink=True,
-    ),
-)
-
-VARIANT_SKIP_REASONS: SkipReasons = (
-    *_COMMON_SKIP_REASONS,
-    SkipReason(
-        error=NullInCollectionError,
-        reason="rejects null elements in this input",
-        unlink=False,
-    ),
-    SkipReason(
-        error=HeterogeneousCollectionError,
-        reason="cannot represent this heterogeneous input",
-        unlink=True,
-    ),
-    SkipReason(
-        error=IncompatibleFormatsError,
-        reason="combination cannot represent this input",
-        unlink=True,
-    ),
-    SkipReason(
-        error=UnrepresentableSpecialFloatError,
-        reason="cannot represent special floats in this input",
-        unlink=True,
-    ),
-    SkipReason(
-        error=UnrepresentableInputError,
-        reason="cannot represent this input",
-        unlink=True,
-    ),
-)
-
-
-@beartype
-def _reasons_for(
-    *,
-    reasons: SkipReasons,
-    errors: tuple[type[Exception], ...],
-) -> SkipReasons:
-    """Return the entries of *reasons* covering exactly *errors*.
-
-    A scenario that should skip on fewer errors than a table lists
-    narrows the table rather than restating a reason, so the message
-    for an error stays written once.
-    """
-    return tuple(entry for entry in reasons if entry.error in errors)
-
-
-# Rendering the paired fixture under a non-default heterogeneous
-# strategy skips only where the strategy cannot represent it; every
-# other error is a real failure, so the table is narrowed rather than
-# reused whole.
-_STRATEGY_SKIP_REASONS: SkipReasons = _reasons_for(
-    reasons=LANGUAGE_SKIP_REASONS,
-    errors=(HeterogeneousCollectionError,),
-)
-
-
-LANGUAGE_SKIPS: SkipPolicy = SkipPolicy(
-    reasons=LANGUAGE_SKIP_REASONS,
-    suffix="",
-)
-"""An input the language itself cannot represent skips."""
-
-VARIANT_SKIPS: SkipPolicy = SkipPolicy(
-    reasons=VARIANT_SKIP_REASONS,
-    suffix="",
-)
-"""An input the variant's spec cannot represent skips."""
-
-
-_VARIANT_MAPPING_KEY_SKIPS: SkipPolicy = SkipPolicy(
-    reasons=(
-        *VARIANT_SKIP_REASONS,
-        SkipReason(
-            error=InvalidDictKeyError,
-            reason="cannot represent a mapping key",
-            unlink=True,
-        ),
-    ),
-    suffix=VARIANT_SKIPS.suffix,
 )
 
 
@@ -271,7 +135,7 @@ def _base_renderings(
                     ),
                     wrap_in_file=True,
                 ),
-                skip=LANGUAGE_SKIPS,
+                skip=scenario_skips.LANGUAGE_SKIPS,
             )
         )
     return tuple(renderings)
@@ -398,7 +262,7 @@ def _combined_renderings(
                 "declaration_style": combined_case.declaration_style,
             },
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
-            skip=LANGUAGE_SKIPS,
+            skip=scenario_skips.LANGUAGE_SKIPS,
         )
         for combined_case in grouped.get(lang_cls, [])
     )
@@ -437,9 +301,9 @@ def _variant_renderings(
             initialize_variable=variant_case.variant.initialize_variable,
             apply_fixture_module_name=variant_case.apply_fixture_module_name,
             skip=(
-                _VARIANT_MAPPING_KEY_SKIPS
+                scenario_skips.VARIANT_MAPPING_KEY_SKIPS
                 if "InvalidDictKeyError" in variant_case.expected_errors
-                else VARIANT_SKIPS
+                else scenario_skips.VARIANT_SKIPS
             ),
         )
         for variant_case in grouped.get(lang_cls, [])
@@ -516,7 +380,7 @@ def _heterogeneous_strategy_renderings(
             },
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
             skip=SkipPolicy(
-                reasons=_STRATEGY_SKIP_REASONS,
+                reasons=scenario_skips.STRATEGY_SKIP_REASONS,
                 suffix=f" under {case.heterogeneous_strategy.name}",
             ),
         )
@@ -554,7 +418,7 @@ def _pre_indent_renderings(
                 wrap_in_file=True,
             ),
             skip=SkipPolicy(
-                reasons=LANGUAGE_SKIP_REASONS,
+                reasons=scenario_skips.LANGUAGE_SKIP_REASONS,
                 suffix=" at non-zero pre-indent",
             ),
         )
