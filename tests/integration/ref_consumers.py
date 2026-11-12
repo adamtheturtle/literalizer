@@ -20,7 +20,7 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
 )
 
-from .call_cases import call_stub_spec
+from .call_stubs import call_stub_spec
 from .case_manifests import (
     RefCaseSpec,
     RefConsumerSpec,

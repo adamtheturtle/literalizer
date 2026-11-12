@@ -20,7 +20,6 @@ import literalizer
 from literalizer._enums import enum_payload
 from literalizer._formatters.preamble_roles import import_preamble
 from literalizer._language import (
-    CallStubDeclarations,
     RenderedCallStub,
 )
 from literalizer._literalize import (
@@ -47,6 +46,7 @@ from .call_expectations import (
     skip_unsupported_wrapper,
     uses_bound_ref_wrapper,
 )
+from .call_stubs import argument_values_for_stub, target_call_declarations
 from .call_transforms import (
     call_transform_for_case,
     followup_result_slots,
@@ -160,23 +160,6 @@ _DECLARATION_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=CallArgNotSupportedError,
             reason="rejected call arg",
-            unlink=True,
-        ),
-    ),
-    suffix="",
-)
-
-# The typed preamble stub restates the call's argument types, which a
-# language with no type for a heterogeneous collection cannot write even
-# where the call itself renders.
-_PREAMBLE_STUB_SKIPS: SkipPolicy = SkipPolicy(
-    reasons=(
-        SkipReason(
-            error=HeterogeneousCollectionError,
-            reason=(
-                "cannot represent this heterogeneous input in its typed "
-                "call stub"
-            ),
             unlink=True,
         ),
     ),
@@ -672,7 +655,7 @@ def _run_call_with_declarations(
                 },
                 ref_key=config.ref_key,
             )
-        stub_argument_values = _arg_values_for_stub(
+        stub_argument_values = argument_values_for_stub(
             source_data=stub_source_data,
             per_element=config.per_element,
             seeded_feedback=seeded_feedback,
@@ -690,91 +673,6 @@ def _run_call_with_declarations(
         result=result,
         seeded_feedback=seeded_feedback,
         stub_argument_values=stub_argument_values,
-    )
-
-
-@beartype
-def _arg_values_for_stub(
-    *,
-    source_data: ParsedValue,
-    per_element: bool,
-    seeded_feedback: bool,
-    seed_argument_values: Sequence[ParsedValue],
-) -> Sequence[ParsedValue]:
-    """Return argument rows for stubs, preserving a whole list as
-    one argument.
-
-    A per-element call always yields a list ``source_data``; the
-    ``isinstance`` check narrows the type for the static checker.
-    """
-    if seeded_feedback:
-        # The synthetic return carrier becomes an argument in later calls.
-        # Original argument metadata cannot type every use of the callee.
-        return ()
-    if per_element and isinstance(source_data, list):
-        return (*seed_argument_values, *source_data)
-    return (*seed_argument_values, [source_data])
-
-
-@beartype
-def call_stub_spec(
-    *, spec: literalizer.Language, argument_values: Sequence[ParsedValue]
-) -> literalizer.Language:
-    """Infer consumer types without changing the composer's inference
-    state.
-    """
-    stub_spec = dataclasses.replace(spec)
-    compute_record_shapes = (
-        stub_spec.heterogeneous_behavior.compute_record_shapes
-    )
-    if compute_record_shapes is not None:
-        _ = compute_record_shapes(list(argument_values))
-    return stub_spec
-
-
-@beartype
-def _target_call_declarations(
-    *,
-    config: CallCaseSpec,
-    spec: literalizer.Language,
-    argument_values: Sequence[ParsedValue],
-    golden_path: Path,
-    file_regression: FileRegressionFixture,
-    lang_name: str,
-) -> CallStubDeclarations:
-    """Declare synthetic targets unless the case uses a built-in."""
-    if not config.include_target_stub:
-        return CallStubDeclarations(body=(), class_scope=(), file_scope=())
-    stub_return = (
-        literalizer.StubReturn.VALUE
-        if config.has_call_transform or config.variable_form is not None
-        else literalizer.StubReturn.VOID
-    )
-    stub_spec = call_stub_spec(spec=spec, argument_values=argument_values)
-    target_parts = tuple(config.target_function.split(sep="."))
-    body = stub_spec.format_call_stub(
-        target_parts, config.parameter_names, stub_return, argument_values
-    )
-    class_scope = stub_spec.format_call_class_scope_stub(
-        target_parts, config.parameter_names, stub_return, argument_values
-    )
-    file_scope: list[str] = []
-    with GoldenSkips(
-        policy=_PREAMBLE_STUB_SKIPS,
-        golden_path=golden_path,
-        prefix=lang_name,
-        config=file_regression.request.config,
-    ):
-        file_scope.extend(
-            stub_spec.format_call_preamble_stub(
-                target_parts,
-                config.parameter_names,
-                stub_return,
-                argument_values,
-            ),
-        )
-    return CallStubDeclarations(
-        body=body, class_scope=class_scope, file_scope=tuple(file_scope)
     )
 
 
@@ -940,7 +838,7 @@ def _render_call_golden_case(
     decl_results = call_outcome.decl_results
     result = call_outcome.result
     # Build stub declarations for undefined names.
-    target_stubs = _target_call_declarations(
+    target_stubs = target_call_declarations(
         config=config,
         spec=spec,
         argument_values=call_outcome.stub_argument_values,
