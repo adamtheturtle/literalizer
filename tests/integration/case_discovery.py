@@ -13,7 +13,7 @@ import json
 import math
 import tomllib
 from pathlib import Path
-from typing import assert_never
+from typing import Literal, assert_never
 
 import json5_document
 import jsonc_document
@@ -337,35 +337,40 @@ def cases_with_special_floats(
 @functools.cache
 @beartype
 def discover_cases(
-    cases_dir: Path,
+    *, cases_dir: Path, suite: Literal["base", "combined"]
 ) -> list[tuple[str, literalizer.LanguageCls]]:
-    """Return ``(case_name, lang_cls)`` tuples."""
+    """Select representable suite inputs before expanding render
+    options.
+    """
     non_trivial_key_cases = cases_with_non_trivial_dict_keys(
         cases_dir=cases_dir,
     )
     special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
     cases: list[tuple[str, literalizer.LanguageCls]] = []
     for manifest in load_case_manifests(cases_dir=cases_dir):
-        if "base" not in manifest.suites:
+        if suite not in manifest.suites:
             continue
-        case_dir = manifest.case_dir
-        non_trivial = case_dir.name in non_trivial_key_cases
-        special_float = case_dir.name in special_float_cases
+        name = manifest.case_dir.name
         for lang_cls in _selected_languages(manifest=manifest):
-            if case_dir.name in cases_with_invalid_dict_keys(
+            if name in cases_with_invalid_dict_keys(
                 cases_dir=cases_dir,
                 key_syntax=make_spec(
                     lang_cls=lang_cls
                 ).dict_format_config.key_syntax,
             ):
                 continue
-            if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
-                lang_cls=lang_cls
+            if name in non_trivial_key_cases and (
+                _lang_raises_for_non_printable_ascii_dict_keys(
+                    lang_cls=lang_cls
+                )
             ):
                 continue
-            if special_float and not lang_cls.supports_special_floats:
+            if (
+                name in special_float_cases
+                and not lang_cls.supports_special_floats
+            ):
                 continue
-            cases.append((case_dir.name, lang_cls))
+            cases.append((name, lang_cls))
     return cases
 
 
@@ -385,7 +390,9 @@ def group_cases_by_language(
     overhead on slower CI runners (notably Windows).
     """
     groups: dict[literalizer.LanguageCls, list[str]] = {}
-    for case_name, lang_cls in discover_cases(cases_dir=cases_dir):
+    for case_name, lang_cls in discover_cases(
+        cases_dir=cases_dir, suite="base"
+    ):
         groups.setdefault(lang_cls, []).append(case_name)
     return groups
 
@@ -411,50 +418,30 @@ def discover_combined_cases(
     """Return combined test cases for all redefinition-supporting
     styles.
     """
-    non_trivial_key_cases = cases_with_non_trivial_dict_keys(
-        cases_dir=cases_dir,
-    )
-    special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
     cases: list[CombinedCase] = []
-    for manifest in load_case_manifests(cases_dir=cases_dir):
-        if "combined" not in manifest.suites:
-            continue
-        case_dir = manifest.case_dir
-        non_trivial = case_dir.name in non_trivial_key_cases
-        special_float = case_dir.name in special_float_cases
-        for lang_cls in _selected_languages(manifest=manifest):
-            lang_name = lang_cls.__name__
-            spec = make_spec(lang_cls=lang_cls)
-            if case_dir.name in cases_with_invalid_dict_keys(
-                cases_dir=cases_dir,
-                key_syntax=spec.dict_format_config.key_syntax,
-            ):
-                continue
-            if non_trivial and _lang_raises_for_non_printable_ascii_dict_keys(
-                lang_cls=lang_cls
-            ):
-                continue
-            if special_float and not lang_cls.supports_special_floats:
-                continue
-            redef_styles = find_redefinition_styles(spec=spec)
-            for style in redef_styles:
-                if style is redef_styles[0]:
-                    golden_name = f"{lang_name}_combined"
-                else:
-                    style_suffix = style.name.lower()
-                    golden_name = (
-                        f"{lang_name}_combined"
-                        f"_declaration_style_{style_suffix}"
-                    )
-                cases.append(
-                    CombinedCase(
-                        case_name=case_dir.name,
-                        lang_name=lang_name,
-                        lang_cls=lang_cls,
-                        declaration_style=style,
-                        golden_file_name=golden_name,
-                    )
+    for case_name, lang_cls in discover_cases(
+        cases_dir=cases_dir, suite="combined"
+    ):
+        lang_name = lang_cls.__name__
+        spec = make_spec(lang_cls=lang_cls)
+        redef_styles = find_redefinition_styles(spec=spec)
+        for style in redef_styles:
+            if style is redef_styles[0]:
+                golden_name = f"{lang_name}_combined"
+            else:
+                style_suffix = style.name.lower()
+                golden_name = (
+                    f"{lang_name}_combined_declaration_style_{style_suffix}"
                 )
+            cases.append(
+                CombinedCase(
+                    case_name=case_name,
+                    lang_name=lang_name,
+                    lang_cls=lang_cls,
+                    declaration_style=style,
+                    golden_file_name=golden_name,
+                )
+            )
     return cases
 
 
