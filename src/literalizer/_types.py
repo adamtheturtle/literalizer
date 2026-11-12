@@ -28,8 +28,8 @@ class CallStubData(list[Value]):
     ) -> None:
         """Retain call-result slots and keyword conventions."""
         super().__init__(data)
-        self.keyword_arguments = keyword_arguments
-        self.call_result_slots = call_result_slots
+        self.keyword_arguments: bool = keyword_arguments
+        self.call_result_slots: frozenset[int] = call_result_slots
 
 
 @beartype
@@ -57,9 +57,9 @@ class CallPreambleData(list[Value]):
     ) -> None:
         """Store the original preamble data and rendered arguments."""
         super().__init__(data)
-        self.argument_values = argument_values
-        self.argument_slots = argument_slots
-        self.argument_types = argument_types
+        self.argument_values: tuple[Value, ...] = argument_values
+        self.argument_slots: tuple[list[Value], ...] = argument_slots
+        self.argument_types: Mapping[int, str | None] = argument_types
 
 
 @runtime_checkable

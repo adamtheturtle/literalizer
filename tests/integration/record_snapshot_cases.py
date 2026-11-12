@@ -24,7 +24,7 @@ class RecordSnapshotCase(BaseModel, extra="forbid", frozen=True):
     consumer_template: str
 
 
-RECORD_SNAPSHOT_CASES = TypeAdapter(
+RECORD_SNAPSHOT_CASES: tuple[RecordSnapshotCase, ...] = TypeAdapter(
     type=tuple[RecordSnapshotCase, ...]
 ).validate_python(
     tomllib.loads(

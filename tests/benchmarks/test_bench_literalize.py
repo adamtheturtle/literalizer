@@ -52,7 +52,7 @@ from literalizer.languages import (
 )
 from tests.integration.parsed_values import ParsedValue, Scalar
 
-PYTHON = Python(
+PYTHON: Language = Python(
     date_format=Python.date_formats.PYTHON,
     datetime_format=Python.datetime_formats.PYTHON,
     bytes_format=Python.bytes_formats.HEX,
@@ -60,7 +60,7 @@ PYTHON = Python(
     set_format=Python.set_formats.SET,
     variable_type_hints=Python.variable_type_hints_formats.NEVER,
 )
-RUST_JSON_VALUE = Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)
+RUST_JSON_VALUE: Language = Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)
 
 
 def _build_yaml_source(*, n_records: int, with_comments: bool) -> str:

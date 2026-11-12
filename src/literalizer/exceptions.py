@@ -27,7 +27,7 @@ class LiteralizerError(Exception):
         data.
         """
         super().__init__(message)
-        self.path = path
+        self.path: InputPath | None = path
 
 
 @beartype
@@ -42,8 +42,8 @@ class UnsupportedOptionError(LiteralizerError):
     def __init__(self, *, language_name: str, option: str) -> None:
         """Create an ``UnsupportedOptionError``."""
         super().__init__(f"{language_name} does not support option {option!r}")
-        self.language_name = language_name
-        self.option = option
+        self.language_name: str = language_name
+        self.option: str = option
 
 
 @beartype
@@ -66,8 +66,8 @@ class ParseError(LiteralizerError):
     ) -> None:
         """Create a parse error with optional source coordinates."""
         super().__init__(message)
-        self.line = line
-        self.column = column
+        self.line: int | None = line
+        self.column: int | None = column
 
 
 class JSONParseError(ParseError):
@@ -152,9 +152,9 @@ class TargetScalarCollisionError(UnrepresentableInputError):
             f"{language_name} renders distinct collection scalars "
             f"{first!r} and {second!r} identically as {rendered!r}"
         )
-        self.first = first
-        self.second = second
-        self.rendered = rendered
+        self.first: object = first
+        self.second: object = second
+        self.rendered: str = rendered
 
 
 @beartype
@@ -175,8 +175,8 @@ class UnrepresentableStringError(UnrepresentableInputError):
             f"{language_name} string literals cannot represent "
             f"{character_name}"
         )
-        self.language_name = language_name
-        self.character_name = character_name
+        self.language_name: str = language_name
+        self.character_name: str = character_name
 
 
 @beartype
@@ -189,8 +189,8 @@ class UnrepresentableNullError(UnrepresentableInputError):
             f"{language_name} cannot represent null distinctly from "
             f"{conflated_value}"
         )
-        self.language_name = language_name
-        self.conflated_value = conflated_value
+        self.language_name: str = language_name
+        self.conflated_value: str = conflated_value
 
 
 class HeterogeneousCollectionError(LiteralizerError):
@@ -318,7 +318,7 @@ class TupleArityNotRepresentableError(HeterogeneousCollectionError):
             f"a heterogeneous scalar array of {arity} elements has no "
             f"native fixed-size tuple in the target language"
         )
-        self.arity = arity
+        self.arity: int = arity
 
 
 class NullInCollectionError(LiteralizerError):
@@ -352,8 +352,8 @@ class ParameterCountMismatchError(LiteralizerError):
         super().__init__(
             f"Expected {expected} parameters but got {got} values"
         )
-        self.expected = expected
-        self.got = got
+        self.expected: int = expected
+        self.got: int = got
 
 
 @beartype
@@ -368,7 +368,7 @@ class CallsNotSupportedByLanguageError(LiteralizerError):
     def __init__(self, *, language_name: str) -> None:
         """Create a ``CallsNotSupportedByLanguageError``."""
         super().__init__(f"{language_name} has no function call syntax")
-        self.language_name = language_name
+        self.language_name: str = language_name
 
 
 @beartype
@@ -386,7 +386,7 @@ class CallsNotSupportedByToolError(LiteralizerError):
             f"literalizer does not support function call rendering "
             f"for {language_name}"
         )
-        self.language_name = language_name
+        self.language_name: str = language_name
 
 
 @beartype
@@ -409,8 +409,8 @@ class CallArgNotSupportedError(LiteralizerError):
             f"{language_name} cannot accept this value as a call "
             f"argument: {reason}"
         )
-        self.language_name = language_name
-        self.reason = reason
+        self.language_name: str = language_name
+        self.reason: str = reason
 
 
 class IncompatibleFormatsError(LiteralizerError):
@@ -453,8 +453,8 @@ class InvalidCppRawStringDelimiterError(LiteralizerError, ValueError):
             "Cpp multiline_raw_string_delimiter_base "
             f"{delimiter!r} is invalid: {reason}"
         )
-        self.delimiter = delimiter
-        self.reason = reason
+        self.delimiter: str = delimiter
+        self.reason: str = reason
 
 
 @beartype
@@ -477,9 +477,9 @@ class ReservedVariableNameError(LiteralizerError):
             f"{language_name} cannot use {name_source} name "
             f"{variable_name!r}: it is a reserved identifier"
         )
-        self.language_name = language_name
-        self.name_source = name_source
-        self.variable_name = variable_name
+        self.language_name: str = language_name
+        self.name_source: str = name_source
+        self.variable_name: str = variable_name
 
 
 @beartype
@@ -503,9 +503,9 @@ class InvalidNewVariableNameError(LiteralizerError):
             f"{language_name} cannot use {name_source} name "
             f"{variable_name!r}: it is not a valid identifier"
         )
-        self.language_name = language_name
-        self.name_source = name_source
-        self.variable_name = variable_name
+        self.language_name: str = language_name
+        self.name_source: str = name_source
+        self.variable_name: str = variable_name
 
 
 @beartype
@@ -518,8 +518,8 @@ class InvalidModuleNameError(LiteralizerError):
             f"{language_name} cannot use module_name {module_name!r}: "
             "it is not a valid identifier"
         )
-        self.language_name = language_name
-        self.module_name = module_name
+        self.language_name: str = language_name
+        self.module_name: str = module_name
 
 
 @beartype
@@ -540,9 +540,9 @@ class InvalidCallParameterNameError(LiteralizerError):
             f"{language_name} cannot use call parameter "
             f"{parameter_name!r}: {reason}"
         )
-        self.language_name = language_name
-        self.parameter_name = parameter_name
-        self.reason = reason
+        self.language_name: str = language_name
+        self.parameter_name: str = parameter_name
+        self.reason: str = reason
 
 
 @beartype
@@ -557,9 +557,9 @@ class InvalidCallTargetError(LiteralizerError):
             f"{language_name} cannot use call target "
             f"{target_function!r}: {reason}"
         )
-        self.language_name = language_name
-        self.target_function = target_function
-        self.reason = reason
+        self.language_name: str = language_name
+        self.target_function: str = target_function
+        self.reason: str = reason
 
 
 class InvalidRenderArgumentError(LiteralizerError, ValueError):
@@ -576,8 +576,8 @@ class InputRootNotMappingError(InvalidRenderArgumentError):
             f"input_root_key={input_root_key!r} requires the parsed input "
             f"root to be a mapping, got {root_type.__name__}"
         )
-        self.input_root_key = input_root_key
-        self.root_type = root_type
+        self.input_root_key: str = input_root_key
+        self.root_type: type = root_type
 
 
 @beartype
@@ -590,7 +590,7 @@ class InputRootKeyNotFoundError(InvalidRenderArgumentError):
             f"input_root_key={input_root_key!r} does not exist in the "
             "parsed input root"
         )
-        self.input_root_key = input_root_key
+        self.input_root_key: str = input_root_key
 
 
 @beartype
@@ -603,7 +603,7 @@ class InvalidValueInputError(InvalidRenderArgumentError):
             f"{argument_name} must contain an acyclic value within the "
             "supported nesting depth"
         )
-        self.argument_name = argument_name
+        self.argument_name: str = argument_name
 
 
 @beartype
@@ -615,7 +615,7 @@ class BoundRefOutputCollisionError(InvalidRenderArgumentError):
         super().__init__(
             f"bound_refs name {name!r} collides with the output variable"
         )
-        self.name = name
+        self.name: str = name
 
 
 @beartype
@@ -638,7 +638,7 @@ class InvalidSequenceArgumentError(InvalidRenderArgumentError):
         super().__init__(
             f"{argument_name} must be a sequence of strings, not a string"
         )
-        self.argument_name = argument_name
+        self.argument_name: str = argument_name
 
 
 @beartype
@@ -651,8 +651,8 @@ class ModuleNameVariableCollisionError(InvalidRenderArgumentError):
             f"{language_name} cannot use module_name {name!r}: the "
             "wrapper and the variable it binds share one scope"
         )
-        self.language_name = language_name
-        self.name = name
+        self.language_name: str = language_name
+        self.name: str = name
 
 
 @beartype
@@ -664,7 +664,7 @@ class RefOutputCollisionError(InvalidRenderArgumentError):
         super().__init__(
             f"ref name {name!r} collides with the output variable"
         )
-        self.name = name
+        self.name: str = name
 
 
 @beartype
@@ -712,8 +712,8 @@ class ImmutableVariableModifierError(InvalidRenderArgumentError):
             f"{modifier_name}: the declaration binds the name once, so "
             "the assignment that follows it cannot compile"
         )
-        self.language_name = language_name
-        self.modifier = modifier
+        self.language_name: str = language_name
+        self.modifier: enum.Enum = modifier
 
 
 @beartype
@@ -734,7 +734,7 @@ class PreIndentedWrappedFileError(InvalidRenderArgumentError):
             "wrap_in_file because its syntax reads indentation as "
             "structure"
         )
-        self.language_name = language_name
+        self.language_name: str = language_name
 
 
 @beartype
@@ -747,7 +747,7 @@ class ExistingVariableNotSelfContainedError(InvalidRenderArgumentError):
             f"{language_name} cannot combine ExistingVariable with "
             "wrap_in_file=True because the assignment has no prior declaration"
         )
-        self.language_name = language_name
+        self.language_name: str = language_name
 
 
 @beartype
@@ -769,8 +769,8 @@ class RefNotSelfContainedError(InvalidRenderArgumentError):
             "result that binds a variable of its own, which is what "
             "emits the declaration"
         )
-        self.language_name = language_name
-        self.ref_names = ref_names
+        self.language_name: str = language_name
+        self.ref_names: frozenset[str] = ref_names
 
 
 @beartype
@@ -790,8 +790,8 @@ class InvalidVariableModifierError(LiteralizerError):
             f"{modifier_name}: it is not a member of the target "
             "language's Modifiers enum"
         )
-        self.language_name = language_name
-        self.modifier = modifier
+        self.language_name: str = language_name
+        self.modifier: enum.Enum = modifier
 
 
 class UnrepresentableIntegerError(LiteralizerError):
@@ -830,7 +830,7 @@ class ExcessiveIntegerDigitsError(LiteralizerError):
             f"integer has more decimal digits than the {limit} this "
             "interpreter converts to text"
         )
-        self.limit = limit
+        self.limit: int = limit
 
 
 class UnrepresentableEmptyDictError(LiteralizerError):
@@ -878,8 +878,8 @@ class UnsupportedIdentifierCaseError(LiteralizerError):
         super().__init__(
             f"{language_name} does not support identifier case {case_name!r}"
         )
-        self.language_name = language_name
-        self.case_name = case_name
+        self.language_name: str = language_name
+        self.case_name: str = case_name
 
 
 @beartype
@@ -898,8 +898,8 @@ class DottedCallTargetNotSupportedError(LiteralizerError):
             f"{language_name} does not support dotted call targets: "
             f"{target_function!r}"
         )
-        self.language_name = language_name
-        self.target_function = target_function
+        self.language_name: str = language_name
+        self.target_function: str = target_function
 
 
 @beartype
@@ -921,8 +921,8 @@ class ZipValuesLengthMismatchError(LiteralizerError):
             f"zip_source parsed to {zip_count} element(s) but "
             f"{call_count} call(s) were generated; the lengths must match"
         )
-        self.call_count = call_count
-        self.zip_count = zip_count
+        self.call_count: int = call_count
+        self.zip_count: int = zip_count
 
 
 @beartype
@@ -1004,8 +1004,8 @@ class CommentSourceLengthMismatchError(LiteralizerError):
             f"comment_source has {comment_count} entry(ies) but "
             f"{call_count} call(s) were generated; the lengths must match"
         )
-        self.call_count = call_count
-        self.comment_count = comment_count
+        self.call_count: int = call_count
+        self.comment_count: int = comment_count
 
 
 @beartype
@@ -1026,7 +1026,7 @@ class CommentSourceMultilineError(LiteralizerError):
             f"comment_source entry at index {index} contains a newline; "
             "trailing comments must be single-line"
         )
-        self.index = index
+        self.index: int = index
 
 
 @beartype
@@ -1043,7 +1043,7 @@ class CommentSourceNulError(LiteralizerError):
             f"comment_source entry at index {index} contains a NUL byte; "
             "source comments cannot contain NUL"
         )
-        self.index = index
+        self.index: int = index
 
 
 @beartype
@@ -1061,8 +1061,8 @@ class VariableNameNotSupportedError(LiteralizerError):
             f"{language_name} does not support variable names: "
             f"{variable_name!r}"
         )
-        self.language_name = language_name
-        self.variable_name = variable_name
+        self.language_name: str = language_name
+        self.variable_name: str = variable_name
 
 
 @beartype
@@ -1090,7 +1090,7 @@ class WrapInFileWithoutVariableNotSupportedError(LiteralizerError):
             f"{language_name} cannot wrap a bare value (without a "
             f"variable_form) at file scope"
         )
-        self.language_name = language_name
+        self.language_name: str = language_name
 
 
 @beartype
@@ -1112,8 +1112,8 @@ class UnsupportedCallShapeError(LiteralizerError):
         super().__init__(
             f"{language_name} cannot represent this call shape: {reason}"
         )
-        self.language_name = language_name
-        self.reason = reason
+        self.language_name: str = language_name
+        self.reason: str = reason
 
 
 @beartype
@@ -1130,9 +1130,9 @@ class ExcessiveNestingError(LiteralizerError):
             f"{language_name} supports collection nesting only through depth "
             f"{maximum_depth}; received depth {actual_depth}"
         )
-        self.language_name = language_name
-        self.maximum_depth = maximum_depth
-        self.actual_depth = actual_depth
+        self.language_name: str = language_name
+        self.maximum_depth: int = maximum_depth
+        self.actual_depth: int = actual_depth
 
 
 class WrapCombinedInFileNotSupportedError(LiteralizerError):
@@ -1174,9 +1174,9 @@ class ConflictingVariableModifiersError(LiteralizerError):
             f"{language_name} accepts at most one {group_name} modifier; "
             f"received {joined}"
         )
-        self.language_name = language_name
-        self.group_name = group_name
-        self.keywords = keywords
+        self.language_name: str = language_name
+        self.group_name: str = group_name
+        self.keywords: tuple[str, ...] = keywords
 
 
 @beartype
