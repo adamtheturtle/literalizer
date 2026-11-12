@@ -9,7 +9,6 @@ import pytest
 
 import literalizer.languages
 from literalizer._language import redefinition_config
-from literalizer.languages import Kotlin, Python
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import (
     CaseManifestError,
@@ -87,8 +86,7 @@ def test_group_variant_cases_by_language_groups_by_variant_language() -> None:
     """Grouped cases stay aligned with the key language."""
     groups = group_variant_cases_by_language()
 
-    assert len(groups) > 0
-    assert Python in groups
+    assert set(groups) == set(literalizer.languages.ALL_LANGUAGES)
     for lang_cls, cases in groups.items():
         assert len(cases) > 0
         misgrouped = [
@@ -146,14 +144,11 @@ def test_empty_sibling_sequence_type_hints_follow_capability(
     )
 
     assert len(cases) > 0
-    assert not Kotlin.supports_empty_sibling_sequence_type_hints
-    incapable = [
-        case
-        for case in cases
-        if not case.variant.lang_cls.supports_empty_sibling_sequence_type_hints
-    ]
-    assert incapable == []
-    assert any(case.variant.lang_cls is Python for case in cases)
+    assert {case.variant.lang_cls for case in cases} == {
+        lang_cls
+        for lang_cls in literalizer.languages.ALL_LANGUAGES
+        if lang_cls.supports_empty_sibling_sequence_type_hints
+    }
 
 
 def test_typed_dict_null_filtering_follows_capability() -> None:
