@@ -1,10 +1,12 @@
 [[threads]]
+scenario_name = "format_variant"
 name = "rust_record"
 language = "Rust"
 golden_name = "Rust_heterogeneous_strategy_record"
 case_names = ["record_pure_scalars", "record_nested_record", "record_nested_container"]
 
 [[threads]]
+scenario_name = "format_variant"
 name = "c_cjson"
 language = "C"
 golden_name = "C_json_type_cjson"
