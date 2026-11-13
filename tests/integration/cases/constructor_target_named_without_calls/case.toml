@@ -1,0 +1,14 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "declares_call_styles", value = false}, {kind = "capability_flag", flag = "supports_variable_names"}, {kind = "capability_flag", flag = "supports_key_value_assignment_documents", value = false}]
+
+# Consume constructor targets in native syntax without fabricating a call.
+# Template keys provide syntax after capability selection; missing keys fail.
+[constructor.target_templates]
+Nix = '''let
+  {target} = {{}};
+in
+{target}
+'''
+Norg = '''* {target}
+'''

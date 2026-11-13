@@ -493,6 +493,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
         lang_cls.supports_special_floats
     ),
     "default_allows_empty_dict_keys": _default_allows_empty_dict_keys,
+    "supports_key_value_assignment_documents": lambda cls: (
+        cls.supports_key_value_assignment_documents
+    ),
     "default_allows_empty_ordered_map_keys": (
         _default_allows_empty_ordered_map_keys
     ),

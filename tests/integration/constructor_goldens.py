@@ -8,6 +8,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from literalizer import literalize_call
 
 from .constructor_cases import ConstructorRendering
+from .constructor_templates import constructor_target_template
 from .golden_checks import GoldenSkips, check_golden, format_consumer
 from .language_specs import with_per_fixture_module_name
 
@@ -29,9 +30,12 @@ def run_constructor_binding_golden_case(
     assert config is not None  # noqa: S101
     source = manifest.input.path.read_text(encoding="utf-8")
     input_format = manifest.input.input_format
-    if config.target_template is not None:
+    target_template = constructor_target_template(
+        config=config, language_name=case.lang_cls.__name__
+    )
+    if target_template is not None:
         check_golden(
-            contents=config.target_template.format(
+            contents=target_template.format(
                 target=language.format_constructor_target(config.class_name)
             ),
             golden_path=golden_path,

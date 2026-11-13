@@ -1833,6 +1833,8 @@ class _LanguageMetadata(_LanguageMetadataBase):
     """
     supports_default_dict_value_type: bool
     supports_default_sequence_element_type: bool
+    supports_key_value_assignment_documents: bool
+    """Whether name = true is a native key/value document."""
     supports_default_set_element_type: bool
     supports_default_ordered_map_value_type: bool
     json_type_variant_name_suffix: str | None
@@ -2014,6 +2016,11 @@ class Language(typing.Protocol):
     @property
     def call_parameter_shadowing(self) -> CallParameterShadowing:
         """Return the wrapped-call parameter shadowing rule."""
+        ...
+
+    @property
+    def supports_key_value_assignment_documents(self) -> bool:
+        """Whether name = true is a native key/value document."""
         ...
 
     @property
