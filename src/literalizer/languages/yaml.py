@@ -207,6 +207,7 @@ class Yaml(metaclass=LanguageCls):
     supports_module_name = False
     supports_empty_dict_key = False
     supports_call_style = False
+    supports_bare_mapping_documents = True
     supports_json_object_documents = True
     supports_default_dict_key_type = False
     supports_default_dict_value_type = False
