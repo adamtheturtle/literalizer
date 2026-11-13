@@ -406,6 +406,7 @@ class Bash(metaclass=LanguageCls):
     supports_no_variable_wrap_in_file = False
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = True
+    supports_stateful_receiver_result_checks = False
     supports_native_invocations = False
     supports_dotted_calls = True
     has_free_function_calls = True

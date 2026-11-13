@@ -1,2 +1,3 @@
 schema_version = 1
 owner = "shared-invocation"
+gates = [{kind = "capability_flag", flag = "supports_stateful_receiver_result_checks"}]

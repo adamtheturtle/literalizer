@@ -47,6 +47,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
         "supports_nullable_object_fallbacks",
         "supports_typed_dict_open",
         "supports_variadic_calls",
+        "supports_stateful_receiver_result_checks",
         "reserved_variable_identifiers",
         "supports_key_value_assignment_documents",
         "reserved_variable_identifiers_case_sensitive",

@@ -1,3 +1,4 @@
+expected_calls = 2
 source = '[["user_1", 100.0], ["user_2", 101.0]]'
 zip_source = '[[true, "first"], [false, "second"]]'
 pre_indent_level = 1
@@ -37,3 +38,12 @@ arguments = [
     {receiver = {reference = "counter", type = "Counter"}, selector = "accept:timestamp:", parameter-types = ["NSString", "float"], return-type = "bool", arguments = [{input = 0}, {input = 1}]},
     {zipped = true},
 ]
+
+[invocation.languages.v]
+result-function = "checker.check_result"
+
+[invocation.languages.rust]
+result-function = "check_result"
+
+[invocation.languages.mojo]
+result-function = "checker.check_result"

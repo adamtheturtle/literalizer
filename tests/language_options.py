@@ -485,6 +485,9 @@ def _default_allows_empty_ordered_map_keys(
 
 
 CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
+    "supports_stateful_receiver_result_checks": lambda cls: (
+        cls.supports_stateful_receiver_result_checks
+    ),
     "supports_variadic_calls": lambda cls: cls.supports_variadic_calls,
     "supports_native_invocations": lambda cls: cls.supports_native_invocations,
     "supports_default_sequence_element_type": lambda lang_cls: (

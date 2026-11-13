@@ -1,0 +1,751 @@
+# Native syntax follows functional selection; these keys never select languages.
+# Both recipes retain their original Python consumer and placement.
+[Python]
+execution = ["{python}", "-I", "{golden_path}"]
+
+[C]
+pre_indent_level = 1
+template = '''{preamble}
+#include <assert.h>
+#include <string.h>
+static int calls = 0, checks = 0;
+static bool accept(CVal user, CVal timestamp) {{
+    assert(strcmp(user.s, calls == 0 ? "user_1" : "user_2") == 0);
+    assert(timestamp.f == 100.0 + calls);
+    calls++;
+    return strcmp(user.s, "user_1") == 0;
+}}
+static void checkResult(bool actual, CVal expected) {{
+    assert(actual == expected.a[0].b);
+    assert(strcmp(expected.a[1].s, checks == 0 ? "first" : "second") == 0);
+    checks++;
+}}
+int main(void) {{
+    const struct {{ bool (*accept)(CVal, CVal); }} counter = {{accept}};
+{bare_code}
+    assert(calls == {expected_calls} && checks == {expected_calls});
+    return 0;
+}}
+'''
+
+[CSharp]
+pre_indent_level = 2
+template = '''{preamble}
+class Counter {{
+    public int calls;
+    public bool accept(string user, double timestamp) {{
+        if (user != (calls == 0 ? "user_1" : "user_2") || timestamp != 100.0 + calls) throw new System.Exception("receiver arguments changed");
+        calls++;
+        return user == "user_1";
+    }}
+}}
+class Program {{
+    static int checks;
+    static void checkResult(bool actual, (bool, string) expected) {{
+        if (actual != expected.Item1 || expected.Item2 != (checks == 0 ? "first" : "second")) throw new System.Exception("paired result changed");
+        checks++;
+    }}
+    static void Main() {{
+        var counter = new Counter();
+{bare_code}
+        if (counter.calls != {expected_calls} || checks != {expected_calls}) throw new System.Exception("calls skipped");
+    }}
+}}
+'''
+
+[Cpp]
+pre_indent_level = 1
+heterogeneous_strategy = "TUPLE"
+template = '''{preamble}
+#include <cassert>
+#include <string>
+#include <tuple>
+struct Counter {{
+    int calls = 0;
+    bool accept(const std::string& user, double timestamp) {{
+        assert(user == (calls == 0 ? "user_1" : "user_2"));
+        assert(timestamp == 100.0 + calls);
+        ++calls;
+        return user == "user_1";
+    }}
+}};
+static int checks = 0;
+static void checkResult(bool actual, const std::tuple<bool, std::string>& expected) {{
+    assert(actual == std::get<0>(expected));
+    assert(std::get<1>(expected) == (checks == 0 ? "first" : "second"));
+    ++checks;
+}}
+int main() {{
+    Counter counter;
+{bare_code}
+    assert(counter.calls == {expected_calls} && checks == {expected_calls});
+}}
+'''
+
+[Crystal]
+pre_indent_level = 0
+template = '''{preamble}
+class Counter
+  getter calls = 0
+  def accept(user : String, timestamp : Float64) : Bool
+    raise "receiver arguments changed" unless user == (@calls == 0 ? "user_1" : "user_2") && timestamp == 100.0 + @calls
+    @calls += 1
+    user == "user_1"
+  end
+end
+class CheckStats
+  class_property count = 0
+end
+def checkResult(actual : Bool, expected : Array(Bool | String))
+  raise "paired result changed" unless actual == expected[0] && expected[1] == (CheckStats.count == 0 ? "first" : "second")
+  CheckStats.count += 1
+end
+counter = Counter.new
+{bare_code}
+raise "calls skipped" unless counter.calls == {expected_calls} && CheckStats.count == {expected_calls}
+'''
+
+[D]
+pre_indent_level = 1
+template = '''{preamble}
+struct Counter {{
+    int calls;
+    bool accept(string user, double timestamp) {{
+        assert(user == (calls == 0 ? "user_1" : "user_2"));
+        assert(timestamp == 100.0 + calls);
+        calls++;
+        return user == "user_1";
+    }}
+}}
+int checks;
+void checkResult(bool actual, JSONValue expected) {{
+    assert(actual == expected.array[0].boolean);
+    assert(expected.array[1].str == (checks == 0 ? "first" : "second"));
+    checks++;
+}}
+void main() {{
+    Counter counter;
+{bare_code}
+    assert(counter.calls == {expected_calls} && checks == {expected_calls});
+}}
+'''
+
+[FSharp]
+pre_indent_level = 0
+template = '''module {module_name}
+{preamble}
+{body_preamble}
+type Counter() =
+    let mutable calls = 0
+    member _.Calls = calls
+    member _.accept(user: Val, timestamp: Val) =
+        match user, timestamp with
+        | FStr text, FFloat value ->
+            if text <> (if calls = 0 then "user_1" else "user_2") || value <> 100.0 + float calls then failwith "receiver arguments changed"
+            calls <- calls + 1
+            text = "user_1"
+        | _ -> failwith "receiver argument types changed"
+let mutable checks = 0
+let checkResult(actual: bool, expected: Val) =
+    match expected with
+    | FList [FBool wanted; FStr reason] ->
+        if actual <> wanted || reason <> (if checks = 0 then "first" else "second") then failwith "paired result changed"
+        checks <- checks + 1
+    | _ -> failwith "paired result types changed"
+let counter = Counter()
+{bare_code}
+if counter.Calls <> {expected_calls} || checks <> {expected_calls} then failwith "calls skipped"
+'''
+
+[Go]
+pre_indent_level = 1
+template = '''{preamble}
+type Counter struct {{ calls int }}
+func (c *Counter) accept(user string, timestamp float64) bool {{
+    wanted := "user_1"
+    if c.calls != 0 {{ wanted = "user_2" }}
+    if user != wanted || timestamp != 100.0 + float64(c.calls) {{ panic("receiver arguments changed") }}
+    c.calls++
+    return user == "user_1"
+}}
+var checks int
+func checkResult(actual bool, expected []any) {{
+    reason := "first"
+    if checks != 0 {{ reason = "second" }}
+    if actual != expected[0].(bool) || expected[1].(string) != reason {{ panic("paired result changed") }}
+    checks++
+}}
+func main() {{
+    counter := Counter{{}}
+{bare_code}
+    if counter.calls != {expected_calls} || checks != {expected_calls} {{ panic("calls skipped") }}
+}}
+'''
+
+[Groovy]
+pre_indent_level = 0
+template = '''{preamble}
+class Counter {{
+    int calls = 0
+    boolean accept(String user, double timestamp) {{
+        assert user == (calls == 0 ? "user_1" : "user_2")
+        assert timestamp == 100.0 + calls
+        calls++
+        return user == "user_1"
+    }}
+}}
+def counter = new Counter()
+int checks = 0
+def checkResult = {{ boolean actual, List expected ->
+    assert actual == expected[0]
+    assert expected[1] == (checks == 0 ? "first" : "second")
+    checks++
+}}
+{bare_code}
+assert counter.calls == {expected_calls} && checks == {expected_calls}
+'''
+
+[Haxe]
+pre_indent_level = 2
+template = '''{preamble}
+class Counter {{
+    public var calls: Int = 0;
+    public function new() {{}}
+    public function accept(user: String, timestamp: Float): Bool {{
+        if (user != (calls == 0 ? "user_1" : "user_2") || timestamp != 100.0 + calls) throw "receiver arguments changed";
+        calls++;
+        return user == "user_1";
+    }}
+}}
+class {module_name} {{
+    static var checks: Int = 0;
+    static function checkResult(actual: Bool, expected: Array<Dynamic>): Void {{
+        if (actual != expected[0] || expected[1] != (checks == 0 ? "first" : "second")) throw "paired result changed";
+        checks++;
+    }}
+    public static function main(): Void {{
+        var counter = new Counter();
+{bare_code}
+        if (counter.calls != {expected_calls} || checks != {expected_calls}) throw "calls skipped";
+    }}
+}}
+'''
+
+[Java]
+pre_indent_level = 2
+template = '''{preamble}
+class Main {{
+    static int checks = 0;
+    static class Counter {{
+        int calls = 0;
+        boolean accept(String user, double timestamp) {{
+            if (!user.equals(calls == 0 ? "user_1" : "user_2") || timestamp != 100.0 + calls) throw new AssertionError("receiver arguments changed");
+            calls++;
+            return user.equals("user_1");
+        }}
+    }}
+    static void checkResult(boolean actual, Object[] expected) {{
+        if (actual != (Boolean) expected[0] || !expected[1].equals(checks == 0 ? "first" : "second")) throw new AssertionError("paired result changed");
+        checks++;
+    }}
+    public static void main() {{
+        Counter counter = new Counter();
+{bare_code}
+        if (counter.calls != {expected_calls} || checks != {expected_calls}) throw new AssertionError("calls skipped");
+    }}
+}}
+'''
+
+[JavaScript]
+pre_indent_level = 1
+template = '''{preamble}
+let calls = 0, checks = 0;
+function ensure(value) {{ if (!value) throw new Error("checked call changed"); }}
+const counter = {{accept(user, timestamp) {{
+    ensure(user === (calls === 0 ? "user_1" : "user_2"));
+    ensure(timestamp === 100.0 + calls);
+    calls++;
+    return user === "user_1";
+}}}};
+function checkResult(actual, expected) {{
+    ensure(actual === expected[0]);
+    ensure(expected[1] === (checks === 0 ? "first" : "second"));
+    checks++;
+}}
+function run() {{
+{bare_code}
+}}
+run();
+ensure(calls === {expected_calls} && checks === {expected_calls});
+'''
+
+[Julia]
+pre_indent_level = 0
+template = '''{preamble}
+calls = Ref(0)
+checks = Ref(0)
+counter = (accept = function(user, timestamp)
+    @assert user == (calls[] == 0 ? "user_1" : "user_2")
+    @assert timestamp == 100.0 + calls[]
+    calls[] += 1
+    user == "user_1"
+end,)
+function checkResult(actual, expected)
+    @assert actual == expected[1]
+    @assert expected[2] == (checks[] == 0 ? "first" : "second")
+    checks[] += 1
+end
+{bare_code}
+@assert calls[] == {expected_calls} && checks[] == {expected_calls}
+'''
+
+[Kotlin]
+pre_indent_level = 1
+template = '''{preamble}
+class Counter {{
+    var calls = 0
+    fun accept(user: String, timestamp: Double): Boolean {{
+        check(user == if (calls == 0) "user_1" else "user_2")
+        check(timestamp == 100.0 + calls)
+        calls++
+        return user == "user_1"
+    }}
+}}
+var checks = 0
+fun checkResult(actual: Boolean, expected: List<Any?>) {{
+    check(actual == expected[0])
+    check(expected[1] == if (checks == 0) "first" else "second")
+    checks++
+}}
+fun main() {{
+    val counter = Counter()
+{bare_code}
+    check(counter.calls == {expected_calls} && checks == {expected_calls})
+}}
+
+main()
+'''
+
+[Lua]
+pre_indent_level = 0
+template = '''{preamble}
+local calls, checks = 0, 0
+local counter = {{}}
+counter.accept = function(user, timestamp)
+    assert(user == (calls == 0 and "user_1" or "user_2"))
+    assert(timestamp == 100.0 + calls)
+    calls = calls + 1
+    return user == "user_1"
+end
+local function checkResult(actual, expected)
+    assert(actual == expected[1])
+    assert(expected[2] == (checks == 0 and "first" or "second"))
+    checks = checks + 1
+end
+{bare_code}
+assert(calls == {expected_calls} and checks == {expected_calls})
+'''
+
+[Matlab]
+pre_indent_level = 0
+template = '''{preamble}
+function {module_name}()
+calls = 0;
+checks = 0;
+counter.accept = @accept;
+{bare_code}
+assert(calls == {expected_calls} && checks == {expected_calls});
+function actual = accept(user, timestamp)
+    users = {{"user_1", "user_2"}};
+    assert(strcmp(user, users{{calls + 1}}) && timestamp == 100.0 + calls);
+    calls = calls + 1;
+    actual = strcmp(user, "user_1");
+end
+function checkResult(actual, expected)
+    reasons = {{"first", "second"}};
+    assert(actual == expected{{1}} && strcmp(expected{{2}}, reasons{{checks + 1}}));
+    checks = checks + 1;
+end
+end
+'''
+
+[Mojo]
+pre_indent_level = 1
+heterogeneous_strategy = "VARIANT"
+template = '''{preamble}
+struct Counter:
+    var calls: Int
+    def __init__(out self):
+        self.calls = 0
+    def accept(mut self, user: String, timestamp: Float64) raises -> Bool:
+        assert_true(user == ("user_1" if self.calls == 0 else "user_2"))
+        assert_equal(timestamp, 100.0 + Float64(self.calls))
+        self.calls += 1
+        return user == "user_1"
+from testing import assert_true, assert_equal
+struct Checker:
+    var calls: Int
+    def __init__(out self):
+        self.calls = 0
+    def check_result(mut self, actual: Bool, expected: List[Value]) raises:
+        assert_equal(actual, expected[0][Bool])
+        assert_equal(expected[1][String], String("first" if self.calls == 0 else "second"))
+        self.calls += 1
+def main() raises:
+    var counter = Counter()
+    var checker = Checker()
+{bare_code}
+    assert_equal(counter.calls, {expected_calls})
+    assert_equal(checker.calls, {expected_calls})
+'''
+
+[Nim]
+pre_indent_level = 0
+heterogeneous_strategy = "OBJECT_VARIANT"
+template = '''{preamble}
+type Counter = object
+  calls: int
+proc accept(counter: var Counter, user: string, timestamp: float64): bool =
+  doAssert user == (if counter.calls == 0: "user_1" else: "user_2")
+  doAssert timestamp == 100.0 + float64(counter.calls)
+  inc counter.calls
+  user == "user_1"
+var counter: Counter
+var checks = 0
+proc checkResult(actual: bool, expected: seq[Value]) =
+  doAssert actual == expected[0].boolVal
+  doAssert expected[1].strVal == (if checks == 0: "first" else: "second")
+  inc checks
+{bare_code}
+doAssert counter.calls == {expected_calls} and checks == {expected_calls}
+'''
+
+[ObjectiveC]
+pre_indent_level = 2
+template = '''{preamble}
+#import <Foundation/Foundation.h>
+@interface Counter : NSObject
+@property(nonatomic) NSUInteger calls;
+- (BOOL)accept:(NSString *)user timestamp:(double)timestamp;
+@end
+@implementation Counter
+- (BOOL)accept:(NSString *)user timestamp:(double)timestamp {{
+    NSCAssert([user isEqualToString:self.calls == 0 ? @"user_1" : @"user_2"], @"receiver user changed");
+    NSCAssert(timestamp == 100.0 + self.calls, @"receiver timestamp changed");
+    self.calls++;
+    return [user isEqualToString:@"user_1"];
+}}
+@end
+static NSUInteger checks;
+static void checkResult(BOOL actual, NSArray *expected) {{
+    NSCAssert(actual == [expected[0] boolValue], @"result changed");
+    NSCAssert([expected[1] isEqualToString:checks == 0 ? @"first" : @"second"], @"paired reason changed");
+    checks++;
+}}
+int main(void) {{
+    @autoreleasepool {{
+        Counter *counter = [[Counter alloc] init];
+{bare_code}
+        NSCAssert(counter.calls == {expected_calls} && checks == {expected_calls}, @"calls skipped");
+    }}
+    return 0;
+}}
+'''
+
+[Odin]
+pre_indent_level = 1
+template = '''{preamble}
+calls, checks: int
+accept :: proc(user: string, timestamp: f64) -> bool {{
+    assert(user == (calls == 0 ? "user_1" : "user_2"))
+    assert(timestamp == 100.0 + f64(calls))
+    calls += 1
+    return user == "user_1"
+}}
+checkResult :: proc(actual: bool, expected: [dynamic]any) {{
+    assert(actual == expected[0].(bool))
+    assert(expected[1].(string) == (checks == 0 ? "first" : "second"))
+    checks += 1
+}}
+main :: proc() {{
+    counter := struct {{ accept: proc(string, f64) -> bool }}{{accept}}
+{bare_code}
+    assert(calls == {expected_calls} && checks == {expected_calls})
+}}
+'''
+
+[Php]
+pre_indent_level = 0
+template = '''{preamble}
+class Counter {{
+    public int $calls = 0;
+    public function accept(string $user, float $timestamp): bool {{
+        if ($user !== ($this->calls === 0 ? "user_1" : "user_2") || $timestamp !== 100.0 + $this->calls) {{
+            throw new Exception("receiver arguments changed");
+        }}
+        $this->calls++;
+        return $user === "user_1";
+    }}
+}}
+$checks = 0;
+function checkResult(bool $actual, array $expected): void {{
+    global $checks;
+    if ($actual !== $expected[0] || $expected[1] !== ($checks === 0 ? "first" : "second")) {{
+        throw new Exception("paired result changed");
+    }}
+    $checks++;
+}}
+$counter = new Counter();
+{bare_code}
+if ($counter->calls !== {expected_calls} || $checks !== {expected_calls}) {{ throw new Exception("calls skipped"); }}
+'''
+
+[Raku]
+pre_indent_level = 0
+template = '''{preamble}
+class Counter {{
+    has Int $.calls is rw = 0;
+    method accept(Str $user, Numeric $timestamp) {{
+        die "receiver arguments changed" unless $user eq ($!calls == 0 ?? 'user_1' !! 'user_2') && $timestamp == 100 + $!calls;
+        $!calls++;
+        $user eq 'user_1'
+    }}
+}}
+my $counter = Counter.new;
+my $checks = 0;
+sub checkResult($actual, $expected) {{
+    die "paired result changed" unless $actual == $expected[0] && $expected[1] eq ($checks == 0 ?? 'first' !! 'second');
+    $checks++;
+}}
+{bare_code}
+die "calls skipped" unless $counter.calls == {expected_calls} && $checks == {expected_calls};
+'''
+
+[Ruby]
+pre_indent_level = 0
+template = '''{preamble}
+class Counter
+  attr_reader :calls
+  def initialize
+    @calls = 0
+  end
+  def accept(user, timestamp)
+    raise "receiver arguments changed" unless user == (@calls == 0 ? "user_1" : "user_2") && timestamp == 100.0 + @calls
+    @calls += 1
+    user == "user_1"
+  end
+end
+$checks = 0
+def checkResult(actual, expected)
+  raise "paired result changed" unless actual == expected[0] && expected[1] == ($checks == 0 ? "first" : "second")
+  $checks += 1
+end
+counter = Counter.new
+{bare_code}
+raise "calls skipped" unless counter.calls == {expected_calls} && $checks == {expected_calls}
+'''
+
+[Rust]
+pre_indent_level = 1
+heterogeneous_strategy = "TUPLE"
+template = '''{preamble}
+use std::cell::Cell;
+struct Counter {{ calls: Cell<usize> }}
+impl Counter {{
+    fn accept(&self, user: &str, timestamp: f64) -> bool {{
+        let calls = self.calls.get();
+        assert_eq!(user, if calls == 0 {{ "user_1" }} else {{ "user_2" }});
+        assert_eq!(timestamp, 100.0 + calls as f64);
+        self.calls.set(calls + 1);
+        user == "user_1"
+    }}
+}}
+fn main() {{
+    let counter = Counter {{ calls: Cell::new(0) }};
+    let checks = Cell::new(0);
+    let check_result = |actual: bool, expected: (bool, &str)| {{
+        assert_eq!(actual, expected.0);
+        assert_eq!(expected.1, if checks.get() == 0 {{ "first" }} else {{ "second" }});
+        checks.set(checks.get() + 1);
+    }};
+{bare_code}
+    assert_eq!(counter.calls.get(), {expected_calls});
+    assert_eq!(checks.get(), {expected_calls});
+}}
+'''
+
+[Scala]
+pre_indent_level = 2
+template = '''{preamble}
+object Check {{
+    class Counter {{
+        var calls = 0
+        def accept(user: String, timestamp: Double): Boolean = {{
+            assert(user == (if (calls == 0) "user_1" else "user_2"))
+            assert(timestamp == 100.0 + calls)
+            calls += 1
+            user == "user_1"
+        }}
+    }}
+    var checks = 0
+    def checkResult(actual: Boolean, expected: List[Any]): Unit = {{
+        assert(actual == expected(0))
+        assert(expected(1) == (if (checks == 0) "first" else "second"))
+        checks += 1
+    }}
+    def main(args: Array[String]): Unit = {{
+        val counter = new Counter
+{bare_code}
+        assert(counter.calls == {expected_calls} && checks == {expected_calls})
+    }}
+}}
+'''
+
+[SystemVerilog]
+pre_indent_level = 2
+template = '''{preamble}
+module check;
+    class Counter;
+        int calls = 0;
+        function bit accept(_VVal user, _VVal timestamp);
+            if (user.s != (calls == 0 ? "user_1" : "user_2") || timestamp.r != 100.0 + calls) $fatal(1, "receiver arguments changed");
+            calls++;
+            return user.s == "user_1";
+        endfunction
+    endclass
+    int checks = 0;
+    function bit checkResult(bit actual, _VVal expected[]);
+        if (actual != (expected[0].i != 0) || expected[1].s != (checks == 0 ? "first" : "second")) $fatal(1, "paired result changed");
+        checks++;
+        return 1;
+    endfunction
+    initial begin
+        Counter counter = new;
+{bare_code}
+        if (counter.calls != {expected_calls} || checks != {expected_calls}) $fatal(1, "calls skipped");
+        $finish;
+    end
+endmodule
+'''
+
+[TypeScript]
+pre_indent_level = 1
+template = '''{preamble}
+let calls = 0, checks = 0;
+function ensure(value: boolean): void {{ if (!value) throw new Error("checked call changed"); }}
+const counter = {{accept(user: string, timestamp: number): boolean {{
+    ensure(user === (calls === 0 ? "user_1" : "user_2"));
+    ensure(timestamp === 100.0 + calls);
+    calls++;
+    return user === "user_1";
+}}}};
+function checkResult(actual: boolean, expected: (boolean | string)[]): void {{
+    ensure(actual === expected[0]);
+    ensure(expected[1] === (checks === 0 ? "first" : "second"));
+    checks++;
+}}
+function run(): void {{
+{bare_code}
+}}
+run();
+ensure(calls === {expected_calls} && checks === {expected_calls});
+'''
+
+[V]
+pre_indent_level = 1
+heterogeneous_strategy = "INTERFACE"
+template = '''{preamble}
+struct Counter {{ mut: calls int }}
+fn (mut counter Counter) accept(user string, timestamp f64) bool {{
+    assert user == if counter.calls == 0 {{ 'user_1' }} else {{ 'user_2' }}
+    assert timestamp == 100.0 + f64(counter.calls)
+    counter.calls++
+    return user == 'user_1'
+}}
+struct Checker {{ mut: calls int }}
+fn (mut checker Checker) check_result(actual bool, expected []IVal) {{
+    assert actual == (expected[0] as bool)
+    assert (expected[1] as string) == if checker.calls == 0 {{ 'first' }} else {{ 'second' }}
+    checker.calls++
+}}
+fn main() {{
+    mut counter := Counter{{}}
+    mut checker := Checker{{}}
+{bare_code}
+    assert counter.calls == {expected_calls}
+    assert checker.calls == {expected_calls}
+}}
+'''
+
+[VisualBasic]
+pre_indent_level = 2
+template = '''{preamble}
+Class Counter
+    Public calls As Integer
+    Public Function accept(user As String, timestamp As Double) As Boolean
+        If user <> If(calls = 0, "user_1", "user_2") OrElse timestamp <> 100.0 + calls Then Throw New System.Exception("receiver arguments changed")
+        calls += 1
+        Return user = "user_1"
+    End Function
+End Class
+Module Check
+    Dim checks As Integer
+    Sub checkResult(actual As Boolean, expected As Object())
+        If actual <> CBool(expected(0)) OrElse CStr(expected(1)) <> If(checks = 0, "first", "second") Then Throw New System.Exception("paired result changed")
+        checks += 1
+    End Sub
+    Sub Main()
+        Dim counter As New Counter()
+{bare_code}
+        If counter.calls <> {expected_calls} OrElse checks <> {expected_calls} Then Throw New System.Exception("calls skipped")
+    End Sub
+End Module
+'''
+
+[Wren]
+pre_indent_level = 0
+template = '''{preamble}
+class Counter {{
+  construct new() {{ _calls = 0 }}
+  calls {{ _calls }}
+  accept(user, timestamp) {{
+    if (user != (_calls == 0 ? "user_1" : "user_2") || timestamp != 100 + _calls) Fiber.abort("receiver arguments changed")
+    _calls = _calls + 1
+    return user == "user_1"
+  }}
+}}
+var counter = Counter.new()
+var checks = 0
+var checkResult = Fn.new {{ |actual, expected|
+  if (actual != expected[0] || expected[1] != (checks == 0 ? "first" : "second")) Fiber.abort("paired result changed")
+  checks = checks + 1
+}}
+{bare_code}
+if (counter.calls != {expected_calls} || checks != {expected_calls}) Fiber.abort("calls skipped")
+'''
+
+[Zig]
+pre_indent_level = 1
+template = '''{preamble}
+const std = @import("std");
+var calls: usize = 0;
+var checks: usize = 0;
+const Counter = struct {{
+    fn accept(_: @This(), user: ZVal, timestamp: ZVal) bool {{
+        std.debug.assert(std.mem.eql(u8, user.str, if (calls == 0) "user_1" else "user_2"));
+        std.debug.assert(timestamp.float == 100.0 + @as(f64, @floatFromInt(calls)));
+        calls += 1;
+        return std.mem.eql(u8, user.str, "user_1");
+    }}
+}};
+fn checkResult(actual: bool, expected: ZVal) void {{
+    std.debug.assert(actual == expected.arr[0].bool);
+    std.debug.assert(std.mem.eql(u8, expected.arr[1].str, if (checks == 0) "first" else "second"));
+    checks += 1;
+}}
+pub fn main() void {{
+    const counter = Counter{{}};
+{bare_code}
+    std.debug.assert(calls == {expected_calls} and checks == {expected_calls});
+}}
+'''
