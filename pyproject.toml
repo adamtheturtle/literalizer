@@ -118,7 +118,7 @@ dev = [
     # listed here so the type checkers resolve its (``py.typed``) imports.
     # Keep in sync with the ``--with`` pin in the ``Norg roundtrip`` step
     # of ``.github/workflows/lint.yml``.
-    "tree-sitter==0.26.0",
+    "tree-sitter==0.26.1",
     "ty==0.0.100",
     "types-pygments==2.21.0.20260819",
     "types-pyyaml==6.0.12.20261103",
