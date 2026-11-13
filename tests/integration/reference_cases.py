@@ -20,6 +20,7 @@ from .case_manifests import (
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
+    make_golden_path,
     make_spec,
     reference_case_for_declaration_style,
     sorted_languages,
@@ -30,12 +31,60 @@ from .variant_context import config_with_variant_layout
 CASES_DIR = Path(__file__).parent / "cases"
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class RefRendering:
+    """A reference configuration, target spec and owned fixture."""
+
+    config: RefCaseSpec
+    lang_cls: literalizer.LanguageCls
+    spec: literalizer.Language
+    golden_name: str
+    ref_case: literalizer.IdentifierCase | None
+
+    def golden_path(self, *, cases_dir: Path) -> Path:
+        """Locate the fixture used by execution and inventory checks."""
+        return make_golden_path(
+            parent=cases_dir / self.config.case_dir_name,
+            name=self.config.golden_name(name=self.golden_name),
+            lang_cls=self.lang_cls,
+            version=self.spec.language_version,
+        )
+
+
 @dataclasses.dataclass(frozen=True)
 class LiteralizeRefCase:
     """A parameterized literalize-ref golden-file test case."""
 
     config: RefCaseSpec
     lang_cls: literalizer.LanguageCls
+    owner: OwnerName
+
+    @property
+    def renderings(self) -> tuple[RefRendering, ...]:
+        """Exercise each selected version under the owner's ref policy."""
+        rows: list[RefRendering] = []
+        for version in ref_language_versions(
+            config=self.config, lang_cls=self.lang_cls
+        ):
+            spec = make_spec(lang_cls=self.lang_cls, language_version=version)
+            ref_case = None
+            if self.owner != REF_DEFAULT_OWNER:
+                ref_case = self.config.ref_case_for(lang_cls=self.lang_cls)
+                if ref_case is None:
+                    ref_case = spec.identifier_cases[0]
+            suffix = (
+                "ref_default" if self.owner == REF_DEFAULT_OWNER else "ref"
+            )
+            rows.append(
+                RefRendering(
+                    config=self.config,
+                    lang_cls=self.lang_cls,
+                    spec=spec,
+                    golden_name=f"{self.lang_cls.__name__}_{suffix}",
+                    ref_case=ref_case,
+                )
+            )
+        return tuple(rows)
 
 
 @functools.cache
@@ -50,7 +99,7 @@ def discover_literalize_ref_cases(
     public defaults without imposing those explicit options.
     """
     return [
-        LiteralizeRefCase(config=config, lang_cls=lang_cls)
+        LiteralizeRefCase(config=config, lang_cls=lang_cls, owner=owner)
         for config in ref_case_specs(cases_dir=CASES_DIR, owner=owner)
         if not config.variant_only
         for lang_cls in sorted_languages()
@@ -78,6 +127,19 @@ class LiteralizeRefVariantCase:
         """Retain whether the public API receives an explicit ref case."""
         suffix = "ref_default" if self.ref_case is None else "ref"
         return f"{self.variant.name}_{suffix}"
+
+    @property
+    def renderings(self) -> tuple[RefRendering, ...]:
+        """Retain the exact spec and ref spelling selected by the axis."""
+        return (
+            RefRendering(
+                config=self.config,
+                lang_cls=self.variant.lang_cls,
+                spec=self.variant.spec,
+                golden_name=self.golden_name,
+                ref_case=self.ref_case,
+            ),
+        )
 
 
 @beartype
