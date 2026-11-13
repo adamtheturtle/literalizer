@@ -4,6 +4,7 @@ import datetime as dt
 import json
 import math
 import tomllib
+from collections.abc import Iterator
 from typing import assert_never
 
 import json5_document
@@ -130,25 +131,29 @@ def load_case_data(*, input_info: CaseInput) -> CaseData:
     )
 
 
-def has_non_printable_ascii_dict_keys(data: CaseData) -> bool:
-    """Return whether a nonempty dict key is outside printable ASCII."""
+def _nested_dict_keys(data: CaseData) -> Iterator[object]:
+    """Visit dictionary keys inside the containers discovery inspects."""
     match data:
         case dict():
-            for key in data:
-                if isinstance(key, str) and (
-                    key != "" and (not key.isprintable() or not key.isascii())
-                ):
-                    return True
-            return any(
-                has_non_printable_ascii_dict_keys(data=v)
-                for v in data.values()
-            )
+            yield from data
+            for value in data.values():
+                yield from _nested_dict_keys(data=value)
         case list():
-            return any(
-                has_non_printable_ascii_dict_keys(data=item) for item in data
-            )
+            for item in data:
+                yield from _nested_dict_keys(data=item)
+
         case _:
-            return False
+            return
+
+
+def has_non_printable_ascii_dict_keys(data: CaseData) -> bool:
+    """Return whether a nonempty dict key is outside printable ASCII."""
+    return any(
+        isinstance(key, str)
+        and key != ""
+        and (not key.isprintable() or not key.isascii())
+        for key in _nested_dict_keys(data=data)
+    )
 
 
 def has_invalid_dict_keys(
@@ -157,22 +162,10 @@ def has_invalid_dict_keys(
     """Return whether a nested string key violates its producer
     grammar.
     """
-    match data:
-        case dict():
-            return any(
-                isinstance(key, str) and not key_syntax.accepts(name=key)
-                for key in data
-            ) or any(
-                has_invalid_dict_keys(data=value, key_syntax=key_syntax)
-                for value in data.values()
-            )
-        case list():
-            return any(
-                has_invalid_dict_keys(data=item, key_syntax=key_syntax)
-                for item in data
-            )
-        case _:
-            return False
+    return any(
+        isinstance(key, str) and not key_syntax.accepts(name=key)
+        for key in _nested_dict_keys(data=data)
+    )
 
 
 def has_special_floats(data: CaseData) -> bool:
