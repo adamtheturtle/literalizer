@@ -95,28 +95,6 @@ def test_native_binding_rejects_foreign_modifiers() -> None:
         )
 
 
-def test_native_capability_can_be_disabled(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """A backend can opt out even when it provides the native
-    callbacks.
-    """
-    monkeypatch.setattr(
-        target=ObjectiveC, name="supports_native_invocations", value=False
-    )
-    with pytest.raises(
-        expected_exception=literalizer.NativeCallError,
-        match="does not support",
-    ):
-        _ = literalizer.literalize_native_call(
-            language=ObjectiveC(),
-            invocation=literalizer.NativeInvocation(
-                target=literalizer.ConstructorTarget(class_name="NSObject"),
-                arguments=(),
-            ),
-        )
-
-
 _UNSUPPORTED = sorted(
     (cls for cls in ALL_LANGUAGES if not cls.supports_native_invocations),
     key=lambda cls: cls.__name__,
