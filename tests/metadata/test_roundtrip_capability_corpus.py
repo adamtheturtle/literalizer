@@ -1,4 +1,4 @@
-"""TOML-driven tests for capability-selected round-trip inputs."""
+"""Capability metadata and selection without a Python program surface."""
 
 import json
 
