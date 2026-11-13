@@ -39,6 +39,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
         "json_type_variant_name_suffix",
         "declares_type_name_call_target",
         "record_shape_names_emit_declarations",
+        "supports_zero_parameter_calls",
         "supports_empty_sibling_sequence_type_hints",
         "supports_multiline_string_literals",
         "supports_non_ascii_string_literals",

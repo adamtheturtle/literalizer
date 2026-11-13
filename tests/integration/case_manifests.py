@@ -732,6 +732,8 @@ class ConstructorCaseSpec(  # noqa: NOD001
     consumer_templates: Mapping[str, str] = Field(default_factory=dict)
     # Native syntax can consume a target even without a call-binding API.
     target_template: str | None = None
+    # Native syntax is resolved after participation, never used as a filter.
+    target_templates: Mapping[str, str] = Field(default_factory=dict)
     variable_name: Annotated[str, Field(min_length=1)] = "p"
 
     @beartype

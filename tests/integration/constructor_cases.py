@@ -13,6 +13,7 @@ from .case_manifests import (
     CaseManifestError,
     load_case_manifests,
 )
+from .constructor_templates import constructor_target_template
 from .constructor_variants import (
     ConstructorBindingSpec,
     constructor_binding_specs,
@@ -85,6 +86,7 @@ def constructor_binding_cases(
             if manifest.selection.admits_language(lang_cls=case.lang_cls)
             and manifest.constructor is not None
             and manifest.constructor.target_template is None
+            and len(manifest.constructor.target_templates) == 0
         )
         if len(owners) == 0:
             msg = (
@@ -111,17 +113,26 @@ def constructor_binding_cases(
         )
     for manifest in manifests:
         config = manifest.constructor
-        if config is not None and config.target_template is not None:
-            cases.extend(
-                ConstructorBindingCase(
-                    name=f"{lang_cls.__name__}_constructor_target",
-                    lang_cls=lang_cls,
-                    spec_overrides={},
-                    variable_form=NewVariable(name="p", modifiers=frozenset()),
-                    skip=NO_SKIPS,
-                    manifest=manifest,
+        if config is not None and (
+            config.target_template is not None
+            or len(config.target_templates) > 0
+        ):
+            for lang_cls in sorted_languages():
+                if not manifest.selection.admits_language(lang_cls=lang_cls):
+                    continue
+                _ = constructor_target_template(
+                    config=config, language_name=lang_cls.__name__
                 )
-                for lang_cls in sorted_languages()
-                if manifest.selection.admits_language(lang_cls=lang_cls)
-            )
+                cases.append(
+                    ConstructorBindingCase(
+                        name=f"{lang_cls.__name__}_constructor_target",
+                        lang_cls=lang_cls,
+                        spec_overrides={},
+                        variable_form=NewVariable(
+                            name="p", modifiers=frozenset()
+                        ),
+                        skip=NO_SKIPS,
+                        manifest=manifest,
+                    )
+                )
     return cases
