@@ -50,7 +50,7 @@ def test_capability_corpus_native_roundtrip(
 ) -> None:
     """Execute each selected group and retain its exact input contract.
 
-    Python executes the integer, interpolation and NUL corpus groups; each
+    Python executes the integer, interpolation and null-byte groups; each
     language's round-trip driver retains its native capability checks.
     Target versions select output syntax, while this process's interpreter
     supplies the runtime, as in the native golden comparison controls.
