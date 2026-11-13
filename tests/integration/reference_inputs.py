@@ -2,6 +2,7 @@
 
 import json
 import tomllib
+from collections.abc import Iterable, Iterator
 from typing import assert_never
 
 import json5_document
@@ -31,33 +32,27 @@ type RefData = (
 
 
 @beartype
-def collect_ref_names(data: RefData, *, ref_key: str) -> list[str]:
-    """Recursively collect all ref name values from parsed data.
+def collect_ref_names(data: RefData, *, ref_key: str) -> Iterator[str]:
+    """Yield reference names in document order without intermediate lists.
 
-    Names retain document order. Binding preparation uses dictionary
-    keys to retain the first position of a repeated name, matching the
-    order :func:`literalizer.literalize` emits the ``bound_refs`` bindings.
+    Binding preparation retains the first position of each repeated name,
+    matching the order emitted by ``literalize`` for ``bound_refs``.
     """
+    children: Iterable[RefData]
     match data:
         case dict():
             if len(data) == 1 and ref_key in data:
                 name = data[ref_key]
                 if isinstance(name, str):
-                    return [name]
-                return []
-            return [
-                n
-                for v in data.values()
-                for n in collect_ref_names(data=v, ref_key=ref_key)
-            ]
+                    yield name
+                return
+            children = data.values()
         case list():
-            return [
-                n
-                for item in data
-                for n in collect_ref_names(data=item, ref_key=ref_key)
-            ]
+            children = data
         case _:
-            return []
+            return
+    for child in children:
+        yield from collect_ref_names(data=child, ref_key=ref_key)
 
 
 @beartype
