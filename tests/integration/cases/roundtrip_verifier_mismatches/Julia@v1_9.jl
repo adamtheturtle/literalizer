@@ -1,0 +1,15 @@
+my_data = Dict(
+    "true_to_one" => Dict("value" => 1),
+    "one_to_true" => Dict("value" => true),
+    "false_to_zero" => Dict("value" => 0),
+    "zero_to_false" => Dict("value" => false),
+    "nested_boolean_to_float" => Dict("value" => [1.0]),
+    "nested_float_to_boolean" => Dict("value" => [false]),
+    "nested_value_types_changed" => Dict("value" => Dict("nested" => [true, 0])),
+    "nested_value_types_reversed" => Dict("value" => Dict("nested" => [1, false])),
+    "array_order_changed" => Dict("value" => [2, 1]),
+    "array_length_changed" => Dict("value" => [1, 2]),
+    "null_to_zero" => Dict("value" => 0),
+    "string_to_boolean" => Dict("value" => true),
+    "object_key_changed" => Dict("value" => Dict("b" => 1)),
+)

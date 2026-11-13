@@ -1,79 +1,66 @@
-# Positive and negative controls for semantic roundtrip verification.
+# Independent mismatch expectations for native golden values (#6914).
 
 [[mismatches]]
 name = "true_to_one"
 expected_json = "{\"value\": true}"
-produced_json = "{\"value\": 1}"
 exclude_keys = []
 
 [[mismatches]]
 name = "one_to_true"
 expected_json = "{\"value\": 1}"
-produced_json = "{\"value\": true}"
 exclude_keys = []
 
 [[mismatches]]
 name = "false_to_zero"
 expected_json = "{\"value\": false}"
-produced_json = "{\"value\": 0}"
 exclude_keys = []
 
 [[mismatches]]
 name = "zero_to_false"
 expected_json = "{\"value\": 0}"
-produced_json = "{\"value\": false}"
 exclude_keys = []
 
 [[mismatches]]
 name = "nested_boolean_to_float"
 expected_json = "{\"value\": [true]}"
-produced_json = "{\"value\": [1.0]}"
 exclude_keys = []
 
 [[mismatches]]
 name = "nested_float_to_boolean"
 expected_json = "{\"value\": [0.0]}"
-produced_json = "{\"value\": [false]}"
 exclude_keys = []
 
 [[mismatches]]
 name = "nested_value_types_changed"
 expected_json = "{\"value\": {\"nested\": [1, false]}}"
-produced_json = "{\"value\": {\"nested\": [true, 0]}}"
 exclude_keys = []
 
 [[mismatches]]
 name = "nested_value_types_reversed"
 expected_json = "{\"value\": {\"nested\": [true, 0]}}"
-produced_json = "{\"value\": {\"nested\": [1, false]}}"
 exclude_keys = []
 
 [[mismatches]]
 name = "array_order_changed"
 expected_json = "{\"value\": [1, 2]}"
-produced_json = "{\"value\": [2, 1]}"
 exclude_keys = []
 
 [[mismatches]]
 name = "array_length_changed"
 expected_json = "{\"value\": [1]}"
-produced_json = "{\"value\": [1, 2]}"
 exclude_keys = []
 
 [[mismatches]]
 name = "null_to_zero"
 expected_json = "{\"value\": null}"
-produced_json = "{\"value\": 0}"
 exclude_keys = []
 
 [[mismatches]]
 name = "string_to_boolean"
 expected_json = "{\"value\": \"true\"}"
-produced_json = "{\"value\": true}"
 exclude_keys = []
 
 [[mismatches]]
 name = "object_key_changed"
 expected_json = "{\"value\": {\"a\": 1}}"
-produced_json = "{\"value\": {\"b\": 1}}"
 exclude_keys = []

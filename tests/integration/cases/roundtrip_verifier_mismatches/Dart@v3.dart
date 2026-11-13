@@ -1,0 +1,15 @@
+final my_data = <String, Map<String, dynamic>>{
+    "true_to_one": <String, dynamic>{"value": 1},
+    "one_to_true": <String, dynamic>{"value": true},
+    "false_to_zero": <String, dynamic>{"value": 0},
+    "zero_to_false": <String, dynamic>{"value": false},
+    "nested_boolean_to_float": <String, dynamic>{"value": <double>[1.0]},
+    "nested_float_to_boolean": <String, dynamic>{"value": <bool>[false]},
+    "nested_value_types_changed": <String, dynamic>{"value": <String, dynamic>{"nested": [true, 0]}},
+    "nested_value_types_reversed": <String, dynamic>{"value": <String, dynamic>{"nested": [1, false]}},
+    "array_order_changed": <String, dynamic>{"value": <int>[2, 1]},
+    "array_length_changed": <String, dynamic>{"value": <int>[1, 2]},
+    "null_to_zero": <String, dynamic>{"value": 0},
+    "string_to_boolean": <String, dynamic>{"value": true},
+    "object_key_changed": <String, dynamic>{"value": <String, dynamic>{"b": 1}},
+};

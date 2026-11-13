@@ -1,0 +1,32 @@
+MOBILE DATA TYPE LIT IS
+  CASE
+    lit.null
+    lit.bool ; BOOL
+    lit.int ; INT
+    lit.float ; REAL64
+    lit.str ; MOBILE []BYTE
+    lit.list ; MOBILE []MOBILE LIT
+    lit.map ; MOBILE []MOBILE LIT
+    lit.pair ; MOBILE []BYTE ; MOBILE LIT
+    lit.set ; MOBILE []MOBILE LIT
+:
+
+PROC main ()
+    VAL MOBILE LIT my_data IS MOBILE LIT(lit.map; MOBILE []MOBILE LIT [
+        MOBILE LIT(lit.pair; MOBILE []BYTE "true_to_one"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.int; 1))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "one_to_true"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.bool; TRUE))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "false_to_zero"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.int; 0))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "zero_to_false"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.bool; FALSE))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "nested_boolean_to_float"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.float; 1.0(REAL64))]))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "nested_float_to_boolean"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.bool; FALSE)]))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "nested_value_types_changed"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "nested"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.bool; TRUE), MOBILE LIT(lit.int; 0)]))]))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "nested_value_types_reversed"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "nested"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.int; 1), MOBILE LIT(lit.bool; FALSE)]))]))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "array_order_changed"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.int; 2), MOBILE LIT(lit.int; 1)]))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "array_length_changed"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.list; MOBILE []MOBILE LIT [MOBILE LIT(lit.int; 1), MOBILE LIT(lit.int; 2)]))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "null_to_zero"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.int; 0))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "string_to_boolean"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.bool; TRUE))])),
+        MOBILE LIT(lit.pair; MOBILE []BYTE "object_key_changed"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "value"; MOBILE LIT(lit.map; MOBILE []MOBILE LIT [MOBILE LIT(lit.pair; MOBILE []BYTE "b"; MOBILE LIT(lit.int; 1))]))]))
+    ]):
+    SEQ
+        SKIP
+:

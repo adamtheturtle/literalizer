@@ -1,0 +1,22 @@
+#import <Foundation/Foundation.h>
+int main(void) {
+@autoreleasepool {
+id my_data = @{
+    @"true_to_one": @{@"value": @1},
+    @"one_to_true": @{@"value": @YES},
+    @"false_to_zero": @{@"value": @0},
+    @"zero_to_false": @{@"value": @NO},
+    @"nested_boolean_to_float": @{@"value": @[@1.0]},
+    @"nested_float_to_boolean": @{@"value": @[@NO]},
+    @"nested_value_types_changed": @{@"value": @{@"nested": @[@YES, @0]}},
+    @"nested_value_types_reversed": @{@"value": @{@"nested": @[@1, @NO]}},
+    @"array_order_changed": @{@"value": @[@2, @1]},
+    @"array_length_changed": @{@"value": @[@1, @2]},
+    @"null_to_zero": @{@"value": @0},
+    @"string_to_boolean": @{@"value": @YES},
+    @"object_key_changed": @{@"value": @{@"b": @1}},
+};
+    (void)my_data;
+}
+    return 0;
+}
