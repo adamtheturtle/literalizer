@@ -749,6 +749,7 @@ class Crystal(metaclass=LanguageCls):
     supports_module_name = True
     supports_empty_dict_key = False
     supports_call_style = True
+    supports_bare_mapping_documents = False
     supports_json_object_documents = False
     supports_default_dict_key_type = True
     supports_default_dict_value_type = True

@@ -499,6 +499,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "supports_json_object_documents": lambda cls: (
         cls.supports_json_object_documents
     ),
+    "supports_bare_mapping_documents": lambda cls: (
+        cls.supports_bare_mapping_documents
+    ),
     "default_allows_empty_dict_keys": _default_allows_empty_dict_keys,
     "supports_key_value_assignment_documents": lambda cls: (
         cls.supports_key_value_assignment_documents

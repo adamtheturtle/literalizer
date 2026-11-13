@@ -52,6 +52,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
         "supports_key_value_assignment_documents",
         "reserved_variable_identifiers_case_sensitive",
         "supports_json_object_documents",
+        "supports_bare_mapping_documents",
         "variant_metadata",
         "wraps_data_dependent_preamble_in_body",
         "uses_data_keyword_for_algebraic_constructors",

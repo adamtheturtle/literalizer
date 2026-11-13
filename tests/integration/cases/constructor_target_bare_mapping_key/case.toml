@@ -1,0 +1,21 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "supports_bare_mapping_documents"}]
+
+# Shared YAML and TOML regressions: native mapping keys preserve target spelling.
+# Retain the assignment and block-map contracts without duplicating their cases.
+[constructor.target_templates]
+Dhall = '''{{ {target} = True }}
+'''
+Hcl = '''{target} = true
+'''
+Json5 = '''{{ {target}: true }}
+'''
+Jsonnet = '''{{ {target}: true }}
+'''
+Nix = '''{{ {target} = true; }}
+'''
+Toml = '''{target} = true
+'''
+Yaml = '''{target}: true
+'''

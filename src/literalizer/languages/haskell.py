@@ -1936,6 +1936,7 @@ class Haskell(metaclass=LanguageCls):
     module_name_must_start_uppercase = True
     supports_empty_dict_key = False
     supports_call_style = True
+    supports_bare_mapping_documents = False
     supports_json_object_documents = False
     supports_default_dict_key_type = False
     supports_default_dict_value_type = False

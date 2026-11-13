@@ -1,9 +1,0 @@
-schema_version = 1
-owner = "constructor-binding"
-gates = [{kind = "capability_flag", flag = "supports_key_value_assignment_documents"}]
-
-# Shared TOML regression: consume the target as a key in an assignment document.
-# Include every backend that accepts this native key/value syntax.
-[constructor]
-target_template = '''{target} = true
-'''
