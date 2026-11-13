@@ -1,6 +1,7 @@
 """Detect orphaned golden files that no parameterized test covers."""
 
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,7 @@ from tests.integration.constructor_cases import (
 )
 from tests.integration.deep_input_cases import deep_input_golden_paths
 from tests.integration.golden_scenarios import GOLDEN_SCENARIOS, golden_groups
+from tests.integration.language_specs import make_golden_path
 from tests.integration.literalize_ref_cases import (
     ref_golden_path,
 )
@@ -39,6 +41,7 @@ from tests.integration.reference_cases import (
 )
 from tests.integration.shared_checked_cases import shared_checked_cases
 from tests.integration.unwrapped_result_cases import result_view_golden_paths
+from tests.integration.variant_cases import variants_for_axis
 
 
 @beartype
@@ -321,35 +324,72 @@ def test_variant_version_inventory_preserves_coverage_and_rejects_phantoms(
     case_dir = cases_dir / "binary"
     case_dir.mkdir(parents=True)
     expected = _expected_literalize_golden_files(cases_dir=cases_dir)
-    ordinary_name = "Cpp_bytes_format_base64@"
-    pinned_name = "Cpp_version_cpp14@"
+    ordinary_variants = variants_for_axis(axis_key="bytes_format")
+    pinned_variants = variants_for_axis(axis_key="language_version")
     ordinary = {
-        case_dir / f"{ordinary_name}{version}.cpp"
-        for version in ("cpp14", "cpp17", "cpp20")
+        make_golden_path(
+            parent=case_dir,
+            name=variant.name,
+            lang_cls=variant.lang_cls,
+            version=version,
+        )
+        for variant in ordinary_variants
+        for version in variant.lang_cls.VersionFormats
     }
-    pinned = case_dir / f"{pinned_name}cpp14.cpp"
+    pinned = {
+        make_golden_path(
+            parent=case_dir,
+            name=variant.name,
+            lang_cls=variant.lang_cls,
+            version=variant.spec.language_version,
+        )
+        for variant in pinned_variants
+    }
+    assert len(ordinary) > 0
+    assert len(pinned) > 0
+    ordinary_names = {path.name.partition("@")[0] for path in ordinary}
+    pinned_names = {path.name.partition("@")[0] for path in pinned}
     assert {
         path
         for path in expected
-        if path.parent == case_dir and path.name.startswith(ordinary_name)
+        if path.parent == case_dir
+        and path.name.partition("@")[0] in ordinary_names
     } == ordinary
     assert {
         path
         for path in expected
-        if path.parent == case_dir and path.name.startswith(pinned_name)
-    } == {pinned}
-    for path in ordinary | {pinned}:
+        if path.parent == case_dir
+        and path.name.partition("@")[0] in pinned_names
+    } == pinned
+    for path in ordinary | pinned:
         actual = Path(__file__).parents[1] / "cases" / "binary" / path.name
         _ = path.write_bytes(data=actual.read_bytes())
     _check_golden_inventory(cases_dir=cases_dir, expected=expected)
 
-    phantom = case_dir / f"{pinned_name}cpp20.cpp"
-    _ = phantom.write_bytes(data=pinned.read_bytes())
-    with pytest.raises(
-        expected_exception=AssertionError,
-        match="Cpp_version_cpp14@cpp20",
-    ):
-        _check_golden_inventory(cases_dir=cases_dir, expected=expected)
+    for variant in pinned_variants:
+        actual = make_golden_path(
+            parent=Path(__file__).parents[1] / "cases" / "binary",
+            name=variant.name,
+            lang_cls=variant.lang_cls,
+            version=variant.spec.language_version,
+        )
+        for version in variant.lang_cls.VersionFormats:
+            if version is variant.spec.language_version:
+                continue
+            phantom = make_golden_path(
+                parent=case_dir,
+                name=variant.name,
+                lang_cls=variant.lang_cls,
+                version=version,
+            )
+            assert phantom not in expected
+            _ = phantom.write_bytes(data=actual.read_bytes())
+            with pytest.raises(
+                expected_exception=AssertionError,
+                match=re.escape(pattern=phantom.name),
+            ):
+                _check_golden_inventory(cases_dir=cases_dir, expected=expected)
+            phantom.unlink()
 
 
 def test_reference_versions_follow_selected_options() -> None:
