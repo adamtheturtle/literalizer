@@ -92,7 +92,7 @@ option = "bytes_format"
 [axes.csharp_object_carrier]
 plan = "fixed_overrides"
 name_template = "{lang}_object_carrier"
-gates = [{ kind = "metadata_field", field = "language_id", value = "csharp" }]
+gates = [{ kind = "capability_flag", flag = "supports_nullable_object_fallbacks" }]
 overrides = [{ kind = "enum_member", option = "sequence_format", member = "ARRAY" }]
 layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
 
@@ -100,7 +100,7 @@ layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multi
 plan = "fixed_overrides"
 name_template = "{lang}_object_carrier_records"
 overrides_from = "csharp_object_carrier"
-gates = [{ kind = "metadata_field", field = "language_id", value = "csharp" }]
+gates = [{ kind = "capability_flag", flag = "supports_nullable_object_fallbacks" }]
 overrides = [{ kind = "enum_member", option = "heterogeneous_strategy", member = "RECORD" }]
 layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
 
@@ -113,7 +113,7 @@ values = [
   { name = "non_nullable", value = "object" },
   { name = "dynamic", value = "dynamic" },
 ]
-gates = [{ kind = "metadata_field", field = "language_id", value = "csharp" }]
+gates = [{ kind = "capability_flag", flag = "supports_nullable_object_fallbacks" }]
 overrides = [{ kind = "enum_member", option = "sequence_format", member = "ARRAY" }]
 
 [axes.custom_value_field_names]

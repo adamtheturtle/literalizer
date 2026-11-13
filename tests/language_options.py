@@ -509,6 +509,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "supports_typed_dict_open": (
         lambda lang_cls: lang_cls.supports_typed_dict_open
     ),
+    "supports_nullable_object_fallbacks": lambda cls: (
+        cls.supports_nullable_object_fallbacks
+    ),
     "declares_call_styles": lambda lang_cls: len(lang_cls.CallStyles) > 0,
     "supports_json_call_result_binding": (
         lambda lang_cls: lang_cls.supports_json_call_result_binding

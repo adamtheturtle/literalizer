@@ -1,6 +1,6 @@
 schema_version = 1
 owner = "variant"
-gates = [{kind = "metadata_field", field = "language_id", value = "csharp"}]
+gates = [{kind = "capability_flag", flag = "supports_nullable_object_fallbacks"}]
 
 [[variants]]
 axis = "csharp_object_carrier"
