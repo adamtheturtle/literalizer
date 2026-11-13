@@ -45,6 +45,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
         "supports_variadic_calls",
         "reserved_variable_identifiers",
         "reserved_variable_identifiers_case_sensitive",
+        "supports_json_object_documents",
         "variant_metadata",
         "wraps_data_dependent_preamble_in_body",
     }

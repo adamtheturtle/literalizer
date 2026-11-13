@@ -1826,6 +1826,8 @@ class _LanguageMetadata(_LanguageMetadataBase):
     supports_module_name: bool
     supports_empty_dict_key: bool
     supports_call_style: bool
+    supports_json_object_documents: bool
+    """Whether a JSON object is a complete native document."""
     supports_default_dict_key_type: bool
     supports_non_string_dict_keys: bool
     checks_raw_control_dict_keys_separately: bool
@@ -2010,6 +2012,8 @@ class Language(typing.Protocol):
     ]
     variant_metadata: ClassVar[VariantMetadata]
     language_id: ClassVar[str]
+    supports_json_object_documents: bool
+    """Whether a JSON object is a complete native document."""
 
     # LanguageCls requires this metadata on every language class. Normal
     # attribute lookup also exposes it through each instance, which is the
