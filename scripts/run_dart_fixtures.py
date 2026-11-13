@@ -43,29 +43,17 @@ def _binding_name(*, variable_form: VariableForm | None) -> str:
 @beartype
 def _literalize_bindings() -> dict[Path, str | None]:
     """Read roots, using None for native programs with a main function."""
-    bindings: dict[Path, str | None] = {}
-    for group in golden_groups():
-        for rendering in group.renderings:
-            if rendering.lang_cls is not Dart:
-                continue
-            for version in rendering.versions:
-                spec = rendering.spec_for(version=version)
-                if spec.language_version is not version:
-                    continue
-                golden = make_golden_path(
-                    parent=rendering.golden_parent,
-                    name=rendering.golden_name,
-                    lang_cls=Dart,
-                    version=version,
-                )
-                bindings[golden.resolve()] = (
-                    None
-                    if rendering.consumer_template is not None
-                    else _binding_name(
-                        variable_form=rendering.render.variable_form
-                    )
-                )
-    return bindings
+    return {
+        rendering.golden_path(version=spec.language_version).resolve(): (
+            None
+            if rendering.consumer_template is not None
+            else _binding_name(variable_form=rendering.render.variable_form)
+        )
+        for group in golden_groups()
+        for rendering in group.renderings
+        if rendering.lang_cls is Dart
+        for spec in rendering.specs
+    }
 
 
 @beartype
