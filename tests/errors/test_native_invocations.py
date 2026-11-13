@@ -1,5 +1,6 @@
 """Data-driven rejections for structured native invocation contracts."""
 
+import enum
 import json
 import tomllib
 from collections.abc import Callable, Mapping
@@ -8,7 +9,12 @@ from pathlib import Path
 import pytest
 
 import literalizer
-from literalizer.languages import ALL_LANGUAGES, Java, ObjectiveC
+from literalizer.languages import ALL_LANGUAGES, ObjectiveC
+
+_SUPPORTED = sorted(
+    (cls for cls in ALL_LANGUAGES if cls.supports_native_invocations),
+    key=lambda cls: cls.__name__,
+)
 
 _CASES = tomllib.loads(
     (Path(__file__).parent / "native_invocations.toml").read_text(
@@ -77,44 +83,94 @@ def test_opaque_native_recipe_literals_are_rejected(value: object) -> None:
         )
 
 
-def test_native_binding_rejects_foreign_modifiers() -> None:
-    """Reject modifiers owned by another language."""
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SUPPORTED,
+    ids=lambda cls: cls.language_id,
+)
+@pytest.mark.parametrize(
+    argnames="modifier",
+    argvalues=[
+        pytest.param(modifier, id=f"{cls.__name__}/{modifier.name}")
+        for cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+        for modifier in cls.Modifiers
+    ],
+)
+def test_native_binding_rejects_declaration_modifiers(
+    language_cls: literalizer.LanguageCls, modifier: enum.Enum
+) -> None:
+    """Native bindings refuse every language's declaration modifiers."""
     with pytest.raises(
         expected_exception=literalizer.NativeCallError,
         match="do not accept modifiers",
     ):
         _ = literalizer.literalize_native_call(
-            language=ObjectiveC(),
+            language=language_cls(),
             invocation=literalizer.NativeInvocation(
-                target=literalizer.ConstructorTarget(class_name="NSObject"),
+                target=literalizer.FunctionTarget(
+                    name="consume",
+                    parameter_types=(),
+                    return_type=literalizer.ScalarType.INTEGER,
+                ),
                 arguments=(),
             ),
             variable_form=literalizer.NewVariable(
-                name="created", modifiers=frozenset({Java.modifiers.FINAL})
+                name="created", modifiers=frozenset({modifier})
             ),
         )
 
 
+@pytest.mark.parametrize(
+    argnames="language_cls",
+    argvalues=_SUPPORTED,
+    ids=lambda cls: cls.language_id,
+)
+@pytest.mark.parametrize(
+    argnames="render",
+    argvalues=[
+        literalizer.literalize_native_call,
+        literalizer.literalize_native_calls,
+        literalizer.literalize_invocations,
+    ],
+    ids=["single", "rows", "shared"],
+)
 def test_native_capability_can_be_disabled(
     monkeypatch: pytest.MonkeyPatch,
+    language_cls: literalizer.LanguageCls,
+    render: Callable[..., literalizer.LiteralizeResult],
 ) -> None:
     """A backend can opt out even when it provides the native
     callbacks.
     """
     monkeypatch.setattr(
-        target=ObjectiveC, name="supports_native_invocations", value=False
+        target=language_cls, name="supports_native_invocations", value=False
     )
+    kwargs: dict[str, object] = {"language": language_cls()}
+    if render is literalizer.literalize_native_call:
+        kwargs["invocation"] = literalizer.NativeInvocation(
+            target=literalizer.FunctionTarget(
+                name="consume",
+                parameter_types=(),
+                return_type=literalizer.ScalarType.VOID,
+            ),
+            arguments=(),
+        )
+    else:
+        kwargs.update(
+            source="[[]]",
+            input_format=literalizer.InputFormat.JSON,
+            invocation={
+                "function": "consume",
+                "parameter-types": [],
+                "return-type": "void",
+                "arguments": [],
+            },
+        )
     with pytest.raises(
         expected_exception=literalizer.NativeCallError,
         match="does not support",
     ):
-        _ = literalizer.literalize_native_call(
-            language=ObjectiveC(),
-            invocation=literalizer.NativeInvocation(
-                target=literalizer.ConstructorTarget(class_name="NSObject"),
-                arguments=(),
-            ),
-        )
+        _ = render(**kwargs)
 
 
 _UNSUPPORTED = sorted(
