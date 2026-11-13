@@ -41,6 +41,23 @@ env:
 # Round-trip budgets include uv's cold project-environment setup. Allow at
 # least three minutes even when executing the generated program is quick.
 jobs:
+  # Filter only PRs with understood inputs. Other events retain full native
+  # coverage; pre-commit and ci.yml's test matrix always run as before.
+  native-changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      jobs: ${{ steps.select.outputs.jobs }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          # PR checkout is a merge commit. Include its first parent (base).
+          fetch-depth: 2
+      - name: Select native jobs
+        id: select
+        run: python3 -m scripts.select_native_jobs
+
   pre-commit:
     strategy:
       # Keep independent validation running when a link-check service fails.
@@ -92,6 +109,8 @@ jobs:
   # enough that splitting them into separate runners would spend more
   # time on runner startup than on linting.
   lint-fast:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-fast')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -701,6 +720,8 @@ jobs:
   # no two odin processes share a kernel. Splitting the fixture work leaves
   # room for cold roundtrip setup within the existing job timeout.
   lint-odin:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-odin')
     strategy:
       fail-fast: false
       matrix:
@@ -763,6 +784,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_odin_roundtrip
 
   lint-roc:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-roc')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Roc has no stable release, and the upstream ``nightly`` GitHub
@@ -840,6 +863,8 @@ jobs:
   # escaped quotes and the ``datetime`` builtin) are documented in
   # scripts/lint-matlab-fixture.sh.
   lint-matlab:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-matlab')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Use a prebuilt Octave image instead of `apt-get install octave`, which
@@ -884,6 +909,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_matlab_roundtrip
 
   lint-perl:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-perl')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -933,6 +960,8 @@ jobs:
 
   # Fixture languages linted by small tools fetched via `go install`.
   lint-go-installed:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-go-installed')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -987,6 +1016,8 @@ jobs:
   # `lint-elm`) so each long-running per-fixture loop fans out instead of
   # serializing.
   lint-npm-installed:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-npm-installed')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1077,6 +1108,8 @@ jobs:
   # so the per-fixture tsx startups run in parallel with the tsc syntax
   # check instead of after it.
   lint-typescript-run:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-typescript-run')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1127,6 +1160,8 @@ jobs:
   # combined step taking 1:30-3:50, so the parallel split saves
   # meaningful wall-clock for ~10-15s of extra setup.
   lint-elm:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-elm')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1167,6 +1202,8 @@ jobs:
   # Elm runtime check. Sibling to `lint-elm` so the compile + Node
   # execute pass runs in parallel with the format + compile-only pass.
   lint-elm-run:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-elm-run')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1210,6 +1247,8 @@ jobs:
 
   # Fixture languages whose check is a small `uv run python ...` helper.
   lint-uv-scripts:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-uv-scripts')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1332,6 +1371,8 @@ jobs:
   # .NET-hosted linters. Run host builds in parallel-looking sequential
   # steps so the .NET runtime startup is paid once for the whole job.
   lint-dotnet:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-dotnet')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1425,6 +1466,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_fsharp_roundtrip
 
   lint-sml:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-sml')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1476,6 +1519,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_sml_roundtrip
 
   lint-elixir:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-elixir')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Elixir fixture on disk carries the tag from
@@ -1527,6 +1572,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_elixir_roundtrip
 
   lint-erlang:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-erlang')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Erlang fixture on disk carries the tag from
@@ -1578,6 +1625,8 @@ jobs:
         run: uv run --no-dev --group=test python -m scripts.check_erlang_binary_programs
 
   lint-gleam:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-gleam')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Gleam fixture on disk carries the tag from
@@ -1654,6 +1703,8 @@ jobs:
 
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-jvm-mini')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1746,6 +1797,8 @@ jobs:
 
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-haskell-family')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -1900,7 +1953,8 @@ jobs:
   # Use the shared toolchain to retain every check without repeatedly
   # expanding shared designated-initializer subtrees (ci/clang/README.md).
   lint-c-tidy:
-    needs: [build-cpp-toolchain]
+    needs: [native-changes, build-cpp-toolchain]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-c-tidy')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -1956,6 +2010,8 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
   build-cpp-toolchain:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'build-cpp-toolchain')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1997,7 +2053,8 @@ jobs:
           retention-days: 1
 
   lint-cpp-tidy:
-    needs: [build-cpp-toolchain]
+    needs: [native-changes, build-cpp-toolchain]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-cpp-tidy')
     strategy:
       matrix:
         shard: [0, 1, 2]
@@ -2069,6 +2126,8 @@ jobs:
           xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
 
   lint-cobol:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-cobol')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -2150,7 +2209,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_cobol_roundtrip
 
   lint-cpp:
-    needs: [build-cpp-toolchain]
+    needs: [native-changes, build-cpp-toolchain]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-cpp')
     strategy:
       matrix:
         shard: [0, 1, 2]
@@ -2255,6 +2315,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_cpp_shared_record
 
   lint-kotlin:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-kotlin')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # The host uses the compiler bundled with this distribution.
@@ -2343,6 +2405,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_kotlin_roundtrip
 
   lint-swift:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-swift')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2409,6 +2473,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_swift_roundtrip
 
   lint-ocaml:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-ocaml')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2481,6 +2547,8 @@ jobs:
         run: opam exec -- uv run --no-dev --group=roundtrip python -m scripts.run_ocaml_roundtrip
 
   lint-commonlisp:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-commonlisp')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # The ``LISP`` environment variable pins the SBCL build that
@@ -2544,6 +2612,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_common_lisp_roundtrip
 
   lint-scala:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-scala')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -2625,6 +2695,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_scala_roundtrip
 
   lint-haxe:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-haxe')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2684,6 +2756,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_haxe_roundtrip
 
   lint-dart:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-dart')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2727,6 +2801,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_dart_roundtrip
 
   lint-julia:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-julia')
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
@@ -2783,6 +2859,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_julia_roundtrip
 
   lint-go:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-go')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2833,6 +2911,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_go_shared_record
 
   lint-rust:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-rust')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2907,6 +2987,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_rust_shared_record
 
   lint-r:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-r')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2966,6 +3048,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_r_roundtrip
 
   lint-d:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-d')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3063,6 +3147,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_d_roundtrip
 
   lint-crystal:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-crystal')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3130,6 +3216,8 @@ jobs:
   # Pull requests use the exact supported version; the scheduled workflow
   # also tries the latest stable release as a non-blocking canary.
   lint-mojo:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-mojo')
     name: lint-mojo (${{ matrix.mojo-version }}, ${{ matrix.shard }})
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -3206,6 +3294,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_mojo_roundtrip
 
   lint-nim:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-nim')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Promote every Nim warning to a CI failure. Nim's
@@ -3342,6 +3432,8 @@ jobs:
   # Check py38 fixtures on Python 3.8 and both typing-alias formats on
   # the project's Python 3.12 floor. Keep each interpreter/tag pair once.
   lint-python:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-python')
     strategy:
       fail-fast: false
       matrix:
@@ -3384,6 +3476,8 @@ jobs:
           python < /tmp/files-python
 
   lint-racket:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-racket')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3426,6 +3520,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_racket_roundtrip
 
   lint-raku:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-raku')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # The pinned Rakudo ``2026.04`` release implements Raku language
@@ -3479,6 +3575,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_raku_roundtrip
 
   lint-zig:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-zig')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Zig fixture on disk carries the tag from
@@ -3550,6 +3648,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_zig_roundtrip
 
   lint-systemverilog:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-systemverilog')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3597,6 +3697,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_systemverilog_roundtrip
 
   lint-v:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-v')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3666,6 +3768,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_v_roundtrip
 
   lint-objectivec:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-objectivec')
     # ``macos-15`` pins the runner image (the current ``macos-latest``
     # alias) so the Apple ``clang`` it ships stays fixed. That clang
     # supports the Objective-C 2.0 (``V2``) language generation that
@@ -3728,6 +3832,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_objective_c_roundtrip
 
   lint-objectivec-tidy:
+    needs: [native-changes]
+    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-objectivec-tidy')
     # ``macos-15`` pins the runner image to match ``lint-objectivec`` so
     # the Apple ``clang`` headers that Homebrew ``clang-tidy`` parses stay
     # fixed against the Objective-C 2.0 (``V2``)
@@ -3763,6 +3869,7 @@ jobs:
 
   completion-lint:
     needs:
+      - native-changes
       - pre-commit
       - lint-fast
       - lint-odin
