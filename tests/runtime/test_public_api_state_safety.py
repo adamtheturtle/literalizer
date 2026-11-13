@@ -9,7 +9,7 @@ import dataclasses
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 
 from literalizer.languages import ALL_LANGUAGES
 from tests.integration.golden_scenarios import GOLDEN_SCENARIOS
@@ -20,7 +20,7 @@ from tests.integration.state_goldens import (
     read_state_golden,
     render_state_golden,
 )
-from tests.toml_cases import load_toml_cases
+from tests.integration.variant_cases import variants_for_axis
 
 
 class _ThreadCase(
@@ -35,21 +35,52 @@ class _ThreadCase(
     case_names: tuple[str, ...]
 
 
-class _Cases(BaseModel, extra="forbid", frozen=True):
-    """Manifest-owned public state-safety scenarios."""
+def _variant_thread_cases() -> list[_ThreadCase]:
+    """Exercise record and JSON caches through every declared producer.
 
-    threads: tuple[_ThreadCase, ...]
-
-
-_CASES = TypeAdapter(type=_Cases).validate_python(
-    load_toml_cases(name="public_api_state_safety")
-)
+    Retain the Rust record and C cJSON regressions from issue #4699 while
+    selecting their peers by the shared option axes.
+    """
+    cases: list[_ThreadCase] = []
+    for axis, case_names in (
+        (
+            "heterogeneous_strategy_record",
+            (
+                "record_pure_scalars",
+                "record_nested_record",
+                "record_nested_container",
+            ),
+        ),
+        (
+            "json_type",
+            (
+                "json_helper_name_arena",
+                "sibling_list_values_same_shape",
+                "rectangular_map_sequence_shapes",
+            ),
+        ),
+    ):
+        producers = {
+            (variant.lang_cls, variant.name)
+            for variant in variants_for_axis(axis_key=axis)
+        }
+        cases.extend(
+            _ThreadCase(
+                name=name,
+                scenario_name="format_variant",
+                language=cls,
+                golden_name=name,
+                case_names=case_names,
+            )
+            for cls, name in sorted(producers, key=lambda pair: pair[1])
+        )
+    return cases
 
 
 @pytest.mark.parametrize(
     argnames="scenario",
     argvalues=[
-        *_CASES.threads,
+        *_variant_thread_cases(),
         *(
             _ThreadCase(
                 name=f"{cls.language_id}_default",
@@ -83,11 +114,21 @@ def test_language_instance_is_thread_safe(scenario: _ThreadCase) -> None:
         scenario.case_names
     )
     cases: list[StateGolden] = []
-    for version in renderings[0].versions:
+    versions = dict.fromkeys(
+        spec.language_version
+        for rendering in renderings
+        for spec in rendering.specs
+    )
+    for version in versions:
+        version_renderings = [
+            rendering
+            for rendering in renderings
+            if version in {spec.language_version for spec in rendering.specs}
+        ]
         shared_language = dataclasses.replace(
-            renderings[0].spec_for(version=version)
+            version_renderings[0].spec_for(version=version)
         )
-        cases.extend(
+        version_cases = [
             read_state_golden(
                 rendering=rendering,
                 language=(
@@ -99,12 +140,13 @@ def test_language_instance_is_thread_safe(scenario: _ThreadCase) -> None:
                     else shared_language
                 ),
             )
-            for rendering in renderings
+            for rendering in version_renderings
             # The base suite omits shapes a backend cannot represent.
             # Exercise its complete native fixtures without a language list.
             if rendering.golden_path(version=version).is_file()
-        )
-    assert len(cases) > 0
+        ]
+        assert len(version_cases) > 0, version.name
+        cases.extend(version_cases)
 
     def render(index: int) -> None:
         """Render one document through the shared language instance."""
