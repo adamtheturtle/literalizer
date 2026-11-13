@@ -1833,8 +1833,8 @@ class _LanguageMetadata(_LanguageMetadataBase):
     """
     supports_default_dict_value_type: bool
     supports_nullable_object_fallbacks: bool
-    """Whether collection fallbacks accept nullable object type
-    annotations.
+    """Whether collection fallbacks accept object type annotations
+    that allow null values.
     """
     supports_default_sequence_element_type: bool
     supports_default_set_element_type: bool
@@ -2400,8 +2400,8 @@ class Language(typing.Protocol):
     """
 
     supports_nullable_object_fallbacks: bool
-    """Whether collection fallbacks accept nullable object type
-    annotations.
+    """Whether collection fallbacks accept object type annotations
+    that allow null values.
     """
     supports_dict_literal_as_free_expression: bool
     """Whether a dict/map literal can appear as a free-standing
