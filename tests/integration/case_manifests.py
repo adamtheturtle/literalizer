@@ -8,7 +8,7 @@ import functools
 import tomllib
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Annotated, Literal, Self, get_args
+from typing import Annotated, Literal, get_args
 
 from beartype import beartype
 from pydantic import (
@@ -25,21 +25,8 @@ from tests.native_value_sources import RefDatetimeInput, RefValueSource
 
 from . import call_templates, manifest_values
 from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
-from .language_metadata import language_metadata
-from .language_specs import make_spec
+from .manifest_selection import CapabilitySelection
 from .owned_case_specs import OwnedCaseSpec
-from .suite_gates import (
-    CallCharacterQuoteGate,
-    CallHashRawPrefixGate,
-    CallIdentifierPrefixGate,
-    CallInterpolationGate,
-    CallLiteralFlagGate,
-    CallRawStringPrefixGate,
-    SuiteGate,
-    call_literal_gate_admits,
-    gates_admit,
-    validate_gate_names,
-)
 from .variant_axis_names import KNOWN_VARIANT_AXES
 from .variant_types import VariantExpectedError
 
@@ -233,62 +220,6 @@ class ManifestVariant(  # noqa: NOD001
         return self
 
 
-# Defaults stand in for omitted keys, as above.
-class CapabilitySelection(  # noqa: NOD001
-    BaseModel,
-    arbitrary_types_allowed=True,
-    extra="forbid",
-    frozen=True,
-    strict=True,
-):
-    """Select participation through declared properties and syntax support.
-
-    A gate reads the language default spec: a case selects languages,
-    while a variant axis selects the specs its overrides build. Named
-    language lists are not part of the root, reference or call schema.
-    """
-
-    gates: list[SuiteGate] = Field(default_factory=list[SuiteGate])
-
-    @model_validator(mode="after")
-    def _validate_language_selection(self) -> Self:
-        """Validate every declared participation property."""
-        validate_gate_names(subject="gates", gates=self.gates)
-        return self
-
-    @beartype
-    def admits_language(self, *, lang_cls: literalizer.LanguageCls) -> bool:
-        """Return whether this narrowing selects *lang_cls*."""
-        literal_gates = tuple(
-            gate
-            for gate in self.gates
-            if isinstance(
-                gate,
-                (
-                    CallLiteralFlagGate,
-                    CallRawStringPrefixGate,
-                    CallInterpolationGate,
-                    CallCharacterQuoteGate,
-                    CallHashRawPrefixGate,
-                    CallIdentifierPrefixGate,
-                ),
-            )
-        )
-        if len(literal_gates) == len(self.gates):
-            return all(
-                call_literal_gate_admits(
-                    gate=gate, syntax=lang_cls.call_literal_syntax
-                )
-                for gate in literal_gates
-            )
-        return gates_admit(
-            gates=self.gates,
-            lang_cls=lang_cls,
-            metadata=language_metadata(language_id=lang_cls.language_id),
-            spec=make_spec(lang_cls=lang_cls),
-        )
-
-
 class ApiManifestVariant(
     BaseModel,
     arbitrary_types_allowed=True,
@@ -341,7 +272,7 @@ class RefConsumerSpec(  # noqa: NOD001
     before_assignment: bool = False
 
 
-class RefCaseSpec(  # noqa: NOD001
+class RefCaseSpec(
     OwnedCaseSpec,
     CapabilitySelection,
     frozen=True,
@@ -525,7 +456,7 @@ class CallWrapperSpec(BaseModel, extra="forbid", frozen=True):
     arguments: tuple[Literal["call", "zipped"], ...]
 
 
-class CallCaseSpec(  # noqa: NOD001
+class CallCaseSpec(
     OwnedCaseSpec,
     CapabilitySelection,
     frozen=True,
@@ -810,7 +741,7 @@ class NativeInvocationCaseSpec(BaseModel, extra="forbid", frozen=True):
     consumer_template: str
 
 
-class _CaseManifestData(  # noqa: NOD001
+class _CaseManifestData(
     CapabilitySelection,
     frozen=True,
 ):
