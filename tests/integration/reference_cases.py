@@ -123,6 +123,13 @@ class LiteralizeRefVariantCase:
     ref_case: literalizer.IdentifierCase | None
 
     @property
+    def lang_cls(self) -> literalizer.LanguageCls:
+        """Expose the target language consistently across reference
+        cases.
+        """
+        return self.variant.lang_cls
+
+    @property
     def golden_name(self) -> str:
         """Retain whether the public API receives an explicit ref case."""
         suffix = "ref_default" if self.ref_case is None else "ref"
@@ -134,7 +141,7 @@ class LiteralizeRefVariantCase:
         return (
             RefRendering(
                 config=self.config,
-                lang_cls=self.variant.lang_cls,
+                lang_cls=self.lang_cls,
                 spec=self.variant.spec,
                 golden_name=self.golden_name,
                 ref_case=self.ref_case,
@@ -269,4 +276,16 @@ def ref_language_versions(
             ).language_version
             for version in lang_cls.VersionFormats
         )
+    )
+
+
+@beartype
+def reference_golden_cases() -> tuple[
+    LiteralizeRefCase | LiteralizeRefVariantCase, ...
+]:
+    """Collect explicit, default and variant reference fixture owners."""
+    return (
+        *discover_literalize_ref_cases(owner=REF_OWNER),
+        *discover_literalize_ref_cases(owner=REF_DEFAULT_OWNER),
+        *build_literalize_ref_variant_cases(),
     )

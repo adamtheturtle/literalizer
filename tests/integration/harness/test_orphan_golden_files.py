@@ -40,6 +40,7 @@ from tests.integration.reference_cases import (
     build_literalize_ref_variant_cases,
     discover_literalize_ref_cases,
     ref_language_versions,
+    reference_golden_cases,
 )
 from tests.integration.shared_checked_cases import shared_checked_cases
 from tests.integration.unwrapped_result_cases import result_view_golden_paths
@@ -82,14 +83,9 @@ def _expected_literalize_golden_files(*, cases_dir: Path) -> set[Path]:
 @beartype
 def _expected_reference_golden_files(*, cases_dir: Path) -> set[Path]:
     """Read reference ownership from the renderings executed by pytest."""
-    cases: tuple[LiteralizeRefCase | LiteralizeRefVariantCase, ...] = (
-        *discover_literalize_ref_cases(owner=REF_OWNER),
-        *discover_literalize_ref_cases(owner=REF_DEFAULT_OWNER),
-        *build_literalize_ref_variant_cases(),
-    )
     return {
         rendering.golden_path(cases_dir=cases_dir)
-        for case in cases
+        for case in reference_golden_cases()
         for rendering in case.renderings
     }
 

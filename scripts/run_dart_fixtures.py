@@ -15,20 +15,13 @@ from tests.integration.call_collection import (
     discover_call_cases,
 )
 from tests.integration.call_variant_cases import build_call_variant_cases
-from tests.integration.case_manifests import (
-    REF_DEFAULT_OWNER,
-    REF_OWNER,
-    RefCaseSpec,
-)
+from tests.integration.case_manifests import RefCaseSpec
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
 )
 from tests.integration.golden_scenarios import golden_groups
 from tests.integration.language_specs import make_golden_path
-from tests.integration.reference_cases import (
-    build_literalize_ref_variant_cases,
-    discover_literalize_ref_cases,
-)
+from tests.integration.reference_cases import reference_golden_cases
 
 _CASES_DIR = Path(__file__).parent.parent / "tests" / "integration" / "cases"
 
@@ -104,26 +97,15 @@ def _ref_binding_name(*, config: RefCaseSpec) -> str | None:
 
 @beartype
 def _ref_bindings() -> dict[Path, str | None]:
-    """Read roots or native entry points for all reference golden
-    owners.
-    """
-    bindings: dict[Path, str | None] = {}
-    for owner in (REF_OWNER, REF_DEFAULT_OWNER):
-        for ref_case in discover_literalize_ref_cases(owner=owner):
-            if ref_case.lang_cls is not Dart:
-                continue
-            for rendering in ref_case.renderings:
-                bindings[
-                    rendering.golden_path(cases_dir=_CASES_DIR).resolve()
-                ] = _ref_binding_name(config=rendering.config)
-    for variant_case in build_literalize_ref_variant_cases():
-        if variant_case.variant.lang_cls is not Dart:
-            continue
-        for rendering in variant_case.renderings:
-            bindings[rendering.golden_path(cases_dir=_CASES_DIR).resolve()] = (
-                _ref_binding_name(config=rendering.config)
-            )
-    return bindings
+    """Read roots or native entry points from the reference renderings."""
+    return {
+        rendering.golden_path(
+            cases_dir=_CASES_DIR
+        ).resolve(): _ref_binding_name(config=rendering.config)
+        for case in reference_golden_cases()
+        if case.lang_cls is Dart
+        for rendering in case.renderings
+    }
 
 
 @beartype
