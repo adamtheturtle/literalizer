@@ -8,6 +8,7 @@ This module selects languages and collects the contexts used by
 import dataclasses
 import enum
 import functools
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal
 
@@ -21,6 +22,7 @@ from literalizer.exceptions import (
 )
 
 from .case_data import (
+    CaseData,
     has_invalid_dict_keys,
     has_non_printable_ascii_dict_keys,
     has_special_floats,
@@ -33,7 +35,6 @@ from .case_manifests import (
     PRE_INDENT_CONTAINER_ROLE,
     STATEMENT_TERMINATOR_ROLE,
     CaseManifest,
-    case_input,
     load_case_manifests,
 )
 from .language_metadata import language_metadata
@@ -106,6 +107,18 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
 
 @functools.cache
 @beartype
+def _case_data_by_name(*, cases_dir: Path) -> Mapping[str, CaseData]:
+    """Parse the shared manifest inventory once for discovery
+    predicates.
+    """
+    return {
+        manifest.case_dir.name: load_case_data(input_info=manifest.input)
+        for manifest in load_case_manifests(cases_dir=cases_dir)
+    }
+
+
+@functools.cache
+@beartype
 def cases_with_invalid_dict_keys(
     *, cases_dir: Path, key_syntax: NewVariableNameSyntax | None
 ) -> frozenset[str]:
@@ -113,12 +126,9 @@ def cases_with_invalid_dict_keys(
     if key_syntax is None:
         return frozenset[str]()
     return frozenset(
-        case_dir.name
-        for case_dir in cases_dir.iterdir()
-        if has_invalid_dict_keys(
-            data=load_case_data(input_info=case_input(case_dir=case_dir)),
-            key_syntax=key_syntax,
-        )
+        name
+        for name, data in _case_data_by_name(cases_dir=cases_dir).items()
+        if has_invalid_dict_keys(data=data, key_syntax=key_syntax)
     )
 
 
@@ -133,13 +143,11 @@ def cases_with_non_trivial_dict_keys(
     Every case is parsed by its declared format, so a JSON/JSON5/TOML
     case carrying such keys is detected the same as a YAML one.
     """
-    result: set[str] = set()
-    for case_dir in cases_dir.iterdir():
-        input_info = case_input(case_dir=case_dir)
-        loaded = load_case_data(input_info=input_info)
-        if has_non_printable_ascii_dict_keys(data=loaded):
-            result.add(case_dir.name)
-    return frozenset(result)
+    return frozenset(
+        name
+        for name, data in _case_data_by_name(cases_dir=cases_dir).items()
+        if has_non_printable_ascii_dict_keys(data=data)
+    )
 
 
 @functools.cache
@@ -153,13 +161,11 @@ def cases_with_special_floats(
     Every case is parsed by its declared format, so a JSON5/TOML case
     expressing ``inf``/``nan`` is detected the same as a YAML one.
     """
-    result: set[str] = set()
-    for case_dir in cases_dir.iterdir():
-        input_info = case_input(case_dir=case_dir)
-        loaded = load_case_data(input_info=input_info)
-        if has_special_floats(data=loaded):
-            result.add(case_dir.name)
-    return frozenset(result)
+    return frozenset(
+        name
+        for name, data in _case_data_by_name(cases_dir=cases_dir).items()
+        if has_special_floats(data=data)
+    )
 
 
 @functools.cache
