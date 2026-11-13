@@ -1641,6 +1641,8 @@ class _LanguageMetadata(_LanguageMetadataBase):
     supports_variable_names: bool
     supports_no_variable_wrap_in_file: bool
     supports_native_invocations: bool
+    supports_local_binding_documents: bool
+    """Whether native documents can bind and return local values."""
     supports_stateful_receiver_result_checks: bool
     """Whether invocation recipes can check a receiver's method or
     function field result while retaining changes to receiver state.
@@ -2395,6 +2397,8 @@ class Language(typing.Protocol):
     extension: str
     """The file extension for this language, including the leading dot."""
 
+    supports_local_binding_documents: bool
+    """Whether native documents can bind and return local values."""
     supports_stateful_receiver_result_checks: bool
     """Whether invocation recipes can check a receiver's method or
     function field result while retaining changes to receiver state.
