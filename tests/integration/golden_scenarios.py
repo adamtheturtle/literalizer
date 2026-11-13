@@ -25,12 +25,9 @@ from beartype import beartype
 
 import literalizer
 
-from . import scenario_skips
+from . import case_manifests, manifest_queries, scenario_skips
 from .case_discovery import (
     build_heterogeneous_strategy_combined_cases,
-    build_indent_cases,
-    build_no_variable_form_cases,
-    build_pre_indent_cases,
     build_statement_terminator_combined_cases,
     group_cases_by_language,
     group_combined_cases_by_language,
@@ -58,6 +55,7 @@ from .golden_renderings import (
     compact_render,
     unprefixed_rendering,
 )
+from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -393,28 +391,36 @@ def _heterogeneous_strategy_renderings(
 
 @beartype
 def _pre_indent_renderings(
-    *,
-    lang_cls: literalizer.LanguageCls,
+    *, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
-    """Declare a new variable at a non-zero ``pre_indent_level``.
+    """Render each modifier combination at a non-zero pre-indent.
 
-    Regression coverage for the bug where the first line of a
-    multi-line value was inserted after ``=`` with the indent baked in,
-    producing extra spaces between ``=`` and the value and shifting
-    continuation lines by an extra indent.
+    Include the comment-scalar fixture when the language declares it.
+    Keep container renderings before comment renderings for stable IDs.
     """
+    container = manifest_queries.case_dir_name_for_role(
+        cases_dir=_CASES_DIR, role=case_manifests.PRE_INDENT_CONTAINER_ROLE
+    )
+    comment = manifest_queries.case_dir_name_for_role(
+        cases_dir=_CASES_DIR,
+        role=case_manifests.PRE_INDENT_COMMENT_SCALAR_ROLE,
+    )
+    contexts = [(container, "")]
+    if language_metadata(
+        language_id=lang_cls.language_id
+    ).variants.pre_indent_comment_scalar:
+        contexts.append((comment, f"_{comment}"))
     return tuple(
         unprefixed_rendering(
             lang_cls=lang_cls,
-            case_dir_name=case.case_dir_name,
-            golden_name=case.name,
+            case_dir_name=case_dir_name,
+            golden_name=f"{lang_cls.__name__}_pre_indent_1_{combo.name}{suffix}",
             spec_source={},
             render=RenderArguments(
                 variable_form=literalizer.NewVariable(
-                    name="my_data",
-                    modifiers=case.modifiers,
+                    name="my_data", modifiers=combo.modifiers
                 ),
-                pre_indent_level=case.pre_indent_level,
+                pre_indent_level=1,
                 collection_layout=literalizer.CollectionLayout.COMPACT,
                 record_null_substitutions=None,
                 wrap_in_file=True,
@@ -424,67 +430,64 @@ def _pre_indent_renderings(
                 suffix=" at non-zero pre-indent",
             ),
         )
-        for case in build_pre_indent_cases()
-        if case.lang_cls is lang_cls
+        for case_dir_name, suffix in contexts
+        for combo in lang_cls.modifier_combinations
     )
 
 
 @beartype
 def _no_variable_form_renderings(
-    *,
-    lang_cls: literalizer.LanguageCls,
+    *, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
-    """Render a bare value at file scope, with no variable form.
+    """Render selected role inputs directly at file scope.
 
-    Locks in issue #2138: languages whose
-    :attr:`~literalizer._language.Language.supports_no_variable_wrap_in_file`
-    is ``True`` must produce valid file-scope output for a bare value;
-    opt-out languages are rejected upstream with
-    :class:`~literalizer.exceptions.WrapInFileWithoutVariableNotSupportedError`.
+    Keep the scalar fixture's historical name; other shapes include
+    their case name so fixtures sharing the role remain distinct.
     """
+    if not lang_cls.supports_no_variable_wrap_in_file:
+        return ()
+    manifests = case_manifests_by_name(cases_dir=_CASES_DIR)
     return tuple(
         unprefixed_rendering(
             lang_cls=lang_cls,
-            case_dir_name=case.case_dir_name,
-            golden_name=case.name,
+            case_dir_name=case_name,
+            golden_name=(
+                f"{lang_cls.__name__}_no_variable_form"
+                + ("" if case_name == "scalar_int" else f"_{case_name}")
+            ),
             spec_source={},
             render=compact_render(variable_form=None),
             skip=NO_SKIPS,
         )
-        for case in build_no_variable_form_cases()
-        if case.lang_cls is lang_cls
+        for case_name in manifest_queries.case_dir_names_for_role(
+            cases_dir=_CASES_DIR, role=case_manifests.NO_VARIABLE_FORM_ROLE
+        )
+        if manifests[case_name].selection.admits_language(lang_cls=lang_cls)
     )
 
 
 @beartype
 def _indent_renderings(
-    *,
-    lang_cls: literalizer.LanguageCls,
+    *, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
-    """Render one case under an indent no language defaults to.
-
-    Locks in issue #2084: every spec carries an ``indent`` field, but
-    until #2087 most languages hard-coded their indentation in the
-    ``wrap_in_file`` / preamble helpers.  Pinning the result means a
-    future regression that re-introduces a literal ``"    "`` (or
-    two-space, or a tab) cannot pass silently.
+    """Exercise the declared indent fixture with three-space
+    indentation.
     """
-    return tuple(
+    return (
         unprefixed_rendering(
             lang_cls=lang_cls,
-            case_dir_name=case.case_dir_name,
-            golden_name=case.name,
-            spec_source={"indent": case.indent},
+            case_dir_name=manifest_queries.case_dir_name_for_role(
+                cases_dir=_CASES_DIR, role=case_manifests.INDENT_ROLE
+            ),
+            golden_name=f"{lang_cls.__name__}_indent_three_space",
+            spec_source={"indent": "   "},
             render=compact_render(
                 variable_form=literalizer.NewVariable(
-                    name="my_data",
-                    modifiers=frozenset(),
-                ),
+                    name="my_data", modifiers=frozenset()
+                )
             ),
             skip=NO_SKIPS,
-        )
-        for case in build_indent_cases()
-        if case.lang_cls is lang_cls
+        ),
     )
 
 
