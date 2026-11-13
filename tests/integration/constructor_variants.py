@@ -56,23 +56,16 @@ def _supports_default_constructor_binding(
 
 
 @beartype
-def _binding_languages() -> list[literalizer.LanguageCls]:
-    """Return languages with supported zero-argument call bindings."""
-    return [
+def constructor_binding_specs() -> list[ConstructorBindingSpec]:
+    """Collect default, call-style, and modifier variants in order."""
+    languages = [
         lang_cls
         for lang_cls in sorted_languages()
         if _supports_default_constructor_binding(
             spec=make_spec(lang_cls=lang_cls),
         )
     ]
-
-
-@beartype
-def _default_binding_cases(
-    *, languages: list[literalizer.LanguageCls]
-) -> list[ConstructorBindingSpec]:
-    """Return the plain constructor binding for each language."""
-    return [
+    cases = [
         ConstructorBindingSpec(
             name=f"{lang_cls.__name__}_constructor_call",
             lang_cls=lang_cls,
@@ -82,14 +75,6 @@ def _default_binding_cases(
         )
         for lang_cls in languages
     ]
-
-
-@beartype
-def _call_style_binding_cases(
-    *, languages: list[literalizer.LanguageCls]
-) -> list[ConstructorBindingSpec]:
-    """Return all non-default call-style constructor binding variants."""
-    cases: list[ConstructorBindingSpec] = []
     for lang_cls in languages:
         spec = make_spec(lang_cls=lang_cls)
         call_styles: list[enum.Enum] = list(spec.call_styles)
@@ -111,15 +96,6 @@ def _call_style_binding_cases(
             if enum_payload(member=call_style, payload_type=object)
             != default_call_style_config
         )
-    return cases
-
-
-@beartype
-def _modifier_binding_cases(
-    *, languages: list[literalizer.LanguageCls]
-) -> list[ConstructorBindingSpec]:
-    """Return constructor binding variants for every language modifier."""
-    cases: list[ConstructorBindingSpec] = []
     for lang_cls in languages:
         spec = make_spec(lang_cls=lang_cls)
         entries: list[tuple[str, frozenset[enum.Enum]]] = [
@@ -141,14 +117,3 @@ def _modifier_binding_cases(
             for modifier_name, modifiers in entries
         )
     return cases
-
-
-@beartype
-def constructor_binding_specs() -> list[ConstructorBindingSpec]:
-    """Collect default, call-style, and modifier variants in order."""
-    languages = _binding_languages()
-    return [
-        *_default_binding_cases(languages=languages),
-        *_call_style_binding_cases(languages=languages),
-        *_modifier_binding_cases(languages=languages),
-    ]
