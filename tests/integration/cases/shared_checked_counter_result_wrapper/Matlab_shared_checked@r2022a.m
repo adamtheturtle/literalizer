@@ -1,5 +1,5 @@
 
-function Fixture_shared_checked_counter_result_wrapper_Matlab_shared_checked()
+function checked_counter()
 calls = 0;
 checks = 0;
 counter.accept = @accept;

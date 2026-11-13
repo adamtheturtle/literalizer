@@ -1,5 +1,5 @@
 
-object Check {
+object Fixture_shared_checked_counter_pairing_Scala_shared_checked {
     class Counter {
         var calls = 0
         def accept(user: String, timestamp: Double): Boolean = {
@@ -15,10 +15,8 @@ object Check {
         assert(expected(1) == (if (checks == 0) "first" else "second"))
         checks += 1
     }
-    def main(args: Array[String]): Unit = {
-        val counter = new Counter
-        checkResult(counter.accept("user_1", 100.0), List(true, "first"))
-        checkResult(counter.accept("user_2", 101.0), List(false, "second"))
-        assert(counter.calls == 2 && checks == 2)
-    }
+    private val counter = new Counter
+    checkResult(counter.accept("user_1", 100.0), List(true, "first"))
+    checkResult(counter.accept("user_2", 101.0), List(false, "second"))
+    assert(counter.calls == 2 && checks == 2)
 }

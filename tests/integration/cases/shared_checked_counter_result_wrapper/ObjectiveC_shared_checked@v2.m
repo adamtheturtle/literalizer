@@ -1,5 +1,4 @@
 #import <Foundation/Foundation.h>
-#import <Foundation/Foundation.h>
 @interface Counter : NSObject
 @property(nonatomic) NSUInteger calls;
 - (BOOL)accept:(NSString *)user timestamp:(double)timestamp;
@@ -12,11 +11,11 @@
     return [user isEqualToString:@"user_1"];
 }
 @end
-static NSUInteger checks;
+static NSUInteger *checkCount(void) { static NSUInteger count = 0; return &count; }
 static void checkResult(BOOL actual, NSArray *expected) {
     NSCAssert(actual == [expected[0] boolValue], @"result changed");
-    NSCAssert([expected[1] isEqualToString:checks == 0 ? @"first" : @"second"], @"paired reason changed");
-    checks++;
+    NSCAssert([expected[1] isEqualToString:*checkCount() == 0 ? @"first" : @"second"], @"paired reason changed");
+    (*checkCount())++;
 }
 int main(void) {
     @autoreleasepool {
@@ -25,7 +24,7 @@ int main(void) {
             @YES,
             @"first",
         ]);
-        NSCAssert(counter.calls == 1 && checks == 1, @"calls skipped");
+        NSCAssert(counter.calls == 1 && *checkCount() == 1, @"calls skipped");
     }
     return 0;
 }

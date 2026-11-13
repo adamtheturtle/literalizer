@@ -1,5 +1,5 @@
 
-class Counter {
+class Fixture_shared_checked_counter_result_wrapper_Haxe_shared_checked_Counter {
     public var calls: Int = 0;
     public function new() {}
     public function accept(user: String, timestamp: Float): Bool {
@@ -15,7 +15,7 @@ class Fixture_shared_checked_counter_result_wrapper_Haxe_shared_checked {
         checks++;
     }
     public static function main(): Void {
-        var counter = new Counter();
+        var counter = new Fixture_shared_checked_counter_result_wrapper_Haxe_shared_checked_Counter();
         checkResult(counter.accept("user_1", 100.0), ([true, "first"] : Array<Dynamic>));
         if (counter.calls != 1 || checks != 1) throw "calls skipped";
     }

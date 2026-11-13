@@ -9,7 +9,7 @@ struct Counter:
         assert_equal(timestamp, 100.0 + Float64(self.calls))
         self.calls += 1
         return user == "user_1"
-from testing import assert_true, assert_equal
+from std.testing import assert_true, assert_equal
 struct Checker:
     var calls: Int
     def __init__(out self):

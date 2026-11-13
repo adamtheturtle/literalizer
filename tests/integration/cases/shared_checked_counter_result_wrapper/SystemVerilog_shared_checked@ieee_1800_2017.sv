@@ -25,7 +25,7 @@ module check;
         return 1;
     endfunction
     initial begin
-        Counter counter = new;
+        static Counter counter = new;
         void'(checkResult(counter.accept(_VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "user_1"}, _VVal'{tag: _VVAL_REAL, i: 0, r: 100.0, s: ""}), '{_VVal'{tag: _VVAL_BOOL, i: 1, r: 0.0, s: ""}, _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: "first"}}));
         if (counter.calls != 1 || checks != 1) $fatal(1, "calls skipped");
         $finish;

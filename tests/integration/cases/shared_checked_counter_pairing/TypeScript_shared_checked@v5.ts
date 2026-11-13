@@ -1,3 +1,4 @@
+export {};
 
 let calls = 0, checks = 0;
 function ensure(value: boolean): void { if (!value) throw new Error("checked call changed"); }

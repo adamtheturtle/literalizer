@@ -8,22 +8,23 @@ pre_indent_level = 1
 template = '''{preamble}
 #include <assert.h>
 #include <string.h>
-static int calls = 0, checks = 0;
+static int *callCount(void) {{ static int count = 0; return &count; }}
+static int *checkCount(void) {{ static int count = 0; return &count; }}
 static bool accept(CVal user, CVal timestamp) {{
-    assert(strcmp(user.s, calls == 0 ? "user_1" : "user_2") == 0);
-    assert(timestamp.f == 100.0 + calls);
-    calls++;
+    assert(strcmp(user.s, *callCount() == 0 ? "user_1" : "user_2") == 0);
+    assert(timestamp.f == 100.0 + *callCount());
+    (*callCount())++;
     return strcmp(user.s, "user_1") == 0;
 }}
 static void checkResult(bool actual, CVal expected) {{
     assert(actual == expected.a[0].b);
-    assert(strcmp(expected.a[1].s, checks == 0 ? "first" : "second") == 0);
-    checks++;
+    assert(strcmp(expected.a[1].s, *checkCount() == 0 ? "first" : "second") == 0);
+    (*checkCount())++;
 }}
 int main(void) {{
     const struct {{ bool (*accept)(CVal, CVal); }} counter = {{accept}};
 {bare_code}
-    assert(calls == {expected_calls} && checks == {expected_calls});
+    assert(*callCount() == {expected_calls} && *checkCount() == {expected_calls});
     return 0;
 }}
 '''
@@ -59,50 +60,60 @@ heterogeneous_strategy = "TUPLE"
 template = '''{preamble}
 #include <cassert>
 #include <string>
-#include <tuple>
-struct Counter {{
-    int calls = 0;
+class Counter {{
+    int calls_ = 0;
+public:
+#if __cplusplus >= 201703L
+    [[nodiscard]]
+#endif
+    int count() const noexcept {{ return calls_; }}
     bool accept(const std::string& user, double timestamp) {{
-        assert(user == (calls == 0 ? "user_1" : "user_2"));
-        assert(timestamp == 100.0 + calls);
-        ++calls;
+        assert(user == (calls_ == 0 ? "user_1" : "user_2"));
+        assert(timestamp == 100.0 + calls_);
+        ++calls_;
         return user == "user_1";
     }}
 }};
-static int checks = 0;
-static void checkResult(bool actual, const std::tuple<bool, std::string>& expected) {{
-    assert(actual == std::get<0>(expected));
-    assert(std::get<1>(expected) == (checks == 0 ? "first" : "second"));
-    ++checks;
-}}
-int main() {{
+int main() try {{
     Counter counter;
+    int checks = 0;
+    const auto checkResult = [&checks](bool actual, const std::tuple<bool, std::string>& expected) {{
+        assert(actual == std::get<0>(expected));
+        assert(std::get<1>(expected) == (checks == 0 ? "first" : "second"));
+        ++checks;
+    }};
 {bare_code}
-    assert(counter.calls == {expected_calls} && checks == {expected_calls});
+    assert(counter.count() == {expected_calls} && checks == {expected_calls});
+    return 0;
+}} catch (...) {{
+    return 1;
 }}
 '''
 
 [Crystal]
-pre_indent_level = 0
-template = '''{preamble}
-class Counter
-  getter calls = 0
-  def accept(user : String, timestamp : Float64) : Bool
-    raise "receiver arguments changed" unless user == (@calls == 0 ? "user_1" : "user_2") && timestamp == 100.0 + @calls
-    @calls += 1
-    user == "user_1"
+pre_indent_level = 1
+template = '''module {module_name}
+  extend self
+{preamble}
+  class Counter
+    getter calls = 0
+    def accept(user : String, timestamp : Float64) : Bool
+      raise "receiver arguments changed" unless user == (@calls == 0 ? "user_1" : "user_2") && timestamp == 100.0 + @calls
+      @calls += 1
+      user == "user_1"
+    end
   end
-end
-class CheckStats
-  class_property count = 0
-end
-def checkResult(actual : Bool, expected : Array(Bool | String))
-  raise "paired result changed" unless actual == expected[0] && expected[1] == (CheckStats.count == 0 ? "first" : "second")
-  CheckStats.count += 1
-end
-counter = Counter.new
+  class CheckStats
+    class_property count = 0
+  end
+  def checkResult(actual : Bool, expected : Array(Bool | String))
+    raise "paired result changed" unless actual == expected[0] && expected[1] == (CheckStats.count == 0 ? "first" : "second")
+    CheckStats.count += 1
+  end
+  counter = Counter.new
 {bare_code}
-raise "calls skipped" unless counter.calls == {expected_calls} && CheckStats.count == {expected_calls}
+  raise "calls skipped" unless counter.calls == {expected_calls} && CheckStats.count == {expected_calls}
+end
 '''
 
 [D]
@@ -208,7 +219,7 @@ assert counter.calls == {expected_calls} && checks == {expected_calls}
 [Haxe]
 pre_indent_level = 2
 template = '''{preamble}
-class Counter {{
+class {module_name}_Counter {{
     public var calls: Int = 0;
     public function new() {{}}
     public function accept(user: String, timestamp: Float): Bool {{
@@ -224,7 +235,7 @@ class {module_name} {{
         checks++;
     }}
     public static function main(): Void {{
-        var counter = new Counter();
+        var counter = new {module_name}_Counter();
 {bare_code}
         if (counter.calls != {expected_calls} || checks != {expected_calls}) throw "calls skipped";
     }}
@@ -349,7 +360,7 @@ assert(calls == {expected_calls} and checks == {expected_calls})
 [Matlab]
 pre_indent_level = 0
 template = '''{preamble}
-function {module_name}()
+function checked_counter()
 calls = 0;
 checks = 0;
 counter.accept = @accept;
@@ -382,7 +393,7 @@ struct Counter:
         assert_equal(timestamp, 100.0 + Float64(self.calls))
         self.calls += 1
         return user == "user_1"
-from testing import assert_true, assert_equal
+from std.testing import assert_true, assert_equal
 struct Checker:
     var calls: Int
     def __init__(out self):
@@ -423,7 +434,6 @@ doAssert counter.calls == {expected_calls} and checks == {expected_calls}
 [ObjectiveC]
 pre_indent_level = 2
 template = '''{preamble}
-#import <Foundation/Foundation.h>
 @interface Counter : NSObject
 @property(nonatomic) NSUInteger calls;
 - (BOOL)accept:(NSString *)user timestamp:(double)timestamp;
@@ -436,17 +446,17 @@ template = '''{preamble}
     return [user isEqualToString:@"user_1"];
 }}
 @end
-static NSUInteger checks;
+static NSUInteger *checkCount(void) {{ static NSUInteger count = 0; return &count; }}
 static void checkResult(BOOL actual, NSArray *expected) {{
     NSCAssert(actual == [expected[0] boolValue], @"result changed");
-    NSCAssert([expected[1] isEqualToString:checks == 0 ? @"first" : @"second"], @"paired reason changed");
-    checks++;
+    NSCAssert([expected[1] isEqualToString:*checkCount() == 0 ? @"first" : @"second"], @"paired reason changed");
+    (*checkCount())++;
 }}
 int main(void) {{
     @autoreleasepool {{
         Counter *counter = [[Counter alloc] init];
 {bare_code}
-        NSCAssert(counter.calls == {expected_calls} && checks == {expected_calls}, @"calls skipped");
+        NSCAssert(counter.calls == {expected_calls} && *checkCount() == {expected_calls}, @"calls skipped");
     }}
     return 0;
 }}
@@ -575,9 +585,9 @@ fn main() {{
 '''
 
 [Scala]
-pre_indent_level = 2
+pre_indent_level = 1
 template = '''{preamble}
-object Check {{
+object {module_name} {{
     class Counter {{
         var calls = 0
         def accept(user: String, timestamp: Double): Boolean = {{
@@ -593,11 +603,9 @@ object Check {{
         assert(expected(1) == (if (checks == 0) "first" else "second"))
         checks += 1
     }}
-    def main(args: Array[String]): Unit = {{
-        val counter = new Counter
+    private val counter = new Counter
 {bare_code}
-        assert(counter.calls == {expected_calls} && checks == {expected_calls})
-    }}
+    assert(counter.calls == {expected_calls} && checks == {expected_calls})
 }}
 '''
 
@@ -620,7 +628,7 @@ module check;
         return 1;
     endfunction
     initial begin
-        Counter counter = new;
+        static Counter counter = new;
 {bare_code}
         if (counter.calls != {expected_calls} || checks != {expected_calls}) $fatal(1, "calls skipped");
         $finish;
@@ -630,7 +638,8 @@ endmodule
 
 [TypeScript]
 pre_indent_level = 1
-template = '''{preamble}
+template = '''export {{}};
+{preamble}
 let calls = 0, checks = 0;
 function ensure(value: boolean): void {{ if (!value) throw new Error("checked call changed"); }}
 const counter = {{accept(user: string, timestamp: number): boolean {{
