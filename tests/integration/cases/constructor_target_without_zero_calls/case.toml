@@ -1,0 +1,24 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "supports_zero_parameter_calls", value = false}]
+
+# Consume constructor targets in native syntax without fabricating a call.
+# Template keys provide syntax after capability selection; missing keys fail.
+[constructor.target_templates]
+Cobol = '''       identification division.
+       program-id. {target}.
+       procedure division.
+           stop run.
+'''
+Dhall = '''let {target} = True in {target}
+'''
+Elm = '''module Check exposing (..)
+
+
+type Playlist
+    = {target}
+
+
+my_data : Playlist
+my_data = {target}
+'''
