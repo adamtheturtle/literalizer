@@ -1813,6 +1813,10 @@ class _LanguageMetadata(_LanguageMetadataBase):
     """
     supports_inline_multiline_dict_args: bool
     supports_standalone_comments_in_wrapped_calls: bool
+    supports_variadic_calls: bool
+    """Whether calls accept a different number of values than
+    parameters.
+    """
     supports_multi_param_call_wrapper_stub: bool
     supports_dict_literal_as_free_expression: bool
     supports_module_name: bool
@@ -2384,6 +2388,10 @@ class Language(typing.Protocol):
     :func:`~literalizer.literalize_call` does not inspect it.
     """
 
+    supports_variadic_calls: bool
+    """Whether calls accept a different number of values than
+    parameters.
+    """
     supports_multi_param_call_wrapper_stub: bool
     """Whether the language can declare, and positionally invoke, a
     harness wrapper stub that receives the call's result alongside one

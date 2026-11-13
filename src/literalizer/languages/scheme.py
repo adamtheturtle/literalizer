@@ -295,6 +295,7 @@ class Scheme(metaclass=LanguageCls):
     supports_inline_multiline_dict_args = True
     supports_standalone_comments_in_wrapped_calls = True
     supports_multi_param_call_wrapper_stub = True
+    supports_variadic_calls = True
     supports_dict_literal_as_free_expression = True
     supports_module_name = False
     supports_empty_dict_key = False
