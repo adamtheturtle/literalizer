@@ -1,31 +1,25 @@
-"""Parser errors retain causes that require a supplied failure."""
+"""Real TOML parser failures can omit position metadata."""
 
 import pytest
-from tomlkit.exceptions import TOMLKitError
+from tomlkit.exceptions import KeyAlreadyPresent
 
 from literalizer import InputFormat, LanguageCls, literalize
 from literalizer.exceptions import TOMLParseError
 
 
-def test_toml_error_without_position(
-    monkeypatch: pytest.MonkeyPatch,
-    language_cls: LanguageCls,
-) -> None:
-    """A parser failure without location metadata retains its cause."""
-    cause = TOMLKitError("unpositioned failure")
-
-    def fail_parse(*, string: str) -> None:
-        """Simulate a parser failure without line and column metadata."""
-        del string
-        raise cause
-
-    monkeypatch.setattr(target="tomlkit.parse", name=fail_parse)
-    with pytest.raises(expected_exception=TOMLParseError) as caught:
+def test_toml_error_without_position(language_cls: LanguageCls) -> None:
+    """Duplicate keys preserve a parser cause without position
+    metadata.
+    """
+    with pytest.raises(
+        expected_exception=TOMLParseError,
+        match='Key "a" already exists',
+    ) as caught:
         _ = literalize(
-            source="a = 1",
+            source="[a]\na = 1\na = 1\n",
             input_format=InputFormat.TOML,
             language=language_cls(),
         )
     assert caught.value.line is None
     assert caught.value.column is None
-    assert caught.value.__cause__ is cause
+    assert isinstance(caught.value.__cause__, KeyAlreadyPresent)
