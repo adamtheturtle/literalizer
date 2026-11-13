@@ -8,7 +8,9 @@ from beartype import beartype
 
 from literalizer.languages import Cpp, Java
 from tests.enum_members import enum_member_by_name
-from tests.integration.call_cases import CallCase
+from tests.integration.call_collection import (
+    CallCase,
+)
 from tests.integration.call_variant_cases import (
     CallVariantCase,
     call_golden_cases,

@@ -17,7 +17,7 @@ from beartype import beartype
 
 from literalizer._enums import enum_payload
 
-from .call_cases import (
+from .call_collection import (
     CallCase,
     CallRendering,
     discover_call_cases,
