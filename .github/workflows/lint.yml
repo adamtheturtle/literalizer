@@ -860,8 +860,8 @@ jobs:
 
   # Octave is a practical CI substitute, but it does not support
   # every MATLAB builtin.  The per-fixture skip rules (for ``""``
-  # escaped quotes and the ``datetime`` builtin) are documented in
-  # scripts/lint-matlab-fixture.sh.
+  # escaped quotes and the ``datetime`` builtin) are retained by
+  # scripts/run_matlab_fixtures.py.
   lint-matlab:
     needs: [native-changes]
     if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-matlab')
@@ -877,11 +877,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Lint Matlab
-        run: |-
-          find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab && test -s /tmp/files-matlab
-          xargs -0 -P "$(nproc)" -n1 bash scripts/lint-matlab-fixture.sh < /tmp/files-matlab
-
       - name: Install uv
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.3
@@ -897,6 +892,15 @@ jobs:
       # the workspace safe so that build succeeds.
       - name: Mark workspace as a safe git directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Check MATLAB fixture execution
+        timeout-minutes: 3
+        run: uv run --no-dev --group=roundtrip python -m scripts.check_matlab_fixture_execution
+
+      - name: Lint Matlab
+        run: |-
+          find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab && test -s /tmp/files-matlab
+          uv run --no-dev --group=roundtrip python -m scripts.run_matlab_fixtures < /tmp/files-matlab
 
       # Basic JSON -> MATLAB -> JSON round-trip (issue 2663). Runs here
       # because this is the job with the MATLAB toolchain (Octave, the

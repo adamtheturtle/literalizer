@@ -41,6 +41,8 @@ def test_shared_checked_golden(
     template = case.consumer.template
     if template is None:
         template = recipe.consumer_template
+    if case.consumer.entrypoint is not None:
+        template = template.replace("{entrypoint}", case.consumer.entrypoint)
     program = format_consumer(
         template=template.replace(
             "{expected_calls}", str(object=recipe.expected_calls)
