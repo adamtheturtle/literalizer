@@ -16,7 +16,6 @@ test body there.
 """
 
 import dataclasses
-import enum
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol, runtime_checkable
@@ -27,10 +26,8 @@ import literalizer
 
 from . import case_manifests, manifest_queries, scenario_skips
 from .case_discovery import (
-    build_heterogeneous_strategy_combined_cases,
-    build_statement_terminator_combined_cases,
+    discover_cases,
     group_cases_by_language,
-    group_combined_cases_by_language,
     kebab_new_variable_languages,
     primed_new_variable_languages,
 )
@@ -243,28 +240,31 @@ def _primed_new_variable_renderings(
 
 @beartype
 def _combined_renderings(
-    *,
-    lang_cls: literalizer.LanguageCls,
+    *, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
-    """Combine a declaration and an assignment in one file.
-
-    One rendering per redefinition-supporting declaration style, which
-    is what :func:`discover_combined_cases` already pairs with its
-    golden name.
-    """
-    grouped = group_combined_cases_by_language(cases_dir=_CASES_DIR)
+    """Combine declaration and assignment under each supported style."""
+    styles = find_redefinition_styles(spec=make_spec(lang_cls=lang_cls))
     return tuple(
         unprefixed_rendering(
             lang_cls=lang_cls,
-            case_dir_name=combined_case.case_name,
-            golden_name=combined_case.golden_name,
-            spec_source={
-                "declaration_style": combined_case.declaration_style,
-            },
+            case_dir_name=case_name,
+            golden_name=(
+                f"{lang_cls.__name__}_combined"
+                if style is styles[0]
+                else (
+                    f"{lang_cls.__name__}_combined_declaration_style"
+                    f"_{style.name.lower()}"
+                )
+            ),
+            spec_source={"declaration_style": style},
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
             skip=scenario_skips.LANGUAGE_SKIPS,
         )
-        for combined_case in grouped.get(lang_cls, [])
+        for case_name, case_language in discover_cases(
+            cases_dir=_CASES_DIR, suite="combined"
+        )
+        if case_language is lang_cls
+        for style in styles
     )
 
 
@@ -311,81 +311,75 @@ def _variant_renderings(
 
 
 @beartype
-def _first_redefinition_style(
-    *,
-    lang_cls: literalizer.LanguageCls,
-) -> enum.Enum:
-    """Return the declaration style a combined rendering declares
-    with.
-
-    Both scenarios that reach here are built only for languages with at
-    least one redefinition-supporting style.
-    """
-    styles = find_redefinition_styles(spec=make_spec(lang_cls=lang_cls))
-    return styles[0]
-
-
-@beartype
 def _statement_terminator_renderings(
-    *,
-    lang_cls: literalizer.LanguageCls,
+    *, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
-    """Combine both variable forms under a non-default statement
-    terminator.
-    """
+    """Combine both variable forms under each non-default terminator."""
+    spec = make_spec(lang_cls=lang_cls)
+    styles = find_redefinition_styles(spec=spec)
+    if len(styles) == 0:
+        return ()
+    case_names = manifest_queries.case_dir_names_for_role(
+        cases_dir=_CASES_DIR, role=case_manifests.STATEMENT_TERMINATOR_ROLE
+    )
     return tuple(
         unprefixed_rendering(
             lang_cls=lang_cls,
-            case_dir_name=case.case_dir_name,
-            golden_name=case.name,
+            case_dir_name=case_name,
+            golden_name=(
+                f"{lang_cls.__name__}_statement_terminator_style"
+                f"_{terminator.name.lower()}_{case_name}"
+            ),
             spec_source={
-                "statement_terminator_style": (
-                    case.statement_terminator_style
-                ),
-                "declaration_style": _first_redefinition_style(
-                    lang_cls=lang_cls
-                ),
+                "statement_terminator_style": terminator,
+                "declaration_style": styles[0],
             },
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
             skip=NO_SKIPS,
         )
-        for case in build_statement_terminator_combined_cases()
-        if case.lang_cls is lang_cls
+        for terminator in spec.statement_terminator_styles
+        if terminator is not spec.statement_terminator_style
+        for case_name in case_names
     )
 
 
 @beartype
 def _heterogeneous_strategy_renderings(
-    *,
-    lang_cls: literalizer.LanguageCls,
+    *, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
-    """Combine both variable forms under a non-default heterogeneous
-    strategy.
+    """Combine both variable forms under each non-default strategy.
 
-    A strategy may not represent the paired fixture in every language
-    (Kotlin ``TUPLE`` has no native tuple for a four-element array), so
-    the strategy is named in the skip and two strategies failing on the
-    same input stay distinguishable.
+    Name the strategy in skips when it cannot represent its paired input.
     """
+    spec = make_spec(lang_cls=lang_cls)
+    styles = find_redefinition_styles(spec=spec)
+    if len(styles) == 0:
+        return ()
     return tuple(
         unprefixed_rendering(
             lang_cls=lang_cls,
-            case_dir_name=case.case_dir_name,
-            golden_name=case.name,
-            spec_source={
-                "heterogeneous_strategy": case.heterogeneous_strategy,
-                "declaration_style": _first_redefinition_style(
-                    lang_cls=lang_cls
+            case_dir_name=manifest_queries.case_dir_name_for_role(
+                cases_dir=_CASES_DIR,
+                role=manifest_queries.heterogeneous_strategy_role(
+                    strategy_name=strategy.name
                 ),
+            ),
+            golden_name=(
+                f"{lang_cls.__name__}_heterogeneous_strategy"
+                f"_{strategy.name.lower()}_combined"
+            ),
+            spec_source={
+                "heterogeneous_strategy": strategy,
+                "declaration_style": styles[0],
             },
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
             skip=SkipPolicy(
                 reasons=scenario_skips.STRATEGY_SKIP_REASONS,
-                suffix=f" under {case.heterogeneous_strategy.name}",
+                suffix=f" under {strategy.name}",
             ),
         )
-        for case in build_heterogeneous_strategy_combined_cases()
-        if case.lang_cls is lang_cls
+        for strategy in spec.heterogeneous_strategies
+        if strategy is not spec.heterogeneous_strategy
     )
 
 
