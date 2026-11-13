@@ -340,24 +340,38 @@ def test_invalid_reference_value_source(
         _ = load_case_manifest(case_dir=case_dir)
 
 
-def test_modifier_gate_selects_supported_declarations(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    argnames="modifier",
+    argvalues=sorted(
+        {
+            member.name
+            for cls in literalizer.languages.ALL_LANGUAGES
+            for member in cls.Modifiers
+        }
+    ),
+)
+def test_modifier_gate_selects_supported_declarations(
+    tmp_path: Path, modifier: str
+) -> None:
     """A declarative modifier requirement admits only supporting specs."""
     case_dir = _write_case(
         tmp_path=tmp_path,
         manifest=(
             "schema_version = 1\n"
             'suites = ["base"]\n'
-            'gates = [{kind = "modifier_present", modifier = "PUBLIC"}]\n'
+            'gates = [{kind = "modifier_present", '
+            f'modifier = "{modifier}"}}]\n'
         ),
         input_name="input.yaml",
     )
     manifest = load_case_manifest(case_dir=case_dir)
-    assert manifest.selection.admits_language(
-        lang_cls=literalizer.languages.Java
-    )
-    assert not manifest.selection.admits_language(
-        lang_cls=literalizer.languages.Python
-    )
+    for lang_cls in literalizer.languages.ALL_LANGUAGES:
+        expected = any(
+            member.name == modifier for member in lang_cls.Modifiers
+        )
+        assert (
+            manifest.selection.admits_language(lang_cls=lang_cls) is expected
+        ), lang_cls.language_id
 
 
 @pytest.mark.parametrize(
