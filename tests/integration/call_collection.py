@@ -102,21 +102,16 @@ def discover_call_cases() -> list[CallCase]:
             if config.call_style_type is not None:
                 # Only include languages that have this as a
                 # non-default style.
-                styles = list(lang_cls.CallStyles)
-                matching = [
-                    s
-                    for s in styles
-                    if isinstance(
-                        enum_payload(member=s, payload_type=object),
+                styles = iter(lang_cls.CallStyles)
+                if isinstance(
+                    enum_payload(member=next(styles), payload_type=object),
+                    config.call_style_type,
+                ) or not any(
+                    isinstance(
+                        enum_payload(member=style, payload_type=object),
                         config.call_style_type,
                     )
-                ]
-                if len(matching) == 0:
-                    continue
-                default_style = styles[0]
-                if isinstance(
-                    enum_payload(member=default_style, payload_type=object),
-                    config.call_style_type,
+                    for style in styles
                 ):
                     continue
             expected_exception = expected_call_shape_exception(
