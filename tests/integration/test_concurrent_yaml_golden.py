@@ -10,13 +10,15 @@ from literalizer.languages import ALL_LANGUAGES
 from .case_inputs import CaseInput
 from .case_manifests import (
     CONCURRENT_YAML_ROLE,
-    case_dir_names_for_role,
     case_input,
 )
 from .golden_renderings import GoldenRendering
 from .golden_scenarios import GOLDEN_SCENARIOS
 from .language_specs import with_per_fixture_module_name
 from .literalize_rendering import literalize_rendering
+from .manifest_queries import (
+    case_dir_names_for_role,
+)
 
 
 @dataclasses.dataclass(frozen=True)

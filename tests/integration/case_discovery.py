@@ -33,10 +33,7 @@ from .case_manifests import (
     PRE_INDENT_CONTAINER_ROLE,
     STATEMENT_TERMINATOR_ROLE,
     CaseManifest,
-    case_dir_name_for_role,
-    case_dir_names_for_role,
     case_input,
-    heterogeneous_strategy_role,
     load_case_manifests,
 )
 from .language_metadata import language_metadata
@@ -44,6 +41,11 @@ from .language_specs import (
     find_redefinition_styles,
     make_spec,
     sorted_languages,
+)
+from .manifest_queries import (
+    case_dir_name_for_role,
+    case_dir_names_for_role,
+    heterogeneous_strategy_role,
 )
 
 _CASES_DIR = Path(__file__).parent / "cases"
