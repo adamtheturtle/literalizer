@@ -79,7 +79,9 @@ class LiteralizeRefCase:
                 RefRendering(
                     config=self.config,
                     lang_cls=self.lang_cls,
-                    spec=spec,
+                    spec=ref_language_options(
+                        config=self.config, lang_cls=self.lang_cls, spec=spec
+                    ),
                     golden_name=f"{self.lang_cls.__name__}_{suffix}",
                     ref_case=ref_case,
                 )

@@ -51,7 +51,7 @@ from .ref_consumers import (
     external_assignment_spec,
     ref_fixture_contents,
 )
-from .reference_cases import RefRendering, ref_language_options
+from .reference_cases import RefRendering
 from .reference_inputs import bound_ref_inputs, parse_ref_input
 
 CASES_DIR = Path(__file__).parent / "cases"
@@ -141,9 +141,7 @@ def run_literalize_ref_golden_case(
     config = rendering.config
     lang_cls = rendering.lang_cls
     ref_case = rendering.ref_case
-    spec = ref_language_options(
-        config=config, lang_cls=lang_cls, spec=rendering.spec
-    )
+    spec = rendering.spec
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
     input_path = input_info.path
     input_source = input_path.read_text(encoding="utf-8")
