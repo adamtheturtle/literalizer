@@ -593,6 +593,7 @@ class VisualBasic(metaclass=LanguageCls):
     supports_module_name = False
     supports_empty_dict_key = False
     supports_call_style = True
+    supports_json_object_documents = False
     supports_default_dict_key_type = True
     # A Visual Basic map is Dictionary(Of String, Object), so each
     # value carries its own type and there is no shared width to
