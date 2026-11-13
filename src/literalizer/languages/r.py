@@ -358,6 +358,7 @@ class R(metaclass=LanguageCls):
         None
     )
     reserved_call_parameter_identifiers: ClassVar[frozenset[str]] = frozenset()
+    uses_data_keyword_for_algebraic_constructors = False
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True

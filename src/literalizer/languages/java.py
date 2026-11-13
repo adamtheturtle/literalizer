@@ -1122,6 +1122,7 @@ class Java(metaclass=LanguageCls):
     reserved_call_parameter_identifier_pattern: ClassVar[
         re.Pattern[str] | None
     ] = None
+    uses_data_keyword_for_algebraic_constructors = False
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     reserved_bare_call_target_identifiers: ClassVar[frozenset[str]] = (

@@ -1702,6 +1702,10 @@ class _LanguageMetadata(_LanguageMetadataBase):
     with anything: there is nothing in the output to collide with
     (issue #4771).
     """
+    uses_data_keyword_for_algebraic_constructors: bool
+    """Whether algebraic constructors are declared with the data
+    keyword.
+    """
     accepts_type_name_call_target: bool
     """Whether a bare type name may be a ``target_function``.
 
@@ -2021,6 +2025,11 @@ class Language(typing.Protocol):
     @property
     def accepts_type_name_call_target(self) -> bool:
         """Whether a bare type name may be a call target."""
+        ...
+
+    @property
+    def uses_data_keyword_for_algebraic_constructors(self) -> bool:
+        """Whether algebraic constructors use the data keyword."""
         ...
 
     @property

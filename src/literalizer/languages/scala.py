@@ -764,6 +764,7 @@ class Scala(metaclass=LanguageCls):
     reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None] = (
         None
     )
+    uses_data_keyword_for_algebraic_constructors = False
     accepts_type_name_call_target = True
     declares_type_name_call_target = True
     dotted_call_root_shares_entrypoint_namespace = True

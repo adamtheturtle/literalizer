@@ -27,6 +27,9 @@ def run_constructor_binding_golden_case(
     )
     config = manifest.constructor
     assert config is not None  # noqa: S101
+    consumer_template = config.consumer_for_language(
+        language_name=case.lang_cls.__name__
+    )
     source = manifest.input.path.read_text(encoding="utf-8")
     input_format = manifest.input.input_format
     if config.target_template is not None:
@@ -52,15 +55,15 @@ def run_constructor_binding_golden_case(
                 config.class_name,
             ),
             parameter_names=config.parameter_names,
-            wrap_in_file=config.consumer_template is None,
+            wrap_in_file=consumer_template is None,
             variable_form=dataclasses.replace(
                 case.variable_form, name=config.variable_name
             ),
         )
     contents = result.code + "\n"
-    if config.consumer_template is not None:
+    if consumer_template is not None:
         contents = format_consumer(
-            template=config.consumer_template,
+            template=consumer_template,
             result=result,
             golden_path=golden_path,
         )

@@ -541,6 +541,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "supports_multiline_string_literals": (
         lambda lang_cls: lang_cls.supports_multiline_string_literals
     ),
+    "uses_data_keyword_for_algebraic_constructors": lambda cls: (
+        cls.uses_data_keyword_for_algebraic_constructors
+    ),
     "supports_record_shape_names": (
         lambda lang_cls: lang_cls.supports_record_shape_names
     ),

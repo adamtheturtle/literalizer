@@ -1,0 +1,24 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "uses_data_keyword_for_algebraic_constructors"}]
+
+# Shared Haskell/PureScript constructor regression, retaining native consumers.
+[constructor]
+class_name = "Playlist"
+variable_name = "created"
+
+[constructor.consumer_templates]
+Haskell = '''module {module_name} where
+{preamble}
+data Playlist = Playlist ()
+{body_preamble}
+main :: IO ()
+main = do
+    let {bare_code}
+    seq created (pure ())
+'''
+PureScript = '''module Check where
+{preamble}
+data Playlist = Playlist
+{code}
+'''
