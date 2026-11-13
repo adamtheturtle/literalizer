@@ -1,0 +1,15 @@
+val my_data = mapOf<String, Map<String, Any?>>(
+    "true_to_one" to mapOf<String, Any?>("value" to 1),
+    "one_to_true" to mapOf<String, Any?>("value" to true),
+    "false_to_zero" to mapOf<String, Any?>("value" to 0),
+    "zero_to_false" to mapOf<String, Any?>("value" to false),
+    "nested_boolean_to_float" to mapOf<String, Any?>("value" to doubleArrayOf(1.0)),
+    "nested_float_to_boolean" to mapOf<String, Any?>("value" to booleanArrayOf(false)),
+    "nested_value_types_changed" to mapOf<String, Any?>("value" to mapOf<String, Any?>("nested" to listOf<Any?>(true, 0))),
+    "nested_value_types_reversed" to mapOf<String, Any?>("value" to mapOf<String, Any?>("nested" to listOf<Any?>(1, false))),
+    "array_order_changed" to mapOf<String, Any?>("value" to intArrayOf(2, 1)),
+    "array_length_changed" to mapOf<String, Any?>("value" to intArrayOf(1, 2)),
+    "null_to_zero" to mapOf<String, Any?>("value" to 0),
+    "string_to_boolean" to mapOf<String, Any?>("value" to true),
+    "object_key_changed" to mapOf<String, Any?>("value" to mapOf<String, Any?>("b" to 1)),
+)

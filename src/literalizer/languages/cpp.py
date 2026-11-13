@@ -1807,7 +1807,9 @@ def _cpp14_widened_sibling_map_ids(
     Sibling maps whose values do not share one type are all written
     with the carrier as their value type, so each of their values needs
     the explicit construction the carrier asks for.  Siblings appear
-    under a list and equally under a mapping (issue #4569).
+    under a list and equally under a mapping (issue #4569). Pool their
+    values at each deeper mapping slot, just as opener widening does.
+    Stop when the sibling value types already agree.
     """
     siblings = [
         child
@@ -1816,18 +1818,33 @@ def _cpp14_widened_sibling_map_ids(
         and not isinstance(child, OrderedMap)
         and id(child) not in excluded_ids
     ]
+    if len(siblings) <= 1:
+        return frozenset[int]()
+    value_types = {
+        _compute_element_type_for_items(
+            items=list(sibling.values()), type_ctx=type_ctx
+        )
+        for sibling in siblings
+    }
+    if len(value_types) <= 1:
+        return frozenset[int]()
     sibling_values = [
         child_value for sibling in siblings for child_value in sibling.values()
     ]
-    if len(siblings) > 1 and (
+    nested_ids = _cpp14_widened_sibling_map_ids(
+        children=sibling_values,
+        type_ctx=type_ctx,
+        excluded_ids=excluded_ids,
+    )
+    if (
         _compute_element_type_for_items(
             items=sibling_values,
             type_ctx=type_ctx,
         )
         == type_ctx.variant_type_name
     ):
-        return frozenset(id(sibling) for sibling in siblings)
-    return frozenset[int]()
+        return nested_ids | frozenset(id(sibling) for sibling in siblings)
+    return nested_ids
 
 
 @beartype

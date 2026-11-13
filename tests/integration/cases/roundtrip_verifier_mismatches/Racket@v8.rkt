@@ -1,0 +1,16 @@
+#lang racket
+(define my_data (hash
+    "true_to_one" (hash "value" 1)
+    "one_to_true" (hash "value" #t)
+    "false_to_zero" (hash "value" 0)
+    "zero_to_false" (hash "value" #f)
+    "nested_boolean_to_float" (hash "value" (list 1.0))
+    "nested_float_to_boolean" (hash "value" (list #f))
+    "nested_value_types_changed" (hash "value" (hash "nested" (list #t 0)))
+    "nested_value_types_reversed" (hash "value" (hash "nested" (list 1 #f)))
+    "array_order_changed" (hash "value" (list 2 1))
+    "array_length_changed" (hash "value" (list 1 2))
+    "null_to_zero" (hash "value" 0)
+    "string_to_boolean" (hash "value" #t)
+    "object_key_changed" (hash "value" (hash "b" 1))
+))
