@@ -1,0 +1,17 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "supports_local_binding_documents"}]
+
+# Preserve the Jsonnet local-object regression and the existing Nix binding.
+# Every native local-binding document participates; syntax keys do not filter.
+[constructor.target_templates]
+Dhall = '''let {target} = {{=}} in {target}
+'''
+Jsonnet = '''local {target} = {{}};
+{target}
+'''
+Nix = '''let
+  {target} = {{}};
+in
+{target}
+'''

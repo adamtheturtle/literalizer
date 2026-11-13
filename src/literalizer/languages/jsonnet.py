@@ -274,6 +274,7 @@ class Jsonnet(metaclass=LanguageCls):
     supports_no_variable_wrap_in_file = True
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = True
+    supports_local_binding_documents = True
     supports_stateful_receiver_result_checks = False
     supports_native_invocations = False
     supports_dotted_calls = True

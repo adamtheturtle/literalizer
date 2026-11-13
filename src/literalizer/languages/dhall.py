@@ -746,6 +746,7 @@ class Dhall(metaclass=LanguageCls):
     supports_no_variable_wrap_in_file = False
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = False
+    supports_local_binding_documents = True
     supports_stateful_receiver_result_checks = False
     supports_native_invocations = False
     supports_dotted_calls = True
