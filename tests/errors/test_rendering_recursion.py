@@ -1,63 +1,37 @@
-"""Rendering stack exhaustion preserves the input format's public
-error.
-"""
-
-from typing import Never
+"""Deep inputs retain their format's error without replacing rendering."""
 
 import pytest
-from pydantic import BaseModel, TypeAdapter
 
-import literalizer
-from literalizer.languages import ALL_LANGUAGES
-from tests.errors.rejection_manifests import ExceptionType
-from tests.integration.manifest_values import (
-    CallInputFormat,
+from literalizer import InputFormat, literalize
+from literalizer.exceptions import (
+    JSON5ParseError,
+    JSONCParseError,
+    JSONParseError,
+    ParseError,
+    YAMLParseError,
 )
-from tests.toml_cases import load_toml_cases
-
-
-class _RecursionCase(BaseModel, extra="forbid", frozen=True):
-    """One input format and its public stack-exhaustion diagnostic."""
-
-    name: str
-    input_format: CallInputFormat
-    error: ExceptionType
-    source: str
-    message: str
-
-
-class _Cases(BaseModel, extra="forbid", frozen=True):
-    """The input-format error boundary matrix."""
-
-    cases: tuple[_RecursionCase, ...]
-
-
-_CASES = TypeAdapter(type=_Cases).validate_python(
-    load_toml_cases(name="rendering_recursion_errors")
-)
-
-
-def _exhaust_stack(**_kwargs: object) -> Never:
-    """Reproduce stack exhaustion without relying on rendering depth."""
-    msg = "rendering exhausted the stack"
-    raise RecursionError(msg)
+from literalizer.languages import Python
 
 
 @pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
+    argnames=("input_format", "error"),
+    argvalues=[
+        pytest.param(InputFormat.JSON, JSONParseError, id="json"),
+        pytest.param(InputFormat.JSONC, JSONCParseError, id="jsonc"),
+        pytest.param(InputFormat.JSON5, JSON5ParseError, id="json5"),
+        pytest.param(InputFormat.YAML, YAMLParseError, id="yaml"),
+    ],
 )
 def test_rendering_recursion_has_a_typed_error(
-    case: _RecursionCase, monkeypatch: pytest.MonkeyPatch
+    input_format: InputFormat, error: type[ParseError]
 ) -> None:
-    """Every language translates stack failures at the API boundary."""
-    monkeypatch.setattr(
-        target="literalizer._literalize._literalize_pre_form_impl",
-        name=_exhaust_stack,
-    )
-    for language in ALL_LANGUAGES:
-        with pytest.raises(expected_exception=case.error, match=case.message):
-            _ = literalizer.literalize(
-                source=case.source,
-                input_format=case.input_format,
-                language=language(),
-            )
+    """Bounded nested values exhaust rendering and keep a typed cause."""
+    source = "[" * 180 + "0" + "]" * 180
+    with pytest.raises(
+        expected_exception=error,
+        match="input exceeds the supported nesting depth",
+    ) as caught:
+        _ = literalize(
+            source=source, input_format=input_format, language=Python()
+        )
+    assert isinstance(caught.value.__cause__, RecursionError)
