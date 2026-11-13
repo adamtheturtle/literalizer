@@ -1222,6 +1222,7 @@ class C(metaclass=LanguageCls):
     supports_default_dict_key_type = False
     supports_default_dict_value_type = False
     supports_default_sequence_element_type = False
+    supports_key_value_assignment_documents = False
     supports_default_set_element_type = False
     supports_default_ordered_map_value_type = False
     json_type_variant_name_suffix: ClassVar[str | None] = None
