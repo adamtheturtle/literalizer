@@ -31,4 +31,17 @@ if grep -q "containers.Map({''" "$f"; then
     exit 0
 fi
 
-scripts/run-bounded.sh "$f" --signal=KILL 60s octave --norc --no-gui "$f"
+# Versioned golden filenames contain @, which makes Octave treat a
+# function file as a script. Give complete function consumers their
+# declared entry-point filename, as the other native compiler hosts do.
+first_line=$(sed -n '/^[[:space:]]*$/d; /^[[:space:]]*%/d; {p;q;}' "$f")
+octave_args=("$f")
+if [[ $first_line =~ ^[[:space:]]*function[[:space:]]+([[:alpha:]][[:alnum:]_]*)[[:space:]]*\( ]]; then
+    workspace=$(mktemp -d)
+    trap 'rm -rf "$workspace"' EXIT
+    entrypoint="${BASH_REMATCH[1]}"
+    cp "$f" "$workspace/$entrypoint.m"
+    octave_args=(--path "$workspace" --eval "$entrypoint()")
+fi
+
+scripts/run-bounded.sh "$f" --signal=KILL 60s octave --norc --no-gui "${octave_args[@]}"
