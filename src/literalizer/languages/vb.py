@@ -599,6 +599,7 @@ class VisualBasic(metaclass=LanguageCls):
     # pool (issue #4488).
     pools_map_integer_width: ClassVar[bool] = False
     supports_default_dict_value_type = True
+    supports_nullable_object_fallbacks = False
     supports_default_sequence_element_type = True
     supports_default_set_element_type = True
     supports_default_ordered_map_value_type = False
