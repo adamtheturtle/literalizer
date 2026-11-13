@@ -1,11 +1,11 @@
 schema_version = 1
 owner = "literalize-call"
 # Positive counterpart of call_parameter_count_mismatch (#5236).
-# Scheme's generated (lambda args ...) stub has a rest parameter, not fixed arity.
-# This is a Scheme stub-syntax constraint, not a sample of portable call support.
+# Scheme's original (lambda args ...) stub accepts rest arguments.
+# Select every producer that supports calls with variable arity.
 
 [call]
-gates = [{ kind = "metadata_field", field = "language_id", value = "scheme" }]
+gates = [{ kind = "capability_flag", flag = "supports_variadic_calls" }]
 target_function = "process"
 parameter_names = ["a", "b"]
 per_element = true
