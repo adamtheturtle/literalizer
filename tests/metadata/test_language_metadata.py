@@ -34,6 +34,7 @@ def test_all_languages_support_non_ascii_string_literals() -> None:
 
 _LANGUAGE_OWNED_METADATA = frozenset(
     {
+        "supports_variable_names",
         "language_id",
         "dotted_call_stub_indexes_colliding_helpers",
         "json_type_variant_name_suffix",
