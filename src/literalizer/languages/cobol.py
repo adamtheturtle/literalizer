@@ -1349,6 +1349,7 @@ class Cobol(metaclass=LanguageCls):
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = False
+    dotted_call_stub_indexes_colliding_helpers = False
     call_returns_expression = False
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = False

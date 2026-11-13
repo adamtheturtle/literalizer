@@ -568,5 +568,8 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
             vars(lang_cls).get("dotted_call_stub_requires_unique_parts", False)
         )
     ),
+    "dotted_call_stub_indexes_colliding_helpers": lambda cls: (
+        cls.dotted_call_stub_indexes_colliding_helpers
+    ),
     "supports_dotted_calls": lambda lang_cls: lang_cls.supports_dotted_calls,
 }

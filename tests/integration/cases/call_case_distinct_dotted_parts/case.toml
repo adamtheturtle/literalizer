@@ -31,7 +31,7 @@ wrap_in_file = true
 [[call_examples]]
 example = "nim_identifier_style"
 # Nim also ignores interior case and underscores when comparing type names.
-gates = [{ kind = "metadata_field", field = "language_id", value = "nim" }]
+gates = [{ kind = "capability_flag", flag = "dotted_call_stub_indexes_colliding_helpers" }]
 target_function = "a.foo_bar.fooBar.bar"
 parameter_names = ["x"]
 per_element = false

@@ -573,6 +573,7 @@ class SystemVerilog(metaclass=LanguageCls):
         reserved_variable_identifiers
     )
     supports_dotted_call_stub = True
+    dotted_call_stub_indexes_colliding_helpers = True
     call_returns_expression = True
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = True

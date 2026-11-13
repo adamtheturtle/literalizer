@@ -1798,6 +1798,10 @@ class _LanguageMetadata(_LanguageMetadataBase):
     value, so it declares its own (issue #3989).
     """
     allows_empty_call_parens: bool
+    dotted_call_stub_indexes_colliding_helpers: bool
+    """Whether generated helper names disambiguate normalized
+    collisions.
+    """
     supports_dotted_call_stub: bool
     call_returns_expression: bool
     supports_json_call_result_binding: bool
@@ -2367,6 +2371,10 @@ class Language(typing.Protocol):
     :class:`~literalizer.exceptions.DottedCallTargetNotSupportedError`.
     """
 
+    dotted_call_stub_indexes_colliding_helpers: bool
+    """Whether generated helper names disambiguate normalized
+    collisions.
+    """
     supports_dotted_call_stub: bool
     """Whether the language can declare a stub for a dotted call wrapper
     name (e.g. ``tracer.emit``).  :func:`~literalizer.literalize_call`
