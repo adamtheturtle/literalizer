@@ -15,6 +15,7 @@ from pathlib import Path
 
 from beartype import beartype
 
+import literalizer
 from literalizer._enums import enum_payload
 
 from .call_collection import (
@@ -38,6 +39,11 @@ class CallVariantCase:
     variant: Variant
 
     @property
+    def lang_cls(self) -> literalizer.LanguageCls:
+        """Expose the target language consistently across call cases."""
+        return self.variant.lang_cls
+
+    @property
     def test_id(self) -> str:
         """Return the manifest and variant identity of this case."""
         return f"{self.config.coverage_id}/{self.variant.name}"
@@ -48,11 +54,11 @@ class CallVariantCase:
         return (
             CallRendering(
                 config=self.config,
-                lang_cls=self.variant.lang_cls,
+                lang_cls=self.lang_cls,
                 spec=self.variant.spec,
                 golden_name=f"{self.variant.name}_call",
                 expected_exception=expected_call_shape_exception(
-                    lang_cls=self.variant.lang_cls,
+                    lang_cls=self.lang_cls,
                     config=self.config,
                     spec=self.variant.spec,
                 ),

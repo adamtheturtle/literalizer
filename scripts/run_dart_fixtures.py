@@ -11,16 +11,12 @@ from beartype import beartype
 
 from literalizer import VariableForm
 from literalizer.languages import Dart
-from tests.integration.call_collection import (
-    discover_call_cases,
-)
-from tests.integration.call_variant_cases import build_call_variant_cases
+from tests.integration.call_variant_cases import call_golden_cases
 from tests.integration.case_manifests import RefCaseSpec
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
 )
 from tests.integration.golden_scenarios import golden_groups
-from tests.integration.language_specs import make_golden_path
 from tests.integration.reference_cases import reference_golden_cases
 
 _CASES_DIR = Path(__file__).parent.parent / "tests" / "integration" / "cases"
@@ -50,39 +46,18 @@ def _literalize_bindings() -> dict[Path, str | None]:
 
 @beartype
 def _call_bindings() -> dict[Path, str]:
-    """Read call roots, including the nameless-wrapper sentinel."""
-    bindings: dict[Path, str] = {}
-    for call_case in discover_call_cases():
-        if (
-            call_case.lang_cls is not Dart
-            or call_case.expected_exception is not None
-        ):
-            continue
-        for version in Dart.VersionFormats:
-            golden = make_golden_path(
-                parent=_CASES_DIR / call_case.config.case_dir_name,
-                name=call_case.config.golden_name(name="Dart_call"),
-                lang_cls=Dart,
-                version=version,
-            )
-            bindings[golden.resolve()] = _binding_name(
-                variable_form=call_case.config.variable_form
-            )
-    for variant_case in build_call_variant_cases(cases_dir=_CASES_DIR):
-        if variant_case.variant.lang_cls is not Dart:
-            continue
-        golden = make_golden_path(
-            parent=_CASES_DIR / variant_case.config.case_dir_name,
-            name=variant_case.config.golden_name(
-                name=f"{variant_case.variant.name}_call"
-            ),
-            lang_cls=Dart,
-            version=variant_case.variant.spec.language_version,
+    """Read successful call roots from their exercised rendering
+    records.
+    """
+    return {
+        rendering.golden_path(cases_dir=_CASES_DIR).resolve(): _binding_name(
+            variable_form=rendering.config.variable_form
         )
-        bindings[golden.resolve()] = _binding_name(
-            variable_form=variant_case.config.variable_form
-        )
-    return bindings
+        for case in call_golden_cases(cases_dir=_CASES_DIR)
+        if case.lang_cls is Dart
+        for rendering in case.renderings
+        if rendering.expected_exception is None
+    }
 
 
 @beartype
