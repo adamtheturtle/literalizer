@@ -1,0 +1,67 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "declares_type_name_call_target", value = false}]
+
+# Exercise native constructors whose wrapped stubs do not declare their target.
+# Preserve V conversions and the OCaml/Gleam/Roc constructor regressions.
+[constructor]
+class_name = "Playlist"
+parameter_names = ["value"]
+variable_name = "created"
+
+[constructor.consumer_templates]
+V = '''module main
+{preamble}
+type Playlist = int
+fn main() {{
+{body_preamble}
+{bare_code}
+    assert int(created) == 1
+}}
+'''
+OCaml = '''module Check = struct
+{preamble}
+{body_preamble}
+type playlist = Playlist of val_t
+{bare_code}
+let () = assert (created = Playlist (OInt 1))
+end
+'''
+Gleam = '''{preamble}
+pub type Playlist {{ Playlist(GVal) }}
+pub fn main() {{
+{body_preamble}
+{bare_code}
+  let assert Playlist(GInt(1)) = created
+  Nil
+}}
+'''
+Roc = '''module [main]
+{preamble}
+{body_preamble}
+
+main =
+    {bare_code}
+    expect created == Playlist (RInt 1)
+    {{}}
+'''
+Haskell = '''module {module_name} where
+{preamble}
+{body_preamble}
+data Playlist = Playlist Val
+main :: IO ()
+main = do
+    let {bare_code}
+    case created of
+        Playlist (HInt 1) -> pure ()
+        _ -> error "changed constructor argument"
+'''
+PureScript = '''module Check where
+{preamble}
+data Playlist = Playlist Val
+{code}
+checked :: Boolean
+checked = case created of
+    Playlist (PInt 1) -> true
+    _ -> false
+'''

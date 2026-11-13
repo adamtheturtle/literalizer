@@ -729,9 +729,23 @@ class ConstructorCaseSpec(  # noqa: NOD001
     parameter_names: tuple[str, ...] = ()
     # A native caller can provide an externally declared constructor.
     consumer_template: str | None = None
+    consumer_templates: Mapping[str, str] = Field(default_factory=dict)
     # Native syntax can consume a target even without a call-binding API.
     target_template: str | None = None
     variable_name: Annotated[str, Field(min_length=1)] = "p"
+
+    @beartype
+    def consumer_for_language(self, *, language_name: str) -> str | None:
+        """Resolve native syntax after the capability selects a
+        backend.
+        """
+        if len(self.consumer_templates) == 0:
+            return self.consumer_template
+        try:
+            return self.consumer_templates[language_name]
+        except KeyError as error:
+            msg = f"no constructor consumer for {language_name!r}"
+            raise CaseManifestError(msg) from error
 
 
 # Defaults stand in for omitted keys, as above.

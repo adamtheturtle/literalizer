@@ -23,16 +23,20 @@ from .enum_members import find_enum_member
 from .language_options import CAPABILITY_FLAGS, OPTIONS
 
 
-class CapabilityFlagGate(
+# Omitted values require the capability to be enabled.
+class CapabilityFlagGate(  # noqa: NOD001
     BaseModel,
     extra="forbid",
     frozen=True,
     strict=True,
 ):
-    """Admit languages whose class declares a capability flag."""
+    """Admit languages whose declared capability matches the requested
+    value.
+    """
 
     kind: Literal["capability_flag"]
     flag: Annotated[str, Field(min_length=1)]
+    value: bool = True
 
 
 class SpecFieldPresentGate(
@@ -116,7 +120,7 @@ def language_gate_admits(
                 is not None
             )
         case CapabilityFlagGate():
-            admits = CAPABILITY_FLAGS[gate.flag](lang_cls)
+            admits = CAPABILITY_FLAGS[gate.flag](lang_cls) == gate.value
         case SpecFieldPresentGate():
             fields = dataclasses.fields(class_or_instance=spec)
             admits = gate.field in {spec_field.name for spec_field in fields}
