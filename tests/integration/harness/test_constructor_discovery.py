@@ -8,6 +8,27 @@ from tests.integration import constructor_cases
 from tests.integration.case_manifests import CaseManifestError
 
 
+def test_selected_backend_requires_native_consumer(tmp_path: Path) -> None:
+    """A consumer table must not silently narrow capability selection."""
+    case_dir = tmp_path / "data_declaration"
+    case_dir.mkdir()
+    _ = (case_dir / "input.json").write_text(data="[[]]\n", encoding="utf-8")
+    _ = (case_dir / "case.toml").write_text(
+        data=(
+            "schema_version = 1\n"
+            'owner = "constructor-binding"\n'
+            "[constructor.consumer_templates]\n"
+            'Haskell = "{code}"\n'
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match="no constructor consumer",
+    ):
+        _ = constructor_cases.constructor_binding_cases(cases_dir=tmp_path)
+
+
 @pytest.mark.parametrize(argnames="owner_count", argvalues=[0, 2])
 def test_every_matching_owner(
     tmp_path: Path, cases_dir: Path, owner_count: int

@@ -350,6 +350,7 @@ class Elixir(metaclass=LanguageCls):
 
     format_integer_widened = no_format_integer_widened
     format_integer_beyond_i64 = no_format_integer_beyond_i64
+    uses_data_keyword_for_algebraic_constructors = False
     accepts_type_name_call_target: ClassVar[bool] = False
     format_constructor_target: ClassVar["staticmethod[[str], str]"] = (
         staticmethod(_constructor_target)
