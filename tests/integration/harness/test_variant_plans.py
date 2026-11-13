@@ -1,15 +1,18 @@
 """Tests for the declared variant-axis expansion plans."""
 
+from collections import Counter
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from pydantic import BaseModel
 
-from literalizer import CollectionLayout, CommentConfig
+from literalizer import CollectionLayout, CommentConfig, LanguageCls
 from literalizer._enums import enum_payload
-from literalizer.languages import ALL_LANGUAGES, Cpp, Java
+from literalizer.languages import ALL_LANGUAGES, Java
 from tests.enum_members import enum_member_by_name, find_enum_member
 from tests.integration.case_manifests import CaseManifestError
+from tests.integration.language_metadata import language_metadata
 from tests.integration.language_specs import make_spec
 from tests.integration.variant_axis_names import (
     KNOWN_VARIANT_AXES,
@@ -28,7 +31,11 @@ from tests.integration.variant_plans import (
     variants_for_declared_axis,
     variants_for_registry_axis,
 )
+from tests.language_options import OPTIONS
 from tests.toml_cases import load_toml_cases
+
+if TYPE_CHECKING:
+    import enum
 
 
 class _AxisErrorCase(BaseModel, extra="forbid", frozen=True):
@@ -119,19 +126,33 @@ def test_format_options_cover_versions_without_overriding_pins() -> None:
     """Ordinary options cover versions; explicit pins and syntax floors
     win.
     """
+    bytes_option = OPTIONS["bytes_format"]
     ordinary = variants_for_axis(axis_key="bytes_format")
     assert {
-        variant.spec.language_version
+        (
+            variant.lang_cls,
+            bytes_option.get_default(variant.spec),
+            variant.spec.language_version,
+        )
         for variant in ordinary
-        if variant.lang_cls is Cpp
-        and variant.name == "Cpp_bytes_format_base64"
-    } == set(Cpp.VersionFormats)
+    } == {
+        (lang_cls, member, version)
+        for lang_cls in ALL_LANGUAGES
+        for member in lang_cls.BytesFormats
+        if member is not bytes_option.get_default(make_spec(lang_cls=lang_cls))
+        for version in lang_cls.VersionFormats
+    }
     pinned = variants_for_axis(axis_key="language_version")
-    assert {
-        variant.spec.language_version
-        for variant in pinned
-        if variant.name == "Cpp_version_cpp14"
-    } == {enum_member_by_name(enum_cls=Cpp.VersionFormats, name="CPP14")}
+    assert Counter(
+        (variant.lang_cls, variant.spec.language_version) for variant in pinned
+    ) == Counter(
+        {
+            (lang_cls, version): 1
+            for lang_cls in ALL_LANGUAGES
+            for version in lang_cls.VersionFormats
+            if version is not make_spec(lang_cls=lang_cls).language_version
+        }
+    )
     records = variants_for_axis(axis_key="heterogeneous_strategy_record")
     assert [
         variant.spec.language_version
@@ -151,11 +172,15 @@ def test_axis_can_cover_only_default_version(
         path=axis_path,
         resolve_axis=variants_for_axis,
     )
-    assert [
-        variant.spec.language_version
+    assert Counter(
+        (variant.lang_cls, variant.spec.language_version)
         for variant in variants
-        if variant.lang_cls is Cpp
-    ] == [enum_member_by_name(enum_cls=Cpp.VersionFormats, name="CPP20")]
+    ) == Counter(
+        {
+            (lang_cls, make_spec(lang_cls=lang_cls).language_version): 1
+            for lang_cls in ALL_LANGUAGES
+        }
+    )
 
 
 def test_optional_metadata_version_pins_only_languages_declaring_it(
@@ -177,16 +202,25 @@ def test_optional_metadata_version_pins_only_languages_declaring_it(
         axis_key="example",
         resolve_axis=variants_for_axis,
     )
-    assert [
-        variant.spec.language_version
+    expected: dict[tuple[LanguageCls, enum.Enum], int] = {}
+    for lang_cls in ALL_LANGUAGES:
+        pin = language_metadata(
+            language_id=lang_cls.language_id
+        ).variants.heterogeneous_value_variant_name_language_version
+        versions = (
+            tuple(lang_cls.VersionFormats)
+            if pin is None
+            else (
+                enum_member_by_name(
+                    enum_cls=lang_cls.VersionFormats, name=pin
+                ),
+            )
+        )
+        expected.update({(lang_cls, version): 1 for version in versions})
+    assert Counter(
+        (variant.lang_cls, variant.spec.language_version)
         for variant in variants
-        if variant.lang_cls is Cpp
-    ] == [enum_member_by_name(enum_cls=Cpp.VersionFormats, name="CPP14")]
-    assert {
-        variant.spec.language_version
-        for variant in variants
-        if variant.lang_cls is Java
-    } == set(Java.VersionFormats)
+    ) == Counter(expected)
 
 
 def test_declared_axis_names_are_unique_per_language() -> None:
