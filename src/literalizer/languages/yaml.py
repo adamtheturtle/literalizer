@@ -192,6 +192,7 @@ class Yaml(metaclass=LanguageCls):
     reserved_variable_identifiers: frozenset[str] = frozenset()
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
+    dotted_call_stub_indexes_colliding_helpers = False
     call_returns_expression = True
     supports_json_call_result_binding = False
     supports_zero_parameter_calls = True

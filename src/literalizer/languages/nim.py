@@ -1383,6 +1383,7 @@ class Nim(metaclass=LanguageCls):
     )
     allows_empty_call_parens = True
     supports_dotted_call_stub = True
+    dotted_call_stub_indexes_colliding_helpers = True
     call_returns_expression = True
     supports_json_call_result_binding = True
     supports_zero_parameter_calls = True
