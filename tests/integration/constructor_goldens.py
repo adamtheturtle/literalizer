@@ -1,36 +1,29 @@
 """Render and compare constructor-binding golden fixtures."""
 
 import dataclasses
-import enum
-from pathlib import Path
 
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import literalize_call
 
-from .constructor_cases import ConstructorBindingCase
+from .constructor_cases import ConstructorRendering
 from .golden_checks import GoldenSkips, check_golden, format_consumer
-from .language_specs import make_spec, with_per_fixture_module_name
+from .language_specs import with_per_fixture_module_name
 
 
 @beartype
 def run_constructor_binding_golden_case(
     *,
-    case: ConstructorBindingCase,
-    version: enum.Enum,
-    golden_path: Path,
+    rendering: ConstructorRendering,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Check one constructor binding golden file."""
-    language = make_spec(
-        lang_cls=case.lang_cls,
-        language_version=version,
-        **case.spec_overrides,
-    )
+    case = rendering.case
+    golden_path = rendering.golden_path
     manifest = case.manifest
     language = with_per_fixture_module_name(
-        spec=language, golden_path=golden_path
+        spec=rendering.spec, golden_path=golden_path
     )
     config = manifest.constructor
     assert config is not None  # noqa: S101

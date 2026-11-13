@@ -7,7 +7,6 @@ from .constructor_cases import (
     CASES_DIR,
     ConstructorBindingCase,
     constructor_binding_cases,
-    constructor_golden_path,
 )
 from .constructor_goldens import run_constructor_binding_golden_case
 
@@ -24,15 +23,9 @@ def test_constructor_binding_golden_file(
     subtests: pytest.Subtests,
 ) -> None:
     """Every declared constructor binding matches its native golden."""
-    for version_format in case.lang_cls.VersionFormats:
-        with subtests.test(version=version_format.name):
-            golden_path = constructor_golden_path(
-                case=case,
-                version=version_format,
-            )
+    for rendering in case.renderings:
+        with subtests.test(version=rendering.version.name):
             run_constructor_binding_golden_case(
-                case=case,
-                version=version_format,
-                golden_path=golden_path,
+                rendering=rendering,
                 file_regression=file_regression,
             )

@@ -23,8 +23,9 @@ from tests.integration.case_manifests import (
     load_case_manifests,
 )
 from tests.integration.constructor_cases import (
+    ConstructorBindingCase,
+    ConstructorRendering,
     constructor_binding_cases,
-    constructor_golden_path,
 )
 from tests.integration.deep_input_cases import deep_input_golden_paths
 from tests.integration.golden_scenarios import GOLDEN_SCENARIOS, golden_groups
@@ -94,6 +95,16 @@ def _expected_reference_golden_files(*, cases_dir: Path) -> set[Path]:
 
 
 @beartype
+def _expected_constructor_golden_files(*, cases_dir: Path) -> set[Path]:
+    """Read constructor fixture ownership from the runner's renderings."""
+    return {
+        rendering.golden_path
+        for case in constructor_binding_cases(cases_dir=cases_dir)
+        for rendering in case.renderings
+    }
+
+
+@beartype
 def _expected_golden_files(cases_dir: Path) -> set[Path]:
     """Return the set of all golden files that parameterized tests
     cover.
@@ -104,14 +115,7 @@ def _expected_golden_files(cases_dir: Path) -> set[Path]:
         expected.add(manifest.path)
         expected.add(manifest.input.path)
 
-    expected.update(
-        constructor_golden_path(
-            case=case,
-            version=version,
-        )
-        for case in constructor_binding_cases(cases_dir=cases_dir)
-        for version in case.lang_cls.VersionFormats
-    )
+    expected.update(_expected_constructor_golden_files(cases_dir=cases_dir))
 
     expected.update(
         case.golden_path
@@ -411,5 +415,59 @@ def test_removed_reference_rendering_leaves_orphan(
         value=property(fget=remaining_renderings),
     )
     expected = _expected_reference_golden_files(cases_dir=tmp_path)
+    with pytest.raises(expected_exception=AssertionError, match=orphan.name):
+        _check_golden_inventory(cases_dir=tmp_path, expected=expected)
+
+
+def test_removed_constructor_rendering_leaves_orphan(
+    cases_dir: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A retained constructor fixture needs an exercised rendering."""
+    cases = constructor_binding_cases(cases_dir=cases_dir)
+    rows = {id(case): case.renderings for case in cases}
+    selected = next(
+        rendering
+        for case in cases
+        for rendering in rows[id(case)]
+        if rendering.golden_path.is_file()
+    )
+    assert selected.golden_path in _expected_constructor_golden_files(
+        cases_dir=cases_dir
+    )
+    orphan = tmp_path / os.path.relpath(
+        path=selected.golden_path, start=cases_dir
+    )
+    orphan.parent.mkdir(parents=True)
+    _ = orphan.write_bytes(data=selected.golden_path.read_bytes())
+
+    def remaining_renderings(
+        case: ConstructorBindingCase, /
+    ) -> tuple[ConstructorRendering, ...]:
+        """Drop one executed version while retaining its source case."""
+        return tuple(row for row in rows[id(case)] if row is not selected)
+
+    monkeypatch.setattr(
+        target=ConstructorBindingCase,
+        name="renderings",
+        value=property(fget=remaining_renderings),
+    )
+
+    def collected_cases(*, cases_dir: Path) -> list[ConstructorBindingCase]:
+        """Retain the cases whose rendering rows the test controls."""
+        assert cases_dir == tmp_path
+        return cases
+
+    monkeypatch.setattr(
+        target=f"{__name__}.constructor_binding_cases", name=collected_cases
+    )
+    expected = _expected_constructor_golden_files(cases_dir=tmp_path)
+    # Constructor paths retain their manifest roots; compare the copied
+    # fixture against the corresponding inventory under the temporary root.
+    expected = {
+        tmp_path / os.path.relpath(path=path, start=cases_dir)
+        for path in expected
+    }
     with pytest.raises(expected_exception=AssertionError, match=orphan.name):
         _check_golden_inventory(cases_dir=tmp_path, expected=expected)

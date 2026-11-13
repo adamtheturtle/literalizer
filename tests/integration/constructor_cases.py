@@ -6,7 +6,7 @@ from pathlib import Path
 
 from beartype import beartype
 
-from literalizer import NewVariable
+from literalizer import Language, NewVariable
 
 from .case_manifests import (
     CaseManifest,
@@ -18,7 +18,7 @@ from .constructor_variants import (
     constructor_binding_specs,
 )
 from .golden_checks import NO_SKIPS
-from .language_specs import make_golden_path, sorted_languages
+from .language_specs import make_golden_path, make_spec, sorted_languages
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -29,20 +29,42 @@ class ConstructorBindingCase(ConstructorBindingSpec):
 
     manifest: CaseManifest
 
+    @property
+    def renderings(self) -> tuple["ConstructorRendering", ...]:
+        """Expand the versions used by execution and fixture inventory."""
+        return tuple(
+            ConstructorRendering(
+                case=self,
+                version=version,
+                spec=make_spec(
+                    lang_cls=self.lang_cls,
+                    language_version=version,
+                    **self.spec_overrides,
+                ),
+            )
+            for version in self.lang_cls.VersionFormats
+        )
 
-@beartype
-def constructor_golden_path(
-    *,
-    case: ConstructorBindingCase,
-    version: enum.Enum,
-) -> Path:
-    """Locate the variant's native golden file."""
-    return make_golden_path(
-        parent=case.manifest.case_dir,
-        name=case.name,
-        lang_cls=case.lang_cls,
-        version=version,
-    )
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class ConstructorRendering:
+    """One collected constructor case, version and effective spec."""
+
+    case: ConstructorBindingCase
+    version: enum.Enum
+    spec: Language
+
+    @property
+    def golden_path(self) -> Path:
+        """Locate the native fixture compared by the constructor
+        runner.
+        """
+        return make_golden_path(
+            parent=self.case.manifest.case_dir,
+            name=self.case.name,
+            lang_cls=self.case.lang_cls,
+            version=self.version,
+        )
 
 
 @beartype
