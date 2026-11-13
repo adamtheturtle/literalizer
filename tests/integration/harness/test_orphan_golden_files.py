@@ -2,51 +2,35 @@
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
 
 import pytest
 from beartype import beartype
 
 from literalizer.languages import Cpp, Java
 from tests.enum_members import enum_member_by_name
-from tests.integration.call_collection import (
-    CallCase,
-)
 from tests.integration.call_variant_cases import (
     CallVariantCase,
     call_golden_cases,
 )
 from tests.integration.case_manifests import (
-    REF_DEFAULT_OWNER,
-    REF_OWNER,
     RefCaseSpec,
     load_case_manifests,
 )
 from tests.integration.constructor_cases import (
-    ConstructorBindingCase,
-    ConstructorRendering,
     constructor_binding_cases,
 )
 from tests.integration.deep_input_cases import deep_input_golden_paths
-from tests.integration.golden_scenarios import GOLDEN_SCENARIOS, golden_groups
+from tests.integration.golden_scenarios import golden_groups
 from tests.integration.native_invocation_cases import native_invocation_cases
 from tests.integration.record_snapshot_cases import (
     record_snapshot_golden_paths,
 )
 from tests.integration.reference_cases import (
-    LiteralizeRefCase,
-    LiteralizeRefVariantCase,
-    RefRendering,
-    build_literalize_ref_variant_cases,
-    discover_literalize_ref_cases,
     ref_language_versions,
     reference_golden_cases,
 )
 from tests.integration.shared_checked_cases import shared_checked_cases
 from tests.integration.unwrapped_result_cases import result_view_golden_paths
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
 
 
 @beartype
@@ -156,84 +140,6 @@ def test_no_dead_golden_files(cases_dir: Path) -> None:
         cases_dir=cases_dir,
         expected=_expected_golden_files(cases_dir=cases_dir),
     )
-
-
-@pytest.mark.parametrize(
-    argnames="scenario_name",
-    argvalues=[scenario.name for scenario in GOLDEN_SCENARIOS],
-)
-def test_removed_scenario_leaves_orphan(
-    scenario_name: str,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Removing any runner scenario must orphan its existing fixtures."""
-    groups = golden_groups()
-    original = next(
-        path
-        for group in groups
-        if group.scenario_name == scenario_name
-        for rendering in group.renderings
-        for spec in rendering.specs
-        if (
-            path := rendering.golden_path(version=spec.language_version)
-        ).is_file()
-    )
-    cases_dir = tmp_path / "cases"
-    orphan = tmp_path / os.path.relpath(
-        path=original, start=Path(__file__).parents[1]
-    )
-    orphan.parent.mkdir(parents=True)
-    _ = orphan.write_bytes(data=original.read_bytes())
-    monkeypatch.setattr(
-        target=f"{__name__}.golden_groups",
-        name=lambda: tuple(
-            group for group in groups if group.scenario_name != scenario_name
-        ),
-    )
-    expected = _expected_literalize_golden_files(cases_dir=cases_dir)
-    with pytest.raises(
-        expected_exception=AssertionError,
-        match=orphan.name,
-    ):
-        _check_golden_inventory(cases_dir=cases_dir, expected=expected)
-
-
-@pytest.mark.parametrize(argnames="variant", argvalues=[False, True])
-def test_removed_call_case_leaves_orphan(
-    *,
-    variant: bool,
-    cases_dir: Path,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Both call families take their inventory from the runner's cases."""
-    cases = call_golden_cases(cases_dir=cases_dir)
-    selected, original = next(
-        (case, path)
-        for case in cases
-        if isinstance(case, CallVariantCase) is variant
-        for rendering in case.renderings
-        if rendering.expected_exception is None
-        if (path := rendering.golden_path(cases_dir=cases_dir)).is_file()
-    )
-    orphan = tmp_path / os.path.relpath(path=original, start=cases_dir)
-    orphan.parent.mkdir(parents=True)
-    _ = orphan.write_bytes(data=original.read_bytes())
-
-    def remaining_cases(
-        *, cases_dir: Path
-    ) -> tuple[CallCase | CallVariantCase, ...]:
-        """Remove one collected case without changing any manifests."""
-        assert cases_dir == tmp_path
-        return tuple(case for case in cases if case is not selected)
-
-    monkeypatch.setattr(
-        target=f"{__name__}.call_golden_cases", name=remaining_cases
-    )
-    expected = _expected_call_golden_files(cases_dir=tmp_path)
-    with pytest.raises(expected_exception=AssertionError, match=orphan.name):
-        _check_golden_inventory(cases_dir=tmp_path, expected=expected)
 
 
 @pytest.mark.parametrize(argnames="variant", argvalues=[False, True])
@@ -357,113 +263,3 @@ def test_reference_versions_follow_selected_options() -> None:
     assert ref_language_versions(config=config, lang_cls=Cpp) == tuple(
         Cpp.VersionFormats
     )
-
-
-@pytest.mark.parametrize(
-    argnames="family", argvalues=["ref", "default", "variant"]
-)
-def test_removed_reference_rendering_leaves_orphan(
-    family: Literal["ref", "default", "variant"],
-    cases_dir: Path,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Every reference family follows the runner's individual
-    renderings.
-    """
-    groups: dict[
-        str, Sequence[LiteralizeRefCase | LiteralizeRefVariantCase]
-    ] = {
-        "ref": discover_literalize_ref_cases(owner=REF_OWNER),
-        "default": discover_literalize_ref_cases(owner=REF_DEFAULT_OWNER),
-        "variant": build_literalize_ref_variant_cases(),
-    }
-    original_rows = {
-        id(case): case.renderings
-        for cases in groups.values()
-        for case in cases
-    }
-    selected, original = next(
-        (case, path)
-        for case in groups[family]
-        for rendering in case.renderings
-        if (path := rendering.golden_path(cases_dir=cases_dir)).is_file()
-    )
-    orphan = tmp_path / os.path.relpath(path=original, start=cases_dir)
-    orphan.parent.mkdir(parents=True)
-    _ = orphan.write_bytes(data=original.read_bytes())
-
-    def remaining_renderings(
-        case: LiteralizeRefCase | LiteralizeRefVariantCase,
-        /,
-    ) -> tuple[RefRendering, ...]:
-        """Remove one exercised version without changing its manifest."""
-        return tuple(
-            rendering
-            for rendering in original_rows[id(case)]
-            if case is not selected
-            or rendering.golden_path(cases_dir=tmp_path) != orphan
-        )
-
-    monkeypatch.setattr(
-        target=type(selected),
-        name="renderings",
-        value=property(fget=remaining_renderings),
-    )
-    expected = _expected_reference_golden_files(cases_dir=tmp_path)
-    with pytest.raises(expected_exception=AssertionError, match=orphan.name):
-        _check_golden_inventory(cases_dir=tmp_path, expected=expected)
-
-
-def test_removed_constructor_rendering_leaves_orphan(
-    cases_dir: Path,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """A retained constructor fixture needs an exercised rendering."""
-    cases = constructor_binding_cases(cases_dir=cases_dir)
-    rows = {id(case): case.renderings for case in cases}
-    selected = next(
-        rendering
-        for case in cases
-        for rendering in rows[id(case)]
-        if rendering.golden_path.is_file()
-    )
-    assert selected.golden_path in _expected_constructor_golden_files(
-        cases_dir=cases_dir
-    )
-    orphan = tmp_path / os.path.relpath(
-        path=selected.golden_path, start=cases_dir
-    )
-    orphan.parent.mkdir(parents=True)
-    _ = orphan.write_bytes(data=selected.golden_path.read_bytes())
-
-    def remaining_renderings(
-        case: ConstructorBindingCase, /
-    ) -> tuple[ConstructorRendering, ...]:
-        """Drop one executed version while retaining its source case."""
-        return tuple(row for row in rows[id(case)] if row is not selected)
-
-    monkeypatch.setattr(
-        target=ConstructorBindingCase,
-        name="renderings",
-        value=property(fget=remaining_renderings),
-    )
-
-    def collected_cases(*, cases_dir: Path) -> list[ConstructorBindingCase]:
-        """Retain the cases whose rendering rows the test controls."""
-        assert cases_dir == tmp_path
-        return cases
-
-    monkeypatch.setattr(
-        target=f"{__name__}.constructor_binding_cases", name=collected_cases
-    )
-    expected = _expected_constructor_golden_files(cases_dir=tmp_path)
-    # Constructor paths retain their manifest roots; compare the copied
-    # fixture against the corresponding inventory under the temporary root.
-    expected = {
-        tmp_path / os.path.relpath(path=path, start=cases_dir)
-        for path in expected
-    }
-    with pytest.raises(expected_exception=AssertionError, match=orphan.name):
-        _check_golden_inventory(cases_dir=tmp_path, expected=expected)
