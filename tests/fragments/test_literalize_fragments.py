@@ -19,7 +19,7 @@ from literalizer import (
     VariableForm,
     literalize_call,
 )
-from tests.integration.case_manifests import (
+from tests.integration.manifest_values import (
     CallInputFormat,
     CallTransformTemplate,
     ManifestLanguage,

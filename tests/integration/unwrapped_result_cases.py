@@ -9,8 +9,11 @@ from pydantic import BaseModel
 
 import literalizer
 
-from .case_manifests import ManifestLanguage, ManifestLanguages
 from .language_specs import make_golden_path, make_spec
+from .manifest_values import (
+    ManifestLanguage,
+    ManifestLanguages,
+)
 
 type ResultAttribute = Literal["code", "bare_code"]
 

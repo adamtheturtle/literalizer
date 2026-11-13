@@ -13,8 +13,13 @@ from literalizer.exceptions import UnrepresentableInputError
 from literalizer.languages import CSharp
 from tests.enum_members import enum_member_by_name
 from tests.integration import literalize_ref_cases
-from tests.integration.case_manifests import ManifestLanguage, RefCaseSpec
+from tests.integration.case_manifests import (
+    RefCaseSpec,
+)
 from tests.integration.language_specs import make_golden_path, make_spec
+from tests.integration.manifest_values import (
+    ManifestLanguage,
+)
 from tests.integration.ref_consumers import external_assignment_spec
 from tests.toml_cases import load_toml_cases
 

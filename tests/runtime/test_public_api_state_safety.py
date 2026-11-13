@@ -12,9 +12,9 @@ import pytest
 from pydantic import BaseModel, TypeAdapter
 
 from literalizer.languages import ALL_LANGUAGES
-from tests.integration.case_manifests import ManifestLanguage
 from tests.integration.golden_scenarios import GOLDEN_SCENARIOS
 from tests.integration.language_specs import with_per_fixture_module_name
+from tests.integration.manifest_values import ManifestLanguage
 from tests.integration.state_goldens import (
     StateGolden,
     read_state_golden,

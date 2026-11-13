@@ -7,12 +7,14 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from .case_manifests import (
-    CallInputFormat,
     CaseManifest,
-    ManifestLanguage,
     load_case_manifests,
 )
 from .language_specs import make_golden_path
+from .manifest_values import (
+    CallInputFormat,
+    ManifestLanguage,
+)
 
 
 class DeepInputRecipe(
