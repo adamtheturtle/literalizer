@@ -22,7 +22,6 @@ from tests.integration.case_manifests import (
 )
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
-    constructor_golden_path,
 )
 from tests.integration.golden_scenarios import golden_groups
 from tests.integration.language_specs import make_golden_path
@@ -150,12 +149,8 @@ def _constructor_bindings() -> dict[Path, str]:
         if config is None:
             msg = f"Missing constructor metadata for {case.name}."
             raise ValueError(msg)
-        for version in Dart.VersionFormats:
-            golden = constructor_golden_path(
-                case=case,
-                version=version,
-            )
-            bindings[golden.resolve()] = config.variable_name
+        for rendering in case.renderings:
+            bindings[rendering.golden_path.resolve()] = config.variable_name
     return bindings
 
 
