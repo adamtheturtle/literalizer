@@ -302,15 +302,19 @@ def case_for_manifest_variant(
     variable_names = language_metadata(
         language_id=variant.lang_cls.language_id
     ).variants.declaration_style_variable_names
-    context = context.model_copy(
-        update={
-            "variable_name": variable_names.get(
-                variant.spec.declaration_style.name, context.variable_name
-            )
-        }
-    )
+    substitutions = context.resolved_record_null_substitutions()
     variant = dataclasses.replace(
         variant,
+        collection_layout=(
+            variant.collection_layout
+            if context.collection_layout is None
+            else literalizer.CollectionLayout(value=context.collection_layout)
+        ),
+        record_null_substitutions=(
+            variant.record_null_substitutions
+            if substitutions is None
+            else substitutions
+        ),
         initialize_variable=manifest_variant.initialize_variable,
         wrap_in_file=manifest_variant.wrap_in_file,
         extra_preamble=(
@@ -319,25 +323,21 @@ def case_for_manifest_variant(
             else ()
         ),
     )
-    if context.collection_layout is not None:
-        variant = dataclasses.replace(
-            variant,
-            collection_layout=literalizer.CollectionLayout(
-                value=context.collection_layout
-            ),
-        )
-    substitutions = context.resolved_record_null_substitutions()
-    if substitutions is not None:
-        variant = dataclasses.replace(
-            variant,
-            record_null_substitutions=substitutions,
-        )
     return VariantCase(
         apply_fixture_module_name=manifest_variant.apply_fixture_module_name,
         golden_name=f"{variant.name}{manifest_variant.suffix}",
         variant=variant,
         case_dir_name=case_dir_name,
-        variable_form=variable_form_for_context(context=context),
+        variable_form=variable_form_for_context(
+            context=context.model_copy(
+                update={
+                    "variable_name": variable_names.get(
+                        variant.spec.declaration_style.name,
+                        context.variable_name,
+                    )
+                }
+            )
+        ),
         pre_indent_level=context.pre_indent_level,
         consumer_template=manifest_variant.consumer_templates.get(
             variant.lang_cls
