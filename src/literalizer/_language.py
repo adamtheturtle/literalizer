@@ -1641,6 +1641,10 @@ class _LanguageMetadata(_LanguageMetadataBase):
     supports_variable_names: bool
     supports_no_variable_wrap_in_file: bool
     supports_native_invocations: bool
+    supports_stateful_receiver_result_checks: bool
+    """Whether invocation recipes can check a receiver's method or
+    function field result while retaining changes to receiver state.
+    """
     supports_dotted_calls: bool
     has_free_function_calls: bool
     reserved_identifiers: frozenset[str]
@@ -2391,6 +2395,10 @@ class Language(typing.Protocol):
     extension: str
     """The file extension for this language, including the leading dot."""
 
+    supports_stateful_receiver_result_checks: bool
+    """Whether invocation recipes can check a receiver's method or
+    function field result while retaining changes to receiver state.
+    """
     supports_dotted_calls: bool
     """Whether the language accepts dotted ``target_function`` values
     (e.g. ``"module.fn"``) in

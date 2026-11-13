@@ -8,17 +8,17 @@ import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import InputFormat, literalize_invocations
-from literalizer.languages import Python
 
 from .golden_checks import check_golden, format_consumer
-from .language_specs import make_spec
 from .shared_checked_cases import SharedCheckedCase, shared_checked_cases
 
 
 @pytest.mark.parametrize(
     argnames="case",
     argvalues=shared_checked_cases(cases_dir=Path(__file__).parent / "cases"),
-    ids=lambda case: f"{case.name}/{case.version.name}",
+    ids=lambda case: (
+        f"{case.name}/{case.lang_cls.__name__}/{case.version.name}"
+    ),
 )
 def test_shared_checked_golden(
     case: SharedCheckedCase, file_regression: FileRegressionFixture
@@ -30,16 +30,21 @@ def test_shared_checked_golden(
         input_format=InputFormat.JSON,
         zip_source=recipe.zip_source,
         zip_input_format=InputFormat.JSON,
-        language=make_spec(
-            lang_cls=Python,
-            language_version=case.version,
-            call_style=Python.call_styles["POSITIONAL"],
-        ),
+        language=case.spec,
         invocation=recipe.invocation,
-        pre_indent_level=recipe.pre_indent_level,
+        pre_indent_level=(
+            recipe.pre_indent_level
+            if case.consumer.pre_indent_level is None
+            else case.consumer.pre_indent_level
+        ),
     )
+    template = case.consumer.template
+    if template is None:
+        template = recipe.consumer_template
     program = format_consumer(
-        template=recipe.consumer_template,
+        template=template.replace(
+            "{expected_calls}", str(object=recipe.expected_calls)
+        ),
         result=result,
         golden_path=case.golden_path,
     )
@@ -48,11 +53,15 @@ def test_shared_checked_golden(
         golden_path=case.golden_path,
         file_regression=file_regression,
     )
-    completed = subprocess.run(  # noqa: S603 - execute complete native fixtures
-        args=[sys.executable, "-I", str(object=case.golden_path)],
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=False,
-    )
-    assert completed.returncode == 0, completed.stderr
+    if len(case.consumer.execution) > 0:
+        completed = subprocess.run(  # noqa: S603 - execute complete native fixtures
+            args=[
+                arg.format(python=sys.executable, golden_path=case.golden_path)
+                for arg in case.consumer.execution
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        assert completed.returncode == 0, completed.stderr
