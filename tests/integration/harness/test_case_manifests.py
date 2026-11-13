@@ -15,6 +15,7 @@ from tests.integration.case_manifests import (
     case_input,
     load_case_manifest,
 )
+from tests.integration.language_specs import make_spec
 from tests.integration.manifest_queries import (
     case_dir_name_for_owner,
     case_dir_name_for_role,
@@ -26,7 +27,34 @@ from tests.integration.variant_cases import (
     build_variant_cases,
     validate_unique_variant_targets,
 )
+from tests.language_gates import CapabilityFlagGate, language_gate_admits
 from tests.toml_cases import load_toml_cases
+
+
+def test_capability_values_partition_all_backends() -> None:
+    """Negative gates complement positive gates; omission stays
+    positive.
+    """
+    positive = CapabilityFlagGate(
+        kind="capability_flag", flag="declares_type_name_call_target"
+    )
+    explicit = positive.model_copy(update={"value": True})
+    negative = positive.model_copy(update={"value": False})
+    selected: list[set[literalizer.LanguageCls]] = [
+        {
+            cls
+            for cls in literalizer.languages.ALL_LANGUAGES
+            if language_gate_admits(
+                gate=gate, lang_cls=cls, spec=make_spec(lang_cls=cls)
+            )
+        }
+        for gate in (positive, explicit, negative)
+    ]
+    assert selected[0] == selected[1]
+    assert selected[0].isdisjoint(selected[2])
+    assert selected[0] | selected[2] == set(
+        literalizer.languages.ALL_LANGUAGES
+    )
 
 
 class _ManifestErrorCase(BaseModel, extra="forbid", frozen=True):
