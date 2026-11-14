@@ -1,9 +1,3 @@
-# Python rejects this group's C0 controls; retain the selector contract.
-[[capability_cases]]
-capability = "control_strings"
-expected_keys = ["string_controls"]
-expected_values = {}
-
 [audited_languages]
 Bash = ["i64_boundaries", "interpolation_strings"]
 C = ["interpolation_strings"]

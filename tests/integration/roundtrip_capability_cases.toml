@@ -12,3 +12,8 @@ expected_values = {}
 capability = "embedded_nul"
 expected_keys = ["string_embedded_nul"]
 expected_values = {}
+
+[document_case]
+capability = "control_strings"
+expected_keys = ["string_controls"]
+expected_values = { string_controls = "\u0001\b\t\n\f\r\u001f" }
