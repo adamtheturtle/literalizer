@@ -359,8 +359,9 @@ assert(calls == {expected_calls} and checks == {expected_calls})
 
 [Matlab]
 pre_indent_level = 0
+entrypoint = "checked_counter"
 template = '''{preamble}
-function checked_counter()
+function {entrypoint}()
 calls = 0;
 checks = 0;
 counter.accept = @accept;

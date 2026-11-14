@@ -36,6 +36,7 @@ class CheckedConsumer(BaseModel, extra="forbid", frozen=True):  # noqa: NOD001
     template: str | None = None
     pre_indent_level: int | None = None
     heterogeneous_strategy: str | None = None
+    entrypoint: str | None = None
     execution: list[str] = Field(default_factory=list[str])
 
 
