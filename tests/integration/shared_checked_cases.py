@@ -76,36 +76,39 @@ class SharedCheckedCase:
 
 def shared_checked_cases(*, cases_dir: Path) -> tuple[SharedCheckedCase, ...]:
     """Discover and own every declared complete checked-call consumer."""
-    return tuple(
-        SharedCheckedCase(
-            name=manifest.case_dir.name,
-            recipe=CheckedRecipe.model_validate(
-                obj=tomllib.loads(
-                    manifest.input.path.read_text(encoding="utf-8")
+    cases: list[SharedCheckedCase] = []
+    for manifest in load_case_manifests(cases_dir=cases_dir):
+        if manifest.owner != "shared-invocation":
+            continue
+        recipe = CheckedRecipe.model_validate(
+            obj=tomllib.loads(manifest.input.path.read_text(encoding="utf-8"))
+        )
+        for lang_cls in sorted_languages():
+            if not manifest.selection.admits_language(lang_cls=lang_cls):
+                continue
+            consumer = checked_consumer_for_language(
+                language_name=lang_cls.__name__
+            )
+            cases.extend(
+                SharedCheckedCase(
+                    name=manifest.case_dir.name,
+                    recipe=recipe,
+                    lang_cls=lang_cls,
+                    spec=_checked_spec(
+                        lang_cls=lang_cls, version=version, consumer=consumer
+                    ),
+                    consumer=consumer,
+                    version=version,
+                    golden_path=make_golden_path(
+                        parent=manifest.case_dir,
+                        name=f"{lang_cls.__name__}_shared_checked",
+                        lang_cls=lang_cls,
+                        version=version,
+                    ),
                 )
-            ),
-            lang_cls=lang_cls,
-            spec=_checked_spec(
-                lang_cls=lang_cls, version=version, consumer=consumer
-            ),
-            consumer=consumer,
-            version=version,
-            golden_path=make_golden_path(
-                parent=manifest.case_dir,
-                name=f"{lang_cls.__name__}_shared_checked",
-                lang_cls=lang_cls,
-                version=version,
-            ),
-        )
-        for manifest in load_case_manifests(cases_dir=cases_dir)
-        if manifest.owner == "shared-invocation"
-        for lang_cls in sorted_languages()
-        if manifest.selection.admits_language(lang_cls=lang_cls)
-        for consumer in (
-            checked_consumer_for_language(language_name=lang_cls.__name__),
-        )
-        for version in lang_cls.VersionFormats
-    )
+                for version in lang_cls.VersionFormats
+            )
+    return tuple(cases)
 
 
 def _checked_spec(
