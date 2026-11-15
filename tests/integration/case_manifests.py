@@ -990,6 +990,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         input_roundtrip=data.input_roundtrip,
         selection=CapabilitySelection(
             gates=data.gates,
+            any_gates=data.any_gates,
         ),
         suites=frozenset(data.suites),
         owner=data.owner,

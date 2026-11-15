@@ -1,6 +1,14 @@
 # Validation scenarios for case-local golden manifests.
 
 [[cases]]
+name = "unknown_alternative_capability"
+manifest = '''schema_version = 1
+suites = ["base"]
+any_gates = [{kind = "capability_flag", flag = "does_not_exist"}]
+'''
+message = "any_gates: unknown capability flag"
+
+[[cases]]
 name = "call_transform_add_one_and_call_transform_nullable_conditional_are_mutually_exclusive"
 manifest = '''schema_version = 1
 owner = "literalize-call"
