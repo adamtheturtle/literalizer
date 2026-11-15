@@ -9,6 +9,7 @@ test execution.
 import dataclasses
 import enum
 import functools
+from collections.abc import Mapping
 from pathlib import Path
 
 from beartype import beartype
@@ -120,14 +121,18 @@ def make_spec(
     lang_cls: literalizer.LanguageCls,
     **kwargs: object,
 ) -> literalizer.Language:
-    """Return a cached instance of *lang_cls* for the given kwargs.
+    """Build a language spec, reusing cached constructor arguments.
 
     Languages whose ``wrap_in_file`` introduces a named scope take a
-    ``module_name`` constructor argument; default it to ``"check"`` so
-    fixture output matches the historic golden files.
+    ``module_name`` constructor argument; default it to the native spelling
+    of ``"main"`` so fixture output matches the historic golden files.
+    Mapping-valued overrides bypass the cache because they cannot be
+    part of its key.
     """
     if lang_cls.supports_module_name and "module_name" not in kwargs:
         kwargs["module_name"] = lang_cls.module_name_case.convert(name="main")
+    if any(isinstance(value, Mapping) for value in kwargs.values()):
+        return lang_cls(**kwargs)
     return cached_spec(
         lang_cls=lang_cls,
         kwargs_items=frozenset(kwargs.items()),
