@@ -35,9 +35,8 @@ def test_record_snapshot_golden(
     rendering = snapshot_rendering(case=case)
     input_info = case_input(case_dir=cases_dir / case.case_name)
     source = input_info.path.read_text(encoding="utf-8")
-    for version in rendering.versions:
-        with subtests.test(version=version.name):
-            seed = rendering.spec_for(version=version)
+    for seed in rendering.specs:
+        with subtests.test(version=seed.language_version.name):
             rust_seed = seed
             assert isinstance(rust_seed, Rust)
             caller_names = dict(rust_seed.record_shape_names)
@@ -71,7 +70,9 @@ def test_record_snapshot_golden(
                 before=before.code,
                 after=after.code,
             )
-            path = case.golden_path(cases_dir=cases_dir, version=version)
+            path = case.golden_path(
+                cases_dir=cases_dir, version=seed.language_version
+            )
             check_golden(
                 contents=contents,
                 golden_path=path,

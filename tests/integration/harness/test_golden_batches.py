@@ -33,7 +33,7 @@ def test_golden_batches_preserve_every_rendering_in_order() -> None:
             )
             assert actual == original
     assert all(
-        sum(len(rendering.versions) for rendering in group.renderings)
+        sum(len(rendering.specs) for rendering in group.renderings)
         <= GOLDEN_BATCH_VERSION_LIMIT
         for group in groups
     )
