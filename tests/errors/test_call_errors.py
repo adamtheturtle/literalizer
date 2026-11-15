@@ -4,7 +4,18 @@ import inspect
 
 import pytest
 
+from literalizer import (
+    ExistingVariable,
+    InputFormat,
+    NewVariable,
+    literalize_call,
+)
 from literalizer._language import validate_call_parameter_names
+from literalizer.exceptions import VariableNameNotSupportedError
+from literalizer.languages import Jsonnet
+from tests.integration.call_expectations import (
+    _variable_form_expected_exception,
+)
 
 
 def test_call_parameter_validation_requires_language_metaclass() -> None:
@@ -15,3 +26,40 @@ def test_call_parameter_validation_requires_language_metaclass() -> None:
         match="requires a LanguageCls language",
     ):
         validator(language=object(), names=(), reject_reserved=True)
+
+
+@pytest.mark.parametrize(
+    argnames="variable_form",
+    argvalues=[
+        NewVariable(name="result", modifiers=frozenset()),
+        ExistingVariable(name="result"),
+    ],
+)
+def test_call_binding_requires_variable_name_support(
+    variable_form: NewVariable | ExistingVariable,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Call syntax alone cannot enable result bindings.
+
+    Every current callable backend supports names. Disable that independent
+    capability to retain the rejection contract for future backends.
+    """
+    monkeypatch.setattr(
+        target=Jsonnet, name="supports_variable_names", value=False
+    )
+    assert (
+        _variable_form_expected_exception(
+            lang_cls=Jsonnet, variable_form=variable_form
+        )
+        is VariableNameNotSupportedError
+    )
+    with pytest.raises(expected_exception=VariableNameNotSupportedError):
+        _ = literalize_call(
+            source="1",
+            input_format=InputFormat.JSON,
+            language=Jsonnet(),
+            target_function="consume",
+            parameter_names=("value",),
+            variable_form=variable_form,
+            per_element=False,
+        )
