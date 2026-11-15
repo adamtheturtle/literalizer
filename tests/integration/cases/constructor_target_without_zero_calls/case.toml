@@ -1,19 +1,15 @@
 schema_version = 1
 owner = "constructor-binding"
-gates = [{kind = "capability_flag", flag = "supports_zero_parameter_calls", value = false}]
+gates = [{kind = "capability_flag", flag = "supports_zero_parameter_calls", value = false}, {kind = "spec_field_absent", field = "program_name"}]
 
 # Consume constructor targets in native syntax without fabricating a call.
 # Generate the boolean binding through the public variable API.
 [constructor]
 target_variable = true
 
-# Program identifiers and algebraic data declarations retain native syntax.
+# Program identifiers are owned by constructor_target_program_document.
+# Algebraic data declarations retain native syntax.
 [constructor.target_templates]
-Cobol = '''       identification division.
-       program-id. {target}.
-       procedure division.
-           stop run.
-'''
 Elm = '''module Check exposing (..)
 
 

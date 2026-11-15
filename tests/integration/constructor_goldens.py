@@ -28,6 +28,18 @@ def run_constructor_binding_golden_case(
     )
     config = manifest.constructor
     assert config is not None  # noqa: S101
+    if len(config.target_options) > 0:
+        language = dataclasses.replace(
+            language,
+            **{
+                key: value.format(
+                    target=language.format_constructor_target(
+                        config.class_name
+                    )
+                )
+                for key, value in config.target_options.items()
+            },
+        )
     consumer_template = config.consumer_for_language(
         language_name=case.lang_cls.__name__
     )
