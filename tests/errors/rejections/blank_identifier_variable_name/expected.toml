@@ -1,4 +1,4 @@
-# languages rejecting: 25; languages accepting: 40
+# languages rejecting: 24; languages accepting: 41
 
 [Accepted]
 Bash = ""
@@ -17,6 +17,7 @@ Groovy = ""
 Haxe = ""
 Hcl = ""
 JavaScript = ""
+Jsonnet = ""
 Julia = ""
 Lua = ""
 Matlab = ""
@@ -70,5 +71,4 @@ Zig = "Zig cannot use NewVariable name '_': it is a reserved identifier"
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: '_'"
 Jsonc = "Jsonc does not support variable names: '_'"
-Jsonnet = "Jsonnet does not support variable names: '_'"
 Yaml = "Yaml does not support variable names: '_'"

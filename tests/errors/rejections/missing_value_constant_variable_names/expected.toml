@@ -1,4 +1,4 @@
-# languages rejecting: 18; languages accepting: 47
+# languages rejecting: 17; languages accepting: 48
 
 [Accepted]
 "Bash['NA_character_']" = ""
@@ -77,6 +77,10 @@
 "JavaScript['NA_complex_']" = ""
 "JavaScript['NA_integer_']" = ""
 "JavaScript['NA_real_']" = ""
+"Jsonnet['NA_character_']" = ""
+"Jsonnet['NA_complex_']" = ""
+"Jsonnet['NA_integer_']" = ""
+"Jsonnet['NA_real_']" = ""
 "Julia['NA_character_']" = ""
 "Julia['NA_complex_']" = ""
 "Julia['NA_integer_']" = ""
@@ -259,10 +263,6 @@
 "Jsonc['NA_complex_']" = "Jsonc does not support variable names: 'NA_complex_'"
 "Jsonc['NA_integer_']" = "Jsonc does not support variable names: 'NA_integer_'"
 "Jsonc['NA_real_']" = "Jsonc does not support variable names: 'NA_real_'"
-"Jsonnet['NA_character_']" = "Jsonnet does not support variable names: 'NA_character_'"
-"Jsonnet['NA_complex_']" = "Jsonnet does not support variable names: 'NA_complex_'"
-"Jsonnet['NA_integer_']" = "Jsonnet does not support variable names: 'NA_integer_'"
-"Jsonnet['NA_real_']" = "Jsonnet does not support variable names: 'NA_real_'"
 "Yaml['NA_character_']" = "Yaml does not support variable names: 'NA_character_'"
 "Yaml['NA_complex_']" = "Yaml does not support variable names: 'NA_complex_'"
 "Yaml['NA_integer_']" = "Yaml does not support variable names: 'NA_integer_'"

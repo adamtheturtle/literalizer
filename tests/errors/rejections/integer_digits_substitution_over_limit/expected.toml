@@ -27,6 +27,7 @@ Haxe = "integer has more decimal digits than the 640 this interpreter converts t
 Hcl = "integer has more decimal digits than the 640 this interpreter converts to text"
 Java = "integer has more decimal digits than the 640 this interpreter converts to text"
 JavaScript = "integer has more decimal digits than the 640 this interpreter converts to text"
+Jsonnet = "integer has more decimal digits than the 640 this interpreter converts to text"
 Julia = "integer has more decimal digits than the 640 this interpreter converts to text"
 Kotlin = "integer has more decimal digits than the 640 this interpreter converts to text"
 Lua = "integer has more decimal digits than the 640 this interpreter converts to text"
@@ -66,5 +67,4 @@ Zig = "integer has more decimal digits than the 640 this interpreter converts to
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'v'"
 Jsonc = "Jsonc does not support variable names: 'v'"
-Jsonnet = "Jsonnet does not support variable names: 'v'"
 Yaml = "Yaml does not support variable names: 'v'"

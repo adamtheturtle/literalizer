@@ -1,4 +1,4 @@
-# languages rejecting: 59; languages accepting: 46
+# languages rejecting: 59; languages accepting: 47
 
 [Accepted]
 "Ada['DATA']" = ""
@@ -97,6 +97,11 @@
 "JavaScript['IDENTIFICATION']" = ""
 "JavaScript['PROCEDURE']" = ""
 "JavaScript['SECTION']" = ""
+"Jsonnet['DATA']" = ""
+"Jsonnet['DIVISION']" = ""
+"Jsonnet['IDENTIFICATION']" = ""
+"Jsonnet['PROCEDURE']" = ""
+"Jsonnet['SECTION']" = ""
 "Julia['DATA']" = ""
 "Julia['DIVISION']" = ""
 "Julia['IDENTIFICATION']" = ""
@@ -311,6 +316,8 @@
 "Java['WORKING-STORAGE']" = "Java cannot use NewVariable name 'WORKING-STORAGE': it is not a valid identifier"
 "JavaScript['PROGRAM-ID']" = "JavaScript cannot use NewVariable name 'PROGRAM-ID': it is not a valid identifier"
 "JavaScript['WORKING-STORAGE']" = "JavaScript cannot use NewVariable name 'WORKING-STORAGE': it is not a valid identifier"
+"Jsonnet['PROGRAM-ID']" = "Jsonnet cannot use NewVariable name 'PROGRAM-ID': it is not a valid identifier"
+"Jsonnet['WORKING-STORAGE']" = "Jsonnet cannot use NewVariable name 'WORKING-STORAGE': it is not a valid identifier"
 "Julia['PROGRAM-ID']" = "Julia cannot use NewVariable name 'PROGRAM-ID': it is not a valid identifier"
 "Julia['WORKING-STORAGE']" = "Julia cannot use NewVariable name 'WORKING-STORAGE': it is not a valid identifier"
 "Kotlin['PROGRAM-ID']" = "Kotlin cannot use NewVariable name 'PROGRAM-ID': it is not a valid identifier"
@@ -450,13 +457,6 @@
 "Jsonc['PROGRAM-ID']" = "Jsonc does not support variable names: 'PROGRAM-ID'"
 "Jsonc['SECTION']" = "Jsonc does not support variable names: 'SECTION'"
 "Jsonc['WORKING-STORAGE']" = "Jsonc does not support variable names: 'WORKING-STORAGE'"
-"Jsonnet['DATA']" = "Jsonnet does not support variable names: 'DATA'"
-"Jsonnet['DIVISION']" = "Jsonnet does not support variable names: 'DIVISION'"
-"Jsonnet['IDENTIFICATION']" = "Jsonnet does not support variable names: 'IDENTIFICATION'"
-"Jsonnet['PROCEDURE']" = "Jsonnet does not support variable names: 'PROCEDURE'"
-"Jsonnet['PROGRAM-ID']" = "Jsonnet does not support variable names: 'PROGRAM-ID'"
-"Jsonnet['SECTION']" = "Jsonnet does not support variable names: 'SECTION'"
-"Jsonnet['WORKING-STORAGE']" = "Jsonnet does not support variable names: 'WORKING-STORAGE'"
 "Yaml['DATA']" = "Yaml does not support variable names: 'DATA'"
 "Yaml['DIVISION']" = "Yaml does not support variable names: 'DIVISION'"
 "Yaml['IDENTIFICATION']" = "Yaml does not support variable names: 'IDENTIFICATION'"

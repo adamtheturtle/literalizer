@@ -1,4 +1,4 @@
-# languages rejecting: 32; languages accepting: 33
+# languages rejecting: 31; languages accepting: 34
 
 [Accepted]
 Ada = ""
@@ -15,6 +15,7 @@ Forth = ""
 Gleam = ""
 Go = ""
 Hcl = ""
+Jsonnet = ""
 Julia = ""
 Lua = ""
 Matlab = ""
@@ -68,5 +69,4 @@ Wren = "Wren cannot use ExistingVariable name 'class': it is a reserved identifi
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'class'"
 Jsonc = "Jsonc does not support variable names: 'class'"
-Jsonnet = "Jsonnet does not support variable names: 'class'"
 Yaml = "Yaml does not support variable names: 'class'"

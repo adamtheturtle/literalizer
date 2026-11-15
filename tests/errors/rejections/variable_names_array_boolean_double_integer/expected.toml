@@ -1,4 +1,4 @@
-# languages rejecting: 28; languages accepting: 46
+# languages rejecting: 27; languages accepting: 47
 
 [Accepted]
 "Ada['Boolean']" = ""
@@ -122,6 +122,13 @@
 "JavaScript['List']" = ""
 "JavaScript['Map']" = ""
 "JavaScript['String']" = ""
+"Jsonnet['Array']" = ""
+"Jsonnet['Boolean']" = ""
+"Jsonnet['Double']" = ""
+"Jsonnet['Integer']" = ""
+"Jsonnet['List']" = ""
+"Jsonnet['Map']" = ""
+"Jsonnet['String']" = ""
 "Julia['Array']" = ""
 "Julia['Boolean']" = ""
 "Julia['Double']" = ""
@@ -450,13 +457,6 @@
 "Jsonc['List']" = "Jsonc does not support variable names: 'List'"
 "Jsonc['Map']" = "Jsonc does not support variable names: 'Map'"
 "Jsonc['String']" = "Jsonc does not support variable names: 'String'"
-"Jsonnet['Array']" = "Jsonnet does not support variable names: 'Array'"
-"Jsonnet['Boolean']" = "Jsonnet does not support variable names: 'Boolean'"
-"Jsonnet['Double']" = "Jsonnet does not support variable names: 'Double'"
-"Jsonnet['Integer']" = "Jsonnet does not support variable names: 'Integer'"
-"Jsonnet['List']" = "Jsonnet does not support variable names: 'List'"
-"Jsonnet['Map']" = "Jsonnet does not support variable names: 'Map'"
-"Jsonnet['String']" = "Jsonnet does not support variable names: 'String'"
 "Yaml['Array']" = "Yaml does not support variable names: 'Array'"
 "Yaml['Boolean']" = "Yaml does not support variable names: 'Boolean'"
 "Yaml['Double']" = "Yaml does not support variable names: 'Double'"

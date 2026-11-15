@@ -1,4 +1,4 @@
-{
+local my_data = {
     omap_value: {
         first: 1,
     },
@@ -16,4 +16,5 @@
         "$keep",
         "z",
     ],
-}
+};
+my_data

@@ -1,4 +1,4 @@
-# languages rejecting: 38; languages accepting: 60
+# languages rejecting: 38; languages accepting: 61
 
 [Accepted]
 "Ada['false']" = ""
@@ -77,6 +77,8 @@
 "Java['nil']" = ""
 "JavaScript['mod']" = ""
 "JavaScript['nil']" = ""
+"Jsonnet['mod']" = ""
+"Jsonnet['nil']" = ""
 "Julia['mod']" = ""
 "Julia['nil']" = ""
 "Kotlin['mod']" = ""
@@ -202,6 +204,8 @@
 "Java['true']" = "Java cannot use NewVariable name 'true': it is a reserved identifier"
 "JavaScript['false']" = "JavaScript cannot use NewVariable name 'false': it is a reserved identifier"
 "JavaScript['true']" = "JavaScript cannot use NewVariable name 'true': it is a reserved identifier"
+"Jsonnet['false']" = "Jsonnet cannot use NewVariable name 'false': it is a reserved identifier"
+"Jsonnet['true']" = "Jsonnet cannot use NewVariable name 'true': it is a reserved identifier"
 "Julia['false']" = "Julia cannot use NewVariable name 'false': it is a reserved identifier"
 "Julia['true']" = "Julia cannot use NewVariable name 'true': it is a reserved identifier"
 "Kotlin['false']" = "Kotlin cannot use NewVariable name 'false': it is a reserved identifier"
@@ -257,10 +261,6 @@
 "Jsonc['mod']" = "Jsonc does not support variable names: 'mod'"
 "Jsonc['nil']" = "Jsonc does not support variable names: 'nil'"
 "Jsonc['true']" = "Jsonc does not support variable names: 'true'"
-"Jsonnet['false']" = "Jsonnet does not support variable names: 'false'"
-"Jsonnet['mod']" = "Jsonnet does not support variable names: 'mod'"
-"Jsonnet['nil']" = "Jsonnet does not support variable names: 'nil'"
-"Jsonnet['true']" = "Jsonnet does not support variable names: 'true'"
 "Yaml['false']" = "Yaml does not support variable names: 'false'"
 "Yaml['mod']" = "Yaml does not support variable names: 'mod'"
 "Yaml['nil']" = "Yaml does not support variable names: 'nil'"

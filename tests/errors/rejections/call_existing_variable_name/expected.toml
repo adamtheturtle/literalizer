@@ -36,6 +36,7 @@ Haxe = "Haxe cannot use ExistingVariable name 'target.value': it is not a valid 
 Hcl = "Hcl cannot use ExistingVariable name 'target.value': it is not a valid identifier"
 Java = "Java cannot use ExistingVariable name 'target.value': it is not a valid identifier"
 JavaScript = "JavaScript cannot use ExistingVariable name 'target.value': it is not a valid identifier"
+Jsonnet = "Jsonnet cannot use ExistingVariable name 'target.value': it is not a valid identifier"
 Julia = "Julia cannot use ExistingVariable name 'target.value': it is not a valid identifier"
 Kotlin = "Kotlin cannot use ExistingVariable name 'target.value': it is not a valid identifier"
 Lua = "Lua cannot use ExistingVariable name 'target.value': it is not a valid identifier"
@@ -71,6 +72,3 @@ Zig = "Zig cannot use ExistingVariable name 'target.value': it is not a valid id
 
 [UnsupportedCallShapeError]
 Cobol = "Cobol cannot represent this call shape: calls in this language are statements, not expressions, so the call result cannot be bound to a variable"
-
-[VariableNameNotSupportedError]
-Jsonnet = "Jsonnet does not support variable names: 'target.value'"

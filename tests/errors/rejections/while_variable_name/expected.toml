@@ -1,4 +1,4 @@
-# languages rejecting: 46; languages accepting: 19
+# languages rejecting: 45; languages accepting: 20
 
 [Accepted]
 "Clojure['while']" = ""
@@ -12,6 +12,7 @@
 "Go['while']" = ""
 "Haskell['while']" = ""
 "Hcl['while']" = ""
+"Jsonnet['while']" = ""
 "Nix['while']" = ""
 "Odin['while']" = ""
 "PureScript['while']" = ""
@@ -68,5 +69,4 @@
 [VariableNameNotSupportedError]
 "Json5['while']" = "Json5 does not support variable names: 'while'"
 "Jsonc['while']" = "Jsonc does not support variable names: 'while'"
-"Jsonnet['while']" = "Jsonnet does not support variable names: 'while'"
 "Yaml['while']" = "Yaml does not support variable names: 'while'"

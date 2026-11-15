@@ -1,4 +1,4 @@
-# languages rejecting: 16; languages accepting: 49
+# languages rejecting: 15; languages accepting: 50
 
 [Accepted]
 "Bash['__']" = ""
@@ -43,6 +43,8 @@
 "Java['___']" = ""
 "JavaScript['__']" = ""
 "JavaScript['___']" = ""
+"Jsonnet['__']" = ""
+"Jsonnet['___']" = ""
 "Julia['__']" = ""
 "Julia['___']" = ""
 "Lua['__']" = ""
@@ -133,7 +135,5 @@
 "Json5['___']" = "Json5 does not support variable names: '___'"
 "Jsonc['__']" = "Jsonc does not support variable names: '__'"
 "Jsonc['___']" = "Jsonc does not support variable names: '___'"
-"Jsonnet['__']" = "Jsonnet does not support variable names: '__'"
-"Jsonnet['___']" = "Jsonnet does not support variable names: '___'"
 "Yaml['__']" = "Yaml does not support variable names: '__'"
 "Yaml['___']" = "Yaml does not support variable names: '___'"

@@ -1,4 +1,5 @@
-{
+local my_data = {
     a: {k: "2020-01-01"},
     b: {k: "string"},
-}
+};
+my_data

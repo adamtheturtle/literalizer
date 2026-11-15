@@ -1,4 +1,4 @@
-# languages rejecting: 9; languages accepting: 56
+# languages rejecting: 8; languages accepting: 57
 
 [Accepted]
 "Ada['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = ""
@@ -51,6 +51,8 @@
 "Java['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = ""
 "JavaScript['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = ""
 "JavaScript['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = ""
+"Jsonnet['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = ""
+"Jsonnet['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = ""
 "Julia['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = ""
 "Julia['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = ""
 "Kotlin['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = ""
@@ -131,7 +133,5 @@
 "Json5['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = "Json5 does not support variable names: 'my_data'"
 "Jsonc['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = "Jsonc does not support variable names: 'my_data'"
 "Jsonc['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = "Jsonc does not support variable names: 'my_data'"
-"Jsonnet['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = "Jsonnet does not support variable names: 'my_data'"
-"Jsonnet['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = "Jsonnet does not support variable names: 'my_data'"
 "Yaml['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = "Yaml does not support variable names: 'my_data'"
 "Yaml['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = "Yaml does not support variable names: 'my_data'"

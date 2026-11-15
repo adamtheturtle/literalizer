@@ -19,16 +19,13 @@ because Jsonnet numbers are IEEE 754 doubles, so the 26-digit literal
 rounds when the evaluator emits it.  Same shape as the Go, TypeScript,
 Zig, Rust, and Elm exclusions.
 
-Jsonnet has no concept of a top-level named binding
-(``supports_variable_names`` is ``False``), so the literalized output
-is a bare expression rather than a ``local myData = ...;`` declaration.
-The whole file evaluates to that expression, which is exactly what we
-want.
+This check declares the shared document with ``NewVariable`` and
+evaluates the local binding at the end of the wrapped file.
 """
 
 import shutil
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Jsonnet
 from scripts import roundtrip_common
 
@@ -48,7 +45,8 @@ def _build_program(json_text: str) -> str:
         language=Jsonnet(),
         pre_indent_level=0,
         include_delimiters=True,
-        wrap_in_file=False,
+        variable_form=NewVariable(name="my_data", modifiers=frozenset()),
+        wrap_in_file=True,
     )
     return f"{result.code}\n"
 

@@ -1,4 +1,4 @@
-# languages rejecting: 14; languages accepting: 55
+# languages rejecting: 13; languages accepting: 56
 
 [Accepted]
 "Ada['clone']" = ""
@@ -172,6 +172,13 @@
 "JavaScript['notifyAll']" = ""
 "JavaScript['toString']" = ""
 "JavaScript['wait']" = ""
+"Jsonnet['clone']" = ""
+"Jsonnet['finalize']" = ""
+"Jsonnet['hashCode']" = ""
+"Jsonnet['notify']" = ""
+"Jsonnet['notifyAll']" = ""
+"Jsonnet['toString']" = ""
+"Jsonnet['wait']" = ""
 "Julia['clone']" = ""
 "Julia['finalize']" = ""
 "Julia['hashCode']" = ""
@@ -450,13 +457,6 @@
 "Jsonc['notifyAll']" = "Jsonc does not support variable names: 'notifyAll'"
 "Jsonc['toString']" = "Jsonc does not support variable names: 'toString'"
 "Jsonc['wait']" = "Jsonc does not support variable names: 'wait'"
-"Jsonnet['clone']" = "Jsonnet does not support variable names: 'clone'"
-"Jsonnet['finalize']" = "Jsonnet does not support variable names: 'finalize'"
-"Jsonnet['hashCode']" = "Jsonnet does not support variable names: 'hashCode'"
-"Jsonnet['notify']" = "Jsonnet does not support variable names: 'notify'"
-"Jsonnet['notifyAll']" = "Jsonnet does not support variable names: 'notifyAll'"
-"Jsonnet['toString']" = "Jsonnet does not support variable names: 'toString'"
-"Jsonnet['wait']" = "Jsonnet does not support variable names: 'wait'"
 "Yaml['clone']" = "Yaml does not support variable names: 'clone'"
 "Yaml['finalize']" = "Yaml does not support variable names: 'finalize'"
 "Yaml['hashCode']" = "Yaml does not support variable names: 'hashCode'"

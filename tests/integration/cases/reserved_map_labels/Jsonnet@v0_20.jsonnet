@@ -1,4 +1,4 @@
-{
+local my_data = {
     "if": 1,
     "then": 2,
     "else": 3,
@@ -16,4 +16,5 @@
     forall: 15,
     with: 16,
     ordinary: 17,
-}
+};
+my_data

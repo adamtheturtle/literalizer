@@ -1,8 +1,5 @@
 # languages rejecting: 65; languages accepting: 0
 
-[CallArgNotSupportedError]
-Jsonnet = "Jsonnet cannot accept this value as a call argument: Jsonnet variable references require a ``local`` preamble that is not generated (got 'myvar')"
-
 [CallsNotSupportedByLanguageError]
 Json5 = "Json5 has no function call syntax"
 Jsonc = "Jsonc has no function call syntax"
@@ -35,6 +32,7 @@ Haxe = "Haxe cannot combine wrap_in_file=True with the unbound reference myvar b
 Hcl = "Hcl cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
 Java = "Java cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
 JavaScript = "JavaScript cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+Jsonnet = "Jsonnet cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
 Julia = "Julia cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
 Kotlin = "Kotlin cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
 Lua = "Lua cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"

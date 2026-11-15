@@ -55,6 +55,7 @@
 "Haxe['super']" = "Haxe cannot use NewVariable name 'super': it is a reserved identifier"
 "Java['super']" = "Java cannot use NewVariable name 'super': it is a reserved identifier"
 "JavaScript['super']" = "JavaScript cannot use NewVariable name 'super': it is a reserved identifier"
+"Jsonnet['super']" = "Jsonnet cannot use NewVariable name 'super': it is a reserved identifier"
 "Kotlin['super']" = "Kotlin cannot use NewVariable name 'super': it is a reserved identifier"
 "ObjectiveC['super']" = "ObjectiveC cannot use NewVariable name 'super': it is a reserved identifier"
 "Ruby['super']" = "Ruby cannot use NewVariable name 'super': it is a reserved identifier"
@@ -68,5 +69,4 @@
 [VariableNameNotSupportedError]
 "Json5['super']" = "Json5 does not support variable names: 'super'"
 "Jsonc['super']" = "Jsonc does not support variable names: 'super'"
-"Jsonnet['super']" = "Jsonnet does not support variable names: 'super'"
 "Yaml['super']" = "Yaml does not support variable names: 'super'"

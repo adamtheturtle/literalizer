@@ -1,4 +1,4 @@
-# languages rejecting: 29; languages accepting: 36
+# languages rejecting: 28; languages accepting: 37
 
 [Accepted]
 "Ada['enum']" = ""
@@ -16,6 +16,7 @@
 "Go['enum']" = ""
 "Haskell['enum']" = ""
 "Hcl['enum']" = ""
+"Jsonnet['enum']" = ""
 "Julia['enum']" = ""
 "Kotlin['enum']" = ""
 "Lua['enum']" = ""
@@ -68,5 +69,4 @@
 [VariableNameNotSupportedError]
 "Json5['enum']" = "Json5 does not support variable names: 'enum'"
 "Jsonc['enum']" = "Jsonc does not support variable names: 'enum'"
-"Jsonnet['enum']" = "Jsonnet does not support variable names: 'enum'"
 "Yaml['enum']" = "Yaml does not support variable names: 'enum'"

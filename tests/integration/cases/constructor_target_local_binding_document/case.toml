@@ -6,9 +6,3 @@ gates = [{kind = "capability_flag", flag = "supports_local_binding_documents"}]
 # Literalizer generates local bindings from the shared empty-object input.
 [constructor]
 target_variable = true
-
-# Jsonnet does not expose top-level variable declarations through literalize.
-[constructor.target_templates]
-Jsonnet = '''local {target} = {{}};
-{target}
-'''

@@ -1,1 +1,2 @@
-0.000000
+local my_data = 0.000000;
+my_data

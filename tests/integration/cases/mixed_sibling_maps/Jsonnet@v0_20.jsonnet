@@ -1,6 +1,7 @@
-[
+local my_data = [
     [{a: 1}, {a: null}, 42],
     [{a: 1}, {a: "s"}, 42],
     [{a: 1}, {a: null}],
     [{a: 1}, {a: "s"}],
-]
+];
+my_data

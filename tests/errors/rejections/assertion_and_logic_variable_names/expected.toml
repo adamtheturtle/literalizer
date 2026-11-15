@@ -1,4 +1,4 @@
-# languages rejecting: 47; languages accepting: 60
+# languages rejecting: 47; languages accepting: 61
 
 [Accepted]
 "Ada['assert']" = ""
@@ -157,6 +157,12 @@
 "JavaScript['before']" = ""
 "JavaScript['not']" = ""
 "JavaScript['or']" = ""
+"Jsonnet['and']" = ""
+"Jsonnet['before']" = ""
+"Jsonnet['let']" = ""
+"Jsonnet['new']" = ""
+"Jsonnet['not']" = ""
+"Jsonnet['or']" = ""
 "Julia['and']" = ""
 "Julia['assert']" = ""
 "Julia['before']" = ""
@@ -421,6 +427,8 @@
 "JavaScript['let']" = "JavaScript cannot use NewVariable name 'let': it is a reserved identifier"
 "JavaScript['new']" = "JavaScript cannot use NewVariable name 'new': it is a reserved identifier"
 "JavaScript['null']" = "JavaScript cannot use NewVariable name 'null': it is a reserved identifier"
+"Jsonnet['assert']" = "Jsonnet cannot use NewVariable name 'assert': it is a reserved identifier"
+"Jsonnet['null']" = "Jsonnet cannot use NewVariable name 'null': it is a reserved identifier"
 "Julia['let']" = "Julia cannot use NewVariable name 'let': it is a reserved identifier"
 "Kotlin['null']" = "Kotlin cannot use NewVariable name 'null': it is a reserved identifier"
 "Lua['and']" = "Lua cannot use NewVariable name 'and': it is a reserved identifier"
@@ -509,14 +517,6 @@
 "Jsonc['not']" = "Jsonc does not support variable names: 'not'"
 "Jsonc['null']" = "Jsonc does not support variable names: 'null'"
 "Jsonc['or']" = "Jsonc does not support variable names: 'or'"
-"Jsonnet['and']" = "Jsonnet does not support variable names: 'and'"
-"Jsonnet['assert']" = "Jsonnet does not support variable names: 'assert'"
-"Jsonnet['before']" = "Jsonnet does not support variable names: 'before'"
-"Jsonnet['let']" = "Jsonnet does not support variable names: 'let'"
-"Jsonnet['new']" = "Jsonnet does not support variable names: 'new'"
-"Jsonnet['not']" = "Jsonnet does not support variable names: 'not'"
-"Jsonnet['null']" = "Jsonnet does not support variable names: 'null'"
-"Jsonnet['or']" = "Jsonnet does not support variable names: 'or'"
 "Yaml['and']" = "Yaml does not support variable names: 'and'"
 "Yaml['assert']" = "Yaml does not support variable names: 'assert'"
 "Yaml['before']" = "Yaml does not support variable names: 'before'"

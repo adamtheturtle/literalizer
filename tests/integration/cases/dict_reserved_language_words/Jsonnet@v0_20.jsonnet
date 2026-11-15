@@ -1,4 +1,4 @@
-{
+local my_data = {
     "assert": 1,
     "else": 1,
     "error": 1,
@@ -18,4 +18,5 @@
     "then": 1,
     "true": 1,
     ordinary: 1,
-}
+};
+my_data

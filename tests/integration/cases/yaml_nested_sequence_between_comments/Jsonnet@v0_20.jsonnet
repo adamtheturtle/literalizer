@@ -1,4 +1,4 @@
-[
+local my_data = [
     [
         {item: "existing"},
         "kept",
@@ -7,4 +7,5 @@
     [{item: "next"}, "also kept"],
     // This comment describes the last pair.
     [{item: "last"}, "kept too"],
-]
+];
+my_data

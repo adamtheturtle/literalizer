@@ -1,4 +1,5 @@
-[
+local my_data = [
     {input: {name: "alice", city: "paris"}, expected: {count: 1, total: 2}},
     {input: {name: 10, city: 20}, expected: {count: "done", total: "pending"}},
-]
+];
+my_data
