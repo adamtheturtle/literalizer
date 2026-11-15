@@ -1,9 +1,9 @@
 """Collect reference cases and their effective language options."""
 
 import dataclasses
-import enum
 import functools
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -27,6 +27,9 @@ from .language_specs import (
 )
 from .variant_cases import Variant, variants_for_axis
 from .variant_context import config_with_variant_layout
+
+if TYPE_CHECKING:
+    import enum
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -63,10 +66,9 @@ class LiteralizeRefCase:
     def renderings(self) -> tuple[RefRendering, ...]:
         """Exercise each selected version under the owner's ref policy."""
         rows: list[RefRendering] = []
-        for version in ref_language_versions(
+        for spec in ref_language_specs(
             config=self.config, lang_cls=self.lang_cls
         ):
-            spec = make_spec(lang_cls=self.lang_cls, language_version=version)
             ref_case = None
             if self.owner != REF_DEFAULT_OWNER:
                 ref_case = self.config.ref_case_for(lang_cls=self.lang_cls)
@@ -79,9 +81,7 @@ class LiteralizeRefCase:
                 RefRendering(
                     config=self.config,
                     lang_cls=self.lang_cls,
-                    spec=ref_language_options(
-                        config=self.config, lang_cls=self.lang_cls, spec=spec
-                    ),
+                    spec=spec,
                     golden_name=f"{self.lang_cls.__name__}_{suffix}",
                     ref_case=ref_case,
                 )
@@ -263,22 +263,19 @@ def ref_language_options(
 
 
 @beartype
-def ref_language_versions(
+def ref_language_specs(
     *, config: RefCaseSpec, lang_cls: literalizer.LanguageCls
-) -> tuple[enum.Enum, ...]:
-    """Return each effective target version once after applying
-    options.
-    """
-    return tuple(
-        dict.fromkeys(
-            ref_language_options(
-                config=config,
-                lang_cls=lang_cls,
-                spec=make_spec(lang_cls=lang_cls, language_version=version),
-            ).language_version
-            for version in lang_cls.VersionFormats
+) -> tuple[literalizer.Language, ...]:
+    """Resolve options once and retain one spec per effective version."""
+    specs: dict[enum.Enum, literalizer.Language] = {}
+    for version in lang_cls.VersionFormats:
+        spec = ref_language_options(
+            config=config,
+            lang_cls=lang_cls,
+            spec=make_spec(lang_cls=lang_cls, language_version=version),
         )
-    )
+        _ = specs.setdefault(spec.language_version, spec)
+    return tuple(specs.values())
 
 
 @beartype

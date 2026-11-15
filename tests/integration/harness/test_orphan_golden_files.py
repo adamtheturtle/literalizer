@@ -26,7 +26,7 @@ from tests.integration.record_snapshot_cases import (
     record_snapshot_golden_paths,
 )
 from tests.integration.reference_cases import (
-    ref_language_versions,
+    ref_language_specs,
     reference_golden_cases,
 )
 from tests.integration.shared_checked_cases import shared_checked_cases
@@ -257,9 +257,11 @@ def test_reference_versions_follow_selected_options() -> None:
         obj={"heterogeneous_strategy": "RECORD"},
         context={"case_dir_name": "record_reference"},
     )
-    assert ref_language_versions(config=config, lang_cls=Java) == (
-        enum_member_by_name(enum_cls=Java.VersionFormats, name="JDK_16"),
-    )
-    assert ref_language_versions(config=config, lang_cls=Cpp) == tuple(
-        Cpp.VersionFormats
-    )
+    assert tuple(
+        spec.language_version
+        for spec in ref_language_specs(config=config, lang_cls=Java)
+    ) == (enum_member_by_name(enum_cls=Java.VersionFormats, name="JDK_16"),)
+    assert tuple(
+        spec.language_version
+        for spec in ref_language_specs(config=config, lang_cls=Cpp)
+    ) == tuple(Cpp.VersionFormats)
