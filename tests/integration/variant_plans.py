@@ -1261,28 +1261,6 @@ def _resolve_overrides(
 
 
 @beartype
-def _build_spec(
-    *,
-    lang_cls: literalizer.LanguageCls,
-    kwargs: Mapping[str, object],
-) -> literalizer.Language:
-    """Return the spec for *kwargs*, bypassing the cache when needed."""
-    if not any(isinstance(value, Mapping) for value in kwargs.values()):
-        return make_spec(lang_cls=lang_cls, **kwargs)
-    # ``record_shape_names`` is a ``Mapping``, which cannot go in
-    # :func:`make_spec`'s ``frozenset`` cache key.  Mirror that
-    # function's ``module_name`` default so a language whose
-    # ``wrap_in_file`` introduces a named scope keeps the name the rest
-    # of the suite builds against.
-    spec_kwargs = dict(kwargs)
-    if lang_cls.supports_module_name:
-        spec_kwargs["module_name"] = lang_cls.module_name_case.convert(
-            name="main",
-        )
-    return lang_cls(**spec_kwargs)
-
-
-@beartype
 def _external_record_shape_preamble(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -1635,9 +1613,9 @@ def _paired_spec(
         axis.skip_incompatible_formats
     )
     if not skips:
-        return _build_spec(lang_cls=lang_cls, kwargs=kwargs)
+        return make_spec(lang_cls=lang_cls, **kwargs)
     try:
-        return _build_spec(lang_cls=lang_cls, kwargs=kwargs)
+        return make_spec(lang_cls=lang_cls, **kwargs)
     except IncompatibleFormatsError:
         return None
 
@@ -1721,7 +1699,7 @@ def _admitted_overrides(
     if not all(
         admits(
             gate=gate,
-            spec=_build_spec(lang_cls=lang_cls, kwargs=resolved.kwargs),
+            spec=make_spec(lang_cls=lang_cls, **resolved.kwargs),
         )
         for gate in behavior_gates
     ):
