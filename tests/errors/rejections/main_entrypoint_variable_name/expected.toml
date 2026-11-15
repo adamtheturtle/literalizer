@@ -1,4 +1,4 @@
-# languages rejecting: 9; languages accepting: 56
+# languages rejecting: 8; languages accepting: 57
 
 [Accepted]
 "Ada['main']" = ""
@@ -57,6 +57,7 @@
 "V['main']" = ""
 "VisualBasic['main']" = ""
 "Wren['main']" = ""
+"Yaml['main']" = ""
 
 [ReservedVariableNameError]
 "Dart['main']" = "Dart cannot use NewVariable name 'main': it is a reserved identifier"
@@ -69,4 +70,3 @@
 [VariableNameNotSupportedError]
 "Json5['main']" = "Json5 does not support variable names: 'main'"
 "Jsonc['main']" = "Jsonc does not support variable names: 'main'"
-"Yaml['main']" = "Yaml does not support variable names: 'main'"

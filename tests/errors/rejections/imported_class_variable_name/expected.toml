@@ -1,4 +1,4 @@
-# languages rejecting: 26; languages accepting: 47
+# languages rejecting: 25; languages accepting: 48
 
 [Accepted]
 "Ada['Integer']" = ""
@@ -173,6 +173,10 @@
 "Wren['Math']" = ""
 "Wren['Object']" = ""
 "Wren['String']" = ""
+"Yaml['Integer']" = ""
+"Yaml['Math']" = ""
+"Yaml['Object']" = ""
+"Yaml['String']" = ""
 "Zig['Integer']" = ""
 "Zig['Math']" = ""
 "Zig['Object']" = ""
@@ -265,7 +269,3 @@
 "Jsonc['Math']" = "Jsonc does not support variable names: 'Math'"
 "Jsonc['Object']" = "Jsonc does not support variable names: 'Object'"
 "Jsonc['String']" = "Jsonc does not support variable names: 'String'"
-"Yaml['Integer']" = "Yaml does not support variable names: 'Integer'"
-"Yaml['Math']" = "Yaml does not support variable names: 'Math'"
-"Yaml['Object']" = "Yaml does not support variable names: 'Object'"
-"Yaml['String']" = "Yaml does not support variable names: 'String'"

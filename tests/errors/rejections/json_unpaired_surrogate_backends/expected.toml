@@ -62,9 +62,9 @@ TypeScript = "Invalid JSON: input contains unpaired UTF-16 surrogate U+D800"
 V = "Invalid JSON: input contains unpaired UTF-16 surrogate U+D800"
 VisualBasic = "Invalid JSON: input contains unpaired UTF-16 surrogate U+D800"
 Wren = "Invalid JSON: input contains unpaired UTF-16 surrogate U+D800"
+Yaml = "Invalid JSON: input contains unpaired UTF-16 surrogate U+D800"
 Zig = "Invalid JSON: input contains unpaired UTF-16 surrogate U+D800"
 
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'my_data'"
 Jsonc = "Jsonc does not support variable names: 'my_data'"
-Yaml = "Yaml does not support variable names: 'my_data'"

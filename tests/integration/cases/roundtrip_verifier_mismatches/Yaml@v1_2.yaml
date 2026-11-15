@@ -1,4 +1,4 @@
-{
+my_data: {
     "true_to_one": {"value": 1},
     "one_to_true": {"value": true},
     "false_to_zero": {"value": 0},

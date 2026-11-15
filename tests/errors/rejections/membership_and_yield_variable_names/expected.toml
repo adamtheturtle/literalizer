@@ -1,4 +1,4 @@
-# languages rejecting: 17; languages accepting: 61
+# languages rejecting: 16; languages accepting: 62
 
 [Accepted]
 "Ada['isnot']" = ""
@@ -168,6 +168,9 @@
 "Wren['isnot']" = ""
 "Wren['notin']" = ""
 "Wren['yield']" = ""
+"Yaml['isnot']" = ""
+"Yaml['notin']" = ""
+"Yaml['yield']" = ""
 "Zig['isnot']" = ""
 "Zig['notin']" = ""
 "Zig['yield']" = ""
@@ -197,6 +200,3 @@
 "Jsonc['isnot']" = "Jsonc does not support variable names: 'isnot'"
 "Jsonc['notin']" = "Jsonc does not support variable names: 'notin'"
 "Jsonc['yield']" = "Jsonc does not support variable names: 'yield'"
-"Yaml['isnot']" = "Yaml does not support variable names: 'isnot'"
-"Yaml['notin']" = "Yaml does not support variable names: 'notin'"
-"Yaml['yield']" = "Yaml does not support variable names: 'yield'"

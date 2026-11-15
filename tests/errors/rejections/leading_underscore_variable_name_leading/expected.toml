@@ -1,4 +1,4 @@
-# languages rejecting: 14; languages accepting: 51
+# languages rejecting: 13; languages accepting: 52
 
 [Accepted]
 Bash = ""
@@ -51,6 +51,7 @@ Tcl = ""
 Toml = ""
 TypeScript = ""
 VisualBasic = ""
+Yaml = ""
 Zig = ""
 
 [InvalidNewVariableNameError]
@@ -71,4 +72,3 @@ Wren = "Wren cannot use NewVariable name '_leading': it is a reserved identifier
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: '_leading'"
 Jsonc = "Jsonc does not support variable names: '_leading'"
-Yaml = "Yaml does not support variable names: '_leading'"

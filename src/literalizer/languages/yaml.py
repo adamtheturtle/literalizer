@@ -22,13 +22,13 @@ from literalizer._formatters.format_dates import (
     format_time_iso,
 )
 from literalizer._formatters.format_entries import (
+    declaration_formatter_ignoring_modifiers,
     dict_entry_with_separator,
     format_bytes_base64,
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
     variable_declaration_formatter,
-    variable_formatter,
 )
 from literalizer._formatters.format_floats import (
     format_float_fixed,
@@ -75,7 +75,6 @@ from literalizer._language import (
     default_consumable_ref_value_inhibits_consuming_form,
     default_format_call_arg_ref_identifier,
     default_format_call_arg_ref_identifier_consumable,
-    default_format_call_ref_identifier,
     default_format_call_statement,
     default_format_call_stub,
     default_format_call_target,
@@ -99,6 +98,7 @@ from literalizer._language import (
 )
 from literalizer._types import Value
 from literalizer.exceptions import (
+    CallArgNotSupportedError,
     UnrepresentableStringError,
 )
 
@@ -124,6 +124,9 @@ class Yaml(metaclass=LanguageCls):
     Produces YAML flow-style values — flow mappings for dicts, and
     flow sequences for sequences and sets — so that the output is
     valid inline YAML that can be embedded in any YAML document.
+
+    Variable forms emit named root entries. Names resembling YAML boolean
+    or null literals are quoted so they remain string keys.
 
     Dates and datetimes are rendered as unquoted YAML native date /
     datetime literals, which YAML parsers interpret as typed values.
@@ -180,7 +183,7 @@ class Yaml(metaclass=LanguageCls):
     pygments_name = "yaml"
     stringifies_nested_collections = False
     supports_special_floats = True
-    supports_variable_names = False
+    supports_variable_names = True
     supports_no_variable_wrap_in_file = True
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = True
@@ -570,8 +573,34 @@ class Yaml(metaclass=LanguageCls):
     @cached_property
     @beartype
     def format_variable_assignment(self) -> Callable[[str, str, Value], str]:
-        """Format an assignment to an existing variable."""
-        return variable_formatter(template="{name}: {value}")
+        """Format a root entry while retaining its value indentation."""
+        ambiguous_keys = frozenset(
+            {"y", "n", "yes", "no", "on", "off", "true", "false", "null"}
+        )
+
+        @beartype
+        def _format(name: str, value: str, _data: Value) -> str:
+            """Keep scalar-looking names as string keys in YAML
+            parsers.
+            """
+            key = (
+                self.format_string(name)
+                if name.casefold() in ambiguous_keys
+                else name
+            )
+            lines = value.split(sep="\n")
+            index = 0
+            while index + 1 < len(lines) and (
+                lines[index].strip() == ""
+                or lines[index].lstrip().startswith("#")
+            ):
+                index += 1
+            first = lines[index]
+            prefix = first[: len(first) - len(first.lstrip())]
+            lines[index] = prefix + key + ": " + first[len(prefix) :]
+            return "\n".join(lines)
+
+        return _format
 
     @cached_property
     @beartype
@@ -597,7 +626,27 @@ class Yaml(metaclass=LanguageCls):
 
     format_call_target = default_format_call_target
 
-    format_call_ref_identifier = default_format_call_ref_identifier
+    @cached_property
+    @beartype
+    def format_call_ref_identifier(
+        self,
+    ) -> Callable[[str, Value | None], str]:
+        """Reject references that would require generated YAML anchors."""
+
+        @beartype
+        def _unsupported(name: str, _value: Value | None, /) -> str:
+            """Keep an identifier from silently becoming a string
+            value.
+            """
+            raise CallArgNotSupportedError(
+                language_name="Yaml",
+                reason=(
+                    "YAML anchor declarations are not generated "
+                    f"(got {name!r})"
+                ),
+            )
+
+        return _unsupported
 
     format_call_arg_ref_identifier = default_format_call_arg_ref_identifier
 
@@ -745,7 +794,9 @@ class Yaml(metaclass=LanguageCls):
         self,
     ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
         """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+        return declaration_formatter_ignoring_modifiers(
+            formatter=self.format_variable_assignment
+        )
 
     @cached_property
     @beartype

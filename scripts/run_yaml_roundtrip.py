@@ -22,14 +22,14 @@ import sys
 
 import yaml
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Yaml
 from scripts import roundtrip_common
 
 _LABEL = "YAML"
 
 
-def _build_document(json_text: str) -> str:
+def _build_document(json_text: str, *, variable_name: str | None) -> str:
     """Return a YAML document literalized from *json_text*."""
     result = literalize(
         source=json_text,
@@ -37,7 +37,12 @@ def _build_document(json_text: str) -> str:
         language=Yaml(),
         pre_indent_level=0,
         include_delimiters=True,
-        wrap_in_file=False,
+        variable_form=(
+            None
+            if variable_name is None
+            else NewVariable(name=variable_name, modifiers=frozenset())
+        ),
+        wrap_in_file=variable_name is not None,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     if preamble != "":
@@ -50,19 +55,21 @@ def main() -> None:
     json_text = roundtrip_common.input_for_capabilities(
         capabilities=Yaml.variant_metadata.round_trip_capabilities,
     )
-    document = _build_document(json_text=json_text)
-    parsed = roundtrip_common.json_object(
-        value=yaml.safe_load(
-            stream=document,
-        ),
-    )
-    produced_json = json.dumps(obj=parsed)
-    roundtrip_common.verify(
-        label=_LABEL,
-        produced_json=produced_json,
-        exclude_keys=(),
-        expected_json=json_text,
-    )
+    for variable_name in (None, "null"):
+        document = _build_document(
+            json_text=json_text, variable_name=variable_name
+        )
+        parsed = roundtrip_common.json_object(
+            value=yaml.safe_load(stream=document),
+        )
+        if variable_name is not None:
+            parsed = roundtrip_common.json_object(value=parsed[variable_name])
+        roundtrip_common.verify(
+            label=_LABEL if variable_name is None else _LABEL + " named root",
+            produced_json=json.dumps(obj=parsed),
+            exclude_keys=(),
+            expected_json=json_text,
+        )
     _ = sys.stdout.write(f"{_LABEL} round-trip OK\n")
 
 

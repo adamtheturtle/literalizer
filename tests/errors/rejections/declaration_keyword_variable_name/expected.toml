@@ -1,4 +1,4 @@
-# languages rejecting: 35; languages accepting: 56
+# languages rejecting: 34; languages accepting: 57
 
 [Accepted]
 "Ada['mutable']" = ""
@@ -239,6 +239,11 @@
 "Wren['primitive']" = ""
 "Wren['type']" = ""
 "Wren['where']" = ""
+"Yaml['abstract']" = ""
+"Yaml['mutable']" = ""
+"Yaml['primitive']" = ""
+"Yaml['type']" = ""
+"Yaml['where']" = ""
 "Zig['abstract']" = ""
 "Zig['mutable']" = ""
 "Zig['primitive']" = ""
@@ -327,8 +332,3 @@
 "Jsonc['primitive']" = "Jsonc does not support variable names: 'primitive'"
 "Jsonc['type']" = "Jsonc does not support variable names: 'type'"
 "Jsonc['where']" = "Jsonc does not support variable names: 'where'"
-"Yaml['abstract']" = "Yaml does not support variable names: 'abstract'"
-"Yaml['mutable']" = "Yaml does not support variable names: 'mutable'"
-"Yaml['primitive']" = "Yaml does not support variable names: 'primitive'"
-"Yaml['type']" = "Yaml does not support variable names: 'type'"
-"Yaml['where']" = "Yaml does not support variable names: 'where'"

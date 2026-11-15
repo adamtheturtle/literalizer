@@ -1,4 +1,4 @@
-# languages rejecting: 11; languages accepting: 61
+# languages rejecting: 10; languages accepting: 62
 
 [Accepted]
 "Ada['parent']" = ""
@@ -114,6 +114,8 @@
 "VisualBasic['self']" = ""
 "Wren['parent']" = ""
 "Wren['self']" = ""
+"Yaml['parent']" = ""
+"Yaml['self']" = ""
 "Zig['parent']" = ""
 "Zig['self']" = ""
 
@@ -133,5 +135,3 @@
 "Json5['self']" = "Json5 does not support variable names: 'self'"
 "Jsonc['parent']" = "Jsonc does not support variable names: 'parent'"
 "Jsonc['self']" = "Jsonc does not support variable names: 'self'"
-"Yaml['parent']" = "Yaml does not support variable names: 'parent'"
-"Yaml['self']" = "Yaml does not support variable names: 'self'"

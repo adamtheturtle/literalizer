@@ -1,4 +1,4 @@
-# languages rejecting: 19; languages accepting: 60
+# languages rejecting: 18; languages accepting: 61
 
 [Accepted]
 "Ada['MyData']" = ""
@@ -161,6 +161,9 @@
 "VisualBasic['myData']" = ""
 "Wren['MyData']" = ""
 "Wren['myData']" = ""
+"Yaml['MyData']" = ""
+"Yaml['_my_data']" = ""
+"Yaml['myData']" = ""
 "Zig['MyData']" = ""
 "Zig['_my_data']" = ""
 "Zig['myData']" = ""
@@ -199,6 +202,3 @@
 "Jsonc['MyData']" = "Jsonc does not support variable names: 'MyData'"
 "Jsonc['_my_data']" = "Jsonc does not support variable names: '_my_data'"
 "Jsonc['myData']" = "Jsonc does not support variable names: 'myData'"
-"Yaml['MyData']" = "Yaml does not support variable names: 'MyData'"
-"Yaml['_my_data']" = "Yaml does not support variable names: '_my_data'"
-"Yaml['myData']" = "Yaml does not support variable names: 'myData'"

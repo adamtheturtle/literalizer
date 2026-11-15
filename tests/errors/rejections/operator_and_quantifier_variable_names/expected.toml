@@ -1,4 +1,4 @@
-# languages rejecting: 22; languages accepting: 61
+# languages rejecting: 21; languages accepting: 62
 
 [Accepted]
 "Bash['abs']" = ""
@@ -223,6 +223,10 @@
 "Wren['and']" = ""
 "Wren['parallel']" = ""
 "Wren['some']" = ""
+"Yaml['abs']" = ""
+"Yaml['and']" = ""
+"Yaml['parallel']" = ""
+"Yaml['some']" = ""
 "Zig['abs']" = ""
 "Zig['parallel']" = ""
 "Zig['some']" = ""
@@ -261,7 +265,3 @@
 "Jsonc['and']" = "Jsonc does not support variable names: 'and'"
 "Jsonc['parallel']" = "Jsonc does not support variable names: 'parallel'"
 "Jsonc['some']" = "Jsonc does not support variable names: 'some'"
-"Yaml['abs']" = "Yaml does not support variable names: 'abs'"
-"Yaml['and']" = "Yaml does not support variable names: 'and'"
-"Yaml['parallel']" = "Yaml does not support variable names: 'parallel'"
-"Yaml['some']" = "Yaml does not support variable names: 'some'"

@@ -1,4 +1,4 @@
-# languages rejecting: 59; languages accepting: 47
+# languages rejecting: 59; languages accepting: 48
 
 [Accepted]
 "Ada['DATA']" = ""
@@ -240,6 +240,11 @@
 "Wren['IDENTIFICATION']" = ""
 "Wren['PROCEDURE']" = ""
 "Wren['SECTION']" = ""
+"Yaml['DATA']" = ""
+"Yaml['DIVISION']" = ""
+"Yaml['IDENTIFICATION']" = ""
+"Yaml['PROCEDURE']" = ""
+"Yaml['SECTION']" = ""
 "Zig['DATA']" = ""
 "Zig['DIVISION']" = ""
 "Zig['IDENTIFICATION']" = ""
@@ -390,6 +395,8 @@
 "VisualBasic['WORKING-STORAGE']" = "VisualBasic cannot use NewVariable name 'WORKING-STORAGE': it is not a valid identifier"
 "Wren['PROGRAM-ID']" = "Wren cannot use NewVariable name 'PROGRAM-ID': it is not a valid identifier"
 "Wren['WORKING-STORAGE']" = "Wren cannot use NewVariable name 'WORKING-STORAGE': it is not a valid identifier"
+"Yaml['PROGRAM-ID']" = "Yaml cannot use NewVariable name 'PROGRAM-ID': it is not a valid identifier"
+"Yaml['WORKING-STORAGE']" = "Yaml cannot use NewVariable name 'WORKING-STORAGE': it is not a valid identifier"
 "Zig['PROGRAM-ID']" = "Zig cannot use NewVariable name 'PROGRAM-ID': it is not a valid identifier"
 "Zig['WORKING-STORAGE']" = "Zig cannot use NewVariable name 'WORKING-STORAGE': it is not a valid identifier"
 
@@ -457,10 +464,3 @@
 "Jsonc['PROGRAM-ID']" = "Jsonc does not support variable names: 'PROGRAM-ID'"
 "Jsonc['SECTION']" = "Jsonc does not support variable names: 'SECTION'"
 "Jsonc['WORKING-STORAGE']" = "Jsonc does not support variable names: 'WORKING-STORAGE'"
-"Yaml['DATA']" = "Yaml does not support variable names: 'DATA'"
-"Yaml['DIVISION']" = "Yaml does not support variable names: 'DIVISION'"
-"Yaml['IDENTIFICATION']" = "Yaml does not support variable names: 'IDENTIFICATION'"
-"Yaml['PROCEDURE']" = "Yaml does not support variable names: 'PROCEDURE'"
-"Yaml['PROGRAM-ID']" = "Yaml does not support variable names: 'PROGRAM-ID'"
-"Yaml['SECTION']" = "Yaml does not support variable names: 'SECTION'"
-"Yaml['WORKING-STORAGE']" = "Yaml does not support variable names: 'WORKING-STORAGE'"

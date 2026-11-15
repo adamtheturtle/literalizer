@@ -1,4 +1,4 @@
-# languages rejecting: 11; languages accepting: 54
+# languages rejecting: 10; languages accepting: 55
 
 [Accepted]
 "Ada['self']" = ""
@@ -54,6 +54,7 @@
 "V['self']" = ""
 "VisualBasic['self']" = ""
 "Wren['self']" = ""
+"Yaml['self']" = ""
 "Zig['self']" = ""
 
 [ReservedVariableNameError]
@@ -69,4 +70,3 @@
 [VariableNameNotSupportedError]
 "Json5['self']" = "Json5 does not support variable names: 'self'"
 "Jsonc['self']" = "Jsonc does not support variable names: 'self'"
-"Yaml['self']" = "Yaml does not support variable names: 'self'"

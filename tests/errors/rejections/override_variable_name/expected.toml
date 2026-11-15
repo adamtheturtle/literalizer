@@ -1,4 +1,4 @@
-# languages rejecting: 15; languages accepting: 50
+# languages rejecting: 14; languages accepting: 51
 
 [Accepted]
 "Ada['override']" = ""
@@ -50,6 +50,7 @@
 "TypeScript['override']" = ""
 "VisualBasic['override']" = ""
 "Wren['override']" = ""
+"Yaml['override']" = ""
 "Zig['override']" = ""
 
 [MixedDictValuesError]
@@ -71,4 +72,3 @@
 [VariableNameNotSupportedError]
 "Json5['override']" = "Json5 does not support variable names: 'override'"
 "Jsonc['override']" = "Jsonc does not support variable names: 'override'"
-"Yaml['override']" = "Yaml does not support variable names: 'override'"

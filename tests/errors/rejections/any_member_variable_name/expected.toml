@@ -1,4 +1,4 @@
-# languages rejecting: 10; languages accepting: 56
+# languages rejecting: 9; languages accepting: 57
 
 [Accepted]
 "Ada['equals']" = ""
@@ -110,6 +110,8 @@
 "VisualBasic['getClass']" = ""
 "Wren['equals']" = ""
 "Wren['getClass']" = ""
+"Yaml['equals']" = ""
+"Yaml['getClass']" = ""
 "Zig['equals']" = ""
 "Zig['getClass']" = ""
 
@@ -137,5 +139,3 @@
 "Json5['getClass']" = "Json5 does not support variable names: 'getClass'"
 "Jsonc['equals']" = "Jsonc does not support variable names: 'equals'"
 "Jsonc['getClass']" = "Jsonc does not support variable names: 'getClass'"
-"Yaml['equals']" = "Yaml does not support variable names: 'equals'"
-"Yaml['getClass']" = "Yaml does not support variable names: 'getClass'"

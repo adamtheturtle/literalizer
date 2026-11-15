@@ -1,4 +1,4 @@
-# languages rejecting: 59; languages accepting: 59
+# languages rejecting: 59; languages accepting: 60
 
 [Accepted]
 "Bash['_x']" = ""
@@ -115,6 +115,8 @@
 "VisualBasic['_x']" = ""
 "VisualBasic['x_']" = ""
 "Wren['x_']" = ""
+"Yaml['_x']" = ""
+"Yaml['x_']" = ""
 "Zig['_x']" = ""
 "Zig['x_']" = ""
 
@@ -187,6 +189,7 @@
 "V['x-']" = "V cannot use NewVariable name 'x-': it is not a valid identifier"
 "VisualBasic['x-']" = "VisualBasic cannot use NewVariable name 'x-': it is not a valid identifier"
 "Wren['x-']" = "Wren cannot use NewVariable name 'x-': it is not a valid identifier"
+"Yaml['x-']" = "Yaml cannot use NewVariable name 'x-': it is not a valid identifier"
 "Zig['x-']" = "Zig cannot use NewVariable name 'x-': it is not a valid identifier"
 
 [ReservedVariableNameError]
@@ -199,6 +202,3 @@
 "Jsonc['_x']" = "Jsonc does not support variable names: '_x'"
 "Jsonc['x-']" = "Jsonc does not support variable names: 'x-'"
 "Jsonc['x_']" = "Jsonc does not support variable names: 'x_'"
-"Yaml['_x']" = "Yaml does not support variable names: '_x'"
-"Yaml['x-']" = "Yaml does not support variable names: 'x-'"
-"Yaml['x_']" = "Yaml does not support variable names: 'x_'"

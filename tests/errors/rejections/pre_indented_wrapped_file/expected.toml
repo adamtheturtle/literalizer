@@ -1,4 +1,4 @@
-# languages rejecting: 10; languages accepting: 55
+# languages rejecting: 9; languages accepting: 56
 
 [Accepted]
 Ada = ""
@@ -55,6 +55,7 @@ TypeScript = ""
 V = ""
 VisualBasic = ""
 Wren = ""
+Yaml = ""
 Zig = ""
 
 [PreIndentedWrappedFileError]
@@ -69,4 +70,3 @@ Python = "Python cannot combine pre_indent_level with wrap_in_file because its s
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'my_data'"
 Jsonc = "Jsonc does not support variable names: 'my_data'"
-Yaml = "Yaml does not support variable names: 'my_data'"

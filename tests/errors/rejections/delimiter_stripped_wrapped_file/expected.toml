@@ -62,9 +62,9 @@ TypeScript = "include_delimiters=False cannot be combined with variable_form"
 V = "include_delimiters=False cannot be combined with variable_form"
 VisualBasic = "include_delimiters=False cannot be combined with variable_form"
 Wren = "include_delimiters=False cannot be combined with variable_form"
+Yaml = "include_delimiters=False cannot be combined with variable_form"
 Zig = "include_delimiters=False cannot be combined with variable_form"
 
 [DelimiterlessWrappedFileError]
 Json5 = "include_delimiters=False cannot be combined with wrap_in_file"
 Jsonc = "include_delimiters=False cannot be combined with wrap_in_file"
-Yaml = "include_delimiters=False cannot be combined with wrap_in_file"

@@ -1,4 +1,4 @@
-# languages rejecting: 28; languages accepting: 37
+# languages rejecting: 27; languages accepting: 38
 
 [Accepted]
 "Ada['enum']" = ""
@@ -38,6 +38,7 @@
 "Tcl['enum']" = ""
 "Toml['enum']" = ""
 "Wren['enum']" = ""
+"Yaml['enum']" = ""
 
 [ReservedVariableNameError]
 "C['enum']" = "C cannot use NewVariable name 'enum': it is a reserved identifier"
@@ -69,4 +70,3 @@
 [VariableNameNotSupportedError]
 "Json5['enum']" = "Json5 does not support variable names: 'enum'"
 "Jsonc['enum']" = "Jsonc does not support variable names: 'enum'"
-"Yaml['enum']" = "Yaml does not support variable names: 'enum'"

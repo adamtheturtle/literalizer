@@ -1,4 +1,4 @@
-# languages rejecting: 6; languages accepting: 61
+# languages rejecting: 5; languages accepting: 62
 
 [Accepted]
 "Ada['bit_set']" = ""
@@ -359,6 +359,12 @@
 "Wren['or_break']" = ""
 "Wren['or_continue']" = ""
 "Wren['or_else']" = ""
+"Yaml['bit_set']" = ""
+"Yaml['fallthrough']" = ""
+"Yaml['not_in']" = ""
+"Yaml['or_break']" = ""
+"Yaml['or_continue']" = ""
+"Yaml['or_else']" = ""
 "Zig['bit_set']" = ""
 "Zig['fallthrough']" = ""
 "Zig['not_in']" = ""
@@ -389,9 +395,3 @@
 "Jsonc['or_break']" = "Jsonc does not support variable names: 'or_break'"
 "Jsonc['or_continue']" = "Jsonc does not support variable names: 'or_continue'"
 "Jsonc['or_else']" = "Jsonc does not support variable names: 'or_else'"
-"Yaml['bit_set']" = "Yaml does not support variable names: 'bit_set'"
-"Yaml['fallthrough']" = "Yaml does not support variable names: 'fallthrough'"
-"Yaml['not_in']" = "Yaml does not support variable names: 'not_in'"
-"Yaml['or_break']" = "Yaml does not support variable names: 'or_break'"
-"Yaml['or_continue']" = "Yaml does not support variable names: 'or_continue'"
-"Yaml['or_else']" = "Yaml does not support variable names: 'or_else'"

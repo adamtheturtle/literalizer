@@ -1,2 +1,2 @@
 # before
-"plain"  # inline
+my_data: "plain"  # inline

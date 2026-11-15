@@ -1,9 +1,11 @@
 schema_version = 1
 owner = "constructor-binding"
 gates = [{kind = "capability_flag", flag = "supports_bare_mapping_documents"}]
+any_gates = [{kind = "capability_flag", flag = "supports_local_binding_documents"}, {kind = "capability_flag", flag = "supports_key_value_assignment_documents"}, {kind = "capability_flag", flag = "supports_variable_names", value = false}]
 
 # Shared YAML and TOML regressions: native mapping keys preserve target spelling.
 # Retain the assignment and block-map contracts without duplicating their cases.
+# Named block maps are owned by constructor_target_named_without_calls.
 [constructor]
 # Literalizer owns native record/object syntax for Dhall, JSON5, Jsonnet and Nix.
 target_source_template = '{{"{target}": true}}'
@@ -13,6 +15,4 @@ target_source_template = '{{"{target}": true}}'
 Hcl = '''{target} = true
 '''
 Toml = '''{target} = true
-'''
-Yaml = '''{target}: true
 '''

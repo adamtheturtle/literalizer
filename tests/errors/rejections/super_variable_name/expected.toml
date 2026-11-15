@@ -1,4 +1,4 @@
-# languages rejecting: 20; languages accepting: 45
+# languages rejecting: 19; languages accepting: 46
 
 [Accepted]
 "Ada['super']" = ""
@@ -45,6 +45,7 @@
 "Toml['super']" = ""
 "V['super']" = ""
 "VisualBasic['super']" = ""
+"Yaml['super']" = ""
 "Zig['super']" = ""
 
 [ReservedVariableNameError]
@@ -69,4 +70,3 @@
 [VariableNameNotSupportedError]
 "Json5['super']" = "Json5 does not support variable names: 'super'"
 "Jsonc['super']" = "Jsonc does not support variable names: 'super'"
-"Yaml['super']" = "Yaml does not support variable names: 'super'"

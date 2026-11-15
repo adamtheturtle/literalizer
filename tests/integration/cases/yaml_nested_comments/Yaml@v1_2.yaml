@@ -1,4 +1,4 @@
-{
+my_data: {
     "a": {
         # inner note
         "b": 1  # inline b

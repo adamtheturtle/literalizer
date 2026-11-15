@@ -1,4 +1,4 @@
-# languages rejecting: 21; languages accepting: 44
+# languages rejecting: 20; languages accepting: 45
 
 [Accepted]
 "Bash['null']" = ""
@@ -45,6 +45,7 @@
 "Toml['null']" = ""
 "V['null']" = ""
 "VisualBasic['null']" = ""
+"Yaml['null']" = ""
 
 [ReservedVariableNameError]
 "Ada['null']" = "Ada cannot use NewVariable name 'null': it is a reserved identifier"
@@ -69,4 +70,3 @@
 [VariableNameNotSupportedError]
 "Json5['null']" = "Json5 does not support variable names: 'null'"
 "Jsonc['null']" = "Jsonc does not support variable names: 'null'"
-"Yaml['null']" = "Yaml does not support variable names: 'null'"

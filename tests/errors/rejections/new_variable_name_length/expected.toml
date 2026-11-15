@@ -1,4 +1,4 @@
-# languages rejecting: 5; languages accepting: 60
+# languages rejecting: 4; languages accepting: 61
 
 [Accepted]
 Ada = ""
@@ -60,6 +60,7 @@ TypeScript = ""
 V = ""
 VisualBasic = ""
 Wren = ""
+Yaml = ""
 Zig = ""
 
 [InvalidNewVariableNameError]
@@ -69,4 +70,3 @@ Fortran = "Fortran cannot use NewVariable name 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv'"
 Jsonc = "Jsonc does not support variable names: 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv'"
-Yaml = "Yaml does not support variable names: 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv'"

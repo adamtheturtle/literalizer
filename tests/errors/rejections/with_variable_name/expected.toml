@@ -1,4 +1,4 @@
-# languages rejecting: 23; languages accepting: 42
+# languages rejecting: 22; languages accepting: 43
 
 [Accepted]
 "Bash['with']" = ""
@@ -42,6 +42,7 @@
 "Toml['with']" = ""
 "V['with']" = ""
 "Wren['with']" = ""
+"Yaml['with']" = ""
 "Zig['with']" = ""
 
 [ReservedVariableNameError]
@@ -69,4 +70,3 @@
 [VariableNameNotSupportedError]
 "Json5['with']" = "Json5 does not support variable names: 'with'"
 "Jsonc['with']" = "Jsonc does not support variable names: 'with'"
-"Yaml['with']" = "Yaml does not support variable names: 'with'"
