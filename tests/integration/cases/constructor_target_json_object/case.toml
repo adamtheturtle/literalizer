@@ -4,6 +4,8 @@ gates = [{kind = "capability_flag", flag = "supports_json_object_documents"}]
 
 # Shared JSON5/JSONC regression; also check every native JSON-object format.
 # Keep the separate YAML block-map and Jsonnet local-binding contracts.
+# Generate strict JSON once: it is a complete native document for every
+# capability-selected consumer, including formats with other default syntax.
 [constructor]
-target_template = '''{{"{target}": true}}
-'''
+target_source_template = '{{"{target}": true}}'
+target_language = "Jsonc"
