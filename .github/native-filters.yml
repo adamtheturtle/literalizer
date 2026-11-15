@@ -1,0 +1,104 @@
+---
+# Only versioned goldens and documentation can narrow native CI coverage.
+# Any other path selects every job. Keep the full filter in sync with the
+# job filters below; the metadata test checks their extension sets.
+full:
+  - '!docs/**'
+  - '!newsfragments/**'
+  - '!README.rst'
+  - '!CHANGELOG.md'
+  - '!LICENSE'
+  - '!tests/integration/cases/*/*@*.{R,adb,c,clj,cob,cpp,cr,cs,d,dart,dhall,elm,erl,ex,f90,fs,fsi,fth,gleam,go,groovy,hcl,hs,hx,java,jl,js,json5,jsonc,jsonnet,kts,lisp,lua,m,ml,mojo,nim,nix,norg,occ,odin,php,pl,ps1,purs,py,raku,rb,rkt,roc,rs,scala,scm,sh,sml,sv,swift,tcl,toml,ts,v,vb,wren,yaml,zig}'
+
+lint-fast:
+  - tests/integration/cases/*/*@*.{c,dhall,f90,fth,java,js,lua,nix,php,ps1,rb,scm,sh,tcl,wren}
+
+lint-odin: [tests/integration/cases/*/*@*.odin]
+
+lint-roc: [tests/integration/cases/*/*@*.roc]
+
+lint-matlab: [tests/integration/cases/*/*@*.m]
+
+lint-perl: [tests/integration/cases/*/*@*.pl]
+
+lint-go-installed: ['tests/integration/cases/*/*@*.{hcl,jsonnet}']
+
+lint-npm-installed: ['tests/integration/cases/*/*@*.{json5,jsonc,norg,ts}']
+
+lint-typescript-run: [tests/integration/cases/*/*@*.ts]
+
+lint-elm: [tests/integration/cases/*/*@*.elm]
+
+lint-elm-run: [tests/integration/cases/*/*@*.elm]
+
+lint-uv-scripts: ['tests/integration/cases/*/*@*.{adb,occ,toml,yaml}']
+
+lint-dotnet: ['tests/integration/cases/*/*@*.{cs,fs,fsi,vb}']
+
+lint-sml: [tests/integration/cases/*/*@*.sml]
+
+lint-elixir: [tests/integration/cases/*/*@*.ex]
+
+lint-erlang: [tests/integration/cases/*/*@*.erl]
+
+lint-gleam: [tests/integration/cases/*/*@*.gleam]
+
+lint-jvm-mini: ['tests/integration/cases/*/*@*.{clj,groovy}']
+
+lint-haskell-family: ['tests/integration/cases/*/*@*.{hs,purs}']
+
+lint-c-tidy: [tests/integration/cases/*/*@*.c]
+
+build-cpp-toolchain: ['tests/integration/cases/*/*@*.{c,cpp}']
+
+lint-cpp-tidy: [tests/integration/cases/*/*@*.cpp]
+
+lint-cobol: [tests/integration/cases/*/*@*.cob]
+
+lint-cpp: [tests/integration/cases/*/*@*.cpp]
+
+lint-kotlin: [tests/integration/cases/*/*@*.kts]
+
+lint-swift: [tests/integration/cases/*/*@*.swift]
+
+lint-ocaml: [tests/integration/cases/*/*@*.ml]
+
+lint-commonlisp: [tests/integration/cases/*/*@*.lisp]
+
+lint-scala: [tests/integration/cases/*/*@*.scala]
+
+lint-haxe: [tests/integration/cases/*/*@*.hx]
+
+lint-dart: [tests/integration/cases/*/*@*.dart]
+
+lint-julia: [tests/integration/cases/*/*@*.jl]
+
+lint-go: [tests/integration/cases/*/*@*.go]
+
+lint-rust: [tests/integration/cases/*/*@*.rs]
+
+lint-r: [tests/integration/cases/*/*@*.R]
+
+lint-d: [tests/integration/cases/*/*@*.d]
+
+lint-crystal: [tests/integration/cases/*/*@*.cr]
+
+lint-mojo: [tests/integration/cases/*/*@*.mojo]
+
+lint-nim: [tests/integration/cases/*/*@*.nim]
+
+lint-python: [tests/integration/cases/*/*@*.py]
+
+lint-racket: [tests/integration/cases/*/*@*.rkt]
+
+lint-raku: [tests/integration/cases/*/*@*.raku]
+
+lint-zig: [tests/integration/cases/*/*@*.zig]
+
+lint-systemverilog: [tests/integration/cases/*/*@*.sv]
+
+lint-v: [tests/integration/cases/*/*@*.v]
+
+lint-objectivec: [tests/integration/cases/*/*@*.m]
+
+lint-objectivec-tidy: [tests/integration/cases/*/*@*.m]
