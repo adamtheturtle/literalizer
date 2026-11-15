@@ -13,7 +13,6 @@ from typing import Literal
 from beartype import beartype
 
 import literalizer
-from literalizer._language import NewVariableNameSyntax
 from literalizer.exceptions import (
     InvalidDictKeyError,
     UnrepresentableStringError,
@@ -27,25 +26,12 @@ from .case_data import (
     load_case_data,
 )
 from .case_manifests import (
-    CaseManifest,
     load_case_manifests,
 )
 from .language_specs import (
     make_spec,
     sorted_languages,
 )
-
-
-@beartype
-def _selected_languages(
-    *, manifest: CaseManifest
-) -> list[literalizer.LanguageCls]:
-    """Return the languages selected by one case manifest."""
-    return [
-        lang_cls
-        for lang_cls in sorted_languages()
-        if manifest.selection.admits_language(lang_cls=lang_cls)
-    ]
 
 
 @beartype
@@ -103,39 +89,6 @@ def _case_data_by_name(*, cases_dir: Path) -> Mapping[str, CaseData]:
 
 @functools.cache
 @beartype
-def cases_with_invalid_dict_keys(
-    *, cases_dir: Path, key_syntax: NewVariableNameSyntax | None
-) -> frozenset[str]:
-    """Return inputs rejected by the declared dictionary key syntax."""
-    if key_syntax is None:
-        return frozenset[str]()
-    return frozenset(
-        name
-        for name, data in _case_data_by_name(cases_dir=cases_dir).items()
-        if has_invalid_dict_keys(data=data, key_syntax=key_syntax)
-    )
-
-
-@functools.cache
-@beartype
-def cases_with_non_trivial_dict_keys(
-    cases_dir: Path,
-) -> frozenset[str]:
-    """Return case directory names whose input has non-printable-ASCII
-    dict keys that some languages cannot represent.
-
-    Every case is parsed by its declared format, so a JSON/JSON5/TOML
-    case carrying such keys is detected the same as a YAML one.
-    """
-    return frozenset(
-        name
-        for name, data in _case_data_by_name(cases_dir=cases_dir).items()
-        if has_non_printable_ascii_dict_keys(data=data)
-    )
-
-
-@functools.cache
-@beartype
 def cases_with_special_floats(
     cases_dir: Path,
 ) -> frozenset[str]:
@@ -156,60 +109,39 @@ def cases_with_special_floats(
 @beartype
 def discover_cases(
     *, cases_dir: Path, suite: Literal["base", "combined"]
-) -> list[tuple[str, literalizer.LanguageCls]]:
-    """Select representable suite inputs before expanding render
-    options.
+) -> dict[literalizer.LanguageCls, list[str]]:
+    """Group representable suite inputs by their selected language.
+
+    Inspect each input directly instead of joining separate indexes of
+    invalid keys, non-ASCII keys and special floats by directory name.
+    Both the base and combined scenarios consume the same selection.
     """
-    non_trivial_key_cases = cases_with_non_trivial_dict_keys(
-        cases_dir=cases_dir,
-    )
-    special_float_cases = cases_with_special_floats(cases_dir=cases_dir)
-    cases: list[tuple[str, literalizer.LanguageCls]] = []
+    data_by_name = _case_data_by_name(cases_dir=cases_dir)
+    groups: dict[literalizer.LanguageCls, list[str]] = {}
     for manifest in load_case_manifests(cases_dir=cases_dir):
         if suite not in manifest.suites:
             continue
         name = manifest.case_dir.name
-        for lang_cls in _selected_languages(manifest=manifest):
-            if name in cases_with_invalid_dict_keys(
-                cases_dir=cases_dir,
-                key_syntax=make_spec(
-                    lang_cls=lang_cls
-                ).dict_format_config.key_syntax,
+        data = data_by_name[name]
+        non_trivial_keys = has_non_printable_ascii_dict_keys(data=data)
+        special_floats = has_special_floats(data=data)
+        for lang_cls in sorted_languages():
+            if not manifest.selection.admits_language(lang_cls=lang_cls):
+                continue
+            key_syntax = make_spec(
+                lang_cls=lang_cls
+            ).dict_format_config.key_syntax
+            if key_syntax is not None and has_invalid_dict_keys(
+                data=data, key_syntax=key_syntax
             ):
                 continue
-            if name in non_trivial_key_cases and (
+            if non_trivial_keys and (
                 _lang_raises_for_non_printable_ascii_dict_keys(
                     lang_cls=lang_cls
                 )
             ):
                 continue
-            if (
-                name in special_float_cases
-                and not lang_cls.supports_special_floats
-            ):
+            if special_floats and not lang_cls.supports_special_floats:
                 continue
-            cases.append((name, lang_cls))
-    return cases
-
-
-@functools.cache
-@beartype
-def group_cases_by_language(
-    cases_dir: Path,
-) -> dict[
-    literalizer.LanguageCls,
-    list[str],
-]:
-    """Return case names grouped by language class.
-
-    The test takes the language as its only pytest axis and iterates
-    that language's case names inside the test body with ``subtests``.
-    Folding thousands of cases into ~30 cuts collection and per-test
-    overhead on slower CI runners (notably Windows).
-    """
-    groups: dict[literalizer.LanguageCls, list[str]] = {}
-    for case_name, lang_cls in discover_cases(
-        cases_dir=cases_dir, suite="base"
-    ):
-        groups.setdefault(lang_cls, []).append(case_name)
+            groups.setdefault(lang_cls, []).append(name)
     return groups
