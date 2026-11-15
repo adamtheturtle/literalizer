@@ -33,6 +33,7 @@ from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
     ModifierPresentGate,
+    SpecFieldAbsentGate,
     SpecFieldPresentGate,
     language_gate_admits,
 )
@@ -142,6 +143,7 @@ SPEC_FIELDS = frozenset(
         "json_type",
         "list_rendering_policy",
         "native_argument_layout",
+        "program_name",
         "indent_file_body",
         "expand_call_stubs",
         "record_map_value_typing",
@@ -354,6 +356,7 @@ type SuiteGate = Annotated[
     CapabilityFlagGate
     | RecordVariantGate
     | NonDefaultKwargGate
+    | SpecFieldAbsentGate
     | SpecFieldPresentGate
     | EnumMemberPresentGate
     | ModifierPresentGate
@@ -389,7 +392,9 @@ def validate_gate_names(
             case CapabilityFlagGate() if gate.flag not in CAPABILITY_FLAGS:
                 msg = f"{subject}: unknown capability flag {gate.flag!r}"
                 raise SuiteGateError(msg)
-            case SpecFieldPresentGate() if gate.field not in SPEC_FIELDS:
+            case SpecFieldPresentGate() | SpecFieldAbsentGate() if (
+                gate.field not in SPEC_FIELDS
+            ):
                 msg = f"{subject}: unknown spec field {gate.field!r}"
                 raise SuiteGateError(msg)
             case EnumMemberPresentGate() if gate.option not in OPTIONS:
@@ -442,6 +447,7 @@ def gate_admits(
     match gate:
         case (
             CapabilityFlagGate()
+            | SpecFieldAbsentGate()
             | SpecFieldPresentGate()
             | EnumMemberPresentGate()
             | ModifierPresentGate()

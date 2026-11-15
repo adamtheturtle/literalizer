@@ -738,6 +738,8 @@ class ConstructorCaseSpec(  # noqa: NOD001
     target_source_template: str | None = None
     # Bind the case input to the formatted target through the variable API.
     target_variable: bool = False
+    # String-valued language options can consume the formatted target too.
+    target_options: Mapping[str, str] = Field(default_factory=dict)
     variable_name: Annotated[str, Field(min_length=1)] = "p"
 
     @property

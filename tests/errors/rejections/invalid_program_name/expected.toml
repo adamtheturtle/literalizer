@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+"Cobol['']" = "COBOL program_name must be a non-reserved COBOL identifier"
+"Cobol['-bad']" = "COBOL program_name must be a non-reserved COBOL identifier"
+"Cobol['1bad']" = "COBOL program_name must be a non-reserved COBOL identifier"
+"Cobol['bad\\nname']" = "COBOL program_name must be a non-reserved COBOL identifier"
+"Cobol['bad-']" = "COBOL program_name must be a non-reserved COBOL identifier"
+"Cobol['bad.name']" = "COBOL program_name must be a non-reserved COBOL identifier"
+"Cobol['stop']" = "COBOL program_name must be a non-reserved COBOL identifier"

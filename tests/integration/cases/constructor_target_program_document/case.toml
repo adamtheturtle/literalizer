@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "supports_zero_parameter_calls", value = false}, {kind = "spec_field_present", field = "program_name"}]
+
+# Preserve the COBOL program-identifier target regression through its wrapper.
+[constructor]
+target_variable = true
+target_options = {program_name = "{target}"}

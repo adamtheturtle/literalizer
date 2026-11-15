@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Program identifiers reject invalid or reserved names before rendering."
+exceptions = ["IncompatibleFormatsError"]
+gates = [{kind = "spec_field_present", field = "program_name"}]
+values = ["", "-bad", "1bad", "bad\nname", "bad-", "bad.name", "stop"]
+
+[call]
+api = "constructor"
+kwargs = [{kind = "text", kwarg = "program_name", value = "{value}"}]
