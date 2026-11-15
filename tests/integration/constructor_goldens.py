@@ -10,7 +10,7 @@ from literalizer import NewVariable, literalize, literalize_call
 from .constructor_cases import ConstructorRendering
 from .constructor_templates import constructor_target_template
 from .golden_checks import GoldenSkips, check_golden, format_consumer
-from .language_specs import with_per_fixture_module_name
+from .language_specs import make_spec, with_per_fixture_module_name
 
 
 @beartype
@@ -61,7 +61,11 @@ def run_constructor_binding_golden_case(
         result = literalize(
             source=target_source,
             input_format=input_format,
-            language=language,
+            language=(
+                language
+                if config.target_language is None
+                else make_spec(lang_cls=config.target_language)
+            ),
             variable_form=(
                 NewVariable(
                     name=(
