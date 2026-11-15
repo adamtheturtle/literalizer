@@ -1020,14 +1020,6 @@ class _Selection:
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class _PrimaryChoice:
-    """One value of a cross product's first half."""
-
-    kwargs: Mapping[str, object]
-    format_name: str | None
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
 class _MemberExpansion:
     """How an axis walks one option's members into named values."""
 
@@ -1352,16 +1344,18 @@ def _member_choices(
     lang_cls: literalizer.LanguageCls,
     metadata: LanguageMetadata,
     default_spec: literalizer.Language,
-) -> list[_PrimaryChoice]:
+) -> list[_Selection]:
     """Return the values one option takes for a single language."""
     option = OPTIONS[expansion.option_key]
     default = option.get_default(default_spec)
-    choices: list[_PrimaryChoice] = []
+    choices: list[_Selection] = []
     if expansion.unset_member_name is not None and default is not None:
         choices.append(
-            _PrimaryChoice(
+            _Selection(
                 kwargs={option.kwarg: None},
                 format_name=expansion.unset_member_name,
+                tag=None,
+                secondary_name=None,
             )
         )
     for member in option.get_members(default_spec):
@@ -1383,13 +1377,15 @@ def _member_choices(
                 )
             )
         choices.append(
-            _PrimaryChoice(
+            _Selection(
                 kwargs=kwargs,
                 format_name=_member_name(
                     expansion=expansion,
                     lang_cls=lang_cls,
                     member=member,
                 ),
+                tag=None,
+                secondary_name=None,
             )
         )
     return choices
@@ -1403,7 +1399,7 @@ def _primary_choices(
     lang_cls: literalizer.LanguageCls,
     metadata: LanguageMetadata,
     default_spec: literalizer.Language,
-) -> list[_PrimaryChoice]:
+) -> list[_Selection]:
     """Return the values a cross product's first half takes."""
     if primary_plan is not None:
         return _member_choices(
@@ -1413,7 +1409,11 @@ def _primary_choices(
             default_spec=default_spec,
         )
     if axis.primary is None:
-        return [_PrimaryChoice(kwargs={}, format_name=None)]
+        return [
+            _Selection(
+                kwargs={}, format_name=None, tag=None, secondary_name=None
+            )
+        ]
     return _member_choices(
         expansion=_MemberExpansion(
             option_key=axis.primary,
@@ -1478,20 +1478,6 @@ def _cross_selections(
 
 
 @beartype
-def _choice_selections(*, choices: list[_PrimaryChoice]) -> list[_Selection]:
-    """Return one unpaired selection per option value."""
-    return [
-        _Selection(
-            kwargs=choice.kwargs,
-            format_name=choice.format_name,
-            tag=None,
-            secondary_name=None,
-        )
-        for choice in choices
-    ]
-
-
-@beartype
 def _kwarg_value_selections(
     *,
     axis_key: str,
@@ -1537,13 +1523,11 @@ def _selections(
                 metadata=metadata,
             )
         case _FixedOverridesPlan() if primary_plan is not None:
-            return _choice_selections(
-                choices=_member_choices(
-                    expansion=_member_expansion(axis=primary_plan),
-                    lang_cls=lang_cls,
-                    metadata=metadata,
-                    default_spec=default_spec,
-                )
+            return _member_choices(
+                expansion=_member_expansion(axis=primary_plan),
+                lang_cls=lang_cls,
+                metadata=metadata,
+                default_spec=default_spec,
             )
         case _FixedOverridesPlan():
             return [
@@ -1563,13 +1547,11 @@ def _selections(
                 default_spec=default_spec,
             )
         case _EveryNonDefaultMemberPlan():
-            return _choice_selections(
-                choices=_member_choices(
-                    expansion=_member_expansion(axis=axis),
-                    lang_cls=lang_cls,
-                    metadata=metadata,
-                    default_spec=default_spec,
-                )
+            return _member_choices(
+                expansion=_member_expansion(axis=axis),
+                lang_cls=lang_cls,
+                metadata=metadata,
+                default_spec=default_spec,
             )
         case _ as unreachable:
             assert_never(unreachable)
