@@ -1548,20 +1548,34 @@ jobs:
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.3
 
-      # Every fixture defines its own entry point at top level, so compile
-      # and run each file directly. Each invocation gets a private tmpdir
-      # so parallel builds don't clobber each other's output binary.
+      - name: Identify runner image
+        id: sml-image
+        run: printf 'version=%s\n' "${ImageVersion:-$GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
+      # Each cache namespace pins the compiler/flags/helper and runner image.
+      # Restore an older fixture-set cache to reuse unchanged programs.
+      - name: Cache compiled SML fixtures
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: .cache/sml-programs
+          key: sml-${{ runner.os }}-${{ runner.arch }}-${{ steps.sml-image.outputs.version
+            }}-${{ hashFiles('.github/workflows/lint.yml', 'scripts/run_sml_fixtures.py')
+            }}-${{ hashFiles('tests/integration/cases/**/*.sml') }}
+          restore-keys: |
+            sml-${{ runner.os }}-${{ runner.arch }}-${{ steps.sml-image.outputs.version }}-${{ hashFiles('.github/workflows/lint.yml', 'scripts/run_sml_fixtures.py') }}-
+      - name: Check SML fixture cache
+        run: uv run --no-dev --group=roundtrip python -m scripts.check_sml_fixture_cache
+      # Cached programs execute all fixture assertions on every run. Main,
+      # nightly and manual runs also exercise fresh compilation explicitly.
       - name: Lint Sml
+        env:
+          REBUILD: ${{ github.event_name != 'pull_request' }}
         run: |-
           find tests/integration/cases -name '*.sml' -print0 > /tmp/files-sml && test -s /tmp/files-sml
-          cat > /tmp/run-sml.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cp "$1" "$tmpdir/check.sml"
-          mlton -output "$tmpdir/out" "$tmpdir/check.sml" || exit 1
-          "$tmpdir/out" || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
+          args=()
+          if [[ "$REBUILD" == true ]]; then
+            args+=(--rebuild)
+          fi
+          uv run --no-dev --group=roundtrip python -m scripts.run_sml_fixtures "${args[@]}" < /tmp/files-sml
 
       # Driven from `lint-sml` because that is the job where MLton (pinned
       # by the `Install MLton` step above) is installed; `uv run` (project

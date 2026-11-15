@@ -90,6 +90,8 @@ full:
   - '!scripts/run_scala_roundtrip.py'
   - '!scripts/run_scheme_roundtrip.py'
   - '!scripts/run_sml_roundtrip.py'
+  - '!scripts/run_sml_fixtures.py'
+  - '!scripts/check_sml_fixture_cache.py'
   - '!scripts/run_swift_roundtrip.py'
   - '!scripts/run_systemverilog_roundtrip.py'
   - '!scripts/run_tcl_roundtrip.py'
@@ -286,6 +288,8 @@ lint-sml:
   - tests/integration/cases/*/*@*.sml
   - src/literalizer/languages/sml.py
   - scripts/run_sml_roundtrip.py
+  - scripts/run_sml_fixtures.py
+  - scripts/check_sml_fixture_cache.py
 
 lint-elixir:
   - tests/integration/cases/*/*@*.ex

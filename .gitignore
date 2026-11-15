@@ -52,3 +52,6 @@ node_modules/
 
 # Vale styles downloaded by ``vale sync``
 styles/
+
+# Compiled native fixture artifacts.
+.cache/sml-programs/
