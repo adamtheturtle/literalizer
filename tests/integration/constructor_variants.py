@@ -14,7 +14,6 @@ from literalizer.exceptions import IncompatibleFormatsError
 from .golden_checks import NO_SKIPS, SkipPolicy, SkipReason
 from .language_specs import make_spec, sorted_languages
 
-_MIN_VARIANT_CALL_STYLES = 2
 # A declared modifier may reject a constructor binding; other errors fail.
 _MODIFIER_SKIPS = SkipPolicy(
     reasons=(
@@ -77,9 +76,6 @@ def constructor_binding_specs() -> list[ConstructorBindingSpec]:
     ]
     for lang_cls in languages:
         spec = make_spec(lang_cls=lang_cls)
-        call_styles: list[enum.Enum] = list(spec.call_styles)
-        if len(call_styles) < _MIN_VARIANT_CALL_STYLES:
-            continue
         default_call_style_config = spec.call_style_config
         cases.extend(
             ConstructorBindingSpec(
@@ -92,7 +88,7 @@ def constructor_binding_specs() -> list[ConstructorBindingSpec]:
                 variable_form=NewVariable(name="p", modifiers=frozenset()),
                 skip=NO_SKIPS,
             )
-            for call_style in call_styles
+            for call_style in spec.call_styles
             if enum_payload(member=call_style, payload_type=object)
             != default_call_style_config
         )
