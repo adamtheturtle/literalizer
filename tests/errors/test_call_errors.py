@@ -1,6 +1,5 @@
 """Error contracts for internal call checks."""
 
-import dataclasses
 import inspect
 
 import pytest
@@ -52,8 +51,8 @@ def test_call_binding_requires_variable_name_support(
     assert (
         expected_call_shape_exception(
             lang_cls=Jsonnet,
-            config=dataclasses.replace(
-                default_call_case_specs()[0], variable_form=variable_form
+            config=default_call_case_specs()[0].model_copy(
+                update={"variable_form": variable_form}
             ),
             spec=Jsonnet(),
         )
