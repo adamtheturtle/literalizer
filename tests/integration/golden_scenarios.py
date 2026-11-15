@@ -16,7 +16,8 @@ test body there.
 """
 
 import dataclasses
-from collections.abc import Sequence
+import functools
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -518,27 +519,39 @@ GOLDEN_SCENARIOS: tuple[GoldenScenario, ...] = (
 )
 
 
+@functools.cache
+@beartype
+def scenario_renderings() -> Mapping[
+    tuple[str, literalizer.LanguageCls], tuple[GoldenRendering, ...]
+]:
+    """Expand each scenario once, independently of pytest scheduling.
+
+    Golden runners, ownership checks and secondary consumers share this
+    inventory. Scheduling may split a scenario into smaller groups
+    without changing which renderings belong to it.
+    """
+    return {
+        (scenario.name, lang_cls): scenario.build(lang_cls=lang_cls)
+        for scenario in GOLDEN_SCENARIOS
+        for lang_cls in sorted_languages()
+    }
+
+
 @beartype
 def golden_groups() -> tuple[GoldenGroup, ...]:
-    """Return every scenario's renderings, grouped by language.
-
-    A language a scenario does not cover yields no group rather than an
-    empty test.
-    """
+    """Split the scenario inventory into bounded pytest work items."""
     groups: list[GoldenGroup] = []
-    for scenario in GOLDEN_SCENARIOS:
-        for lang_cls in sorted_languages():
-            renderings = scenario.build(lang_cls=lang_cls)
-            batches = batch_renderings(
-                renderings=renderings, max_versions=GOLDEN_BATCH_VERSION_LIMIT
-            )
-            for index, batch in enumerate(iterable=batches, start=1):
-                groups.append(
-                    GoldenGroup(
-                        scenario_name=scenario.name,
-                        lang_cls=lang_cls,
-                        renderings=batch,
-                        batch_index=index if len(batches) > 1 else None,
-                    )
+    for (scenario_name, lang_cls), renderings in scenario_renderings().items():
+        batches = batch_renderings(
+            renderings=renderings, max_versions=GOLDEN_BATCH_VERSION_LIMIT
+        )
+        for index, batch in enumerate(iterable=batches, start=1):
+            groups.append(
+                GoldenGroup(
+                    scenario_name=scenario_name,
+                    lang_cls=lang_cls,
+                    renderings=batch,
+                    batch_index=index if len(batches) > 1 else None,
                 )
+            )
     return tuple(groups)
