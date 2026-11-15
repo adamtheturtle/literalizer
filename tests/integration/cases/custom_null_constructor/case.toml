@@ -1,0 +1,6 @@
+schema_version = 1
+owner = "variant"
+
+# A custom null constructor composes with other generated value constructors.
+[[variants]]
+axis = "null_constructor_name"

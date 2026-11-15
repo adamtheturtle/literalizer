@@ -1,0 +1,10 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+"Elm['']" = "Elm null_constructor_name must be an available constructor identifier"
+"Elm['EInt']" = "Elm null_constructor_name must be an available constructor identifier"
+"Elm['LT']" = "Elm null_constructor_name must be an available constructor identifier"
+"Elm['Nothing']" = "Elm null_constructor_name must be an available constructor identifier"
+"Elm['True']" = "Elm null_constructor_name must be an available constructor identifier"
+"Elm['bad.name']" = "Elm null_constructor_name must be an available constructor identifier"
+"Elm['lower']" = "Elm null_constructor_name must be an available constructor identifier"

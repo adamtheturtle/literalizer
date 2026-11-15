@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "A custom data constructor cannot replace a JSON encoder value."
+exceptions = ["IncompatibleFormatsError"]
+gates = [{kind = "spec_field_present", field = "null_constructor_name"}]
+
+[call]
+api = "constructor"
+kwargs = [
+    {kind = "text", kwarg = "null_constructor_name", value = "Playlist"},
+    {kind = "option_member", option = "json_type", member = "JSON_ENCODE_VALUE"},
+]

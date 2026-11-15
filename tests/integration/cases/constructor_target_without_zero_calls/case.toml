@@ -1,6 +1,6 @@
 schema_version = 1
 owner = "constructor-binding"
-gates = [{kind = "capability_flag", flag = "supports_zero_parameter_calls", value = false}, {kind = "spec_field_absent", field = "program_name"}]
+gates = [{kind = "capability_flag", flag = "supports_zero_parameter_calls", value = false}, {kind = "spec_field_absent", field = "program_name"}, {kind = "spec_field_absent", field = "null_constructor_name"}]
 
 # Consume constructor targets in native syntax without fabricating a call.
 # Generate the boolean binding through the public variable API.
@@ -8,15 +8,4 @@ gates = [{kind = "capability_flag", flag = "supports_zero_parameter_calls", valu
 target_variable = true
 
 # Program identifiers are owned by constructor_target_program_document.
-# Algebraic data declarations retain native syntax.
-[constructor.target_templates]
-Elm = '''module Check exposing (..)
-
-
-type Playlist
-    = {target}
-
-
-my_data : Playlist
-my_data = {target}
-'''
+# Data declarations are owned by constructor_target_nullary_data_constructor.

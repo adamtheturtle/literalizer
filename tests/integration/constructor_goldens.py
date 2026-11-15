@@ -64,7 +64,11 @@ def run_constructor_binding_golden_case(
             language=language,
             variable_form=(
                 NewVariable(
-                    name=language.format_constructor_target(config.class_name),
+                    name=(
+                        language.format_constructor_target(config.class_name)
+                        if config.target_variable_name is None
+                        else config.target_variable_name
+                    ),
                     modifiers=frozenset(),
                 )
                 if config.target_variable
