@@ -1120,40 +1120,6 @@ def _behavior_flag_member(
 
 
 @beartype
-def _nondefault_kwarg_selection(
-    *,
-    axis_key: str,
-    override: _NonDefaultKwargOverride,
-    metadata: LanguageMetadata,
-) -> _ResolvedOverrides:
-    """Resolve a non-default keyword and its optional display name."""
-    value = _sample_kwarg(
-        axis_key=axis_key,
-        kwarg=override.kwarg,
-        metadata=metadata,
-    )
-    effective_name_value = None
-    if override.name_value:
-        effective_name_value = value
-    return _ResolvedOverrides(
-        kwargs={override.kwarg: value},
-        name_value=effective_name_value,
-    )
-
-
-@beartype
-def _metadata_table_selection(
-    *, override: _MetadataTableOverride, metadata: LanguageMetadata
-) -> _ResolvedOverrides | None:
-    """Resolve a metadata table when the language supplies it."""
-    table = _metadata_table(override=override, metadata=metadata)
-    resolved = None
-    if table is not None:
-        resolved = _ResolvedOverrides(kwargs=table, name_value=None)
-    return resolved
-
-
-@beartype
 def _override_selection(
     *,
     axis_key: str,
@@ -1166,8 +1132,12 @@ def _override_selection(
     resolved: _ResolvedOverrides | None
     match override:
         case _NonDefaultKwargOverride():
-            resolved = _nondefault_kwarg_selection(
-                axis_key=axis_key, override=override, metadata=metadata
+            value = _sample_kwarg(
+                axis_key=axis_key, kwarg=override.kwarg, metadata=metadata
+            )
+            resolved = _ResolvedOverrides(
+                kwargs={override.kwarg: value},
+                name_value=value if override.name_value else None,
             )
         case _EnumMemberOverride():
             option = OPTIONS[override.option]
@@ -1191,8 +1161,11 @@ def _override_selection(
                 name_value=None,
             )
         case _MetadataTableOverride():
-            resolved = _metadata_table_selection(
-                override=override, metadata=metadata
+            table = _metadata_table(override=override, metadata=metadata)
+            resolved = (
+                None
+                if table is None
+                else _ResolvedOverrides(kwargs=table, name_value=None)
             )
         case _TrueFlagOverride():
             resolved = _ResolvedOverrides(
