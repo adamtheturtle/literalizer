@@ -144,6 +144,7 @@ SPEC_FIELDS = frozenset(
         "list_rendering_policy",
         "native_argument_layout",
         "program_name",
+        "null_constructor_name",
         "indent_file_body",
         "expand_call_stubs",
         "record_map_value_typing",
