@@ -13,8 +13,9 @@ from literalizer import (
 from literalizer._language import validate_call_parameter_names
 from literalizer.exceptions import VariableNameNotSupportedError
 from literalizer.languages import Jsonnet
+from tests.integration.call_collection import default_call_case_specs
 from tests.integration.call_expectations import (
-    _variable_form_expected_exception,
+    expected_call_shape_exception,
 )
 
 
@@ -48,8 +49,12 @@ def test_call_binding_requires_variable_name_support(
         target=Jsonnet, name="supports_variable_names", value=False
     )
     assert (
-        _variable_form_expected_exception(
-            lang_cls=Jsonnet, variable_form=variable_form
+        expected_call_shape_exception(
+            lang_cls=Jsonnet,
+            config=default_call_case_specs()[0].model_copy(
+                update={"variable_form": variable_form}
+            ),
+            spec=Jsonnet(),
         )
         is VariableNameNotSupportedError
     )
