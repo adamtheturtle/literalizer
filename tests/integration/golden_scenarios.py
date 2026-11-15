@@ -209,36 +209,6 @@ def _new_variable_renderings(
 
 
 @beartype
-def _kebab_new_variable_renderings(
-    *,
-    lang_cls: literalizer.LanguageCls,
-) -> tuple[GoldenRendering, ...]:
-    """Hyphen-friendly languages preserve a hyphenated declaration
-    name.
-    """
-    return _new_variable_renderings(
-        lang_cls=lang_cls,
-        languages=kebab_new_variable_languages(),
-        owner=KEBAB_NEW_VARIABLE_OWNER,
-        variable_name="a-b",
-    )
-
-
-@beartype
-def _primed_new_variable_renderings(
-    *,
-    lang_cls: literalizer.LanguageCls,
-) -> tuple[GoldenRendering, ...]:
-    """Prime-friendly languages preserve a primed declaration name."""
-    return _new_variable_renderings(
-        lang_cls=lang_cls,
-        languages=primed_new_variable_languages(),
-        owner=PRIMED_NEW_VARIABLE_OWNER,
-        variable_name="a'",
-    )
-
-
-@beartype
 def _combined_renderings(
     *, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
@@ -492,11 +462,21 @@ GOLDEN_SCENARIOS: tuple[GoldenScenario, ...] = (
     ),
     GoldenScenario(
         name="kebab_new_variable",
-        build=_kebab_new_variable_renderings,
+        build=functools.partial(
+            _new_variable_renderings,
+            languages=kebab_new_variable_languages(),
+            owner=KEBAB_NEW_VARIABLE_OWNER,
+            variable_name="a-b",
+        ),
     ),
     GoldenScenario(
         name="primed_new_variable",
-        build=_primed_new_variable_renderings,
+        build=functools.partial(
+            _new_variable_renderings,
+            languages=primed_new_variable_languages(),
+            owner=PRIMED_NEW_VARIABLE_OWNER,
+            variable_name="a'",
+        ),
     ),
     GoldenScenario(name="combined", build=_combined_renderings),
     GoldenScenario(name="format_variant", build=_variant_renderings),
