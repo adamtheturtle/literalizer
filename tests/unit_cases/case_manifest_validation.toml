@@ -1,6 +1,14 @@
 # Validation scenarios for case-local golden manifests.
 
 [[cases]]
+name = "language_identity_is_not_a_participation_gate"
+manifest = '''schema_version = 1
+suites = ["base"]
+gates = [{kind = "metadata_field", field = "language_id", value = "python"}]
+'''
+message = "unknown metadata field 'language_id'"
+
+[[cases]]
 name = "call_transform_add_one_and_call_transform_nullable_conditional_are_mutually_exclusive"
 manifest = '''schema_version = 1
 owner = "literalize-call"

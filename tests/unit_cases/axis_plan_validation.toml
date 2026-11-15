@@ -1,6 +1,28 @@
 # Axis registry loading and metadata-dependent expansion diagnostics.
 
 [[cases]]
+name = "language_identity_is_not_an_axis_gate"
+contents = '''
+schema_version = 1
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+gates = [{kind = "metadata_field", field = "language_id", value = "python"}]
+'''
+message = "unknown metadata field 'language_id'"
+
+[[cases]]
+name = "language_identity_is_not_an_option_override"
+contents = '''
+schema_version = 1
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+overrides = [{kind = "metadata_enum_member", option = "language_version", field = "language_id"}]
+'''
+message = "unknown metadata field 'language_id'"
+
+[[cases]]
 name = "schema_version"
 contents = '''schema_version = 2
 [axes]
