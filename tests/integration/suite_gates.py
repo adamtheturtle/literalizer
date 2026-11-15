@@ -47,24 +47,6 @@ class SuiteGateError(ValueError):
 
 
 @beartype
-def _widens_nested_maps_by_wrapping_scalars(
-    spec: literalizer.Language,
-) -> bool:
-    """Return whether the strategy wraps sibling maps' scalar leaves."""
-    behavior = spec.heterogeneous_behavior
-    return behavior.widens_nested_maps_by_wrapping_scalars
-
-
-@beartype
-def _widens_unrecordizable_nested_sibling_maps(
-    spec: literalizer.Language,
-) -> bool:
-    """Return whether the strategy widens nested maps no record fits."""
-    behavior = spec.heterogeneous_behavior
-    return behavior.widens_unrecordizable_nested_sibling_maps
-
-
-@beartype
 def _empty_container_type_hint_strategy(
     metadata: LanguageMetadata,
 ) -> str | None:
@@ -115,10 +97,14 @@ BEHAVIOR_FLAGS: Mapping[str, Callable[[literalizer.Language], bool]] = {
         lambda spec: spec.sequence_format_config.supports_heterogeneity
     ),
     "widens_nested_maps_by_wrapping_scalars": (
-        _widens_nested_maps_by_wrapping_scalars
+        lambda spec: (
+            spec.heterogeneous_behavior.widens_nested_maps_by_wrapping_scalars
+        )
     ),
     "widens_unrecordizable_nested_sibling_maps": (
-        _widens_unrecordizable_nested_sibling_maps
+        lambda spec: (
+            spec.heterogeneous_behavior.widens_unrecordizable_nested_sibling_maps
+        )
     ),
 }
 
