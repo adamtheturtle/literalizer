@@ -1,4 +1,1 @@
-let
-  Playlist = {};
-in
-Playlist
+let Playlist = { }; in Playlist
