@@ -217,11 +217,10 @@ def test_native_code_does_not_import_ignored_tests() -> None:
                     assert node.module is None or not node.module.startswith(
                         ignored
                     ), path
-                    if node.module == "tests":
-                        assert all(
-                            f"tests.{alias.name}" not in ignored
-                            for alias in node.names
-                        ), path
+                    assert all(
+                        f"{node.module}.{alias.name}" not in ignored
+                        for alias in node.names
+                    ), path
                 elif isinstance(node, ast.Import):
                     assert all(
                         not alias.name.startswith(ignored)
