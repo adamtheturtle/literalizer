@@ -98,21 +98,18 @@ def target_call_declarations(
     class_scope = stub_spec.format_call_class_scope_stub(
         target_parts, config.parameter_names, stub_return, argument_values
     )
-    file_scope: list[str] = []
     with GoldenSkips(
         policy=_PREAMBLE_STUB_SKIPS,
         golden_path=golden_path,
         prefix=lang_name,
         config=file_regression.request.config,
     ):
-        file_scope.extend(
-            stub_spec.format_call_preamble_stub(
-                target_parts,
-                config.parameter_names,
-                stub_return,
-                argument_values,
-            ),
+        file_scope = stub_spec.format_call_preamble_stub(
+            target_parts,
+            config.parameter_names,
+            stub_return,
+            argument_values,
         )
     return CallStubDeclarations(
-        body=body, class_scope=class_scope, file_scope=tuple(file_scope)
+        body=body, class_scope=class_scope, file_scope=file_scope
     )
