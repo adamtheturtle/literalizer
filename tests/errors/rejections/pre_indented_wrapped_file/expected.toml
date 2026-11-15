@@ -1,4 +1,4 @@
-# languages rejecting: 11; languages accepting: 54
+# languages rejecting: 10; languages accepting: 55
 
 [Accepted]
 Ada = ""
@@ -25,6 +25,7 @@ Haxe = ""
 Hcl = ""
 Java = ""
 JavaScript = ""
+Jsonnet = ""
 Julia = ""
 Kotlin = ""
 Lua = ""
@@ -68,5 +69,4 @@ Python = "Python cannot combine pre_indent_level with wrap_in_file because its s
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'my_data'"
 Jsonc = "Jsonc does not support variable names: 'my_data'"
-Jsonnet = "Jsonnet does not support variable names: 'my_data'"
 Yaml = "Yaml does not support variable names: 'my_data'"

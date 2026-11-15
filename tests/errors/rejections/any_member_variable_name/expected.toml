@@ -1,4 +1,4 @@
-# languages rejecting: 11; languages accepting: 55
+# languages rejecting: 10; languages accepting: 56
 
 [Accepted]
 "Ada['equals']" = ""
@@ -50,6 +50,8 @@
 "Java['getClass']" = ""
 "JavaScript['equals']" = ""
 "JavaScript['getClass']" = ""
+"Jsonnet['equals']" = ""
+"Jsonnet['getClass']" = ""
 "Julia['equals']" = ""
 "Julia['getClass']" = ""
 "Kotlin['equals']" = ""
@@ -135,7 +137,5 @@
 "Json5['getClass']" = "Json5 does not support variable names: 'getClass'"
 "Jsonc['equals']" = "Jsonc does not support variable names: 'equals'"
 "Jsonc['getClass']" = "Jsonc does not support variable names: 'getClass'"
-"Jsonnet['equals']" = "Jsonnet does not support variable names: 'equals'"
-"Jsonnet['getClass']" = "Jsonnet does not support variable names: 'getClass'"
 "Yaml['equals']" = "Yaml does not support variable names: 'equals'"
 "Yaml['getClass']" = "Yaml does not support variable names: 'getClass'"

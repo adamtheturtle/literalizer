@@ -1,4 +1,4 @@
-# languages rejecting: 5; languages accepting: 28
+# languages rejecting: 4; languages accepting: 29
 
 [Accepted]
 Bash = ""
@@ -10,6 +10,7 @@ FSharp = ""
 Haxe = ""
 Java = ""
 JavaScript = ""
+Jsonnet = ""
 Julia = ""
 Kotlin = ""
 Nim = ""
@@ -37,4 +38,3 @@ Rust = "Rust nested sibling lists require one concrete element type; these sibli
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'my_data'"
 Jsonc = "Jsonc does not support variable names: 'my_data'"
-Jsonnet = "Jsonnet does not support variable names: 'my_data'"

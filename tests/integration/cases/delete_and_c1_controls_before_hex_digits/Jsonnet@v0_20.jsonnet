@@ -1,1 +1,2 @@
-"0aF"
+local my_data = "0aF";
+my_data

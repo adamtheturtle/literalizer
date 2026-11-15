@@ -1,4 +1,4 @@
-# languages rejecting: 10; languages accepting: 55
+# languages rejecting: 9; languages accepting: 56
 
 [Accepted]
 "Ada['car']" = ""
@@ -76,6 +76,9 @@
 "JavaScript['car']" = ""
 "JavaScript['cdr']" = ""
 "JavaScript['cons']" = ""
+"Jsonnet['car']" = ""
+"Jsonnet['cdr']" = ""
+"Jsonnet['cons']" = ""
 "Julia['car']" = ""
 "Julia['cdr']" = ""
 "Julia['cons']" = ""
@@ -196,9 +199,6 @@
 "Jsonc['car']" = "Jsonc does not support variable names: 'car'"
 "Jsonc['cdr']" = "Jsonc does not support variable names: 'cdr'"
 "Jsonc['cons']" = "Jsonc does not support variable names: 'cons'"
-"Jsonnet['car']" = "Jsonnet does not support variable names: 'car'"
-"Jsonnet['cdr']" = "Jsonnet does not support variable names: 'cdr'"
-"Jsonnet['cons']" = "Jsonnet does not support variable names: 'cons'"
 "Yaml['car']" = "Yaml does not support variable names: 'car'"
 "Yaml['cdr']" = "Yaml does not support variable names: 'cdr'"
 "Yaml['cons']" = "Yaml does not support variable names: 'cons'"

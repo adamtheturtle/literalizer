@@ -1,4 +1,4 @@
-# languages rejecting: 27; languages accepting: 46
+# languages rejecting: 26; languages accepting: 47
 
 [Accepted]
 "Ada['Integer']" = ""
@@ -71,6 +71,10 @@
 "JavaScript['Math']" = ""
 "JavaScript['Object']" = ""
 "JavaScript['String']" = ""
+"Jsonnet['Integer']" = ""
+"Jsonnet['Math']" = ""
+"Jsonnet['Object']" = ""
+"Jsonnet['String']" = ""
 "Julia['Integer']" = ""
 "Julia['Math']" = ""
 "Julia['Object']" = ""
@@ -261,10 +265,6 @@
 "Jsonc['Math']" = "Jsonc does not support variable names: 'Math'"
 "Jsonc['Object']" = "Jsonc does not support variable names: 'Object'"
 "Jsonc['String']" = "Jsonc does not support variable names: 'String'"
-"Jsonnet['Integer']" = "Jsonnet does not support variable names: 'Integer'"
-"Jsonnet['Math']" = "Jsonnet does not support variable names: 'Math'"
-"Jsonnet['Object']" = "Jsonnet does not support variable names: 'Object'"
-"Jsonnet['String']" = "Jsonnet does not support variable names: 'String'"
 "Yaml['Integer']" = "Yaml does not support variable names: 'Integer'"
 "Yaml['Math']" = "Yaml does not support variable names: 'Math'"
 "Yaml['Object']" = "Yaml does not support variable names: 'Object'"

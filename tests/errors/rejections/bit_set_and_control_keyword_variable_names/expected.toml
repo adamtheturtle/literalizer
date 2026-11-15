@@ -1,4 +1,4 @@
-# languages rejecting: 7; languages accepting: 60
+# languages rejecting: 6; languages accepting: 61
 
 [Accepted]
 "Ada['bit_set']" = ""
@@ -156,6 +156,12 @@
 "JavaScript['or_break']" = ""
 "JavaScript['or_continue']" = ""
 "JavaScript['or_else']" = ""
+"Jsonnet['bit_set']" = ""
+"Jsonnet['fallthrough']" = ""
+"Jsonnet['not_in']" = ""
+"Jsonnet['or_break']" = ""
+"Jsonnet['or_continue']" = ""
+"Jsonnet['or_else']" = ""
 "Julia['bit_set']" = ""
 "Julia['fallthrough']" = ""
 "Julia['not_in']" = ""
@@ -383,12 +389,6 @@
 "Jsonc['or_break']" = "Jsonc does not support variable names: 'or_break'"
 "Jsonc['or_continue']" = "Jsonc does not support variable names: 'or_continue'"
 "Jsonc['or_else']" = "Jsonc does not support variable names: 'or_else'"
-"Jsonnet['bit_set']" = "Jsonnet does not support variable names: 'bit_set'"
-"Jsonnet['fallthrough']" = "Jsonnet does not support variable names: 'fallthrough'"
-"Jsonnet['not_in']" = "Jsonnet does not support variable names: 'not_in'"
-"Jsonnet['or_break']" = "Jsonnet does not support variable names: 'or_break'"
-"Jsonnet['or_continue']" = "Jsonnet does not support variable names: 'or_continue'"
-"Jsonnet['or_else']" = "Jsonnet does not support variable names: 'or_else'"
 "Yaml['bit_set']" = "Yaml does not support variable names: 'bit_set'"
 "Yaml['fallthrough']" = "Yaml does not support variable names: 'fallthrough'"
 "Yaml['not_in']" = "Yaml does not support variable names: 'not_in'"

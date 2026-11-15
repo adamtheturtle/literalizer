@@ -1,4 +1,5 @@
-[
+local my_data = [
     "a",
     # trailing
-]
+];
+my_data

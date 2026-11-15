@@ -1,4 +1,4 @@
-{
+local my_data = {
     a: {
         // inner note
         b: 1,  // inline b
@@ -7,4 +7,5 @@
         1,  // first
         2,  // second
     ],
-}
+};
+my_data

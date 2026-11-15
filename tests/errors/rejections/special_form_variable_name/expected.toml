@@ -1,4 +1,4 @@
-# languages rejecting: 19; languages accepting: 46
+# languages rejecting: 18; languages accepting: 47
 
 [Accepted]
 "Bash['__CALLER__']" = ""
@@ -96,6 +96,11 @@
 "JavaScript['__ENV__']" = ""
 "JavaScript['__MODULE__']" = ""
 "JavaScript['__STACKTRACE__']" = ""
+"Jsonnet['__CALLER__']" = ""
+"Jsonnet['__DIR__']" = ""
+"Jsonnet['__ENV__']" = ""
+"Jsonnet['__MODULE__']" = ""
+"Jsonnet['__STACKTRACE__']" = ""
 "Julia['__CALLER__']" = ""
 "Julia['__DIR__']" = ""
 "Julia['__ENV__']" = ""
@@ -324,11 +329,6 @@
 "Jsonc['__ENV__']" = "Jsonc does not support variable names: '__ENV__'"
 "Jsonc['__MODULE__']" = "Jsonc does not support variable names: '__MODULE__'"
 "Jsonc['__STACKTRACE__']" = "Jsonc does not support variable names: '__STACKTRACE__'"
-"Jsonnet['__CALLER__']" = "Jsonnet does not support variable names: '__CALLER__'"
-"Jsonnet['__DIR__']" = "Jsonnet does not support variable names: '__DIR__'"
-"Jsonnet['__ENV__']" = "Jsonnet does not support variable names: '__ENV__'"
-"Jsonnet['__MODULE__']" = "Jsonnet does not support variable names: '__MODULE__'"
-"Jsonnet['__STACKTRACE__']" = "Jsonnet does not support variable names: '__STACKTRACE__'"
 "Yaml['__CALLER__']" = "Yaml does not support variable names: '__CALLER__'"
 "Yaml['__DIR__']" = "Yaml does not support variable names: '__DIR__'"
 "Yaml['__ENV__']" = "Yaml does not support variable names: '__ENV__'"

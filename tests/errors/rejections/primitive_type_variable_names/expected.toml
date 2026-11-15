@@ -1,4 +1,4 @@
-# languages rejecting: 25; languages accepting: 54
+# languages rejecting: 24; languages accepting: 55
 
 [Accepted]
 "Ada['boolean']" = ""
@@ -173,6 +173,15 @@
 "JavaScript['int']" = ""
 "JavaScript['long']" = ""
 "JavaScript['short']" = ""
+"Jsonnet['boolean']" = ""
+"Jsonnet['byte']" = ""
+"Jsonnet['char']" = ""
+"Jsonnet['double']" = ""
+"Jsonnet['float']" = ""
+"Jsonnet['int']" = ""
+"Jsonnet['long']" = ""
+"Jsonnet['short']" = ""
+"Jsonnet['void']" = ""
 "Julia['boolean']" = ""
 "Julia['byte']" = ""
 "Julia['char']" = ""
@@ -574,15 +583,6 @@
 "Jsonc['long']" = "Jsonc does not support variable names: 'long'"
 "Jsonc['short']" = "Jsonc does not support variable names: 'short'"
 "Jsonc['void']" = "Jsonc does not support variable names: 'void'"
-"Jsonnet['boolean']" = "Jsonnet does not support variable names: 'boolean'"
-"Jsonnet['byte']" = "Jsonnet does not support variable names: 'byte'"
-"Jsonnet['char']" = "Jsonnet does not support variable names: 'char'"
-"Jsonnet['double']" = "Jsonnet does not support variable names: 'double'"
-"Jsonnet['float']" = "Jsonnet does not support variable names: 'float'"
-"Jsonnet['int']" = "Jsonnet does not support variable names: 'int'"
-"Jsonnet['long']" = "Jsonnet does not support variable names: 'long'"
-"Jsonnet['short']" = "Jsonnet does not support variable names: 'short'"
-"Jsonnet['void']" = "Jsonnet does not support variable names: 'void'"
 "Yaml['boolean']" = "Yaml does not support variable names: 'boolean'"
 "Yaml['byte']" = "Yaml does not support variable names: 'byte'"
 "Yaml['char']" = "Yaml does not support variable names: 'char'"

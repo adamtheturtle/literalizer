@@ -1,4 +1,4 @@
-{
+local my_data = {
     flow: [
         1,
         // After the first element.
@@ -16,4 +16,5 @@
     anchored: 4,
     alias: 4,
     // On the alias.
-}
+};
+my_data

@@ -4,6 +4,7 @@
 Clojure = "Clojure cannot accept this value as a call argument: Clojure output is not wrapped in a function body; symbol references require a surrounding ``def`` that cannot be injected (got 'my_list')"
 CommonLisp = "CommonLisp cannot accept this value as a call argument: Common Lisp output is not wrapped in a function body; ``*name*`` references require a surrounding DEFPARAMETER that cannot be injected (got 'my_list')"
 Dhall = "Dhall cannot accept this value as a call argument: ref variable 'my_list' has a concrete type that cannot be unified with the DVal stub parameter type"
+Jsonnet = "Jsonnet cannot accept this value as a call argument: Jsonnet variable references require a ``local`` preamble that is not generated (got 'my_list')"
 Julia = "Julia cannot accept this value as a call argument: Julia output is not wrapped in a function body; variable references require a surrounding assignment that cannot be injected (got 'my_list')"
 Racket = "Racket cannot accept this value as a call argument: Racket output is not wrapped in a function body; identifier references require a surrounding ``define`` that cannot be injected (got 'my_list')"
 Scheme = "Scheme cannot accept this value as a call argument: Scheme output is not wrapped in a function body; variable references require a surrounding define (got 'my_list')"
@@ -73,6 +74,3 @@ V = "V cannot represent this call shape: variable_form cannot be combined with b
 VisualBasic = "VisualBasic cannot represent this call shape: variable_form cannot be combined with bound_refs; bound_refs declares the call's input refs, not a binding for the call result"
 Wren = "Wren cannot represent this call shape: variable_form cannot be combined with bound_refs; bound_refs declares the call's input refs, not a binding for the call result"
 Zig = "Zig cannot represent this call shape: variable_form cannot be combined with bound_refs; bound_refs declares the call's input refs, not a binding for the call result"
-
-[VariableNameNotSupportedError]
-Jsonnet = "Jsonnet does not support variable names: 'result'"

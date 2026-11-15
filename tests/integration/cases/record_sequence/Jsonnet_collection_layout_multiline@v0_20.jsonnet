@@ -1,4 +1,4 @@
-[
+local my_data = [
     {
         id: 1,
         label: "first",
@@ -14,4 +14,5 @@
         label: "third",
         tags: [],
     },
-]
+];
+my_data

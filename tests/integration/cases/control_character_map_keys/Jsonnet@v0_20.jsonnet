@@ -1,4 +1,5 @@
-{
+local my_data = {
     "": 1,
     "a\u0001b": 2,
-}
+};
+my_data

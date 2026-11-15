@@ -1,4 +1,4 @@
-# languages rejecting: 11; languages accepting: 54
+# languages rejecting: 10; languages accepting: 55
 
 [Accepted]
 "Ada['initialize']" = ""
@@ -24,6 +24,7 @@
 "Hcl['initialize']" = ""
 "Java['initialize']" = ""
 "JavaScript['initialize']" = ""
+"Jsonnet['initialize']" = ""
 "Julia['initialize']" = ""
 "Kotlin['initialize']" = ""
 "Lua['initialize']" = ""
@@ -70,5 +71,4 @@
 [VariableNameNotSupportedError]
 "Json5['initialize']" = "Json5 does not support variable names: 'initialize'"
 "Jsonc['initialize']" = "Jsonc does not support variable names: 'initialize'"
-"Jsonnet['initialize']" = "Jsonnet does not support variable names: 'initialize'"
 "Yaml['initialize']" = "Yaml does not support variable names: 'initialize'"

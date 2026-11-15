@@ -1,4 +1,4 @@
-# languages rejecting: 11; languages accepting: 54
+# languages rejecting: 10; languages accepting: 55
 
 [Accepted]
 "Ada['[[1,2],[3]]']" = ""
@@ -70,6 +70,9 @@
 "JavaScript['[[1,2],[3]]']" = ""
 "JavaScript['[[[1],[2]],[[3,4]]]']" = ""
 "JavaScript['{\"first\": [1, 2], \"second\": [3]}']" = ""
+"Jsonnet['[[1,2],[3]]']" = ""
+"Jsonnet['[[[1],[2]],[[3,4]]]']" = ""
+"Jsonnet['{\"first\": [1, 2], \"second\": [3]}']" = ""
 "Julia['[[1,2],[3]]']" = ""
 "Julia['[[[1],[2]],[[3,4]]]']" = ""
 "Julia['{\"first\": [1, 2], \"second\": [3]}']" = ""
@@ -201,8 +204,3 @@
 "Cobol['[[1,2],[3]]']" = "Cobol cannot represent this call shape: calls in this language are statements, not expressions, so the call result cannot be bound to a variable"
 "Cobol['[[[1],[2]],[[3,4]]]']" = "Cobol cannot represent this call shape: calls in this language are statements, not expressions, so the call result cannot be bound to a variable"
 "Cobol['{\"first\": [1, 2], \"second\": [3]}']" = "Cobol cannot represent this call shape: calls in this language are statements, not expressions, so the call result cannot be bound to a variable"
-
-[VariableNameNotSupportedError]
-"Jsonnet['[[1,2],[3]]']" = "Jsonnet does not support variable names: 'my_data'"
-"Jsonnet['[[[1],[2]],[[3,4]]]']" = "Jsonnet does not support variable names: 'my_data'"
-"Jsonnet['{\"first\": [1, 2], \"second\": [3]}']" = "Jsonnet does not support variable names: 'my_data'"

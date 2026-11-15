@@ -1,4 +1,4 @@
-# languages rejecting: 5; languages accepting: 60
+# languages rejecting: 4; languages accepting: 61
 
 [Accepted]
 Ada = ""
@@ -27,6 +27,7 @@ Haxe = ""
 Hcl = ""
 Java = ""
 JavaScript = ""
+Jsonnet = ""
 Julia = ""
 Kotlin = ""
 Lua = ""
@@ -68,5 +69,4 @@ Rust = "Rust ordered maps require one concrete value type; these values have inc
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'my_data'"
 Jsonc = "Jsonc does not support variable names: 'my_data'"
-Jsonnet = "Jsonnet does not support variable names: 'my_data'"
 Yaml = "Yaml does not support variable names: 'my_data'"

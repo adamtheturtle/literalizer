@@ -1,4 +1,4 @@
-# languages rejecting: 64; languages accepting: 55
+# languages rejecting: 64; languages accepting: 56
 
 [Accepted]
 "Ada['length']" = ""
@@ -140,6 +140,12 @@
 "JavaScript['map']" = ""
 "JavaScript['print']" = ""
 "JavaScript['seq']" = ""
+"Jsonnet['abs']" = ""
+"Jsonnet['length']" = ""
+"Jsonnet['main']" = ""
+"Jsonnet['map']" = ""
+"Jsonnet['print']" = ""
+"Jsonnet['seq']" = ""
 "Julia['abs']" = ""
 "Julia['length']" = ""
 "Julia['main']" = ""
@@ -348,6 +354,7 @@
 "Hcl[\"foldl'\"]" = "Hcl cannot use NewVariable name \"foldl'\": it is not a valid identifier"
 "Java[\"foldl'\"]" = "Java cannot use NewVariable name \"foldl'\": it is not a valid identifier"
 "JavaScript[\"foldl'\"]" = "JavaScript cannot use NewVariable name \"foldl'\": it is not a valid identifier"
+"Jsonnet[\"foldl'\"]" = "Jsonnet cannot use NewVariable name \"foldl'\": it is not a valid identifier"
 "Julia[\"foldl'\"]" = "Julia cannot use NewVariable name \"foldl'\": it is not a valid identifier"
 "Kotlin[\"foldl'\"]" = "Kotlin cannot use NewVariable name \"foldl'\": it is not a valid identifier"
 "Lua[\"foldl'\"]" = "Lua cannot use NewVariable name \"foldl'\": it is not a valid identifier"
@@ -450,13 +457,6 @@
 "Jsonc['map']" = "Jsonc does not support variable names: 'map'"
 "Jsonc['print']" = "Jsonc does not support variable names: 'print'"
 "Jsonc['seq']" = "Jsonc does not support variable names: 'seq'"
-"Jsonnet['abs']" = "Jsonnet does not support variable names: 'abs'"
-"Jsonnet[\"foldl'\"]" = "Jsonnet does not support variable names: \"foldl'\""
-"Jsonnet['length']" = "Jsonnet does not support variable names: 'length'"
-"Jsonnet['main']" = "Jsonnet does not support variable names: 'main'"
-"Jsonnet['map']" = "Jsonnet does not support variable names: 'map'"
-"Jsonnet['print']" = "Jsonnet does not support variable names: 'print'"
-"Jsonnet['seq']" = "Jsonnet does not support variable names: 'seq'"
 "Yaml['abs']" = "Yaml does not support variable names: 'abs'"
 "Yaml[\"foldl'\"]" = "Yaml does not support variable names: \"foldl'\""
 "Yaml['length']" = "Yaml does not support variable names: 'length'"

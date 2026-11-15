@@ -1,5 +1,6 @@
-{
+local my_data = {
     date: "0099-05-27",
     naive: -62135551800,
     recent: 1716804000,
-}
+};
+my_data
