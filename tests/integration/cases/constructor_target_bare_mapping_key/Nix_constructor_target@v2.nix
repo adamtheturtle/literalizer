@@ -1,1 +1,3 @@
-{ Playlist = true; }
+{
+  Playlist = true;
+}

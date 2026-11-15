@@ -39,8 +39,7 @@ def test_every_matching_owner(
         case.name
         for case in baseline
         if case.manifest.constructor is not None
-        and case.manifest.constructor.target_template is None
-        and len(case.manifest.constructor.target_templates) == 0
+        and not case.manifest.constructor.renders_target
     }
     for index in range(owner_count):
         case_dir = tmp_path / f"wrapper_{index}"

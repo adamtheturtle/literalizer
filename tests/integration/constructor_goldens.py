@@ -5,7 +5,7 @@ import dataclasses
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import literalize_call
+from literalizer import literalize, literalize_call
 
 from .constructor_cases import ConstructorRendering
 from .constructor_templates import constructor_target_template
@@ -37,40 +37,45 @@ def run_constructor_binding_golden_case(
         config=config, language_name=case.lang_cls.__name__
     )
     if target_template is not None:
-        check_golden(
-            contents=target_template.format(
+        contents = target_template.format(
+            target=language.format_constructor_target(config.class_name)
+        )
+    elif config.target_source_template is not None:
+        result = literalize(
+            source=config.target_source_template.format(
                 target=language.format_constructor_target(config.class_name)
             ),
-            golden_path=golden_path,
-            file_regression=file_regression,
-        )
-        return
-    with GoldenSkips(
-        policy=case.skip,
-        golden_path=golden_path,
-        prefix=case.lang_cls.__name__,
-        config=file_regression.request.config,
-    ):
-        result = literalize_call(
-            source=source,
             input_format=input_format,
             language=language,
-            target_function=language.format_constructor_target(
-                config.class_name,
-            ),
-            parameter_names=config.parameter_names,
-            wrap_in_file=consumer_template is None,
-            variable_form=dataclasses.replace(
-                case.variable_form, name=config.variable_name
-            ),
         )
-    contents = result.code + "\n"
-    if consumer_template is not None:
-        contents = format_consumer(
-            template=consumer_template,
-            result=result,
+        contents = result.code + "\n"
+    else:
+        with GoldenSkips(
+            policy=case.skip,
             golden_path=golden_path,
-        )
+            prefix=case.lang_cls.__name__,
+            config=file_regression.request.config,
+        ):
+            result = literalize_call(
+                source=source,
+                input_format=input_format,
+                language=language,
+                target_function=language.format_constructor_target(
+                    config.class_name,
+                ),
+                parameter_names=config.parameter_names,
+                wrap_in_file=consumer_template is None,
+                variable_form=dataclasses.replace(
+                    case.variable_form, name=config.variable_name
+                ),
+            )
+        contents = result.code + "\n"
+        if consumer_template is not None:
+            contents = format_consumer(
+                template=consumer_template,
+                result=result,
+                golden_path=golden_path,
+            )
     check_golden(
         contents=contents,
         golden_path=golden_path,

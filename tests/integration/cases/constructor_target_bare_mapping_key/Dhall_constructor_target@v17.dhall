@@ -1,1 +1,3 @@
-{ Playlist = True }
+{
+  Playlist = True,
+}

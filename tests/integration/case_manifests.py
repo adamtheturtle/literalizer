@@ -734,7 +734,18 @@ class ConstructorCaseSpec(  # noqa: NOD001
     target_template: str | None = None
     # Native syntax is resolved after participation, never used as a filter.
     target_templates: Mapping[str, str] = Field(default_factory=dict)
+    # Render shared input through literalize unless native syntax overrides it.
+    target_source_template: str | None = None
     variable_name: Annotated[str, Field(min_length=1)] = "p"
+
+    @property
+    def renders_target(self) -> bool:
+        """Whether this case consumes a target instead of calling it."""
+        return (
+            self.target_template is not None
+            or len(self.target_templates) > 0
+            or self.target_source_template is not None
+        )
 
     @beartype
     def consumer_for_language(self, *, language_name: str) -> str | None:
