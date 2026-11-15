@@ -9,7 +9,7 @@ from pydantic import BaseModel, TypeAdapter
 from literalizer.languages import Rust
 
 from .golden_renderings import GoldenRendering
-from .golden_scenarios import golden_groups
+from .golden_scenarios import scenario_renderings
 from .language_specs import make_golden_path
 
 
@@ -50,9 +50,7 @@ def snapshot_rendering(*, case: RecordSnapshotCase) -> GoldenRendering:
     """
     return next(
         rendering
-        for group in golden_groups()
-        if group.scenario_name == "format_variant" and group.lang_cls is Rust
-        for rendering in group.renderings
+        for rendering in scenario_renderings()["format_variant", Rust]
         if rendering.case_dir_name == case.case_name
         and rendering.golden_name == case.seed_golden_name
     )
@@ -63,7 +61,7 @@ def record_snapshot_golden_paths(*, cases_dir: Path) -> set[Path]:
     cases.
     """
     return {
-        case.golden_path(cases_dir=cases_dir, version=version)
+        case.golden_path(cases_dir=cases_dir, version=spec.language_version)
         for case in RECORD_SNAPSHOT_CASES
-        for version in snapshot_rendering(case=case).versions
+        for spec in snapshot_rendering(case=case).specs
     }

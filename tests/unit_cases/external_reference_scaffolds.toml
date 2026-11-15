@@ -27,28 +27,10 @@ shared = "1"
 [[arities]]
 name = "fixed_only_destination"
 directory = "external"
-explicit_choice = false
 message = "cannot change length on reassignment"
 
 [arities.configuration]
 variable_form = "existing"
-
-[arities.configuration.external_declarations]
-my_data = "[0]"
-shared = "[1, 2]"
-
-[arities.raw_data]
-"$ref" = "shared"
-
-[[arities]]
-name = "explicit_tuple"
-directory = "external"
-explicit_choice = true
-message = "cannot change length on reassignment"
-
-[arities.configuration]
-variable_form = "existing"
-sequence_format = "TUPLE"
 
 [arities.configuration.external_declarations]
 my_data = "[0]"

@@ -20,7 +20,7 @@ from tests.integration.constructor_cases import (
     constructor_binding_cases,
 )
 from tests.integration.deep_input_cases import deep_input_golden_paths
-from tests.integration.golden_scenarios import golden_groups
+from tests.integration.golden_scenarios import scenario_renderings
 from tests.integration.native_invocation_cases import native_invocation_cases
 from tests.integration.record_snapshot_cases import (
     record_snapshot_golden_paths,
@@ -58,8 +58,8 @@ def _expected_literalize_golden_files(*, cases_dir: Path) -> set[Path]:
             path=rendering.golden_path(version=spec.language_version),
             start=integration_dir,
         )
-        for group in golden_groups()
-        for rendering in group.renderings
+        for renderings in scenario_renderings().values()
+        for rendering in renderings
         for spec in rendering.specs
     }
 
