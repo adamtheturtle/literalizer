@@ -9,11 +9,13 @@ from .case_manifests import CaseManifestError, ConstructorCaseSpec
 def constructor_target_template(
     *, config: ConstructorCaseSpec, language_name: str
 ) -> str | None:
-    """Require a native template for every selected backend."""
+    """Resolve native syntax, falling back to explicitly shared input."""
     if len(config.target_templates) == 0:
         return config.target_template
     try:
         return config.target_templates[language_name]
     except KeyError as error:
+        if config.target_source_template is not None:
+            return None
         msg = f"no constructor target template for {language_name!r}"
         raise CaseManifestError(msg) from error

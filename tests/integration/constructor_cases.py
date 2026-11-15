@@ -85,8 +85,7 @@ def constructor_binding_cases(
             for manifest in manifests
             if manifest.selection.admits_language(lang_cls=case.lang_cls)
             and manifest.constructor is not None
-            and manifest.constructor.target_template is None
-            and len(manifest.constructor.target_templates) == 0
+            and not manifest.constructor.renders_target
         )
         if len(owners) == 0:
             msg = (
@@ -113,10 +112,7 @@ def constructor_binding_cases(
         )
     for manifest in manifests:
         config = manifest.constructor
-        if config is not None and (
-            config.target_template is not None
-            or len(config.target_templates) > 0
-        ):
+        if config is not None and config.renders_target:
             for lang_cls in sorted_languages():
                 if not manifest.selection.admits_language(lang_cls=lang_cls):
                     continue
