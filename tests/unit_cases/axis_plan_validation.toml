@@ -129,6 +129,30 @@ overrides = [{ kind = "metadata_enum_member", option = "language_version", field
 message = "unknown metadata field 'vibe'"
 
 [[cases]]
+name = "language_id_selection_gate"
+contents = '''
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
+'''
+message = "unknown metadata field 'language_id'"
+
+[[cases]]
+name = "language_id_metadata_override"
+contents = '''
+schema_version = 1
+
+[axes.example]
+plan = "fixed_overrides"
+name_template = "{lang}_example"
+overrides = [{ kind = "metadata_enum_member", option = "language_version", field = "language_id" }]
+'''
+message = "unknown metadata field 'language_id'"
+
+[[cases]]
 name = "unknown_override_option"
 contents = '''
 

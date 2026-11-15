@@ -605,6 +605,63 @@ languages = ["Python"]
 message = "Extra inputs are not permitted"
 
 [[cases]]
+name = "root_language_id_selection_gate"
+manifest = '''schema_version = 1
+suites = ["base"]
+gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
+'''
+message = "unknown metadata field 'language_id'"
+
+[[cases]]
+name = "ref_language_id_selection_gate"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
+'''
+message = "unknown metadata field 'language_id'"
+
+[[cases]]
+name = "call_language_id_selection_gate"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
+'''
+message = "unknown metadata field 'language_id'"
+
+[[cases]]
+name = "ref_example_language_id_selection_gate"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+[[ref_examples]]
+example = "sampled"
+gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
+'''
+message = "unknown metadata field 'language_id'"
+
+[[cases]]
+name = "call_example_language_id_selection_gate"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+[[call_examples]]
+example = "sampled"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
+'''
+message = "unknown metadata field 'language_id'"
+
+[[cases]]
 name = "legacy_call_language_list"
 manifest = '''schema_version = 1
 owner = "literalize-call"

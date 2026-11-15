@@ -20,3 +20,5 @@ Shared Python helpers live directly under ``tests``, with declarative unit data 
 
 Run the ordinary suite with ``UV_PYTHON=3.14 uvx uv@0.13.0 run --group=dev pytest --ignore=tests/benchmarks``.
 A directory can also be selected directly, for example ``UV_PYTHON=3.14 uvx uv@0.13.0 run --group=dev pytest tests/stress``.
+
+The historical golden-selection migration is reconciled in ``integration/selection-migration-audit.md``.
