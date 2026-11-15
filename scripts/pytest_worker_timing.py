@@ -45,23 +45,13 @@ def completion_tail(*, arrivals: Mapping[str, float]) -> float:
 def pytest_terminal_summary(
     terminalreporter: pytest.TerminalReporter, config: pytest.Config
 ) -> None:
-    """Summarize the report without changing pytest's outcome on read
-    errors.
-    """
+    """Summarize the report produced by pytest-timing for this run."""
     report_name = config.getoption(name="timing_json_file", default=None)
     if not isinstance(report_name, str):
         return
-    try:
-        data = _Report.model_validate_json(
-            json_data=(config.rootpath / report_name).read_text(
-                encoding="utf-8"
-            )
-        )
-    except (OSError, ValueError) as error:
-        terminalreporter.write_line(
-            line=f"worker timing summary unavailable: {error}", yellow=True
-        )
-        return
+    data = _Report.model_validate_json(
+        json_data=(config.rootpath / report_name).read_text(encoding="utf-8")
+    )
     if data.run.get("workers_only") is not True or not isinstance(
         data.run.get("dist"), str
     ):
