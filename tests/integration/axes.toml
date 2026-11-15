@@ -235,6 +235,20 @@ overrides = [
   { kind = "enum_member", option = "datetime_format", member = "JS" },
 ]
 
+[axes.datetime_php]
+plan = "fixed_overrides"
+name_template = "{lang}_datetime_php"
+per_version = true
+gates = [{ kind = "enum_member_present", option = "datetime_format", member = "PHP" }]
+overrides = [{ kind = "enum_member", option = "datetime_format", member = "PHP" }]
+
+[axes.datetime_swift]
+plan = "fixed_overrides"
+name_template = "{lang}_datetime_swift"
+per_version = true
+gates = [{ kind = "enum_member_present", option = "datetime_format", member = "SWIFT" }]
+overrides = [{ kind = "enum_member", option = "datetime_format", member = "SWIFT" }]
+
 [axes.declaration_style]
 plan = "every_non_default_member"
 name_template = "{lang}_declaration_style_{format}"

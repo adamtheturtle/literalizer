@@ -259,9 +259,15 @@ def _format_date_swift(value: dt.date) -> str:
 
 @beartype
 def _format_datetime_swift(value: dt.datetime) -> str:
-    """Format a datetime as a native Swift ``Date`` expression."""
+    """Format a datetime as a native Swift ``Date`` expression.
+
+    Normalize offsets that ``TimeZone(secondsFromGMT:)`` cannot hold
+    rather than truncating their fractional seconds.
+    """
     offset = value.utcoffset()
-    if offset is not None and abs(offset) > dt.timedelta(hours=18):
+    if offset is not None and (
+        abs(offset) > dt.timedelta(hours=18) or offset.microseconds != 0
+    ):
         value = normalize_datetime_utc(value=value, language_name="Swift")
         offset = dt.timedelta()
     if offset is None or offset == dt.timedelta():
