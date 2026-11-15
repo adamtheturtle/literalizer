@@ -28,7 +28,6 @@ import literalizer
 from . import case_manifests, manifest_queries, scenario_skips
 from .case_discovery import (
     discover_cases,
-    group_cases_by_language,
     kebab_new_variable_languages,
     primed_new_variable_languages,
 )
@@ -107,7 +106,7 @@ def _base_renderings(
     substitutions -- is whatever the case's manifest declares.
     """
     manifests = case_manifests_by_name(cases_dir=_CASES_DIR)
-    grouped = group_cases_by_language(cases_dir=_CASES_DIR)
+    grouped = discover_cases(cases_dir=_CASES_DIR, suite="base")
     renderings: list[GoldenRendering] = []
     for case_name in grouped.get(lang_cls, []):
         context = manifests[case_name].base_context
@@ -261,10 +260,9 @@ def _combined_renderings(
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
             skip=scenario_skips.LANGUAGE_SKIPS,
         )
-        for case_name, case_language in discover_cases(
+        for case_name in discover_cases(
             cases_dir=_CASES_DIR, suite="combined"
-        )
-        if case_language is lang_cls
+        ).get(lang_cls, [])
         for style in styles
     )
 
