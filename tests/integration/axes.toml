@@ -77,6 +77,13 @@ name_template = "{lang}_array_inference_{format}_tuple"
 primary_axis = "array_inference_policy"
 overrides = [{ kind = "enum_member", option = "sequence_format", member = "TUPLE" }]
 
+[axes.array_inference_type_hints]
+plan = "fixed_overrides"
+name_template = "{lang}_array_type_hints_always"
+gates = [{ kind = "spec_field_present", field = "array_inference_policy" }]
+overrides = [{ kind = "enum_member", option = "variable_type_hints", member = "ALWAYS" }]
+layouts = [{ layout = "COMPACT" }, { layout = "MULTILINE", name_suffix = "_multiline" }]
+
 [axes.bool_format]
 plan = "every_non_default_member"
 name_template = "{lang}_bool_format_{format}"

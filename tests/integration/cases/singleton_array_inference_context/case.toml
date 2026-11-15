@@ -3,4 +3,7 @@ schema_version = 1
 suites = ["base"]
 
 [[variants]]
+axis = "array_inference_type_hints"
+
+[[variants]]
 axis = "array_inference_policy"
