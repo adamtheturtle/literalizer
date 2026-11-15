@@ -1,0 +1,24 @@
+---
+# Documentation stays covered by the lint/docs jobs. All Python versions
+# and platforms still run for runtime changes and on main/nightly events.
+tests:
+  - '**'
+  - '!docs/**'
+  - '!newsfragments/**'
+  - '!README.rst'
+  - '!CHANGELOG.md'
+  - '!LICENSE'
+  - '!tests/benchmarks/**'
+
+# These isolated Python tests do not alter benchmark code or its inputs.
+benchmarks:
+  - '**'
+  - '!docs/**'
+  - '!newsfragments/**'
+  - '!README.rst'
+  - '!CHANGELOG.md'
+  - '!LICENSE'
+  - '!tests/errors/**'
+  - '!tests/metadata/**'
+  - '!tests/runtime/**'
+  - '!tests/unit_cases/**'

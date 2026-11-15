@@ -22,8 +22,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ci-changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tests: >-
+        ${{ github.event_name != 'pull_request'
+        || steps.filter.outcome != 'success'
+        || steps.filter.outputs.tests == 'true' }}
+      benchmarks: >-
+        ${{ github.event_name != 'pull_request'
+        || steps.filter.outcome != 'success'
+        || steps.filter.outputs.benchmarks == 'true' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Find tested base
+        if: github.event_name == 'pull_request'
+        id: base
+        continue-on-error: true
+        run: |-
+          sha=$(git rev-parse HEAD^1)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - name: Select CI jobs
+        if: github.event_name == 'pull_request' && steps.base.outcome == 'success'
+        id: filter
+        continue-on-error: true
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        with:
+          token: ''
+          base: ${{ steps.base.outputs.sha }}
+          predicate-quantifier: some-with-excludes
+          filters: .github/ci-filters.yml
+      - name: Report full-suite fallback
+        if: github.event_name == 'pull_request' && steps.filter.outcome != 'success'
+        run: echo "::warning::Cannot detect CI changes; running all tests and benchmarks."
+
   build:
-    needs: [benchmark-wheel]
+    needs: [ci-changes, benchmark-wheel]
+    if: needs.ci-changes.outputs.tests == 'true'
     strategy:
       matrix:
         python-version: ['3.12', '3.13', '3.14', '3.15']
@@ -102,6 +141,10 @@ jobs:
   # this wheel avoids repeating the setuptools metadata and editable-build
   # work in every Python/platform cell.
   benchmark-wheel:
+    needs: [ci-changes]
+    if: >-
+      needs.ci-changes.outputs.tests == 'true'
+      || needs.ci-changes.outputs.benchmarks == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -128,7 +171,8 @@ jobs:
 
   benchmarks:
     name: benchmarks (${{ matrix.shard }})
-    needs: [benchmark-wheel]
+    needs: [ci-changes, benchmark-wheel]
+    if: needs.ci-changes.outputs.benchmarks == 'true'
 
     strategy:
       # A shard that fails still leaves the other shards' timings worth
@@ -194,14 +238,20 @@ jobs:
           PYTHONHASHSEED: '0'
 
   completion-ci:
-    needs: [build, benchmark-wheel, benchmarks]
+    needs: [ci-changes, build, benchmark-wheel, benchmarks]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: ${{ !cancelled() }}
     steps:
       - name: Check matrix job status
         run: |-
-          if ! ${{ needs.build.result == 'success' && needs['benchmark-wheel'].result == 'success' && needs.benchmarks.result == 'success' }}; then
+          if ! ${{ !contains(needs.*.result, 'failure')
+            && !contains(needs.*.result, 'cancelled')
+            && needs.ci-changes.result == 'success'
+            && (needs.ci-changes.outputs.tests != 'true' || needs.build.result == 'success')
+            && (needs.ci-changes.outputs.benchmarks != 'true' || needs.benchmarks.result == 'success')
+            && ((needs.ci-changes.outputs.tests != 'true' && needs.ci-changes.outputs.benchmarks != 'true')
+                || needs['benchmark-wheel'].result == 'success') }}; then
             echo "One or more matrix jobs failed"
             exit 1
           fi
