@@ -3,8 +3,6 @@ owner = "constructor-binding"
 gates = [{kind = "capability_flag", flag = "declares_call_styles", value = false}, {kind = "capability_flag", flag = "supports_variable_names"}, {kind = "capability_flag", flag = "supports_key_value_assignment_documents", value = false}, {kind = "capability_flag", flag = "supports_local_binding_documents", value = false}]
 
 # Local bindings are owned by constructor_target_local_binding_document.
-# Consume the remaining native target syntax without fabricating a call.
-# Template keys provide syntax after capability selection; missing keys fail.
-[constructor.target_templates]
-Norg = '''* {target}
-'''
+# Generate a heading and its literal body through the variable API.
+[constructor]
+target_variable = true

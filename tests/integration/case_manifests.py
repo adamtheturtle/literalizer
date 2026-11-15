@@ -736,6 +736,8 @@ class ConstructorCaseSpec(  # noqa: NOD001
     target_templates: Mapping[str, str] = Field(default_factory=dict)
     # Render shared input through literalize unless native syntax overrides it.
     target_source_template: str | None = None
+    # Bind the case input to the formatted target through the variable API.
+    target_variable: bool = False
     variable_name: Annotated[str, Field(min_length=1)] = "p"
 
     @property
@@ -745,6 +747,7 @@ class ConstructorCaseSpec(  # noqa: NOD001
             self.target_template is not None
             or len(self.target_templates) > 0
             or self.target_source_template is not None
+            or self.target_variable
         )
 
     @beartype

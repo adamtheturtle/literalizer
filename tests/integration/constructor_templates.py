@@ -15,7 +15,7 @@ def constructor_target_template(
     try:
         return config.target_templates[language_name]
     except KeyError as error:
-        if config.target_source_template is not None:
+        if config.target_source_template is not None or config.target_variable:
             return None
         msg = f"no constructor target template for {language_name!r}"
         raise CaseManifestError(msg) from error
