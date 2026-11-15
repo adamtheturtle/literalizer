@@ -1,55 +1,36 @@
-"""Record worker collection and shutdown arrivals without per-test logging.
+"""Adapt pytest-timing's public worker JSON to the existing CI summary.
 
-Load with ``pytest -p scripts.pytest_worker_timing``. The controller emits
-one JSON summary. Shutdown includes teardown and communication; its tail
-is an observation of released workers, not a promised scheduling speedup.
-
-An upstream replacement is tracked at
-https://github.com/messense/pytest-timing/issues/12 (workers-only capture) and
-https://github.com/messense/pytest-timing/issues/11 (monotonic timings).
+Load with ``-p timing -p scripts.pytest_worker_timing`` and
+``--timing-capture=workers --timing-json-file=PATH``. pytest-timing owns
+worker observation; this adapter retains the release-tail calculation.
+Offsets use the upstream run's origin. Shutdown includes fixture cleanup and
+communication, so the tail is not a promised scheduling speedup.
 """
 
 import json
 from collections.abc import Mapping
-from dataclasses import dataclass
-from time import perf_counter
-from typing import Protocol
 
 import pytest
 from _pytest.terminal import TerminalReporter
+from pydantic import BaseModel
 
-__all__ = (
-    "completion_tail",
-    "pytest_sessionstart",
-    "pytest_terminal_summary",
-    "pytest_testnodedown",
-    "pytest_xdist_node_collection_finished",
-)
+__all__ = ("completion_tail", "pytest_terminal_summary")
 
 
-class _Gateway(Protocol):
-    """Gateway identity supplied by pytest-xdist."""
+class _Worker(BaseModel, extra="ignore", frozen=True, strict=True):
+    """The public timing fields needed for one worker."""
 
     id: str
+    collected: float | None
+    down: float | None
+    error: str | None
 
 
-class _Worker(Protocol):
-    """The controller fields this optional plugin reads."""
+class _Report(BaseModel, extra="ignore", frozen=True, strict=True):
+    """Read the public report while allowing unrelated upstream fields."""
 
-    gateway: _Gateway
-
-
-@dataclass
-class _Clock:
-    """Mutable session timing state, reset for each pytest invocation."""
-
-    started: float
-
-
-_CLOCK = _Clock(started=0.0)
-_COLLECTED: dict[str, float] = {}
-_FINISHED: dict[str, float] = {}
-_ERRORS: list[str] = []
+    run: Mapping[str, object]
+    workers: tuple[_Worker, ...]
 
 
 def completion_tail(*, arrivals: Mapping[str, float]) -> float:
@@ -62,44 +43,49 @@ def completion_tail(*, arrivals: Mapping[str, float]) -> float:
     return sum(last - value for value in arrivals.values())
 
 
-def pytest_sessionstart() -> None:
-    """Reset state even when pytest is invoked repeatedly in one
-    process.
+def pytest_terminal_summary(
+    terminalreporter: TerminalReporter, config: pytest.Config
+) -> None:
+    """Summarize the report without changing pytest's outcome on read
+    errors.
     """
-    _CLOCK.started = perf_counter()
-    _COLLECTED.clear()
-    _FINISHED.clear()
-    _ERRORS.clear()
-
-
-@pytest.hookimpl(optionalhook=True)
-def pytest_xdist_node_collection_finished(node: _Worker) -> None:
-    """Record collection completion as observed by the controller."""
-    _COLLECTED[node.gateway.id] = perf_counter() - _CLOCK.started
-
-
-@pytest.hookimpl(optionalhook=True)
-def pytest_testnodedown(node: _Worker, error: object | None) -> None:
-    """Record worker release, retaining failures instead of hiding
-    them.
-    """
-    worker = node.gateway.id
-    _FINISHED[worker] = perf_counter() - _CLOCK.started
-    if error is not None:
-        _ERRORS.append(worker)
-
-
-def pytest_terminal_summary(terminalreporter: TerminalReporter) -> None:
-    """Emit small machine-readable evidence without changing pytest
-    results.
-    """
-    if len(_FINISHED) == 0:
+    report_name = config.getoption(name="timing_json_file", default=None)
+    if not isinstance(report_name, str):
+        return
+    try:
+        data = _Report.model_validate_json(
+            json_data=(config.rootpath / report_name).read_text(
+                encoding="utf-8"
+            )
+        )
+    except (OSError, ValueError) as error:
+        terminalreporter.write_line(
+            line=f"worker timing summary unavailable: {error}", yellow=True
+        )
+        return
+    if data.run.get("workers_only") is not True or not isinstance(
+        data.run.get("dist"), str
+    ):
+        return
+    collected = {
+        worker.id: worker.collected
+        for worker in data.workers
+        if worker.collected is not None
+    }
+    finished = {
+        worker.id: worker.down
+        for worker in data.workers
+        if worker.down is not None
+    }
+    if len(finished) == 0:
         return
     report = {
-        "collection_finished_seconds": _COLLECTED,
-        "worker_released_seconds": _FINISHED,
-        "released_worker_tail_seconds": completion_tail(arrivals=_FINISHED),
-        "worker_errors": _ERRORS,
+        "collection_finished_seconds": collected,
+        "worker_released_seconds": finished,
+        "released_worker_tail_seconds": completion_tail(arrivals=finished),
+        "worker_errors": [
+            worker.id for worker in data.workers if worker.error is not None
+        ],
         "observation": "Arrivals include teardown and communication. "
         "the tail is not a measured recoverable speedup.",
     }
