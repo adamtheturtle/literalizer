@@ -16,7 +16,7 @@ from tests.integration.case_manifests import RefCaseSpec
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
 )
-from tests.integration.golden_scenarios import golden_groups
+from tests.integration.golden_scenarios import scenario_renderings
 from tests.integration.reference_cases import reference_golden_cases
 
 _CASES_DIR = Path(__file__).parent.parent / "tests" / "integration" / "cases"
@@ -37,9 +37,9 @@ def _literalize_bindings() -> dict[Path, str | None]:
             if rendering.consumer_template is not None
             else _binding_name(variable_form=rendering.render.variable_form)
         )
-        for group in golden_groups()
-        for rendering in group.renderings
-        if rendering.lang_cls is Dart
+        for (_, lang_cls), renderings in scenario_renderings().items()
+        if lang_cls is Dart
+        for rendering in renderings
         for spec in rendering.specs
     }
 
