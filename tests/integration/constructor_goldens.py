@@ -5,7 +5,7 @@ import dataclasses
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import literalize, literalize_call
+from literalizer import NewVariable, literalize, literalize_call
 
 from .constructor_cases import ConstructorRendering
 from .constructor_templates import constructor_target_template
@@ -40,13 +40,25 @@ def run_constructor_binding_golden_case(
         contents = target_template.format(
             target=language.format_constructor_target(config.class_name)
         )
-    elif config.target_source_template is not None:
-        result = literalize(
-            source=config.target_source_template.format(
+    elif config.target_source_template is not None or config.target_variable:
+        target_source = source
+        if config.target_source_template is not None:
+            target_source = config.target_source_template.format(
                 target=language.format_constructor_target(config.class_name)
-            ),
+            )
+        result = literalize(
+            source=target_source,
             input_format=input_format,
             language=language,
+            variable_form=(
+                NewVariable(
+                    name=language.format_constructor_target(config.class_name),
+                    modifiers=frozenset(),
+                )
+                if config.target_variable
+                else None
+            ),
+            wrap_in_file=config.target_variable,
         )
         contents = result.code + "\n"
     else:
