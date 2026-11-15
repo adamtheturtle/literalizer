@@ -9,12 +9,16 @@ communication, so the tail is not a promised scheduling speedup.
 
 import json
 from collections.abc import Mapping
+from pathlib import Path
 
 import pytest
-from _pytest.terminal import TerminalReporter
 from pydantic import BaseModel
 
-__all__ = ("completion_tail", "pytest_terminal_summary")
+__all__ = (
+    "completion_tail",
+    "pytest_terminal_summary",
+    "write_worker_summary",
+)
 
 
 class _Worker(BaseModel, extra="ignore", frozen=True, strict=True):
@@ -44,19 +48,26 @@ def completion_tail(*, arrivals: Mapping[str, float]) -> float:
 
 
 def pytest_terminal_summary(
-    terminalreporter: TerminalReporter, config: pytest.Config
+    terminalreporter: pytest.TerminalReporter, config: pytest.Config
+) -> None:
+    """Resolve pytest's report path and write the CI summary."""
+    report_name = config.getoption(name="timing_json_file", default=None)
+    if not isinstance(report_name, str):
+        return
+    write_worker_summary(
+        path=config.rootpath / report_name, terminalreporter=terminalreporter
+    )
+
+
+def write_worker_summary(
+    *, path: Path, terminalreporter: pytest.TerminalReporter
 ) -> None:
     """Summarize the report without changing pytest's outcome on read
     errors.
     """
-    report_name = config.getoption(name="timing_json_file", default=None)
-    if not isinstance(report_name, str):
-        return
     try:
         data = _Report.model_validate_json(
-            json_data=(config.rootpath / report_name).read_text(
-                encoding="utf-8"
-            )
+            json_data=path.read_text(encoding="utf-8")
         )
     except (OSError, ValueError) as error:
         terminalreporter.write_line(

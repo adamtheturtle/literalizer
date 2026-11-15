@@ -7,11 +7,10 @@ from io import StringIO
 from pathlib import Path
 
 import pytest
-from _pytest.terminal import TerminalReporter
 
 from scripts.pytest_worker_timing import (
     completion_tail,
-    pytest_terminal_summary,
+    write_worker_summary,
 )
 
 
@@ -19,21 +18,14 @@ def _summarize(
     *,
     path: Path,
     config: pytest.Config,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> str:
     """Run the adapter against a report and capture its terminal
     output.
     """
-    monkeypatch.setattr(
-        target=config.option,
-        name="timing_json_file",
-        value=str(object=path),
-        raising=False,
-    )
     stream = StringIO()
-    pytest_terminal_summary(
-        terminalreporter=TerminalReporter(config=config, file=stream),
-        config=config,
+    write_worker_summary(
+        path=path,
+        terminalreporter=pytest.TerminalReporter(config=config, file=stream),
     )
     return stream.getvalue()
 
@@ -46,7 +38,6 @@ def test_no_workers_have_zero_release_tail() -> None:
 def test_public_report_preserves_ci_summary(
     tmp_path: Path,
     request: pytest.FixtureRequest,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Preserve the summary schema, worker errors, and aggregate release
     tail.
@@ -80,9 +71,7 @@ def test_public_report_preserves_ci_summary(
         ),
         encoding="utf-8",
     )
-    output = _summarize(
-        path=path, config=request.config, monkeypatch=monkeypatch
-    )
+    output = _summarize(path=path, config=request.config)
     assert output.splitlines()[-1] == json.dumps(
         obj={
             "collection_finished_seconds": {
@@ -104,7 +93,6 @@ def test_public_report_preserves_ci_summary(
 def test_report_read_error_is_nonfatal(
     tmp_path: Path,
     request: pytest.FixtureRequest,
-    monkeypatch: pytest.MonkeyPatch,
     contents: str | None,
 ) -> None:
     """Missing or malformed telemetry must not raise during pytest's
@@ -113,7 +101,5 @@ def test_report_read_error_is_nonfatal(
     path = tmp_path / "timing.json"
     if contents is not None:
         _ = path.write_text(data=contents, encoding="utf-8")
-    output = _summarize(
-        path=path, config=request.config, monkeypatch=monkeypatch
-    )
+    output = _summarize(path=path, config=request.config)
     assert "worker timing summary unavailable:" in output
