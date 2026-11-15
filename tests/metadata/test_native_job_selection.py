@@ -142,9 +142,10 @@ def test_backend_modules_are_independent() -> None:
         for node in ast.walk(node=ast.parse(source=path.read_text())):
             if isinstance(node, ast.ImportFrom):
                 assert node.level == 0, path
-                assert not (node.module or "").startswith(
-                    "literalizer.languages",
-                ), path
+                assert node.module is not None, path
+                assert not node.module.startswith("literalizer.languages"), (
+                    path
+                )
                 assert not (
                     node.module == "literalizer"
                     and any(alias.name == "languages" for alias in node.names)
@@ -163,14 +164,14 @@ def test_native_helper_dependencies_preserve_consumers(
     owners: defaultdict[str, set[str]] = defaultdict(set[str])
     for job, patterns in native_filters.items():
         if job != "full":
-            for path in patterns[1:]:
-                owners[path].add(job)
+            for owned_path in patterns[1:]:
+                owners[owned_path].add(job)
     for path in (_ROOT / "scripts").glob(pattern="*.py"):
         tree = ast.parse(source=path.read_text())
         for module in _script_imports(tree=tree):
             dependency = module.replace(".", "/") + ".py"
             if dependency in owners:
-                importer = path.relative_to(_ROOT).as_posix()
+                importer = path.as_posix().removeprefix(f"{_ROOT.as_posix()}/")
                 assert importer in owners, (importer, dependency)
                 assert owners[importer] <= owners[dependency], (
                     importer,
@@ -185,8 +186,9 @@ def _script_imports(*, tree: ast.AST) -> set[str]:
         if isinstance(node, ast.ImportFrom):
             if node.module == "scripts":
                 modules.update(f"scripts.{alias.name}" for alias in node.names)
-            elif (node.module or "").startswith("scripts."):
-                assert node.module is not None
+            elif node.module is not None and node.module.startswith(
+                "scripts."
+            ):
                 modules.add(node.module)
         elif isinstance(node, ast.Import):
             modules.update(
@@ -212,7 +214,9 @@ def test_native_code_does_not_import_ignored_tests() -> None:
                 continue
             for node in ast.walk(node=ast.parse(source=path.read_text())):
                 if isinstance(node, ast.ImportFrom):
-                    assert not (node.module or "").startswith(ignored), path
+                    assert node.module is None or not node.module.startswith(
+                        ignored
+                    ), path
                     if node.module == "tests":
                         assert all(
                             f"tests.{alias.name}" not in ignored
