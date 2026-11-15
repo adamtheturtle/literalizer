@@ -1,104 +1,470 @@
 ---
-# Only versioned goldens and documentation can narrow native CI coverage.
-# Any other path selects every job. Keep the full filter in sync with the
-# job filters below; the metadata test checks their extension sets.
+# Named backends and directly invoked native helpers select their consumers.
+# Shared source, harnesses, inputs/manifests, dependencies and unknown paths
+# retain full coverage. Python tests and pre-commit still run normally.
 full:
+  - '**'
   - '!docs/**'
   - '!newsfragments/**'
   - '!README.rst'
   - '!CHANGELOG.md'
   - '!LICENSE'
   - '!tests/integration/cases/*/*@*.{R,adb,c,clj,cob,cpp,cr,cs,d,dart,dhall,elm,erl,ex,f90,fs,fsi,fth,gleam,go,groovy,hcl,hs,hx,java,jl,js,json5,jsonc,jsonnet,kts,lisp,lua,m,ml,mojo,nim,nix,norg,occ,odin,php,pl,ps1,purs,py,raku,rb,rkt,roc,rs,scala,scm,sh,sml,sv,swift,tcl,toml,ts,v,vb,wren,yaml,zig}'
+  - '!tests/benchmarks/**'
+  - '!tests/errors/**'
+  - '!tests/metadata/**'
+  - '!tests/runtime/**'
+  - '!tests/unit_cases/**'
+  - '!scripts/check_ada_syntax.py'
+  - '!scripts/check_elm_syntax.py'
+  - '!scripts/check_erlang_binary_programs.py'
+  - '!scripts/check_gleam_syntax.py'
+  - '!scripts/check_jsonc_syntax.py'
+  - '!scripts/check_matlab_fixture_execution.py'
+  - '!scripts/check_occam_syntax.py'
+  - '!scripts/check_purescript_syntax.py'
+  - '!scripts/check_toml_syntax.py'
+  - '!scripts/check_typescript_consumers.py'
+  - '!scripts/check_v_syntax.py'
+  - '!scripts/lint-cpp-fixture.sh'
+  - '!scripts/lint-mojo.sh'
+  - '!scripts/lint-odin-fixture.sh'
+  - '!scripts/run_ada.py'
+  - '!scripts/run_ada_roundtrip.py'
+  - '!scripts/run_bash_roundtrip.py'
+  - '!scripts/run_c_roundtrip.py'
+  - '!scripts/run_clojure_roundtrip.py'
+  - '!scripts/run_cobol_roundtrip.py'
+  - '!scripts/run_common_lisp_roundtrip.py'
+  - '!scripts/run_cpp_roundtrip.py'
+  - '!scripts/run_cpp_shared_record.py'
+  - '!scripts/run_crystal_roundtrip.py'
+  - '!scripts/run_csharp_roundtrip.py'
+  - '!scripts/run_d_roundtrip.py'
+  - '!scripts/run_dart_fixtures.py'
+  - '!scripts/run_dart_roundtrip.py'
+  - '!scripts/run_dhall_roundtrip.py'
+  - '!scripts/run_elixir_roundtrip.py'
+  - '!scripts/run_elm.py'
+  - '!scripts/run_elm_roundtrip.py'
+  - '!scripts/run_erlang_roundtrip.py'
+  - '!scripts/run_forth_roundtrip.py'
+  - '!scripts/run_fortran_roundtrip.py'
+  - '!scripts/run_fsharp_roundtrip.py'
+  - '!scripts/run_gleam.py'
+  - '!scripts/run_gleam_roundtrip.py'
+  - '!scripts/run_go_roundtrip.py'
+  - '!scripts/run_go_shared_record.py'
+  - '!scripts/run_groovy_roundtrip.py'
+  - '!scripts/run_haskell_roundtrip.py'
+  - '!scripts/run_haxe_roundtrip.py'
+  - '!scripts/run_hcl_roundtrip.py'
+  - '!scripts/run_java_roundtrip.py'
+  - '!scripts/run_javascript_roundtrip.py'
+  - '!scripts/run_json5_roundtrip.py'
+  - '!scripts/run_jsonnet_roundtrip.py'
+  - '!scripts/run_julia_roundtrip.py'
+  - '!scripts/run_kotlin_roundtrip.py'
+  - '!scripts/run_lua_roundtrip.py'
+  - '!scripts/run_matlab_fixtures.py'
+  - '!scripts/run_matlab_roundtrip.py'
+  - '!scripts/run_mojo_roundtrip.py'
+  - '!scripts/run_nim_roundtrip.py'
+  - '!scripts/run_nix_roundtrip.py'
+  - '!scripts/run_norg_roundtrip.py'
+  - '!scripts/run_objective_c_roundtrip.py'
+  - '!scripts/run_ocaml_roundtrip.py'
+  - '!scripts/run_odin_roundtrip.py'
+  - '!scripts/run_perl_roundtrip.py'
+  - '!scripts/run_php_roundtrip.py'
+  - '!scripts/run_powershell_roundtrip.py'
+  - '!scripts/run_purescript.py'
+  - '!scripts/run_purescript_roundtrip.py'
+  - '!scripts/run_r_roundtrip.py'
+  - '!scripts/run_racket_roundtrip.py'
+  - '!scripts/run_raku_roundtrip.py'
+  - '!scripts/run_roc_roundtrip.py'
+  - '!scripts/run_ruby_roundtrip.py'
+  - '!scripts/run_rust_roundtrip.py'
+  - '!scripts/run_rust_shared_record.py'
+  - '!scripts/run_scala_roundtrip.py'
+  - '!scripts/run_scheme_roundtrip.py'
+  - '!scripts/run_sml_roundtrip.py'
+  - '!scripts/run_swift_roundtrip.py'
+  - '!scripts/run_systemverilog_roundtrip.py'
+  - '!scripts/run_tcl_roundtrip.py'
+  - '!scripts/run_toml_roundtrip.py'
+  - '!scripts/run_typescript_roundtrip.py'
+  - '!scripts/run_v_roundtrip.py'
+  - '!scripts/run_vb_roundtrip.py'
+  - '!scripts/run_wren_roundtrip.py'
+  - '!scripts/run_yaml_roundtrip.py'
+  - '!scripts/run_zig_roundtrip.py'
+  - '!scripts/swift-gpg.sh'
+  - '!scripts/test-swift-gpg.sh'
+  - '!src/literalizer/languages/ada.py'
+  - '!src/literalizer/languages/bash.py'
+  - '!src/literalizer/languages/c.py'
+  - '!src/literalizer/languages/clojure.py'
+  - '!src/literalizer/languages/cobol.py'
+  - '!src/literalizer/languages/common_lisp.py'
+  - '!src/literalizer/languages/cpp.py'
+  - '!src/literalizer/languages/crystal.py'
+  - '!src/literalizer/languages/csharp.py'
+  - '!src/literalizer/languages/d.py'
+  - '!src/literalizer/languages/dart.py'
+  - '!src/literalizer/languages/dhall.py'
+  - '!src/literalizer/languages/elixir.py'
+  - '!src/literalizer/languages/elm.py'
+  - '!src/literalizer/languages/erlang.py'
+  - '!src/literalizer/languages/forth.py'
+  - '!src/literalizer/languages/fortran.py'
+  - '!src/literalizer/languages/fsharp.py'
+  - '!src/literalizer/languages/gleam.py'
+  - '!src/literalizer/languages/go.py'
+  - '!src/literalizer/languages/groovy.py'
+  - '!src/literalizer/languages/haskell.py'
+  - '!src/literalizer/languages/haxe.py'
+  - '!src/literalizer/languages/hcl.py'
+  - '!src/literalizer/languages/java.py'
+  - '!src/literalizer/languages/javascript.py'
+  - '!src/literalizer/languages/json5.py'
+  - '!src/literalizer/languages/jsonc.py'
+  - '!src/literalizer/languages/jsonnet.py'
+  - '!src/literalizer/languages/julia.py'
+  - '!src/literalizer/languages/kotlin.py'
+  - '!src/literalizer/languages/lua.py'
+  - '!src/literalizer/languages/matlab.py'
+  - '!src/literalizer/languages/mojo.py'
+  - '!src/literalizer/languages/nim.py'
+  - '!src/literalizer/languages/nix.py'
+  - '!src/literalizer/languages/norg.py'
+  - '!src/literalizer/languages/objective_c.py'
+  - '!src/literalizer/languages/ocaml.py'
+  - '!src/literalizer/languages/occam.py'
+  - '!src/literalizer/languages/odin.py'
+  - '!src/literalizer/languages/perl.py'
+  - '!src/literalizer/languages/php.py'
+  - '!src/literalizer/languages/powershell.py'
+  - '!src/literalizer/languages/purescript.py'
+  - '!src/literalizer/languages/python.py'
+  - '!src/literalizer/languages/r.py'
+  - '!src/literalizer/languages/racket.py'
+  - '!src/literalizer/languages/raku.py'
+  - '!src/literalizer/languages/roc.py'
+  - '!src/literalizer/languages/ruby.py'
+  - '!src/literalizer/languages/rust.py'
+  - '!src/literalizer/languages/scala.py'
+  - '!src/literalizer/languages/scheme.py'
+  - '!src/literalizer/languages/sml.py'
+  - '!src/literalizer/languages/swift.py'
+  - '!src/literalizer/languages/systemverilog.py'
+  - '!src/literalizer/languages/tcl.py'
+  - '!src/literalizer/languages/toml.py'
+  - '!src/literalizer/languages/typescript.py'
+  - '!src/literalizer/languages/v.py'
+  - '!src/literalizer/languages/vb.py'
+  - '!src/literalizer/languages/wren.py'
+  - '!src/literalizer/languages/yaml.py'
+  - '!src/literalizer/languages/zig.py'
 
 lint-fast:
   - tests/integration/cases/*/*@*.{c,dhall,f90,fth,java,js,lua,nix,php,ps1,rb,scm,sh,tcl,wren}
+  - src/literalizer/languages/bash.py
+  - src/literalizer/languages/c.py
+  - src/literalizer/languages/dhall.py
+  - src/literalizer/languages/forth.py
+  - src/literalizer/languages/fortran.py
+  - src/literalizer/languages/java.py
+  - src/literalizer/languages/javascript.py
+  - src/literalizer/languages/lua.py
+  - src/literalizer/languages/nix.py
+  - src/literalizer/languages/php.py
+  - src/literalizer/languages/powershell.py
+  - src/literalizer/languages/ruby.py
+  - src/literalizer/languages/scheme.py
+  - src/literalizer/languages/tcl.py
+  - src/literalizer/languages/wren.py
+  - scripts/run_bash_roundtrip.py
+  - scripts/run_c_roundtrip.py
+  - scripts/run_dhall_roundtrip.py
+  - scripts/run_forth_roundtrip.py
+  - scripts/run_fortran_roundtrip.py
+  - scripts/run_java_roundtrip.py
+  - scripts/run_javascript_roundtrip.py
+  - scripts/run_lua_roundtrip.py
+  - scripts/run_nix_roundtrip.py
+  - scripts/run_php_roundtrip.py
+  - scripts/run_powershell_roundtrip.py
+  - scripts/run_ruby_roundtrip.py
+  - scripts/run_scheme_roundtrip.py
+  - scripts/run_tcl_roundtrip.py
+  - scripts/run_wren_roundtrip.py
 
-lint-odin: [tests/integration/cases/*/*@*.odin]
+lint-odin:
+  - tests/integration/cases/*/*@*.odin
+  - src/literalizer/languages/odin.py
+  - scripts/lint-odin-fixture.sh
+  - scripts/run_odin_roundtrip.py
 
-lint-roc: [tests/integration/cases/*/*@*.roc]
+lint-roc:
+  - tests/integration/cases/*/*@*.roc
+  - src/literalizer/languages/roc.py
+  - scripts/run_roc_roundtrip.py
 
-lint-matlab: [tests/integration/cases/*/*@*.m]
+lint-matlab:
+  - tests/integration/cases/*/*@*.m
+  - src/literalizer/languages/matlab.py
+  - src/literalizer/languages/objective_c.py
+  - scripts/check_matlab_fixture_execution.py
+  - scripts/run_matlab_fixtures.py
+  - scripts/run_matlab_roundtrip.py
 
-lint-perl: [tests/integration/cases/*/*@*.pl]
+lint-perl:
+  - tests/integration/cases/*/*@*.pl
+  - src/literalizer/languages/perl.py
+  - scripts/run_perl_roundtrip.py
 
-lint-go-installed: ['tests/integration/cases/*/*@*.{hcl,jsonnet}']
+lint-go-installed:
+  - tests/integration/cases/*/*@*.{hcl,jsonnet}
+  - src/literalizer/languages/hcl.py
+  - src/literalizer/languages/jsonnet.py
+  - scripts/run_hcl_roundtrip.py
+  - scripts/run_jsonnet_roundtrip.py
 
-lint-npm-installed: ['tests/integration/cases/*/*@*.{json5,jsonc,norg,ts}']
+lint-npm-installed:
+  - tests/integration/cases/*/*@*.{json5,jsonc,norg,ts}
+  - src/literalizer/languages/json5.py
+  - src/literalizer/languages/jsonc.py
+  - src/literalizer/languages/norg.py
+  - src/literalizer/languages/typescript.py
+  - scripts/check_jsonc_syntax.py
+  - scripts/check_typescript_consumers.py
+  - scripts/run_norg_roundtrip.py
 
-lint-typescript-run: [tests/integration/cases/*/*@*.ts]
+lint-typescript-run:
+  - tests/integration/cases/*/*@*.ts
+  - src/literalizer/languages/typescript.py
+  - scripts/run_typescript_roundtrip.py
 
-lint-elm: [tests/integration/cases/*/*@*.elm]
+lint-elm:
+  - tests/integration/cases/*/*@*.elm
+  - src/literalizer/languages/elm.py
+  - scripts/check_elm_syntax.py
 
-lint-elm-run: [tests/integration/cases/*/*@*.elm]
+lint-elm-run:
+  - tests/integration/cases/*/*@*.elm
+  - src/literalizer/languages/elm.py
+  - scripts/run_elm.py
+  - scripts/run_elm_roundtrip.py
 
-lint-uv-scripts: ['tests/integration/cases/*/*@*.{adb,occ,toml,yaml}']
+lint-uv-scripts:
+  - tests/integration/cases/*/*@*.{adb,occ,toml,yaml}
+  - src/literalizer/languages/ada.py
+  - src/literalizer/languages/occam.py
+  - src/literalizer/languages/toml.py
+  - src/literalizer/languages/yaml.py
+  - scripts/check_ada_syntax.py
+  - scripts/check_occam_syntax.py
+  - scripts/check_toml_syntax.py
+  - scripts/run_ada.py
+  - scripts/run_ada_roundtrip.py
+  - scripts/run_json5_roundtrip.py
+  - scripts/run_toml_roundtrip.py
+  - scripts/run_yaml_roundtrip.py
 
-lint-dotnet: ['tests/integration/cases/*/*@*.{cs,fs,fsi,vb}']
+lint-dotnet:
+  - tests/integration/cases/*/*@*.{cs,fs,fsi,vb}
+  - src/literalizer/languages/csharp.py
+  - src/literalizer/languages/fsharp.py
+  - src/literalizer/languages/vb.py
+  - scripts/run_csharp_roundtrip.py
+  - scripts/run_fsharp_roundtrip.py
+  - scripts/run_vb_roundtrip.py
 
-lint-sml: [tests/integration/cases/*/*@*.sml]
+lint-sml:
+  - tests/integration/cases/*/*@*.sml
+  - src/literalizer/languages/sml.py
+  - scripts/run_sml_roundtrip.py
 
-lint-elixir: [tests/integration/cases/*/*@*.ex]
+lint-elixir:
+  - tests/integration/cases/*/*@*.ex
+  - src/literalizer/languages/elixir.py
+  - scripts/run_elixir_roundtrip.py
 
-lint-erlang: [tests/integration/cases/*/*@*.erl]
+lint-erlang:
+  - tests/integration/cases/*/*@*.erl
+  - src/literalizer/languages/erlang.py
+  - scripts/check_erlang_binary_programs.py
+  - scripts/run_erlang_roundtrip.py
 
-lint-gleam: [tests/integration/cases/*/*@*.gleam]
+lint-gleam:
+  - tests/integration/cases/*/*@*.gleam
+  - src/literalizer/languages/gleam.py
+  - scripts/check_gleam_syntax.py
+  - scripts/run_gleam.py
+  - scripts/run_gleam_roundtrip.py
 
-lint-jvm-mini: ['tests/integration/cases/*/*@*.{clj,groovy}']
+lint-jvm-mini:
+  - tests/integration/cases/*/*@*.{clj,groovy}
+  - src/literalizer/languages/clojure.py
+  - src/literalizer/languages/groovy.py
+  - scripts/run_clojure_roundtrip.py
+  - scripts/run_groovy_roundtrip.py
 
-lint-haskell-family: ['tests/integration/cases/*/*@*.{hs,purs}']
+lint-haskell-family:
+  - tests/integration/cases/*/*@*.{hs,purs}
+  - src/literalizer/languages/haskell.py
+  - src/literalizer/languages/purescript.py
+  - scripts/check_purescript_syntax.py
+  - scripts/run_haskell_roundtrip.py
+  - scripts/run_purescript.py
+  - scripts/run_purescript_roundtrip.py
 
-lint-c-tidy: [tests/integration/cases/*/*@*.c]
+lint-c-tidy:
+  - tests/integration/cases/*/*@*.c
+  - src/literalizer/languages/c.py
 
-build-cpp-toolchain: ['tests/integration/cases/*/*@*.{c,cpp}']
+build-cpp-toolchain:
+  - tests/integration/cases/*/*@*.{c,cpp}
+  - src/literalizer/languages/c.py
+  - src/literalizer/languages/cpp.py
 
-lint-cpp-tidy: [tests/integration/cases/*/*@*.cpp]
+lint-cpp-tidy:
+  - tests/integration/cases/*/*@*.cpp
+  - src/literalizer/languages/cpp.py
+  - scripts/lint-cpp-fixture.sh
 
-lint-cobol: [tests/integration/cases/*/*@*.cob]
+lint-cobol:
+  - tests/integration/cases/*/*@*.cob
+  - src/literalizer/languages/cobol.py
+  - scripts/run_cobol_roundtrip.py
 
-lint-cpp: [tests/integration/cases/*/*@*.cpp]
+lint-cpp:
+  - tests/integration/cases/*/*@*.cpp
+  - src/literalizer/languages/cpp.py
+  - scripts/lint-cpp-fixture.sh
+  - scripts/run_cpp_roundtrip.py
+  - scripts/run_cpp_shared_record.py
 
-lint-kotlin: [tests/integration/cases/*/*@*.kts]
+lint-kotlin:
+  - tests/integration/cases/*/*@*.kts
+  - src/literalizer/languages/kotlin.py
+  - scripts/run_kotlin_roundtrip.py
 
-lint-swift: [tests/integration/cases/*/*@*.swift]
+lint-swift:
+  - tests/integration/cases/*/*@*.swift
+  - src/literalizer/languages/swift.py
+  - scripts/run_swift_roundtrip.py
+  - scripts/swift-gpg.sh
+  - scripts/test-swift-gpg.sh
 
-lint-ocaml: [tests/integration/cases/*/*@*.ml]
+lint-ocaml:
+  - tests/integration/cases/*/*@*.ml
+  - src/literalizer/languages/ocaml.py
+  - scripts/run_ocaml_roundtrip.py
 
-lint-commonlisp: [tests/integration/cases/*/*@*.lisp]
+lint-commonlisp:
+  - tests/integration/cases/*/*@*.lisp
+  - src/literalizer/languages/common_lisp.py
+  - scripts/run_common_lisp_roundtrip.py
 
-lint-scala: [tests/integration/cases/*/*@*.scala]
+lint-scala:
+  - tests/integration/cases/*/*@*.scala
+  - src/literalizer/languages/scala.py
+  - scripts/run_scala_roundtrip.py
 
-lint-haxe: [tests/integration/cases/*/*@*.hx]
+lint-haxe:
+  - tests/integration/cases/*/*@*.hx
+  - src/literalizer/languages/haxe.py
+  - scripts/run_haxe_roundtrip.py
 
-lint-dart: [tests/integration/cases/*/*@*.dart]
+lint-dart:
+  - tests/integration/cases/*/*@*.dart
+  - src/literalizer/languages/dart.py
+  - scripts/run_dart_fixtures.py
+  - scripts/run_dart_roundtrip.py
 
-lint-julia: [tests/integration/cases/*/*@*.jl]
+lint-julia:
+  - tests/integration/cases/*/*@*.jl
+  - src/literalizer/languages/julia.py
+  - scripts/run_julia_roundtrip.py
 
-lint-go: [tests/integration/cases/*/*@*.go]
+lint-go:
+  - tests/integration/cases/*/*@*.go
+  - src/literalizer/languages/go.py
+  - scripts/run_go_roundtrip.py
+  - scripts/run_go_shared_record.py
 
-lint-rust: [tests/integration/cases/*/*@*.rs]
+lint-rust:
+  - tests/integration/cases/*/*@*.rs
+  - src/literalizer/languages/rust.py
+  - scripts/run_rust_roundtrip.py
+  - scripts/run_rust_shared_record.py
 
-lint-r: [tests/integration/cases/*/*@*.R]
+lint-r:
+  - tests/integration/cases/*/*@*.R
+  - src/literalizer/languages/r.py
+  - scripts/run_r_roundtrip.py
 
-lint-d: [tests/integration/cases/*/*@*.d]
+lint-d:
+  - tests/integration/cases/*/*@*.d
+  - src/literalizer/languages/d.py
+  - scripts/run_d_roundtrip.py
 
-lint-crystal: [tests/integration/cases/*/*@*.cr]
+lint-crystal:
+  - tests/integration/cases/*/*@*.cr
+  - src/literalizer/languages/crystal.py
+  - scripts/run_crystal_roundtrip.py
 
-lint-mojo: [tests/integration/cases/*/*@*.mojo]
+lint-mojo:
+  - tests/integration/cases/*/*@*.mojo
+  - src/literalizer/languages/mojo.py
+  - scripts/lint-mojo.sh
+  - scripts/run_mojo_roundtrip.py
 
-lint-nim: [tests/integration/cases/*/*@*.nim]
+lint-nim:
+  - tests/integration/cases/*/*@*.nim
+  - src/literalizer/languages/nim.py
+  - scripts/run_nim_roundtrip.py
 
-lint-python: [tests/integration/cases/*/*@*.py]
+lint-python:
+  - tests/integration/cases/*/*@*.py
+  - src/literalizer/languages/python.py
 
-lint-racket: [tests/integration/cases/*/*@*.rkt]
+lint-racket:
+  - tests/integration/cases/*/*@*.rkt
+  - src/literalizer/languages/racket.py
+  - scripts/run_racket_roundtrip.py
 
-lint-raku: [tests/integration/cases/*/*@*.raku]
+lint-raku:
+  - tests/integration/cases/*/*@*.raku
+  - src/literalizer/languages/raku.py
+  - scripts/run_raku_roundtrip.py
 
-lint-zig: [tests/integration/cases/*/*@*.zig]
+lint-zig:
+  - tests/integration/cases/*/*@*.zig
+  - src/literalizer/languages/zig.py
+  - scripts/run_zig_roundtrip.py
 
-lint-systemverilog: [tests/integration/cases/*/*@*.sv]
+lint-systemverilog:
+  - tests/integration/cases/*/*@*.sv
+  - src/literalizer/languages/systemverilog.py
+  - scripts/run_systemverilog_roundtrip.py
 
-lint-v: [tests/integration/cases/*/*@*.v]
+lint-v:
+  - tests/integration/cases/*/*@*.v
+  - src/literalizer/languages/v.py
+  - scripts/check_v_syntax.py
+  - scripts/run_v_roundtrip.py
 
-lint-objectivec: [tests/integration/cases/*/*@*.m]
+lint-objectivec:
+  - tests/integration/cases/*/*@*.m
+  - src/literalizer/languages/matlab.py
+  - src/literalizer/languages/objective_c.py
+  - scripts/run_objective_c_roundtrip.py
 
-lint-objectivec-tidy: [tests/integration/cases/*/*@*.m]
+lint-objectivec-tidy:
+  - tests/integration/cases/*/*@*.m
+  - src/literalizer/languages/matlab.py
+  - src/literalizer/languages/objective_c.py

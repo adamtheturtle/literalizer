@@ -41,8 +41,8 @@ env:
 # Round-trip budgets include uv's cold project-environment setup. Allow at
 # least three minutes even when executing the generated program is quick.
 jobs:
-  # Filter only PRs with understood inputs. Other events retain full native
-  # coverage; pre-commit and ci.yml's test matrix always run as before.
+  # Filter PRs with understood backend/helper paths. Shared and unknown
+  # changes and non-PR events retain full native coverage.
   native-changes:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -74,7 +74,7 @@ jobs:
           # Use the checked-out merge commit, rather than the PR files API.
           token: ''
           base: ${{ steps.base.outputs.sha }}
-          predicate-quantifier: every
+          predicate-quantifier: some-with-excludes
           filters: .github/native-filters.yml
       - name: Report full-suite fallback
         if: github.event_name == 'pull_request' && steps.filter.outcome != 'success'
