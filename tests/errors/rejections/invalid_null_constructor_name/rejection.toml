@@ -1,0 +1,9 @@
+schema_version = 1
+summary = "Null constructors reject invalid, built-in, or colliding names."
+exceptions = ["IncompatibleFormatsError"]
+gates = [{kind = "spec_field_present", field = "null_constructor_name"}]
+values = ["", "EInt", "LT", "Nothing", "True", "bad.name", "lower"]
+
+[call]
+api = "constructor"
+kwargs = [{kind = "text", kwarg = "null_constructor_name", value = "{value}"}]

@@ -1,0 +1,6 @@
+schema_version = 1
+owner = "variant"
+
+# Named wrapper programs retain the value declaration and data sections.
+[[variants]]
+axis = "program_name"

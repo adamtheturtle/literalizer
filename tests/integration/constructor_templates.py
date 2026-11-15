@@ -11,7 +11,7 @@ def constructor_target_template(
 ) -> str | None:
     """Resolve native syntax, falling back to explicitly shared input."""
     if len(config.target_templates) == 0:
-        return config.target_template
+        return None
     try:
         return config.target_templates[language_name]
     except KeyError as error:

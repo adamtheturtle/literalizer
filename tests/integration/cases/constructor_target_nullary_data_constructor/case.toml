@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "supports_zero_parameter_calls", value = false}, {kind = "spec_field_present", field = "null_constructor_name"}]
+
+# Retain the Elm constructor-target regression without fabricating a call.
+[constructor]
+target_variable = true
+target_variable_name = "my_data"
+target_options = {type_name = "{target}", null_constructor_name = "{target}"}

@@ -1748,6 +1748,20 @@ gates = [
 [special_axes.existing_integer_suffix]
 reason = "Compose caller-suffixed negative integer literals inside native C++ type and value checks."
 
+[axes.program_name]
+plan = "kwarg_values"
+name_template = "{lang}_program_name_{format}"
+kwarg = "program_name"
+values = [{name = "hyphen", value = "my-program"}, {name = "mixed_case", value = "Playlist"}]
+gates = [{kind = "spec_field_present", field = "program_name"}]
+
+[axes.null_constructor_name]
+plan = "kwarg_values"
+name_template = "{lang}_null_constructor_{format}"
+kwarg = "null_constructor_name"
+values = [{name = "empty", value = "Empty"}, {name = "playlist", value = "Playlist"}]
+gates = [{kind = "spec_field_present", field = "null_constructor_name"}]
+
 [special_axes.date_formatter_datetime_view]
 reason = "Feed datetime inputs through Ruby date enum members and check native Gregorian dates."
 

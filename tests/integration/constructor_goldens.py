@@ -10,7 +10,7 @@ from literalizer import NewVariable, literalize, literalize_call
 from .constructor_cases import ConstructorRendering
 from .constructor_templates import constructor_target_template
 from .golden_checks import GoldenSkips, check_golden, format_consumer
-from .language_specs import with_per_fixture_module_name
+from .language_specs import make_spec, with_per_fixture_module_name
 
 
 @beartype
@@ -28,6 +28,18 @@ def run_constructor_binding_golden_case(
     )
     config = manifest.constructor
     assert config is not None  # noqa: S101
+    if len(config.target_options) > 0:
+        language = dataclasses.replace(
+            language,
+            **{
+                key: value.format(
+                    target=language.format_constructor_target(
+                        config.class_name
+                    )
+                )
+                for key, value in config.target_options.items()
+            },
+        )
     consumer_template = config.consumer_for_language(
         language_name=case.lang_cls.__name__
     )
@@ -49,10 +61,18 @@ def run_constructor_binding_golden_case(
         result = literalize(
             source=target_source,
             input_format=input_format,
-            language=language,
+            language=(
+                language
+                if config.target_language is None
+                else make_spec(lang_cls=config.target_language)
+            ),
             variable_form=(
                 NewVariable(
-                    name=language.format_constructor_target(config.class_name),
+                    name=(
+                        language.format_constructor_target(config.class_name)
+                        if config.target_variable_name is None
+                        else config.target_variable_name
+                    ),
                     modifiers=frozenset(),
                 )
                 if config.target_variable

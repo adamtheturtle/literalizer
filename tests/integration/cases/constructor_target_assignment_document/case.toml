@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "supports_bare_mapping_documents"}, {kind = "capability_flag", flag = "supports_key_value_assignment_documents"}]
+
+# Preserve the HCL/TOML constructor-target assignment regressions through the
+# public variable API instead of spelling their native assignments in templates.
+[constructor]
+target_variable = true

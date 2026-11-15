@@ -108,6 +108,7 @@ from literalizer._language import (
 from literalizer._statements import split_statements
 from literalizer._types import OrderedMap, Scalar, Value
 from literalizer.exceptions import (
+    IncompatibleFormatsError,
     UnrepresentableInputError,
 )
 
@@ -357,6 +358,7 @@ def _build_elm_body_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
+    null_constructor_name: str,
     datetime_type_produced: type,
     indent: str,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
@@ -386,7 +388,7 @@ def _build_elm_body_preamble(
         constructors = [
             constructor
             for type_set, constructor in (
-                (frozenset({type(None)}), f"{p}Null"),
+                (frozenset({type(None)}), null_constructor_name),
                 (frozenset({bool}), f"{p}Bool Bool"),
                 (frozenset(int_types), f"{p}Int Int"),
                 (frozenset({float}), f"{p}Float Float"),
@@ -884,6 +886,9 @@ class Elm(metaclass=LanguageCls):
         constructor_prefix: Prefix for generated constructor names.
             Defaults to ``"E"``, producing constructors like ``ENull``,
             ``EBool``, ``EInt``, etc.
+
+        null_constructor_name: Optional constructor for null values,
+            overriding the prefix-derived name in the generated custom type.
 
         dict_format: ``RECORD`` emits native Elm records for valid
             string-keyed fields and lets Elm infer their structural type.
@@ -1442,7 +1447,49 @@ class Elm(metaclass=LanguageCls):
     indent: str = "    "
     type_name: str = "Val"
     constructor_prefix: str = "E"
+    null_constructor_name: str | None = None
     json_type: JsonTypes | None = None
+
+    def __post_init__(self) -> None:
+        """Validate a custom constructor before generating its type."""
+        name = self.null_constructor_name
+        if name is None:
+            return
+        if self.json_type is not None:
+            msg = "Elm null_constructor_name cannot be combined with json_type"
+            raise IncompatibleFormatsError(msg)
+        occupied = {
+            "True",
+            "False",
+            "Nothing",
+            "Just",
+            "LT",
+            "EQ",
+            "GT",
+            "Ok",
+            "Err",
+            *(
+                self.constructor_prefix + suffix
+                for suffix in (
+                    "Bool",
+                    "Int",
+                    "Float",
+                    "Str",
+                    "List",
+                    "Dict",
+                    "Set",
+                )
+            ),
+        }
+        if (
+            re.fullmatch(pattern=r"[A-Z][A-Za-z0-9_]*", string=name) is None
+            or name in occupied
+        ):
+            msg = (
+                "Elm null_constructor_name must be an available "
+                "constructor identifier"
+            )
+            raise IncompatibleFormatsError(msg)
 
     indent_closing_delimiter: ClassVar[bool] = True
     element_separator: ClassVar[str] = ", "
@@ -1549,7 +1596,11 @@ class Elm(metaclass=LanguageCls):
         """Literal representing ``None``."""
         if self._json_active:
             return _JSON_ENC_NULL
-        return f"{self.constructor_prefix}Null"
+        return (
+            f"{self.constructor_prefix}Null"
+            if self.null_constructor_name is None
+            else self.null_constructor_name
+        )
 
     @cached_property
     @beartype
@@ -1999,6 +2050,7 @@ class Elm(metaclass=LanguageCls):
         return _build_elm_body_preamble(
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
+            null_constructor_name=self.null_literal,
             datetime_type_produced=self.datetime_format.value.type_produced,
             indent=self.indent,
         )
