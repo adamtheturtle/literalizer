@@ -1,6 +1,5 @@
 """Parse fixture inputs and inspect their values during case discovery."""
 
-import datetime as dt
 import json
 import math
 import tomllib
@@ -20,29 +19,22 @@ from literalizer._language import NewVariableNameSyntax
 from tests.yaml_support import as_yaml_parser
 
 from .case_inputs import CaseInput
+from .parsed_values import Scalar
 from .yaml_warnings import expected_yaml_warnings
 
-# Every scalar a parser can yield: JSON/JSON5 -> str/int/float/bool/
-# None; TOML adds date/datetime/time; YAML via ruamel adds those plus
-# bytes (``!!binary``).  Mirrors ``literalizer._types.Scalar`` but is
-# spelled out so strict pyright keeps it fully known (the ruamel
-# library ships no type stubs).
-type _CaseScalar = (
-    str | int | float | bool | dt.date | dt.datetime | dt.time | bytes | None
-)
 # Parsed case data.  ``load_case_data`` parses YAML with the ``safe``
 # loader (and JSON/JSON5/TOML natively), so containers are plain
 # ``dict``/``list``/``set`` rather than the ruamel comment-tracking
 # subclasses; a precise model keeps ``@beartype`` accurate and strict
 # pyright/ty fully resolved.
 type CaseData = (
-    _CaseScalar
+    Scalar
     # A YAML ``!!pairs`` node resolves to a list of two-tuples.
     | tuple[object, CaseData]
     | list[CaseData]
     | dict[object, CaseData]
-    | set[_CaseScalar]
-    | frozenset[_CaseScalar]
+    | set[Scalar]
+    | frozenset[Scalar]
 )
 
 
