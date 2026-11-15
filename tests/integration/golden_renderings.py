@@ -69,40 +69,24 @@ class GoldenRendering:
     consumer_template: str | None
 
     @property
-    def versions(self) -> tuple[enum.Enum, ...]:
-        """Return the language versions this rendering covers.
-
-        A pinned spec names the one version it was built for; anything
-        else renders a golden per member of the language's
-        ``VersionFormats``.
-        """
-        pinned = self.spec_source
-        if isinstance(pinned, literalizer.Language):
-            return (pinned.language_version,)
-        return tuple(self.lang_cls.VersionFormats)
-
-    def spec_for(self, *, version: enum.Enum) -> literalizer.Language:
-        """Return the spec this rendering uses for *version*."""
-        pinned = self.spec_source
-        if isinstance(pinned, literalizer.Language):
-            return pinned
-        return make_spec(
-            lang_cls=self.lang_cls,
-            language_version=version,
-            **pinned,
-        )
-
-    @property
     def specs(self) -> tuple[literalizer.Language, ...]:
-        """Return the effective specs exercised by the golden runner.
+        """Return each effective language version this rendering covers.
 
-        An override may require a newer language version (for example,
-        Java records require JDK16). Keep only the iteration for that
-        effective version, so earlier versions cannot own phantom files.
+        A pinned spec is used unchanged. Constructor overrides expand
+        across supported versions, keeping only the iteration matching
+        the effective version when an option raises the version floor.
+        Scheduling, rendering and fixture ownership all use this view.
         """
+        source = self.spec_source
+        if isinstance(source, literalizer.Language):
+            return (source,)
         specs: list[literalizer.Language] = []
-        for version in self.versions:
-            spec = self.spec_for(version=version)
+        for version in self.lang_cls.VersionFormats:
+            spec = make_spec(
+                lang_cls=self.lang_cls,
+                language_version=version,
+                **source,
+            )
             if spec.language_version is version:
                 specs.append(spec)
         return tuple(specs)

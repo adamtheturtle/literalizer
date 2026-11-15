@@ -83,10 +83,9 @@ def test_language_instance_is_thread_safe(scenario: _ThreadCase) -> None:
         scenario.case_names
     )
     cases: list[StateGolden] = []
-    for version in renderings[0].versions:
-        shared_language = dataclasses.replace(
-            renderings[0].spec_for(version=version)
-        )
+    for spec in renderings[0].specs:
+        shared_language = dataclasses.replace(spec)
+        version = shared_language.language_version
         cases.extend(
             read_state_golden(
                 rendering=rendering,

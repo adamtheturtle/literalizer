@@ -42,7 +42,7 @@ def batch_renderings(
     current: list[GoldenRendering] = []
     versions = 0
     for rendering in renderings:
-        cost = len(rendering.versions)
+        cost = len(rendering.specs)
         if len(current) > 0 and versions + cost > max_versions:
             batches.append(tuple(current))
             current = []

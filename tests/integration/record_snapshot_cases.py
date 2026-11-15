@@ -63,7 +63,7 @@ def record_snapshot_golden_paths(*, cases_dir: Path) -> set[Path]:
     cases.
     """
     return {
-        case.golden_path(cases_dir=cases_dir, version=version)
+        case.golden_path(cases_dir=cases_dir, version=spec.language_version)
         for case in RECORD_SNAPSHOT_CASES
-        for version in snapshot_rendering(case=case).versions
+        for spec in snapshot_rendering(case=case).specs
     }
