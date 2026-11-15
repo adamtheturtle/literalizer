@@ -1,0 +1,204 @@
+---
+# Native jobs match their fixture types plus these shared inputs.
+shared: &shared
+  - src/**
+  - scripts/**
+  - tests/*.py
+  - tests/integration/*.py
+  - tests/integration/*.toml
+  - tests/integration/languages/**
+  - tests/integration/cases/**/case.toml
+  - tests/integration/cases/**/input.*
+  - ci/**
+  - .github/workflows/lint.yml
+  - .github/native-filters.yml
+  - .github/npm-linters/**
+  - .clang-tidy
+  - .clj-kondo/**
+  - pyproject.toml
+  - uv.lock
+
+lint-fast:
+  - *shared
+  - tests/integration/cases/**/*.{c,dhall,f90,fth,java,js,lua,nix,php,ps1,rb,scm,sh,tcl,wren}
+  - CheckJavaSyntax.java
+
+lint-odin:
+  - *shared
+  - tests/integration/cases/**/*.odin
+
+lint-roc:
+  - *shared
+  - tests/integration/cases/**/*.roc
+
+lint-matlab:
+  - *shared
+  - tests/integration/cases/**/*.m
+
+lint-perl:
+  - *shared
+  - tests/integration/cases/**/*.pl
+
+lint-go-installed:
+  - *shared
+  - tests/integration/cases/**/*.{hcl,jsonnet}
+
+lint-npm-installed:
+  - *shared
+  - tests/integration/cases/**/*.{json5,jsonc,norg,ts}
+
+lint-typescript-run:
+  - *shared
+  - tests/integration/cases/**/*.ts
+
+lint-elm:
+  - *shared
+  - tests/integration/cases/**/*.elm
+
+lint-elm-run:
+  - *shared
+  - tests/integration/cases/**/*.elm
+
+lint-uv-scripts:
+  - *shared
+  - tests/integration/cases/**/*.{adb,occ,toml,yaml}
+
+lint-dotnet:
+  - *shared
+  - tests/integration/cases/**/*.{cs,fs,fsi,vb}
+
+lint-sml:
+  - *shared
+  - tests/integration/cases/**/*.sml
+
+lint-elixir:
+  - *shared
+  - tests/integration/cases/**/*.ex
+
+lint-erlang:
+  - *shared
+  - tests/integration/cases/**/*.erl
+
+lint-gleam:
+  - *shared
+  - tests/integration/cases/**/*.gleam
+
+lint-jvm-mini:
+  - *shared
+  - tests/integration/cases/**/*.{clj,groovy}
+
+lint-haskell-family:
+  - *shared
+  - tests/integration/cases/**/*.{hs,purs}
+
+lint-c-tidy:
+  - *shared
+  - tests/integration/cases/**/*.c
+
+build-cpp-toolchain:
+  - *shared
+  - tests/integration/cases/**/*.{c,cpp}
+
+lint-cpp-tidy:
+  - *shared
+  - tests/integration/cases/**/*.cpp
+
+lint-cobol:
+  - *shared
+  - tests/integration/cases/**/*.cob
+
+lint-cpp:
+  - *shared
+  - tests/integration/cases/**/*.cpp
+
+lint-kotlin:
+  - *shared
+  - tests/integration/cases/**/*.kts
+
+lint-swift:
+  - *shared
+  - tests/integration/cases/**/*.swift
+
+lint-ocaml:
+  - *shared
+  - tests/integration/cases/**/*.ml
+
+lint-commonlisp:
+  - *shared
+  - tests/integration/cases/**/*.lisp
+
+lint-scala:
+  - *shared
+  - tests/integration/cases/**/*.scala
+
+lint-haxe:
+  - *shared
+  - tests/integration/cases/**/*.hx
+
+lint-dart:
+  - *shared
+  - tests/integration/cases/**/*.dart
+
+lint-julia:
+  - *shared
+  - tests/integration/cases/**/*.jl
+
+lint-go:
+  - *shared
+  - tests/integration/cases/**/*.go
+
+lint-rust:
+  - *shared
+  - tests/integration/cases/**/*.rs
+
+lint-r:
+  - *shared
+  - tests/integration/cases/**/*.R
+
+lint-d:
+  - *shared
+  - tests/integration/cases/**/*.d
+
+lint-crystal:
+  - *shared
+  - tests/integration/cases/**/*.cr
+
+lint-mojo:
+  - *shared
+  - tests/integration/cases/**/*.mojo
+
+lint-nim:
+  - *shared
+  - tests/integration/cases/**/*.nim
+
+lint-python:
+  - *shared
+  - tests/integration/cases/**/*.py
+
+lint-racket:
+  - *shared
+  - tests/integration/cases/**/*.rkt
+
+lint-raku:
+  - *shared
+  - tests/integration/cases/**/*.raku
+
+lint-zig:
+  - *shared
+  - tests/integration/cases/**/*.zig
+
+lint-systemverilog:
+  - *shared
+  - tests/integration/cases/**/*.sv
+
+lint-v:
+  - *shared
+  - tests/integration/cases/**/*.v
+
+lint-objectivec:
+  - *shared
+  - tests/integration/cases/**/*.m
+
+lint-objectivec-tidy:
+  - *shared
+  - tests/integration/cases/**/*.m

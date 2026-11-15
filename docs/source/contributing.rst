@@ -99,6 +99,11 @@ Golden case manifests
 Every directory under :file:`tests/integration/cases/` contains a versioned :file:`case.toml`.
 The manifest is the source of truth for the input's suite, variant-axis and ``literalize_call`` coverage; language capability checks and expansion remain in the typed Python runner.
 
+Portable scenarios discover every supported language and version.
+Narrow participation through declared capabilities, supported options or concrete syntax contracts.
+Root, reference and call manifests reject the legacy ``languages`` and ``languages_reason`` fields.
+Manifests and variant axes also reject ``language_id`` metadata gates; language IDs remain available for fixture naming and toolchain routing.
+
 A YAML case that deliberately reuses an anchor declares its expected parser warning:
 
 .. code-block:: toml

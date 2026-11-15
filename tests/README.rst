@@ -14,9 +14,12 @@ The Python tests below retain contracts that a fixed compiling example cannot re
 * ``integration`` contains the golden rendering drivers and the multiline golden execution oracle.
   Concurrent YAML renders are compared against those same compiling goldens.
   Its supporting modules build the cases, while ``integration/harness`` checks discovery, manifests, ownership, version selection, and regeneration behavior.
+  See `Golden cases <integration/README.rst>`_ for authoring, regeneration commands and a map of the harness.
 * ``benchmarks`` measures rendering performance.
 
 Shared Python helpers live directly under ``tests``, with declarative unit data in ``unit_cases`` and rejection data in ``errors/rejections``.
 
 Run the ordinary suite with ``UV_PYTHON=3.14 uvx uv@0.13.0 run --group=dev pytest --ignore=tests/benchmarks``.
 A directory can also be selected directly, for example ``UV_PYTHON=3.14 uvx uv@0.13.0 run --group=dev pytest tests/stress``.
+
+The historical golden-selection migration is reconciled in ``integration/selection-migration-audit.md``.

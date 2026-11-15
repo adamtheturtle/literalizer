@@ -41,22 +41,24 @@ env:
 # Round-trip budgets include uv's cold project-environment setup. Allow at
 # least three minutes even when executing the generated program is quick.
 jobs:
-  # Filter only PRs with understood inputs. Other events retain full native
-  # coverage; pre-commit and ci.yml's test matrix always run as before.
   native-changes:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
-      jobs: ${{ steps.select.outputs.jobs }}
+      jobs: ${{ steps.filter.outputs.changes || '[]' }}
     steps:
       - uses: actions/checkout@v7
+        if: github.event_name == 'pull_request'
         with:
           persist-credentials: false
-          # PR checkout is a merge commit. Include its first parent (base).
-          fetch-depth: 2
-      - name: Select native jobs
-        id: select
-        run: python3 -m scripts.select_native_jobs
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
+        if: github.event_name == 'pull_request'
+        id: filter
+        with:
+          filters: .github/native-filters.yml
 
   pre-commit:
     strategy:
@@ -110,7 +112,9 @@ jobs:
   # time on runner startup than on linting.
   lint-fast:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-fast')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-fast')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -721,7 +725,9 @@ jobs:
   # room for cold roundtrip setup within the existing job timeout.
   lint-odin:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-odin')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-odin')
     strategy:
       fail-fast: false
       matrix:
@@ -785,7 +791,9 @@ jobs:
 
   lint-roc:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-roc')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-roc')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Roc has no stable release, and the upstream ``nightly`` GitHub
@@ -864,7 +872,9 @@ jobs:
   # scripts/run_matlab_fixtures.py.
   lint-matlab:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-matlab')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-matlab')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Use a prebuilt Octave image instead of `apt-get install octave`, which
@@ -914,7 +924,9 @@ jobs:
 
   lint-perl:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-perl')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-perl')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -965,7 +977,9 @@ jobs:
   # Fixture languages linted by small tools fetched via `go install`.
   lint-go-installed:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-go-installed')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-go-installed')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1021,7 +1035,9 @@ jobs:
   # serializing.
   lint-npm-installed:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-npm-installed')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-npm-installed')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1113,7 +1129,9 @@ jobs:
   # check instead of after it.
   lint-typescript-run:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-typescript-run')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-typescript-run')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1165,7 +1183,9 @@ jobs:
   # meaningful wall-clock for ~10-15s of extra setup.
   lint-elm:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-elm')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-elm')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1207,7 +1227,9 @@ jobs:
   # execute pass runs in parallel with the format + compile-only pass.
   lint-elm-run:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-elm-run')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-elm-run')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1252,7 +1274,9 @@ jobs:
   # Fixture languages whose check is a small `uv run python ...` helper.
   lint-uv-scripts:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-uv-scripts')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-uv-scripts')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1376,7 +1400,9 @@ jobs:
   # steps so the .NET runtime startup is paid once for the whole job.
   lint-dotnet:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-dotnet')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-dotnet')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1471,7 +1497,9 @@ jobs:
 
   lint-sml:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-sml')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-sml')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1524,7 +1552,9 @@ jobs:
 
   lint-elixir:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-elixir')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-elixir')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Elixir fixture on disk carries the tag from
@@ -1577,7 +1607,9 @@ jobs:
 
   lint-erlang:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-erlang')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-erlang')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Erlang fixture on disk carries the tag from
@@ -1630,7 +1662,9 @@ jobs:
 
   lint-gleam:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-gleam')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-gleam')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Gleam fixture on disk carries the tag from
@@ -1708,7 +1742,9 @@ jobs:
   # Small JVM-based lints that each do a quick action install.
   lint-jvm-mini:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-jvm-mini')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-jvm-mini')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -1802,7 +1838,9 @@ jobs:
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-haskell-family')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-haskell-family')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -1958,7 +1996,9 @@ jobs:
   # expanding shared designated-initializer subtrees (ci/clang/README.md).
   lint-c-tidy:
     needs: [native-changes, build-cpp-toolchain]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-c-tidy')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-c-tidy')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -2015,7 +2055,9 @@ jobs:
 
   build-cpp-toolchain:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'build-cpp-toolchain')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'build-cpp-toolchain')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2058,7 +2100,9 @@ jobs:
 
   lint-cpp-tidy:
     needs: [native-changes, build-cpp-toolchain]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-cpp-tidy')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-cpp-tidy')
     strategy:
       matrix:
         shard: [0, 1, 2]
@@ -2131,7 +2175,9 @@ jobs:
 
   lint-cobol:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-cobol')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-cobol')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -2214,7 +2260,9 @@ jobs:
 
   lint-cpp:
     needs: [native-changes, build-cpp-toolchain]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-cpp')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-cpp')
     strategy:
       matrix:
         shard: [0, 1, 2]
@@ -2320,7 +2368,9 @@ jobs:
 
   lint-kotlin:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-kotlin')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-kotlin')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # The host uses the compiler bundled with this distribution.
@@ -2410,7 +2460,9 @@ jobs:
 
   lint-swift:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-swift')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-swift')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2478,7 +2530,9 @@ jobs:
 
   lint-ocaml:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-ocaml')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-ocaml')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2552,7 +2606,9 @@ jobs:
 
   lint-commonlisp:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-commonlisp')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-commonlisp')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # The ``LISP`` environment variable pins the SBCL build that
@@ -2617,7 +2673,9 @@ jobs:
 
   lint-scala:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-scala')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-scala')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -2700,7 +2758,9 @@ jobs:
 
   lint-haxe:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-haxe')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-haxe')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2761,7 +2821,9 @@ jobs:
 
   lint-dart:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-dart')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-dart')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2806,7 +2868,9 @@ jobs:
 
   lint-julia:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-julia')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-julia')
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
@@ -2864,7 +2928,9 @@ jobs:
 
   lint-go:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-go')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-go')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2916,7 +2982,9 @@ jobs:
 
   lint-rust:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-rust')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-rust')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -2992,7 +3060,9 @@ jobs:
 
   lint-r:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-r')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-r')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3053,7 +3123,9 @@ jobs:
 
   lint-d:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-d')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-d')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3152,7 +3224,9 @@ jobs:
 
   lint-crystal:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-crystal')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-crystal')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3221,7 +3295,9 @@ jobs:
   # also tries the latest stable release as a non-blocking canary.
   lint-mojo:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-mojo')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-mojo')
     name: lint-mojo (${{ matrix.mojo-version }}, ${{ matrix.shard }})
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -3299,7 +3375,9 @@ jobs:
 
   lint-nim:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-nim')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-nim')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Promote every Nim warning to a CI failure. Nim's
@@ -3437,7 +3515,9 @@ jobs:
   # the project's Python 3.12 floor. Keep each interpreter/tag pair once.
   lint-python:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-python')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-python')
     strategy:
       fail-fast: false
       matrix:
@@ -3481,7 +3561,9 @@ jobs:
 
   lint-racket:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-racket')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-racket')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3525,7 +3607,9 @@ jobs:
 
   lint-raku:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-raku')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-raku')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # The pinned Rakudo ``2026.04`` release implements Raku language
@@ -3580,7 +3664,9 @@ jobs:
 
   lint-zig:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-zig')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-zig')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Every Zig fixture on disk carries the tag from
@@ -3653,7 +3739,9 @@ jobs:
 
   lint-systemverilog:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-systemverilog')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-systemverilog')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3702,7 +3790,9 @@ jobs:
 
   lint-v:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-v')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-v')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -3773,7 +3863,9 @@ jobs:
 
   lint-objectivec:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-objectivec')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-objectivec')
     # ``macos-15`` pins the runner image (the current ``macos-latest``
     # alias) so the Apple ``clang`` it ships stays fixed. That clang
     # supports the Objective-C 2.0 (``V2``) language generation that
@@ -3837,7 +3929,9 @@ jobs:
 
   lint-objectivec-tidy:
     needs: [native-changes]
-    if: contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-objectivec-tidy')
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-objectivec-tidy')
     # ``macos-15`` pins the runner image to match ``lint-objectivec`` so
     # the Apple ``clang`` headers that Homebrew ``clang-tidy`` parses stay
     # fixed against the Objective-C 2.0 (``V2``)
