@@ -1,4 +1,4 @@
-# languages rejecting: 44; languages accepting: 51
+# languages rejecting: 43; languages accepting: 52
 
 [Accepted]
 "Ada['final']" = ""
@@ -29,6 +29,8 @@
 "Hcl['do']" = ""
 "Hcl['final']" = ""
 "JavaScript['final']" = ""
+"Jsonnet['do']" = ""
+"Jsonnet['final']" = ""
 "Julia['final']" = ""
 "Kotlin['final']" = ""
 "Lua['final']" = ""
@@ -131,7 +133,5 @@
 "Json5['final']" = "Json5 does not support variable names: 'final'"
 "Jsonc['do']" = "Jsonc does not support variable names: 'do'"
 "Jsonc['final']" = "Jsonc does not support variable names: 'final'"
-"Jsonnet['do']" = "Jsonnet does not support variable names: 'do'"
-"Jsonnet['final']" = "Jsonnet does not support variable names: 'final'"
 "Yaml['do']" = "Yaml does not support variable names: 'do'"
 "Yaml['final']" = "Yaml does not support variable names: 'final'"

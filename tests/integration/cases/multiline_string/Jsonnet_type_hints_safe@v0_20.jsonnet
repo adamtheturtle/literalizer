@@ -1,4 +1,4 @@
-[
+local my_data = [
     "first line\n  indented\n\nlast line",
     "\nleading newline",
     " \t\nleading whitespace",
@@ -18,4 +18,5 @@
     "Ruby fallback interpolation  \n#{expression} #@instance #$global",
     "NUL followed by a digit: \u00007",
     "carriage\rreturn",
-]
+];
+my_data

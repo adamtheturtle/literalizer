@@ -1,4 +1,4 @@
-# languages rejecting: 18; languages accepting: 60
+# languages rejecting: 17; languages accepting: 61
 
 [Accepted]
 "Ada['isnot']" = ""
@@ -74,6 +74,9 @@
 "Java['yield']" = ""
 "JavaScript['isnot']" = ""
 "JavaScript['notin']" = ""
+"Jsonnet['isnot']" = ""
+"Jsonnet['notin']" = ""
+"Jsonnet['yield']" = ""
 "Julia['isnot']" = ""
 "Julia['notin']" = ""
 "Julia['yield']" = ""
@@ -194,9 +197,6 @@
 "Jsonc['isnot']" = "Jsonc does not support variable names: 'isnot'"
 "Jsonc['notin']" = "Jsonc does not support variable names: 'notin'"
 "Jsonc['yield']" = "Jsonc does not support variable names: 'yield'"
-"Jsonnet['isnot']" = "Jsonnet does not support variable names: 'isnot'"
-"Jsonnet['notin']" = "Jsonnet does not support variable names: 'notin'"
-"Jsonnet['yield']" = "Jsonnet does not support variable names: 'yield'"
 "Yaml['isnot']" = "Yaml does not support variable names: 'isnot'"
 "Yaml['notin']" = "Yaml does not support variable names: 'notin'"
 "Yaml['yield']" = "Yaml does not support variable names: 'yield'"

@@ -1,4 +1,4 @@
-# languages rejecting: 51; languages accepting: 60
+# languages rejecting: 51; languages accepting: 61
 
 [Accepted]
 "Ada['Any']" = ""
@@ -148,6 +148,10 @@
 "JavaScript['as']" = ""
 "JavaScript['nil']" = ""
 "JavaScript['self']" = ""
+"Jsonnet['Any']" = ""
+"Jsonnet['Self']" = ""
+"Jsonnet['as']" = ""
+"Jsonnet['nil']" = ""
 "Julia['Any']" = ""
 "Julia['Self']" = ""
 "Julia['as']" = ""
@@ -408,6 +412,10 @@
 "JavaScript['false']" = "JavaScript cannot use NewVariable name 'false': it is a reserved identifier"
 "JavaScript['in']" = "JavaScript cannot use NewVariable name 'in': it is a reserved identifier"
 "JavaScript['true']" = "JavaScript cannot use NewVariable name 'true': it is a reserved identifier"
+"Jsonnet['false']" = "Jsonnet cannot use NewVariable name 'false': it is a reserved identifier"
+"Jsonnet['in']" = "Jsonnet cannot use NewVariable name 'in': it is a reserved identifier"
+"Jsonnet['self']" = "Jsonnet cannot use NewVariable name 'self': it is a reserved identifier"
+"Jsonnet['true']" = "Jsonnet cannot use NewVariable name 'true': it is a reserved identifier"
 "Julia['false']" = "Julia cannot use NewVariable name 'false': it is a reserved identifier"
 "Julia['true']" = "Julia cannot use NewVariable name 'true': it is a reserved identifier"
 "Kotlin['Any']" = "Kotlin cannot use NewVariable name 'Any': it is a reserved identifier"
@@ -511,14 +519,6 @@
 "Jsonc['nil']" = "Jsonc does not support variable names: 'nil'"
 "Jsonc['self']" = "Jsonc does not support variable names: 'self'"
 "Jsonc['true']" = "Jsonc does not support variable names: 'true'"
-"Jsonnet['Any']" = "Jsonnet does not support variable names: 'Any'"
-"Jsonnet['Self']" = "Jsonnet does not support variable names: 'Self'"
-"Jsonnet['as']" = "Jsonnet does not support variable names: 'as'"
-"Jsonnet['false']" = "Jsonnet does not support variable names: 'false'"
-"Jsonnet['in']" = "Jsonnet does not support variable names: 'in'"
-"Jsonnet['nil']" = "Jsonnet does not support variable names: 'nil'"
-"Jsonnet['self']" = "Jsonnet does not support variable names: 'self'"
-"Jsonnet['true']" = "Jsonnet does not support variable names: 'true'"
 "Yaml['Any']" = "Yaml does not support variable names: 'Any'"
 "Yaml['Self']" = "Yaml does not support variable names: 'Self'"
 "Yaml['as']" = "Yaml does not support variable names: 'as'"

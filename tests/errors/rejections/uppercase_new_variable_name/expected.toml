@@ -1,4 +1,4 @@
-# languages rejecting: 16; languages accepting: 49
+# languages rejecting: 15; languages accepting: 50
 
 [Accepted]
 Ada = ""
@@ -20,6 +20,7 @@ Haxe = ""
 Hcl = ""
 Java = ""
 JavaScript = ""
+Jsonnet = ""
 Julia = ""
 Kotlin = ""
 Lua = ""
@@ -70,5 +71,4 @@ Fortran = "Fortran cannot use NewVariable name 'Value': it is a reserved identif
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'Value'"
 Jsonc = "Jsonc does not support variable names: 'Value'"
-Jsonnet = "Jsonnet does not support variable names: 'Value'"
 Yaml = "Yaml does not support variable names: 'Value'"

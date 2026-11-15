@@ -1,4 +1,4 @@
-{
+local my_data = {
     a: {
         b: [1],
         // Outdented from the sequence, so the inner mapping claims this.
@@ -6,4 +6,5 @@
     },
     // Outdented from the inner mapping too, so the root claims this.
     d: 3,
-}
+};
+my_data

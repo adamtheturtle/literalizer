@@ -1,4 +1,4 @@
-# languages rejecting: 60; languages accepting: 55
+# languages rejecting: 60; languages accepting: 56
 
 [Accepted]
 "Ada['date']" = ""
@@ -117,6 +117,11 @@
 "JavaScript['hash']" = ""
 "JavaScript['list']" = ""
 "JavaScript['set']" = ""
+"Jsonnet['date']" = ""
+"Jsonnet['hash']" = ""
+"Jsonnet['list']" = ""
+"Jsonnet['set']" = ""
+"Jsonnet['void']" = ""
 "Julia['date']" = ""
 "Julia['hash']" = ""
 "Julia['list']" = ""
@@ -284,6 +289,7 @@
 "Hcl['make-keyword-procedure']" = "Hcl cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
 "Java['make-keyword-procedure']" = "Java cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
 "JavaScript['make-keyword-procedure']" = "JavaScript cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
+"Jsonnet['make-keyword-procedure']" = "Jsonnet cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
 "Julia['make-keyword-procedure']" = "Julia cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
 "Kotlin['make-keyword-procedure']" = "Kotlin cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
 "Lua['make-keyword-procedure']" = "Lua cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
@@ -387,12 +393,6 @@
 "Jsonc['make-keyword-procedure']" = "Jsonc does not support variable names: 'make-keyword-procedure'"
 "Jsonc['set']" = "Jsonc does not support variable names: 'set'"
 "Jsonc['void']" = "Jsonc does not support variable names: 'void'"
-"Jsonnet['date']" = "Jsonnet does not support variable names: 'date'"
-"Jsonnet['hash']" = "Jsonnet does not support variable names: 'hash'"
-"Jsonnet['list']" = "Jsonnet does not support variable names: 'list'"
-"Jsonnet['make-keyword-procedure']" = "Jsonnet does not support variable names: 'make-keyword-procedure'"
-"Jsonnet['set']" = "Jsonnet does not support variable names: 'set'"
-"Jsonnet['void']" = "Jsonnet does not support variable names: 'void'"
 "Yaml['date']" = "Yaml does not support variable names: 'date'"
 "Yaml['hash']" = "Yaml does not support variable names: 'hash'"
 "Yaml['list']" = "Yaml does not support variable names: 'list'"

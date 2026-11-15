@@ -1,6 +1,9 @@
 schema_version = 1
 owner = "literalize-call"
 
+# Jsonnet local bindings retire the last rejection from call_variable_form.
+# This shared scalar call retains its count=42 binding as a compiling example.
+
 [call]
 target_function = "make_widget"
 parameter_names = ["count"]

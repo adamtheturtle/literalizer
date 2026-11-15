@@ -1,4 +1,4 @@
-# languages rejecting: 14; languages accepting: 51
+# languages rejecting: 13; languages accepting: 52
 
 [Accepted]
 "Ada['Record0']" = ""
@@ -22,6 +22,7 @@
 "Hcl['Record0']" = ""
 "Java['Record0']" = ""
 "JavaScript['Record0']" = ""
+"Jsonnet['Record0']" = ""
 "Julia['Record0']" = ""
 "Kotlin['Record0']" = ""
 "Lua['Record0']" = ""
@@ -68,5 +69,4 @@
 [VariableNameNotSupportedError]
 "Json5['Record0']" = "Json5 does not support variable names: 'Record0'"
 "Jsonc['Record0']" = "Jsonc does not support variable names: 'Record0'"
-"Jsonnet['Record0']" = "Jsonnet does not support variable names: 'Record0'"
 "Yaml['Record0']" = "Yaml does not support variable names: 'Record0'"

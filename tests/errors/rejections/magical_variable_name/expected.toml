@@ -1,4 +1,4 @@
-# languages rejecting: 19; languages accepting: 46
+# languages rejecting: 18; languages accepting: 47
 
 [Accepted]
 "Ada['ARGV']" = ""
@@ -141,6 +141,13 @@
 "JavaScript['STDERR']" = ""
 "JavaScript['STDIN']" = ""
 "JavaScript['STDOUT']" = ""
+"Jsonnet['ARGV']" = ""
+"Jsonnet['ENV']" = ""
+"Jsonnet['INC']" = ""
+"Jsonnet['SIG']" = ""
+"Jsonnet['STDERR']" = ""
+"Jsonnet['STDIN']" = ""
+"Jsonnet['STDOUT']" = ""
 "Julia['ARGV']" = ""
 "Julia['ENV']" = ""
 "Julia['INC']" = ""
@@ -450,13 +457,6 @@
 "Jsonc['STDERR']" = "Jsonc does not support variable names: 'STDERR'"
 "Jsonc['STDIN']" = "Jsonc does not support variable names: 'STDIN'"
 "Jsonc['STDOUT']" = "Jsonc does not support variable names: 'STDOUT'"
-"Jsonnet['ARGV']" = "Jsonnet does not support variable names: 'ARGV'"
-"Jsonnet['ENV']" = "Jsonnet does not support variable names: 'ENV'"
-"Jsonnet['INC']" = "Jsonnet does not support variable names: 'INC'"
-"Jsonnet['SIG']" = "Jsonnet does not support variable names: 'SIG'"
-"Jsonnet['STDERR']" = "Jsonnet does not support variable names: 'STDERR'"
-"Jsonnet['STDIN']" = "Jsonnet does not support variable names: 'STDIN'"
-"Jsonnet['STDOUT']" = "Jsonnet does not support variable names: 'STDOUT'"
 "Yaml['ARGV']" = "Yaml does not support variable names: 'ARGV'"
 "Yaml['ENV']" = "Yaml does not support variable names: 'ENV'"
 "Yaml['INC']" = "Yaml does not support variable names: 'INC'"

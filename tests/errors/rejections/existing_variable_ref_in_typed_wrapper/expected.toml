@@ -24,6 +24,7 @@ Clojure = "Clojure cannot accept this value as a call argument: Clojure output i
 Cobol = "COBOL cannot accept this value as a call argument: COBOL DATA DIVISION VALUE clauses only accept literals, not identifier references (got 'seed')"
 CommonLisp = "CommonLisp cannot accept this value as a call argument: Common Lisp output is not wrapped in a function body; ``*name*`` references require a surrounding DEFPARAMETER that cannot be injected (got 'seed')"
 Dhall = "Dhall cannot accept this value as a call argument: ref variable 'seed' has a concrete type that cannot be unified with the DVal stub parameter type"
+Jsonnet = "Jsonnet cannot accept this value as a call argument: Jsonnet variable references require a ``local`` preamble that is not generated (got 'seed')"
 Julia = "Julia cannot accept this value as a call argument: Julia output is not wrapped in a function body; variable references require a surrounding assignment that cannot be injected (got 'seed')"
 Racket = "Racket cannot accept this value as a call argument: Racket output is not wrapped in a function body; identifier references require a surrounding ``define`` that cannot be injected (got 'seed')"
 Ruby = "Ruby cannot accept this value as a call argument: Ruby output is not wrapped in a function body; variable references require a surrounding assignment (got 'seed')"
@@ -70,5 +71,4 @@ Zig = "Zig cannot combine ExistingVariable with wrap_in_file=True because the as
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'my_data'"
 Jsonc = "Jsonc does not support variable names: 'my_data'"
-Jsonnet = "Jsonnet does not support variable names: 'my_data'"
 Yaml = "Yaml does not support variable names: 'my_data'"

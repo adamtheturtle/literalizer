@@ -49,6 +49,7 @@ Haskell = "BothVariableForms requires a declaration_style that supports redefini
 Haxe = "BothVariableForms requires a declaration_style that supports redefinition; 'FINAL' does not."
 Hcl = "BothVariableForms requires a declaration_style that supports redefinition; 'ASSIGN' does not."
 JavaScript = "BothVariableForms requires a declaration_style that supports redefinition; 'CONST' does not."
+Jsonnet = "BothVariableForms requires a declaration_style that supports redefinition; 'ASSIGN' does not."
 Kotlin = "BothVariableForms requires a declaration_style that supports redefinition; 'VAL' does not."
 Nix = "BothVariableForms requires a declaration_style that supports redefinition; 'LET' does not."
 Norg = "BothVariableForms requires a declaration_style that supports redefinition; 'BLOCK' does not."
@@ -68,5 +69,4 @@ Zig = "BothVariableForms requires a declaration_style that supports redefinition
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'x'"
 Jsonc = "Jsonc does not support variable names: 'x'"
-Jsonnet = "Jsonnet does not support variable names: 'x'"
 Yaml = "Yaml does not support variable names: 'x'"

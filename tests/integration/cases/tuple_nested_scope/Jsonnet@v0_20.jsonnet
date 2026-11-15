@@ -1,3 +1,4 @@
-{
+local my_data = {
     x: [1, [2, [3]]],
-}
+};
+my_data

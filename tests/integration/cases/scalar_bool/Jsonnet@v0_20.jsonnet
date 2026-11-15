@@ -1,1 +1,2 @@
-true
+local my_data = true;
+my_data

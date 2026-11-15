@@ -1,4 +1,4 @@
-# languages rejecting: 6; languages accepting: 59
+# languages rejecting: 5; languages accepting: 60
 
 [Accepted]
 "Ada['exposing']" = ""
@@ -26,6 +26,7 @@
 "Hcl['exposing']" = ""
 "Java['exposing']" = ""
 "JavaScript['exposing']" = ""
+"Jsonnet['exposing']" = ""
 "Julia['exposing']" = ""
 "Kotlin['exposing']" = ""
 "Lua['exposing']" = ""
@@ -68,5 +69,4 @@
 [VariableNameNotSupportedError]
 "Json5['exposing']" = "Json5 does not support variable names: 'exposing'"
 "Jsonc['exposing']" = "Jsonc does not support variable names: 'exposing'"
-"Jsonnet['exposing']" = "Jsonnet does not support variable names: 'exposing'"
 "Yaml['exposing']" = "Yaml does not support variable names: 'exposing'"

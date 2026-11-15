@@ -1,2 +1,3 @@
-# note
-42
+local my_data = # note
+42;
+my_data

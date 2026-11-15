@@ -58,6 +58,7 @@
 "Haxe['null']" = "Haxe cannot use NewVariable name 'null': it is a reserved identifier"
 "Java['null']" = "Java cannot use NewVariable name 'null': it is a reserved identifier"
 "JavaScript['null']" = "JavaScript cannot use NewVariable name 'null': it is a reserved identifier"
+"Jsonnet['null']" = "Jsonnet cannot use NewVariable name 'null': it is a reserved identifier"
 "Kotlin['null']" = "Kotlin cannot use NewVariable name 'null': it is a reserved identifier"
 "Scala['null']" = "Scala cannot use NewVariable name 'null': it is a reserved identifier"
 "SystemVerilog['null']" = "SystemVerilog cannot use NewVariable name 'null': it is a reserved identifier"
@@ -68,5 +69,4 @@
 [VariableNameNotSupportedError]
 "Json5['null']" = "Json5 does not support variable names: 'null'"
 "Jsonc['null']" = "Jsonc does not support variable names: 'null'"
-"Jsonnet['null']" = "Jsonnet does not support variable names: 'null'"
 "Yaml['null']" = "Yaml does not support variable names: 'null'"

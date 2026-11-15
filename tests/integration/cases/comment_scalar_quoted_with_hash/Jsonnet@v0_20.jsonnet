@@ -1,1 +1,2 @@
-"hello # world"  // note
+local my_data = "hello # world";  // note
+my_data

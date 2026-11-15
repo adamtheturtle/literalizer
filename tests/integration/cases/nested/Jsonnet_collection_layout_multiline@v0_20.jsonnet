@@ -1,4 +1,4 @@
-{
+local my_data = {
     users: [
         {
             name: "Bob",
@@ -14,4 +14,5 @@
             ],
         },
     ],
-}
+};
+my_data

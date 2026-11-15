@@ -1,4 +1,4 @@
-# languages rejecting: 16; languages accepting: 49
+# languages rejecting: 15; languages accepting: 50
 
 [Accepted]
 "Ada['override']" = ""
@@ -21,6 +21,7 @@
 "Hcl['override']" = ""
 "Java['override']" = ""
 "JavaScript['override']" = ""
+"Jsonnet['override']" = ""
 "Julia['override']" = ""
 "Kotlin['override']" = ""
 "Lua['override']" = ""
@@ -70,5 +71,4 @@
 [VariableNameNotSupportedError]
 "Json5['override']" = "Json5 does not support variable names: 'override'"
 "Jsonc['override']" = "Jsonc does not support variable names: 'override'"
-"Jsonnet['override']" = "Jsonnet does not support variable names: 'override'"
 "Yaml['override']" = "Yaml does not support variable names: 'override'"

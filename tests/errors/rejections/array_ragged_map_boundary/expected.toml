@@ -1,4 +1,4 @@
-# languages rejecting: 4; languages accepting: 29
+# languages rejecting: 3; languages accepting: 30
 
 [Accepted]
 "Bash['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
@@ -21,6 +21,8 @@
 "Java['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
 "JavaScript['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
 "JavaScript['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
+"Jsonnet['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
+"Jsonnet['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
 "Julia['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
 "Julia['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = ""
 "Kotlin['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = ""
@@ -69,5 +71,3 @@
 "Json5['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = "Json5 does not support variable names: 'my_data'"
 "Jsonc['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = "Jsonc does not support variable names: 'my_data'"
 "Jsonc['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = "Jsonc does not support variable names: 'my_data'"
-"Jsonnet['{\"a\":[{\"item\":[1]}],\"b\":[{\"item\":[2,3]}]}']" = "Jsonnet does not support variable names: 'my_data'"
-"Jsonnet['{\"a\":[{\"outer\":{\"item\":[1]}}],\"b\":[{\"outer\":{\"item\":[2,3]}}]}']" = "Jsonnet does not support variable names: 'my_data'"

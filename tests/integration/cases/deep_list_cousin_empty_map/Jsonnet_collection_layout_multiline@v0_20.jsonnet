@@ -1,4 +1,4 @@
-[
+local my_data = [
     {
         items: [
             {
@@ -23,4 +23,5 @@
             },
         ],
     },
-]
+];
+my_data

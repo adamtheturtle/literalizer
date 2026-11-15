@@ -1,4 +1,4 @@
-[
+local my_data = [
     {
         outer: {
             inner: {
@@ -11,4 +11,5 @@
             inner: {},
         },
     },
-]
+];
+my_data

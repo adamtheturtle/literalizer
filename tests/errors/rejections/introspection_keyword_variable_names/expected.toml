@@ -1,4 +1,4 @@
-# languages rejecting: 5; languages accepting: 60
+# languages rejecting: 4; languages accepting: 61
 
 [Accepted]
 "Ada['annotation']" = ""
@@ -101,6 +101,10 @@
 "JavaScript['instance_sizeof']" = ""
 "JavaScript['offsetof']" = ""
 "JavaScript['pointerof']" = ""
+"Jsonnet['annotation']" = ""
+"Jsonnet['instance_sizeof']" = ""
+"Jsonnet['offsetof']" = ""
+"Jsonnet['pointerof']" = ""
 "Julia['annotation']" = ""
 "Julia['instance_sizeof']" = ""
 "Julia['offsetof']" = ""
@@ -257,10 +261,6 @@
 "Jsonc['instance_sizeof']" = "Jsonc does not support variable names: 'instance_sizeof'"
 "Jsonc['offsetof']" = "Jsonc does not support variable names: 'offsetof'"
 "Jsonc['pointerof']" = "Jsonc does not support variable names: 'pointerof'"
-"Jsonnet['annotation']" = "Jsonnet does not support variable names: 'annotation'"
-"Jsonnet['instance_sizeof']" = "Jsonnet does not support variable names: 'instance_sizeof'"
-"Jsonnet['offsetof']" = "Jsonnet does not support variable names: 'offsetof'"
-"Jsonnet['pointerof']" = "Jsonnet does not support variable names: 'pointerof'"
 "Yaml['annotation']" = "Yaml does not support variable names: 'annotation'"
 "Yaml['instance_sizeof']" = "Yaml does not support variable names: 'instance_sizeof'"
 "Yaml['offsetof']" = "Yaml does not support variable names: 'offsetof'"

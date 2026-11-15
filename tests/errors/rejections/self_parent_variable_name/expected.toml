@@ -1,4 +1,4 @@
-# languages rejecting: 11; languages accepting: 60
+# languages rejecting: 11; languages accepting: 61
 
 [Accepted]
 "Ada['parent']" = ""
@@ -51,6 +51,7 @@
 "Java['self']" = ""
 "JavaScript['parent']" = ""
 "JavaScript['self']" = ""
+"Jsonnet['parent']" = ""
 "Julia['parent']" = ""
 "Julia['self']" = ""
 "Kotlin['parent']" = ""
@@ -119,6 +120,7 @@
 [ReservedVariableNameError]
 "Cobol['self']" = "Cobol cannot use NewVariable name 'self': it is a reserved identifier"
 "Crystal['self']" = "Crystal cannot use NewVariable name 'self': it is a reserved identifier"
+"Jsonnet['self']" = "Jsonnet cannot use NewVariable name 'self': it is a reserved identifier"
 "Mojo['self']" = "Mojo cannot use NewVariable name 'self': it is a reserved identifier"
 "Php['parent']" = "Php cannot use NewVariable name 'parent': it is a reserved identifier"
 "Php['self']" = "Php cannot use NewVariable name 'self': it is a reserved identifier"
@@ -131,7 +133,5 @@
 "Json5['self']" = "Json5 does not support variable names: 'self'"
 "Jsonc['parent']" = "Jsonc does not support variable names: 'parent'"
 "Jsonc['self']" = "Jsonc does not support variable names: 'self'"
-"Jsonnet['parent']" = "Jsonnet does not support variable names: 'parent'"
-"Jsonnet['self']" = "Jsonnet does not support variable names: 'self'"
 "Yaml['parent']" = "Yaml does not support variable names: 'parent'"
 "Yaml['self']" = "Yaml does not support variable names: 'self'"

@@ -1,4 +1,4 @@
-# languages rejecting: 6; languages accepting: 59
+# languages rejecting: 5; languages accepting: 60
 
 [Accepted]
 Ada = ""
@@ -25,6 +25,7 @@ Haxe = ""
 Hcl = ""
 Java = ""
 JavaScript = ""
+Jsonnet = ""
 Julia = ""
 Kotlin = ""
 Lua = ""
@@ -68,5 +69,4 @@ Fortran = "Fortran cannot use NewVariable name 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv'"
 Jsonc = "Jsonc does not support variable names: 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv'"
-Jsonnet = "Jsonnet does not support variable names: 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv'"
 Yaml = "Yaml does not support variable names: 'vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv'"

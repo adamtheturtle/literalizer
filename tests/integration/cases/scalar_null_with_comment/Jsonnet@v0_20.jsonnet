@@ -1,1 +1,2 @@
-null  // note
+local my_data = null;  // note
+my_data

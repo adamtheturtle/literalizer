@@ -1,4 +1,4 @@
-# languages rejecting: 36; languages accepting: 55
+# languages rejecting: 35; languages accepting: 56
 
 [Accepted]
 "Ada['mutable']" = ""
@@ -105,6 +105,11 @@
 "JavaScript['primitive']" = ""
 "JavaScript['type']" = ""
 "JavaScript['where']" = ""
+"Jsonnet['abstract']" = ""
+"Jsonnet['mutable']" = ""
+"Jsonnet['primitive']" = ""
+"Jsonnet['type']" = ""
+"Jsonnet['where']" = ""
 "Kotlin['abstract']" = ""
 "Kotlin['mutable']" = ""
 "Kotlin['primitive']" = ""
@@ -322,11 +327,6 @@
 "Jsonc['primitive']" = "Jsonc does not support variable names: 'primitive'"
 "Jsonc['type']" = "Jsonc does not support variable names: 'type'"
 "Jsonc['where']" = "Jsonc does not support variable names: 'where'"
-"Jsonnet['abstract']" = "Jsonnet does not support variable names: 'abstract'"
-"Jsonnet['mutable']" = "Jsonnet does not support variable names: 'mutable'"
-"Jsonnet['primitive']" = "Jsonnet does not support variable names: 'primitive'"
-"Jsonnet['type']" = "Jsonnet does not support variable names: 'type'"
-"Jsonnet['where']" = "Jsonnet does not support variable names: 'where'"
 "Yaml['abstract']" = "Yaml does not support variable names: 'abstract'"
 "Yaml['mutable']" = "Yaml does not support variable names: 'mutable'"
 "Yaml['primitive']" = "Yaml does not support variable names: 'primitive'"

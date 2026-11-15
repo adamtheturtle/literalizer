@@ -1,4 +1,4 @@
-# languages rejecting: 54; languages accepting: 7
+# languages rejecting: 55; languages accepting: 7
 
 [Accepted]
 Clojure = ""
@@ -33,6 +33,7 @@ Haxe = "Haxe cannot use NewVariable name 'a-b': it is not a valid identifier"
 Hcl = "Hcl cannot use NewVariable name 'a-b': it is not a valid identifier"
 Java = "Java cannot use NewVariable name 'a-b': it is not a valid identifier"
 JavaScript = "JavaScript cannot use NewVariable name 'a-b': it is not a valid identifier"
+Jsonnet = "Jsonnet cannot use NewVariable name 'a-b': it is not a valid identifier"
 Julia = "Julia cannot use NewVariable name 'a-b': it is not a valid identifier"
 Kotlin = "Kotlin cannot use NewVariable name 'a-b': it is not a valid identifier"
 Lua = "Lua cannot use NewVariable name 'a-b': it is not a valid identifier"

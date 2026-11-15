@@ -1,4 +1,4 @@
-# languages rejecting: 59; languages accepting: 58
+# languages rejecting: 59; languages accepting: 59
 
 [Accepted]
 "Bash['_x']" = ""
@@ -48,6 +48,8 @@
 "Java['x_']" = ""
 "JavaScript['_x']" = ""
 "JavaScript['x_']" = ""
+"Jsonnet['_x']" = ""
+"Jsonnet['x_']" = ""
 "Julia['_x']" = ""
 "Julia['x_']" = ""
 "Kotlin['_x']" = ""
@@ -148,6 +150,7 @@
 "Hcl['x-']" = "Hcl cannot use NewVariable name 'x-': it is not a valid identifier"
 "Java['x-']" = "Java cannot use NewVariable name 'x-': it is not a valid identifier"
 "JavaScript['x-']" = "JavaScript cannot use NewVariable name 'x-': it is not a valid identifier"
+"Jsonnet['x-']" = "Jsonnet cannot use NewVariable name 'x-': it is not a valid identifier"
 "Julia['x-']" = "Julia cannot use NewVariable name 'x-': it is not a valid identifier"
 "Kotlin['x-']" = "Kotlin cannot use NewVariable name 'x-': it is not a valid identifier"
 "Lua['x-']" = "Lua cannot use NewVariable name 'x-': it is not a valid identifier"
@@ -196,9 +199,6 @@
 "Jsonc['_x']" = "Jsonc does not support variable names: '_x'"
 "Jsonc['x-']" = "Jsonc does not support variable names: 'x-'"
 "Jsonc['x_']" = "Jsonc does not support variable names: 'x_'"
-"Jsonnet['_x']" = "Jsonnet does not support variable names: '_x'"
-"Jsonnet['x-']" = "Jsonnet does not support variable names: 'x-'"
-"Jsonnet['x_']" = "Jsonnet does not support variable names: 'x_'"
 "Yaml['_x']" = "Yaml does not support variable names: '_x'"
 "Yaml['x-']" = "Yaml does not support variable names: 'x-'"
 "Yaml['x_']" = "Yaml does not support variable names: 'x_'"

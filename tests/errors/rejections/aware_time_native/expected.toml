@@ -43,6 +43,7 @@ Zig = ""
 Clojure = "Clojure cannot accept this value as a call argument: Clojure output is not wrapped in a function body; symbol references require a surrounding ``def`` that cannot be injected (got 'value')"
 CommonLisp = "CommonLisp cannot accept this value as a call argument: Common Lisp output is not wrapped in a function body; ``*name*`` references require a surrounding DEFPARAMETER that cannot be injected (got 'value')"
 Dhall = "Dhall cannot accept this value as a call argument: ref variable 'value' has a concrete type that cannot be unified with the DVal stub parameter type"
+Jsonnet = "Jsonnet cannot accept this value as a call argument: Jsonnet variable references require a ``local`` preamble that is not generated (got 'value')"
 Julia = "Julia cannot accept this value as a call argument: Julia output is not wrapped in a function body; variable references require a surrounding assignment that cannot be injected (got 'value')"
 Racket = "Racket cannot accept this value as a call argument: Racket output is not wrapped in a function body; identifier references require a surrounding ``define`` that cannot be injected (got 'value')"
 Ruby = "Ruby cannot accept this value as a call argument: Ruby output is not wrapped in a function body; variable references require a surrounding assignment (got 'value')"
@@ -72,5 +73,4 @@ VisualBasic = "VisualBasic native time format cannot preserve UTC offset 2:00:00
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'out'"
 Jsonc = "Jsonc does not support variable names: 'out'"
-Jsonnet = "Jsonnet does not support variable names: 'out'"
 Yaml = "Yaml does not support variable names: 'out'"

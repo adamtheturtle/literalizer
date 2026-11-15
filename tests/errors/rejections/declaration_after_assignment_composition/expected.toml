@@ -54,6 +54,7 @@ Zig = ""
 Clojure = "Clojure cannot accept this value as a call argument: Clojure output is not wrapped in a function body; symbol references require a surrounding ``def`` that cannot be injected (got 'first')"
 CommonLisp = "CommonLisp cannot accept this value as a call argument: Common Lisp output is not wrapped in a function body; ``*name*`` references require a surrounding DEFPARAMETER that cannot be injected (got 'first')"
 Dhall = "Dhall cannot accept this value as a call argument: ref variable 'first' has a concrete type that cannot be unified with the DVal stub parameter type"
+Jsonnet = "Jsonnet cannot accept this value as a call argument: Jsonnet variable references require a ``local`` preamble that is not generated (got 'first')"
 Julia = "Julia cannot accept this value as a call argument: Julia output is not wrapped in a function body; variable references require a surrounding assignment that cannot be injected (got 'first')"
 Racket = "Racket cannot accept this value as a call argument: Racket output is not wrapped in a function body; identifier references require a surrounding ``define`` that cannot be injected (got 'first')"
 Ruby = "Ruby cannot accept this value as a call argument: Ruby output is not wrapped in a function body; variable references require a surrounding assignment (got 'first')"
@@ -76,5 +77,4 @@ Ada = "Ada cannot represent this call shape: a declaration after an executable a
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'first'"
 Jsonc = "Jsonc does not support variable names: 'first'"
-Jsonnet = "Jsonnet does not support variable names: 'first'"
 Yaml = "Yaml does not support variable names: 'first'"

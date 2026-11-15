@@ -1,4 +1,4 @@
-# languages rejecting: 15; languages accepting: 50
+# languages rejecting: 14; languages accepting: 51
 
 [Accepted]
 "Ada['ZKV']" = ""
@@ -43,6 +43,8 @@
 "Java['ZVal']" = ""
 "JavaScript['ZKV']" = ""
 "JavaScript['ZVal']" = ""
+"Jsonnet['ZKV']" = ""
+"Jsonnet['ZVal']" = ""
 "Julia['ZKV']" = ""
 "Julia['ZVal']" = ""
 "Kotlin['ZKV']" = ""
@@ -133,7 +135,5 @@
 "Json5['ZVal']" = "Json5 does not support variable names: 'ZVal'"
 "Jsonc['ZKV']" = "Jsonc does not support variable names: 'ZKV'"
 "Jsonc['ZVal']" = "Jsonc does not support variable names: 'ZVal'"
-"Jsonnet['ZKV']" = "Jsonnet does not support variable names: 'ZKV'"
-"Jsonnet['ZVal']" = "Jsonnet does not support variable names: 'ZVal'"
 "Yaml['ZKV']" = "Yaml does not support variable names: 'ZKV'"
 "Yaml['ZVal']" = "Yaml does not support variable names: 'ZVal'"

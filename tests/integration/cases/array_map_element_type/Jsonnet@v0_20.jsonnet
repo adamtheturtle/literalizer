@@ -1,3 +1,4 @@
-{
+local my_data = {
     d: [{a: [{b: [1, [2.5, ["x", [true]]]]}]}],
-}
+};
+my_data

@@ -1,1 +1,2 @@
--1
+local my_data = -1;
+my_data

@@ -47,6 +47,7 @@ Clojure = "Clojure cannot accept this value as a call argument: Clojure output i
 Cobol = "COBOL cannot accept this value as a call argument: COBOL DATA DIVISION VALUE clauses only accept literals, not identifier references (got 'items')"
 CommonLisp = "CommonLisp cannot accept this value as a call argument: Common Lisp output is not wrapped in a function body; ``*name*`` references require a surrounding DEFPARAMETER that cannot be injected (got 'items')"
 Dhall = "Dhall cannot accept this value as a call argument: ref variable 'items' has a concrete type that cannot be unified with the DVal stub parameter type"
+Jsonnet = "Jsonnet cannot accept this value as a call argument: Jsonnet variable references require a ``local`` preamble that is not generated (got 'items')"
 Julia = "Julia cannot accept this value as a call argument: Julia output is not wrapped in a function body; variable references require a surrounding assignment that cannot be injected (got 'items')"
 Racket = "Racket cannot accept this value as a call argument: Racket output is not wrapped in a function body; identifier references require a surrounding ``define`` that cannot be injected (got 'items')"
 Ruby = "Ruby cannot accept this value as a call argument: Ruby output is not wrapped in a function body; variable references require a surrounding assignment (got 'items')"
@@ -76,5 +77,4 @@ Tcl = "Tcl cannot represent null distinctly from the empty string"
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'value'"
 Jsonc = "Jsonc does not support variable names: 'value'"
-Jsonnet = "Jsonnet does not support variable names: 'value'"
 Yaml = "Yaml does not support variable names: 'value'"

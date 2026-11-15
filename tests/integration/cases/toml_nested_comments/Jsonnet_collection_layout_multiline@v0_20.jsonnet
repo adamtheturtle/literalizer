@@ -1,4 +1,4 @@
-{
+local my_data = {
     // About the first dotted key.
     // About the second dotted key.
     dotted: {
@@ -20,4 +20,5 @@
     table: {
         inner: 4,
     },
-}
+};
+my_data

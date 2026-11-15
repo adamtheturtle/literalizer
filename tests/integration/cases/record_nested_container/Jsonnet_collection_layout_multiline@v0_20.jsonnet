@@ -1,4 +1,4 @@
-{
+local my_data = {
     title: "report",
     tags: [
         "draft",
@@ -6,4 +6,5 @@
         "review",
     ],
     priority: 2,
-}
+};
+my_data
