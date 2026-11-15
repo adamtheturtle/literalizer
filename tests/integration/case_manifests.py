@@ -942,8 +942,13 @@ def _fail(*, path: Path, message: str) -> CaseManifestError:
     return CaseManifestError(f"{path}: {message}")
 
 
-def _load_manifest_data(*, path: Path) -> _CaseManifestData:
-    """Parse and structurally validate one manifest file."""
+@functools.cache
+@beartype
+def load_case_manifest(case_dir: Path) -> CaseManifest:
+    """Return one fully validated ``case.toml`` manifest."""
+    path = case_dir / MANIFEST_NAME
+    if not path.is_file():
+        raise _fail(path=path, message="manifest is missing")
     try:
         raw = tomllib.loads(path.read_text(encoding="utf-8"))
     except tomllib.TOMLDecodeError as exc:
@@ -956,17 +961,6 @@ def _load_manifest_data(*, path: Path) -> _CaseManifestData:
         )
     except ValueError as exc:
         raise _fail(path=path, message=str(object=exc)) from exc
-    return data
-
-
-@functools.cache
-@beartype
-def load_case_manifest(case_dir: Path) -> CaseManifest:
-    """Return one fully validated ``case.toml`` manifest."""
-    path = case_dir / MANIFEST_NAME
-    if not path.is_file():
-        raise _fail(path=path, message="manifest is missing")
-    data = _load_manifest_data(path=path)
     try:
         input_info = infer_case_input(
             case_dir=case_dir,
