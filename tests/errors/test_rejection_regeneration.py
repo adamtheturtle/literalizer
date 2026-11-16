@@ -100,7 +100,8 @@ def _run_snapshot_pytest(
         cwd=project_root,
         capture_output=True,
         text=True,
-        timeout=60,
+        # Coverage startup can exceed a minute on hosted Windows runners.
+        timeout=180,
         check=False,
     )
 
