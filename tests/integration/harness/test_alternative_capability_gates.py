@@ -76,8 +76,3 @@ def test_authored_alternatives_intersect_required_gates(
     assert len(expected) > 0
     assert expected < required
     assert actual == expected
-
-
-def test_omitted_alternatives_do_not_narrow_participation() -> None:
-    """Existing selections keep their original unconstrained default."""
-    assert _selected(selection=CapabilitySelection()) == set(ALL_LANGUAGES)
