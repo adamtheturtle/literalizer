@@ -25,7 +25,7 @@ from .case_manifests import (
     RefCaseSpec,
     RefConsumerSpec,
 )
-from .language_metadata import language_metadata
+from .golden_checks import fixture_contents
 from .language_specs import (
     find_redefinition_styles,
     reference_case_for_declaration_style,
@@ -36,7 +36,7 @@ from .reference_inputs import RefData
 @beartype
 def _compose_ref_value_check(
     *,
-    source: str,
+    config: RefCaseSpec,
     spec: literalizer.Language,
     declarations: list[literalizer.LiteralizeResult],
     result: literalizer.LiteralizeResult,
@@ -46,8 +46,20 @@ def _compose_ref_value_check(
     Expected data is rendered separately, after the operation under test,
     and never participates in its reference inference.
     """
+    if "my_data" in config.external_declarations:
+        initial_source = config.external_declarations["my_data"]
+        initial_check = literalizer.literalize_call(
+            source=f'[[{{"$ref": "my_data"}}, {initial_source}]]',
+            target_function="assert_equal",
+            parameter_names=("actual", "expected"),
+            input_format=literalizer.InputFormat.JSON,
+            language=spec,
+            ref_key="$ref",
+        )
+        declarations.append(initial_check)
+    assert config.expected_value_source is not None  # noqa: S101
     expected = literalizer.literalize(
-        source=source,
+        source=config.expected_value_source,
         input_format=literalizer.InputFormat.JSON,
         language=spec,
         variable_form=literalizer.NewVariable(
@@ -297,14 +309,20 @@ def compose_external_ref_fixture(
     )
     if config.expected_value_source is not None and assertion_helper.is_file():
         return _compose_ref_value_check(
-            source=config.expected_value_source,
+            config=config,
             spec=spec,
             declarations=declarations,
             result=result,
         )
     consumer = config.consumer
     if consumer is None:
-        consumer = RefConsumerSpec(target_function="consume_widget")
+        consumer = RefConsumerSpec(
+            target_function="consume_widget",
+            before_assignment=(
+                config.variable_form == "existing"
+                and "my_data" in config.external_declarations
+            ),
+        )
     return _compose_ref_consumer(
         consumer=consumer,
         expression=config.variable_form == "none",
@@ -332,11 +350,9 @@ def ref_fixture_contents(
     native_case = reference_case_for_declaration_style(
         lang_cls=lang_cls, spec=spec
     )
-    preamble = (
-        language_metadata(
-            language_id=lang_cls.language_id
-        ).golden.intentional_identifier_preamble
-        if ref_case is not None and ref_case is not native_case
-        else ()
+    return fixture_contents(
+        code=code,
+        language_id=spec.language_id,
+        intentional_identifier=ref_case is not None
+        and ref_case is not native_case,
     )
-    return "\n".join((*preamble, code, ""))

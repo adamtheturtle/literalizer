@@ -904,24 +904,6 @@ def _resolved_axis(
 
 
 @beartype
-def _validate_references(
-    *,
-    axis_key: str,
-    axis: _Axis,
-    axes: Mapping[str, _Axis],
-) -> None:
-    """Check the axes one axis names against the loaded registry."""
-    if isinstance(axis, _FixedOverridesPlan | _CrossProductPlan) and (
-        axis.primary_axis is not None
-    ):
-        _ = _primary_axis_plan(
-            axis_key=axis_key,
-            primary_axis=axis.primary_axis,
-            axes=axes,
-        )
-
-
-@beartype
 def _validate_axis(
     *,
     axis_key: str,
@@ -981,7 +963,8 @@ def load_axis_registry(*, path: Path) -> Mapping[str, _Axis]:
     }
     for axis_key, axis in axes.items():
         _validate_axis(axis_key=axis_key, axis=axis, axes=axes)
-        _validate_references(axis_key=axis_key, axis=axis, axes=axes)
+        if not isinstance(axis, _FilteredPlan):
+            _ = _primary_plan_for(axis_key=axis_key, axis=axis, axes=axes)
     return axes
 
 
@@ -1463,23 +1446,23 @@ def _kwarg_value_selections(
     metadata: LanguageMetadata,
 ) -> list[_Selection]:
     """Return the parameter values an axis passes for one language."""
-    collected_entries: list[_Selection] = []
-    for entry_choice in axis.values:
-        if entry_choice.value is None:
-            effective_kwargs = _sample_kwarg(
-                axis_key=axis_key, kwarg=axis.kwarg, metadata=metadata
-            )
-        else:
-            effective_kwargs = entry_choice.value
-        collected_entries.append(
-            _Selection(
-                kwargs={axis.kwarg: effective_kwargs},
-                format_name=entry_choice.name,
-                tag=None,
-                secondary_name=None,
-            )
+    return [
+        _Selection(
+            kwargs={
+                axis.kwarg: (
+                    _sample_kwarg(
+                        axis_key=axis_key, kwarg=axis.kwarg, metadata=metadata
+                    )
+                    if choice.value is None
+                    else choice.value
+                )
+            },
+            format_name=choice.name,
+            tag=None,
+            secondary_name=None,
         )
-    return collected_entries
+        for choice in axis.values
+    ]
 
 
 @beartype
@@ -1632,14 +1615,10 @@ def _admitted_overrides(
         lang_cls=lang_cls,
         metadata=metadata,
     )
-    behavior_gates = [
-        gate for gate in gates if isinstance(gate, BehaviorFlagGate)
-    ]
-    language_gates = [
-        gate for gate in gates if not isinstance(gate, BehaviorFlagGate)
-    ]
     if not all(
-        admits(gate=gate, spec=default_spec) for gate in language_gates
+        admits(gate=gate, spec=default_spec)
+        for gate in gates
+        if not isinstance(gate, BehaviorFlagGate)
     ):
         return None
     resolved = _resolve_overrides(
@@ -1656,7 +1635,8 @@ def _admitted_overrides(
             gate=gate,
             spec=make_spec(lang_cls=lang_cls, **resolved.kwargs),
         )
-        for gate in behavior_gates
+        for gate in gates
+        if isinstance(gate, BehaviorFlagGate)
     ):
         return None
     return resolved

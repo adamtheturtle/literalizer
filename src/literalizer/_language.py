@@ -1952,20 +1952,21 @@ class LanguageCls(type, _LanguageMetadata):
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
         unsupported = kwargs.keys() - cls.__dataclass_fields__.keys()
-        known_options = {
-            field_name
-            for language_cls in LanguageCls._language_classes
-            for field_name in vars(language_cls).get(
-                "__dataclass_fields__",
-                {},
-            )
-        }
-        known_unsupported = unsupported & known_options
-        if len(known_unsupported) > 0:
-            raise UnsupportedOptionError(
-                language_name=cls.__name__,
-                option=min(known_unsupported),
-            )
+        if len(unsupported) > 0:
+            known_options = {
+                field_name
+                for language_cls in LanguageCls._language_classes
+                for field_name in vars(language_cls).get(
+                    "__dataclass_fields__",
+                    {},
+                )
+            }
+            known_unsupported = unsupported & known_options
+            if len(known_unsupported) > 0:
+                raise UnsupportedOptionError(
+                    language_name=cls.__name__,
+                    option=min(known_unsupported),
+                )
         instance: Language = super().__call__(*args, **kwargs)
         if cls.supports_record_shape_names:
             object.__setattr__(

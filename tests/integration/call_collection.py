@@ -9,7 +9,7 @@ from beartype import beartype
 import literalizer
 from literalizer._enums import enum_payload
 
-from .call_expectations import expected_call_shape_exception
+from .call_expectations import call_style_spec, expected_call_shape_exception
 from .case_manifests import CallCaseSpec, call_case_specs
 from .language_specs import make_golden_path, make_spec, sorted_languages
 
@@ -60,8 +60,12 @@ class CallCase:
             CallRendering(
                 config=self.config,
                 lang_cls=self.lang_cls,
-                spec=make_spec(
-                    lang_cls=self.lang_cls, language_version=version
+                spec=call_style_spec(
+                    config=self.config,
+                    lang_cls=self.lang_cls,
+                    spec=make_spec(
+                        lang_cls=self.lang_cls, language_version=version
+                    ),
                 ),
                 golden_name=f"{self.lang_cls.__name__}_call",
                 expected_exception=self.expected_exception,

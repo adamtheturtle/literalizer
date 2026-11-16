@@ -17,7 +17,6 @@ from pydantic import TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer._enums import enum_payload
 from literalizer._formatters.preamble_roles import import_preamble
 from literalizer._language import (
     RenderedCallStub,
@@ -65,6 +64,7 @@ from .golden_checks import (
     SkipReason,
     check_golden,
     cleanup_stale_golden,
+    fixture_contents,
 )
 from .language_metadata import language_metadata
 from .language_specs import (
@@ -263,14 +263,22 @@ def _call_fixture_contents(
             if not config.ref_case_per_language
         ),
     )
-    preamble = (
-        language_metadata(
-            language_id=spec.language_id
-        ).golden.intentional_identifier_preamble
-        if any(name != name.lower() for name in names)
-        else ()
+    return fixture_contents(
+        code=code,
+        language_id=spec.language_id,
+        intentional_identifier=any(name != name.lower() for name in names),
     )
-    return "\n".join((*preamble, code, ""))
+
+
+@beartype
+def _parse_ref_sources(
+    *, sources: Mapping[str, str], input_format: literalizer.InputFormat
+) -> dict[str, ParsedValue]:
+    """Parse each caller-owned reference source in its declared format."""
+    return {
+        name: parse_input(source=source, input_format=input_format).data
+        for name, source in sources.items()
+    }
 
 
 @beartype
@@ -306,21 +314,15 @@ def run_wrap_in_file_case(
             ref_values=(
                 None
                 if config.explicit_ref_value_sources is None
-                else {
-                    name: parse_input(
-                        source=ref_source, input_format=config.ref_input_format
-                    ).data
-                    for name, ref_source in (
-                        config.explicit_ref_value_sources.items()
-                    )
-                }
+                else _parse_ref_sources(
+                    sources=config.explicit_ref_value_sources,
+                    input_format=config.ref_input_format,
+                )
             ),
-            bound_refs={
-                ref_name: parse_input(
-                    source=ref_source, input_format=config.ref_input_format
-                ).data
-                for ref_name, ref_source in config.ref_declarations.items()
-            },
+            bound_refs=_parse_ref_sources(
+                sources=config.ref_declarations,
+                input_format=config.ref_input_format,
+            ),
         )
     check_golden(
         contents=_call_fixture_contents(
@@ -447,27 +449,19 @@ def _run_call_with_declarations(
             if ref_name not in config.unknown_ref_names
         }
         ref_values.update(
-            {
-                ref_name: parse_input(
-                    source=ref_source, input_format=config.ref_input_format
-                ).data
-                for ref_name, ref_source in (
-                    config.extra_ref_value_sources.items()
-                )
-            }
+            _parse_ref_sources(
+                sources=config.extra_ref_value_sources,
+                input_format=config.ref_input_format,
+            )
         )
         effective_ref_values = None
         if len(ref_values) > 0:
             effective_ref_values = ref_values
         if config.explicit_ref_value_sources is not None:
-            effective_ref_values = {
-                name: parse_input(
-                    source=ref_source, input_format=config.ref_input_format
-                ).data
-                for name, ref_source in (
-                    config.explicit_ref_value_sources.items()
-                )
-            }
+            effective_ref_values = _parse_ref_sources(
+                sources=config.explicit_ref_value_sources,
+                input_format=config.ref_input_format,
+            )
         followup_result = None
         followup_target = (
             config.target_function
@@ -619,17 +613,6 @@ def _render_call_golden_case(
         golden_path=golden_path,
         file_regression=file_regression,
     )
-    if config.call_style_type is not None:
-        # Apply the manifest's style to variant specs as well as defaults.
-        style = next(
-            member
-            for member in lang_cls.CallStyles
-            if isinstance(
-                enum_payload(member=member, payload_type=object),
-                config.call_style_type,
-            )
-        )
-        spec = dataclasses.replace(spec, call_style=style)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
@@ -678,12 +661,10 @@ def _render_call_golden_case(
                 variable_form=config.variable_form,
                 wrap_in_file=True,
                 ref_values=None,
-                bound_refs={
-                    ref_name: parse_input(
-                        source=ref_source, input_format=config.ref_input_format
-                    ).data
-                    for ref_name, ref_source in config.ref_declarations.items()
-                },
+                bound_refs=_parse_ref_sources(
+                    sources=config.ref_declarations,
+                    input_format=config.ref_input_format,
+                ),
             )
         check_golden(
             contents=_call_fixture_contents(

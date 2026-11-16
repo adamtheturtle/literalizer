@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import dataclasses
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
@@ -19,13 +18,8 @@ from literalizer._language import redefinition_config
 from tests.enum_members import enum_member_by_name
 
 from .case_manifests import RenderContext
-from .language_specs import make_spec, sorted_languages
+from .language_specs import make_spec, modifier_entries, sorted_languages
 from .variant_types import Variant, VariantCase, compact_variant
-
-if TYPE_CHECKING:
-    import enum
-
-_enum_member_by_name = enum_member_by_name
 
 
 @beartype
@@ -54,15 +48,9 @@ def build_modifier_variant_cases(
         spec = base_variant.spec
         if len(spec.modifiers) == 0:
             continue
-        entries: list[tuple[str, frozenset[enum.Enum]]] = [
-            (member.name.lower(), frozenset({member}))
-            for member in spec.modifiers
-        ]
-        entries.extend(
-            (combo.name, combo.modifiers)
-            for combo in lang_cls.modifier_combinations
-        )
-        for mod_name, modifiers in entries:
+        for mod_name, modifiers in modifier_entries(
+            lang_cls=lang_cls, spec=spec
+        ):
             variant = dataclasses.replace(
                 base_variant,
                 name=f"{base_variant.name}_modifiers_{mod_name}",
@@ -109,11 +97,11 @@ def build_modifier_variant_cases(
             modifier_name,
             sequence_format_name,
         ) in overrides.items():
-            modifier = _enum_member_by_name(
+            modifier = enum_member_by_name(
                 enum_cls=default_spec.modifiers,
                 name=modifier_name,
             )
-            sequence_format = _enum_member_by_name(
+            sequence_format = enum_member_by_name(
                 enum_cls=default_spec.sequence_formats,
                 name=sequence_format_name,
             )

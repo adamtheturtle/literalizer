@@ -155,6 +155,9 @@ def run_literalize_ref_golden_case(
         spec = dataclasses.replace(
             spec, declaration_style=find_redefinition_styles(spec=spec)[0]
         )
+    wrap_in_file = (
+        len(config.external_declarations) == 0 and config.consumer is None
+    )
     variable_form_obj: literalizer.VariableForm | None = (
         config.resolved_variable_form()
     )
@@ -178,10 +181,7 @@ def run_literalize_ref_golden_case(
                 input_format=literalizer.InputFormat.JSON,
                 language=spec,
                 variable_form=variable_form_obj,
-                wrap_in_file=(
-                    len(config.external_declarations) == 0
-                    and config.consumer is None
-                ),
+                wrap_in_file=wrap_in_file,
             )
         except VariableNameNotSupportedError:
             variable_form_obj = None
@@ -212,10 +212,7 @@ def run_literalize_ref_golden_case(
             input_format=input_info.input_format,
             language=spec,
             variable_form=variable_form_obj,
-            wrap_in_file=(
-                len(config.external_declarations) == 0
-                and config.consumer is None
-            ),
+            wrap_in_file=wrap_in_file,
             ref_case=ref_case,
             bound_refs=(effective_bound_refs),
             ref_values=(effective_ref_values),
@@ -229,10 +226,7 @@ def run_literalize_ref_golden_case(
         assert effective_ref_values == original_ref_values, (  # noqa: S101
             "literalize mutated caller-owned ref_values"
         )
-        if (
-            len(config.external_declarations) > 0
-            or config.consumer is not None
-        ):
+        if not wrap_in_file:
             result = compose_external_ref_fixture(
                 config=config,
                 spec=spec,

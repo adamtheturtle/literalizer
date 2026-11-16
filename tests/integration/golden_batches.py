@@ -7,6 +7,7 @@ from beartype import beartype
 import literalizer
 
 from .golden_renderings import GoldenRendering
+from .golden_scenarios import scenario_renderings
 
 GOLDEN_BATCH_VERSION_LIMIT = 64
 
@@ -52,3 +53,23 @@ def batch_renderings(
     if len(current) > 0:
         batches.append(tuple(current))
     return tuple(batches)
+
+
+@beartype
+def golden_groups() -> tuple[GoldenGroup, ...]:
+    """Split the scenario inventory into bounded pytest work items."""
+    groups: list[GoldenGroup] = []
+    for (scenario_name, lang_cls), renderings in scenario_renderings().items():
+        batches = batch_renderings(
+            renderings=renderings, max_versions=GOLDEN_BATCH_VERSION_LIMIT
+        )
+        for index, batch in enumerate(iterable=batches, start=1):
+            groups.append(
+                GoldenGroup(
+                    scenario_name=scenario_name,
+                    lang_cls=lang_cls,
+                    renderings=batch,
+                    batch_index=index if len(batches) > 1 else None,
+                )
+            )
+    return tuple(groups)
