@@ -129,4 +129,5 @@ def test_native_runner_deadline(
         cli=run_interpreted_fixtures.main,
         args=["javascript", "--check", "execution", "--timeout", "0.1"],
     )
-    assert result.exit_code != 0
+    assert isinstance(result.exception, subprocess.CalledProcessError)
+    assert result.exception.returncode in (124, 137)
