@@ -1563,9 +1563,7 @@ jobs:
       # single BEAM VM, paying the cold-start cost once instead of twice
       # per fixture (serial `elixirc` + `elixir` loops).
       - name: Lint Elixir
-        run: |-
-          uv run --only-group=cli python -m tests.integration.list_fixtures .ex "$ELIXIR_FIXTURE_TAG" > /tmp/files-elixir && test -s /tmp/files-elixir
-          elixir scripts/lint-elixir.exs < /tmp/files-elixir
+        run: uv run --only-group=cli python -m scripts.run_elixir_fixtures
 
       # Basic JSON -> Elixir -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Elixir toolchain (`elixir` on
