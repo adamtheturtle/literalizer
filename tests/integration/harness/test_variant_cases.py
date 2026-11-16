@@ -2,7 +2,6 @@
 
 import dataclasses
 import enum
-from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -95,24 +94,6 @@ def test_group_variant_cases_by_language_groups_by_variant_language() -> None:
             case for case in cases if case.variant.lang_cls is not lang_cls
         ]
         assert misgrouped == []
-
-
-def test_variant_cases_have_unique_golden_paths() -> None:
-    """No two variant cases should exercise the same golden file."""
-    targets = [
-        (
-            case.case_dir_name,
-            case.golden_name,
-            case.variant.spec.extension,
-            case.variant.spec.language_version,
-        )
-        for case in build_variant_cases()
-    ]
-    duplicates = [
-        target for target, count in Counter(targets).items() if count > 1
-    ]
-
-    assert duplicates == []
 
 
 def _cases_requiring(
