@@ -65,28 +65,31 @@ class LiteralizeRefCase:
     @property
     def renderings(self) -> tuple[RefRendering, ...]:
         """Exercise each selected version under the owner's ref policy."""
-        rows: list[RefRendering] = []
-        for spec in ref_language_specs(
-            config=self.config, lang_cls=self.lang_cls
-        ):
-            ref_case = None
-            if self.owner != REF_DEFAULT_OWNER:
-                ref_case = self.config.ref_case_for(lang_cls=self.lang_cls)
-                if ref_case is None:
-                    ref_case = spec.identifier_cases[0]
-            suffix = (
-                "ref_default" if self.owner == REF_DEFAULT_OWNER else "ref"
+        default = self.owner == REF_DEFAULT_OWNER
+        ref_case = (
+            None
+            if default
+            else self.config.ref_case_for(lang_cls=self.lang_cls)
+        )
+        suffix = "ref_default" if default else "ref"
+        return tuple(
+            RefRendering(
+                config=self.config,
+                lang_cls=self.lang_cls,
+                spec=spec,
+                golden_name=f"{self.lang_cls.__name__}_{suffix}",
+                ref_case=(
+                    None
+                    if default
+                    else spec.identifier_cases[0]
+                    if ref_case is None
+                    else ref_case
+                ),
             )
-            rows.append(
-                RefRendering(
-                    config=self.config,
-                    lang_cls=self.lang_cls,
-                    spec=spec,
-                    golden_name=f"{self.lang_cls.__name__}_{suffix}",
-                    ref_case=ref_case,
-                )
+            for spec in ref_language_specs(
+                config=self.config, lang_cls=self.lang_cls
             )
-        return tuple(rows)
+        )
 
 
 @functools.cache
@@ -175,7 +178,7 @@ def _reference_variant_case(
     names = language_metadata(
         language_id=lang_cls.language_id
     ).variants.declaration_style_variable_names
-    reference_case = config.ref_case_for(lang_cls=lang_cls)
+    reference_case = ref_case
     if owner == REF_DEFAULT_OWNER:
         reference_case = None
     elif reference_case is None:
