@@ -27,6 +27,9 @@ class _Backend:
 
 _BACKENDS = {
     "bash": _Backend(executable="bash", extension=".sh", syntax_argument="-n"),
+    "raku": _Backend(
+        executable="raku", extension=".raku", syntax_argument="-c"
+    ),
     "ruby": _Backend(executable="ruby", extension=".rb", syntax_argument="-c"),
     "javascript": _Backend(
         executable="node", extension=".js", syntax_argument="--check"
