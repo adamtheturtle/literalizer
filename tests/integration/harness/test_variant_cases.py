@@ -27,10 +27,10 @@ from tests.integration.variant_cases import (
     build_variant_cases,
     group_variant_cases_by_language,
     one_special_input,
-    spec_supports_capability,
+    variant_supports_capability,
     variants_for_axis,
 )
-from tests.integration.variant_types import VariantCase
+from tests.integration.variant_types import VariantCase, compact_variant
 
 _SampleEnum = enum.Enum(value="_SampleEnum", names=["FIRST"])
 
@@ -288,29 +288,37 @@ def test_multiline_context_cases_follow_capabilities(
 
 
 @pytest.mark.parametrize(
-    argnames="spec",
+    argnames=("lang_cls", "spec"),
     argvalues=[
-        literalizer.languages.Cpp(
-            json_type=literalizer.languages.Cpp.JsonTypes.NLOHMANN_JSON,
-            json_rendering=literalizer.languages.Cpp.JsonRenderings.INLINE_DOCUMENT,
+        (
+            literalizer.languages.Cpp,
+            literalizer.languages.Cpp(
+                json_type=literalizer.languages.Cpp.JsonTypes.NLOHMANN_JSON,
+                json_rendering=literalizer.languages.Cpp.JsonRenderings.INLINE_DOCUMENT,
+            ),
         ),
-        literalizer.languages.Haskell(
-            json_type=literalizer.languages.Haskell.JsonTypes.AESON_VALUE,
+        (
+            literalizer.languages.Haskell,
+            literalizer.languages.Haskell(
+                json_type=literalizer.languages.Haskell.JsonTypes.AESON_VALUE,
+            ),
         ),
     ],
 )
 def test_collection_comments_require_the_effective_configuration(
+    lang_cls: literalizer.LanguageCls,
     spec: literalizer.Language,
 ) -> None:
     """JSON variants cannot borrow collection comment support from
     defaults.
     """
-    assert spec_supports_capability(
-        spec=type(spec)(),
+    variant = compact_variant(name="effective", lang_cls=lang_cls, spec=spec)
+    assert variant_supports_capability(
+        variant=dataclasses.replace(variant, spec=lang_cls()),
         capability="collection_comments",
     )
-    assert not spec_supports_capability(
-        spec=spec,
+    assert not variant_supports_capability(
+        variant=variant,
         capability="collection_comments",
     )
     # Removing the option restores support even after the disabled spec has
@@ -320,7 +328,7 @@ def test_collection_comments_require_the_effective_configuration(
         if isinstance(spec, literalizer.languages.Cpp)
         else dataclasses.replace(spec, json_type=None)
     )
-    assert spec_supports_capability(
-        spec=restored,
+    assert variant_supports_capability(
+        variant=dataclasses.replace(variant, spec=restored),
         capability="collection_comments",
     )
