@@ -1,4 +1,4 @@
-# languages rejecting: 43; languages accepting: 22
+# languages rejecting: 42; languages accepting: 23
 
 [Accepted]
 Clojure = ""
@@ -23,6 +23,7 @@ Ruby = ""
 Sml = ""
 Tcl = ""
 Toml = ""
+Yaml = ""
 
 [ExistingVariableNotSelfContainedError]
 Ada = "Ada cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
@@ -69,4 +70,3 @@ Zig = "Zig cannot combine ExistingVariable with wrap_in_file=True because the as
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'x'"
 Jsonc = "Jsonc does not support variable names: 'x'"
-Yaml = "Yaml does not support variable names: 'x'"

@@ -1,4 +1,4 @@
-# languages rejecting: 4; languages accepting: 61
+# languages rejecting: 3; languages accepting: 62
 
 [Accepted]
 Ada = ""
@@ -61,6 +61,7 @@ TypeScript = ""
 V = ""
 VisualBasic = ""
 Wren = ""
+Yaml = ""
 Zig = ""
 
 [UnrepresentableInputError]
@@ -69,4 +70,3 @@ Rust = "Rust nested sibling lists require one concrete element type; these sibli
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'my_data'"
 Jsonc = "Jsonc does not support variable names: 'my_data'"
-Yaml = "Yaml does not support variable names: 'my_data'"

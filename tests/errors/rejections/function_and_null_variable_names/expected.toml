@@ -1,4 +1,4 @@
-# languages rejecting: 31; languages accepting: 52
+# languages rejecting: 30; languages accepting: 53
 
 [Accepted]
 "Bash['null']" = ""
@@ -86,6 +86,8 @@
 "V['null']" = ""
 "VisualBasic['null']" = ""
 "Wren['function']" = ""
+"Yaml['function']" = ""
+"Yaml['null']" = ""
 "Zig['function']" = ""
 
 [ReservedVariableNameError]
@@ -133,5 +135,3 @@
 "Json5['null']" = "Json5 does not support variable names: 'null'"
 "Jsonc['function']" = "Jsonc does not support variable names: 'function'"
 "Jsonc['null']" = "Jsonc does not support variable names: 'null'"
-"Yaml['function']" = "Yaml does not support variable names: 'function'"
-"Yaml['null']" = "Yaml does not support variable names: 'null'"

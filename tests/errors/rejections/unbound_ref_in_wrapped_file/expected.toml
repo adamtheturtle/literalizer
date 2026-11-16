@@ -11,6 +11,7 @@ Racket = "Racket cannot accept this value as a call argument: Racket output is n
 Ruby = "Ruby cannot accept this value as a call argument: Ruby output is not wrapped in a function body; variable references require a surrounding assignment (got 'myvar')"
 Scheme = "Scheme cannot accept this value as a call argument: Scheme output is not wrapped in a function body; variable references require a surrounding define (got 'myvar')"
 Toml = "TOML cannot accept this value as a call argument: TOML values must be literals, not variable references (got 'myvar')"
+Yaml = "Yaml cannot accept this value as a call argument: YAML anchor declarations are not generated (got 'myvar')"
 
 [RefNotSelfContainedError]
 Bash = "Bash cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
@@ -71,4 +72,3 @@ R = "R cannot represent an empty dict distinctly from an empty list; both serial
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'my_data'"
 Jsonc = "Jsonc does not support variable names: 'my_data'"
-Yaml = "Yaml does not support variable names: 'my_data'"

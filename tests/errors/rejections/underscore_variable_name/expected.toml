@@ -1,4 +1,4 @@
-# languages rejecting: 6; languages accepting: 60
+# languages rejecting: 5; languages accepting: 61
 
 [Accepted]
 "Bash['a__b']" = ""
@@ -118,6 +118,8 @@
 "VisualBasic['trailing_']" = ""
 "Wren['a__b']" = ""
 "Wren['trailing_']" = ""
+"Yaml['a__b']" = ""
+"Yaml['trailing_']" = ""
 "Zig['a__b']" = ""
 "Zig['trailing_']" = ""
 
@@ -133,5 +135,3 @@
 "Json5['trailing_']" = "Json5 does not support variable names: 'trailing_'"
 "Jsonc['a__b']" = "Jsonc does not support variable names: 'a__b'"
 "Jsonc['trailing_']" = "Jsonc does not support variable names: 'trailing_'"
-"Yaml['a__b']" = "Yaml does not support variable names: 'a__b'"
-"Yaml['trailing_']" = "Yaml does not support variable names: 'trailing_'"

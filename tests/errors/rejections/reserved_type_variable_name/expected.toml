@@ -1,4 +1,4 @@
-# languages rejecting: 21; languages accepting: 56
+# languages rejecting: 20; languages accepting: 57
 
 [Accepted]
 "Ada['idouble']" = ""
@@ -364,6 +364,13 @@
 "Wren['long']" = ""
 "Wren['real']" = ""
 "Wren['string']" = ""
+"Yaml['idouble']" = ""
+"Yaml['ifloat']" = ""
+"Yaml['int']" = ""
+"Yaml['ireal']" = ""
+"Yaml['long']" = ""
+"Yaml['real']" = ""
+"Yaml['string']" = ""
 "Zig['idouble']" = ""
 "Zig['ifloat']" = ""
 "Zig['int']" = ""
@@ -455,10 +462,3 @@
 "Jsonc['long']" = "Jsonc does not support variable names: 'long'"
 "Jsonc['real']" = "Jsonc does not support variable names: 'real'"
 "Jsonc['string']" = "Jsonc does not support variable names: 'string'"
-"Yaml['idouble']" = "Yaml does not support variable names: 'idouble'"
-"Yaml['ifloat']" = "Yaml does not support variable names: 'ifloat'"
-"Yaml['int']" = "Yaml does not support variable names: 'int'"
-"Yaml['ireal']" = "Yaml does not support variable names: 'ireal'"
-"Yaml['long']" = "Yaml does not support variable names: 'long'"
-"Yaml['real']" = "Yaml does not support variable names: 'real'"
-"Yaml['string']" = "Yaml does not support variable names: 'string'"

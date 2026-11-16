@@ -62,9 +62,9 @@ TypeScript = "integer has more decimal digits than the 640 this interpreter conv
 V = "integer has more decimal digits than the 640 this interpreter converts to text"
 VisualBasic = "integer has more decimal digits than the 640 this interpreter converts to text"
 Wren = "integer has more decimal digits than the 640 this interpreter converts to text"
+Yaml = "integer has more decimal digits than the 640 this interpreter converts to text"
 Zig = "integer has more decimal digits than the 640 this interpreter converts to text"
 
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'v'"
 Jsonc = "Jsonc does not support variable names: 'v'"
-Yaml = "Yaml does not support variable names: 'v'"

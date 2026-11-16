@@ -3,7 +3,6 @@
 [CallsNotSupportedByLanguageError]
 Json5 = "Json5 has no function call syntax"
 Jsonc = "Jsonc has no function call syntax"
-Yaml = "Yaml has no function call syntax"
 
 [RefNotSelfContainedError]
 Ada = "Ada cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
@@ -67,4 +66,5 @@ TypeScript = "TypeScript cannot combine wrap_in_file=True with the unbound refer
 V = "V cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
 VisualBasic = "VisualBasic cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
 Wren = "Wren cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
+Yaml = "Yaml cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"
 Zig = "Zig cannot combine wrap_in_file=True with the unbound reference myvar because a complete file has to declare every name it uses; name it in bound_refs on a result that binds a variable of its own, which is what emits the declaration"

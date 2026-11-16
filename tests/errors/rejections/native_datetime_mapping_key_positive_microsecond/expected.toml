@@ -30,6 +30,7 @@ Racket = "Racket cannot accept this value as a call argument: Racket output is n
 Ruby = "Ruby cannot accept this value as a call argument: Ruby output is not wrapped in a function body; variable references require a surrounding assignment (got 'binding')"
 Scheme = "Scheme cannot accept this value as a call argument: Scheme output is not wrapped in a function body; variable references require a surrounding define (got 'binding')"
 Toml = "TOML cannot accept this value as a call argument: TOML values must be literals, not variable references (got 'binding')"
+Yaml = "Yaml cannot accept this value as a call argument: YAML anchor declarations are not generated (got 'binding')"
 
 [UnrepresentableInputError]
 Ada = "Ada cannot represent dict key of type datetime"
@@ -71,4 +72,3 @@ Zig = "integer Unix epoch seconds cannot preserve fractional datetime precision:
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'result_data'"
 Jsonc = "Jsonc does not support variable names: 'result_data'"
-Yaml = "Yaml does not support variable names: 'result_data'"

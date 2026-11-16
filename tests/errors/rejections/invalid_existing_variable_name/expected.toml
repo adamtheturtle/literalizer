@@ -123,6 +123,8 @@
 "VisualBasic['a.b[0]']" = "VisualBasic cannot use ExistingVariable name 'a.b[0]': it is not a valid identifier"
 "Wren['']" = "Wren cannot use ExistingVariable name '': it is not a valid identifier"
 "Wren['a.b[0]']" = "Wren cannot use ExistingVariable name 'a.b[0]': it is not a valid identifier"
+"Yaml['']" = "Yaml cannot use ExistingVariable name '': it is not a valid identifier"
+"Yaml['a.b[0]']" = "Yaml cannot use ExistingVariable name 'a.b[0]': it is not a valid identifier"
 "Zig['']" = "Zig cannot use ExistingVariable name '': it is not a valid identifier"
 "Zig['a.b[0]']" = "Zig cannot use ExistingVariable name 'a.b[0]': it is not a valid identifier"
 
@@ -131,5 +133,3 @@
 "Json5['a.b[0]']" = "Json5 does not support variable names: 'a.b[0]'"
 "Jsonc['']" = "Jsonc does not support variable names: ''"
 "Jsonc['a.b[0]']" = "Jsonc does not support variable names: 'a.b[0]'"
-"Yaml['']" = "Yaml does not support variable names: ''"
-"Yaml['a.b[0]']" = "Yaml does not support variable names: 'a.b[0]'"

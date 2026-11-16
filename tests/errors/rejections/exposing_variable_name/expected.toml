@@ -1,4 +1,4 @@
-# languages rejecting: 5; languages accepting: 60
+# languages rejecting: 4; languages accepting: 61
 
 [Accepted]
 "Ada['exposing']" = ""
@@ -60,6 +60,7 @@
 "V['exposing']" = ""
 "VisualBasic['exposing']" = ""
 "Wren['exposing']" = ""
+"Yaml['exposing']" = ""
 "Zig['exposing']" = ""
 
 [ReservedVariableNameError]
@@ -69,4 +70,3 @@
 [VariableNameNotSupportedError]
 "Json5['exposing']" = "Json5 does not support variable names: 'exposing'"
 "Jsonc['exposing']" = "Jsonc does not support variable names: 'exposing'"
-"Yaml['exposing']" = "Yaml does not support variable names: 'exposing'"

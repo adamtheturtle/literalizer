@@ -1,4 +1,4 @@
-# languages rejecting: 13; languages accepting: 56
+# languages rejecting: 12; languages accepting: 57
 
 [Accepted]
 "Ada['clone']" = ""
@@ -380,6 +380,13 @@
 "Wren['notifyAll']" = ""
 "Wren['toString']" = ""
 "Wren['wait']" = ""
+"Yaml['clone']" = ""
+"Yaml['finalize']" = ""
+"Yaml['hashCode']" = ""
+"Yaml['notify']" = ""
+"Yaml['notifyAll']" = ""
+"Yaml['toString']" = ""
+"Yaml['wait']" = ""
 "Zig['clone']" = ""
 "Zig['finalize']" = ""
 "Zig['hashCode']" = ""
@@ -457,10 +464,3 @@
 "Jsonc['notifyAll']" = "Jsonc does not support variable names: 'notifyAll'"
 "Jsonc['toString']" = "Jsonc does not support variable names: 'toString'"
 "Jsonc['wait']" = "Jsonc does not support variable names: 'wait'"
-"Yaml['clone']" = "Yaml does not support variable names: 'clone'"
-"Yaml['finalize']" = "Yaml does not support variable names: 'finalize'"
-"Yaml['hashCode']" = "Yaml does not support variable names: 'hashCode'"
-"Yaml['notify']" = "Yaml does not support variable names: 'notify'"
-"Yaml['notifyAll']" = "Yaml does not support variable names: 'notifyAll'"
-"Yaml['toString']" = "Yaml does not support variable names: 'toString'"
-"Yaml['wait']" = "Yaml does not support variable names: 'wait'"

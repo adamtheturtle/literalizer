@@ -1,4 +1,4 @@
-# languages rejecting: 9; languages accepting: 56
+# languages rejecting: 8; languages accepting: 57
 
 [Accepted]
 "Ada['car']" = ""
@@ -166,6 +166,9 @@
 "Wren['car']" = ""
 "Wren['cdr']" = ""
 "Wren['cons']" = ""
+"Yaml['car']" = ""
+"Yaml['cdr']" = ""
+"Yaml['cons']" = ""
 "Zig['car']" = ""
 "Zig['cdr']" = ""
 "Zig['cons']" = ""
@@ -199,6 +202,3 @@
 "Jsonc['car']" = "Jsonc does not support variable names: 'car'"
 "Jsonc['cdr']" = "Jsonc does not support variable names: 'cdr'"
 "Jsonc['cons']" = "Jsonc does not support variable names: 'cons'"
-"Yaml['car']" = "Yaml does not support variable names: 'car'"
-"Yaml['cdr']" = "Yaml does not support variable names: 'cdr'"
-"Yaml['cons']" = "Yaml does not support variable names: 'cons'"

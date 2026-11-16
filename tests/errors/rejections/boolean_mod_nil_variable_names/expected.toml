@@ -1,4 +1,4 @@
-# languages rejecting: 38; languages accepting: 61
+# languages rejecting: 37; languages accepting: 62
 
 [Accepted]
 "Ada['false']" = ""
@@ -172,6 +172,10 @@
 "VisualBasic['nil']" = ""
 "Wren['mod']" = ""
 "Wren['nil']" = ""
+"Yaml['false']" = ""
+"Yaml['mod']" = ""
+"Yaml['nil']" = ""
+"Yaml['true']" = ""
 "Zig['mod']" = ""
 "Zig['nil']" = ""
 
@@ -261,7 +265,3 @@
 "Jsonc['mod']" = "Jsonc does not support variable names: 'mod'"
 "Jsonc['nil']" = "Jsonc does not support variable names: 'nil'"
 "Jsonc['true']" = "Jsonc does not support variable names: 'true'"
-"Yaml['false']" = "Yaml does not support variable names: 'false'"
-"Yaml['mod']" = "Yaml does not support variable names: 'mod'"
-"Yaml['nil']" = "Yaml does not support variable names: 'nil'"
-"Yaml['true']" = "Yaml does not support variable names: 'true'"

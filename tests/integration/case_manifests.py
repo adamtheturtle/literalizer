@@ -730,9 +730,7 @@ class ConstructorCaseSpec(  # noqa: NOD001
     # A native caller can provide an externally declared constructor.
     consumer_template: str | None = None
     consumer_templates: Mapping[str, str] = Field(default_factory=dict)
-    # Native syntax is resolved after participation, never used as a filter.
-    target_templates: Mapping[str, str] = Field(default_factory=dict)
-    # Render shared input through literalize unless native syntax overrides it.
+    # Render shared input through literalize.
     target_source_template: str | None = None
     # A portable document can use a common renderer after native selection.
     target_language: manifest_values.ManifestLanguage | None = None
@@ -747,11 +745,7 @@ class ConstructorCaseSpec(  # noqa: NOD001
     @property
     def renders_target(self) -> bool:
         """Whether this case consumes a target instead of calling it."""
-        return (
-            len(self.target_templates) > 0
-            or self.target_source_template is not None
-            or self.target_variable
-        )
+        return self.target_source_template is not None or self.target_variable
 
     @beartype
     def consumer_for_language(self, *, language_name: str) -> str | None:

@@ -1,4 +1,4 @@
-# languages rejecting: 8; languages accepting: 57
+# languages rejecting: 7; languages accepting: 58
 
 [Accepted]
 "Ada['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = ""
@@ -113,6 +113,8 @@
 "VisualBasic['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = ""
 "Wren['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = ""
 "Wren['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = ""
+"Yaml['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = ""
+"Yaml['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = ""
 "Zig['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = ""
 "Zig['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = ""
 
@@ -133,5 +135,3 @@
 "Json5['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = "Json5 does not support variable names: 'my_data'"
 "Jsonc['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = "Jsonc does not support variable names: 'my_data'"
 "Jsonc['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = "Jsonc does not support variable names: 'my_data'"
-"Yaml['{\"a\":[[1],[2]],\"b\":[[\"x\"],[\"y\"]]}']" = "Yaml does not support variable names: 'my_data'"
-"Yaml['[[[1],[2]],[[\"x\"],[\"y\"]]]']" = "Yaml does not support variable names: 'my_data'"

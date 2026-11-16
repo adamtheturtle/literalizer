@@ -1,4 +1,4 @@
-# languages rejecting: 64; languages accepting: 56
+# languages rejecting: 64; languages accepting: 57
 
 [Accepted]
 "Ada['length']" = ""
@@ -323,6 +323,12 @@
 "Wren['map']" = ""
 "Wren['print']" = ""
 "Wren['seq']" = ""
+"Yaml['abs']" = ""
+"Yaml['length']" = ""
+"Yaml['main']" = ""
+"Yaml['map']" = ""
+"Yaml['print']" = ""
+"Yaml['seq']" = ""
 "Zig['abs']" = ""
 "Zig['length']" = ""
 "Zig['map']" = ""
@@ -384,6 +390,7 @@
 "TypeScript[\"foldl'\"]" = "TypeScript cannot use NewVariable name \"foldl'\": it is not a valid identifier"
 "VisualBasic[\"foldl'\"]" = "VisualBasic cannot use NewVariable name \"foldl'\": it is not a valid identifier"
 "Wren[\"foldl'\"]" = "Wren cannot use NewVariable name \"foldl'\": it is not a valid identifier"
+"Yaml[\"foldl'\"]" = "Yaml cannot use NewVariable name \"foldl'\": it is not a valid identifier"
 "Zig[\"foldl'\"]" = "Zig cannot use NewVariable name \"foldl'\": it is not a valid identifier"
 
 [MixedDictValuesError]
@@ -457,10 +464,3 @@
 "Jsonc['map']" = "Jsonc does not support variable names: 'map'"
 "Jsonc['print']" = "Jsonc does not support variable names: 'print'"
 "Jsonc['seq']" = "Jsonc does not support variable names: 'seq'"
-"Yaml['abs']" = "Yaml does not support variable names: 'abs'"
-"Yaml[\"foldl'\"]" = "Yaml does not support variable names: \"foldl'\""
-"Yaml['length']" = "Yaml does not support variable names: 'length'"
-"Yaml['main']" = "Yaml does not support variable names: 'main'"
-"Yaml['map']" = "Yaml does not support variable names: 'map'"
-"Yaml['print']" = "Yaml does not support variable names: 'print'"
-"Yaml['seq']" = "Yaml does not support variable names: 'seq'"

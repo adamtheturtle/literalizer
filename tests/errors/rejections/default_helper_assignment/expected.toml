@@ -1,4 +1,4 @@
-# languages rejecting: 48; languages accepting: 17
+# languages rejecting: 47; languages accepting: 18
 
 [Accepted]
 "Clojure['ZKV']" = ""
@@ -35,6 +35,8 @@
 "Tcl['ZVal']" = ""
 "Toml['ZKV']" = ""
 "Toml['ZVal']" = ""
+"Yaml['ZKV']" = ""
+"Yaml['ZVal']" = ""
 
 [ExistingVariableNotSelfContainedError]
 "Ada['ZKV']" = "Ada cannot combine ExistingVariable with wrap_in_file=True because the assignment has no prior declaration"
@@ -137,5 +139,3 @@
 "Json5['ZVal']" = "Json5 does not support variable names: 'ZVal'"
 "Jsonc['ZKV']" = "Jsonc does not support variable names: 'ZKV'"
 "Jsonc['ZVal']" = "Jsonc does not support variable names: 'ZVal'"
-"Yaml['ZKV']" = "Yaml does not support variable names: 'ZKV'"
-"Yaml['ZVal']" = "Yaml does not support variable names: 'ZVal'"

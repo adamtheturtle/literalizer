@@ -1,14 +1,11 @@
 schema_version = 1
 owner = "constructor-binding"
 gates = [{kind = "capability_flag", flag = "supports_bare_mapping_documents"}, {kind = "capability_flag", flag = "supports_key_value_assignment_documents", value = false}]
+any_gates = [{kind = "capability_flag", flag = "supports_local_binding_documents"}, {kind = "capability_flag", flag = "supports_variable_names", value = false}]
 
 # Native mapping keys preserve target spelling.
 # Assignment documents are owned by constructor_target_assignment_document.
+# Named block maps are owned by constructor_target_named_without_calls.
 [constructor]
 # Literalizer owns native record/object syntax for Dhall, JSON5, Jsonnet and Nix.
 target_source_template = '{{"{target}": true}}'
-
-# Preserve the YAML block-map contract alongside the generated object literals.
-[constructor.target_templates]
-Yaml = '''{target}: true
-'''

@@ -62,9 +62,9 @@ TypeScript = "BothVariableForms requires wrap_in_file=True"
 V = "BothVariableForms requires wrap_in_file=True"
 VisualBasic = "BothVariableForms requires wrap_in_file=True"
 Wren = "BothVariableForms requires wrap_in_file=True"
+Yaml = "BothVariableForms requires wrap_in_file=True"
 Zig = "BothVariableForms requires wrap_in_file=True"
 
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'x'"
 Jsonc = "Jsonc does not support variable names: 'x'"
-Yaml = "Yaml does not support variable names: 'x'"

@@ -1,4 +1,4 @@
-# languages rejecting: 15; languages accepting: 50
+# languages rejecting: 14; languages accepting: 51
 
 [Accepted]
 Ada = ""
@@ -50,6 +50,7 @@ Toml = ""
 TypeScript = ""
 VisualBasic = ""
 Wren = ""
+Yaml = ""
 Zig = ""
 
 [InvalidNewVariableNameError]
@@ -71,4 +72,3 @@ Fortran = "Fortran cannot use NewVariable name 'Value': it is a reserved identif
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'Value'"
 Jsonc = "Jsonc does not support variable names: 'Value'"
-Yaml = "Yaml does not support variable names: 'Value'"

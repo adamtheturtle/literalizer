@@ -1,4 +1,4 @@
-# languages rejecting: 18; languages accepting: 47
+# languages rejecting: 17; languages accepting: 48
 
 [Accepted]
 Ada = ""
@@ -47,6 +47,7 @@ Tcl = ""
 Toml = ""
 V = ""
 VisualBasic = ""
+Yaml = ""
 Zig = ""
 
 [ReservedVariableNameError]
@@ -69,4 +70,3 @@ Wren = "Wren cannot use NewVariable name 'this': it is a reserved identifier"
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'this'"
 Jsonc = "Jsonc does not support variable names: 'this'"
-Yaml = "Yaml does not support variable names: 'this'"

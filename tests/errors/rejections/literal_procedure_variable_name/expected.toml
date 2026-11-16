@@ -1,4 +1,4 @@
-# languages rejecting: 60; languages accepting: 56
+# languages rejecting: 60; languages accepting: 57
 
 [Accepted]
 "Ada['date']" = ""
@@ -261,6 +261,11 @@
 "Wren['list']" = ""
 "Wren['set']" = ""
 "Wren['void']" = ""
+"Yaml['date']" = ""
+"Yaml['hash']" = ""
+"Yaml['list']" = ""
+"Yaml['set']" = ""
+"Yaml['void']" = ""
 "Zig['date']" = ""
 "Zig['hash']" = ""
 "Zig['list']" = ""
@@ -316,6 +321,7 @@
 "TypeScript['make-keyword-procedure']" = "TypeScript cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
 "VisualBasic['make-keyword-procedure']" = "VisualBasic cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
 "Wren['make-keyword-procedure']" = "Wren cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
+"Yaml['make-keyword-procedure']" = "Yaml cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
 "Zig['make-keyword-procedure']" = "Zig cannot use NewVariable name 'make-keyword-procedure': it is not a valid identifier"
 
 [MixedDictValuesError]
@@ -393,9 +399,3 @@
 "Jsonc['make-keyword-procedure']" = "Jsonc does not support variable names: 'make-keyword-procedure'"
 "Jsonc['set']" = "Jsonc does not support variable names: 'set'"
 "Jsonc['void']" = "Jsonc does not support variable names: 'void'"
-"Yaml['date']" = "Yaml does not support variable names: 'date'"
-"Yaml['hash']" = "Yaml does not support variable names: 'hash'"
-"Yaml['list']" = "Yaml does not support variable names: 'list'"
-"Yaml['make-keyword-procedure']" = "Yaml does not support variable names: 'make-keyword-procedure'"
-"Yaml['set']" = "Yaml does not support variable names: 'set'"
-"Yaml['void']" = "Yaml does not support variable names: 'void'"

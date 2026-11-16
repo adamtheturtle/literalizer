@@ -1,4 +1,4 @@
-# languages rejecting: 15; languages accepting: 50
+# languages rejecting: 14; languages accepting: 51
 
 [Accepted]
 "Bash['__']" = ""
@@ -99,6 +99,8 @@
 "TypeScript['___']" = ""
 "VisualBasic['__']" = ""
 "VisualBasic['___']" = ""
+"Yaml['__']" = ""
+"Yaml['___']" = ""
 "Zig['__']" = ""
 "Zig['___']" = ""
 
@@ -135,5 +137,3 @@
 "Json5['___']" = "Json5 does not support variable names: '___'"
 "Jsonc['__']" = "Jsonc does not support variable names: '__'"
 "Jsonc['___']" = "Jsonc does not support variable names: '___'"
-"Yaml['__']" = "Yaml does not support variable names: '__'"
-"Yaml['___']" = "Yaml does not support variable names: '___'"

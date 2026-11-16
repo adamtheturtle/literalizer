@@ -1,4 +1,4 @@
-# languages rejecting: 36; languages accepting: 56
+# languages rejecting: 35; languages accepting: 57
 
 [Accepted]
 "Ada['BigInt']" = ""
@@ -497,6 +497,17 @@
 "Wren['double']" = ""
 "Wren['int']" = ""
 "Wren['main']" = ""
+"Yaml['BigInt']" = ""
+"Yaml['DateTime']" = ""
+"Yaml['List']" = ""
+"Yaml['Map']" = ""
+"Yaml['Null']" = ""
+"Yaml['Set']" = ""
+"Yaml['String']" = ""
+"Yaml['bool']" = ""
+"Yaml['double']" = ""
+"Yaml['int']" = ""
+"Yaml['main']" = ""
 "Zig['BigInt']" = ""
 "Zig['DateTime']" = ""
 "Zig['List']" = ""
@@ -713,14 +724,3 @@
 "Jsonc['double']" = "Jsonc does not support variable names: 'double'"
 "Jsonc['int']" = "Jsonc does not support variable names: 'int'"
 "Jsonc['main']" = "Jsonc does not support variable names: 'main'"
-"Yaml['BigInt']" = "Yaml does not support variable names: 'BigInt'"
-"Yaml['DateTime']" = "Yaml does not support variable names: 'DateTime'"
-"Yaml['List']" = "Yaml does not support variable names: 'List'"
-"Yaml['Map']" = "Yaml does not support variable names: 'Map'"
-"Yaml['Null']" = "Yaml does not support variable names: 'Null'"
-"Yaml['Set']" = "Yaml does not support variable names: 'Set'"
-"Yaml['String']" = "Yaml does not support variable names: 'String'"
-"Yaml['bool']" = "Yaml does not support variable names: 'bool'"
-"Yaml['double']" = "Yaml does not support variable names: 'double'"
-"Yaml['int']" = "Yaml does not support variable names: 'int'"
-"Yaml['main']" = "Yaml does not support variable names: 'main'"

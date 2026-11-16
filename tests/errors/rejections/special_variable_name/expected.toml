@@ -1,4 +1,4 @@
-# languages rejecting: 61; languages accepting: 56
+# languages rejecting: 61; languages accepting: 57
 
 [Accepted]
 "Ada['features']" = ""
@@ -153,6 +153,9 @@
 "Wren['Package']" = ""
 "Wren['features']" = ""
 "Wren['package']" = ""
+"Yaml['Package']" = ""
+"Yaml['features']" = ""
+"Yaml['package']" = ""
 "Zig['Package']" = ""
 "Zig['features']" = ""
 "Zig['package']" = ""
@@ -265,6 +268,8 @@
 "VisualBasic['standard-output']" = "VisualBasic cannot use NewVariable name 'standard-output': it is not a valid identifier"
 "Wren['print-base']" = "Wren cannot use NewVariable name 'print-base': it is not a valid identifier"
 "Wren['standard-output']" = "Wren cannot use NewVariable name 'standard-output': it is not a valid identifier"
+"Yaml['print-base']" = "Yaml cannot use NewVariable name 'print-base': it is not a valid identifier"
+"Yaml['standard-output']" = "Yaml cannot use NewVariable name 'standard-output': it is not a valid identifier"
 "Zig['print-base']" = "Zig cannot use NewVariable name 'print-base': it is not a valid identifier"
 "Zig['standard-output']" = "Zig cannot use NewVariable name 'standard-output': it is not a valid identifier"
 
@@ -329,8 +334,3 @@
 "Jsonc['package']" = "Jsonc does not support variable names: 'package'"
 "Jsonc['print-base']" = "Jsonc does not support variable names: 'print-base'"
 "Jsonc['standard-output']" = "Jsonc does not support variable names: 'standard-output'"
-"Yaml['Package']" = "Yaml does not support variable names: 'Package'"
-"Yaml['features']" = "Yaml does not support variable names: 'features'"
-"Yaml['package']" = "Yaml does not support variable names: 'package'"
-"Yaml['print-base']" = "Yaml does not support variable names: 'print-base'"
-"Yaml['standard-output']" = "Yaml does not support variable names: 'standard-output'"

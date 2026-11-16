@@ -1,4 +1,4 @@
-# languages rejecting: 17; languages accepting: 48
+# languages rejecting: 16; languages accepting: 49
 
 [Accepted]
 "Bash['NA_character_']" = ""
@@ -189,6 +189,10 @@
 "Wren['NA_complex_']" = ""
 "Wren['NA_integer_']" = ""
 "Wren['NA_real_']" = ""
+"Yaml['NA_character_']" = ""
+"Yaml['NA_complex_']" = ""
+"Yaml['NA_integer_']" = ""
+"Yaml['NA_real_']" = ""
 "Zig['NA_character_']" = ""
 "Zig['NA_complex_']" = ""
 "Zig['NA_integer_']" = ""
@@ -263,7 +267,3 @@
 "Jsonc['NA_complex_']" = "Jsonc does not support variable names: 'NA_complex_'"
 "Jsonc['NA_integer_']" = "Jsonc does not support variable names: 'NA_integer_'"
 "Jsonc['NA_real_']" = "Jsonc does not support variable names: 'NA_real_'"
-"Yaml['NA_character_']" = "Yaml does not support variable names: 'NA_character_'"
-"Yaml['NA_complex_']" = "Yaml does not support variable names: 'NA_complex_'"
-"Yaml['NA_integer_']" = "Yaml does not support variable names: 'NA_integer_'"
-"Yaml['NA_real_']" = "Yaml does not support variable names: 'NA_real_'"
