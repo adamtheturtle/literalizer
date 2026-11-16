@@ -23,7 +23,7 @@ from .call_collection import (
     CallRendering,
     discover_call_cases,
 )
-from .call_expectations import expected_call_shape_exception
+from .call_expectations import call_style_spec, expected_call_shape_exception
 from .case_manifests import CallCaseSpec, call_case_specs
 from .variant_cases import Variant, variants_for_axis
 from .variant_context import config_with_variant_layout
@@ -55,7 +55,11 @@ class CallVariantCase:
             CallRendering(
                 config=self.config,
                 lang_cls=self.lang_cls,
-                spec=self.variant.spec,
+                spec=call_style_spec(
+                    config=self.config,
+                    lang_cls=self.lang_cls,
+                    spec=self.variant.spec,
+                ),
                 golden_name=f"{self.variant.name}_call",
                 expected_exception=expected_call_shape_exception(
                     lang_cls=self.lang_cls,
