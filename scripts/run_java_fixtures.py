@@ -1,4 +1,6 @@
-"""Compile and execute Java goldens through the existing warm JVM host."""
+"""Compile and execute Java fixtures through the existing warm compiler
+host.
+"""
 
 import shutil
 import subprocess
@@ -66,7 +68,7 @@ def main(
         for offset in range(0, len(fixtures), batch_size):
             batch = fixtures[offset : offset + batch_size]
             # The host creates one private compilation directory per file.
-            # Own its JVM temporary root so successes, failures and timeouts
+            # Own its temporary root so successes, failures and timeouts
             # all remove those directories on return.
             with tempfile.TemporaryDirectory(
                 suffix="-literalizer-java"

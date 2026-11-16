@@ -4,6 +4,7 @@ path.
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -20,9 +21,13 @@ def test_java_fixture_runner(
     """Both target releases compile and execute; a bad initializer
     fails.
     """
-    if shutil.which(cmd="java") is None or (
-        shutil.which(cmd="timeout") is None
-        and shutil.which(cmd="gtimeout") is None
+    if (
+        sys.platform == "win32"
+        or shutil.which(cmd="java") is None
+        or (
+            shutil.which(cmd="timeout") is None
+            and shutil.which(cmd="gtimeout") is None
+        )
     ):
         pytest.skip(reason="A JDK and GNU timeout are required")
     monkeypatch.setattr(target=list_fixtures, name="CASES_DIR", value=tmp_path)
@@ -61,6 +66,7 @@ def test_java_command_contract(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Keep target selection and native failure propagation portable."""
+    monkeypatch.setattr(target=sys, name="platform", value="linux")
     monkeypatch.setattr(
         target=shutil, name="which", value=Mock(return_value="/jdk/java")
     )
