@@ -60,16 +60,13 @@ class CallCase:
             CallRendering(
                 config=self.config,
                 lang_cls=self.lang_cls,
-                spec=spec,
-                golden_name=f"{self.lang_cls.__name__}_call",
-                expected_exception=expected_call_shape_exception(
-                    lang_cls=self.lang_cls, config=self.config, spec=spec
+                spec=make_spec(
+                    lang_cls=self.lang_cls, language_version=version
                 ),
+                golden_name=f"{self.lang_cls.__name__}_call",
+                expected_exception=self.expected_exception,
             )
             for version in self.lang_cls.VersionFormats
-            for spec in (
-                make_spec(lang_cls=self.lang_cls, language_version=version),
-            )
         )
 
 

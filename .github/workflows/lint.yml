@@ -794,34 +794,11 @@ jobs:
       || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-roc')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - version: v0
-            build: roc_nightly-linux_x86_64-2025-10-28-ea210f57
-            url: https://github.com/roc-lang/roc/releases/download/nightly/roc_nightly-linux_x86_64-latest.tar.gz
-            sha256: ''
-          - version: v1
-            build: roc_nightly-linux_x86_64-2026-11-15-f25da45
-            url: https://github.com/roc-lang/nightlies/releases/download/nightly-2026-11-15-f25da45/roc_nightly-linux_x86_64-2026-11-15-f25da45.tar.gz
-            sha256: 986360348a6bbf4f27696f6b3d73f0260293813346712a3f72e736452671e994
-    # Roc has no stable release, and the upstream ``nightly`` GitHub
-    # release only ever retains the moving
-    # ``roc_nightly-linux_x86_64-latest.tar.gz`` asset -- old dated
-    # nightlies are not kept, so there is no dated URL to ``curl``.
-    # Instead we download ``-latest`` and assert its embedded build id
-    # (the tarball's top-level directory, which carries the build date
-    # and commit) equals ``ROC_NIGHTLY_BUILD``, so CI fails loudly when
-    # upstream replaces the nightly instead of silently drifting. This
-    # ``2025-10-28`` build is documented against the ``V0`` default of
-    # ``Roc.language_version`` in ``src/literalizer/languages/roc.py``;
-    # keep them in sync. Roc has no ``--langversion``-style flag, so the
-    # pinned nightly build is the only mechanism for pinning the
-    # language version.
+    # V1 is the only supported Roc target. Keep this immutable compiler
+    # release paired with basic-cli in scripts/run_roc_roundtrip.py.
     env:
-      ROC_NIGHTLY_BUILD: ${{ matrix.build }}
-      ROC_LANGUAGE_VERSION: ${{ matrix.version }}
+      ROC_NIGHTLY_BUILD: roc_nightly-linux_x86_64-2026-11-15-f25da45
+      ROC_SHA256: 986360348a6bbf4f27696f6b3d73f0260293813346712a3f72e736452671e994
     steps:
       - uses: actions/checkout@v7
         with:
@@ -831,17 +808,13 @@ jobs:
         uses: nick-fields/retry@v4.0.0
         env:
           ARTIFACT_DESTINATION: /tmp/roc.tar.gz
-          ARTIFACT_URL: ${{ matrix.url }}
+          ARTIFACT_URL: https://github.com/roc-lang/nightlies/releases/download/nightly-2026-11-15-f25da45/roc_nightly-linux_x86_64-2026-11-15-f25da45.tar.gz
         with: *download
 
       - name: Install Roc
         timeout-minutes: 10
-        env:
-          ROC_SHA256: ${{ matrix.sha256 }}
         run: |-
-          if [ -n "$ROC_SHA256" ]; then
-            echo "$ROC_SHA256  /tmp/roc.tar.gz" | sha256sum --check
-          fi
+          echo "$ROC_SHA256  /tmp/roc.tar.gz" | sha256sum --check
           mkdir -p /tmp/roc-nightly
           tar -xzf /tmp/roc.tar.gz -C /tmp/roc-nightly
           # Read the extracted top-level directory by globbing rather
@@ -858,7 +831,7 @@ jobs:
           sudo install "/tmp/roc-nightly/$ROC_NIGHTLY_BUILD/roc" /usr/local/bin/roc
       - name: Lint Roc
         run: |-
-          find tests/integration/cases -name "*@${ROC_LANGUAGE_VERSION}.roc" -print0 > /tmp/files-roc && test -s /tmp/files-roc
+          find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc && test -s /tmp/files-roc
           xargs -0 -P "$(nproc)" -n1 roc check < /tmp/files-roc
 
       # `uv` is needed by the `Roc roundtrip` step below; it runs the
@@ -881,7 +854,6 @@ jobs:
         # allowance (issue 5205).
         timeout-minutes: 5
         run: uv run --no-dev --group=roundtrip python -m scripts.run_roc_roundtrip
-          --language-version "$ROC_LANGUAGE_VERSION"
 
   # Octave is a practical CI substitute, but it does not support
   # every MATLAB builtin.  The per-fixture skip rules (for ``""``

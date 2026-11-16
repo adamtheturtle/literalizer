@@ -96,11 +96,9 @@ def constructor_binding_cases(
         for manifest in owners:
             config = manifest.constructor
             assert config is not None  # noqa: S101
-            for version in case.lang_cls.VersionFormats:
-                _ = config.consumer_for_language(
-                    language_name=case.lang_cls.__name__,
-                    version_name=version.name,
-                )
+            _ = config.consumer_for_language(
+                language_name=case.lang_cls.__name__
+            )
             cases.append(
                 ConstructorBindingCase(
                     name=case.name,

@@ -48,7 +48,7 @@ Python = "Python renders distinct collection scalars datetime.datetime(1970, 1, 
 R = "R renders distinct collection scalars datetime.datetime(1970, 1, 1, 0, 0, 1, tzinfo=datetime.timezone(datetime.timedelta(0), 'Z')) and 1 identically as '1'"
 Racket = "Racket renders distinct collection scalars datetime.datetime(1970, 1, 1, 0, 0, 1, tzinfo=datetime.timezone(datetime.timedelta(0), 'Z')) and 1 identically as '1'"
 Raku = "Raku renders distinct collection scalars datetime.datetime(1970, 1, 1, 0, 0, 1, tzinfo=datetime.timezone(datetime.timedelta(0), 'Z')) and 1 identically as '1'"
-Roc = "Roc renders distinct collection scalars datetime.datetime(1970, 1, 1, 0, 0, 1, tzinfo=datetime.timezone(datetime.timedelta(0), 'Z')) and 1 identically as 'RInt 1i128'"
+Roc = "Roc renders distinct collection scalars datetime.datetime(1970, 1, 1, 0, 0, 1, tzinfo=datetime.timezone(datetime.timedelta(0), 'Z')) and 1 identically as 'RInt(1.I128)'"
 Ruby = "Ruby renders distinct collection scalars datetime.datetime(1970, 1, 1, 0, 0, 1, tzinfo=datetime.timezone(datetime.timedelta(0), 'Z')) and 1 identically as '1'"
 Rust = "Rust renders distinct collection scalars datetime.datetime(1970, 1, 1, 0, 0, 1, tzinfo=datetime.timezone(datetime.timedelta(0), 'Z')) and 1 identically as '1'"
 Scheme = "Scheme renders distinct collection scalars datetime.datetime(1970, 1, 1, 0, 0, 1, tzinfo=datetime.timezone(datetime.timedelta(0), 'Z')) and 1 identically as '1'"

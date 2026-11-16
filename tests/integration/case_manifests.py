@@ -754,17 +754,12 @@ class ConstructorCaseSpec(  # noqa: NOD001
         )
 
     @beartype
-    def consumer_for_language(
-        self, *, language_name: str, version_name: str
-    ) -> str | None:
+    def consumer_for_language(self, *, language_name: str) -> str | None:
         """Resolve native syntax after the capability selects a
         backend.
         """
         if len(self.consumer_templates) == 0:
             return self.consumer_template
-        versioned_key = f"{language_name}@{version_name}"
-        if versioned_key in self.consumer_templates:
-            return self.consumer_templates[versioned_key]
         try:
             return self.consumer_templates[language_name]
         except KeyError as error:

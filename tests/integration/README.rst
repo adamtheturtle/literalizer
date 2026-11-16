@@ -82,6 +82,3 @@ Follow the ordinary literal path in this order:
 The specialized entry points are ``test_calls.py``, ``test_literalize_ref_golden.py``, ``test_literalize_ref_default.py`` and ``test_constructor_targets.py``.
 Backend-specific fixture naming, native consumer scaffolds and sample options live under ``languages/``.
 ``language_specs.py`` applies those naming rules and creates versioned fixture paths.
-
-Constructor consumer templates can override a language's native syntax for a version using a key such as ``"Roc@V1"``.
-Other versions use the language's ordinary template.
