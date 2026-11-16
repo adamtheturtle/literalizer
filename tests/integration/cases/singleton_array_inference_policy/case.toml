@@ -3,6 +3,9 @@ schema_version = 1
 suites = ["base", "combined"]
 
 [[variants]]
+axis = "array_inference_type_hints"
+
+[[variants]]
 axis = "collection_layout"
 
 [[variants]]
