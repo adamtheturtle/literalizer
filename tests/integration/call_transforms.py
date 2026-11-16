@@ -42,22 +42,6 @@ from .language_specs import (
 from .parsed_values import ParsedValue
 
 
-@beartype
-def _statement_stub_targets(
-    *, config: CallCaseSpec
-) -> list[tuple[str, tuple[str, ...]]]:
-    """Pair each statement target with its own parameter names."""
-    targets = [
-        (name, config.transform_stub_param_names)
-        for name in config.transform_stub_names
-    ]
-    if config.followup_target_function is not None:
-        targets.append(
-            (config.followup_target_function, config.parameter_names)
-        )
-    return targets
-
-
 @runtime_checkable
 class _CallExpressionGroupLanguage(Protocol):
     """A producer whose value grouping differs from parentheses."""
@@ -176,7 +160,15 @@ def wrapper_call_declarations(
     class_scope: list[str] = []
     file_scope: list[str] = []
     wrapper = config.call_transform_wrapper
-    for name, parameter_names in _statement_stub_targets(config=config):
+    targets = [
+        (name, config.transform_stub_param_names)
+        for name in config.transform_stub_names
+    ]
+    if config.followup_target_function is not None:
+        targets.append(
+            (config.followup_target_function, config.parameter_names)
+        )
+    for name, parameter_names in targets:
         params = parameter_names
         wrapper_spec = spec
         arguments: Sequence[ParsedValue] = ()
@@ -240,17 +232,16 @@ def followup_result_slots(
         source=config.followup_source, input_format=input_format
     ).data
     rows = data if config.per_element and isinstance(data, list) else [data]
-    slots: set[int] = set()
-    for row in rows:
-        arguments = (
-            row if config.per_element and isinstance(row, list) else [row]
+    return frozenset(
+        index
+        for row in rows
+        for index, value in enumerate(
+            iterable=row
+            if config.per_element and isinstance(row, list)
+            else [row]
         )
-        slots.update(
-            index
-            for index, value in enumerate(iterable=arguments)
-            if value == {config.ref_key: config.variable_form.name}
-        )
-    return frozenset(slots)
+        if value == {config.ref_key: config.variable_form.name}
+    )
 
 
 @dataclasses.dataclass(frozen=True)
