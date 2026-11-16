@@ -33,6 +33,7 @@ from tests.language_gates import (
     CapabilityFlagGate,
     EnumMemberPresentGate,
     ModifierPresentGate,
+    SpecFieldAbsentGate,
     SpecFieldPresentGate,
     language_gate_admits,
 )
@@ -43,24 +44,6 @@ from .language_metadata import LanguageMetadata, RecordVariantName
 
 class SuiteGateError(ValueError):
     """A declared gate names something no registry answers to."""
-
-
-@beartype
-def _widens_nested_maps_by_wrapping_scalars(
-    spec: literalizer.Language,
-) -> bool:
-    """Return whether the strategy wraps sibling maps' scalar leaves."""
-    behavior = spec.heterogeneous_behavior
-    return behavior.widens_nested_maps_by_wrapping_scalars
-
-
-@beartype
-def _widens_unrecordizable_nested_sibling_maps(
-    spec: literalizer.Language,
-) -> bool:
-    """Return whether the strategy widens nested maps no record fits."""
-    behavior = spec.heterogeneous_behavior
-    return behavior.widens_unrecordizable_nested_sibling_maps
 
 
 @beartype
@@ -114,10 +97,14 @@ BEHAVIOR_FLAGS: Mapping[str, Callable[[literalizer.Language], bool]] = {
         lambda spec: spec.sequence_format_config.supports_heterogeneity
     ),
     "widens_nested_maps_by_wrapping_scalars": (
-        _widens_nested_maps_by_wrapping_scalars
+        lambda spec: (
+            spec.heterogeneous_behavior.widens_nested_maps_by_wrapping_scalars
+        )
     ),
     "widens_unrecordizable_nested_sibling_maps": (
-        _widens_unrecordizable_nested_sibling_maps
+        lambda spec: (
+            spec.heterogeneous_behavior.widens_unrecordizable_nested_sibling_maps
+        )
     ),
 }
 
@@ -142,6 +129,8 @@ SPEC_FIELDS = frozenset(
         "json_type",
         "list_rendering_policy",
         "native_argument_layout",
+        "program_name",
+        "null_constructor_name",
         "indent_file_body",
         "expand_call_stubs",
         "record_map_value_typing",
@@ -354,6 +343,7 @@ type SuiteGate = Annotated[
     CapabilityFlagGate
     | RecordVariantGate
     | NonDefaultKwargGate
+    | SpecFieldAbsentGate
     | SpecFieldPresentGate
     | EnumMemberPresentGate
     | ModifierPresentGate
@@ -389,7 +379,9 @@ def validate_gate_names(
             case CapabilityFlagGate() if gate.flag not in CAPABILITY_FLAGS:
                 msg = f"{subject}: unknown capability flag {gate.flag!r}"
                 raise SuiteGateError(msg)
-            case SpecFieldPresentGate() if gate.field not in SPEC_FIELDS:
+            case SpecFieldPresentGate() | SpecFieldAbsentGate() if (
+                gate.field not in SPEC_FIELDS
+            ):
                 msg = f"{subject}: unknown spec field {gate.field!r}"
                 raise SuiteGateError(msg)
             case EnumMemberPresentGate() if gate.option not in OPTIONS:
@@ -442,6 +434,7 @@ def gate_admits(
     match gate:
         case (
             CapabilityFlagGate()
+            | SpecFieldAbsentGate()
             | SpecFieldPresentGate()
             | EnumMemberPresentGate()
             | ModifierPresentGate()

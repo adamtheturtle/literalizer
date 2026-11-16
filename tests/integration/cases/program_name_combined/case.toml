@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "variant"
+
+# BothVariableForms also uses the configured wrapper program identifier.
+[[variants]]
+axis = "program_name"
+[variants.context]
+variable_form = "both"

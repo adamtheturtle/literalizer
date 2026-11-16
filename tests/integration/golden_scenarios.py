@@ -28,7 +28,6 @@ import literalizer
 from . import case_manifests, manifest_queries, scenario_skips
 from .case_discovery import (
     discover_cases,
-    group_cases_by_language,
     kebab_new_variable_languages,
     primed_new_variable_languages,
 )
@@ -107,7 +106,7 @@ def _base_renderings(
     substitutions -- is whatever the case's manifest declares.
     """
     manifests = case_manifests_by_name(cases_dir=_CASES_DIR)
-    grouped = group_cases_by_language(cases_dir=_CASES_DIR)
+    grouped = discover_cases(cases_dir=_CASES_DIR, suite="base")
     renderings: list[GoldenRendering] = []
     for case_name in grouped.get(lang_cls, []):
         context = manifests[case_name].base_context
@@ -210,36 +209,6 @@ def _new_variable_renderings(
 
 
 @beartype
-def _kebab_new_variable_renderings(
-    *,
-    lang_cls: literalizer.LanguageCls,
-) -> tuple[GoldenRendering, ...]:
-    """Hyphen-friendly languages preserve a hyphenated declaration
-    name.
-    """
-    return _new_variable_renderings(
-        lang_cls=lang_cls,
-        languages=kebab_new_variable_languages(),
-        owner=KEBAB_NEW_VARIABLE_OWNER,
-        variable_name="a-b",
-    )
-
-
-@beartype
-def _primed_new_variable_renderings(
-    *,
-    lang_cls: literalizer.LanguageCls,
-) -> tuple[GoldenRendering, ...]:
-    """Prime-friendly languages preserve a primed declaration name."""
-    return _new_variable_renderings(
-        lang_cls=lang_cls,
-        languages=primed_new_variable_languages(),
-        owner=PRIMED_NEW_VARIABLE_OWNER,
-        variable_name="a'",
-    )
-
-
-@beartype
 def _combined_renderings(
     *, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
@@ -261,10 +230,9 @@ def _combined_renderings(
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
             skip=scenario_skips.LANGUAGE_SKIPS,
         )
-        for case_name, case_language in discover_cases(
+        for case_name in discover_cases(
             cases_dir=_CASES_DIR, suite="combined"
-        )
-        if case_language is lang_cls
+        ).get(lang_cls, [])
         for style in styles
     )
 
@@ -494,11 +462,21 @@ GOLDEN_SCENARIOS: tuple[GoldenScenario, ...] = (
     ),
     GoldenScenario(
         name="kebab_new_variable",
-        build=_kebab_new_variable_renderings,
+        build=functools.partial(
+            _new_variable_renderings,
+            languages=kebab_new_variable_languages(),
+            owner=KEBAB_NEW_VARIABLE_OWNER,
+            variable_name="a-b",
+        ),
     ),
     GoldenScenario(
         name="primed_new_variable",
-        build=_primed_new_variable_renderings,
+        build=functools.partial(
+            _new_variable_renderings,
+            languages=primed_new_variable_languages(),
+            owner=PRIMED_NEW_VARIABLE_OWNER,
+            variable_name="a'",
+        ),
     ),
     GoldenScenario(name="combined", build=_combined_renderings),
     GoldenScenario(name="format_variant", build=_variant_renderings),

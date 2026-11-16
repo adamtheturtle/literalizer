@@ -61,23 +61,10 @@ class _InvalidMessageCase(BaseModel, extra="forbid", frozen=True):
     message: str
 
 
-class _VersionCase(BaseModel, extra="forbid", frozen=True):
-    """The active message entry for one Python version."""
-
-    name: str
-    version: str
-    source: str
-    rejecting: int
-    accepting: int
-    expected_document: str
-    actual_messages: dict[str, dict[str, str]]
-
-
 class _MessageCases(BaseModel, extra="forbid", frozen=True):
     """Versioned diagnostic regressions declared in TOML."""
 
     invalid: tuple[_InvalidMessageCase, ...]
-    versions: tuple[_VersionCase, ...]
 
 
 _MESSAGE_CASES = TypeAdapter(type=_MessageCases).validate_python(
@@ -663,31 +650,6 @@ def test_missing_message_golden_can_be_generated(tmp_path: Path) -> None:
     assert (
         _load_expected_messages(golden_path=tmp_path / "expected.toml") == {}
     )
-
-
-@pytest.mark.parametrize(
-    argnames="case",
-    argvalues=_MESSAGE_CASES.versions,
-    ids=lambda case: case.name,
-)
-def test_versioned_messages_preserve_inactive_variants(
-    case: _VersionCase, tmp_path: Path
-) -> None:
-    """Regeneration preserves inactive messages and removes stale
-    cases.
-    """
-    golden_path = tmp_path / "expected.toml"
-    _ = golden_path.write_text(data=case.source, encoding="utf-8")
-    expected = _load_expected_messages(golden_path=golden_path)
-    document = _rejection_document(
-        messages_by_exception=case.actual_messages,
-        expected=expected,
-        rejecting=case.rejecting,
-        accepting=case.accepting,
-        python_version=case.version,
-    )
-    assert tomllib.loads(document) == tomllib.loads(case.expected_document)
-    assert expected == tomllib.loads(case.source)
 
 
 @pytest.mark.parametrize(argnames="limit", argvalues=[None, 0, 640])

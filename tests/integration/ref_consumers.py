@@ -275,26 +275,23 @@ def compose_external_ref_fixture(
                 declaration_spec = dataclasses.replace(
                     spec, declaration_style=styles[0]
                 )
+        declaration = literalizer.literalize(
+            source=source,
+            input_format=literalizer.InputFormat.JSON,
+            language=declaration_spec,
+            variable_form=literalizer.NewVariable(
+                name=name, modifiers=frozenset()
+            ),
+        )
         declarations.append(
-            literalizer.literalize(
-                source=source,
-                input_format=literalizer.InputFormat.JSON,
-                language=declaration_spec,
-                variable_form=literalizer.NewVariable(
-                    name=name, modifiers=frozenset()
-                ),
+            dataclasses.replace(
+                declaration,
+                preamble=(*config.caller_preamble, *declaration.preamble),
             )
         )
     result = dataclasses.replace(
         result, preamble=(*config.caller_preamble, *result.preamble)
     )
-    declarations = [
-        dataclasses.replace(
-            declaration,
-            preamble=(*config.caller_preamble, *declaration.preamble),
-        )
-        for declaration in declarations
-    ]
     assertion_helper = (
         Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
     )

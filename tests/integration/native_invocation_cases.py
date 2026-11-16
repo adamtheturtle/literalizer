@@ -23,7 +23,16 @@ class NativeInvocationCase:
     manifest: CaseManifest
     lang_cls: literalizer.LanguageCls
     version: enum.Enum
-    golden_path: Path
+
+    @property
+    def golden_path(self) -> Path:
+        """Locate this case's fixture from its manifest and target version."""
+        return make_golden_path(
+            parent=self.manifest.case_dir,
+            name=f"{self.lang_cls.__name__}_native_invocations",
+            lang_cls=self.lang_cls,
+            version=self.version,
+        )
 
     @property
     def test_id(self) -> str:
@@ -41,12 +50,6 @@ def native_invocation_cases(*, cases_dir: Path) -> list[NativeInvocationCase]:
             manifest=manifest,
             lang_cls=language,
             version=version,
-            golden_path=make_golden_path(
-                parent=manifest.case_dir,
-                name=f"{language.__name__}_native_invocations",
-                lang_cls=language,
-                version=version,
-            ),
         )
         for manifest in load_case_manifests(cases_dir=cases_dir)
         if manifest.native_invocation is not None

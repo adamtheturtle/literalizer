@@ -20,6 +20,7 @@ from literalizer._formatters.format_dates import (
     format_datetime_epoch,
     format_datetime_iso,
     format_time_iso,
+    normalize_datetime_utc,
 )
 from literalizer._formatters.format_entries import (
     dict_entry_with_separator,
@@ -123,7 +124,14 @@ def _format_date_php(value: dt.date) -> str:
 
 @beartype
 def _format_datetime_php(value: dt.datetime) -> str:
-    """Format a datetime without consulting PHP's default time zone."""
+    """Format a datetime without consulting PHP's default time zone.
+
+    PHP parses whole-second offsets. Normalize fractional offsets to
+    their UTC instant before passing the timestamp to its parser.
+    """
+    offset = value.utcoffset()
+    if offset is not None and offset.microseconds != 0:
+        value = normalize_datetime_utc(value=value, language_name="PHP")
     iso = value.isoformat()
     if value.utcoffset() is None:
         return f'new DateTime("{iso}", new DateTimeZone("UTC"))'

@@ -737,14 +737,13 @@ jobs:
     # cleanup hangs, stop this job promptly instead of leaving the
     # completion gate blocked until the workflow-wide timeout.
     timeout-minutes: 10
-    # Pinned: `release: latest` (dev-2026-05) crashes at runtime under
-    # `odin run .`, and the compiler itself segfaults on some fixtures
-    # under `odin build .`.  dev-2026-04 was the last release known to
-    # work with `odin run .`.  Every Odin fixture on disk carries the
+    # Use an explicitly validated release (issue 6298), rather than
+    # allowing `release: latest` to change the compiler between runs.
+    # Every Odin fixture on disk carries the
     # tag from ``Odin.VersionFormats`` (e.g. `Odin@dev_2024.odin`); the
     # compiler pin here and that enum member name are reviewed together.
     env:
-      ODIN_VERSION: dev-2026-04
+      ODIN_VERSION: dev-2026-11a
       ODIN_FIXTURE_TAG: dev_2024
       ODIN_SHARD: ${{ matrix.shard }}
       ODIN_SHARDS: 2
@@ -768,8 +767,7 @@ jobs:
             # Print before running so a timeout log identifies the
             # fixture to minimize for an upstream Odin bug report.
             printf 'Running %s\n' "$src"
-            bash scripts/lint-odin-fixture.sh "$src" || \
-              bash scripts/lint-odin-fixture.sh "$src" || exit 1
+            bash scripts/lint-odin-fixture.sh "$src"
           done
       # `uv` is needed by the `Odin roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.

@@ -84,6 +84,8 @@ dev = [
     "pytest-codspeed==5.0.4",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.11.0",
+    # Combined upstream PRs #13/#14; replace with a release when available.
+    "pytest-timing @ git+https://github.com/adamtheturtle/pytest-timing.git@f123dfccd871515e78ac56926603b7643934c838",
     "pytest-xdist==3.8.0",
     "ruff==0.17.4",
     # We add shellcheck-py not only for shell scripts and shell code blocks,
@@ -136,6 +138,7 @@ test = [
     "pytest-beartype==0.3.0",
     "pytest-cov==7.1.0",
     "pytest-regressions==2.11.0",
+    "pytest-timing @ git+https://github.com/adamtheturtle/pytest-timing.git@f123dfccd871515e78ac56926603b7643934c838",
     "pytest-xdist==3.8.0",
 ]
 benchmark = [

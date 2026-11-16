@@ -15,7 +15,7 @@ from literalizer._formatters.collection_openers import (
 )
 from literalizer._formatters.format_dates import (
     date_iso_formatter,
-    datetime_iso_formatter,
+    datetime_minute_offset_formatter,
     format_date_iso,
     format_datetime_epoch,
     format_datetime_iso,
@@ -310,7 +310,7 @@ class Toml(metaclass=LanguageCls):
         """Datetime format options for Toml."""
 
         TOML = DatetimeFormatConfig(
-            formatter=datetime_iso_formatter(template="{iso}"),
+            formatter=datetime_minute_offset_formatter(language_name="TOML"),
             preamble_lines=(),
             type_produced=dt.datetime,
         )

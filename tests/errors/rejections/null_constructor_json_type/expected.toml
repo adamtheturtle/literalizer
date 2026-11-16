@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[IncompatibleFormatsError]
+Elm = "Elm null_constructor_name cannot be combined with json_type"

@@ -721,7 +721,7 @@ class CallCaseSpec(
 
 # Defaults describe omitted manifest fields, as for RenderContext.
 class ConstructorCaseSpec(  # noqa: NOD001
-    BaseModel, extra="forbid", frozen=True
+    BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
 ):
     """A constructor target and variable for a generated call binding."""
 
@@ -730,22 +730,25 @@ class ConstructorCaseSpec(  # noqa: NOD001
     # A native caller can provide an externally declared constructor.
     consumer_template: str | None = None
     consumer_templates: Mapping[str, str] = Field(default_factory=dict)
-    # Native syntax can consume a target even without a call-binding API.
-    target_template: str | None = None
     # Native syntax is resolved after participation, never used as a filter.
     target_templates: Mapping[str, str] = Field(default_factory=dict)
     # Render shared input through literalize unless native syntax overrides it.
     target_source_template: str | None = None
+    # A portable document can use a common renderer after native selection.
+    target_language: manifest_values.ManifestLanguage | None = None
     # Bind the case input to the formatted target through the variable API.
     target_variable: bool = False
+    # A target supplied through language options can bind a separate name.
+    target_variable_name: Annotated[str, Field(min_length=1)] | None = None
+    # String-valued language options can consume the formatted target too.
+    target_options: Mapping[str, str] = Field(default_factory=dict)
     variable_name: Annotated[str, Field(min_length=1)] = "p"
 
     @property
     def renders_target(self) -> bool:
         """Whether this case consumes a target instead of calling it."""
         return (
-            self.target_template is not None
-            or len(self.target_templates) > 0
+            len(self.target_templates) > 0
             or self.target_source_template is not None
             or self.target_variable
         )
@@ -939,8 +942,13 @@ def _fail(*, path: Path, message: str) -> CaseManifestError:
     return CaseManifestError(f"{path}: {message}")
 
 
-def _load_manifest_data(*, path: Path) -> _CaseManifestData:
-    """Parse and structurally validate one manifest file."""
+@functools.cache
+@beartype
+def load_case_manifest(case_dir: Path) -> CaseManifest:
+    """Return one fully validated ``case.toml`` manifest."""
+    path = case_dir / MANIFEST_NAME
+    if not path.is_file():
+        raise _fail(path=path, message="manifest is missing")
     try:
         raw = tomllib.loads(path.read_text(encoding="utf-8"))
     except tomllib.TOMLDecodeError as exc:
@@ -953,17 +961,6 @@ def _load_manifest_data(*, path: Path) -> _CaseManifestData:
         )
     except ValueError as exc:
         raise _fail(path=path, message=str(object=exc)) from exc
-    return data
-
-
-@functools.cache
-@beartype
-def load_case_manifest(case_dir: Path) -> CaseManifest:
-    """Return one fully validated ``case.toml`` manifest."""
-    path = case_dir / MANIFEST_NAME
-    if not path.is_file():
-        raise _fail(path=path, message="manifest is missing")
-    data = _load_manifest_data(path=path)
     try:
         input_info = infer_case_input(
             case_dir=case_dir,

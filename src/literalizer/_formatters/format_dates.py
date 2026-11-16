@@ -112,6 +112,32 @@ def format_datetime_iso(value: dt.datetime) -> str:
 
 
 @beartype
+def datetime_minute_offset_formatter(
+    *, language_name: str
+) -> Callable[[dt.datetime], str]:
+    """Return a native ISO timestamp formatter requiring minute
+    offsets.
+    """
+
+    @beartype
+    def _format(value: dt.datetime) -> str:
+        """Reject offsets outside the document's timestamp grammar."""
+        offset = value.utcoffset()
+        if (
+            offset is not None
+            and offset % dt.timedelta(minutes=1) != dt.timedelta()
+        ):
+            msg = (
+                f"{language_name} native datetime format cannot preserve "
+                f"sub-minute UTC offset {offset}"
+            )
+            raise UnrepresentableInputError(msg)
+        return value.isoformat()
+
+    return _format
+
+
+@beartype
 def format_time_iso(value: dt.time) -> str:
     """Format a time as an ISO 8601 quoted string literal.
 

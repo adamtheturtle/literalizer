@@ -1020,14 +1020,6 @@ class _Selection:
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class _PrimaryChoice:
-    """One value of a cross product's first half."""
-
-    kwargs: Mapping[str, object]
-    format_name: str | None
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
 class _MemberExpansion:
     """How an axis walks one option's members into named values."""
 
@@ -1120,40 +1112,6 @@ def _behavior_flag_member(
 
 
 @beartype
-def _nondefault_kwarg_selection(
-    *,
-    axis_key: str,
-    override: _NonDefaultKwargOverride,
-    metadata: LanguageMetadata,
-) -> _ResolvedOverrides:
-    """Resolve a non-default keyword and its optional display name."""
-    value = _sample_kwarg(
-        axis_key=axis_key,
-        kwarg=override.kwarg,
-        metadata=metadata,
-    )
-    effective_name_value = None
-    if override.name_value:
-        effective_name_value = value
-    return _ResolvedOverrides(
-        kwargs={override.kwarg: value},
-        name_value=effective_name_value,
-    )
-
-
-@beartype
-def _metadata_table_selection(
-    *, override: _MetadataTableOverride, metadata: LanguageMetadata
-) -> _ResolvedOverrides | None:
-    """Resolve a metadata table when the language supplies it."""
-    table = _metadata_table(override=override, metadata=metadata)
-    resolved = None
-    if table is not None:
-        resolved = _ResolvedOverrides(kwargs=table, name_value=None)
-    return resolved
-
-
-@beartype
 def _override_selection(
     *,
     axis_key: str,
@@ -1166,8 +1124,12 @@ def _override_selection(
     resolved: _ResolvedOverrides | None
     match override:
         case _NonDefaultKwargOverride():
-            resolved = _nondefault_kwarg_selection(
-                axis_key=axis_key, override=override, metadata=metadata
+            value = _sample_kwarg(
+                axis_key=axis_key, kwarg=override.kwarg, metadata=metadata
+            )
+            resolved = _ResolvedOverrides(
+                kwargs={override.kwarg: value},
+                name_value=value if override.name_value else None,
             )
         case _EnumMemberOverride():
             option = OPTIONS[override.option]
@@ -1191,8 +1153,11 @@ def _override_selection(
                 name_value=None,
             )
         case _MetadataTableOverride():
-            resolved = _metadata_table_selection(
-                override=override, metadata=metadata
+            table = _metadata_table(override=override, metadata=metadata)
+            resolved = (
+                None
+                if table is None
+                else _ResolvedOverrides(kwargs=table, name_value=None)
             )
         case _TrueFlagOverride():
             resolved = _ResolvedOverrides(
@@ -1258,28 +1223,6 @@ def _resolve_overrides(
         if resolved.name_value is not None:
             name_value = resolved.name_value
     return _ResolvedOverrides(kwargs=kwargs, name_value=name_value)
-
-
-@beartype
-def _build_spec(
-    *,
-    lang_cls: literalizer.LanguageCls,
-    kwargs: Mapping[str, object],
-) -> literalizer.Language:
-    """Return the spec for *kwargs*, bypassing the cache when needed."""
-    if not any(isinstance(value, Mapping) for value in kwargs.values()):
-        return make_spec(lang_cls=lang_cls, **kwargs)
-    # ``record_shape_names`` is a ``Mapping``, which cannot go in
-    # :func:`make_spec`'s ``frozenset`` cache key.  Mirror that
-    # function's ``module_name`` default so a language whose
-    # ``wrap_in_file`` introduces a named scope keeps the name the rest
-    # of the suite builds against.
-    spec_kwargs = dict(kwargs)
-    if lang_cls.supports_module_name:
-        spec_kwargs["module_name"] = lang_cls.module_name_case.convert(
-            name="main",
-        )
-    return lang_cls(**spec_kwargs)
 
 
 @beartype
@@ -1379,16 +1322,18 @@ def _member_choices(
     lang_cls: literalizer.LanguageCls,
     metadata: LanguageMetadata,
     default_spec: literalizer.Language,
-) -> list[_PrimaryChoice]:
+) -> list[_Selection]:
     """Return the values one option takes for a single language."""
     option = OPTIONS[expansion.option_key]
     default = option.get_default(default_spec)
-    choices: list[_PrimaryChoice] = []
+    choices: list[_Selection] = []
     if expansion.unset_member_name is not None and default is not None:
         choices.append(
-            _PrimaryChoice(
+            _Selection(
                 kwargs={option.kwarg: None},
                 format_name=expansion.unset_member_name,
+                tag=None,
+                secondary_name=None,
             )
         )
     for member in option.get_members(default_spec):
@@ -1410,13 +1355,15 @@ def _member_choices(
                 )
             )
         choices.append(
-            _PrimaryChoice(
+            _Selection(
                 kwargs=kwargs,
                 format_name=_member_name(
                     expansion=expansion,
                     lang_cls=lang_cls,
                     member=member,
                 ),
+                tag=None,
+                secondary_name=None,
             )
         )
     return choices
@@ -1430,7 +1377,7 @@ def _primary_choices(
     lang_cls: literalizer.LanguageCls,
     metadata: LanguageMetadata,
     default_spec: literalizer.Language,
-) -> list[_PrimaryChoice]:
+) -> list[_Selection]:
     """Return the values a cross product's first half takes."""
     if primary_plan is not None:
         return _member_choices(
@@ -1440,7 +1387,11 @@ def _primary_choices(
             default_spec=default_spec,
         )
     if axis.primary is None:
-        return [_PrimaryChoice(kwargs={}, format_name=None)]
+        return [
+            _Selection(
+                kwargs={}, format_name=None, tag=None, secondary_name=None
+            )
+        ]
     return _member_choices(
         expansion=_MemberExpansion(
             option_key=axis.primary,
@@ -1505,20 +1456,6 @@ def _cross_selections(
 
 
 @beartype
-def _choice_selections(*, choices: list[_PrimaryChoice]) -> list[_Selection]:
-    """Return one unpaired selection per option value."""
-    return [
-        _Selection(
-            kwargs=choice.kwargs,
-            format_name=choice.format_name,
-            tag=None,
-            secondary_name=None,
-        )
-        for choice in choices
-    ]
-
-
-@beartype
 def _kwarg_value_selections(
     *,
     axis_key: str,
@@ -1564,13 +1501,11 @@ def _selections(
                 metadata=metadata,
             )
         case _FixedOverridesPlan() if primary_plan is not None:
-            return _choice_selections(
-                choices=_member_choices(
-                    expansion=_member_expansion(axis=primary_plan),
-                    lang_cls=lang_cls,
-                    metadata=metadata,
-                    default_spec=default_spec,
-                )
+            return _member_choices(
+                expansion=_member_expansion(axis=primary_plan),
+                lang_cls=lang_cls,
+                metadata=metadata,
+                default_spec=default_spec,
             )
         case _FixedOverridesPlan():
             return [
@@ -1590,13 +1525,11 @@ def _selections(
                 default_spec=default_spec,
             )
         case _EveryNonDefaultMemberPlan():
-            return _choice_selections(
-                choices=_member_choices(
-                    expansion=_member_expansion(axis=axis),
-                    lang_cls=lang_cls,
-                    metadata=metadata,
-                    default_spec=default_spec,
-                )
+            return _member_choices(
+                expansion=_member_expansion(axis=axis),
+                lang_cls=lang_cls,
+                metadata=metadata,
+                default_spec=default_spec,
             )
         case _ as unreachable:
             assert_never(unreachable)
@@ -1635,9 +1568,9 @@ def _paired_spec(
         axis.skip_incompatible_formats
     )
     if not skips:
-        return _build_spec(lang_cls=lang_cls, kwargs=kwargs)
+        return make_spec(lang_cls=lang_cls, **kwargs)
     try:
-        return _build_spec(lang_cls=lang_cls, kwargs=kwargs)
+        return make_spec(lang_cls=lang_cls, **kwargs)
     except IncompatibleFormatsError:
         return None
 
@@ -1721,7 +1654,7 @@ def _admitted_overrides(
     if not all(
         admits(
             gate=gate,
-            spec=_build_spec(lang_cls=lang_cls, kwargs=resolved.kwargs),
+            spec=make_spec(lang_cls=lang_cls, **resolved.kwargs),
         )
         for gate in behavior_gates
     ):

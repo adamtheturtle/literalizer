@@ -88,6 +88,7 @@ from literalizer._language import (
     default_wrap_calls_with_declarations,
     encode_file_sections,
     identity_constructor_target,
+    is_reserved_identifier,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
     no_data_preamble,
@@ -100,6 +101,7 @@ from literalizer._language import (
 from literalizer._types import Value
 from literalizer.exceptions import (
     CallArgNotSupportedError,
+    IncompatibleFormatsError,
     UnrepresentableEmptyDictError,
     UnrepresentableInputError,
     UnrepresentableStringError,
@@ -714,12 +716,15 @@ def _cobol_call_stub(
 
 
 @beartype
-def _cobol_wrapper_program_name(*, program_ids: frozenset[str]) -> str:
+def _cobol_wrapper_program_name(
+    *, program_ids: frozenset[str], base_name: str
+) -> str:
     """Choose a wrapper name distinct from its generated nested
     programs.
     """
-    name = "CHECK"
-    while name in program_ids:
+    occupied = {program_id.casefold() for program_id in program_ids}
+    name = base_name
+    while name.casefold() in occupied:
         name += "-WRAPPER"
     return name
 
@@ -1685,6 +1690,14 @@ class Cobol(metaclass=LanguageCls):
     )
     _PROGRAM_SUFFIX: ClassVar[str] = "PROCEDURE DIVISION.\n    STOP RUN."
 
+    @cached_property
+    @beartype
+    def _program_prefix(self) -> str:
+        """Name the wrapper without changing its data sections."""
+        return self._PROGRAM_PREFIX.replace(
+            "PROGRAM-ID. CHECK.", f"PROGRAM-ID. {self.program_name}."
+        )
+
     def wrap_in_file(
         self,
         content: str,
@@ -1712,7 +1725,7 @@ class Cobol(metaclass=LanguageCls):
                 prefix=self.indent,
             )
             return (
-                Cobol._PROGRAM_PREFIX
+                self._program_prefix
                 + f"{sections.working_storage}\n"
                 + "PROCEDURE DIVISION.\n"
                 + f"{indented}\n"
@@ -1724,12 +1737,13 @@ class Cobol(metaclass=LanguageCls):
                 body_preamble=body_preamble,
             )
             return (
-                Cobol._PROGRAM_PREFIX + f"{content}\n" + Cobol._PROGRAM_SUFFIX
+                self._program_prefix + f"{content}\n" + Cobol._PROGRAM_SUFFIX
             )
         indented = textwrap.indent(text=content, prefix=self.indent)
         stubs = "\n".join(body_preamble)
         program_name = _cobol_wrapper_program_name(
             program_ids=context.call_stub_names,
+            base_name=self.program_name,
         )
         program_prefix = Cobol._PROGRAM_PREFIX.replace(
             "PROGRAM-ID. CHECK.", f"PROGRAM-ID. {program_name}."
@@ -1743,8 +1757,8 @@ class Cobol(metaclass=LanguageCls):
             + f"END PROGRAM {program_name}."
         )
 
-    @staticmethod
     def wrap_combined_in_file(
+        self,
         declaration: str,
         assignment: str,
         context: FileWrapperContext,
@@ -1774,7 +1788,7 @@ class Cobol(metaclass=LanguageCls):
                 prefix="    ",
             )
             return (
-                Cobol._PROGRAM_PREFIX
+                self._program_prefix
                 + f"{working_storage}\n"
                 + "PROCEDURE DIVISION.\n"
                 + f"{procedure}\n"
@@ -1785,7 +1799,7 @@ class Cobol(metaclass=LanguageCls):
             body_preamble=body_preamble,
         )
         return (
-            Cobol._PROGRAM_PREFIX
+            self._program_prefix
             + f"{declaration}\n"
             + "PROCEDURE DIVISION.\n"
             + f"    {assignment}\n"
@@ -1826,6 +1840,20 @@ class Cobol(metaclass=LanguageCls):
     language_version: VersionFormats = VersionFormats.V2002
     json_type: JsonTypes | None = None
     indent: str = "    "
+    #: COBOL identifier used for the enclosing program in wrapped output.
+    program_name: str = "CHECK"
+
+    def __post_init__(self) -> None:
+        """Require a program identifier that can be emitted verbatim."""
+        if not self.new_variable_name_syntax.accepts(
+            name=self.program_name
+        ) or is_reserved_identifier(
+            case_sensitive=self.reserved_variable_identifiers_case_sensitive,
+            name=self.program_name,
+            reserved_identifiers=self.reserved_variable_identifiers,
+        ):
+            msg = "COBOL program_name must be a non-reserved COBOL identifier"
+            raise IncompatibleFormatsError(msg)
 
     null_literal: ClassVar[str] = "SPACES"
     true_literal: ClassVar[str] = "1"

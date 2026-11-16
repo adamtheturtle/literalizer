@@ -73,6 +73,19 @@ def _parenthesized_call_group(expression: str, /) -> str:
     return f"({expression})"
 
 
+@beartype
+def _apply_outer_transform(
+    *,
+    context: literalizer.CallContext,
+    expression: str,
+    outer: CallTransform | None,
+) -> str:
+    """Pass a native expression through the optional outer recipe."""
+    if outer is None:
+        return expression
+    return outer(dataclasses.replace(context, call=expression))
+
+
 @dataclasses.dataclass(frozen=True)
 class GroupedCallTransform:
     """Retain operand metadata while grouping a generated expression."""
@@ -93,9 +106,9 @@ class GroupedCallTransform:
     def __call__(self, context: literalizer.CallContext, /) -> str:
         """Apply native grouping before the optional outer transform."""
         expression = self.group(self.body(context)) + self.suffix
-        if self.outer is None:
-            return expression
-        return self.outer(dataclasses.replace(context, call=expression))
+        return _apply_outer_transform(
+            context=context, expression=expression, outer=self.outer
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -114,9 +127,9 @@ class LiteralArgumentsTransform:
     def __call__(self, context: literalizer.CallContext, /) -> str:
         """Insert native operands before applying the outer transform."""
         expression = self.call + self.suffix
-        if self.outer is None:
-            return expression
-        return self.outer(dataclasses.replace(context, call=expression))
+        return _apply_outer_transform(
+            context=context, expression=expression, outer=self.outer
+        )
 
 
 @beartype
@@ -308,11 +321,11 @@ class WrapperCallTransform:
             args_str=args,
             style=style,
         )
-        if self.config.call_transform is not None:
-            return self.config.call_transform(
-                dataclasses.replace(context, call=expression)
-            )
-        return expression
+        return _apply_outer_transform(
+            context=context,
+            expression=expression,
+            outer=self.config.call_transform,
+        )
 
 
 @runtime_checkable
@@ -348,9 +361,9 @@ class SequenceCallTransform:
             expression = self.spec.format_sequence_expression((context.call,))
         else:
             expression = self._literal_sequence(context.call)
-        if self.outer is not None:
-            return self.outer(dataclasses.replace(context, call=expression))
-        return expression
+        return _apply_outer_transform(
+            context=context, expression=expression, outer=self.outer
+        )
 
     def _literal_sequence(self, call: str, /) -> str:
         """Use the native sequence delimiters for a result expression."""
@@ -377,9 +390,9 @@ class IntegerResultCallTransform:
             right="1",
             comment=" " + self.syntax.comment_prefix + " inner",
         )
-        if self.outer is not None:
-            return self.outer(dataclasses.replace(context, call=expression))
-        return expression
+        return _apply_outer_transform(
+            context=context, expression=expression, outer=self.outer
+        )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -406,9 +419,9 @@ class ConditionalCallTransform:
             trailing_comment=" " + self.comment_prefix + " trailing",
             indent=self.indent,
         )
-        if self.outer is not None:
-            return self.outer(dataclasses.replace(context, call=expression))
-        return expression
+        return _apply_outer_transform(
+            context=context, expression=expression, outer=self.outer
+        )
 
 
 @beartype

@@ -100,32 +100,24 @@ def bound_ref_inputs(
     """Prepare referenced bindings and the case's additional
     declarations.
     """
-    collected_bound_refs_input: dict[str, ValueInput] = {}
     key_syntax = make_spec(lang_cls=lang_cls).dict_format_config.key_syntax
     effective_s = '{"_": "_"}'
     if key_syntax is not None and not key_syntax.accepts(name="_"):
         effective_s = '{"key": "value"}'
-    for entry_raw_name in collect_ref_names(
-        data=raw_data, ref_key=config.ref_key
-    ):
-        collected_bound_refs_input[entry_raw_name] = json.loads(
-            s=config.value_sources.get(entry_raw_name, effective_s)
-        )
-    bound_refs_input: dict[str, ValueInput] = collected_bound_refs_input
+    bound_refs_input: dict[str, ValueInput] = {
+        name: json.loads(s=config.value_sources.get(name, effective_s))
+        for name in collect_ref_names(data=raw_data, ref_key=config.ref_key)
+    }
     bound_refs_input.update(
-        {
-            name: json.loads(s=source)
-            for name, source in config.extra_ref_value_sources.items()
-        },
+        (name, json.loads(s=source))
+        for name, source in config.extra_ref_value_sources.items()
     )
     if config.bound_refs is not None:
         bound_refs_input.update(config.bound_refs)
     bound_refs_input.update(config.bound_ref_times)
     bound_refs_input.update(config.bound_ref_datetimes)
     bound_refs_input.update(
-        {
-            name: source.to_value()
-            for name, source in config.bound_ref_values.items()
-        }
+        (name, source.to_value())
+        for name, source in config.bound_ref_values.items()
     )
     return bound_refs_input

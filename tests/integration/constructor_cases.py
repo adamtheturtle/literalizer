@@ -99,17 +99,16 @@ def constructor_binding_cases(
             _ = config.consumer_for_language(
                 language_name=case.lang_cls.__name__
             )
-        cases.extend(
-            ConstructorBindingCase(
-                name=case.name,
-                lang_cls=case.lang_cls,
-                spec_overrides=case.spec_overrides,
-                variable_form=case.variable_form,
-                skip=case.skip,
-                manifest=manifest,
+            cases.append(
+                ConstructorBindingCase(
+                    name=case.name,
+                    lang_cls=case.lang_cls,
+                    spec_overrides=case.spec_overrides,
+                    variable_form=case.variable_form,
+                    skip=case.skip,
+                    manifest=manifest,
+                )
             )
-            for manifest in owners
-        )
     for manifest in manifests:
         config = manifest.constructor
         if config is not None and config.renders_target:
