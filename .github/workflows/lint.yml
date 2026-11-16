@@ -620,12 +620,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_scheme_roundtrip
 
       - name: Lint Dhall
-        run: |-
-          find tests/integration/cases -name '*.dhall' -print0 > /tmp/files-dhall && test -s /tmp/files-dhall
-          cat > /tmp/check-dhall.sh <<'SCRIPT'
-          dhall < "$1" > /dev/null
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-dhall
+        run: uv run --only-group=cli python -m scripts.run_dhall_fixtures
 
       # Basic JSON -> Dhall -> JSON round-trip (issue 1867).  Runs here
       # because this is the job with the `dhall` binary on PATH (the
