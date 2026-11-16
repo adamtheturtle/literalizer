@@ -2,3 +2,21 @@
 # Preserve all 30 nested singleton sequences and their native container types.
 schema_version = 1
 suites = ["base"]
+
+# Explicit Swift annotations must preserve the exact depth-30 array type
+# without the compiler cost of recursively nested shorthand (issue 5264).
+[[variants]]
+axis = "array_inference_type_hints"
+wrap_in_file = false
+
+[variants.consumer_templates]
+Swift = '''import Foundation
+{preamble}
+struct Array {{}}
+{code}
+typealias ExpectedLeaf = Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Swift.Array<Int>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+precondition(type(of: my_data) == [String: ExpectedLeaf].self)
+let encoded = try JSONSerialization.data(withJSONObject: my_data, options: [.sortedKeys])
+let expected = "{{\"deep\":[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]}}"
+precondition(String(data: encoded, encoding: .utf8) == expected)
+'''

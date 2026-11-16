@@ -1,4 +1,4 @@
-# languages rejecting: 18; languages accepting: 47
+# languages rejecting: 17; languages accepting: 48
 
 [Accepted]
 "Ada['ARGV']" = ""
@@ -323,6 +323,13 @@
 "Wren['STDERR']" = ""
 "Wren['STDIN']" = ""
 "Wren['STDOUT']" = ""
+"Yaml['ARGV']" = ""
+"Yaml['ENV']" = ""
+"Yaml['INC']" = ""
+"Yaml['SIG']" = ""
+"Yaml['STDERR']" = ""
+"Yaml['STDIN']" = ""
+"Yaml['STDOUT']" = ""
 "Zig['ARGV']" = ""
 "Zig['ENV']" = ""
 "Zig['INC']" = ""
@@ -457,10 +464,3 @@
 "Jsonc['STDERR']" = "Jsonc does not support variable names: 'STDERR'"
 "Jsonc['STDIN']" = "Jsonc does not support variable names: 'STDIN'"
 "Jsonc['STDOUT']" = "Jsonc does not support variable names: 'STDOUT'"
-"Yaml['ARGV']" = "Yaml does not support variable names: 'ARGV'"
-"Yaml['ENV']" = "Yaml does not support variable names: 'ENV'"
-"Yaml['INC']" = "Yaml does not support variable names: 'INC'"
-"Yaml['SIG']" = "Yaml does not support variable names: 'SIG'"
-"Yaml['STDERR']" = "Yaml does not support variable names: 'STDERR'"
-"Yaml['STDIN']" = "Yaml does not support variable names: 'STDIN'"
-"Yaml['STDOUT']" = "Yaml does not support variable names: 'STDOUT'"

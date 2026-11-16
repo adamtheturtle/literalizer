@@ -1,4 +1,4 @@
-# languages rejecting: 14; languages accepting: 51
+# languages rejecting: 13; languages accepting: 52
 
 [Accepted]
 "Ada['ZKV']" = ""
@@ -103,6 +103,8 @@
 "VisualBasic['ZVal']" = ""
 "Wren['ZKV']" = ""
 "Wren['ZVal']" = ""
+"Yaml['ZKV']" = ""
+"Yaml['ZVal']" = ""
 
 [InvalidNewVariableNameError]
 "Crystal['ZKV']" = "Crystal cannot use NewVariable name 'ZKV': it is not a valid identifier"
@@ -135,5 +137,3 @@
 "Json5['ZVal']" = "Json5 does not support variable names: 'ZVal'"
 "Jsonc['ZKV']" = "Jsonc does not support variable names: 'ZKV'"
 "Jsonc['ZVal']" = "Jsonc does not support variable names: 'ZVal'"
-"Yaml['ZKV']" = "Yaml does not support variable names: 'ZKV'"
-"Yaml['ZVal']" = "Yaml does not support variable names: 'ZVal'"

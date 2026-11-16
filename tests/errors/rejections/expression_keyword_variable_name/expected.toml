@@ -1,4 +1,4 @@
-# languages rejecting: 51; languages accepting: 61
+# languages rejecting: 50; languages accepting: 62
 
 [Accepted]
 "Ada['Any']" = ""
@@ -331,6 +331,14 @@
 "Wren['as']" = ""
 "Wren['nil']" = ""
 "Wren['self']" = ""
+"Yaml['Any']" = ""
+"Yaml['Self']" = ""
+"Yaml['as']" = ""
+"Yaml['false']" = ""
+"Yaml['in']" = ""
+"Yaml['nil']" = ""
+"Yaml['self']" = ""
+"Yaml['true']" = ""
 "Zig['Any']" = ""
 "Zig['Self']" = ""
 "Zig['as']" = ""
@@ -519,11 +527,3 @@
 "Jsonc['nil']" = "Jsonc does not support variable names: 'nil'"
 "Jsonc['self']" = "Jsonc does not support variable names: 'self'"
 "Jsonc['true']" = "Jsonc does not support variable names: 'true'"
-"Yaml['Any']" = "Yaml does not support variable names: 'Any'"
-"Yaml['Self']" = "Yaml does not support variable names: 'Self'"
-"Yaml['as']" = "Yaml does not support variable names: 'as'"
-"Yaml['false']" = "Yaml does not support variable names: 'false'"
-"Yaml['in']" = "Yaml does not support variable names: 'in'"
-"Yaml['nil']" = "Yaml does not support variable names: 'nil'"
-"Yaml['self']" = "Yaml does not support variable names: 'self'"
-"Yaml['true']" = "Yaml does not support variable names: 'true'"

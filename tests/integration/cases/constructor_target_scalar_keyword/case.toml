@@ -1,0 +1,8 @@
+schema_version = 1
+owner = "constructor-binding"
+gates = [{kind = "capability_flag", flag = "declares_call_styles", value = false}, {kind = "capability_flag", flag = "supports_variable_names"}, {kind = "capability_flag", flag = "supports_key_value_assignment_documents", value = false}, {kind = "capability_flag", flag = "supports_local_binding_documents", value = false}]
+
+# Preserve a target resembling a YAML scalar as a string key or named heading.
+[constructor]
+class_name = "null"
+target_variable = true

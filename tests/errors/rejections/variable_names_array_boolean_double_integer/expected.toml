@@ -1,4 +1,4 @@
-# languages rejecting: 27; languages accepting: 47
+# languages rejecting: 26; languages accepting: 48
 
 [Accepted]
 "Ada['Boolean']" = ""
@@ -294,6 +294,13 @@
 "Wren['List']" = ""
 "Wren['Map']" = ""
 "Wren['String']" = ""
+"Yaml['Array']" = ""
+"Yaml['Boolean']" = ""
+"Yaml['Double']" = ""
+"Yaml['Integer']" = ""
+"Yaml['List']" = ""
+"Yaml['Map']" = ""
+"Yaml['String']" = ""
 "Zig['Array']" = ""
 "Zig['Boolean']" = ""
 "Zig['Double']" = ""
@@ -457,10 +464,3 @@
 "Jsonc['List']" = "Jsonc does not support variable names: 'List'"
 "Jsonc['Map']" = "Jsonc does not support variable names: 'Map'"
 "Jsonc['String']" = "Jsonc does not support variable names: 'String'"
-"Yaml['Array']" = "Yaml does not support variable names: 'Array'"
-"Yaml['Boolean']" = "Yaml does not support variable names: 'Boolean'"
-"Yaml['Double']" = "Yaml does not support variable names: 'Double'"
-"Yaml['Integer']" = "Yaml does not support variable names: 'Integer'"
-"Yaml['List']" = "Yaml does not support variable names: 'List'"
-"Yaml['Map']" = "Yaml does not support variable names: 'Map'"
-"Yaml['String']" = "Yaml does not support variable names: 'String'"

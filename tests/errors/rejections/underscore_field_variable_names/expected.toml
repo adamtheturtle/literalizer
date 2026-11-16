@@ -1,4 +1,4 @@
-# languages rejecting: 24; languages accepting: 51
+# languages rejecting: 23; languages accepting: 52
 
 [Accepted]
 "Bash['_']" = ""
@@ -92,6 +92,8 @@
 "TypeScript['_field']" = ""
 "VisualBasic['_']" = ""
 "VisualBasic['_field']" = ""
+"Yaml['_']" = ""
+"Yaml['_field']" = ""
 "Zig['_field']" = ""
 
 [InvalidNewVariableNameError]
@@ -135,5 +137,3 @@
 "Json5['_field']" = "Json5 does not support variable names: '_field'"
 "Jsonc['_']" = "Jsonc does not support variable names: '_'"
 "Jsonc['_field']" = "Jsonc does not support variable names: '_field'"
-"Yaml['_']" = "Yaml does not support variable names: '_'"
-"Yaml['_field']" = "Yaml does not support variable names: '_field'"

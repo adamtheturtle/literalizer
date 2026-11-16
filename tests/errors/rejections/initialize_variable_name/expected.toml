@@ -1,4 +1,4 @@
-# languages rejecting: 10; languages accepting: 55
+# languages rejecting: 9; languages accepting: 56
 
 [Accepted]
 "Ada['initialize']" = ""
@@ -55,6 +55,7 @@
 "TypeScript['initialize']" = ""
 "VisualBasic['initialize']" = ""
 "Wren['initialize']" = ""
+"Yaml['initialize']" = ""
 "Zig['initialize']" = ""
 
 [MixedDictValuesError]
@@ -71,4 +72,3 @@
 [VariableNameNotSupportedError]
 "Json5['initialize']" = "Json5 does not support variable names: 'initialize'"
 "Jsonc['initialize']" = "Jsonc does not support variable names: 'initialize'"
-"Yaml['initialize']" = "Yaml does not support variable names: 'initialize'"

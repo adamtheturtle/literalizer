@@ -113,6 +113,8 @@
 "VisualBasic['END-PERFORM']" = "VisualBasic cannot use NewVariable name 'END-PERFORM': it is not a valid identifier"
 "Wren['END-IF']" = "Wren cannot use NewVariable name 'END-IF': it is not a valid identifier"
 "Wren['END-PERFORM']" = "Wren cannot use NewVariable name 'END-PERFORM': it is not a valid identifier"
+"Yaml['END-IF']" = "Yaml cannot use NewVariable name 'END-IF': it is not a valid identifier"
+"Yaml['END-PERFORM']" = "Yaml cannot use NewVariable name 'END-PERFORM': it is not a valid identifier"
 "Zig['END-IF']" = "Zig cannot use NewVariable name 'END-IF': it is not a valid identifier"
 "Zig['END-PERFORM']" = "Zig cannot use NewVariable name 'END-PERFORM': it is not a valid identifier"
 
@@ -137,5 +139,3 @@
 "Json5['END-PERFORM']" = "Json5 does not support variable names: 'END-PERFORM'"
 "Jsonc['END-IF']" = "Jsonc does not support variable names: 'END-IF'"
 "Jsonc['END-PERFORM']" = "Jsonc does not support variable names: 'END-PERFORM'"
-"Yaml['END-IF']" = "Yaml does not support variable names: 'END-IF'"
-"Yaml['END-PERFORM']" = "Yaml does not support variable names: 'END-PERFORM'"

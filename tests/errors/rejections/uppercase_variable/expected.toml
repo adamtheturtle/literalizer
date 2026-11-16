@@ -1,4 +1,4 @@
-# languages rejecting: 13; languages accepting: 52
+# languages rejecting: 12; languages accepting: 53
 
 [Accepted]
 "Ada['Record0']" = ""
@@ -52,6 +52,7 @@
 "TypeScript['Record0']" = ""
 "VisualBasic['Record0']" = ""
 "Wren['Record0']" = ""
+"Yaml['Record0']" = ""
 "Zig['Record0']" = ""
 
 [InvalidNewVariableNameError]
@@ -69,4 +70,3 @@
 [VariableNameNotSupportedError]
 "Json5['Record0']" = "Json5 does not support variable names: 'Record0'"
 "Jsonc['Record0']" = "Jsonc does not support variable names: 'Record0'"
-"Yaml['Record0']" = "Yaml does not support variable names: 'Record0'"

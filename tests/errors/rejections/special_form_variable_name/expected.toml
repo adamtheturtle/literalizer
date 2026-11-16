@@ -1,4 +1,4 @@
-# languages rejecting: 18; languages accepting: 47
+# languages rejecting: 17; languages accepting: 48
 
 [Accepted]
 "Bash['__CALLER__']" = ""
@@ -231,6 +231,11 @@
 "VisualBasic['__ENV__']" = ""
 "VisualBasic['__MODULE__']" = ""
 "VisualBasic['__STACKTRACE__']" = ""
+"Yaml['__CALLER__']" = ""
+"Yaml['__DIR__']" = ""
+"Yaml['__ENV__']" = ""
+"Yaml['__MODULE__']" = ""
+"Yaml['__STACKTRACE__']" = ""
 "Zig['__CALLER__']" = ""
 "Zig['__DIR__']" = ""
 "Zig['__ENV__']" = ""
@@ -329,8 +334,3 @@
 "Jsonc['__ENV__']" = "Jsonc does not support variable names: '__ENV__'"
 "Jsonc['__MODULE__']" = "Jsonc does not support variable names: '__MODULE__'"
 "Jsonc['__STACKTRACE__']" = "Jsonc does not support variable names: '__STACKTRACE__'"
-"Yaml['__CALLER__']" = "Yaml does not support variable names: '__CALLER__'"
-"Yaml['__DIR__']" = "Yaml does not support variable names: '__DIR__'"
-"Yaml['__ENV__']" = "Yaml does not support variable names: '__ENV__'"
-"Yaml['__MODULE__']" = "Yaml does not support variable names: '__MODULE__'"
-"Yaml['__STACKTRACE__']" = "Yaml does not support variable names: '__STACKTRACE__'"

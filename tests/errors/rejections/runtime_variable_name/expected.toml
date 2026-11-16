@@ -1,4 +1,4 @@
-# languages rejecting: 30; languages accepting: 56
+# languages rejecting: 29; languages accepting: 57
 
 [Accepted]
 "Ada['BOOL']" = ""
@@ -462,6 +462,16 @@
 "Wren['YES']" = ""
 "Wren['id']" = ""
 "Wren['nil']" = ""
+"Yaml['BOOL']" = ""
+"Yaml['Class']" = ""
+"Yaml['IMP']" = ""
+"Yaml['NO']" = ""
+"Yaml['NULL']" = ""
+"Yaml['Nil']" = ""
+"Yaml['SEL']" = ""
+"Yaml['YES']" = ""
+"Yaml['id']" = ""
+"Yaml['nil']" = ""
 "Zig['BOOL']" = ""
 "Zig['Class']" = ""
 "Zig['IMP']" = ""
@@ -649,13 +659,3 @@
 "Jsonc['YES']" = "Jsonc does not support variable names: 'YES'"
 "Jsonc['id']" = "Jsonc does not support variable names: 'id'"
 "Jsonc['nil']" = "Jsonc does not support variable names: 'nil'"
-"Yaml['BOOL']" = "Yaml does not support variable names: 'BOOL'"
-"Yaml['Class']" = "Yaml does not support variable names: 'Class'"
-"Yaml['IMP']" = "Yaml does not support variable names: 'IMP'"
-"Yaml['NO']" = "Yaml does not support variable names: 'NO'"
-"Yaml['NULL']" = "Yaml does not support variable names: 'NULL'"
-"Yaml['Nil']" = "Yaml does not support variable names: 'Nil'"
-"Yaml['SEL']" = "Yaml does not support variable names: 'SEL'"
-"Yaml['YES']" = "Yaml does not support variable names: 'YES'"
-"Yaml['id']" = "Yaml does not support variable names: 'id'"
-"Yaml['nil']" = "Yaml does not support variable names: 'nil'"

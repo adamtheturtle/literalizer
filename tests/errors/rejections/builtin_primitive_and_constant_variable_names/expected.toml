@@ -1,4 +1,4 @@
-# languages rejecting: 48; languages accepting: 56
+# languages rejecting: 47; languages accepting: 57
 
 [Accepted]
 "Ada['anyerror']" = ""
@@ -731,6 +731,21 @@
 "Wren['undefined']" = ""
 "Wren['usize']" = ""
 "Wren['void']" = ""
+"Yaml['anyerror']" = ""
+"Yaml['bool']" = ""
+"Yaml['c_int']" = ""
+"Yaml['comptime_int']" = ""
+"Yaml['f16']" = ""
+"Yaml['false']" = ""
+"Yaml['i33']" = ""
+"Yaml['main']" = ""
+"Yaml['null']" = ""
+"Yaml['true']" = ""
+"Yaml['type']" = ""
+"Yaml['u7']" = ""
+"Yaml['undefined']" = ""
+"Yaml['usize']" = ""
+"Yaml['void']" = ""
 
 [MixedDictValuesError]
 "Dhall['anyerror']" = "Dict contains values of mixed types that cannot be represented in the target language (found types: int, list)"
@@ -967,18 +982,3 @@
 "Jsonc['undefined']" = "Jsonc does not support variable names: 'undefined'"
 "Jsonc['usize']" = "Jsonc does not support variable names: 'usize'"
 "Jsonc['void']" = "Jsonc does not support variable names: 'void'"
-"Yaml['anyerror']" = "Yaml does not support variable names: 'anyerror'"
-"Yaml['bool']" = "Yaml does not support variable names: 'bool'"
-"Yaml['c_int']" = "Yaml does not support variable names: 'c_int'"
-"Yaml['comptime_int']" = "Yaml does not support variable names: 'comptime_int'"
-"Yaml['f16']" = "Yaml does not support variable names: 'f16'"
-"Yaml['false']" = "Yaml does not support variable names: 'false'"
-"Yaml['i33']" = "Yaml does not support variable names: 'i33'"
-"Yaml['main']" = "Yaml does not support variable names: 'main'"
-"Yaml['null']" = "Yaml does not support variable names: 'null'"
-"Yaml['true']" = "Yaml does not support variable names: 'true'"
-"Yaml['type']" = "Yaml does not support variable names: 'type'"
-"Yaml['u7']" = "Yaml does not support variable names: 'u7'"
-"Yaml['undefined']" = "Yaml does not support variable names: 'undefined'"
-"Yaml['usize']" = "Yaml does not support variable names: 'usize'"
-"Yaml['void']" = "Yaml does not support variable names: 'void'"

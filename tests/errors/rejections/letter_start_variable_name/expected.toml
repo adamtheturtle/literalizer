@@ -1,4 +1,4 @@
-# languages rejecting: 24; languages accepting: 51
+# languages rejecting: 23; languages accepting: 52
 
 [Accepted]
 "Bash['_']" = ""
@@ -142,6 +142,9 @@
 "VisualBasic['_']" = ""
 "VisualBasic['__x']" = ""
 "VisualBasic['_x']" = ""
+"Yaml['_']" = ""
+"Yaml['__x']" = ""
+"Yaml['_x']" = ""
 "Zig['__x']" = ""
 "Zig['_x']" = ""
 
@@ -199,6 +202,3 @@
 "Jsonc['_']" = "Jsonc does not support variable names: '_'"
 "Jsonc['__x']" = "Jsonc does not support variable names: '__x'"
 "Jsonc['_x']" = "Jsonc does not support variable names: '_x'"
-"Yaml['_']" = "Yaml does not support variable names: '_'"
-"Yaml['__x']" = "Yaml does not support variable names: '__x'"
-"Yaml['_x']" = "Yaml does not support variable names: '_x'"

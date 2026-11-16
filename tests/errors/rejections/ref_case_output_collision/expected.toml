@@ -11,6 +11,7 @@ Racket = "Racket cannot accept this value as a call argument: Racket output is n
 Ruby = "Ruby cannot accept this value as a call argument: Ruby output is not wrapped in a function body; variable references require a surrounding assignment (got 'my_var')"
 Scheme = "Scheme cannot accept this value as a call argument: Scheme output is not wrapped in a function body; variable references require a surrounding define (got 'my_var')"
 Toml = "TOML cannot accept this value as a call argument: TOML values must be literals, not variable references (got 'my_var')"
+Yaml = "Yaml cannot accept this value as a call argument: YAML anchor declarations are not generated (got 'my_var')"
 
 [RefOutputCollisionError]
 Bash = "ref name 'my_var' collides with the output variable"
@@ -71,4 +72,3 @@ R = "R cannot represent an empty dict distinctly from an empty list; both serial
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'my_var'"
 Jsonc = "Jsonc does not support variable names: 'my_var'"
-Yaml = "Yaml does not support variable names: 'my_var'"

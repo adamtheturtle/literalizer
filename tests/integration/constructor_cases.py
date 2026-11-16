@@ -13,7 +13,6 @@ from .case_manifests import (
     CaseManifestError,
     load_case_manifests,
 )
-from .constructor_templates import constructor_target_template
 from .constructor_variants import (
     ConstructorBindingSpec,
     constructor_binding_specs,
@@ -115,9 +114,6 @@ def constructor_binding_cases(
             for lang_cls in sorted_languages():
                 if not manifest.selection.admits_language(lang_cls=lang_cls):
                     continue
-                _ = constructor_target_template(
-                    config=config, language_name=lang_cls.__name__
-                )
                 cases.append(
                     ConstructorBindingCase(
                         name=f"{lang_cls.__name__}_constructor_target",

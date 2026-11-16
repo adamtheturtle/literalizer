@@ -112,7 +112,7 @@ from literalizer._language import (
     wrap_in_file_noop_static,
 )
 from literalizer._statements import CallLiteralSyntax
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import UnrepresentableInputError
 
 
@@ -144,6 +144,20 @@ _INTEGER_STRING_KEY = re.compile(pattern=r"(?:0|-[1-9][0-9]*|[1-9][0-9]*)\Z")
 
 
 @beartype
+def _reject_numeric_string_key(key: Scalar) -> None:
+    """Reject one string key that PHP converts to an integer."""
+    if (
+        isinstance(key, str)
+        and _INTEGER_STRING_KEY.fullmatch(string=key) is not None
+    ):
+        msg = (
+            f"PHP arrays coerce numeric string mapping key {key!r} "
+            "to an integer key"
+        )
+        raise UnrepresentableInputError(msg)
+
+
+@beartype
 def _reject_numeric_string_keys(data: Value) -> None:
     """Reject mapping keys that PHP arrays coerce from strings to integers."""
     stack = [data]
@@ -152,22 +166,27 @@ def _reject_numeric_string_keys(data: Value) -> None:
         match value:
             case dict():
                 for key, child in value.items():
-                    if (
-                        isinstance(key, str)
-                        and _INTEGER_STRING_KEY.fullmatch(string=key)
-                        is not None
-                    ):
-                        msg = (
-                            "PHP arrays coerce numeric string mapping key "
-                            f"{key!r} "
-                            "to an integer key"
-                        )
-                        raise UnrepresentableInputError(msg)
+                    _reject_numeric_string_key(key=key)
                     stack.append(child)
             case list() | set():
                 stack.extend(value)
             case _:
                 pass
+
+
+@beartype
+def _php_dict_open(data: dict[Scalar, Value]) -> str:
+    """Validate the actual mapping before emitting its PHP array opener.
+
+    Call validation removes opaque references, which can leave an empty
+    inference placeholder or hide a numeric key whose value is a reference.
+    Only the mapping being constructed determines these restrictions.
+    """
+    if len(data) == 0:
+        reject_empty_dicts(data=data, language_name="PHP")
+    for key in data:
+        _reject_numeric_string_key(key=key)
+    return "["
 
 
 @beartype
@@ -1617,7 +1636,7 @@ class Php(metaclass=LanguageCls):
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
         return DictFormatConfig(
-            dict_open=fixed_open(open_str="["),
+            dict_open=_php_dict_open,
             close="]",
             format_entry=self._dict_entry,
             empty_dict=None,
@@ -1690,7 +1709,7 @@ class Php(metaclass=LanguageCls):
     def ordered_map_format_config(self) -> OrderedMapFormatConfig:
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
-            ordered_map_open=fixed_open(open_str="["),
+            ordered_map_open=_php_dict_open,
             close="]",
             preamble_lines=(),
         )

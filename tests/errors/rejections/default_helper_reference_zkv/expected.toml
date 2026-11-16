@@ -1,4 +1,4 @@
-# languages rejecting: 23; languages accepting: 42
+# languages rejecting: 24; languages accepting: 41
 
 [Accepted]
 Ada = ""
@@ -42,7 +42,6 @@ Tcl = ""
 TypeScript = ""
 VisualBasic = ""
 Wren = ""
-Yaml = ""
 
 [CallArgNotSupportedError]
 Clojure = "Clojure cannot accept this value as a call argument: Clojure output is not wrapped in a function body; symbol references require a surrounding ``def`` that cannot be injected (got 'ZKV')"
@@ -57,6 +56,7 @@ Racket = "Racket cannot accept this value as a call argument: Racket output is n
 Ruby = "Ruby cannot accept this value as a call argument: Ruby output is not wrapped in a function body; variable references require a surrounding assignment (got 'ZKV')"
 Scheme = "Scheme cannot accept this value as a call argument: Scheme output is not wrapped in a function body; variable references require a surrounding define (got 'ZKV')"
 Toml = "TOML cannot accept this value as a call argument: TOML values must be literals, not variable references (got 'ZKV')"
+Yaml = "Yaml cannot accept this value as a call argument: YAML anchor declarations are not generated (got 'ZKV')"
 
 [InvalidNewVariableNameError]
 Crystal = "Crystal cannot use reference name 'ZKV': it is not a valid identifier"

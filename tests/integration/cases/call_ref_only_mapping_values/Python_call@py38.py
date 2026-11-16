@@ -1,0 +1,3 @@
+def consume(*_args: object, **_kwargs: object) -> object: ...
+item = 42
+consume(value={"field": item})

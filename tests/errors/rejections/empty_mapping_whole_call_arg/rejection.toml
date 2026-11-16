@@ -1,0 +1,11 @@
+schema_version = 1
+summary = "Call arguments retain backend mapping representability checks (#6986)."
+exceptions = ["UnrepresentableEmptyDictError"]
+
+[call]
+api = "literalize_call"
+sources = ['!!omap []', '{nested: !!omap []}', '[!!omap []]', '{}', '{"nested":{}}', '[{}]']
+input_format = "yaml"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false

@@ -686,7 +686,9 @@ analysis.strict-equality-semantics = true
 analysis.strict-generic-narrowing = true
 
 [tool.pytest]
-addopts = [ "-n", "auto" ]
+# Golden subtests use in-memory output capture to avoid two temporary
+# files per subtest. Subprocess tests capture their own output explicitly.
+addopts = [ "--capture=sys", "-n", "auto" ]
 beartype_packages = [ "literalizer" ]
 # Exclude literalizer._json_native_document:
 # per-level wrappers exhaust the stack below the shared parse-depth guard.

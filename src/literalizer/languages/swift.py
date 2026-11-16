@@ -138,6 +138,17 @@ _ARRAY_INFERENCE_CHUNK_DEPTH = 8
 
 
 @beartype
+def _singleton_array_leaf(data: Value) -> tuple[int, Value]:
+    """Find the depth and terminal value of a singleton-array chain."""
+    depth = 0
+    leaf = data
+    while isinstance(leaf, list) and len(leaf) == 1:
+        depth += 1
+        leaf = leaf[0]
+    return depth, leaf
+
+
+@beartype
 def _array_sequence_entry(data: Value, value: str, /) -> str:
     """Infer long singleton-array chains in independent closure bodies.
 
@@ -147,11 +158,7 @@ def _array_sequence_entry(data: Value, value: str, /) -> str:
     Only scalar-ended chains whose leaf type can be inferred qualify;
     nil and empty collections still need their enclosing type context.
     """
-    depth = 0
-    leaf = data
-    while isinstance(leaf, list) and len(leaf) == 1:
-        depth += 1
-        leaf = leaf[0]
+    depth, leaf = _singleton_array_leaf(data=data)
     if (
         depth > 0
         and depth % _ARRAY_INFERENCE_CHUNK_DEPTH == 0
@@ -532,7 +539,7 @@ def _swift_type_hint(
                 if len(data) > 0
                 else _swift_named_hint(name=default_dict_value_type)
             )
-            return dataclasses.replace(
+            hint = dataclasses.replace(
                 value_hint,
                 code=f"[{key_hint}: {value_hint.code}]",
                 kind=_SwiftTypeKind.NAMED,
@@ -546,6 +553,18 @@ def _swift_type_hint(
                 kind=_SwiftTypeKind.NAMED,
             )
         case list():
+            depth, leaf = _singleton_array_leaf(data=data)
+            if not sequence_is_tuple and depth >= _ARRAY_INFERENCE_CHUNK_DEPTH:
+                # Deep [T] shorthand is expensive even without an initializer.
+                # Array<T> preserves the same native type and inference facts.
+                # Swift parser issue: https://github.com/swiftlang/swift/issues/94336
+                leaf_hint = recurse(data=leaf)
+                return dataclasses.replace(
+                    leaf_hint,
+                    code="Swift.Array<" * depth + leaf_hint.code + ">" * depth,
+                    kind=_SwiftTypeKind.NAMED,
+                    array_element_is_any=False,
+                )
             element_hints = [recurse(data=e) for e in data]
             if sequence_is_tuple:
                 return _SwiftTypeHint(
@@ -571,11 +590,12 @@ def _swift_type_hint(
                 array_element_is_any=element_hint.kind is _SwiftTypeKind.ANY,
             )
         case _:
-            return _swift_named_hint(
+            hint = _swift_named_hint(
                 name=_swift_scalar_hint(
                     data=data, date_hint=date_hint, datetime_hint=datetime_hint
                 )
             )
+    return hint
 
 
 @beartype

@@ -1,4 +1,4 @@
-# languages rejecting: 24; languages accepting: 41
+# languages rejecting: 23; languages accepting: 42
 
 [Accepted]
 Bash = ""
@@ -42,6 +42,7 @@ Tcl = ""
 Toml = ""
 TypeScript = ""
 VisualBasic = ""
+Yaml = ""
 
 [InvalidNewVariableNameError]
 Ada = "Ada cannot use NewVariable name '_': it is not a valid identifier"
@@ -71,4 +72,3 @@ Zig = "Zig cannot use NewVariable name '_': it is a reserved identifier"
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: '_'"
 Jsonc = "Jsonc does not support variable names: '_'"
-Yaml = "Yaml does not support variable names: '_'"

@@ -1,4 +1,4 @@
-# languages rejecting: 47; languages accepting: 61
+# languages rejecting: 46; languages accepting: 62
 
 [Accepted]
 "Ada['assert']" = ""
@@ -368,6 +368,14 @@
 "Wren['new']" = ""
 "Wren['not']" = ""
 "Wren['or']" = ""
+"Yaml['and']" = ""
+"Yaml['assert']" = ""
+"Yaml['before']" = ""
+"Yaml['let']" = ""
+"Yaml['new']" = ""
+"Yaml['not']" = ""
+"Yaml['null']" = ""
+"Yaml['or']" = ""
 "Zig['assert']" = ""
 "Zig['before']" = ""
 "Zig['let']" = ""
@@ -517,11 +525,3 @@
 "Jsonc['not']" = "Jsonc does not support variable names: 'not'"
 "Jsonc['null']" = "Jsonc does not support variable names: 'null'"
 "Jsonc['or']" = "Jsonc does not support variable names: 'or'"
-"Yaml['and']" = "Yaml does not support variable names: 'and'"
-"Yaml['assert']" = "Yaml does not support variable names: 'assert'"
-"Yaml['before']" = "Yaml does not support variable names: 'before'"
-"Yaml['let']" = "Yaml does not support variable names: 'let'"
-"Yaml['new']" = "Yaml does not support variable names: 'new'"
-"Yaml['not']" = "Yaml does not support variable names: 'not'"
-"Yaml['null']" = "Yaml does not support variable names: 'null'"
-"Yaml['or']" = "Yaml does not support variable names: 'or'"

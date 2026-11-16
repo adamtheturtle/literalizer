@@ -1,4 +1,4 @@
-{
+my_data: {
     "double": "a\u2028b",
     "single": "c\u2029d",
     # A comment, which both separators would end.

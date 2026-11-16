@@ -1,4 +1,4 @@
-# languages rejecting: 15; languages accepting: 50
+# languages rejecting: 14; languages accepting: 51
 
 [Accepted]
 "Bash['__ENCODING__']" = ""
@@ -148,6 +148,9 @@
 "VisualBasic['__ENCODING__']" = ""
 "VisualBasic['__FILE__']" = ""
 "VisualBasic['__LINE__']" = ""
+"Yaml['__ENCODING__']" = ""
+"Yaml['__FILE__']" = ""
+"Yaml['__LINE__']" = ""
 "Zig['__ENCODING__']" = ""
 "Zig['__FILE__']" = ""
 "Zig['__LINE__']" = ""
@@ -199,6 +202,3 @@
 "Jsonc['__ENCODING__']" = "Jsonc does not support variable names: '__ENCODING__'"
 "Jsonc['__FILE__']" = "Jsonc does not support variable names: '__FILE__'"
 "Jsonc['__LINE__']" = "Jsonc does not support variable names: '__LINE__'"
-"Yaml['__ENCODING__']" = "Yaml does not support variable names: '__ENCODING__'"
-"Yaml['__FILE__']" = "Yaml does not support variable names: '__FILE__'"
-"Yaml['__LINE__']" = "Yaml does not support variable names: '__LINE__'"

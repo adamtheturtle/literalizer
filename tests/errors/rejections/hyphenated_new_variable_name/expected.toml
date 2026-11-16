@@ -1,4 +1,4 @@
-# languages rejecting: 55; languages accepting: 7
+# languages rejecting: 56; languages accepting: 7
 
 [Accepted]
 Clojure = ""
@@ -64,4 +64,5 @@ TypeScript = "TypeScript cannot use NewVariable name 'a-b': it is not a valid id
 V = "V cannot use NewVariable name 'a-b': it is not a valid identifier"
 VisualBasic = "VisualBasic cannot use NewVariable name 'a-b': it is not a valid identifier"
 Wren = "Wren cannot use NewVariable name 'a-b': it is not a valid identifier"
+Yaml = "Yaml cannot use NewVariable name 'a-b': it is not a valid identifier"
 Zig = "Zig cannot use NewVariable name 'a-b': it is not a valid identifier"

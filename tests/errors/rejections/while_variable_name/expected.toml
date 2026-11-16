@@ -1,4 +1,4 @@
-# languages rejecting: 45; languages accepting: 20
+# languages rejecting: 44; languages accepting: 21
 
 [Accepted]
 "Clojure['while']" = ""
@@ -21,6 +21,7 @@
 "Scheme['while']" = ""
 "Toml['while']" = ""
 "V['while']" = ""
+"Yaml['while']" = ""
 
 [ReservedVariableNameError]
 "Ada['while']" = "Ada cannot use NewVariable name 'while': it is a reserved identifier"
@@ -69,4 +70,3 @@
 [VariableNameNotSupportedError]
 "Json5['while']" = "Json5 does not support variable names: 'while'"
 "Jsonc['while']" = "Jsonc does not support variable names: 'while'"
-"Yaml['while']" = "Yaml does not support variable names: 'while'"

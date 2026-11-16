@@ -1,4 +1,4 @@
-{
+my_data: {
     "comma_hash": "a,#b",
     "comma_space_hash": "trail, # comment",
     "escaped_quote": "quote \" and , #",

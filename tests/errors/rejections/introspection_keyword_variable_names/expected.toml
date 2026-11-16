@@ -1,4 +1,4 @@
-# languages rejecting: 4; languages accepting: 61
+# languages rejecting: 3; languages accepting: 62
 
 [Accepted]
 "Ada['annotation']" = ""
@@ -241,6 +241,10 @@
 "Wren['instance_sizeof']" = ""
 "Wren['offsetof']" = ""
 "Wren['pointerof']" = ""
+"Yaml['annotation']" = ""
+"Yaml['instance_sizeof']" = ""
+"Yaml['offsetof']" = ""
+"Yaml['pointerof']" = ""
 "Zig['annotation']" = ""
 "Zig['instance_sizeof']" = ""
 "Zig['offsetof']" = ""
@@ -261,7 +265,3 @@
 "Jsonc['instance_sizeof']" = "Jsonc does not support variable names: 'instance_sizeof'"
 "Jsonc['offsetof']" = "Jsonc does not support variable names: 'offsetof'"
 "Jsonc['pointerof']" = "Jsonc does not support variable names: 'pointerof'"
-"Yaml['annotation']" = "Yaml does not support variable names: 'annotation'"
-"Yaml['instance_sizeof']" = "Yaml does not support variable names: 'instance_sizeof'"
-"Yaml['offsetof']" = "Yaml does not support variable names: 'offsetof'"
-"Yaml['pointerof']" = "Yaml does not support variable names: 'pointerof'"

@@ -1,4 +1,4 @@
-# languages rejecting: 5; languages accepting: 60
+# languages rejecting: 4; languages accepting: 61
 
 [Accepted]
 "Ada['my']" = ""
@@ -60,6 +60,7 @@
 "V['my']" = ""
 "VisualBasic['my']" = ""
 "Wren['my']" = ""
+"Yaml['my']" = ""
 "Zig['my']" = ""
 
 [ReservedVariableNameError]
@@ -69,4 +70,3 @@
 [VariableNameNotSupportedError]
 "Json5['my']" = "Json5 does not support variable names: 'my'"
 "Jsonc['my']" = "Jsonc does not support variable names: 'my'"
-"Yaml['my']" = "Yaml does not support variable names: 'my'"

@@ -1,4 +1,4 @@
-# languages rejecting: 24; languages accepting: 61
+# languages rejecting: 23; languages accepting: 62
 
 [Accepted]
 "Ada['nil']" = ""
@@ -280,6 +280,11 @@
 "Wren['panic']" = ""
 "Wren['print']" = ""
 "Wren['println']" = ""
+"Yaml['exit']" = ""
+"Yaml['nil']" = ""
+"Yaml['panic']" = ""
+"Yaml['print']" = ""
+"Yaml['println']" = ""
 "Zig['exit']" = ""
 "Zig['nil']" = ""
 "Zig['panic']" = ""
@@ -325,8 +330,3 @@
 "Jsonc['panic']" = "Jsonc does not support variable names: 'panic'"
 "Jsonc['print']" = "Jsonc does not support variable names: 'print'"
 "Jsonc['println']" = "Jsonc does not support variable names: 'println'"
-"Yaml['exit']" = "Yaml does not support variable names: 'exit'"
-"Yaml['nil']" = "Yaml does not support variable names: 'nil'"
-"Yaml['panic']" = "Yaml does not support variable names: 'panic'"
-"Yaml['print']" = "Yaml does not support variable names: 'print'"
-"Yaml['println']" = "Yaml does not support variable names: 'println'"

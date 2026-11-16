@@ -64,9 +64,9 @@ Swift = "BothVariableForms requires a declaration_style that supports redefiniti
 Toml = "BothVariableForms requires a declaration_style that supports redefinition; 'ASSIGN' does not."
 TypeScript = "BothVariableForms requires a declaration_style that supports redefinition; 'CONST' does not."
 V = "BothVariableForms requires a declaration_style that supports redefinition; 'ASSIGN' does not."
+Yaml = "BothVariableForms requires a declaration_style that supports redefinition; 'ASSIGN' does not."
 Zig = "BothVariableForms requires a declaration_style that supports redefinition; 'CONST' does not."
 
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'x'"
 Jsonc = "Jsonc does not support variable names: 'x'"
-Yaml = "Yaml does not support variable names: 'x'"

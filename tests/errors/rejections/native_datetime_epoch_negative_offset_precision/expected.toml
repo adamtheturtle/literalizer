@@ -12,6 +12,7 @@ Ruby = "Ruby cannot accept this value as a call argument: Ruby output is not wra
 Scheme = "Scheme cannot accept this value as a call argument: Scheme output is not wrapped in a function body; variable references require a surrounding define (got 'stamp')"
 SystemVerilog = "SystemVerilog cannot accept this value as a call argument: SystemVerilog cannot reference a scalar value behind a ``$ref`` (got 'stamp'); the variable declaration shape is keyed off the ref marker and does not match the scalar's ``_VVal`` type."
 Toml = "TOML cannot accept this value as a call argument: TOML values must be literals, not variable references (got 'stamp')"
+Yaml = "Yaml cannot accept this value as a call argument: YAML anchor declarations are not generated (got 'stamp')"
 
 [UnrepresentableInputError]
 Ada = "integer Unix epoch seconds cannot preserve fractional datetime precision: 1970-01-01T00:00:00-00:00:00.000001"
@@ -69,4 +70,3 @@ Zig = "integer Unix epoch seconds cannot preserve fractional datetime precision:
 [VariableNameNotSupportedError]
 Json5 = "Json5 does not support variable names: 'result_data'"
 Jsonc = "Jsonc does not support variable names: 'result_data'"
-Yaml = "Yaml does not support variable names: 'result_data'"

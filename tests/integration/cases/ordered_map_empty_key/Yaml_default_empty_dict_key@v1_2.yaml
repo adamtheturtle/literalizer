@@ -1,4 +1,4 @@
-{
+my_data: {
     !!str "": "unnamed",
     "named": "value"
 }
