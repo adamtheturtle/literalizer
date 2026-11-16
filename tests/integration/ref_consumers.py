@@ -25,7 +25,7 @@ from .case_manifests import (
     RefCaseSpec,
     RefConsumerSpec,
 )
-from .language_metadata import language_metadata
+from .golden_checks import fixture_contents
 from .language_specs import (
     find_redefinition_styles,
     reference_case_for_declaration_style,
@@ -350,11 +350,9 @@ def ref_fixture_contents(
     native_case = reference_case_for_declaration_style(
         lang_cls=lang_cls, spec=spec
     )
-    preamble = (
-        language_metadata(
-            language_id=lang_cls.language_id
-        ).golden.intentional_identifier_preamble
-        if ref_case is not None and ref_case is not native_case
-        else ()
+    return fixture_contents(
+        code=code,
+        language_id=spec.language_id,
+        intentional_identifier=ref_case is not None
+        and ref_case is not native_case,
     )
-    return "\n".join((*preamble, code, ""))

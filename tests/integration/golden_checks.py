@@ -23,6 +23,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import LiteralizeResult
 
+from .language_metadata import language_metadata
 from .language_specs import fixture_module_name
 
 
@@ -171,3 +172,20 @@ def format_consumer(
         bare_code=result.bare_code,
         module_name=fixture_module_name(golden_path=golden_path),
     )
+
+
+@beartype
+def fixture_contents(
+    *, code: str, language_id: str, intentional_identifier: bool
+) -> str:
+    """Finish a fixture with its declared identifier preamble and
+    newline.
+    """
+    preamble = (
+        language_metadata(
+            language_id=language_id
+        ).golden.intentional_identifier_preamble
+        if intentional_identifier
+        else ()
+    )
+    return "\n".join((*preamble, code, ""))
