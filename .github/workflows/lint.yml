@@ -1682,9 +1682,8 @@ jobs:
         timeout-minutes: 5
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: |-
-          uv run --only-group=cli python -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
-          uv run --only-group=cli python -m scripts.check_gleam_syntax < /tmp/files-gleam
+        run: uv run --only-group=cli python -m scripts.run_gleam_fixtures --check
+          syntax
 
       # All ~350 fixtures are run in a single `gleam run` invocation; the
       # script generates a runner module that calls each fixture's `main`
@@ -1693,9 +1692,8 @@ jobs:
         timeout-minutes: 5
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: |-
-          uv run --only-group=cli python -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
-          uv run --only-group=cli python -m scripts.run_gleam < /tmp/files-gleam
+        run: uv run --only-group=cli python -m scripts.run_gleam_fixtures --check
+          execution
 
       # Basic JSON -> Gleam -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Gleam toolchain and the primed
