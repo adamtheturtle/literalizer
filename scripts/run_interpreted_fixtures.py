@@ -23,10 +23,17 @@ class _Backend:
     executable: str
     extension: str
     syntax_argument: str
+    arguments: tuple[str, ...] = ()  # noqa: NOD001 - omitted flags mean no prefix
 
 
 _BACKENDS = {
     "bash": _Backend(executable="bash", extension=".sh", syntax_argument="-n"),
+    "perl": _Backend(
+        executable="perl",
+        extension=".pl",
+        syntax_argument="-c",
+        arguments=("-Mstrict=subs",),
+    ),
     "ruby": _Backend(executable="ruby", extension=".rb", syntax_argument="-c"),
     "javascript": _Backend(
         executable="node", extension=".js", syntax_argument="--check"
@@ -114,6 +121,7 @@ def main(
                     _run,
                     arguments=[
                         executable,
+                        *config.arguments,
                         *(
                             [config.syntax_argument]
                             if phase == "syntax"
