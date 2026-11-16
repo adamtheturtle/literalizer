@@ -2362,10 +2362,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --only-group=cli python -m tests.integration.list_fixtures .kts
-          "$KOTLIN_FIXTURE_TAG" > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Kotlin
         timeout-minutes: 10
         uses: fwilhe2/setup-kotlin@v2
@@ -2411,8 +2407,8 @@ jobs:
         # Use the distribution's compiler in a plain script. A `.main.kts`
         # host loads duplicate scripting classes in an isolated class loader
         # that cannot see the legacy ScriptExpectedLocation runtime API.
-        run: kotlin -classpath "$KOTLIN_HOME/lib/kotlin-compiler.jar" scripts/lint-kotlin.kts
-          < /tmp/files-to-lint
+        run: uv run --only-group=cli python -m scripts.run_kotlin_fixtures
+
       # Basic JSON -> Kotlin -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Kotlin toolchain on hand; the
       # script (issue 2715) routes the shared document through
