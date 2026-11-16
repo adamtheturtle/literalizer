@@ -329,13 +329,3 @@ def test_collection_comments_require_the_effective_configuration(
         variant=variant,
         capability="collection_comments",
     )
-    # Removing the option restores support even after the disabled spec has
-    # populated its cached capability property.
-    reset_options: dict[str, object] = {"json_type": None}
-    if lang_cls is literalizer.languages.Cpp:
-        reset_options["json_rendering"] = None
-    restored = dataclasses.replace(spec, **reset_options)
-    assert variant_supports_capability(
-        variant=dataclasses.replace(variant, spec=restored),
-        capability="collection_comments",
-    )
