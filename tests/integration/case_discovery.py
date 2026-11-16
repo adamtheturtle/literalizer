@@ -6,7 +6,6 @@ This module selects languages and collects the contexts used by
 """
 
 import functools
-from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal
 
@@ -25,6 +24,7 @@ from .case_data import (
     has_special_floats,
     load_case_data,
 )
+from .case_inputs import CaseInput
 from .case_manifests import (
     load_case_manifests,
 )
@@ -77,14 +77,9 @@ def _lang_raises_for_non_printable_ascii_dict_keys(
 
 @functools.cache
 @beartype
-def _case_data_by_name(*, cases_dir: Path) -> Mapping[str, CaseData]:
-    """Parse the shared manifest inventory once for discovery
-    predicates.
-    """
-    return {
-        manifest.case_dir.name: load_case_data(input_info=manifest.input)
-        for manifest in load_case_manifests(cases_dir=cases_dir)
-    }
+def _case_data(*, input_info: CaseInput) -> CaseData:
+    """Parse an admitted input once, shared by discovery consumers."""
+    return load_case_data(input_info=input_info)
 
 
 @functools.cache
@@ -99,49 +94,47 @@ def cases_with_special_floats(
     expressing ``inf``/``nan`` is detected the same as a YAML one.
     """
     return frozenset(
-        name
-        for name, data in _case_data_by_name(cases_dir=cases_dir).items()
-        if has_special_floats(data=data)
+        manifest.case_dir.name
+        for manifest in load_case_manifests(cases_dir=cases_dir)
+        if has_special_floats(data=_case_data(input_info=manifest.input))
     )
 
 
 @functools.cache
 @beartype
 def discover_cases(
-    *, cases_dir: Path, suite: Literal["base", "combined"]
-) -> dict[literalizer.LanguageCls, list[str]]:
-    """Group representable suite inputs by their selected language.
+    *,
+    cases_dir: Path,
+    suite: Literal["base", "combined"],
+    lang_cls: literalizer.LanguageCls,
+) -> tuple[str, ...]:
+    """Select one backend's suite before parsing inputs or building specs.
 
-    Inspect each input directly instead of joining separate indexes of
-    invalid keys, non-ASCII keys and special floats by directory name.
-    Both the base and combined scenarios consume the same selection.
+    Cases outside the suite or its declared backend selection never need
+    their source parsed. Shared inputs are cached by their input identity,
+    so full-corpus discovery still parses each source at most once.
     """
-    data_by_name = _case_data_by_name(cases_dir=cases_dir)
-    groups: dict[literalizer.LanguageCls, list[str]] = {}
+    names: list[str] = []
+    key_syntax = make_spec(lang_cls=lang_cls).dict_format_config.key_syntax
     for manifest in load_case_manifests(cases_dir=cases_dir):
-        if suite not in manifest.suites:
+        if (
+            suite not in manifest.suites
+            or not manifest.selection.admits_language(lang_cls=lang_cls)
+        ):
             continue
-        name = manifest.case_dir.name
-        data = data_by_name[name]
-        non_trivial_keys = has_non_printable_ascii_dict_keys(data=data)
-        special_floats = has_special_floats(data=data)
-        for lang_cls in sorted_languages():
-            if not manifest.selection.admits_language(lang_cls=lang_cls):
-                continue
-            key_syntax = make_spec(
-                lang_cls=lang_cls
-            ).dict_format_config.key_syntax
-            if key_syntax is not None and has_invalid_dict_keys(
-                data=data, key_syntax=key_syntax
-            ):
-                continue
-            if non_trivial_keys and (
-                _lang_raises_for_non_printable_ascii_dict_keys(
-                    lang_cls=lang_cls
-                )
-            ):
-                continue
-            if special_floats and not lang_cls.supports_special_floats:
-                continue
-            groups.setdefault(lang_cls, []).append(name)
-    return groups
+        data = _case_data(input_info=manifest.input)
+        if key_syntax is not None and has_invalid_dict_keys(
+            data=data, key_syntax=key_syntax
+        ):
+            continue
+        if has_non_printable_ascii_dict_keys(data=data) and (
+            _lang_raises_for_non_printable_ascii_dict_keys(lang_cls=lang_cls)
+        ):
+            continue
+        if (
+            has_special_floats(data=data)
+            and not lang_cls.supports_special_floats
+        ):
+            continue
+        names.append(manifest.case_dir.name)
+    return tuple(names)

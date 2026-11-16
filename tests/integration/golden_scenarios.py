@@ -101,9 +101,11 @@ def _base_renderings(
     substitutions -- is whatever the case's manifest declares.
     """
     manifests = case_manifests_by_name(cases_dir=_CASES_DIR)
-    grouped = discover_cases(cases_dir=_CASES_DIR, suite="base")
+    case_names = discover_cases(
+        cases_dir=_CASES_DIR, suite="base", lang_cls=lang_cls
+    )
     renderings: list[GoldenRendering] = []
-    for case_name in grouped.get(lang_cls, []):
+    for case_name in case_names:
         context = manifests[case_name].base_context
         effective_value = (
             "compact"
@@ -226,8 +228,8 @@ def _combined_renderings(
             skip=scenario_skips.LANGUAGE_SKIPS,
         )
         for case_name in discover_cases(
-            cases_dir=_CASES_DIR, suite="combined"
-        ).get(lang_cls, [])
+            cases_dir=_CASES_DIR, suite="combined", lang_cls=lang_cls
+        )
         for style in styles
     )
 
