@@ -35,6 +35,7 @@ from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidCallTargetError,
     ReservedVariableNameError,
+    UnrepresentableEmptyDictError,
     UnrepresentableInputError,
     VariableNameNotSupportedError,
 )
@@ -85,6 +86,11 @@ _WRAP_IN_FILE_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=UnrepresentableInputError,
             reason="cannot represent these call arguments",
+            unlink=True,
+        ),
+        SkipReason(
+            error=UnrepresentableEmptyDictError,
+            reason="cannot preserve an empty mapping call argument",
             unlink=True,
         ),
         SkipReason(
@@ -144,6 +150,11 @@ _DECLARATION_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=UnrepresentableInputError,
             reason="cannot represent this heterogeneous input",
+            unlink=True,
+        ),
+        SkipReason(
+            error=UnrepresentableEmptyDictError,
+            reason="cannot preserve an empty mapping call argument",
             unlink=True,
         ),
         SkipReason(
