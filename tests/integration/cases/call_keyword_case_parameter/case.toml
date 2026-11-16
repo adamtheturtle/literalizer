@@ -6,4 +6,6 @@ owner = "literalize-call"
 target_function = "make_widget"
 parameter_names = ["Before"]
 per_element = false
-wrap_in_file = true
+
+[call.fixture]
+kind = "wrapped"

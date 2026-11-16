@@ -8,7 +8,6 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
-wrap_in_file = true
 
 [[call.variants]]
 axis = "json_type"
@@ -22,3 +21,6 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.fixture]
+kind = "wrapped"

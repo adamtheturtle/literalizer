@@ -7,8 +7,6 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "enu
 target_function = "make_widget"
 parameter_names = ["text"]
 per_element = false
-call_transform = "{call} // note\n// extra"
-wrap_in_file = true
 variable_form = "new"
 
 [[call.variants]]
@@ -16,3 +14,10 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "multiline_string"
+
+[call.transform]
+kind = "template"
+template = "{call} // note\n// extra"
+
+[call.fixture]
+kind = "wrapped"

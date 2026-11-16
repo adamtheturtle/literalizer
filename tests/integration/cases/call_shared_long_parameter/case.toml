@@ -6,4 +6,6 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["parameter_name_parameter_name_parameter_name_parameter_name_para"]
 per_element = true
-wrap_in_file = true
+
+[call.fixture]
+kind = "wrapped"

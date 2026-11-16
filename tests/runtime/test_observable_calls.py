@@ -19,7 +19,13 @@ from tests.integration.call_receivers import (
     integer_receiver_syntax,
 )
 from tests.integration.call_transforms import call_transform_for_case
-from tests.integration.case_manifests import CallCaseSpec, CallWrapperSpec
+from tests.integration.case_manifests import (
+    CallCaseSpec,
+    CallOperandSpec,
+    CallWrapperSpec,
+    ComposedCallFixture,
+    FollowupCallSpec,
+)
 from tests.integration.language_specs import (
     find_redefinition_styles,
     fixture_module_name,
@@ -90,14 +96,20 @@ def _program(*, spec: literalizer.Language, control: str) -> str:
                 ),
                 "zip_source": "[41, 42]",
                 "zip_input_format": literalizer.InputFormat.JSON,
-                "call_transform_wrapper": CallWrapperSpec(
+                "transform": CallWrapperSpec(
+                    kind="wrapper",
                     target="emit",
-                    arguments=("zipped", "call")
-                    if control == "swapped"
-                    else ("call", "zipped"),
+                    arguments=(
+                        CallOperandSpec(
+                            role="zipped" if control == "swapped" else "call",
+                            parameter="actual",
+                        ),
+                        CallOperandSpec(
+                            role="call" if control == "swapped" else "zipped",
+                            parameter="zipped",
+                        ),
+                    ),
                 ),
-                "transform_stub_names": ("emit",),
-                "transform_stub_param_names": ("actual", "zipped"),
             }
         )
     if control == "unary_wrapper":
@@ -109,12 +121,13 @@ def _program(*, spec: literalizer.Language, control: str) -> str:
                     ("call", 2),
                     ("result", 102),
                 ),
-                "call_transform_wrapper": CallWrapperSpec(
+                "transform": CallWrapperSpec(
+                    kind="wrapper",
                     target="emit",
-                    arguments=("call",),
+                    arguments=(
+                        CallOperandSpec(role="call", parameter="actual"),
+                    ),
                 ),
-                "transform_stub_names": ("emit",),
-                "transform_stub_param_names": ("actual",),
             }
         )
     fragments: list[literalizer.LiteralizeResult] = []
@@ -127,7 +140,11 @@ def _program(*, spec: literalizer.Language, control: str) -> str:
                     ("call", 1),
                     ("result", 101),
                 ),
-                "followup_target_function": "consume",
+                "fixture": ComposedCallFixture(
+                    followup=FollowupCallSpec(
+                        source='{"$ref": "my_data"}', target_function="consume"
+                    )
+                ),
                 "variable_form": literalizer.ExistingVariable(name="my_data"),
             }
         )

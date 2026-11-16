@@ -5,8 +5,11 @@ owner = "literalize-ref"
 gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", member = "RECORD"}]
 heterogeneous_strategy = "RECORD"
 
-[ref.value_sources]
-record_data = '{"items":[1,2]}'
-
 [ref.explicit_ref_value_sources]
 record_data = '{"items":[3,4]}'
+
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
+record_data = '{"items":[1,2]}'

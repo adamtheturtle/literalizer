@@ -6,7 +6,11 @@ gates = [{kind = "integer_call_stub"}]
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
-call_transform_add_one = true
-call_transform = "({call}) * 2"
+
+[call.transform]
+kind = "add-one"
+outer = "({call}) * 2"
+
+[call.fixture]
+kind = "wrapped"

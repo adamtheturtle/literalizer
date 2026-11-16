@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "do_thing"
 parameter_names = ["x_"]
 per_element = true
-wrap_in_file = true
 # Original regression: Scala-specific: the parser reads `x_:` as one identifier, so a trailing-underscore parameter needs a space before its type ascription.
+
+[call.fixture]
+kind = "wrapped"

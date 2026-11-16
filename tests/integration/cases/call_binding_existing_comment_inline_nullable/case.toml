@@ -3,17 +3,25 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
-followup_source = '{"$ref": "my_data"}'
-followup_target_function = "consume"
 gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "enum_member_present", option = "comment_format", member = "DOUBLE_SLASH"}]
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "existing"
-call_transform = "{call} // note"
-
-[call.ref_declarations]
-my_data = "null"
 
 [[call.variants]]
 axis = "type_hints"
+
+[call.transform]
+kind = "template"
+template = "{call} // note"
+
+[call.fixture]
+kind = "composed"
+
+[call.fixture.ref_declarations]
+my_data = "null"
+
+[call.fixture.followup]
+source = '{"$ref": "my_data"}'
+target_function = "consume"

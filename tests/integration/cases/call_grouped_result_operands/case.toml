@@ -8,90 +8,133 @@ gates = [{kind = "integer_call_stub"}]
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
-call_transform_group = {body = "{call}", suffix = " + 1"}
-call_transform = "({call}) * {zipped}"
 zip_source = "3"
 zip_input_format = "json"
 
+[call.transform]
+kind = "group"
+body = "{call}"
+suffix = " + 1"
+outer = "({call}) * {zipped}"
+
+[call.fixture]
+kind = "wrapped"
 [[call_examples]]
 example = "body_zip"
 gates = [{kind = "integer_call_stub"}]
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
-call_transform_group = {body = "{call} * {zipped}", suffix = " + 1"}
-call_transform = "({call}) * 2"
 zip_source = "3"
 zip_input_format = "json"
 
+[call_examples.transform]
+kind = "group"
+body = "{call} * {zipped}"
+suffix = " + 1"
+outer = "({call}) * 2"
+
+[call_examples.fixture]
+kind = "wrapped"
 [[call_examples]]
 example = "no_zip"
 gates = [{kind = "integer_call_stub"}]
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
-call_transform_group = {body = "{call}", suffix = " + 1"}
-call_transform = "({call}) * 2"
+
+[call_examples.transform]
+kind = "group"
+body = "{call}"
+suffix = " + 1"
+outer = "({call}) * 2"
+
+[call_examples.fixture]
+kind = "wrapped"
 [[call_examples]]
 example = "outer_zip_date"
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "new"
-call_transform_group = {body = "wrap_widget({call}, r#\"// group\"#)", suffix = ""}
-call_transform = "zip_widget({call}, {zipped})"
-transform_stub_names = ["wrap_widget", "zip_widget"]
-transform_stub_param_names = ["value", "extra"]
 zip_source = "2024-01-15"
 zip_input_format = "yaml"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_hash_raw_prefix"
 prefix = "r"
 marker = "#"
+
+[call_examples.transform]
+kind = "group"
+body = "wrap_widget({call}, r#\"// group\"#)"
+suffix = ""
+outer = "zip_widget({call}, {zipped})"
+stub_names = ["wrap_widget", "zip_widget"]
+stub_param_names = ["value", "extra"]
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 example = "body_zip_date"
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "new"
-call_transform_group = {body = "zip_widget({call}, {zipped})", suffix = ""}
-call_transform = "wrap_widget({call}, r#\"// group\"#)"
-transform_stub_names = ["wrap_widget", "zip_widget"]
-transform_stub_param_names = ["value", "extra"]
 zip_source = "2024-01-15"
 zip_input_format = "yaml"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_hash_raw_prefix"
 prefix = "r"
 marker = "#"
+
+[call_examples.transform]
+kind = "group"
+body = "zip_widget({call}, {zipped})"
+suffix = ""
+outer = "wrap_widget({call}, r#\"// group\"#)"
+stub_names = ["wrap_widget", "zip_widget"]
+stub_param_names = ["value", "extra"]
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 example = "unused_zip_date"
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "new"
-call_transform_group = {body = "wrap_widget({call}, r#\"// group\"#)", suffix = ""}
-call_transform = "{call}"
-transform_stub_names = ["wrap_widget"]
-transform_stub_param_names = ["value", "extra"]
 zip_source = "2024-01-15"
 zip_input_format = "yaml"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_hash_raw_prefix"
 prefix = "r"
 marker = "#"
+
+[call_examples.transform]
+kind = "group"
+body = "wrap_widget({call}, r#\"// group\"#)"
+suffix = ""
+outer = "{call}"
+stub_names = ["wrap_widget"]
+stub_param_names = ["value", "extra"]
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"

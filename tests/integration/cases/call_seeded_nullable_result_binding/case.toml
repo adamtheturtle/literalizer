@@ -7,11 +7,16 @@ target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "existing"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
-[call.ref_declarations]
+[call.fixture]
+kind = "composed"
+
+[call.fixture.ref_declarations]
 my_data = "null"
+
+[call.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 
 [[call_examples]]
 # Regression provenance: call_shared_comments_verbatim_interpolated_nested_format_comment_existing
@@ -21,7 +26,6 @@ target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "existing"
-call_transform = "($\"{{$\"{{1://}}\"}}\").Length >= 0 ? {call} : {call} // trailing\n// extra"
 
 [[call_examples.gates]]
 kind = "call_literal_flag"
@@ -32,10 +36,18 @@ kind = "call_interpolation"
 opener = "{"
 quotes = "\""
 
-[call_examples.ref_declarations]
+[call_examples.transform]
+kind = "template"
+template = "($\"{{$\"{{1://}}\"}}\").Length >= 0 ? {call} : {call} // trailing\n// extra"
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.ref_declarations]
 my_data = "null"
 
 # Keep existing integer and nullable result bindings valid when their values are passed to a later call.
+
 [[call.variants]]
 axis = "type_hints"
 

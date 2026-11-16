@@ -4,5 +4,8 @@ owner = "literalize-ref"
 [ref]
 variable_form = "both"
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 shared_values = "[1, 2]"

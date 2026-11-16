@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "check_wrapper"
 parameter_names = ["a"]
 per_element = false
-wrap_in_file = true
 # Original regression (cobol_call_wrapper_name_control): A target equal to the alternative COBOL wrapper name must also remain distinct from the selected outer program.
+
+[call.fixture]
+kind = "wrapped"

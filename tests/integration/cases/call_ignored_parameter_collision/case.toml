@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "f"
 parameter_names = ["x", "_x"]
 per_element = true
-wrap_in_file = true
 # Original regression: Elixir prefixes stub parameters with underscores, Swift preserves both names, and Ada rejects the leading underscore.
+
+[call.fixture]
+kind = "wrapped"

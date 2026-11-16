@@ -5,5 +5,12 @@ owner = "literalize-ref-default"
 
 [ref]
 gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "capability_flag", flag = "declares_call_styles"}]
-external_declarations = {shared = "[1, 2]"}
 explicit_ref_value_sources = {shared = "[1, 2]"}
+
+[ref.context]
+kind = "external"
+declarations = {shared = "[1, 2]"}
+
+[ref.context.consumer]
+kind = "call"
+target_function = "consume_widget"

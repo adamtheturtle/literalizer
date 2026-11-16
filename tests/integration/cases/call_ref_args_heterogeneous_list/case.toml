@@ -8,8 +8,11 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["data", "count"]
 per_element = true
-ref_declarations = { my_ints = "[1, 2, 3]", my_strings = "[\"a\", \"b\"]", my_empty = "[]" }
 consumable_refs = ["my_empty", "my_ints", "my_strings"]
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
+
+[call.fixture]
+kind = "bound"
+ref_declarations = { my_ints = "[1, 2, 3]", my_strings = "[\"a\", \"b\"]", my_empty = "[]" }

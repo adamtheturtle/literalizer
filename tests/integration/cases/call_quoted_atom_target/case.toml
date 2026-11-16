@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "DoThing"
 parameter_names = ["x"]
 per_element = true
-wrap_in_file = true
 # Original regression: Erlang quotes capitalized function atoms; V rejects the capitalized wrapped target.
+
+[call.fixture]
+kind = "wrapped"

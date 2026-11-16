@@ -7,6 +7,9 @@ gates = [{kind = "enum_member_present", option = "heterogeneous_strategy", membe
 declaration_style = "VAR"
 heterogeneous_strategy = "RECORD"
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 shared = "[1, 2]"
 second = '["one", "two"]'

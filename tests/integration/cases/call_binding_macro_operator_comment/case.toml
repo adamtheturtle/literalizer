@@ -9,10 +9,17 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-call_transform = '''(`__LINE__ + 1 > 0) ? {call} : {call} // note'''
-followup_source = '{"$ref": "my_data"}'
-followup_target_function = "consume"
 
+[call.transform]
+kind = "template"
+template = '''(`__LINE__ + 1 > 0) ? {call} : {call} // note'''
+
+[call.fixture]
+kind = "composed"
+
+[call.fixture.followup]
+source = '{"$ref": "my_data"}'
+target_function = "consume"
 [[call_examples]]
 example = "existing"
 gates = [{kind = "call_identifier_prefix", prefix = "`"}]
@@ -20,7 +27,15 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "existing"
+
+[call_examples.transform]
+kind = "template"
+template = '''(`__LINE__ + 1 > 0) ? {call} : {call} // note'''
+
+[call_examples.fixture]
+kind = "composed"
 ref_declarations = {my_data = "42"}
-call_transform = '''(`__LINE__ + 1 > 0) ? {call} : {call} // note'''
-followup_source = '{"$ref": "my_data"}'
-followup_target_function = "consume"
+
+[call_examples.fixture.followup]
+source = '{"$ref": "my_data"}'
+target_function = "consume"

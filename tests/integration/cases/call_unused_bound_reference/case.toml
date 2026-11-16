@@ -6,10 +6,6 @@ target_function = "f"
 parameter_names = ["value"]
 per_element = false
 
-[call.ref_declarations]
-unused = "[3, 4]"
-
-# Keep repeated and nested references usable under alternate sequence types, annotations and call layouts.
 [[call.variants]]
 axis = "sequence"
 
@@ -18,3 +14,11 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.fixture]
+kind = "bound"
+
+[call.fixture.ref_declarations]
+unused = "[3, 4]"
+
+# Keep repeated and nested references usable under alternate sequence types, annotations and call layouts.

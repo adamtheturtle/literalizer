@@ -7,9 +7,13 @@ gates = [{kind = "nullable_object_call_stub"}]
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = true
-wrap_in_file = true
 variable_form = "new"
-call_transform_nullable_conditional = true
 
 [[call.variants]]
 axis = "type_hints"
+
+[call.transform]
+kind = "nullable-conditional"
+
+[call.fixture]
+kind = "wrapped"

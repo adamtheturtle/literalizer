@@ -6,7 +6,6 @@ target_function = "consume"
 parameter_names = ["value"]
 per_element = true
 ref_key = ""
-ref_declarations = { external_value = "1" }
 
 # Retain empty bindings and statement-only calls under explicit result annotations and alternate layouts.
 [[call.variants]]
@@ -14,3 +13,7 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.fixture]
+kind = "bound"
+ref_declarations = { external_value = "1" }

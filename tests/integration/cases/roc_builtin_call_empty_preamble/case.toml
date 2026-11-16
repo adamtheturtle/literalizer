@@ -8,4 +8,7 @@ gates = [{kind = "enum_member_present", option = "language_version", member = "V
 target_function = "dbg"
 parameter_names = ["value"]
 per_element = false
+
+[call.fixture]
+kind = "composed"
 include_target_stub = false

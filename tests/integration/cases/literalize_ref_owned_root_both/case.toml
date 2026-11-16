@@ -9,5 +9,8 @@ owner = "literalize-ref"
 gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
 variable_form = "both"
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 shared = "[1, 2]"

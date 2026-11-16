@@ -2,7 +2,11 @@
 schema_version = 1
 owner = "literalize-ref"
 
-[ref.value_sources]
+
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 shared = "[1,\"x\"]"
 
 [[ref_examples]]
@@ -26,7 +30,11 @@ kind = "enum_member_present"
 option = "heterogeneous_strategy"
 member = "TAGGED_ENUM"
 
-[ref_examples.value_sources]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.value_sources]
 shared = "[1,\"x\"]"
 
 [[ref_examples]]
@@ -44,5 +52,9 @@ kind = "enum_member_present"
 option = "heterogeneous_strategy"
 member = "TAGGED_ENUM"
 
-[ref_examples.value_sources]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.value_sources]
 shared = "[1,\"x\"]"

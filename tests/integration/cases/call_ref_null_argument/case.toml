@@ -8,7 +8,6 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "consume"
 parameter_names = ["value"]
 per_element = false
-ref_declarations = { value = "null" }
 
 # Compile the shared call in annotation and collection-layout contexts.
 [[call.variants]]
@@ -16,3 +15,7 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.fixture]
+kind = "bound"
+ref_declarations = { value = "null" }

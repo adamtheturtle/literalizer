@@ -3,7 +3,7 @@
 import dataclasses
 import functools
 from collections.abc import Callable, Sequence
-from typing import Protocol, runtime_checkable
+from typing import Protocol, assert_never, runtime_checkable
 
 from beartype import beartype
 from pydantic import TypeAdapter
@@ -12,7 +12,7 @@ import literalizer
 from literalizer._enums import enum_payload
 from literalizer._language import (
     CallStubDeclarations,
-    CallSupport,
+    CallStyle,
     IntegerCallStubResult,
     KeywordCallStyle,
     NullableObjectCallStubResult,
@@ -32,9 +32,17 @@ from literalizer.exceptions import (
 )
 
 from .case_manifests import (
+    CallAddOneSpec,
+    CallArgumentsSpec,
     CallCaseSpec,
+    CallConditionalSpec,
+    CallGroupSpec,
+    CallSequenceSpec,
+    CallStubRecipeSpec,
+    CallTemplateSpec,
     CallTransform,
     CallWrapperSpec,
+    FollowupCallSpec,
 )
 from .language_specs import (
     sorted_languages,
@@ -149,30 +157,56 @@ def _wrapper_parameter_names(
 
 
 @beartype
+def transform_stub_targets(
+    *, config: CallCaseSpec
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """Read wrapper declarations from the selected recipe's own
+    operands.
+    """
+    match config.transform:
+        case CallWrapperSpec() as wrapper:
+            return (
+                (
+                    wrapper.target,
+                    tuple(operand.parameter for operand in wrapper.arguments),
+                ),
+            )
+        case CallStubRecipeSpec() as recipe:
+            return tuple(
+                (name, recipe.stub_param_names) for name in recipe.stub_names
+            )
+        case None:
+            return ()
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+@beartype
 def wrapper_call_declarations(
     *,
     spec: literalizer.Language,
     config: CallCaseSpec,
+    followup: FollowupCallSpec | None,
     bound_result_slots: frozenset[int],
 ) -> CallStubDeclarations:
     """Keep actual operand representations and wrapper calling conventions."""
     body: list[str | RenderedCallStub] = []
     class_scope: list[str] = []
     file_scope: list[str] = []
-    wrapper = config.call_transform_wrapper
-    targets = [
-        (name, config.transform_stub_param_names)
-        for name in config.transform_stub_names
-    ]
-    if config.followup_target_function is not None:
-        targets.append(
-            (config.followup_target_function, config.parameter_names)
-        )
+    wrapper = (
+        config.transform
+        if isinstance(config.transform, CallWrapperSpec)
+        else None
+    )
+    targets = list(transform_stub_targets(config=config))
+    followup_target = None if followup is None else followup.target_function
+    if followup_target is not None:
+        targets.append((followup_target, config.parameter_names))
     for name, parameter_names in targets:
         params = parameter_names
         wrapper_spec = spec
         arguments: Sequence[ParsedValue] = ()
-        if name == config.followup_target_function:
+        if name == followup_target:
             arguments = CallStubData(
                 data=(),
                 keyword_arguments=isinstance(
@@ -191,7 +225,7 @@ def wrapper_call_declarations(
                 call_result_slots=frozenset(
                     index
                     for index, role in enumerate(iterable=wrapper.arguments)
-                    if role == "call"
+                    if role.role == "call"
                 ),
             )
         parts = tuple(name.split(sep="."))
@@ -221,16 +255,15 @@ def wrapper_call_declarations(
 def followup_result_slots(
     *,
     config: CallCaseSpec,
+    followup: FollowupCallSpec | None,
     input_format: literalizer.InputFormat,
 ) -> frozenset[int]:
     """Identify direct bound-result operands in the parsed follow-up
     call.
     """
-    if config.followup_source is None or config.variable_form is None:
+    if followup is None or config.variable_form is None:
         return frozenset[int]()
-    data = parse_input(
-        source=config.followup_source, input_format=input_format
-    ).data
+    data = parse_input(source=followup.source, input_format=input_format).data
     rows = data if config.per_element and isinstance(data, list) else [data]
     return frozenset(
         index
@@ -258,10 +291,10 @@ class WrapperCallTransform:
     @property
     def uses_zipped(self) -> bool:
         """Report only the operand roles declared by the recipe."""
-        outer = self.config.call_transform
-        return "zipped" in self.wrapper.arguments or (
-            outer is not None and outer.uses_zipped
-        )
+        outer = self.wrapper.outer
+        return any(
+            operand.role == "zipped" for operand in self.wrapper.arguments
+        ) or (outer is not None and outer.uses_zipped)
 
     @functools.cached_property
     def call_stub_declarations(self) -> CallStubDeclarations:
@@ -271,6 +304,7 @@ class WrapperCallTransform:
         return wrapper_call_declarations(
             spec=self.spec,
             config=self.config,
+            followup=None,
             bound_result_slots=frozenset(),
         )
 
@@ -287,7 +321,7 @@ class WrapperCallTransform:
         ).validate_python(spec.call_style_config)
         operands: list[str] = []
         for role in wrapper.arguments:
-            if role == "call":
+            if role.role == "call":
                 operands.append(context.call)
                 continue
             operand = TypeAdapter(type=str).validate_python(context.zipped)
@@ -300,7 +334,10 @@ class WrapperCallTransform:
         args = format_rendered_call_arguments(
             formatted=operands,
             params=_wrapper_parameter_names(
-                spec=spec, params=self.config.transform_stub_param_names
+                spec=spec,
+                params=tuple(
+                    operand.parameter for operand in wrapper.arguments
+                ),
             ),
             style=style,
             allows_empty_call_parens=spec.allows_empty_call_parens,
@@ -315,7 +352,7 @@ class WrapperCallTransform:
         return _apply_outer_transform(
             context=context,
             expression=expression,
-            outer=self.config.call_transform,
+            outer=self.wrapper.outer,
         )
 
 
@@ -417,7 +454,7 @@ class ConditionalCallTransform:
 
 @beartype
 def _result_call_transform(
-    *, spec: literalizer.Language, config: CallCaseSpec
+    *, spec: literalizer.Language, recipe: CallAddOneSpec | CallConditionalSpec
 ) -> IntegerResultCallTransform | ConditionalCallTransform:
     """Build an admitted result expression from its producer metadata."""
     result = next(
@@ -426,13 +463,11 @@ def _result_call_transform(
         if cls.language_id == spec.language_id
     )
     # The manifest gates admit only producers of the required result type.
-    if config.call_transform_add_one:
+    if isinstance(recipe, CallAddOneSpec):
         syntax = TypeAdapter(type=IntegerCallStubResult).validate_python(
             result
         )
-        return IntegerResultCallTransform(
-            syntax=syntax, outer=config.call_transform
-        )
+        return IntegerResultCallTransform(syntax=syntax, outer=recipe.outer)
     nullable = TypeAdapter(type=NullableObjectCallStubResult).validate_python(
         result
     )
@@ -443,7 +478,53 @@ def _result_call_transform(
         null_value=nullable.value,
         comment_prefix=nullable.comment_prefix,
         indent=spec.indent,
-        outer=config.call_transform,
+        outer=recipe.outer,
+    )
+
+
+@beartype
+def _wrapper_transform(
+    *,
+    spec: literalizer.Language,
+    config: CallCaseSpec,
+    recipe: CallWrapperSpec,
+) -> WrapperCallTransform:
+    """Parse the independent zip input for a native wrapper recipe."""
+    zip_data: ParsedValue = None
+    if config.zip_source is not None and config.zip_input_format is not None:
+        zip_data = parse_input(
+            source=config.zip_source,
+            input_format=config.zip_input_format,
+        ).data
+    return WrapperCallTransform(
+        spec=spec, config=config, wrapper=recipe, zip_data=zip_data
+    )
+
+
+@beartype
+def _arguments_transform(
+    *,
+    spec: literalizer.Language,
+    config: CallCaseSpec,
+    recipe: CallArgumentsSpec,
+) -> LiteralArgumentsTransform:
+    """Render lexical operands with the selected native calling convention."""
+    style = TypeAdapter(type=CallStyle).validate_python(spec.call_style_config)
+    args = format_rendered_call_arguments(
+        formatted=list(recipe.arguments),
+        params=config.parameter_names,
+        style=style,
+        allows_empty_call_parens=spec.allows_empty_call_parens,
+    )
+    target = spec.format_call_target(
+        tuple(config.target_function.split(sep="."))
+    )
+    return LiteralArgumentsTransform(
+        call=assemble_call_expression(
+            target_function=target, args_str=args, style=style
+        ),
+        suffix=recipe.suffix,
+        outer=recipe.outer,
     )
 
 
@@ -451,64 +532,31 @@ def _result_call_transform(
 def call_transform_for_case(
     *, spec: literalizer.Language, config: CallCaseSpec
 ) -> Callable[[literalizer.CallContext], str] | None:
-    """Compose the declared expression recipe with the actual call
-    syntax.
-    """
-    if config.call_transform_wrapper is not None:
-        zip_data: ParsedValue = None
-        if (
-            config.zip_source is not None
-            and config.zip_input_format is not None
-        ):
-            zip_data = parse_input(
-                source=config.zip_source, input_format=config.zip_input_format
-            ).data
-        return WrapperCallTransform(
-            spec=spec,
-            config=config,
-            wrapper=config.call_transform_wrapper,
-            zip_data=zip_data,
-        )
-    if (
-        config.call_transform_add_one
-        or config.call_transform_nullable_conditional
-    ):
-        return _result_call_transform(spec=spec, config=config)
-    if config.call_transform_sequence:
-        return SequenceCallTransform(spec=spec, outer=config.call_transform)
-    style = spec.call_style_config
-    if config.call_transform_arguments is not None and not isinstance(
-        style, CallSupport
-    ):
-        native_arguments = config.call_transform_arguments
-        args = format_rendered_call_arguments(
-            formatted=list(native_arguments.arguments),
-            params=config.parameter_names,
-            style=style,
-            allows_empty_call_parens=spec.allows_empty_call_parens,
-        )
-        target = spec.format_call_target(
-            tuple(config.target_function.split(sep="."))
-        )
-        return LiteralArgumentsTransform(
-            call=assemble_call_expression(
-                target_function=target,
-                args_str=args,
-                style=style,
-            ),
-            suffix=native_arguments.suffix,
-            outer=config.call_transform,
-        )
-    if config.call_transform_group is not None:
-        group = (
-            spec.group_call_expression
-            if isinstance(spec, _CallExpressionGroupLanguage)
-            else _parenthesized_call_group
-        )
-        return GroupedCallTransform(
-            body=config.call_transform_group.body,
-            suffix=config.call_transform_group.suffix,
-            outer=config.call_transform,
-            group=group,
-        )
-    return config.call_transform
+    """Execute the selected recipe without reconstructing its mode."""
+    match config.transform:
+        case None | CallTemplateSpec() as recipe:
+            return None if recipe is None else recipe.template
+        case CallWrapperSpec() as recipe:
+            return _wrapper_transform(spec=spec, config=config, recipe=recipe)
+        case (CallAddOneSpec() | CallConditionalSpec()) as recipe:
+            return _result_call_transform(spec=spec, recipe=recipe)
+        case CallSequenceSpec() as recipe:
+            return SequenceCallTransform(spec=spec, outer=recipe.outer)
+        case CallArgumentsSpec() as recipe:
+            return _arguments_transform(
+                spec=spec, config=config, recipe=recipe
+            )
+        case CallGroupSpec() as recipe:
+            group = (
+                spec.group_call_expression
+                if isinstance(spec, _CallExpressionGroupLanguage)
+                else _parenthesized_call_group
+            )
+            return GroupedCallTransform(
+                body=recipe.body,
+                suffix=recipe.suffix,
+                outer=recipe.outer,
+                group=group,
+            )
+        case _ as unreachable:
+            assert_never(unreachable)

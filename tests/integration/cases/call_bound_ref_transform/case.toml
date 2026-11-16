@@ -6,9 +6,16 @@ owner = "literalize-call"
 target_function = "f"
 parameter_names = ["a"]
 per_element = true
-call_transform_wrapper = {target = "repr", arguments = ["call"]}
-transform_stub_names = ["repr"]
-wrap_in_file = true
 
-[call.ref_declarations]
+[call.transform]
+kind = "wrapper"
+target = "repr"
+
+[[call.transform.arguments]]
+role = "call"
+parameter = "_arg"
+[call.fixture]
+kind = "wrapped"
+
+[call.fixture.ref_declarations]
 ref_data = "1"

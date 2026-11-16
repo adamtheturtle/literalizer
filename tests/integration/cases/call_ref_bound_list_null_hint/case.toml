@@ -5,7 +5,9 @@ owner = "literalize-call"
 target_function = "consume"
 parameter_names = ["value"]
 per_element = false
-wrap_in_file = true
-ref_declarations = { item = '[1, 2]' }
 explicit_ref_value_sources = { item = 'null' }
 consumable_refs = ["item"]
+
+[call.fixture]
+kind = "wrapped"
+ref_declarations = { item = '[1, 2]' }

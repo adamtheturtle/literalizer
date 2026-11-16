@@ -5,8 +5,6 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-call_transform = "tracer.emit({call})"
-transform_stub_names = ["tracer.emit"]
 requires_call_returns_expression = true
 
 [[call.variants]]
@@ -18,3 +16,8 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.transform]
+kind = "template"
+stub_names = ["tracer.emit"]
+template = "tracer.emit({call})"

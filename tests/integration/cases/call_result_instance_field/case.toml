@@ -8,6 +8,8 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "mod
 target_function = "process"
 parameter_names = ["item"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
 variable_modifiers = ["PUBLIC"]
+
+[call.fixture]
+kind = "wrapped"

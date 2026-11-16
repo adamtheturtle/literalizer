@@ -6,6 +6,11 @@ gates = [{kind = "capability_flag", flag = "supports_dotted_calls"}]
 target_function = "thing.go"
 parameter_names = ["value"]
 per_element = true
-call_transform = "{call}"
-wrap_in_file = true
+
+[call.transform]
+kind = "template"
+template = "{call}"
+
+[call.fixture]
+kind = "wrapped"
 ref_declarations = { item = "[1, 2]" }

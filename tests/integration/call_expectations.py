@@ -30,8 +30,11 @@ from literalizer.exceptions import (
     VariableNameNotSupportedError,
 )
 
+from .call_transforms import transform_stub_targets
 from .case_manifests import (
+    BoundCallFixture,
     CallCaseSpec,
+    WrappedCallFixture,
 )
 from .golden_checks import (
     skip_golden,
@@ -61,7 +64,7 @@ def _call_transform_style_unsupported(
     the test pins that style; otherwise the language's default
     (first-listed) style applies.
     """
-    if not config.has_call_transform:
+    if config.transform is None:
         return False
     if config.call_style_type is not None:
         return not issubclass(
@@ -96,7 +99,7 @@ def _wrapper_capability_skip_reason(
     """
     if (
         isinstance(config.variable_form, literalizer.ExistingVariable)
-        and config.variable_form.name in config.ref_declarations
+        and config.variable_form.name in config.fixture.ref_declarations
         and spec.call_assignment_declares_binding
         and len(find_redefinition_styles(spec=spec)) == 0
     ):
@@ -104,8 +107,9 @@ def _wrapper_capability_skip_reason(
             f"{lang_cls.__name__} cannot redefine the seeded binding "
             f"for the {config.case_dir_name} fixture"
         )
+    targets = transform_stub_targets(config=config)
     if (
-        len(config.transform_stub_param_names) > 1
+        any(len(params) > 1 for _, params in targets)
         and not lang_cls.supports_multi_param_call_wrapper_stub
     ):
         return (
@@ -120,7 +124,7 @@ def _wrapper_capability_skip_reason(
             f"{lang_cls.__name__} cannot splice a map literal as a free "
             f"expression for the {config.case_dir_name} fixture"
         )
-    for wrapper_name in config.transform_stub_names:
+    for wrapper_name, _ in targets:
         if "." in wrapper_name:
             if not lang_cls.supports_dotted_call_stub:
                 return (
@@ -273,19 +277,6 @@ def _is_reserved_call_target(
 
 
 @beartype
-def uses_bound_ref_wrapper(*, config: CallCaseSpec) -> bool:
-    """Select the same reference wrapper for validation and rendering."""
-    return (
-        len(config.ref_declarations) > 0
-        and len(config.unknown_ref_names) == 0
-        and config.explicit_ref_value_sources is None
-        and not config.has_call_transform
-        and (len(config.transform_stub_names) == 0)
-        and (config.variable_form is None)
-    )
-
-
-@beartype
 def _call_support_exception(
     *, spec: literalizer.Language
 ) -> type[Exception] | None:
@@ -361,15 +352,15 @@ def expected_call_shape_exception(
         return prerequisite_error
     spec = call_style_spec(config=config, lang_cls=lang_cls, spec=spec)
     effective_style = spec.call_style_config
-    bound_refs_wrap = uses_bound_ref_wrapper(config=config)
+    bound_refs_wrap = isinstance(config.fixture, BoundCallFixture)
     rejects_reserved_parameters = (
-        config.wrap_in_file
+        isinstance(config.fixture, WrappedCallFixture)
         or bound_refs_wrap
         or isinstance(effective_style, literalizer.KeywordCallStyle)
     )
     target_parts = config.target_function.split(sep=".")
     shadowing = spec.call_parameter_shadowing
-    declared_parts = (
+    declared_parts: list[str] = (
         target_parts
         if shadowing is CallParameterShadowing.ANY_DECLARATION
         else target_parts[-1:]
@@ -388,7 +379,7 @@ def expected_call_shape_exception(
             _is_reserved_parameter_name(lang_cls=lang_cls, name=name)
             for name in config.parameter_names
         ),
-        (config.wrap_in_file or bound_refs_wrap)
+        (isinstance(config.fixture, WrappedCallFixture) or bound_refs_wrap)
         and any(
             (
                 parameter == declared
@@ -406,9 +397,10 @@ def expected_call_shape_exception(
         invalid_target_grammar(
             lang_cls=lang_cls,
             target=config.target_function,
-            wrapped=config.wrap_in_file
-            or bound_refs_wrap
-            or config.include_target_stub,
+            wrapped=isinstance(
+                config.fixture, (WrappedCallFixture, BoundCallFixture)
+            )
+            or config.fixture.include_target_stub,
             spec=spec,
         )
         or _is_reserved_call_target(
@@ -441,7 +433,7 @@ def expected_call_shape_exception(
                 lang_cls.max_variable_identifier_length is not None
                 and len(name) > lang_cls.max_variable_identifier_length
             )
-            for name in config.ref_declarations
+            for name in config.fixture.ref_declarations
         )
         else None
     )

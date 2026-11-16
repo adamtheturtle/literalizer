@@ -6,4 +6,6 @@ owner = "literalize-call"
 target_function = "Before"
 parameter_names = ["value"]
 per_element = false
-wrap_in_file = true
+
+[call.fixture]
+kind = "wrapped"

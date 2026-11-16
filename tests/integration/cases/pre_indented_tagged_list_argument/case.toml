@@ -8,5 +8,9 @@ gates = [{kind = "non_default_kwarg", kwarg = "constructor_prefix"}]
 variable_form = "none"
 pre_indent_level = 1
 
-[ref.consumer]
+[ref.context]
+kind = "expression"
+
+[ref.context.consumer]
+kind = "call"
 target_function = "consume_widget"

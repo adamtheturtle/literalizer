@@ -9,8 +9,11 @@ target_function = "consume"
 parameter_names = ["value"]
 per_element = false
 variant_only = true
-ref_declarations = { item = '{"name":"first","values":[1,2]}' }
 explicit_ref_value_sources = { item = '{"name":"first","values":[1,2]}' }
 
 [[call.variants]]
 axis = "heterogeneous_strategy_record"
+
+[call.fixture]
+kind = "composed"
+ref_declarations = { item = '{"name":"first","values":[1,2]}' }

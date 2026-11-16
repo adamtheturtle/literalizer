@@ -9,8 +9,10 @@ target_function = "consume"
 parameter_names = ["item"]
 per_element = true
 call_style = "command"
-wrap_in_file = true
 variant_only = true
 
 [[call.variants]]
 axis = "native_record"
+
+[call.fixture]
+kind = "wrapped"

@@ -8,26 +8,29 @@ gates = [{ kind = "capability_flag", flag = "supports_dotted_calls" }]
 target_function = "a.foo.Foo.bar"
 parameter_names = ["x"]
 per_element = false
-wrap_in_file = true
 
+[call.fixture]
+kind = "wrapped"
 [[call_examples]]
 example = "value_result"
 gates = [{ kind = "capability_flag", flag = "supports_dotted_calls" }]
 target_function = "a.foo.Foo.bar"
 parameter_names = ["x"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
 requires_call_returns_expression = true
 
+[call_examples.fixture]
+kind = "wrapped"
 [[call_examples]]
 example = "root_collision"
 gates = [{ kind = "capability_flag", flag = "supports_dotted_calls" }]
 target_function = "foo.Foo.bar"
 parameter_names = ["x"]
 per_element = false
-wrap_in_file = true
 
+[call_examples.fixture]
+kind = "wrapped"
 [[call_examples]]
 example = "nim_identifier_style"
 # Nim also ignores interior case and underscores when comparing type names.
@@ -35,4 +38,6 @@ gates = [{ kind = "capability_flag", flag = "dotted_call_stub_indexes_colliding_
 target_function = "a.foo_bar.fooBar.bar"
 parameter_names = ["x"]
 per_element = false
-wrap_in_file = true
+
+[call_examples.fixture]
+kind = "wrapped"

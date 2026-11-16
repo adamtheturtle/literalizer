@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "f"
 parameter_names = ["_"]
 per_element = true
-wrap_in_file = true
 # Original regression: Crystal, Kotlin, Mojo, and Scala reject a bare underscore parameter; Python renders it.
+
+[call.fixture]
+kind = "wrapped"

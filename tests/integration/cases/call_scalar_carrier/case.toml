@@ -8,7 +8,6 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-wrap_in_file = true
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
@@ -28,3 +27,6 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.fixture]
+kind = "wrapped"

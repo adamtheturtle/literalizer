@@ -9,7 +9,12 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["a", "b"]
 per_element = true
-call_transform = "{call}"
-wrap_in_file = true
 variable_form = "new"
 requires_call_returns_expression = true
+
+[call.transform]
+kind = "template"
+template = "{call}"
+
+[call.fixture]
+kind = "wrapped"

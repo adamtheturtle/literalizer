@@ -5,7 +5,6 @@ owner = "literalize-call"
 target_function = "api.worker.process"
 parameter_names = ["self", "self_"]
 per_element = true
-wrap_in_file = true
 
 [[call.variants]]
 axis = "heterogeneous_strategy_record"
@@ -16,3 +15,6 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.fixture]
+kind = "wrapped"

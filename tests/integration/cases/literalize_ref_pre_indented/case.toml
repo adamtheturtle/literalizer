@@ -7,5 +7,8 @@ gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "
 pre_indent_level = 1
 # Original regression (literalize_ref_pre_indented): A wrapped ref declaration has to take the same margin as the binding it precedes; Roc also aligns each annotation with its definition.
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 shared = "[1, 2]"

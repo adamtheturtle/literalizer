@@ -8,9 +8,7 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "cap
 target_function = "thing.go"
 parameter_names = ["value"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
-call_transform = "{call}"
 
 [[call.variants]]
 axis = "json_type_call_result"
@@ -24,3 +22,10 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.transform]
+kind = "template"
+template = "{call}"
+
+[call.fixture]
+kind = "wrapped"

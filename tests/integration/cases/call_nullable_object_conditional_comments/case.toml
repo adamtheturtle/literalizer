@@ -6,10 +6,14 @@ owner = "literalize-call"
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
-call_transform_nullable_conditional = true
-wrap_in_file = true
 variable_form = "new"
 gates = [{kind = "nullable_object_call_stub"}]
 
 [[call.variants]]
 axis = "json_type"
+
+[call.transform]
+kind = "nullable-conditional"
+
+[call.fixture]
+kind = "wrapped"

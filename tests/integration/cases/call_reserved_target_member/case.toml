@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "obj.class"
 parameter_names = ["a"]
 per_element = false
-wrap_in_file = true
 # Original regression: ECMAScript accepts declaration keywords as member names and wraps this call with a target stub.
+
+[call.fixture]
+kind = "wrapped"

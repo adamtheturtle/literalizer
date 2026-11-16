@@ -6,6 +6,12 @@ integer_receiver_events = [["call", 42], ["result", 142]]
 target_function = "process"
 parameter_names = ["value"]
 per_element = false
-call_transform_wrapper = {target = "emit", arguments = ["call"]}
-transform_stub_names = ["emit"]
-call_transform = "{call}"
+
+[call.transform]
+kind = "wrapper"
+target = "emit"
+outer = "{call}"
+
+[[call.transform.arguments]]
+role = "call"
+parameter = "_arg"

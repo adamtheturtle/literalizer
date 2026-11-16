@@ -5,8 +5,11 @@ owner = "literalize-ref-default"
 variant_only = true
 gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
 
-[ref.value_sources]
-shared = "42"
-
 [[ref.variants]]
 axis = "json_type"
+
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
+shared = "42"

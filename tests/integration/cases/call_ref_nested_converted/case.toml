@@ -6,4 +6,7 @@ target_function = "process"
 parameter_names = ["data"]
 per_element = true
 ref_case_per_language = true
+
+[call.fixture]
+kind = "bound"
 ref_declarations = { myVar = "42" }

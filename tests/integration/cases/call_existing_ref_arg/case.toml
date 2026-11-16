@@ -5,4 +5,7 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
+
+[call.fixture]
+kind = "bound"
 ref_declarations = { existing = "42" }

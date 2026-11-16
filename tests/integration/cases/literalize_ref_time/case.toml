@@ -4,5 +4,8 @@ owner = "literalize-ref"
 [ref]
 collection_layout = "multiline"
 
-[ref.bound_refs]
+[ref.context]
+kind = "bound"
+
+[ref.context.bound_refs]
 my_time = 01:02:03

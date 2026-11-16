@@ -9,6 +9,15 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-call_transform_arguments = {arguments = ['`// payload`'], suffix = " // note"}
-followup_source = '{"$ref": "my_data"}'
-followup_target_function = "consume"
+
+[call.transform]
+kind = "arguments"
+arguments = ['`// payload`']
+suffix = " // note"
+
+[call.fixture]
+kind = "composed"
+
+[call.fixture.followup]
+source = '{"$ref": "my_data"}'
+target_function = "consume"

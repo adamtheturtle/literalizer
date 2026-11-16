@@ -11,9 +11,6 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-call_transform = "emit({call}, {zipped})"
-transform_stub_names = ["emit"]
-transform_stub_param_names = ["_call", "_zip"]
 zip_source = "---\n- a: 1\n  b: 2\n- c: 3\n  d: 4\n"
 zip_input_format = "yaml"
 requires_call_returns_expression = true
@@ -31,3 +28,9 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.transform]
+kind = "template"
+stub_names = ["emit"]
+stub_param_names = ["_call", "_zip"]
+template = "emit({call}, {zipped})"

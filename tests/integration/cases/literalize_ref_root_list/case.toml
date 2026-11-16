@@ -6,5 +6,8 @@ owner = "literalize-ref"
 # for a value its own declaration wrote as ``@[...]`` (issue #4768).
 [ref]
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 whole = '[1, 2]'

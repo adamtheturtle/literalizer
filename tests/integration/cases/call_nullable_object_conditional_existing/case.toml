@@ -7,12 +7,19 @@ target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "existing"
-call_transform_nullable_conditional = true
-followup_source = '{"$ref": "my_data"}'
-followup_target_function = "consume"
-
-[call.ref_declarations]
-my_data = "7"
 
 [[call.variants]]
 axis = "json_type"
+
+[call.transform]
+kind = "nullable-conditional"
+
+[call.fixture]
+kind = "composed"
+
+[call.fixture.ref_declarations]
+my_data = "7"
+
+[call.fixture.followup]
+source = '{"$ref": "my_data"}'
+target_function = "consume"

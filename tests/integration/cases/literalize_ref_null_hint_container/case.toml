@@ -3,8 +3,11 @@ owner = "literalize-ref"
 
 [ref]
 
-[ref.value_sources]
-my_value = "[1, 2]"
-
 [ref.explicit_ref_value_sources]
 my_value = "null"
+
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
+my_value = "[1, 2]"

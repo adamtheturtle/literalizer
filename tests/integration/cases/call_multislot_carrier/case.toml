@@ -8,7 +8,6 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "process"
 parameter_names = ["value", "extra"]
 per_element = true
-wrap_in_file = true
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
@@ -21,3 +20,6 @@ axis = "cpp14_tuple_carrier_name"
 
 [[call.variants]]
 axis = "cpp14_heterogeneous_strategy_record"
+
+[call.fixture]
+kind = "wrapped"

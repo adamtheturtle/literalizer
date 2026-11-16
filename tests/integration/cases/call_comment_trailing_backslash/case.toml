@@ -19,9 +19,11 @@ integer_receiver_events = [["call", 1], ["result", 101], ["zipped", 41], ["call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-call_transform_wrapper = {target = "emit", arguments = ["call", "zipped"]}
-transform_stub_names = ["emit"]
-transform_stub_param_names = ["_call", "_zip"]
 zip_source = "[41, 42]"
 zip_input_format = "json"
 requires_call_returns_expression = true
+
+[call_examples.transform]
+kind = "wrapper"
+target = "emit"
+arguments = [{role = "call", parameter = "_call"}, {role = "zipped", parameter = "_zip"}]

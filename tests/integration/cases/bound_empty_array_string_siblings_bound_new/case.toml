@@ -13,6 +13,9 @@ heterogeneous_strategy = "RECORD"
 variable_type_hints = "NEVER"
 variable_form = "new"
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 shared = "[]"
 second = '["one", "two"]'

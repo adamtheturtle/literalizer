@@ -6,8 +6,11 @@ gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "
 # Original regression (literalize_ref_csharp_static_tuple_hint): C# bound values must use legal fields when the root requires class-member scope.
 variable_modifiers = ["STATIC"]
 
-[ref.value_sources]
-ref_data = '[1,2]'
-
 [ref.explicit_ref_value_sources]
 ref_data = '[3,4]'
+
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
+ref_data = '[1,2]'

@@ -7,5 +7,8 @@ gates = [{kind = "capability_flag", flag = "supports_default_sequence_element_ty
 sequence_format = "ARRAY"
 default_sequence_element_type = "String"
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 shared = "[]"

@@ -9,10 +9,13 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "process"
 parameter_names = ["value"]
 per_element = false
-ref_declarations = { value = "1" }
 
 [[call.variants]]
 axis = "type_name"
+
+[call.fixture]
+kind = "bound"
+ref_declarations = { value = "1" }
 
 [[call_examples]]
 gates = [{kind = "capability_flag", flag = "supports_stateful_free_call_consumers"}]
@@ -21,6 +24,9 @@ integer_receiver_events = [["call", 1]]
 target_function = "process"
 parameter_names = ["value"]
 per_element = false
+explicit_ref_value_sources = {}
+
+[call_examples.fixture]
+kind = "composed"
 ref_declarations = { value = "1" }
 unknown_ref_names = ["value"]
-explicit_ref_value_sources = {}

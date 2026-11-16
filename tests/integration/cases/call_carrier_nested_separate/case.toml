@@ -7,7 +7,6 @@ gates = [{kind = "capability_flag", flag = "supports_dotted_calls"}]
 target_function = "app.client.go"
 parameter_names = ["first_value", "second_value"]
 per_element = true
-wrap_in_file = true
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
@@ -17,3 +16,6 @@ axis = "expand_call_stubs"
 
 [[call.variants]]
 axis = "expanded_call_file"
+
+[call.fixture]
+kind = "wrapped"

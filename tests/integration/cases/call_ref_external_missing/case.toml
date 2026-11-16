@@ -6,6 +6,9 @@ owner = "literalize-call"
 target_function = "consume"
 parameter_names = ["value"]
 per_element = false
-ref_declarations = {item = "[1, 2]"}
 consumable_refs = ["item"]
+
+[call.fixture]
+kind = "composed"
+ref_declarations = {item = "[1, 2]"}
 unknown_ref_names = ["item"]

@@ -6,9 +6,10 @@ owner = "literalize-call"
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
 
+[call.fixture]
+kind = "wrapped"
 [[call_examples]]
 # Regression provenance: call_regex_interpolated_regex_binding
 # Regression provenance: Haxe; Haxe EReg literal delimiters retain their escaped slashes during call binding.
@@ -16,8 +17,6 @@ example = "call_regex_interpolated_regex_binding"
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
-call_transform = "(~/\\//).match(\"/\") ? {call} : null"
-wrap_in_file = true
 variable_form = "new"
 
 [[call_examples.gates]]
@@ -29,6 +28,13 @@ kind = "call_interpolation"
 opener = "${"
 quotes = "'"
 
+
+[call_examples.transform]
+kind = "template"
+template = "(~/\\//).match(\"/\") ? {call} : null"
+
+[call_examples.fixture]
+kind = "wrapped"
 [[call_examples]]
 # Regression provenance: call_regex_interpolated_regex_binding_comment
 # Regression provenance: Haxe; Haxe regex slashes stay inside the expression while its trailing comment follows the terminator.
@@ -36,8 +42,6 @@ example = "call_regex_interpolated_regex_binding_comment"
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
-call_transform = "(~/\\//).match(\"/\") ? {call} : null // trailing"
-wrap_in_file = true
 variable_form = "new"
 
 [[call_examples.gates]]
@@ -49,6 +53,13 @@ kind = "call_interpolation"
 opener = "${"
 quotes = "'"
 
+
+[call_examples.transform]
+kind = "template"
+template = "(~/\\//).match(\"/\") ? {call} : null // trailing"
+
+[call_examples.fixture]
+kind = "wrapped"
 [[call_examples]]
 # Regression provenance: call_sv_macro_binding_comment
 # Regression provenance: SystemVerilog. SystemVerilog macro backticks do not open D raw strings or hide trailing line comments.
@@ -56,10 +67,15 @@ example = "call_sv_macro_binding_comment"
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
-call_transform = "(`__LINE__ > 0) ? {call} : {call} // trailing `marker"
-wrap_in_file = true
 variable_form = "new"
 
 [[call_examples.gates]]
 kind = "call_identifier_prefix"
 prefix = "`"
+
+[call_examples.transform]
+kind = "template"
+template = "(`__LINE__ > 0) ? {call} : {call} // trailing `marker"
+
+[call_examples.fixture]
+kind = "wrapped"

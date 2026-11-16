@@ -18,7 +18,13 @@ from pydantic import BaseModel, Field
 import literalizer
 from literalizer._language import CallStubDeclarations
 
-from .case_manifests import CallCaseSpec
+from .case_manifests import (
+    CallCaseSpec,
+    CallWrapperSpec,
+    ComposedCallFixture,
+    FragmentCallFixture,
+    WrappedCallFixture,
+)
 
 
 # Omitted table entries retain the ordinary native syntax and placement.
@@ -63,7 +69,7 @@ def uses_integer_receiver(
     """Select native free-function observers by capabilities."""
     return (
         config.integer_receiver_events is not None
-        and not config.wrap_in_file
+        and not isinstance(config.fixture, WrappedCallFixture)
         and spec.supports_stateful_free_call_consumers
         and spec.has_free_function_calls
         and spec.supports_zero_parameter_calls
@@ -84,6 +90,18 @@ def integer_receiver_declarations(
     observations = tuple(
         value for kind, actual in events for value in (tags[kind], actual)
     )
+    followup = (
+        config.fixture.followup
+        if isinstance(
+            config.fixture, (ComposedCallFixture, FragmentCallFixture)
+        )
+        else None
+    )
+    wrapper = (
+        config.transform
+        if isinstance(config.transform, CallWrapperSpec)
+        else None
+    )
     fields = {
         "events": syntax.event_separator.join(
             str(object=value) + syntax.event_suffix for value in observations
@@ -92,12 +110,8 @@ def integer_receiver_declarations(
         "return_increment": return_increment,
         "target": config.target_function,
         "parameter": parameter,
-        "consumer": config.followup_target_function,
-        "wrapper": (
-            None
-            if config.call_transform_wrapper is None
-            else config.call_transform_wrapper.target
-        ),
+        "consumer": None if followup is None else followup.target_function,
+        "wrapper": None if wrapper is None else wrapper.target,
     }
     target = syntax.target
     if config.variable_form is not None and syntax.target_binding is not None:
@@ -105,16 +119,16 @@ def integer_receiver_declarations(
     elif (
         syntax.target_void is not None
         and config.variable_form is None
-        and not config.has_call_transform
+        and config.transform is None
     ):
         target = syntax.target_void
     parts = [syntax.state, target]
-    if config.followup_target_function is not None:
+    if followup is not None and followup.target_function is not None:
         parts.append(syntax.consumer)
-    if config.call_transform_wrapper is not None:
+    if wrapper is not None:
         parts.append(
             syntax.wrapper
-            if "zipped" in config.call_transform_wrapper.arguments
+            if any(argument.role == "zipped" for argument in wrapper.arguments)
             else syntax.wrapper_unary
         )
     parts.append(syntax.verify)
