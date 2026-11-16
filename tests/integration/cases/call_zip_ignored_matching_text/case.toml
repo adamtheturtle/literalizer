@@ -6,6 +6,9 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-call_transform = "{call}"
 zip_source = "- 2024-01-15T12:00:00\n"
 zip_input_format = "yaml"
+
+[call.transform]
+kind = "template"
+template = "{call}"

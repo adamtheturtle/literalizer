@@ -2,35 +2,47 @@
 schema_version = 1
 owner = "literalize-ref"
 
-[ref.value_sources]
+[[ref.variants]]
+axis = "collection_layout"
+
+
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 ref_data = "[1, 2]"
 
 # Omitted and explicit layout choices are checked in complete native
 # programs, replacing the helper-only variant_layout controls.
-[[ref.variants]]
-axis = "collection_layout"
-
 [[ref_examples]]
 example = "layout_forced_compact"
 variant_only = true
 collection_layout = "compact"
 
-[ref_examples.value_sources]
-ref_data = "[1, 2]"
-
 [[ref_examples.variants]]
 axis = "collection_layout"
+
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.value_sources]
+ref_data = "[1, 2]"
 
 [[ref_examples]]
 example = "layout_forced_multiline"
 variant_only = true
 collection_layout = "multiline"
 
-[ref_examples.value_sources]
-ref_data = "[1, 2]"
-
 [[ref_examples.variants]]
 axis = "collection_layout"
+
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.value_sources]
+ref_data = "[1, 2]"
 
 [[ref_examples]]
 # Regression provenance: literalize_ref_const_bound_list
@@ -46,7 +58,11 @@ flag = "supports_variable_names"
 kind = "modifier_present"
 modifier = "CONST"
 
-[ref_examples.value_sources]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.value_sources]
 ref_data = "[1, 2]"
 
 [[ref_examples]]
@@ -67,5 +83,9 @@ modifier = "STATIC"
 kind = "modifier_present"
 modifier = "CONST"
 
-[ref_examples.value_sources]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.value_sources]
 ref_data = "[1, 2]"

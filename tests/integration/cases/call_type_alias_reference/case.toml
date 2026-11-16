@@ -8,7 +8,10 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "process"
 parameter_names = ["value"]
 per_element = false
-ref_declarations = { value = "1" }
 
 [[call.variants]]
 axis = "type_name"
+
+[call.fixture]
+kind = "bound"
+ref_declarations = { value = "1" }

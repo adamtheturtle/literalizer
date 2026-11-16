@@ -5,6 +5,9 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = []
 per_element = true
-call_transform = "emit({call})"
-transform_stub_names = ["emit"]
 requires_call_returns_expression = true
+
+[call.transform]
+kind = "template"
+stub_names = ["emit"]
+template = "emit({call})"

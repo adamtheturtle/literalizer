@@ -9,8 +9,6 @@ parameter_names = ["data"]
 per_element = false
 ref_key = "@reference"
 ref_case_per_language = true
-ref_declarations = { untyped_value = "[]" }
-unknown_ref_names = ["untyped_value"]
 extra_ref_value_sources = { known_value = "1" }
 
 [[call.variants]]
@@ -18,3 +16,8 @@ axis = "sequence"
 
 [[call.variants]]
 axis = "json_type"
+
+[call.fixture]
+kind = "composed"
+ref_declarations = { untyped_value = "[]" }
+unknown_ref_names = ["untyped_value"]

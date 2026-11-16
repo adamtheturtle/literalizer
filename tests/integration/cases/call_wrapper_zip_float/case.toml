@@ -6,9 +6,6 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = false
-call_transform_wrapper = {target = "emit", arguments = ["call", "zipped"]}
-transform_stub_names = ["emit"]
-transform_stub_param_names = ["_call", "_zip"]
 zip_source = "1.5"
 zip_input_format = "yaml"
 
@@ -18,3 +15,15 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.transform]
+kind = "wrapper"
+target = "emit"
+
+[[call.transform.arguments]]
+role = "call"
+parameter = "_call"
+
+[[call.transform.arguments]]
+role = "zipped"
+parameter = "_zip"

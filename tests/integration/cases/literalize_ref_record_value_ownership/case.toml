@@ -6,11 +6,14 @@ gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "
 # Original regression (literalize_ref_cpp_record_ownership): C++ moves must follow the ownership of native RECORD fields.
 heterogeneous_strategy = "RECORD"
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 trivial = '{"integer":1,"boolean":true,"decimal":1.5,"null":null}'
 nested = '{"child":{"integer":2}}'
 owning = '{"text":"owned"}'
 
-[ref.bound_refs.calendar]
+[ref.context.bound_refs.calendar]
 day = 2001-01-02
 stamp = 2001-01-02T03:04:05Z

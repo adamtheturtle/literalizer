@@ -8,8 +8,11 @@ gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "
 pre_indent_level = 2
 collection_layout = "multiline"
 
-[ref.value_sources]
-shared = "[1, 2]"
-
 [[ref.variants]]
 axis = "declaration_style"
+
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
+shared = "[1, 2]"

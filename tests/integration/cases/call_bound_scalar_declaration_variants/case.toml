@@ -7,8 +7,11 @@ parameter_names = ["value"]
 per_element = false
 ref_case_per_language = true
 
-[call.ref_declarations]
-shared = "42"
-
 [[call.variants]]
 axis = "declaration_style"
+
+[call.fixture]
+kind = "bound"
+
+[call.fixture.ref_declarations]
+shared = "42"

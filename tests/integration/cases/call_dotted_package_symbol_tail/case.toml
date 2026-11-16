@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "helper.list"
 parameter_names = ["a"]
 per_element = true
-wrap_in_file = true
 # Original regression: A Common Lisp dotted stub declares each prefix, so only the leading component can name a locked COMMON-LISP symbol; helper.list declares HELPER and HELPER.LIST, neither of which is one.
+
+[call.fixture]
+kind = "wrapped"

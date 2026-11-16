@@ -6,5 +6,8 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = false
-call_transform_reports_zip_usage = false
-call_transform = "{call}"
+
+[call.transform]
+kind = "template"
+reports_zip_usage = false
+template = "{call}"

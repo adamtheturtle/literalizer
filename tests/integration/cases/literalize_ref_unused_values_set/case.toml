@@ -14,5 +14,9 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 variable_form = "none"
 explicit_ref_value_sources = { unused = "[3]" }
 
-[ref_examples.consumer]
+[ref_examples.context]
+kind = "expression"
+
+[ref_examples.context.consumer]
+kind = "call"
 target_function = "consume_widget"

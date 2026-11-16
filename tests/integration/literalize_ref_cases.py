@@ -34,6 +34,9 @@ from literalizer.exceptions import (
 from tests.enum_members import enum_member_by_name
 
 from .case_manifests import (
+    BoundRefContext,
+    ExternalRefContext,
+    RefExpressionContext,
     case_input,
 )
 from .golden_checks import (
@@ -48,6 +51,7 @@ from .language_specs import (
 )
 from .ref_consumers import (
     compose_external_ref_fixture,
+    compose_ref_expression_fixture,
     external_assignment_spec,
     ref_fixture_contents,
 )
@@ -139,6 +143,7 @@ def run_literalize_ref_golden_case(
     program with the language's declaration order.
     """
     config = rendering.config
+    context = config.context
     lang_cls = rendering.lang_cls
     ref_case = rendering.ref_case
     spec = rendering.spec
@@ -155,9 +160,7 @@ def run_literalize_ref_golden_case(
         spec = dataclasses.replace(
             spec, declaration_style=find_redefinition_styles(spec=spec)[0]
         )
-    wrap_in_file = (
-        len(config.external_declarations) == 0 and config.consumer is None
-    )
+    wrap_in_file = isinstance(context, BoundRefContext)
     variable_form_obj: literalizer.VariableForm | None = (
         config.resolved_variable_form()
     )
@@ -189,17 +192,23 @@ def run_literalize_ref_golden_case(
             input_format=input_info.input_format,
             input_source=input_source,
         )
-        spec = external_assignment_spec(
-            spec=spec, config=config, raw_data=raw_data
-        )
-        bound_refs_input = bound_ref_inputs(
-            config=config,
-            raw_data=raw_data,
-            lang_cls=lang_cls,
-        )
         effective_bound_refs = None
-        if len(bound_refs_input) > 0 and config.external_declarations == {}:
-            effective_bound_refs = bound_refs_input
+        if isinstance(context, ExternalRefContext):
+            spec = external_assignment_spec(
+                context=context,
+                spec=spec,
+                config=config,
+                raw_data=raw_data,
+            )
+        else:
+            bound_refs_input = bound_ref_inputs(
+                context=context,
+                config=config,
+                raw_data=raw_data,
+                lang_cls=lang_cls,
+            )
+            if len(bound_refs_input) > 0:
+                effective_bound_refs = bound_refs_input
         effective_ref_values = None
         if config.explicit_ref_value_sources is not None:
             effective_ref_values = {
@@ -226,8 +235,15 @@ def run_literalize_ref_golden_case(
         assert effective_ref_values == original_ref_values, (  # noqa: S101
             "literalize mutated caller-owned ref_values"
         )
-        if not wrap_in_file:
+        if isinstance(context, RefExpressionContext):
+            result = compose_ref_expression_fixture(
+                context=context,
+                spec=spec,
+                result=result,
+            )
+        elif isinstance(context, ExternalRefContext):
             result = compose_external_ref_fixture(
+                context=context,
                 config=config,
                 spec=spec,
                 result=result,

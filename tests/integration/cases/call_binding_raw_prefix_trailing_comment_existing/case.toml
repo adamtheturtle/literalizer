@@ -8,9 +8,17 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "existing"
-call_transform_arguments = {arguments = ['''r"a\ // payload"'''], suffix = " // note"}
-ref_declarations = {my_data = "42"}
-followup_source = '{"$ref": "my_data"}'
-followup_target_function = "consume"
 zip_source = "2024-01-15"
 zip_input_format = "yaml"
+
+[call.transform]
+kind = "arguments"
+arguments = ['''r"a\ // payload"''']
+suffix = " // note"
+[call.fixture]
+kind = "composed"
+ref_declarations = {my_data = "42"}
+
+[call.fixture.followup]
+source = '{"$ref": "my_data"}'
+target_function = "consume"

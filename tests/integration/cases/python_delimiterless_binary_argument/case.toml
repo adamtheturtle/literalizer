@@ -8,5 +8,9 @@ gates = [{kind = "enum_member_present", option = "language_version", member = "P
 variable_form = "none"
 include_delimiters = false
 
-[ref.consumer]
+[ref.context]
+kind = "expression"
+
+[ref.context.consumer]
+kind = "call"
 target_function = "consume_widget"

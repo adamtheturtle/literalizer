@@ -10,5 +10,8 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["known_value", "nested_missing"]
 per_element = true
+
+[call.fixture]
+kind = "composed"
 ref_declarations = { known_value = "true", unknown_value = "true" }
 unknown_ref_names = ["unknown_value"]

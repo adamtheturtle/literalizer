@@ -8,8 +8,10 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "f"
 parameter_names = ["a"]
 per_element = false
-wrap_in_file = true
 variant_only = true
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
+
+[call.fixture]
+kind = "wrapped"

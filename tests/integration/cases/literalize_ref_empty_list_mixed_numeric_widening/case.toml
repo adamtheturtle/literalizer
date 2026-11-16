@@ -3,7 +3,10 @@ owner = "literalize-ref"
 
 [ref]
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 empty_values = "[]"
 integer_values = "[1]"
 float_values = "[1.5]"

@@ -8,8 +8,6 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["data"]
 per_element = false
-ref_declarations = { unknown_value = "[]" }
-unknown_ref_names = ["unknown_value"]
 extra_ref_value_sources = { known_value = "1" }
 
 [[call.variants]]
@@ -17,3 +15,8 @@ axis = "sequence"
 
 [[call.variants]]
 axis = "json_type"
+
+[call.fixture]
+kind = "composed"
+ref_declarations = { unknown_value = "[]" }
+unknown_ref_names = ["unknown_value"]

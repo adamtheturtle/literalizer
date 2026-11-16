@@ -7,9 +7,13 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
+[call.fixture]
+kind = "composed"
+
+[call.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 # Regression provenance: call_binding_rust_byte_raw_hashes_new
 # Regression provenance: Rust. Rust raw and byte-raw string delimiters may contain quoted comment markers.
@@ -18,15 +22,23 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-call_transform = "make_widget(br#\"// payload\"#) // note"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_hash_raw_prefix"
 prefix = "br"
 marker = "#"
 
+
+[call_examples.transform]
+kind = "template"
+template = "make_widget(br#\"// payload\"#) // note"
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 # Regression provenance: call_binding_rust_character_escape_new
 # Regression provenance: Rust. Rust character literals and their escapes must not hide trailing line comments.
@@ -35,14 +47,22 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-call_transform = "make_widget('\\n') // note"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_character_quote"
 quote = "'"
 
+
+[call_examples.transform]
+kind = "template"
+template = "make_widget('\\n') // note"
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 # Regression provenance: call_binding_rust_character_hex_new
 # Regression provenance: Rust. Rust character literals and their escapes must not hide trailing line comments.
@@ -51,14 +71,22 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-call_transform = "make_widget('\\x2f') // note"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_character_quote"
 quote = "'"
 
+
+[call_examples.transform]
+kind = "template"
+template = "make_widget('\\x2f') // note"
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 # Regression provenance: call_binding_rust_character_quote_new
 # Regression provenance: Rust. Rust character literals and their escapes must not hide trailing line comments.
@@ -67,14 +95,22 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-call_transform = "make_widget('\"') // note"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_character_quote"
 quote = "'"
 
+
+[call_examples.transform]
+kind = "template"
+template = "make_widget('\"') // note"
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 # Regression provenance: call_binding_rust_character_unicode_new
 # Regression provenance: Rust. Rust character literals and their escapes must not hide trailing line comments.
@@ -83,14 +119,22 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-call_transform = "make_widget('\\u{{2f}}') // note"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_character_quote"
 quote = "'"
 
+
+[call_examples.transform]
+kind = "template"
+template = "make_widget('\\u{{2f}}') // note"
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 # Regression provenance: call_binding_rust_lifetime_new
 # Regression provenance: Rust. Rust lifetime arguments must not be mistaken for quoted characters.
@@ -99,14 +143,22 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-call_transform = "{{\n    {call};\n    {{\n        fn make_widget<'a>() where 'a: 'a {{}}\n        make_widget::<'static>()\n    }}\n}} // note"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_character_quote"
 quote = "'"
 
+
+[call_examples.transform]
+kind = "template"
+template = "{{\n    {call};\n    {{\n        fn make_widget<'a>() where 'a: 'a {{}}\n        make_widget::<'static>()\n    }}\n}} // note"
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 # Regression provenance: call_binding_rust_raw_hashes_new
 # Regression provenance: Rust. Rust raw and byte-raw string delimiters may contain quoted comment markers.
@@ -115,15 +167,23 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-call_transform = "make_widget(r##\"a \" // payload\"##) // note"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_hash_raw_prefix"
 prefix = "r"
 marker = "#"
 
+
+[call_examples.transform]
+kind = "template"
+template = "make_widget(r##\"a \" // payload\"##) // note"
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 # Regression provenance: call_binding_rust_raw_identifier_new
 # Regression provenance: Rust. Rust raw identifiers must not be mistaken for raw string prefixes.
@@ -132,15 +192,23 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-call_transform = "{{\n    {call};\n    fn r#type() {{}}\n    r#type()\n}} // note"
-followup_source = "{\"$ref\": \"my_data\"}"
-followup_target_function = "consume"
 
 [[call_examples.gates]]
 kind = "call_hash_raw_prefix"
 prefix = "r"
 marker = "#"
 
+
+[call_examples.transform]
+kind = "template"
+template = "{{\n    {call};\n    fn r#type() {{}}\n    r#type()\n}} // note"
+
+[call_examples.fixture]
+kind = "composed"
+
+[call_examples.fixture.followup]
+source = "{\"$ref\": \"my_data\"}"
+target_function = "consume"
 [[call_examples]]
 # Migrated from rust_incomplete_raw_string_new: preserve the open C raw
 # string and its generated semicolon, then complete it in caller-owned code.
@@ -149,15 +217,20 @@ target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
 variable_form = "new"
-include_target_stub = false
-use_unwrapped_code = true
-call_transform = 'make_widget(cr#"// payload'
-caller_body_preamble = [
-    "fn make_widget(value: &'static std::ffi::CStr) -> &'static std::ffi::CStr { value }",
-]
-caller_code_suffix = '"#); assert_eq!(my_data.to_bytes(), b"// payload;");'
 
 [[call_examples.gates]]
 kind = "call_hash_raw_prefix"
 prefix = "cr"
 marker = "#"
+
+[call_examples.transform]
+kind = "template"
+template = 'make_widget(cr#"// payload'
+
+[call_examples.fixture]
+kind = "fragment"
+include_target_stub = false
+caller_body_preamble = [
+    "fn make_widget(value: &'static std::ffi::CStr) -> &'static std::ffi::CStr { value }",
+]
+caller_code_suffix = '"#); assert_eq!(my_data.to_bytes(), b"// payload;");'

@@ -17,110 +17,6 @@ gates = [{kind = "metadata_field", field = "language_id", value = "python"}]
 message = "unknown metadata field 'language_id'"
 
 [[cases]]
-name = "call_transform_add_one_and_call_transform_nullable_conditional_are_mutually_exclusive"
-manifest = '''schema_version = 1
-owner = "literalize-call"
-[call]
-target_function = "target"
-parameter_names = ["value"]
-per_element = false
-call_transform_add_one = true
-call_transform_nullable_conditional = true
-'''
-message = "call_transform_add_one and call_transform_nullable_conditional are mutually exclusive"
-
-[[cases]]
-name = "call_transform_sequence_and_call_transform_add_one_are_mutually_exclusive"
-manifest = '''schema_version = 1
-owner = "literalize-call"
-[call]
-target_function = "target"
-parameter_names = ["value"]
-per_element = false
-call_transform_sequence = true
-call_transform_add_one = true
-'''
-message = "call_transform_sequence and call_transform_add_one are mutually exclusive"
-
-[[cases]]
-name = "call_transform_wrapper_requires_a_declared_transform_stub"
-manifest = '''schema_version = 1
-owner = "literalize-call"
-[call]
-target_function = "target"
-parameter_names = ["value"]
-per_element = false
-call_transform_wrapper = {target = "emit", arguments = ["call"]}
-'''
-message = "call_transform_wrapper requires a declared transform stub"
-
-[[cases]]
-name = "wrapper_operands_must_match_transform_stub_param_names"
-manifest = '''schema_version = 1
-owner = "literalize-call"
-[call]
-target_function = "target"
-parameter_names = ["value"]
-per_element = false
-transform_stub_names = ["emit"]
-call_transform_wrapper = {target = "emit", arguments = ["call", "call"]}
-'''
-message = "wrapper operands must match transform_stub_param_names"
-
-[[cases]]
-name = "a_zipped_wrapper_operand_requires_zip_source"
-manifest = '''schema_version = 1
-owner = "literalize-call"
-[call]
-target_function = "target"
-parameter_names = ["value"]
-per_element = false
-transform_stub_names = ["emit"]
-call_transform_wrapper = {target = "emit", arguments = ["zipped"]}
-'''
-message = "a zipped wrapper operand requires zip_source"
-
-[[cases]]
-name = "call_transform_wrapper_and_call_transform_sequence_are_mutually_exclusive"
-manifest = '''schema_version = 1
-owner = "literalize-call"
-[call]
-target_function = "target"
-parameter_names = ["value"]
-per_element = false
-transform_stub_names = ["emit"]
-call_transform_wrapper = {target = "emit", arguments = ["call"]}
-call_transform_sequence = true
-'''
-message = "call_transform_wrapper and call_transform_sequence are mutually exclusive"
-
-[[cases]]
-name = "call_transform_group_and_call_transform_sequence_are_mutually_exclusive"
-manifest = '''schema_version = 1
-owner = "literalize-call"
-[call]
-target_function = "target"
-parameter_names = ["value"]
-per_element = false
-call_transform_group = {body = "{call}", suffix = ""}
-call_transform_sequence = true
-'''
-message = "call_transform_group and call_transform_sequence are mutually exclusive"
-
-[[cases]]
-name = "call_transform_group_and_call_transform_arguments_are_mutually_exclusive"
-manifest = '''schema_version = 1
-owner = "literalize-call"
-[call]
-target_function = "target"
-parameter_names = ["value"]
-per_element = false
-call_transform_group = {body = "{call}", suffix = ""}
-call_transform_arguments = {arguments = ["token"], suffix = ""}
-'''
-message = "call_transform_group and call_transform_arguments are mutually exclusive"
-
-[[cases]]
 name = "expected_error_must_be_public_literalizer_error"
 manifest = '''schema_version = 1
 suites = ["base"]
@@ -245,25 +141,20 @@ suites = ["combined"]
 message = "base_context requires participation in the base suite"
 
 [[cases]]
-name = "consumer_requires_external_declarations"
-manifest = '''schema_version = 1
-owner = "literalize-ref-default"
-[ref.consumer]
-target_function = "consume_widget"
-'''
-message = "consumer requires external_declarations"
-
-[[cases]]
 name = "consumer_before_new_binding"
 manifest = '''schema_version = 1
 owner = "literalize-ref-default"
 [ref]
-external_declarations = {my_data = "0"}
-[ref.consumer]
+
+[ref.context]
+kind = "external"
+declarations = {my_data = "0"}
+
+[ref.context.consumer]
+kind = "assignment"
 target_function = "consume_widget"
-before_assignment = true
 '''
-message = "before_assignment requires an existing my_data binding"
+message = "assignment consumer requires an existing my_data binding"
 
 [[cases]]
 name = "consumer_without_named_existing_binding"
@@ -271,21 +162,16 @@ manifest = '''schema_version = 1
 owner = "literalize-ref-default"
 [ref]
 variable_form = "existing"
-external_declarations = {other = "0"}
-[ref.consumer]
-target_function = "consume_widget"
-before_assignment = true
-'''
-message = "before_assignment requires an existing my_data binding"
 
-[[cases]]
-name = "expected_value_source_requires_external_declarations"
-manifest = '''schema_version = 1
-owner = "literalize-ref-default"
-[ref]
-expected_value_source = "[0, 1]"
+[ref.context]
+kind = "external"
+declarations = {other = "0"}
+
+[ref.context.consumer]
+kind = "assignment"
+target_function = "consume_widget"
 '''
-message = "expected_value_source requires external_declarations"
+message = "assignment consumer requires an existing my_data binding"
 
 [[cases]]
 name = "expected_value_source_requires_a_variable_binding"
@@ -293,21 +179,18 @@ manifest = '''schema_version = 1
 owner = "literalize-ref-default"
 [ref]
 variable_form = "none"
-expected_value_source = "1"
-'''
-message = "expected_value_source requires a variable binding"
 
-[[cases]]
-name = "consumer_and_expected_value_source_are_mutually_exclusive"
-manifest = '''schema_version = 1
-owner = "literalize-ref-default"
-[ref]
-external_declarations = {a = "0"}
-expected_value_source = "[0, 1]"
-[ref.consumer]
-target_function = "consume_widget"
+[ref.context]
+kind = "external"
+
+[ref.context.declarations]
+a = "0"
+
+[ref.context.consumer]
+kind = "value-check"
+expected_source = "1"
 '''
-message = "consumer and expected_value_source are mutually exclusive"
+message = "value-check requires a variable binding"
 
 [[cases]]
 name = "requires_a_constructor_table"
@@ -350,7 +233,10 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-call_transform = "emit({bogus})"
+
+[call.transform]
+kind = "template"
+template = "emit({bogus})"
 '''
 message = "unknown call_transform placeholder 'bogus'"
 
@@ -362,9 +248,14 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-followup_target_function = "consume"
+
+[call.fixture]
+kind = "composed"
+
+[call.fixture.followup]
+target_function = "consume"
 '''
-message = "followup_target_function requires followup_source"
+message = "source"
 
 [[cases]]
 name = "followup_target_function_must_differ_from_target_function"
@@ -374,10 +265,15 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-followup_source = "1"
-followup_target_function = "process"
+
+[call.fixture]
+kind = "composed"
+
+[call.fixture.followup]
+source = "1"
+target_function = "process"
 '''
-message = "followup_target_function must differ from target_function"
+message = "followup target_function must differ from target_function"
 
 [[cases]]
 name = "followup_target_must_be_string"
@@ -387,8 +283,13 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-followup_source = "1"
-followup_target_function = 1
+
+[call.fixture]
+kind = "composed"
+
+[call.fixture.followup]
+source = "1"
+target_function = 1
 '''
 message = "Input should be a valid string"
 
@@ -424,9 +325,12 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-call_transform = 1
+
+[call.transform]
+kind = "template"
+template = 1
 '''
-message = "call_transform"
+message = "template"
 
 [[cases]]
 name = "unknown_zip_input_format"
@@ -790,6 +694,7 @@ parameter_names = ["value"]
 per_element = false
 '''
 message = "requires its primary API table"
+
 [[cases]]
 name = "call_example_unnamed"
 manifest = '''schema_version = 1
@@ -804,6 +709,7 @@ parameter_names = ["value"]
 per_element = false
 '''
 message = "requires an example name"
+
 [[cases]]
 name = "call_example_duplicate"
 manifest = '''schema_version = 1
@@ -824,6 +730,7 @@ parameter_names = ["value"]
 per_element = false
 '''
 message = "contains a duplicate example name"
+
 [[cases]]
 name = "call_example_primary_named"
 manifest = '''schema_version = 1
@@ -840,6 +747,7 @@ parameter_names = ["value"]
 per_element = false
 '''
 message = "primary API tables cannot name an example"
+
 [[cases]]
 name = "call_example_invalid_name"
 manifest = '''schema_version = 1
@@ -855,6 +763,7 @@ parameter_names = ["value"]
 per_element = false
 '''
 message = "String should match pattern"
+
 [[cases]]
 name = "ref_example_missing_primary"
 manifest = '''schema_version = 1
@@ -864,6 +773,7 @@ example = "native"
 variable_name = "result"
 '''
 message = "requires its primary API table"
+
 [[cases]]
 name = "ref_example_unnamed"
 manifest = '''schema_version = 1
@@ -874,6 +784,7 @@ variable_name = "result"
 variable_name = "result"
 '''
 message = "requires an example name"
+
 [[cases]]
 name = "ref_example_duplicate"
 manifest = '''schema_version = 1
@@ -888,6 +799,7 @@ example = "native"
 variable_name = "result"
 '''
 message = "contains a duplicate example name"
+
 [[cases]]
 name = "ref_example_primary_named"
 manifest = '''schema_version = 1
@@ -900,6 +812,7 @@ example = "native"
 variable_name = "result"
 '''
 message = "primary API tables cannot name an example"
+
 [[cases]]
 name = "ref_example_invalid_name"
 manifest = '''schema_version = 1
@@ -911,11 +824,13 @@ example = "invalid-name"
 variable_name = "result"
 '''
 message = "String should match pattern"
+
 [[cases]]
 name = "invalid_toml_syntax"
 manifest = '''schema_version = [
 '''
 message = "invalid TOML"
+
 [[cases]]
 name = "declared_input_missing"
 manifest = '''schema_version = 1
@@ -923,6 +838,7 @@ input = "input.json"
 suites = ["base"]
 '''
 message = "declared input does not exist"
+
 [[cases]]
 name = "unsupported_declared_input_name"
 manifest = '''schema_version = 1
@@ -930,6 +846,7 @@ input = "data.yaml"
 suites = ["base"]
 '''
 message = "input must name one of"
+
 [[cases]]
 name = "input_roundtrip_for_reference_owner"
 manifest = '''schema_version = 1
@@ -940,6 +857,81 @@ language = "Jsonc"
 input_format = "jsonc"
 '''
 message = "input_roundtrip requires a literal rendering suite"
+
+[[cases]]
+name = "unknown_transform_kind"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+transform = {kind = "unknown"}
+'''
+message = "union_tag_invalid"
+
+[[cases]]
+name = "group_requires_body"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+transform = {kind = "group", suffix = ""}
+'''
+message = "body"
+
+[[cases]]
+name = "sequence_rejects_group_fields"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+transform = {kind = "sequence", body = "{call}"}
+'''
+message = "extra_forbidden"
+
+[[cases]]
+name = "wrapper_requires_operand_parameter"
+manifest = '''schema_version = 1
+owner = "literalize-call"
+[call]
+target_function = "target"
+parameter_names = ["value"]
+per_element = false
+transform = {kind = "wrapper", target = "emit", arguments = [{role = "call"}]}
+'''
+message = "parameter"
+
+[[cases]]
+name = "external_rejects_api_bindings"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+context = {kind = "external", declarations = {a = "0"}, consumer = {kind = "call", target_function = "consume"}, bound_refs = {a = 0}}
+'''
+message = "extra_forbidden"
+
+[[cases]]
+name = "bound_rejects_caller_declarations"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+context = {kind = "bound", declarations = {a = "0"}}
+'''
+message = "extra_forbidden"
+
+[[cases]]
+name = "expression_requires_no_binding"
+manifest = '''schema_version = 1
+owner = "literalize-ref"
+[ref]
+context = {kind = "expression", consumer = {kind = "call", target_function = "consume"}}
+'''
+message = "expression context requires"
 [[references]]
 name = "time_binding_invalid_string"
 field = "bound_ref_times"

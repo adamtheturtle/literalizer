@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["IF"]
 per_element = false
-wrap_in_file = true
 # Original regression: Ada reserves IF irrespective of case, whereas Python accepts the uppercase keyword spelling as a parameter label.
+
+[call.fixture]
+kind = "wrapped"

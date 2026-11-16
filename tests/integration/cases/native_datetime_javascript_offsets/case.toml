@@ -7,7 +7,13 @@ owner = "literalize-ref-default"
 variable_name = "result_data"
 variant_only = true
 
-[ref.bound_ref_datetimes]
+[[ref.variants]]
+axis = "datetime_javascript"
+
+[ref.context]
+kind = "bound"
+
+[ref.context.bound_ref_datetimes]
 positive_second = {wall_time = 1970-01-01T00:00:00.000000, offset_microseconds = 1000000}
 negative_second = {wall_time = 1970-01-01T00:00:00.000000, offset_microseconds = -1000000}
 microsecond = {wall_time = 1970-01-01T00:00:00.000001, offset_microseconds = 1}
@@ -17,6 +23,3 @@ fraction = {wall_time = 1970-01-01T00:00:00.123456, offset_microseconds = 123456
 one_millisecond = {wall_time = 1970-01-01T00:00:00.123456, offset_microseconds = 122456}
 calendar_boundary = {wall_time = 0001-01-01T00:00:00.000000, offset_microseconds = 1000000}
 utc = 1970-01-01T00:00:00Z
-
-[[ref.variants]]
-axis = "datetime_javascript"

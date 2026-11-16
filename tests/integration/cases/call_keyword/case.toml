@@ -5,7 +5,10 @@ owner = "literalize-call"
 target_function = "throttler.check"
 parameter_names = ["user_id", "ts"]
 per_element = true
-call_transform = "emit({call})"
-transform_stub_names = ["emit"]
 call_style = "keyword"
 requires_call_returns_expression = true
+
+[call.transform]
+kind = "template"
+stub_names = ["emit"]
+template = "emit({call})"

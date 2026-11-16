@@ -22,8 +22,12 @@ from literalizer.exceptions import (
 
 from .call_stubs import call_stub_spec
 from .case_manifests import (
+    ExternalRefContext,
+    RefAssignmentConsumerSpec,
     RefCaseSpec,
     RefConsumerSpec,
+    RefExpressionContext,
+    RefValueCheckSpec,
 )
 from .golden_checks import fixture_contents
 from .language_specs import (
@@ -36,7 +40,8 @@ from .reference_inputs import RefData
 @beartype
 def _compose_ref_value_check(
     *,
-    config: RefCaseSpec,
+    context: ExternalRefContext,
+    consumer: RefValueCheckSpec,
     spec: literalizer.Language,
     declarations: list[literalizer.LiteralizeResult],
     result: literalizer.LiteralizeResult,
@@ -46,8 +51,8 @@ def _compose_ref_value_check(
     Expected data is rendered separately, after the operation under test,
     and never participates in its reference inference.
     """
-    if "my_data" in config.external_declarations:
-        initial_source = config.external_declarations["my_data"]
+    if "my_data" in context.declarations:
+        initial_source = context.declarations["my_data"]
         initial_check = literalizer.literalize_call(
             source=f'[[{{"$ref": "my_data"}}, {initial_source}]]',
             target_function="assert_equal",
@@ -57,9 +62,8 @@ def _compose_ref_value_check(
             ref_key="$ref",
         )
         declarations.append(initial_check)
-    assert config.expected_value_source is not None  # noqa: S101
     expected = literalizer.literalize(
-        source=config.expected_value_source,
+        source=consumer.expected_source,
         input_format=literalizer.InputFormat.JSON,
         language=spec,
         variable_form=literalizer.NewVariable(
@@ -88,7 +92,7 @@ def _compose_ref_value_check(
 @beartype
 def _compose_ref_consumer(
     *,
-    consumer: RefConsumerSpec,
+    consumer: RefConsumerSpec | RefAssignmentConsumerSpec,
     spec: literalizer.Language,
     declarations: list[literalizer.LiteralizeResult],
     result: literalizer.LiteralizeResult,
@@ -144,7 +148,7 @@ def _compose_ref_consumer(
             per_element=False,
             ref_key="$ref",
         )
-        if consumer.before_assignment:
+        if isinstance(consumer, RefAssignmentConsumerSpec):
             declarations.append(call)
         declarations.append(result)
     return literalizer.literalize_call_with_declarations(
@@ -164,21 +168,27 @@ def _compose_ref_consumer(
 
 
 @beartype
-def _external_result_value(*, source: Value, config: RefCaseSpec) -> Value:
+def _external_result_value(
+    *, source: Value, context: ExternalRefContext, config: RefCaseSpec
+) -> Value:
     """Resolve caller values only for the independent consumer's signature."""
     if isinstance(source, dict):
         name = source.get(config.ref_key)
         if len(source) == 1 and isinstance(name, str):
             return TypeAdapter[Value](type=Value).validate_python(
-                json.loads(s=config.external_declarations[name])
+                json.loads(s=context.declarations[name])
             )
         return {
-            key: _external_result_value(source=value, config=config)
+            key: _external_result_value(
+                source=value, config=config, context=context
+            )
             for key, value in source.items()
         }
     if isinstance(source, list):
         return [
-            _external_result_value(source=value, config=config)
+            _external_result_value(
+                source=value, config=config, context=context
+            )
             for value in source
         ]
     return source
@@ -186,7 +196,11 @@ def _external_result_value(*, source: Value, config: RefCaseSpec) -> Value:
 
 @beartype
 def external_assignment_spec(
-    *, spec: literalizer.Language, config: RefCaseSpec, raw_data: RefData
+    *,
+    spec: literalizer.Language,
+    config: RefCaseSpec,
+    context: ExternalRefContext,
+    raw_data: RefData,
 ) -> literalizer.Language:
     """Use a length-independent sequence for a caller's changing-size
     binding.
@@ -196,15 +210,16 @@ def external_assignment_spec(
     """
     if (
         config.variable_form != "existing"
-        or "my_data" not in config.external_declarations
+        or "my_data" not in context.declarations
     ):
         return spec
     initial = TypeAdapter[Value](type=Value).validate_python(
-        json.loads(s=config.external_declarations["my_data"])
+        json.loads(s=context.declarations["my_data"])
     )
     assigned = _external_result_value(
         source=TypeAdapter[Value](type=Value).validate_python(raw_data),
         config=config,
+        context=context,
     )
     if not (
         isinstance(initial, list)
@@ -227,6 +242,7 @@ def external_assignment_spec(
 @beartype
 def _with_caller_binding_signature(
     *,
+    context: ExternalRefContext,
     config: RefCaseSpec,
     spec: literalizer.Language,
     result: literalizer.LiteralizeResult,
@@ -237,11 +253,12 @@ def _with_caller_binding_signature(
     """
     if (
         config.variable_form == "existing"
-        and config.variable_name not in config.external_declarations
+        and config.variable_name not in context.declarations
     ):
         value = _external_result_value(
             source=TypeAdapter[Value](type=Value).validate_python(raw_data),
             config=config,
+            context=context,
         )
         placeholder = "caller_value"
         assignment = spec.format_variable_assignment(
@@ -265,16 +282,21 @@ def _with_caller_binding_signature(
 def compose_external_ref_fixture(
     *,
     config: RefCaseSpec,
+    context: ExternalRefContext,
     spec: literalizer.Language,
     result: literalizer.LiteralizeResult,
     raw_data: RefData,
 ) -> literalizer.LiteralizeResult:
     """Compose caller declarations and optional generated checks."""
     result = _with_caller_binding_signature(
-        config=config, spec=spec, result=result, raw_data=raw_data
+        config=config,
+        context=context,
+        spec=spec,
+        result=result,
+        raw_data=raw_data,
     )
     declarations: list[literalizer.LiteralizeResult] = []
-    for name, source in config.external_declarations.items():
+    for name, source in context.declarations.items():
         declaration_spec = spec
         if config.variable_form == "existing" and name == "my_data":
             styles = find_redefinition_styles(spec=spec)
@@ -298,31 +320,36 @@ def compose_external_ref_fixture(
         declarations.append(
             dataclasses.replace(
                 declaration,
-                preamble=(*config.caller_preamble, *declaration.preamble),
+                preamble=(*context.caller_preamble, *declaration.preamble),
             )
         )
     result = dataclasses.replace(
-        result, preamble=(*config.caller_preamble, *result.preamble)
+        result, preamble=(*context.caller_preamble, *result.preamble)
     )
     assertion_helper = (
         Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
     )
-    if config.expected_value_source is not None and assertion_helper.is_file():
+    consumer = context.consumer
+    if isinstance(consumer, RefValueCheckSpec) and assertion_helper.is_file():
         return _compose_ref_value_check(
-            config=config,
+            context=context,
+            consumer=consumer,
             spec=spec,
             declarations=declarations,
             result=result,
         )
-    consumer = config.consumer
-    if consumer is None:
-        consumer = RefConsumerSpec(
-            target_function="consume_widget",
-            before_assignment=(
-                config.variable_form == "existing"
-                and "my_data" in config.external_declarations
-            ),
-        )
+    if isinstance(consumer, RefValueCheckSpec):
+        if (
+            config.variable_form == "existing"
+            and "my_data" in context.declarations
+        ):
+            consumer = RefAssignmentConsumerSpec(
+                kind="assignment", target_function="consume_widget"
+            )
+        else:
+            consumer = RefConsumerSpec(
+                kind="call", target_function="consume_widget"
+            )
     return _compose_ref_consumer(
         consumer=consumer,
         expression=config.variable_form == "none",
@@ -332,6 +359,7 @@ def compose_external_ref_fixture(
         argument_data=_external_result_value(
             source=TypeAdapter[Value](type=Value).validate_python(raw_data),
             config=config,
+            context=context,
         ),
     )
 
@@ -355,4 +383,24 @@ def ref_fixture_contents(
         language_id=spec.language_id,
         intentional_identifier=ref_case is not None
         and ref_case is not native_case,
+    )
+
+
+@beartype
+def compose_ref_expression_fixture(
+    *,
+    context: RefExpressionContext,
+    spec: literalizer.Language,
+    result: literalizer.LiteralizeResult,
+) -> literalizer.LiteralizeResult:
+    """Pass the rendered expression to its explicitly selected
+    consumer.
+    """
+    return _compose_ref_consumer(
+        consumer=context.consumer,
+        expression=True,
+        spec=spec,
+        declarations=[],
+        result=result,
+        argument_data=result.source_data,
     )

@@ -6,8 +6,11 @@ owner = "literalize-call"
 target_function = "consume"
 parameter_names = ["value"]
 per_element = false
-ref_declarations = { shared = "[1, 2]" }
 variant_only = true
 
 [[call.variants]]
 axis = "json_type"
+
+[call.fixture]
+kind = "bound"
+ref_declarations = { shared = "[1, 2]" }

@@ -9,4 +9,6 @@ gates = [{ kind = "capability_flag", flag = "supports_variadic_calls" }]
 target_function = "process"
 parameter_names = ["a", "b"]
 per_element = true
-wrap_in_file = true
+
+[call.fixture]
+kind = "wrapped"

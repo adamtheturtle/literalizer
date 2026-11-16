@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "Playlist.newValue"
 parameter_names = ["x"]
 per_element = true
-wrap_in_file = true
 # Original regression: Scala accepts ordinary call members whose prefixes match reserved keywords.
+
+[call.fixture]
+kind = "wrapped"

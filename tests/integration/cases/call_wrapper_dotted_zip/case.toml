@@ -6,10 +6,20 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = false
-wrap_in_file = true
-call_transform = "{call}"
-call_transform_wrapper = {target = "helpers.emit", arguments = ["call", "zipped"]}
-transform_stub_names = ["helpers.emit"]
-transform_stub_param_names = ["_call", "_zip"]
 zip_source = "42"
 zip_input_format = "yaml"
+
+[call.transform]
+kind = "wrapper"
+target = "helpers.emit"
+outer = "{call}"
+
+[[call.transform.arguments]]
+role = "call"
+parameter = "_call"
+
+[[call.transform.arguments]]
+role = "zipped"
+parameter = "_zip"
+[call.fixture]
+kind = "wrapped"

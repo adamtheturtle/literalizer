@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "Playlist.new"
 parameter_names = ["x"]
 per_element = true
-wrap_in_file = true
 # Original regression: Elixir alone treats a capitalized call root as an alias, which a generated stub names directly rather than binding.
+
+[call.fixture]
+kind = "wrapped"

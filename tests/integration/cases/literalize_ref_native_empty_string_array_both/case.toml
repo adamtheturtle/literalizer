@@ -8,6 +8,9 @@ declaration_style = "VAR"
 heterogeneous_strategy = "RECORD"
 variable_form = "both"
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 shared = "[]"
 second = '["one", "two"]'

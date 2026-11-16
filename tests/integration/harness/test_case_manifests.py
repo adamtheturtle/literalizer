@@ -106,8 +106,9 @@ def test_invalid_manifest_is_actionable(
     )
     with pytest.raises(
         expected_exception=CaseManifestError, match=case.message
-    ):
+    ) as error:
         _ = load_case_manifest(case_dir=case_dir)
+    assert str(object=case_dir / "case.toml") in str(object=error.value)
 
 
 def test_missing_manifest_is_actionable(tmp_path: Path) -> None:
@@ -121,28 +122,23 @@ def test_missing_manifest_is_actionable(tmp_path: Path) -> None:
         _ = load_case_manifest(case_dir=case_dir)
 
 
-@pytest.mark.parametrize(
-    argnames=("use_unwrapped_code", "wrap_in_file"),
-    argvalues=[("false", "false"), ("true", "true")],
-)
-def test_call_suffix_cannot_be_silently_ignored(
-    tmp_path: Path, use_unwrapped_code: str, wrap_in_file: str
+@pytest.mark.parametrize(argnames="kind", argvalues=["composed", "wrapped"])
+def test_call_suffix_requires_fragment_context(
+    tmp_path: Path, kind: str
 ) -> None:
-    """A caller suffix requires the runner that preserves raw code."""
+    """Only the fragment variant accepts caller source bytes."""
     case_dir = _write_case(
         tmp_path=tmp_path,
         manifest=(
             'schema_version = 1\nowner = "literalize-call"\n[call]\n'
             'target_function = "target"\nparameter_names = ["value"]\n'
-            'per_element = false\ncaller_code_suffix = "completion"\n'
-            f"use_unwrapped_code = {use_unwrapped_code}\n"
-            f"wrap_in_file = {wrap_in_file}\n"
+            "per_element = false\n[call.fixture]\n"
+            f'kind = "{kind}"\ncaller_code_suffix = "completion"\n'
         ),
         input_name="input.yaml",
     )
     with pytest.raises(
-        expected_exception=CaseManifestError,
-        match="caller code requires use_unwrapped_code without wrap_in_file",
+        expected_exception=CaseManifestError, match="caller_code_suffix"
     ):
         _ = load_case_manifest(case_dir=case_dir)
 
@@ -385,7 +381,7 @@ def test_invalid_reference_value_source(
         manifest=(
             "schema_version = 1\n"
             'owner = "literalize-ref-default"\n'
-            "[ref]\n"
+            '[ref.context]\nkind = "bound"\n'
             f"{case.field} = {{ value = {case.source} }}\n"
         ),
         input_name="input.json",

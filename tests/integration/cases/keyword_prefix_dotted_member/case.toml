@@ -6,4 +6,6 @@ gates = [{kind = "capability_flag", flag = "supports_dotted_calls"}]
 target_function = "thing.first_value"
 parameter_names = ["value"]
 per_element = false
-wrap_in_file = true
+
+[call.fixture]
+kind = "wrapped"

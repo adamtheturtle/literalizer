@@ -15,7 +15,7 @@ import literalizer
 from literalizer import ValueInput
 from tests.yaml_support import as_yaml_parser
 
-from .case_manifests import RefCaseSpec
+from .case_manifests import BoundRefContext, RefCaseSpec, RefExpressionContext
 from .language_specs import make_spec
 
 type RefData = (
@@ -97,6 +97,7 @@ def parse_ref_input(
 def bound_ref_inputs(
     *,
     config: RefCaseSpec,
+    context: BoundRefContext | RefExpressionContext,
     raw_data: RefData,
     lang_cls: literalizer.LanguageCls,
 ) -> dict[str, ValueInput]:
@@ -108,19 +109,19 @@ def bound_ref_inputs(
     if key_syntax is not None and not key_syntax.accepts(name="_"):
         effective_s = '{"key": "value"}'
     bound_refs_input: dict[str, ValueInput] = {
-        name: json.loads(s=config.value_sources.get(name, effective_s))
+        name: json.loads(s=context.value_sources.get(name, effective_s))
         for name in collect_ref_names(data=raw_data, ref_key=config.ref_key)
     }
     bound_refs_input.update(
         (name, json.loads(s=source))
-        for name, source in config.extra_ref_value_sources.items()
+        for name, source in context.extra_ref_value_sources.items()
     )
-    if config.bound_refs is not None:
-        bound_refs_input.update(config.bound_refs)
-    bound_refs_input.update(config.bound_ref_times)
-    bound_refs_input.update(config.bound_ref_datetimes)
+    if context.bound_refs is not None:
+        bound_refs_input.update(context.bound_refs)
+    bound_refs_input.update(context.bound_ref_times)
+    bound_refs_input.update(context.bound_ref_datetimes)
     bound_refs_input.update(
         (name, source.to_value())
-        for name, source in config.bound_ref_values.items()
+        for name, source in context.bound_ref_values.items()
     )
     return bound_refs_input

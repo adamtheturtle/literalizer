@@ -6,5 +6,8 @@ owner = "literalize-ref"
 gates = [{kind = "enum_member_present", option = "declaration_style", member = "VAR"}]
 declaration_style = "VAR"
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 shared = "[1, 2]"

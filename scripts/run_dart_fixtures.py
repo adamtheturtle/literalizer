@@ -13,7 +13,7 @@ from beartype import beartype
 from literalizer import VariableForm
 from literalizer.languages import Dart
 from tests.integration.call_variant_cases import call_golden_cases
-from tests.integration.case_manifests import RefCaseSpec
+from tests.integration.case_manifests import BoundRefContext, RefCaseSpec
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
 )
@@ -66,7 +66,7 @@ def _ref_binding_name(*, config: RefCaseSpec) -> str | None:
     """Run composed reference programs, otherwise read their root
     binding.
     """
-    if config.consumer is not None or len(config.external_declarations) > 0:
+    if not isinstance(config.context, BoundRefContext):
         return None
     return _binding_name(variable_form=config.resolved_variable_form())
 

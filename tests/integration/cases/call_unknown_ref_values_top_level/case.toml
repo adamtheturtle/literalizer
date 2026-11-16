@@ -9,6 +9,9 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["data"]
 per_element = false
+extra_ref_value_sources = { known_value = "1" }
+
+[call.fixture]
+kind = "composed"
 ref_declarations = { unknown_value = "[]" }
 unknown_ref_names = ["unknown_value"]
-extra_ref_value_sources = { known_value = "1" }

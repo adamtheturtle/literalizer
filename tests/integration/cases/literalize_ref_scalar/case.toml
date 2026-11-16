@@ -1,8 +1,11 @@
 schema_version = 1
 owner = "literalize-ref"
 
-[ref.value_sources]
-my_int = "42"
-
 [[ref.variants]]
 axis = "declaration_style"
+
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
+my_int = "42"

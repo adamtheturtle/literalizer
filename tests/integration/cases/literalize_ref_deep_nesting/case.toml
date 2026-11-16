@@ -4,5 +4,8 @@ owner = "literalize-ref"
 [ref]
 collection_layout = "multiline"
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 deep = '[["one", "two"], ["three", "four"]]'

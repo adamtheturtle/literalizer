@@ -5,7 +5,6 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["data"]
 per_element = true
-ref_declarations = { my_var = "42" }
 requires_heterogeneous_dict_values = true
 
 # Check nested reusable bindings and ordered map call arguments under explicit annotations and both layouts.
@@ -14,3 +13,7 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.fixture]
+kind = "bound"
+ref_declarations = { my_var = "42" }

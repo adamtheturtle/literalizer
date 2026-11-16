@@ -11,7 +11,11 @@ import literalizer
 from literalizer._language import CallStubDeclarations
 from literalizer.exceptions import HeterogeneousCollectionError
 
-from .case_manifests import CallCaseSpec
+from .case_manifests import (
+    CallCaseSpec,
+    ComposedCallFixture,
+    FragmentCallFixture,
+)
 from .golden_checks import GoldenSkips, SkipPolicy, SkipReason
 from .parsed_values import ParsedValue
 
@@ -76,6 +80,7 @@ def call_stub_spec(
 def target_call_declarations(
     *,
     config: CallCaseSpec,
+    fixture: ComposedCallFixture | FragmentCallFixture,
     spec: literalizer.Language,
     argument_values: Sequence[ParsedValue],
     golden_path: Path,
@@ -83,11 +88,11 @@ def target_call_declarations(
     lang_name: str,
 ) -> CallStubDeclarations:
     """Declare synthetic targets unless the case uses a built-in."""
-    if not config.include_target_stub:
+    if not fixture.include_target_stub:
         return CallStubDeclarations(body=(), class_scope=(), file_scope=())
     stub_return = (
         literalizer.StubReturn.VALUE
-        if config.has_call_transform or config.variable_form is not None
+        if (config.transform is not None) or config.variable_form is not None
         else literalizer.StubReturn.VOID
     )
     stub_spec = call_stub_spec(spec=spec, argument_values=argument_values)

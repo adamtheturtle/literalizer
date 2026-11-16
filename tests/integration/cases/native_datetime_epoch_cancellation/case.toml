@@ -7,25 +7,34 @@ owner = "literalize-ref-default"
 [ref]
 variable_name = "result_data"
 variant_only = true
-bound_ref_datetimes = {stamp = {wall_time = 1970-01-01T00:00:00.000001, offset_microseconds = 1}}
 
 [[ref.variants]]
 axis = "datetime_epoch"
 
+
+[ref.context]
+kind = "bound"
+bound_ref_datetimes = {stamp = {wall_time = 1970-01-01T00:00:00.000001, offset_microseconds = 1}}
 [[ref_examples]]
 example = "carry"
 variable_name = "result_data"
 variant_only = true
-bound_ref_datetimes = {stamp = {wall_time = 1970-01-01T00:00:00.999999, offset_microseconds = -1}}
 
 [[ref_examples.variants]]
 axis = "datetime_epoch"
 
+
+[ref_examples.context]
+kind = "bound"
+bound_ref_datetimes = {stamp = {wall_time = 1970-01-01T00:00:00.999999, offset_microseconds = -1}}
 [[ref_examples]]
 example = "fraction"
 variable_name = "result_data"
 variant_only = true
-bound_ref_datetimes = {stamp = {wall_time = 1970-01-01T00:00:00.123456, offset_microseconds = 123456}}
 
 [[ref_examples.variants]]
 axis = "datetime_epoch"
+
+[ref_examples.context]
+kind = "bound"
+bound_ref_datetimes = {stamp = {wall_time = 1970-01-01T00:00:00.123456, offset_microseconds = 123456}}

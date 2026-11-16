@@ -6,30 +6,34 @@ owner = "literalize-ref-default"
 variable_name = "result_data"
 variant_only = true
 
-[ref.bound_ref_values.binding]
-kind = "mapping"
-
-[[ref.bound_ref_values.binding.entries]]
-key = "stamp"
-
-[ref.bound_ref_values.binding.entries.value]
-kind = "scalar"
-
-[ref.bound_ref_values.binding.entries.value.value]
-wall_time = 2001-02-03T04:05:06.123456
-offset_microseconds = 0
-
-[[ref.bound_ref_values.binding.entries]]
-[ref.bound_ref_values.binding.entries.key]
-wall_time = 2001-02-03T04:05:06.123456
-offset_microseconds = 0
-
-[ref.bound_ref_values.binding.entries.value]
-kind = "scalar"
-value = "key"
-
 [[ref.variants]]
 axis = "datetime_python"
+
+
+[ref.context]
+kind = "bound"
+
+[ref.context.bound_ref_values.binding]
+kind = "mapping"
+
+[[ref.context.bound_ref_values.binding.entries]]
+key = "stamp"
+
+[ref.context.bound_ref_values.binding.entries.value]
+kind = "scalar"
+
+[ref.context.bound_ref_values.binding.entries.value.value]
+wall_time = 2001-02-03T04:05:06.123456
+offset_microseconds = 0
+
+[[ref.context.bound_ref_values.binding.entries]]
+[ref.context.bound_ref_values.binding.entries.key]
+wall_time = 2001-02-03T04:05:06.123456
+offset_microseconds = 0
+
+[ref.context.bound_ref_values.binding.entries.value]
+kind = "scalar"
+value = "key"
 
 [[ref_examples]]
 example = "positive_minutes"
@@ -39,25 +43,29 @@ variant_only = true
 [[ref_examples.variants]]
 axis = "datetime_python"
 
-[ref_examples.bound_ref_values.binding]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.bound_ref_values.binding]
 kind = "mapping"
 
-[[ref_examples.bound_ref_values.binding.entries]]
+[[ref_examples.context.bound_ref_values.binding.entries]]
 key = "stamp"
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 
-[ref_examples.bound_ref_values.binding.entries.value.value]
+[ref_examples.context.bound_ref_values.binding.entries.value.value]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = 19800000000
 
-[[ref_examples.bound_ref_values.binding.entries]]
-[ref_examples.bound_ref_values.binding.entries.key]
+[[ref_examples.context.bound_ref_values.binding.entries]]
+[ref_examples.context.bound_ref_values.binding.entries.key]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = 19800000000
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 value = "key"
 
@@ -69,25 +77,29 @@ variant_only = true
 [[ref_examples.variants]]
 axis = "datetime_python"
 
-[ref_examples.bound_ref_values.binding]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.bound_ref_values.binding]
 kind = "mapping"
 
-[[ref_examples.bound_ref_values.binding.entries]]
+[[ref_examples.context.bound_ref_values.binding.entries]]
 key = "stamp"
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 
-[ref_examples.bound_ref_values.binding.entries.value.value]
+[ref_examples.context.bound_ref_values.binding.entries.value.value]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = -19800000000
 
-[[ref_examples.bound_ref_values.binding.entries]]
-[ref_examples.bound_ref_values.binding.entries.key]
+[[ref_examples.context.bound_ref_values.binding.entries]]
+[ref_examples.context.bound_ref_values.binding.entries.key]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = -19800000000
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 value = "key"
 
@@ -99,25 +111,29 @@ variant_only = true
 [[ref_examples.variants]]
 axis = "datetime_python"
 
-[ref_examples.bound_ref_values.binding]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.bound_ref_values.binding]
 kind = "mapping"
 
-[[ref_examples.bound_ref_values.binding.entries]]
+[[ref_examples.context.bound_ref_values.binding.entries]]
 key = "stamp"
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 
-[ref_examples.bound_ref_values.binding.entries.value.value]
+[ref_examples.context.bound_ref_values.binding.entries.value.value]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = 1000000
 
-[[ref_examples.bound_ref_values.binding.entries]]
-[ref_examples.bound_ref_values.binding.entries.key]
+[[ref_examples.context.bound_ref_values.binding.entries]]
+[ref_examples.context.bound_ref_values.binding.entries.key]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = 1000000
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 value = "key"
 
@@ -129,25 +145,29 @@ variant_only = true
 [[ref_examples.variants]]
 axis = "datetime_python"
 
-[ref_examples.bound_ref_values.binding]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.bound_ref_values.binding]
 kind = "mapping"
 
-[[ref_examples.bound_ref_values.binding.entries]]
+[[ref_examples.context.bound_ref_values.binding.entries]]
 key = "stamp"
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 
-[ref_examples.bound_ref_values.binding.entries.value.value]
+[ref_examples.context.bound_ref_values.binding.entries.value.value]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = -1000000
 
-[[ref_examples.bound_ref_values.binding.entries]]
-[ref_examples.bound_ref_values.binding.entries.key]
+[[ref_examples.context.bound_ref_values.binding.entries]]
+[ref_examples.context.bound_ref_values.binding.entries.key]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = -1000000
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 value = "key"
 
@@ -159,25 +179,29 @@ variant_only = true
 [[ref_examples.variants]]
 axis = "datetime_python"
 
-[ref_examples.bound_ref_values.binding]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.bound_ref_values.binding]
 kind = "mapping"
 
-[[ref_examples.bound_ref_values.binding.entries]]
+[[ref_examples.context.bound_ref_values.binding.entries]]
 key = "stamp"
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 
-[ref_examples.bound_ref_values.binding.entries.value.value]
+[ref_examples.context.bound_ref_values.binding.entries.value.value]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = 1
 
-[[ref_examples.bound_ref_values.binding.entries]]
-[ref_examples.bound_ref_values.binding.entries.key]
+[[ref_examples.context.bound_ref_values.binding.entries]]
+[ref_examples.context.bound_ref_values.binding.entries.key]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = 1
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 value = "key"
 
@@ -189,25 +213,29 @@ variant_only = true
 [[ref_examples.variants]]
 axis = "datetime_python"
 
-[ref_examples.bound_ref_values.binding]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.bound_ref_values.binding]
 kind = "mapping"
 
-[[ref_examples.bound_ref_values.binding.entries]]
+[[ref_examples.context.bound_ref_values.binding.entries]]
 key = "stamp"
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 
-[ref_examples.bound_ref_values.binding.entries.value.value]
+[ref_examples.context.bound_ref_values.binding.entries.value.value]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = -1
 
-[[ref_examples.bound_ref_values.binding.entries]]
-[ref_examples.bound_ref_values.binding.entries.key]
+[[ref_examples.context.bound_ref_values.binding.entries]]
+[ref_examples.context.bound_ref_values.binding.entries.key]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = -1
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 value = "key"
 
@@ -219,25 +247,29 @@ variant_only = true
 [[ref_examples.variants]]
 axis = "datetime_python"
 
-[ref_examples.bound_ref_values.binding]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.bound_ref_values.binding]
 kind = "mapping"
 
-[[ref_examples.bound_ref_values.binding.entries]]
+[[ref_examples.context.bound_ref_values.binding.entries]]
 key = "stamp"
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 
-[ref_examples.bound_ref_values.binding.entries.value.value]
+[ref_examples.context.bound_ref_values.binding.entries.value.value]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = 19815123456
 
-[[ref_examples.bound_ref_values.binding.entries]]
-[ref_examples.bound_ref_values.binding.entries.key]
+[[ref_examples.context.bound_ref_values.binding.entries]]
+[ref_examples.context.bound_ref_values.binding.entries.key]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = 19815123456
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 value = "key"
 
@@ -249,25 +281,29 @@ variant_only = true
 [[ref_examples.variants]]
 axis = "datetime_python"
 
-[ref_examples.bound_ref_values.binding]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.bound_ref_values.binding]
 kind = "mapping"
 
-[[ref_examples.bound_ref_values.binding.entries]]
+[[ref_examples.context.bound_ref_values.binding.entries]]
 key = "stamp"
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 
-[ref_examples.bound_ref_values.binding.entries.value.value]
+[ref_examples.context.bound_ref_values.binding.entries.value.value]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = -19815123456
 
-[[ref_examples.bound_ref_values.binding.entries]]
-[ref_examples.bound_ref_values.binding.entries.key]
+[[ref_examples.context.bound_ref_values.binding.entries]]
+[ref_examples.context.bound_ref_values.binding.entries.key]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = -19815123456
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 value = "key"
 
@@ -279,25 +315,29 @@ variant_only = true
 [[ref_examples.variants]]
 axis = "datetime_python"
 
-[ref_examples.bound_ref_values.binding]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.bound_ref_values.binding]
 kind = "mapping"
 
-[[ref_examples.bound_ref_values.binding.entries]]
+[[ref_examples.context.bound_ref_values.binding.entries]]
 key = "stamp"
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 
-[ref_examples.bound_ref_values.binding.entries.value.value]
+[ref_examples.context.bound_ref_values.binding.entries.value.value]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = 86399999999
 
-[[ref_examples.bound_ref_values.binding.entries]]
-[ref_examples.bound_ref_values.binding.entries.key]
+[[ref_examples.context.bound_ref_values.binding.entries]]
+[ref_examples.context.bound_ref_values.binding.entries.key]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = 86399999999
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 value = "key"
 
@@ -309,24 +349,28 @@ variant_only = true
 [[ref_examples.variants]]
 axis = "datetime_python"
 
-[ref_examples.bound_ref_values.binding]
+
+[ref_examples.context]
+kind = "bound"
+
+[ref_examples.context.bound_ref_values.binding]
 kind = "mapping"
 
-[[ref_examples.bound_ref_values.binding.entries]]
+[[ref_examples.context.bound_ref_values.binding.entries]]
 key = "stamp"
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 
-[ref_examples.bound_ref_values.binding.entries.value.value]
+[ref_examples.context.bound_ref_values.binding.entries.value.value]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = -86399999999
 
-[[ref_examples.bound_ref_values.binding.entries]]
-[ref_examples.bound_ref_values.binding.entries.key]
+[[ref_examples.context.bound_ref_values.binding.entries]]
+[ref_examples.context.bound_ref_values.binding.entries.key]
 wall_time = 2001-02-03T04:05:06.123456
 offset_microseconds = -86399999999
 
-[ref_examples.bound_ref_values.binding.entries.value]
+[ref_examples.context.bound_ref_values.binding.entries.value]
 kind = "scalar"
 value = "key"

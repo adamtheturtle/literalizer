@@ -44,7 +44,6 @@ from .call_collection import CallRendering
 from .call_expectations import (
     invalid_target_grammar,
     skip_unsupported_wrapper,
-    uses_bound_ref_wrapper,
 )
 from .call_stubs import argument_values_for_stub, target_call_declarations
 from .call_transforms import (
@@ -54,8 +53,12 @@ from .call_transforms import (
 )
 from .case_inputs import CaseInput
 from .case_manifests import (
+    BoundCallFixture,
     CallCaseSpec,
     CallTransform,
+    ComposedCallFixture,
+    FragmentCallFixture,
+    WrappedCallFixture,
     case_input,
 )
 from .golden_checks import (
@@ -199,7 +202,8 @@ def _literalize_call_case(
     call_transform = call_transform_for_case(spec=spec, config=config)
     if (
         call_transform is not None
-        and not config.call_transform_reports_zip_usage
+        and config.transform is not None
+        and not config.transform.reports_zip_usage
     ):
         call_transform = functools.partial(call_transform)
     if config.shared_invocation:
@@ -259,7 +263,7 @@ def _call_fixture_contents(
         *config.parameter_names,
         *(
             name
-            for name in config.ref_declarations
+            for name in config.fixture.ref_declarations
             if not config.ref_case_per_language
         ),
     )
@@ -320,7 +324,7 @@ def run_wrap_in_file_case(
                 )
             ),
             bound_refs=_parse_ref_sources(
-                sources=config.ref_declarations,
+                sources=config.fixture.ref_declarations,
                 input_format=config.ref_input_format,
             ),
         )
@@ -413,6 +417,7 @@ def _render_ref_declaration(
 def _run_call_with_declarations(
     *,
     config: CallCaseSpec,
+    fixture: ComposedCallFixture | FragmentCallFixture,
     spec: literalizer.Language,
     source: str,
     input_info: CaseInput,
@@ -438,7 +443,7 @@ def _run_call_with_declarations(
                 declaration_name=declaration_names[ref_name],
                 ref_source=ref_source,
             )
-            for ref_name, ref_source in config.ref_declarations.items()
+            for ref_name, ref_source in config.fixture.ref_declarations.items()
         }
         decl_results = [
             declaration.result for declaration in rendered_by_ref_name.values()
@@ -446,7 +451,7 @@ def _run_call_with_declarations(
         ref_values = {
             ref_name: declaration.result.source_data
             for ref_name, declaration in rendered_by_ref_name.items()
-            if ref_name not in config.unknown_ref_names
+            if ref_name not in fixture.unknown_ref_names
         }
         ref_values.update(
             _parse_ref_sources(
@@ -463,14 +468,12 @@ def _run_call_with_declarations(
                 input_format=config.ref_input_format,
             )
         followup_result = None
-        followup_target = (
-            config.target_function
-            if config.followup_target_function is None
-            else config.followup_target_function
-        )
-        if config.followup_source is not None:
+        followup_target = config.target_function
+        if fixture.followup is not None:
+            if fixture.followup.target_function is not None:
+                followup_target = fixture.followup.target_function
             followup_result = literalizer.literalize_call(
-                source=config.followup_source,
+                source=fixture.followup.source,
                 input_format=input_info.input_format,
                 language=spec,
                 target_function=followup_target,
@@ -523,7 +526,7 @@ def _run_call_with_declarations(
         # A deliberately absent inference hint must not erase the actual
         # declaration's type from the compiler fixture's consumer signature.
         stub_source_data = result.source_data
-        if len(config.unknown_ref_names) > 0:
+        if len(fixture.unknown_ref_names) > 0:
             stub_source_data = _resolve_refs_for_inference(
                 value=parse_input(
                     source=source, input_format=input_info.input_format
@@ -605,6 +608,7 @@ def _render_call_golden_case(
 ) -> None:
     """Assemble one call rendering and compare its native golden file."""
     config = rendering.config
+    fixture = config.fixture
     spec = rendering.spec
     lang_cls = rendering.lang_cls
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
@@ -629,14 +633,14 @@ def _render_call_golden_case(
         effective_ref_case = default_case
         declaration_names = {
             ref_name: default_case.convert(name=ref_name)
-            for ref_name in config.ref_declarations
+            for ref_name in fixture.ref_declarations
         }
     else:
         effective_ref_case = None
         declaration_names = {
-            ref_name: ref_name for ref_name in config.ref_declarations
+            ref_name: ref_name for ref_name in fixture.ref_declarations
         }
-    if config.wrap_in_file:
+    if isinstance(fixture, WrappedCallFixture):
         run_wrap_in_file_case(
             config=config,
             spec=spec,
@@ -649,7 +653,7 @@ def _render_call_golden_case(
             pytest_config=file_regression.request.config,
         )
         return
-    if uses_bound_ref_wrapper(config=config):
+    if isinstance(fixture, BoundCallFixture):
         with GoldenSkips(
             policy=_DECLARATION_SKIPS,
             golden_path=golden_path,
@@ -666,7 +670,7 @@ def _render_call_golden_case(
                 wrap_in_file=True,
                 ref_values=None,
                 bound_refs=_parse_ref_sources(
-                    sources=config.ref_declarations,
+                    sources=fixture.ref_declarations,
                     input_format=config.ref_input_format,
                 ),
             )
@@ -681,7 +685,7 @@ def _render_call_golden_case(
     if invalid_target_grammar(
         lang_cls=lang_cls,
         target=config.target_function,
-        wrapped=config.include_target_stub,
+        wrapped=fixture.include_target_stub,
         spec=spec,
     ) and not invalid_target_grammar(
         lang_cls=lang_cls,
@@ -695,6 +699,7 @@ def _render_call_golden_case(
             reason="cannot name a declaration in the generated file",
         )
     call_outcome = _run_call_with_declarations(
+        fixture=fixture,
         config=config,
         spec=spec,
         source=source,
@@ -709,6 +714,7 @@ def _render_call_golden_case(
     result = call_outcome.result
     # Build stub declarations for undefined names.
     target_stubs = target_call_declarations(
+        fixture=fixture,
         config=config,
         spec=spec,
         argument_values=call_outcome.stub_argument_values,
@@ -722,15 +728,17 @@ def _render_call_golden_case(
     wrapper_stubs = wrapper_call_declarations(
         spec=spec,
         config=config,
+        followup=fixture.followup,
         bound_result_slots=followup_result_slots(
+            followup=fixture.followup,
             config=config,
             input_format=input_info.input_format,
         ),
     )
     body_stubs = (
         *target_stubs.body,
-        *(import_preamble(code=entry) for entry in config.caller_imports),
-        *config.caller_body_preamble,
+        *(import_preamble(code=entry) for entry in fixture.caller_imports),
+        *fixture.caller_body_preamble,
         *wrapper_stubs.body,
     )
     class_stubs = (*target_stubs.class_scope, *wrapper_stubs.class_scope)
@@ -762,12 +770,12 @@ def _render_call_golden_case(
         extra_preamble=preamble_stubs,
     )
     code = composed.code
-    if config.use_unwrapped_code:
+    if isinstance(fixture, FragmentCallFixture):
         code = _wrap_unwrapped_call(
             spec=spec,
             result=result,
-            caller_code_prefix=config.caller_code_prefix,
-            caller_code_suffix=config.caller_code_suffix,
+            caller_code_prefix=fixture.caller_code_prefix,
+            caller_code_suffix=fixture.caller_code_suffix,
             body_preamble=body_stubs,
             class_preamble=class_stubs,
             preamble=preamble_stubs,

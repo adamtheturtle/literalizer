@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "f"
 parameter_names = ["xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"]
 per_element = true
-wrap_in_file = true
 # Original regression: Fortran rejects parameter names beyond 63 characters; Python preserves the complete identifier.
+
+[call.fixture]
+kind = "wrapped"

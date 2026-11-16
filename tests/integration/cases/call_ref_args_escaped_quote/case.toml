@@ -5,7 +5,6 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["v"]
 per_element = true
-ref_declarations = { my_str = "\"a\\\"b\"" }
 
 # Preserve escaped and reused string bindings in complete annotated and alternate-layout call consumers.
 [[call.variants]]
@@ -13,3 +12,7 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.fixture]
+kind = "bound"
+ref_declarations = { my_str = "\"a\\\"b\"" }

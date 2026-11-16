@@ -5,18 +5,23 @@ owner = "literalize-call"
 target_function = "throttler.check"
 parameter_names = ["user_id", "ts"]
 per_element = true
-call_transform = "emit({call})"
-transform_stub_names = ["emit"]
 call_style = "positional"
 requires_call_returns_expression = true
 
+[call.transform]
+kind = "template"
+stub_names = ["emit"]
+template = "emit({call})"
 [[call_examples]]
 # Retain the object-style API context with the identical shared input.
 example = "call_object"
 target_function = "throttler.check"
 parameter_names = ["user_id", "ts"]
 per_element = true
-call_transform = "emit({call})"
-transform_stub_names = ["emit"]
 call_style = "object"
 requires_call_returns_expression = true
+
+[call_examples.transform]
+kind = "template"
+stub_names = ["emit"]
+template = "emit({call})"

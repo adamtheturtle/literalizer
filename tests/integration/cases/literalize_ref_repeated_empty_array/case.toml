@@ -6,5 +6,8 @@ gates = [{kind = "capability_flag", flag = "supports_variable_names"}, {kind = "
 # Original regression (literalize_ref_rust_repeated_empty_array_copy): Rust empty arrays retain the ownership of their declared element type.
 sequence_format = "ARRAY"
 
-[ref.value_sources]
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
 shared = "[]"

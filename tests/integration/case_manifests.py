@@ -258,18 +258,97 @@ def _parse_ref_time(value: object, /) -> object:
 type RefTimeInput = Annotated[dt.time, BeforeValidator(func=_parse_ref_time)]
 
 
-class RefConsumerSpec(  # noqa: NOD001
-    BaseModel, extra="forbid", frozen=True, strict=True
-):
-    """A generated call using the reference case's output binding.
-
-    Assignment cases can also consume the caller's initial value before
-    the assignment. The consumer is composed after the API under test has
-    rendered, so it cannot change reference inference.
-    """
+class _RefCallConsumer(BaseModel, extra="forbid", frozen=True, strict=True):
+    """Call a consumer after producing the reference result."""
 
     target_function: Annotated[str, Field(min_length=1)]
-    before_assignment: bool = False
+
+
+class RefConsumerSpec(_RefCallConsumer, frozen=True):
+    """Consume the produced reference binding or expression."""
+
+    kind: Literal["call"]
+
+
+class RefAssignmentConsumerSpec(_RefCallConsumer, frozen=True):
+    """Consume both the caller's initial binding and the assigned
+    value.
+    """
+
+    kind: Literal["assignment"]
+
+
+class RefValueCheckSpec(BaseModel, extra="forbid", frozen=True, strict=True):
+    """Check an independent value without providing inference hints."""
+
+    kind: Literal["value-check"]
+    expected_source: str
+
+
+type RefConsumer = Annotated[
+    RefConsumerSpec | RefAssignmentConsumerSpec | RefValueCheckSpec,
+    Field(discriminator="kind"),
+]
+
+
+# Defaults below describe omitted TOML keys, as for RenderContext.
+class _RefBindings(  # noqa: NOD001
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+    arbitrary_types_allowed=True,
+):
+    """Bindings materialized by the API, including native TOML values."""
+
+    value_sources: dict[str, str] = Field(default_factory=dict[str, str])
+    bound_refs: Mapping[str, ValueInput] | None = None
+    bound_ref_times: dict[str, RefTimeInput] = Field(
+        default_factory=dict[str, dt.time]
+    )
+    bound_ref_datetimes: dict[str, RefDatetimeInput] = Field(
+        default_factory=dict[str, dt.datetime]
+    )
+    bound_ref_values: dict[str, RefValueSource] = Field(
+        default_factory=dict[str, RefValueSource]
+    )
+    extra_ref_value_sources: dict[str, str] = Field(
+        default_factory=dict[str, str]
+    )
+
+
+class ExternalRefContext(  # noqa: NOD001
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Caller-owned declarations composed after API rendering."""
+
+    kind: Literal["external"]
+    declarations: Annotated[dict[str, str], Field(min_length=1)]
+    caller_preamble: manifest_values.StringTuple = Field(
+        default_factory=tuple[str, ...]
+    )
+    consumer: RefConsumer
+
+
+class BoundRefContext(  # noqa: NOD001
+    _RefBindings, frozen=True
+):
+    """Wrap API-materialized reference bindings in a complete file."""
+
+    kind: Literal["bound"] = "bound"
+
+
+class RefExpressionContext(_RefBindings, frozen=True):
+    """Pass an API-rendered expression directly to a native consumer."""
+
+    kind: Literal["expression"]
+    consumer: RefConsumerSpec
+
+
+type RefContext = Annotated[
+    BoundRefContext | ExternalRefContext | RefExpressionContext,
+    Field(discriminator="kind"),
+]
 
 
 class RefCaseSpec(
@@ -277,36 +356,10 @@ class RefCaseSpec(
     CapabilitySelection,
     frozen=True,
 ):
-    """Everything a case declares about driving a ``$ref`` golden.
+    """Public reference arguments and one validated fixture context.
 
-    When *value_sources* is supplied, each entry maps a
-    ``{ref_key: name}`` marker in the case input to a JSON source whose
-    value seeds ``bound_refs`` on the :func:`literalizer.literalize`
-    call and the matching ref stub.  Without it the harness keeps its
-    historical behavior: refs render with no value-type knowledge and
-    stubs are dict shaped.
-
-    *bound_refs* supplies values directly from TOML, including dates
-    and times that JSON sources cannot express. These values override
-    the corresponding source-derived bindings. ``bound_ref_datetimes``
-    additionally accepts tables with a naive TOML ``wall_time`` and signed
-    ``offset_microseconds``, preserving native offsets that serialized
-    timestamps and older ISO parsers cannot express exactly.
-    ``bound_ref_values`` composes scalar, sequence and mapping sources,
-    including native datetime mapping keys, into one bound value.
-
-    *external_declarations* supplies a caller's declarations as JSON
-    sources. They are composed around the unwrapped result afterwards,
-    without passing ``bound_refs`` or deriving inference hints from them.
-    *explicit_ref_value_sources* independently selects reference hints;
-    omission passes ``None``, while an empty table passes ``{}``.
-
-    When *ref_case_override* is set, the case forces that identifier
-    case for the ``ref_case`` argument of :func:`literalizer.literalize`
-    instead of using the language's default (``identifier_cases[0]``).
-    Discovery skips any language whose ``supported_ref_cases`` does not
-    include the override. ``ref_case_by_language`` can choose a different
-    explicit case for a language with a compiler-enforced naming convention.
+    The context distinguishes API-materialized bindings from caller-owned
+    declarations. Inference hints remain a separate public API argument.
     """
 
     ref_key: str = "$ref"
@@ -333,34 +386,10 @@ class RefCaseSpec(
             literalizer.LanguageCls, literalizer.IdentifierCase
         ],
     )
-    value_sources: dict[str, str] = Field(default_factory=dict[str, str])
-    bound_refs: Mapping[str, ValueInput] | None = None
-    # ISO time strings can carry UTC offsets that TOML's native time cannot.
-    bound_ref_times: dict[str, RefTimeInput] = Field(
-        default_factory=dict[str, dt.time],
-    )
-    # Native TOML datetimes or exact wall-time/offset tables.
-    bound_ref_datetimes: dict[str, RefDatetimeInput] = Field(
-        default_factory=dict[str, dt.datetime],
-    )
-    bound_ref_values: dict[str, RefValueSource] = Field(
-        default_factory=dict[str, RefValueSource],
-    )
-    extra_ref_value_sources: dict[str, str] = Field(
-        default_factory=dict[str, str],
-    )
-    # Fixture declarations are composed after rendering, so the API still
-    # sees external references rather than materialized bound_refs.
-    external_declarations: dict[str, str] = Field(
-        default_factory=dict[str, str],
-    )
-    # Caller-owned headers are attached only after the API render.
-    caller_preamble: manifest_values.StringTuple = Field(
-        default_factory=tuple[str, ...]
-    )
+    context: RefContext = Field(default_factory=BoundRefContext)
+    # Inference hints are independent of caller declarations and bindings.
+    # Omission passes None; an explicitly empty table passes {}.
     explicit_ref_value_sources: dict[str, str] | None = None
-    expected_value_source: str | None = None
-    consumer: RefConsumerSpec | None = None
     variants: list[ApiManifestVariant] = Field(
         default_factory=list[ApiManifestVariant],
     )
@@ -379,39 +408,29 @@ class RefCaseSpec(
         return self
 
     @model_validator(mode="after")
-    def _validate_expected_value(self) -> RefCaseSpec:
-        """Limit executable value checks to their supported fixture
-        context.
-        """
-        if self.expected_value_source is not None:
-            if self.variable_form == "none":
-                msg = "expected_value_source requires a variable binding"
-                raise ValueError(msg)
-            if len(self.external_declarations) == 0:
-                msg = "expected_value_source requires external_declarations"
-                raise ValueError(msg)
-            if self.consumer is not None:
-                msg = (
-                    "consumer and expected_value_source are mutually exclusive"
-                )
-                raise ValueError(msg)
-        return self
-
-    @model_validator(mode="after")
-    def _validate_consumer(self) -> RefCaseSpec:
-        """Require the caller context needed by composed consumers."""
-        if self.consumer is not None:
+    def _validate_consumer_context(self) -> RefCaseSpec:
+        """Check consumer requirements against the selected public binding."""
+        if (
+            isinstance(self.context, RefExpressionContext)
+            and self.variable_form != "none"
+        ):
+            msg = "expression context requires variable_form = none"
+            raise ValueError(msg)
+        if isinstance(self.context, ExternalRefContext):
+            consumer = self.context.consumer
             if (
-                len(self.external_declarations) == 0
-                and self.variable_form != "none"
+                isinstance(consumer, RefValueCheckSpec)
+                and self.variable_form == "none"
             ):
-                msg = "consumer requires external_declarations"
+                msg = "value-check requires a variable binding"
                 raise ValueError(msg)
-            if self.consumer.before_assignment and (
+            if isinstance(consumer, RefAssignmentConsumerSpec) and (
                 self.variable_form != "existing"
-                or "my_data" not in self.external_declarations
+                or "my_data" not in self.context.declarations
             ):
-                msg = "before_assignment requires an existing my_data binding"
+                msg = (
+                    "assignment consumer requires an existing my_data binding"
+                )
                 raise ValueError(msg)
         return self
 
@@ -433,27 +452,190 @@ class RefCaseSpec(
         )
 
 
-class CallGroupSpec(BaseModel, extra="forbid", frozen=True):
-    """A transformed body grouped using the language's expression
+class CallRecipeSpec(  # noqa: NOD001
+    BaseModel,
+    extra="forbid",
+    frozen=True,
+    strict=True,
+    arbitrary_types_allowed=True,
+):
+    """Common callback metadata, independent of native expression
     syntax.
     """
 
+    reports_zip_usage: bool = True
+
+
+class CallStubRecipeSpec(  # noqa: NOD001
+    CallRecipeSpec, frozen=True
+):
+    """Synthetic declarations needed by authored template expressions."""
+
+    stub_names: manifest_values.StringTuple = Field(
+        default_factory=tuple[str, ...]
+    )
+    stub_param_names: manifest_values.StringTuple = Field(
+        default_factory=_single_stub_parameter
+    )
+
+
+class NativeCallRecipeSpec(  # noqa: NOD001
+    CallStubRecipeSpec, frozen=True
+):
+    """A native expression optionally composed through an outer
+    template.
+    """
+
+    outer: manifest_values.CallTransformTemplate | None = None
+
+
+class CallTemplateSpec(CallStubRecipeSpec, frozen=True):
+    """A callback expressed entirely by an authored template."""
+
+    kind: Literal["template"]
+    template: manifest_values.CallTransformTemplate
+
+
+class CallGroupSpec(NativeCallRecipeSpec, frozen=True):
+    """Group a template body using the language's expression syntax."""
+
+    kind: Literal["group"]
     body: manifest_values.CallTransformTemplate
     suffix: str
 
 
-class CallArgumentsSpec(BaseModel, extra="forbid", frozen=True):
-    """Native lexical operands passed using the configured call convention."""
+class CallArgumentsSpec(NativeCallRecipeSpec, frozen=True):
+    """Pass native lexical operands using the configured call
+    convention.
+    """
 
+    kind: Literal["arguments"]
     arguments: manifest_values.StringTuple
     suffix: str
 
 
-class CallWrapperSpec(BaseModel, extra="forbid", frozen=True):
-    """Native wrapper calls retaining the roles of their operands."""
+class CallOperandSpec(BaseModel, extra="forbid", frozen=True, strict=True):
+    """A wrapper parameter and the operand supplied in that position."""
 
+    role: Literal["call", "zipped"]
+    parameter: str
+
+
+class CallWrapperSpec(  # noqa: NOD001
+    CallRecipeSpec, frozen=True
+):
+    """A native wrapper whose operands retain their call/zip roles."""
+
+    kind: Literal["wrapper"]
+    outer: manifest_values.CallTransformTemplate | None = None
     target: Annotated[str, Field(min_length=1)]
-    arguments: tuple[Literal["call", "zipped"], ...]
+    arguments: Annotated[tuple[CallOperandSpec, ...], Field(strict=False)]
+
+
+class CallSequenceSpec(NativeCallRecipeSpec, frozen=True):
+    """Wrap the call result in a native one-element sequence."""
+
+    kind: Literal["sequence"]
+
+
+class CallAddOneSpec(NativeCallRecipeSpec, frozen=True):
+    """Add one using the result producer's native grammar."""
+
+    kind: Literal["add-one"]
+
+
+class CallConditionalSpec(NativeCallRecipeSpec, frozen=True):
+    """Place the call in the native conditional for a possibly null object."""
+
+    kind: Literal["nullable-conditional"]
+
+
+type CallRecipe = Annotated[
+    CallTemplateSpec
+    | CallGroupSpec
+    | CallArgumentsSpec
+    | CallWrapperSpec
+    | CallSequenceSpec
+    | CallAddOneSpec
+    | CallConditionalSpec,
+    Field(discriminator="kind"),
+]
+
+
+class FollowupCallSpec(  # noqa: NOD001
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """An additional call consuming the primary call's bound result."""
+
+    source: str
+    target_function: str | None = None
+
+
+class CallFixtureSpec(  # noqa: NOD001
+    BaseModel, extra="forbid", frozen=True, strict=True
+):
+    """Reference sources shared by the supported call fixture contexts."""
+
+    ref_declarations: dict[str, str] = Field(default_factory=dict[str, str])
+
+
+class BoundCallFixture(CallFixtureSpec, frozen=True):
+    """Use API-owned reference bindings with the declaration skip
+    policy.
+    """
+
+    kind: Literal["bound"]
+
+
+class WrappedCallFixture(CallFixtureSpec, frozen=True):
+    """Let the public API assemble the complete file and bound refs."""
+
+    kind: Literal["wrapped"]
+
+
+class _ComposedCallFixture(  # noqa: NOD001
+    CallFixtureSpec, frozen=True
+):
+    """Compose declarations and synthetic stubs around the call result."""
+
+    followup: FollowupCallSpec | None = None
+    unknown_ref_names: manifest_values.StringFrozenSet = Field(
+        default_factory=frozenset[str]
+    )
+    include_target_stub: bool = True
+    caller_imports: manifest_values.StringTuple = Field(
+        default_factory=tuple[str, ...]
+    )
+    caller_body_preamble: manifest_values.StringTuple = Field(
+        default_factory=tuple[str, ...]
+    )
+
+
+class ComposedCallFixture(  # noqa: NOD001
+    _ComposedCallFixture, frozen=True
+):
+    """Assemble a complete file from result metadata and declarations."""
+
+    kind: Literal["composed"] = "composed"
+
+
+class FragmentCallFixture(  # noqa: NOD001
+    _ComposedCallFixture, frozen=True
+):
+    """Preserve the public fragment between caller-owned source bytes."""
+
+    kind: Literal["fragment"]
+    caller_code_prefix: str = ""
+    caller_code_suffix: str = ""
+
+
+type CallFixture = Annotated[
+    WrappedCallFixture
+    | BoundCallFixture
+    | ComposedCallFixture
+    | FragmentCallFixture,
+    Field(discriminator="kind"),
+]
 
 
 class CallCaseSpec(
@@ -463,12 +645,11 @@ class CallCaseSpec(
 ):
     """Everything a case declares about driving ``literalize_call``.
 
-    A manifest spells enum- and type-valued arguments as strings, which
-    this model resolves to their ``literalizer`` types during
-    validation, and ``call_transform`` is a template over
-    validated placeholders rather than evaluated code.
+    Validation resolves public API arguments and selects a transform recipe
+    and fixture context. Native expressions may compose an outer template;
+    wrapper operands also supply their own stub parameters.
 
-    ``ref_declarations`` maps a ``{"$ref": "name"}`` marker in the case
+    ``fixture.ref_declarations`` maps a ``{"$ref": "name"}`` marker in the case
     input to a source in ``ref_input_format`` rendered as a declaration via
     :func:`literalizer.literalize`, emitted before the call so the
     resulting file is self-contained.
@@ -476,7 +657,7 @@ class CallCaseSpec(
     With ``ref_case_per_language``, the harness picks the native case
     for the selected declaration style, falling back to the language's
     first-listed ``IdentifierCases`` member. It converts every
-    ``ref_declarations`` key to that case and passes the
+    ``fixture.ref_declarations`` key to that case and passes the
     same case to :func:`literalize_call` so the declaration site and the
     call site agree on identifier spelling.
     """
@@ -485,59 +666,17 @@ class CallCaseSpec(
     shared_invocation: bool = False
     parameter_names: manifest_values.StringTuple
     per_element: bool
-    # Native built-ins need no synthetic target declaration in a manual file.
-    include_target_stub: bool = True
-    # Preserve the returned code prefix instead of reconciling its metadata.
-    use_unwrapped_code: bool = False
-    # Caller statements around a public fragment, inside the native wrapper.
-    # Preserve every emitted byte, including terminators in open literals.
-    caller_code_prefix: str = ""
-    caller_code_suffix: str = ""
-    # Caller-owned imports and declarations in manually composed fixtures.
-    caller_imports: manifest_values.StringTuple = Field(
-        default_factory=tuple[str, ...]
-    )
-    caller_body_preamble: manifest_values.StringTuple = Field(
-        default_factory=tuple[str, ...]
-    )
+    fixture: CallFixture = Field(default_factory=ComposedCallFixture)
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
-    call_transform: manifest_values.CallTransformTemplate | None = None
-    call_transform_group: CallGroupSpec | None = None
-    call_transform_arguments: CallArgumentsSpec | None = None
-    call_transform_wrapper: CallWrapperSpec | None = None
-    call_transform_sequence: bool = False
-    call_transform_add_one: bool = False
-    call_transform_nullable_conditional: bool = False
-    # Ordinary callbacks omit the template producer's zip-usage metadata.
-    call_transform_reports_zip_usage: bool = True
-    # An additional call, emitted after the primary call so a fixture
-    # can use its bound result. A separate target accommodates languages
-    # that distinguish value-returning functions from procedures.
-    followup_source: str | None = None
-    followup_target_function: str | None = None
-    transform_stub_names: manifest_values.StringTuple = Field(
-        default_factory=tuple[str, ...]
-    )
-    # Parameter names used when stubbing each ``transform_stub_names``
-    # wrapper.  The length sets how many parameters the wrapper takes,
-    # so a transform that calls the wrapper with the call *and* the
-    # zipped value (two arguments) compiles in fixed-parameter-count
-    # languages.
-    transform_stub_param_names: manifest_values.StringTuple = Field(
-        default_factory=_single_stub_parameter,
-    )
+    transform: CallRecipe | None = None
     # Spelled ``call_style`` in a manifest, which names a style rather
     # than describing the type the harness passes to ``literalize_call``.
     call_style_type: manifest_values.CallStyleType | None = Field(
         default=None,
         alias="call_style",
     )
-    # When True, drive ``literalize_call(..., wrap_in_file=True)``
-    # directly instead of wrapping manually with injected stubs.
-    wrap_in_file: bool = False
     ref_case_per_language: bool = False
-    ref_declarations: dict[str, str] = Field(default_factory=dict[str, str])
     # Use one format for declaration sources and inference-hint sources.
     ref_input_format: manifest_values.CallInputFormat = (
         literalizer.InputFormat.JSON
@@ -546,13 +685,6 @@ class CallCaseSpec(
     # ``literalize_call`` may treat as consumable.  Empty means no ref
     # is consumed.
     consumable_refs: manifest_values.StringFrozenSet = Field(
-        default_factory=frozenset[str],
-    )
-    # Refs that receive declarations in the self-contained golden file
-    # but are intentionally omitted from ``ref_values``.  This exercises
-    # the historical unknown-ref preamble behavior without leaving the
-    # rendered call's identifier undefined for fixture compilation.
-    unknown_ref_names: manifest_values.StringFrozenSet = Field(
         default_factory=frozenset[str],
     )
     # An explicit mapping overrides declaration-derived inference hints.
@@ -582,31 +714,11 @@ class CallCaseSpec(
     # select this table entry as the root value used for call rendering
     # after parsing.  Other formats normally leave this as ``None``.
     input_root_key: str | None = None
-    # When set, drive ``literalize_call(..., variable_form=...)`` to
-    # exercise the call-binding output mode.  Only meaningful with
-    # ``per_element=False`` and (typically) ``wrap_in_file=True`` so
-    # the generated file is self-contained around the binding.
+    # Keep the public API binding argument independent of the fixture context.
     variable_form: manifest_values.CallVariableForm | None = None
     variable_modifiers: manifest_values.StringTuple = Field(
         default_factory=tuple[str, ...]
     )
-    # When set (only meaningful with ``wrap_in_file=True`` and a
-    # ``variable_form``), emit a golden for a language only when its
-    # ``variable_form`` output is byte-identical to its output under
-    # this mirror form.  ``ExistingVariable`` call-binding wrapped in a
-    # file is self-contained (compiles standalone) exactly for the
-    # languages whose assignment *is* a declaration -- functional
-    # ``let`` rebinds (OCaml/F#/Haskell/Roc/PureScript/Elm) and dynamic
-    # languages where a bare assignment defines the name.  For those,
-    # the ``ExistingVariable`` output equals the ``NewVariable``
-    # declaration form, which already has a compiling
-    # ``call_variable_form_new`` golden -- so an identical
-    # ``ExistingVariable`` fixture provably compiles too, with no
-    # hand-maintained allow-list.  Imperative compiled languages emit a
-    # bare assignment to an undeclared name (not self-contained, fails
-    # the lint-CI compile of every fixture); they diverge from the
-    # ``NewVariable`` form and are skipped (no golden) instead.  ``None``
-    # disables the gate (every supporting language gets a golden).
     requires_call_returns_expression: bool = False
     requires_inline_multiline_dict_args: bool = False
     requires_standalone_wrapped_comments: bool = False
@@ -633,83 +745,6 @@ class CallCaseSpec(
     # case-specific opt-out.
     variant_only: bool = False
 
-    @property
-    def has_call_transform(self) -> bool:
-        """Whether a template or native expression group transforms
-        calls.
-        """
-        return (
-            self.call_transform is not None
-            or self.call_transform_group is not None
-            or self.call_transform_arguments is not None
-            or self.call_transform_wrapper is not None
-            or self.call_transform_sequence
-            or self.call_transform_add_one
-            or self.call_transform_nullable_conditional
-        )
-
-    def _validate_transform_recipe(self) -> None:
-        """Require a single recipe for the primary call expression."""
-        if (
-            self.caller_code_prefix != "" or self.caller_code_suffix != ""
-        ) and (not self.use_unwrapped_code or self.wrap_in_file):
-            msg = (
-                "caller code requires use_unwrapped_code without wrap_in_file"
-            )
-            raise ValueError(msg)
-        recipes = [
-            name
-            for name, present in (
-                (
-                    "call_transform_group",
-                    self.call_transform_group is not None,
-                ),
-                (
-                    "call_transform_arguments",
-                    self.call_transform_arguments is not None,
-                ),
-                (
-                    "call_transform_wrapper",
-                    self.call_transform_wrapper is not None,
-                ),
-                ("call_transform_sequence", self.call_transform_sequence),
-                ("call_transform_add_one", self.call_transform_add_one),
-                (
-                    "call_transform_nullable_conditional",
-                    self.call_transform_nullable_conditional,
-                ),
-            )
-            if present
-        ]
-        if len(recipes) > 1:
-            msg = " and ".join(recipes) + " are mutually exclusive"
-            raise ValueError(msg)
-        wrapper = self.call_transform_wrapper
-        if wrapper is not None:
-            if wrapper.target not in self.transform_stub_names:
-                msg = (
-                    "call_transform_wrapper requires a declared transform stub"
-                )
-                raise ValueError(msg)
-            if len(wrapper.arguments) != len(self.transform_stub_param_names):
-                msg = "wrapper operands must match transform_stub_param_names"
-                raise ValueError(msg)
-            if "zipped" in wrapper.arguments and self.zip_source is None:
-                msg = "a zipped wrapper operand requires zip_source"
-                raise ValueError(msg)
-
-    def _validate_followup_target(self) -> None:
-        """Require a separate follow-up target to have a source."""
-        if self.followup_target_function is not None:
-            if self.followup_source is None:
-                msg = "followup_target_function requires followup_source"
-                raise ValueError(msg)
-            if self.followup_target_function == self.target_function:
-                msg = (
-                    "followup_target_function must differ from target_function"
-                )
-                raise ValueError(msg)
-
     @model_validator(mode="after")
     def _validate_call_variants(self) -> CallCaseSpec:
         """Validate the variant coverage a call case declares.
@@ -718,8 +753,18 @@ class CallCaseSpec(
         default per-language matrix names at least one, so no call case
         declares itself into having no coverage at all.
         """
-        self._validate_transform_recipe()
-        self._validate_followup_target()
+        if isinstance(
+            self.fixture, (ComposedCallFixture, FragmentCallFixture)
+        ):
+            followup = self.fixture.followup
+            if (
+                followup is not None
+                and followup.target_function == self.target_function
+            ):
+                msg = (
+                    "followup target_function must differ from target_function"
+                )
+                raise ValueError(msg)
         axes = [entry.axis for entry in self.variants]
         if len(axes) != len(set(axes)):
             msg = "duplicate call variant axis"

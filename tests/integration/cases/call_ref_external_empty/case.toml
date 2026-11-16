@@ -6,9 +6,7 @@ owner = "literalize-call"
 target_function = "consume"
 parameter_names = ["value"]
 per_element = false
-ref_declarations = {item = "[1, 2]"}
 consumable_refs = ["item"]
-unknown_ref_names = ["item"]
 explicit_ref_value_sources = {}
 
 # Retain empty bindings and statement-only calls under explicit result annotations and alternate layouts.
@@ -17,3 +15,8 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.fixture]
+kind = "composed"
+ref_declarations = {item = "[1, 2]"}
+unknown_ref_names = ["item"]

@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "check"
 parameter_names = ["a"]
 per_element = false
-wrap_in_file = true
 # Original regression (cobol_call_wrapper_target_collision): COBOL wraps the call in a program and declares a nested target program in the same compilation unit.
+
+[call.fixture]
+kind = "wrapped"

@@ -8,8 +8,10 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "consume"
 parameter_names = ["item", "count", "label"]
 per_element = true
-wrap_in_file = true
 variant_only = true
 
 [[call.variants]]
 axis = "native_record"
+
+[call.fixture]
+kind = "wrapped"

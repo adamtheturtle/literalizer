@@ -7,9 +7,14 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "cap
 target_function = "obj.ZVal"
 parameter_names = ["_arg"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
-call_transform = "{call} // note"
 
 [[call.variants]]
 axis = "heterogeneous_strategy"
+
+[call.transform]
+kind = "template"
+template = "{call} // note"
+
+[call.fixture]
+kind = "wrapped"

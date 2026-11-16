@@ -11,7 +11,11 @@ variant_only = true
 [[call.variants]]
 axis = "json_type"
 
-[call.ref_declarations]
+
+[call.fixture]
+kind = "bound"
+
+[call.fixture.ref_declarations]
 arena = '{"a":1}'
 ZVal = '{"a":1}'
 ZKV = '{"a":1}'

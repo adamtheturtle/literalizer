@@ -13,6 +13,8 @@ owner = "literalize-call"
 target_function = "make_widget"
 parameter_names = []
 per_element = true
-wrap_in_file = true
 variable_form = "new"
 requires_call_returns_expression = true
+
+[call.fixture]
+kind = "wrapped"

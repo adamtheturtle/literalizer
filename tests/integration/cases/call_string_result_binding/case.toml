@@ -6,12 +6,14 @@ gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "make_widget"
 parameter_names = ["text"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
 
 [[call.variants]]
 axis = "type_hints"
 
+
+[call.fixture]
+kind = "wrapped"
 [[call_examples]]
 # Regression provenance: call_string_result_constant_modifier
 # Shared coverage retains cpp_call_string_result_binding_const.
@@ -19,10 +21,12 @@ example = "call_string_result_constant_modifier"
 target_function = "make_widget"
 parameter_names = ["text"]
 per_element = false
-wrap_in_file = true
 variable_form = "new"
 variable_modifiers = ["CONST"]
 
 [[call_examples.gates]]
 kind = "modifier_present"
 modifier = "CONST"
+
+[call_examples.fixture]
+kind = "wrapped"

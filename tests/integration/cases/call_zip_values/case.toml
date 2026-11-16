@@ -5,13 +5,10 @@ owner = "literalize-call"
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
-call_transform_wrapper = {target = "emit", arguments = ["call", "zipped"]}
-transform_stub_names = ["emit"]
 # The bool ``$zipped`` value is not a map literal, so no
 # free-expression dict support is needed.  The two-parameter wrapper
 # stub is gated generically: languages without
 # ``supports_multi_param_call_wrapper_stub`` are skipped.
-transform_stub_param_names = ["_call", "_zip"]
 zip_source = "---\n- true\n- false\n"
 zip_input_format = "yaml"
 requires_call_returns_expression = true
@@ -22,3 +19,15 @@ axis = "type_hints"
 
 [[call.variants]]
 axis = "collection_layout"
+
+[call.transform]
+kind = "wrapper"
+target = "emit"
+
+[[call.transform.arguments]]
+role = "call"
+parameter = "_call"
+
+[[call.transform.arguments]]
+role = "zipped"
+parameter = "_zip"

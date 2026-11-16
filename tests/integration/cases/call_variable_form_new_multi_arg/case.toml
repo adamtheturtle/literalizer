@@ -9,6 +9,8 @@ owner = "literalize-call"
 target_function = "record_entry"
 parameter_names = ["s", "n", "b"]
 per_element = true
-wrap_in_file = true
 variable_form = "new"
 requires_call_returns_expression = true
+
+[call.fixture]
+kind = "wrapped"

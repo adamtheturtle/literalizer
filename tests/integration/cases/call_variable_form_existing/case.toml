@@ -10,6 +10,8 @@ owner = "literalize-call"
 target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
-wrap_in_file = true
 variable_form = "existing"
 requires_call_returns_expression = true
+
+[call.fixture]
+kind = "wrapped"

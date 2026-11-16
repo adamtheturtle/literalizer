@@ -5,8 +5,11 @@ owner = "literalize-ref"
 gates = [{kind = "spec_field_present", field = "list_rendering_policy"}]
 variant_only = true
 
-[ref.value_sources]
-shared = "[[1]]"
-
 [[ref.variants]]
 axis = "list_rendering_policy"
+
+[ref.context]
+kind = "bound"
+
+[ref.context.value_sources]
+shared = "[[1]]"

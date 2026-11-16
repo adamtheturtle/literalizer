@@ -5,5 +5,7 @@ owner = "literalize-call"
 target_function = "BEGIN"
 parameter_names = ["a"]
 per_element = false
-wrap_in_file = true
 # Original regression: Ada call target keywords are reserved irrespective of case.
+
+[call.fixture]
+kind = "wrapped"

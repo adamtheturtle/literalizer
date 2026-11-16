@@ -5,9 +5,12 @@ owner = "literalize-ref-default"
 gates = [{kind = "capability_flag", flag = "supports_variable_names"}]
 # Shared coverage retains literalize_ref_zig_external_native_assignment.
 variable_form = "existing"
-external_declarations = {shared = "[1, 2]", my_data = "[0]"}
 explicit_ref_value_sources = {shared = "[1, 2]"}
 
-[ref.consumer]
+[ref.context]
+kind = "external"
+declarations = {shared = "[1, 2]", my_data = "[0]"}
+
+[ref.context.consumer]
+kind = "assignment"
 target_function = "consume_widget"
-before_assignment = true

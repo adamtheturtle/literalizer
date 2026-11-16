@@ -6,4 +6,7 @@ owner = "literalize-call"
 target_function = "consume"
 parameter_names = ["value"]
 per_element = true
+
+[call.fixture]
+kind = "bound"
 ref_declarations = { item = "42" }

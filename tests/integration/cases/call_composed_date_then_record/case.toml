@@ -9,8 +9,11 @@ parameter_names = ["stamp", "value"]
 per_element = true
 variant_only = true
 ref_input_format = "yaml"
-ref_declarations = { stamp = '2001-02-03', item = '{a: 1}' }
 explicit_ref_value_sources = { stamp = '2001-02-03', item = '{a: 1}' }
 
 [[call.variants]]
 axis = "heterogeneous_strategy_record"
+
+[call.fixture]
+kind = "composed"
+ref_declarations = { stamp = '2001-02-03', item = '{a: 1}' }

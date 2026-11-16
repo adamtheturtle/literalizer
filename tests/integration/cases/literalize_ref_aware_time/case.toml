@@ -2,4 +2,7 @@ schema_version = 1
 owner = "literalize-ref-default"
 
 [ref]
+
+[ref.context]
+kind = "bound"
 bound_ref_times = { shared_time = "12:30:15+02:00" }

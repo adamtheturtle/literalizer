@@ -7,6 +7,10 @@ target_function = "make_widget"
 parameter_names = ["count"]
 per_element = false
 variable_form = "existing"
-wrap_in_file = true
-call_transform_sequence = true
-call_transform = "{call}"
+
+[call.transform]
+kind = "sequence"
+outer = "{call}"
+
+[call.fixture]
+kind = "wrapped"
