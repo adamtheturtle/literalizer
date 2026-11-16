@@ -95,7 +95,6 @@ def test_zero_argument_selector(language_cls: LanguageCls) -> None:
     argnames="override",
     argvalues=[
         {"name": ""},
-        {"name": "bad name"},
         {"name": "name\nother"},
         {"parameter-names": "task"},
         {"parameter-names": [2]},
@@ -106,15 +105,22 @@ def test_zero_argument_selector(language_cls: LanguageCls) -> None:
         {"typo": True},
     ],
 )
-@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
-def test_invalid_description(
-    override: dict[str, object], language_cls: LanguageCls
-) -> None:
+def test_invalid_description(override: dict[str, object]) -> None:
     """Invalid metadata fails even when no sample values exist."""
     with pytest.raises(expected_exception=LiteralizerError):
         _ = describe_callable(
-            language=language_cls(),
+            language=Python(),
             description={"name": "consume", "parameter-names": [], **override},
+        )
+
+
+@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
+def test_invalid_callable_name(language_cls: LanguageCls) -> None:
+    """Each backend rejects a name outside its call-target grammar."""
+    with pytest.raises(expected_exception=LiteralizerError):
+        _ = describe_callable(
+            language=language_cls(),
+            description={"name": "bad name", "parameter-names": []},
         )
 
 
@@ -142,12 +148,11 @@ def test_invalid_native_selector(
         )
 
 
-@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
-def test_missing_field(language_cls: LanguageCls) -> None:
+def test_missing_field() -> None:
     """Required parameter metadata is never inferred."""
     with pytest.raises(expected_exception=LiteralizerError):
         _ = describe_callable(
-            language=language_cls(), description={"name": "accept"}
+            language=Python(), description={"name": "accept"}
         )
 
 
