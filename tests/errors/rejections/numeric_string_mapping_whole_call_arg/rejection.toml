@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Call arguments retain backend mapping representability checks (#6986)."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize_call"
+sources = ['!!omap [{"0": {"$ref":"item"}}]', '!!omap [{"0": ""}]', '{nested: !!omap [{"0": ""}]}', '[!!omap [{"0": ""}]]', '{"0":{"$ref":"item"}}', '{"0":""}', '{"nested":{"0":""}}', '[{"0":""}]']
+input_format = "yaml"
+ref_key = "$ref"
+ref_value_yaml = { item = "42" }
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false

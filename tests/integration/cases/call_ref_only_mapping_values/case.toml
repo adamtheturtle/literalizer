@@ -1,0 +1,9 @@
+schema_version = 1
+owner = "literalize-call"
+
+# Removing references for inference must not make this a literal empty map.
+[call]
+target_function = "consume"
+parameter_names = ["value"]
+per_element = true
+ref_declarations = { item = "42" }
