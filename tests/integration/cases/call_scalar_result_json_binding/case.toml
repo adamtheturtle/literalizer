@@ -1068,3 +1068,26 @@ flag = "verbatim_strings"
 kind = "call_interpolation"
 opener = "{"
 quotes = "\""
+
+[[call_examples]]
+# Migrated from dart_incomplete_interpolation_1: caller code closes the outer
+# string after the generated terminator, preserving the nested interpolation.
+example = "incomplete_outer_interpolation"
+target_function = "make_widget"
+parameter_names = ["count"]
+per_element = false
+variable_form = "existing"
+include_target_stub = false
+use_unwrapped_code = true
+call_transform = '"${{"// payload"}}'
+caller_code_prefix = "var my_data = \"seed\";\n"
+caller_code_suffix = '"; if (my_data != "// payload;") throw StateError("incorrect interpolation");'
+
+[[call_examples.gates]]
+kind = "call_raw_string_prefix"
+prefix = "r"
+
+[[call_examples.gates]]
+kind = "call_interpolation"
+opener = "${"
+quotes = "\"'"

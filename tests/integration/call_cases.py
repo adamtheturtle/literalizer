@@ -560,6 +560,8 @@ def _wrap_unwrapped_call(
     *,
     spec: literalizer.Language,
     result: literalizer.LiteralizeResult,
+    caller_code_prefix: str,
+    caller_code_suffix: str,
     body_preamble: tuple[str | RenderedCallStub, ...],
     class_preamble: tuple[str, ...],
     preamble: tuple[str, ...],
@@ -568,7 +570,9 @@ def _wrap_unwrapped_call(
     prefix = result.code.removesuffix(result.declaration_code).rstrip("\n")
     wrapped = spec.wrap_calls_with_declarations(
         declarations=(),
-        calls=result.declaration_code,
+        calls=(
+            caller_code_prefix + result.declaration_code + caller_code_suffix
+        ),
         context=literalizer.FileWrapperContext(
             line_prefix="",
             bound_variable_names=(),
@@ -762,6 +766,8 @@ def _render_call_golden_case(
         code = _wrap_unwrapped_call(
             spec=spec,
             result=result,
+            caller_code_prefix=config.caller_code_prefix,
+            caller_code_suffix=config.caller_code_suffix,
             body_preamble=body_stubs,
             class_preamble=class_stubs,
             preamble=preamble_stubs,
