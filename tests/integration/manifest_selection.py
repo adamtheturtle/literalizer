@@ -39,11 +39,15 @@ class CapabilitySelection(  # noqa: NOD001
     """
 
     gates: list[SuiteGate] = Field(default_factory=list[SuiteGate])
+    # Every required gate must match. At least one alternative must match
+    # when alternatives are supplied.
+    any_gates: list[SuiteGate] = Field(default_factory=list[SuiteGate])
 
     @model_validator(mode="after")
     def _validate_language_selection(self) -> Self:
         """Validate every declared participation property."""
         validate_gate_names(subject="gates", gates=self.gates)
+        validate_gate_names(subject="any_gates", gates=self.any_gates)
         return self
 
     @beartype
@@ -65,15 +69,27 @@ class CapabilitySelection(  # noqa: NOD001
             )
         )
         if len(literal_gates) == len(self.gates):
-            return all(
+            admitted = all(
                 call_literal_gate_admits(
                     gate=gate, syntax=lang_cls.call_literal_syntax
                 )
                 for gate in literal_gates
             )
-        return gates_admit(
-            gates=self.gates,
-            lang_cls=lang_cls,
-            metadata=language_metadata(language_id=lang_cls.language_id),
-            spec=make_spec(lang_cls=lang_cls),
+        else:
+            admitted = gates_admit(
+                gates=self.gates,
+                lang_cls=lang_cls,
+                metadata=language_metadata(language_id=lang_cls.language_id),
+                spec=make_spec(lang_cls=lang_cls),
+            )
+        if not admitted or len(self.any_gates) == 0:
+            return admitted
+        return any(
+            gates_admit(
+                gates=(gate,),
+                lang_cls=lang_cls,
+                metadata=language_metadata(language_id=lang_cls.language_id),
+                spec=make_spec(lang_cls=lang_cls),
+            )
+            for gate in self.any_gates
         )

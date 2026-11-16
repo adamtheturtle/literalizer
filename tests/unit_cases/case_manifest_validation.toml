@@ -1,6 +1,14 @@
 # Validation scenarios for case-local golden manifests.
 
 [[cases]]
+name = "unknown_alternative_capability"
+manifest = '''schema_version = 1
+suites = ["base"]
+any_gates = [{kind = "capability_flag", flag = "does_not_exist"}]
+'''
+message = "any_gates: unknown capability flag"
+
+[[cases]]
 name = "language_identity_is_not_a_participation_gate"
 manifest = '''schema_version = 1
 suites = ["base"]
