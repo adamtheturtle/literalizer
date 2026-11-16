@@ -12,7 +12,7 @@ import literalizer
 from literalizer._enums import enum_payload
 from literalizer._language import (
     CallStubDeclarations,
-    CallSupport,
+    CallStyle,
     IntegerCallStubResult,
     KeywordCallStyle,
     NullableObjectCallStubResult,
@@ -177,6 +177,8 @@ def transform_stub_targets(
             )
         case None:
             return ()
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 @beartype
@@ -505,11 +507,9 @@ def _arguments_transform(
     spec: literalizer.Language,
     config: CallCaseSpec,
     recipe: CallArgumentsSpec,
-) -> LiteralArgumentsTransform | CallTransform | None:
+) -> LiteralArgumentsTransform:
     """Render lexical operands with the selected native calling convention."""
-    style = spec.call_style_config
-    if isinstance(style, CallSupport):
-        return recipe.outer
+    style = TypeAdapter(type=CallStyle).validate_python(spec.call_style_config)
     args = format_rendered_call_arguments(
         formatted=list(recipe.arguments),
         params=config.parameter_names,
