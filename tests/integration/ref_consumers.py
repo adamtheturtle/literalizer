@@ -36,7 +36,7 @@ from .reference_inputs import RefData
 @beartype
 def _compose_ref_value_check(
     *,
-    source: str,
+    config: RefCaseSpec,
     spec: literalizer.Language,
     declarations: list[literalizer.LiteralizeResult],
     result: literalizer.LiteralizeResult,
@@ -46,8 +46,20 @@ def _compose_ref_value_check(
     Expected data is rendered separately, after the operation under test,
     and never participates in its reference inference.
     """
+    if "my_data" in config.external_declarations:
+        initial_source = config.external_declarations["my_data"]
+        initial_check = literalizer.literalize_call(
+            source=f'[[{{"$ref": "my_data"}}, {initial_source}]]',
+            target_function="assert_equal",
+            parameter_names=("actual", "expected"),
+            input_format=literalizer.InputFormat.JSON,
+            language=spec,
+            ref_key="$ref",
+        )
+        declarations.append(initial_check)
+    assert config.expected_value_source is not None  # noqa: S101
     expected = literalizer.literalize(
-        source=source,
+        source=config.expected_value_source,
         input_format=literalizer.InputFormat.JSON,
         language=spec,
         variable_form=literalizer.NewVariable(
@@ -297,7 +309,7 @@ def compose_external_ref_fixture(
     )
     if config.expected_value_source is not None and assertion_helper.is_file():
         return _compose_ref_value_check(
-            source=config.expected_value_source,
+            config=config,
             spec=spec,
             declarations=declarations,
             result=result,

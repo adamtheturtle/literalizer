@@ -1,0 +1,5 @@
+function consume_widget() {}
+let my_data = 0;
+const shared = 1;
+my_data = shared;
+consume_widget({ arg_value: my_data });

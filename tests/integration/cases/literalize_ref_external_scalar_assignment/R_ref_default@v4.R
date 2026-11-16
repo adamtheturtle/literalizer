@@ -1,0 +1,5 @@
+consume_widget <- function(...) NULL
+my_data <- 0
+shared <- 1
+my_data <- shared
+consume_widget(arg_value = my_data)
