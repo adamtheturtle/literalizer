@@ -329,7 +329,7 @@ def test_collection_comments_require_the_effective_configuration(
     )
     # Removing the option restores support even after the disabled spec has
     # populated its cached capability property.
-    reset_options = {"json_type": None}
+    reset_options: dict[str, object] = {"json_type": None}
     if lang_cls is literalizer.languages.Cpp:
         reset_options["json_rendering"] = None
     restored = dataclasses.replace(spec, **reset_options)
