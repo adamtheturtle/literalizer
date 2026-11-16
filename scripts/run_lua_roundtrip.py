@@ -39,6 +39,8 @@ Three top-level keys are excluded from the comparison:
 
 import shutil
 
+import click
+
 from literalizer.languages import Lua
 from scripts import roundtrip_common
 
@@ -68,6 +70,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Lua backend."""
     json_text = roundtrip_common.input_for_capabilities(

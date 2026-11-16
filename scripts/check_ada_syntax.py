@@ -6,12 +6,15 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from scripts.bounded_command import bounded_command
 
 
-def main() -> None:
+@click.command()
+@click.argument("filename")
+def main(filename: str) -> None:
     """Check syntax of the given Ada golden file."""
-    filename = sys.argv[1]
     gnatmake_path = shutil.which(cmd="gnatmake")
     if gnatmake_path is None or gnatmake_path == "":
         gnatmake_path = "gnatmake"

@@ -21,6 +21,8 @@ import datetime as dt
 import json
 import shutil
 
+import click
+
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import JavaScript
 from scripts import roundtrip_common
@@ -108,6 +110,7 @@ def _check_native_datetime_offsets(*, node: str) -> None:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the JavaScript backend."""
     json_text = roundtrip_common.input_for_capabilities(

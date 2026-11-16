@@ -10,6 +10,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from scripts.run_matlab_fixtures import (
     find_octave,
     fixture_entrypoints,
@@ -17,6 +19,7 @@ from scripts.run_matlab_fixtures import (
 )
 
 
+@click.command()
 def main() -> None:
     """Require success and failure to propagate through both execution
     modes.

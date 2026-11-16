@@ -26,6 +26,8 @@ and ``-0.0`` exactly.
 
 import shutil
 
+import click
+
 from literalizer.languages import Racket
 from scripts import roundtrip_common
 
@@ -57,6 +59,7 @@ def _build_program(json_text: str) -> str:
     return f"{preamble}\n(require json)\n{result.code}\n{_NORMALIZE_AND_WRITE}"
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Racket backend."""
     json_text = roundtrip_common.input_for_capabilities(

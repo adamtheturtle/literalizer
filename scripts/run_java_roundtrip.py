@@ -16,6 +16,8 @@ are installed; it is deliberately not a pytest test under ``tests/``.
 import os
 import shutil
 
+import click
+
 from literalizer.languages import Java
 from scripts import roundtrip_common
 
@@ -58,6 +60,7 @@ def _build_main(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Java backend."""
     json_text = roundtrip_common.input_for_capabilities(

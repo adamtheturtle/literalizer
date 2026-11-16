@@ -21,7 +21,8 @@ at literalize time. Same shape as the Go, TypeScript, and Zig exclusions.
 """
 
 import shutil
-import sys
+
+import click
 
 from literalizer.languages import Rust
 from scripts import roundtrip_common
@@ -56,7 +57,10 @@ def _build_program(json_text: str) -> str:
     )
 
 
-def main() -> None:
+@click.command()
+@click.argument("deps_dir")
+@click.argument("serde_json_rlib")
+def main(deps_dir: str, serde_json_rlib: str) -> None:
     """Round-trip the shared document through the Rust backend."""
     json_text = roundtrip_common.input_for_capabilities(
         capabilities=Rust.variant_metadata.round_trip_capabilities,
@@ -65,8 +69,6 @@ def main() -> None:
     rustc = shutil.which(cmd="rustc")
     if rustc is None or rustc == "":
         rustc = "rustc"
-    deps_dir = sys.argv[1]
-    serde_json_rlib = sys.argv[2]
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.rs",

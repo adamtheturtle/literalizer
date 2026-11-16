@@ -6,13 +6,16 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from scripts.bounded_command import bounded_command
 from scripts.purescript_common import write_lint_environment
 
 
-def main() -> None:
+@click.command()
+@click.argument("filename")
+def main(filename: str) -> None:
     """Check syntax of a single PureScript file."""
-    filename = sys.argv[1]
     purs_path = shutil.which(cmd="purs")
     if purs_path is None or purs_path == "":
         purs_path = "purs"

@@ -21,6 +21,8 @@ would reject.
 
 import shutil
 
+import click
+
 from literalizer.languages import Dart
 from scripts import roundtrip_common
 
@@ -57,6 +59,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Dart backend."""
     json_text = roundtrip_common.input_for_capabilities(

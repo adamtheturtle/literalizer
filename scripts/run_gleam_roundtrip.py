@@ -28,6 +28,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from literalizer.languages import Gleam
 from scripts import roundtrip_common
 
@@ -54,6 +56,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Gleam backend."""
     primed_dir = Path(os.environ["LINT_GLEAM_PRIMED_DIR"])

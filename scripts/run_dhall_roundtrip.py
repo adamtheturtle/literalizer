@@ -50,6 +50,8 @@ import shutil
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 
+import click
+
 from literalizer.languages import Dhall
 from scripts import roundtrip_common
 
@@ -250,6 +252,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the trimmed shared document through the Dhall
     backend.

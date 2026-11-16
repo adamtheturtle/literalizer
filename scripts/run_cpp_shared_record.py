@@ -17,6 +17,8 @@ toolchain (``clang++``) is already installed.
 
 import shutil
 
+import click
+
 from literalizer import (
     InputFormat,
     Language,
@@ -166,6 +168,7 @@ def _check_composed_records(*, clangxx: str) -> None:
             )
 
 
+@click.command()
 def main() -> None:
     """Compile both documents against one set of declarations."""
     program = _build_program()

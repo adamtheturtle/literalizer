@@ -14,6 +14,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Roc
 from scripts import roundtrip_common
@@ -127,6 +129,7 @@ def _log_progress(*, message: str) -> None:
     _ = sys.stderr.flush()
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document and verify recursive inspection."""
     json_text = roundtrip_common.input_for_capabilities(

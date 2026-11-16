@@ -17,6 +17,7 @@ value, so the parsed result is fed directly to ``verify``.
 import json
 import sys
 
+import click
 import json5_document
 
 from literalizer import InputFormat, literalize
@@ -42,6 +43,7 @@ def _build_document(json_text: str) -> str:
     return f"{result.code}\n"
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the JSON5 backend."""
     json_text = roundtrip_common.input_for_capabilities(

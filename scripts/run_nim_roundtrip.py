@@ -27,6 +27,8 @@ Swift, Rust, D, and C++ exclusions.
 import os
 import shutil
 
+import click
+
 from literalizer.languages import Nim
 from scripts import roundtrip_common
 
@@ -53,6 +55,7 @@ def _build_program(json_text: str) -> str:
     return f"{preamble}\n{result.code}\nstdout.write(${_VAR_NAME})\n"
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Nim backend."""
     json_text = roundtrip_common.input_for_capabilities(

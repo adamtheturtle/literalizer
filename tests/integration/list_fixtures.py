@@ -12,10 +12,15 @@ Invoked from CI as
 import sys
 from pathlib import Path
 
+import click
+
 CASES_DIR: Path = Path("tests/integration/cases")
 
 
-def main(extension: str, version: str) -> int:
+@click.command()
+@click.argument("extension")
+@click.argument("version")
+def main(extension: str, version: str) -> None:
     """Emit fixture paths matching *extension* and *version*."""
     suffix = f"@{version}{extension}"
     paths = sorted(
@@ -25,8 +30,7 @@ def main(extension: str, version: str) -> int:
     )
     output = b"".join(f"{path}".encode() + b"\0" for path in paths)
     _ = sys.stdout.buffer.write(output)
-    return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main(extension=sys.argv[1], version=sys.argv[2]))
+    main()

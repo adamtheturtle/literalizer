@@ -3,6 +3,8 @@
 import sys
 from pathlib import Path
 
+import click
+
 
 def _strip_comment(line: str) -> str:
     """Strip an occam-pi inline comment (``--`` to end of line)."""
@@ -125,9 +127,10 @@ def _check_file(path: Path) -> str | None:
     return _check_brackets(lines=lines)
 
 
-def main() -> None:
+@click.command()
+@click.argument("filename")
+def main(filename: str) -> None:
     """Check syntax of the given Occam-pi golden file."""
-    filename = sys.argv[1]
     src = Path(filename)
     error = _check_file(path=src)
     if error is not None:

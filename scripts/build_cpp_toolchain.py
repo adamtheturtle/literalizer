@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import concurrent.futures
 import hashlib
 import json
@@ -14,6 +13,8 @@ import shutil
 import subprocess
 import tarfile
 from pathlib import Path
+
+import click
 
 LOGGER: logging.Logger = logging.getLogger(name=__name__)
 VERSION = "23.1.4"
@@ -28,21 +29,6 @@ ASSETS = {
         "efdd1dbd089b99bfcfcde7b8eb1236163f2e88df5a981cca4f783ec9cb5e0378",
     ),
 }
-
-
-class Arguments(argparse.Namespace):
-    """Directories supplied by the toolchain job."""
-
-    work_directory: Path
-    output_directory: Path
-
-    def __init__(self) -> None:
-        """Initialize fields before argparse assigns both required
-        paths.
-        """
-        super().__init__()
-        self.work_directory = Path()
-        self.output_directory = Path()
 
 
 def run(command: list[str], /, *, cwd: Path | None) -> str:
@@ -645,15 +631,18 @@ def build(work: Path, output: Path, /) -> None:
     )
 
 
-def main() -> None:
+@click.command(context_settings={"help_option_names": ["-h", "--help"]})
+@click.option(
+    "--work-directory", type=click.Path(path_type=Path), required=True
+)
+@click.option(
+    "--output-directory", type=click.Path(path_type=Path), required=True
+)
+def main(work_directory: Path, output_directory: Path) -> None:
     """Build inside job-owned directories, leaving system tools alone."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    _ = parser.add_argument("--work-directory", type=Path, required=True)
-    _ = parser.add_argument("--output-directory", type=Path, required=True)
-    arguments = parser.parse_args(namespace=Arguments())
-    work = arguments.work_directory.resolve()
+    work = work_directory.resolve()
     work.mkdir(parents=True, exist_ok=True)
-    build(work, arguments.output_directory.resolve())
+    build(work, output_directory.resolve())
 
 
 if __name__ == "__main__":

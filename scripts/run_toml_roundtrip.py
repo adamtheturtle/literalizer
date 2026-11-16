@@ -22,6 +22,7 @@ other per-language round-trip helpers.
 import json
 import sys
 
+import click
 import tomli
 
 from literalizer import InputFormat, NewVariable, literalize
@@ -50,6 +51,7 @@ def _build_document(json_text: str) -> str:
     return f"{result.code}\n"
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the TOML backend."""
     json_text = roundtrip_common.input_for_capabilities(

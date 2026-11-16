@@ -37,6 +37,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from literalizer.languages import Elm
 from scripts import roundtrip_common
 from scripts.bounded_command import bounded_command
@@ -106,6 +108,7 @@ def _build_main(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Elm backend."""
     json_text = roundtrip_common.input_for_capabilities(

@@ -58,6 +58,7 @@ escaped / empty strings -- round-trips losslessly.
 import json
 import shutil
 
+import click
 from pydantic import JsonValue
 
 from literalizer.languages import SystemVerilog
@@ -185,6 +186,7 @@ def _build_program(*, json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the SystemVerilog
     backend.

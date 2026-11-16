@@ -16,6 +16,8 @@ toolchain is already available.
 
 import shutil
 
+import click
+
 from literalizer.languages import Go
 from scripts import roundtrip_common, shared_record_common
 
@@ -74,6 +76,7 @@ def _build_program() -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Compile both documents against one set of declarations."""
     program = _build_program()

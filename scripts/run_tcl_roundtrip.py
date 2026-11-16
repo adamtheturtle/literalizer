@@ -28,6 +28,7 @@ precision-loss exclusions seen in the typed-language scripts.
 
 import shutil
 
+import click
 from pydantic import JsonValue
 
 from literalizer.languages import Tcl
@@ -103,6 +104,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Tcl backend."""
     json_text = roundtrip_common.input_for_capabilities(

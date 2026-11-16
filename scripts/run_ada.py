@@ -12,15 +12,18 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from scripts.bounded_command import bounded_command
 
 _REPO_ROOT = Path(__file__).resolve().parent
 _STUB_SOURCES = ("a_stub.ads", "a_stub.adb")
 
 
-def main() -> None:
+@click.command()
+@click.argument("filename")
+def main(filename: str) -> None:
     """Compile and run the given Ada golden file."""
-    filename = sys.argv[1]
     gnatmake_path = shutil.which(cmd="gnatmake")
     if gnatmake_path is None or gnatmake_path == "":
         gnatmake_path = "gnatmake"

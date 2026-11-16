@@ -18,6 +18,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 # ``tsc`` type-checks the fixtures at ``TypeScript.language_version``
 # (``V5``) in ``src/literalizer/languages/typescript.py``; ``--target
 # es2015 --lib es2015`` matches ``JavaScript.language_version``
@@ -61,14 +63,16 @@ def _probe(*, text: str) -> str:
     return f"void {name};\n"
 
 
-def main() -> None:
+@click.command()
+@click.argument("filenames", nargs=-1)
+def main(filenames: tuple[str, ...]) -> None:
     """Type-check the given TypeScript golden files with probes."""
     tsc = shutil.which(cmd="tsc")
     if tsc is None or tsc == "":
         tsc = "tsc"
     with tempfile.TemporaryDirectory() as tmpdir:
         names: list[str] = []
-        for golden in sys.argv[1:]:
+        for golden in filenames:
             path = Path(golden)
             text = path.read_text(encoding="utf-8")
             names.append(f"{path.parent.name}__{path.name}")

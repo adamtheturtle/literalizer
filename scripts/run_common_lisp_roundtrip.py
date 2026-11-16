@@ -36,6 +36,7 @@ new Common Lisp code that needs JSON.
 
 import shutil
 
+import click
 from pydantic import JsonValue
 
 from literalizer.languages import CommonLisp
@@ -124,6 +125,7 @@ def _build_program(json_text: str) -> str:
     return f"{_HEADER}\n{preamble}\n{result.code}\n{emit}\n"
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Common Lisp backend."""
     json_text = roundtrip_common.input_for_capabilities(

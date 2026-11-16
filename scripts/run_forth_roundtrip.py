@@ -41,6 +41,8 @@ import os
 import shutil
 from pathlib import Path
 
+import click
+
 from literalizer.languages import Forth
 from scripts import roundtrip_common
 
@@ -100,6 +102,7 @@ def _build_program(*, json_text: str, ffl_path: str) -> str:
     return f"{header}\n{preamble}\n{result.code}\n\n{_FOOTER}"
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Forth backend."""
     # ``LITERALIZER_FFL_PATH`` points at the FFL checkout (the

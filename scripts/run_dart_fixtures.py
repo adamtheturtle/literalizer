@@ -7,6 +7,7 @@ import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 
+import click
 from beartype import beartype
 
 from literalizer import VariableForm
@@ -177,6 +178,7 @@ def write_dart_driver(*, fixtures: Sequence[Path], target: Path) -> None:
     )
 
 
+@click.command()
 @beartype
 def main() -> None:
     """Consume null-separated paths, then analyze and run the driver."""

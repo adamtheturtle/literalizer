@@ -58,6 +58,8 @@ Two fields are excluded from the comparison (the same two as the C
 import shutil
 import textwrap
 
+import click
+
 import literalizer
 from literalizer.languages import Cobol
 from scripts import roundtrip_common
@@ -157,6 +159,7 @@ def _build_program(*, json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the COBOL cJSON backend."""
     json_text = roundtrip_common.input_for_capabilities(

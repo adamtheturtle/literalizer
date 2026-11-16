@@ -26,6 +26,8 @@ cannot represent them losslessly:
 
 import shutil
 
+import click
+
 from literalizer.languages import Php
 from scripts import roundtrip_common
 
@@ -50,6 +52,7 @@ def _build_program(json_text: str) -> str:
     return f"{preamble}\n{result.code}\necho json_encode(${_VAR_NAME});\n"
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the PHP backend."""
     json_text = roundtrip_common.input_for_capabilities(

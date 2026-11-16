@@ -16,6 +16,8 @@ stdlib) already serializes ``Map``/``List``/``BigInteger``/``Number``
 
 import shutil
 
+import click
+
 from literalizer.languages import Groovy
 from scripts import roundtrip_common
 
@@ -42,6 +44,7 @@ def _build_script(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Groovy backend."""
     json_text = roundtrip_common.input_for_capabilities(
