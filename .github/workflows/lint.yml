@@ -3541,10 +3541,12 @@ jobs:
       # silently dropping every fixture; see the
       # ``Python.VersionFormats`` enum in
       # ``src/literalizer/languages/python.py``.
+      # Run the Click-based lister with the project's minimum Python.
+      # The fixture checks below retain the requested runtime.
       - name: Find Python golden files
         shell: bash
-        run: uv run --only-group=cli python -m tests.integration.list_fixtures .py
-          "$PYTHON_FIXTURE_TAG" > /tmp/files-python && test -s /tmp/files-python
+        run: uv run --python 3.12 --only-group=cli python -m tests.integration.list_fixtures
+          .py "$PYTHON_FIXTURE_TAG" > /tmp/files-python && test -s /tmp/files-python
       - name: Check Python syntax
         run: xargs -0 -P "$(nproc)" -n1 uv run --python "$PYTHON_VERSION" --no-project
           python -m py_compile < /tmp/files-python
