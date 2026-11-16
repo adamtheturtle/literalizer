@@ -1759,12 +1759,19 @@ jobs:
       # ``clj-kondo`` reads the file statically, so it cannot see that
       # module and reports it unresolved; the ``Run Clojure files``
       # step below is what actually proves the call resolves.
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Lint Clojure
-        run: |-
-          find tests/integration/cases -name '*.clj' -print0 > /tmp/files-clj && test -s /tmp/files-clj
-          xargs -0 clj-kondo --config '{:linters {:unresolved-namespace {:level :off}}}' --lint < /tmp/files-clj
+        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures --check
+          syntax
+
       - name: Run Clojure files
-        run: xargs -0 -P "$(nproc)" -n1 bb < /tmp/files-clj
+        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures --check
+          execution
 
       # Parse and run every fixture inside a single Groovy JVM via
       # GroovyShell, so the compiler stays warm across iterations
@@ -1779,12 +1786,6 @@ jobs:
       # `uv` is needed by the `Clojure roundtrip` and `Groovy roundtrip`
       # steps below; they run their helpers in project mode so
       # `import literalizer` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Clojure -> JSON round-trip (issue 2642). Runs here
       # because this is the job with Babashka (pinned by the
       # `Install clj-kondo and Babashka` step above); `cheshire.core`
