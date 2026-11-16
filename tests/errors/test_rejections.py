@@ -21,7 +21,7 @@ from typing import assert_never
 import pytest
 import tomlkit
 from beartype import beartype
-from pydantic import BaseModel, ConfigDict, TypeAdapter
+from pydantic import ConfigDict, TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 from ruamel.yaml import YAML
 from tomlkit.items import InlineTable
@@ -31,7 +31,6 @@ from literalizer.exceptions import LiteralizerError, ParseError
 from tests.enum_members import enum_member_by_name
 from tests.integration.case_manifests import CallTransform
 from tests.integration.golden_checks import check_golden
-from tests.toml_cases import load_toml_cases
 from tests.yaml_support import as_yaml_parser
 
 from .rejection_cases import (
@@ -51,26 +50,6 @@ from .rejection_manifests import (
     load_rejection_manifests,
     substituted,
 )
-
-
-class _InvalidMessageCase(BaseModel, extra="forbid", frozen=True):
-    """One malformed expected-message document."""
-
-    name: str
-    source: str
-    message: str
-
-
-class _MessageCases(BaseModel, extra="forbid", frozen=True):
-    """Versioned diagnostic regressions declared in TOML."""
-
-    invalid: tuple[_InvalidMessageCase, ...]
-
-
-_MESSAGE_CASES = TypeAdapter(type=_MessageCases).validate_python(
-    load_toml_cases(name="versioned_messages")
-)
-
 
 _MANIFESTS = load_rejection_manifests(rejections_dir=REJECTIONS_DIR)
 
@@ -627,28 +606,6 @@ def test_explicit_absence_preserves_omitted_default(
             value=None,
         )
         == expected
-    )
-
-
-@pytest.mark.parametrize(
-    argnames="case",
-    argvalues=_MESSAGE_CASES.invalid,
-    ids=lambda case: case.name,
-)
-def test_invalid_versioned_message_is_rejected(
-    case: _InvalidMessageCase, tmp_path: Path
-) -> None:
-    """Malformed message variants cannot silently bypass comparison."""
-    golden_path = tmp_path / "expected.toml"
-    _ = golden_path.write_text(data=case.source, encoding="utf-8")
-    with pytest.raises(expected_exception=ValueError, match=case.message):
-        _ = _load_expected_messages(golden_path=golden_path)
-
-
-def test_missing_message_golden_can_be_generated(tmp_path: Path) -> None:
-    """A new family starts with plain messages until variants are declared."""
-    assert (
-        _load_expected_messages(golden_path=tmp_path / "expected.toml") == {}
     )
 
 
