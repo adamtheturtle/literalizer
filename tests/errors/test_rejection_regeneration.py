@@ -27,7 +27,7 @@ case = "deleted exception"
 
 
 def _reserved_name_manifest(*, tmp_path: Path) -> RejectionManifest:
-    """Load a real rejection scenario for snapshot lifecycle checks."""
+    """Load a real rejection scenario for snapshot life cycle checks."""
     manifest_path = tmp_path / "rejection.toml"
     _ = manifest_path.write_text(
         data=(
@@ -75,6 +75,12 @@ def _run_snapshot_pytest(
     return subprocess.run(  # noqa: S603 - run the real pytest golden workflow
         args=[
             sys.executable,
+            "-m",
+            "coverage",
+            "run",
+            "--parallel-mode",
+            "--rcfile",
+            str(object=project_root / "pyproject.toml"),
             "-m",
             "pytest",
             "-c",
@@ -126,7 +132,7 @@ def test_invalid_snapshot_survives_verification_and_regeneration(
     diagnostic: str,
     regenerate: bool,
 ) -> None:
-    """Both CLI modes reject malformed snapshots without overwriting
+    """Reject malformed snapshots in both modes without overwriting
     them.
     """
     case_dir = tmp_path / "case"
