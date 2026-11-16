@@ -8,5 +8,6 @@ def consume_widget(var arg_value: Int):
 def main():
     var my_data = 0
     var shared = 1
+    consume_widget(literalizer_ref_value(my_data))
     my_data = shared
     consume_widget(literalizer_ref_value(my_data))

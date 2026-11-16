@@ -4,6 +4,7 @@ procedure Main is
     my_data : A_Val := AInt (0);
     shared : A_Val := AInt (1);
 begin
+    Consume_Widget(arg_value => my_data);
     my_data := shared;
     Consume_Widget(arg_value => my_data);
 end Main;

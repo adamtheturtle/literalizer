@@ -18,6 +18,7 @@ static void consume_widget(CVal _a0) { (void)_a0; }
 int main(void) {
 CVal my_data = ((CVal){.i = 0});
 CVal shared = ((CVal){.i = 1});
+consume_widget(my_data);
 my_data = shared;
 consume_widget(my_data);
     return 0;

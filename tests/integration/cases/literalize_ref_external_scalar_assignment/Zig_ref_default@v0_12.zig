@@ -14,6 +14,7 @@ fn consume_widget(arg_value: ZVal) void { _ = arg_value; }
 pub fn main() void {
     var my_data: ZVal = .{ .int = 0 };
     const shared: ZVal = .{ .int = 1 };
+    consume_widget(my_data);
     my_data = shared;
     consume_widget(my_data);
     _ = &my_data;

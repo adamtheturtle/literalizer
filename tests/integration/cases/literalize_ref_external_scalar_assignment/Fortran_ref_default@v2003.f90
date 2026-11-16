@@ -88,6 +88,7 @@ program main
     type(fval_t) :: shared
     my_data = fint(0_int64)
     shared = fint(1_int64)
+    call consume_widget(my_data)
     my_data = shared
     call consume_widget(my_data)
 contains

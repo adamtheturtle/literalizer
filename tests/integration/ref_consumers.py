@@ -316,7 +316,13 @@ def compose_external_ref_fixture(
         )
     consumer = config.consumer
     if consumer is None:
-        consumer = RefConsumerSpec(target_function="consume_widget")
+        consumer = RefConsumerSpec(
+            target_function="consume_widget",
+            before_assignment=(
+                config.variable_form == "existing"
+                and "my_data" in config.external_declarations
+            ),
+        )
     return _compose_ref_consumer(
         consumer=consumer,
         expression=config.variable_form == "none",
