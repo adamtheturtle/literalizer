@@ -2962,10 +2962,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.rs' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
       # Build chrono + serde_json once and stash the rlib paths in
       # `$GITHUB_ENV`; both the per-fixture compile step below and the
       # `Rust roundtrip` step reuse them. The build tmpdir is kept for
@@ -2988,32 +2984,17 @@ jobs:
             echo "RUST_CHRONO_RLIB=$chrono_rlib"
             echo "RUST_SERDE_JSON_RLIB=$serde_json_rlib"
           } >> "$GITHUB_ENV"
-      - name: Check Rust syntax and run binaries
-        run: |-
-          # ``--edition 2021`` matches ``Rust.language_version`` in
-          # ``src/literalizer/languages/rust.py``; keep them in sync.
-          # rustc infers a crate name from the source filename and
-          # rejects ``@`` in that name, so pass ``--crate-name`` with
-          # the ``@<version>`` suffix sanitized to an underscore.
-          while IFS= read -r -d '' f; do
-            stem=$(basename "$f" .rs)
-            crate_name=${stem//@/_}
-            rustc --edition 2021 -D warnings \
-              --crate-name "$crate_name" \
-              -L "dependency=$RUST_DEPS" \
-              --extern "chrono=$RUST_CHRONO_RLIB" \
-              --extern "serde_json=$RUST_SERDE_JSON_RLIB" \
-              "$f" -o "$RUST_TMPDIR/out" 2>&1 || exit 1
-            "$RUST_TMPDIR/out" || exit 1
-          done < /tmp/files-to-lint
-      # `uv` is needed by the `Rust roundtrip` step below; it runs the
-      # helper in project mode so `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      - name: Check Rust syntax and run binaries
+        run: uv run --only-group=cli python -m scripts.run_rust_fixtures
+
+      # `uv` is needed by the `Rust roundtrip` step below; it runs the
+      # helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Rust -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Rust toolchain and a prebuilt
       # `libserde_json-*.rlib`; `uv run` (project mode, not
