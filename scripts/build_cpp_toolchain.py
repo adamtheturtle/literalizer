@@ -631,7 +631,7 @@ def build(work: Path, output: Path, /) -> None:
     )
 
 
-@click.command()
+@click.command(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
     "--work-directory", type=click.Path(path_type=Path), required=True
 )
