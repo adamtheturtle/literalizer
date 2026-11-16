@@ -551,6 +551,7 @@ def _swift_type_hint(
             if not sequence_is_tuple and depth >= _ARRAY_INFERENCE_CHUNK_DEPTH:
                 # Deep [T] shorthand is expensive even without an initializer.
                 # Array<T> preserves the same native type and inference facts.
+                # Swift parser issue: https://github.com/swiftlang/swift/issues/94336
                 leaf_hint = recurse(data=leaf)
                 return dataclasses.replace(
                     leaf_hint,
