@@ -1,4 +1,4 @@
-# languages rejecting: 25; languages accepting: 60
+# languages rejecting: 24; languages accepting: 61
 
 [Accepted]
 "Ada['nil']" = ""
@@ -121,6 +121,11 @@
 "JavaScript['panic']" = ""
 "JavaScript['print']" = ""
 "JavaScript['println']" = ""
+"Jsonnet['exit']" = ""
+"Jsonnet['nil']" = ""
+"Jsonnet['panic']" = ""
+"Jsonnet['print']" = ""
+"Jsonnet['println']" = ""
 "Julia['exit']" = ""
 "Julia['nil']" = ""
 "Julia['panic']" = ""
@@ -320,11 +325,6 @@
 "Jsonc['panic']" = "Jsonc does not support variable names: 'panic'"
 "Jsonc['print']" = "Jsonc does not support variable names: 'print'"
 "Jsonc['println']" = "Jsonc does not support variable names: 'println'"
-"Jsonnet['exit']" = "Jsonnet does not support variable names: 'exit'"
-"Jsonnet['nil']" = "Jsonnet does not support variable names: 'nil'"
-"Jsonnet['panic']" = "Jsonnet does not support variable names: 'panic'"
-"Jsonnet['print']" = "Jsonnet does not support variable names: 'print'"
-"Jsonnet['println']" = "Jsonnet does not support variable names: 'println'"
 "Yaml['exit']" = "Yaml does not support variable names: 'exit'"
 "Yaml['nil']" = "Yaml does not support variable names: 'nil'"
 "Yaml['panic']" = "Yaml does not support variable names: 'panic'"

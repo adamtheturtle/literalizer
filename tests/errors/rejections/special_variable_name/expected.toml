@@ -1,4 +1,4 @@
-# languages rejecting: 61; languages accepting: 55
+# languages rejecting: 61; languages accepting: 56
 
 [Accepted]
 "Ada['features']" = ""
@@ -64,6 +64,9 @@
 "JavaScript['Package']" = ""
 "JavaScript['features']" = ""
 "JavaScript['package']" = ""
+"Jsonnet['Package']" = ""
+"Jsonnet['features']" = ""
+"Jsonnet['package']" = ""
 "Julia['Package']" = ""
 "Julia['features']" = ""
 "Julia['package']" = ""
@@ -204,6 +207,8 @@
 "Java['standard-output']" = "Java cannot use NewVariable name 'standard-output': it is not a valid identifier"
 "JavaScript['print-base']" = "JavaScript cannot use NewVariable name 'print-base': it is not a valid identifier"
 "JavaScript['standard-output']" = "JavaScript cannot use NewVariable name 'standard-output': it is not a valid identifier"
+"Jsonnet['print-base']" = "Jsonnet cannot use NewVariable name 'print-base': it is not a valid identifier"
+"Jsonnet['standard-output']" = "Jsonnet cannot use NewVariable name 'standard-output': it is not a valid identifier"
 "Julia['print-base']" = "Julia cannot use NewVariable name 'print-base': it is not a valid identifier"
 "Julia['standard-output']" = "Julia cannot use NewVariable name 'standard-output': it is not a valid identifier"
 "Kotlin['print-base']" = "Kotlin cannot use NewVariable name 'print-base': it is not a valid identifier"
@@ -324,11 +329,6 @@
 "Jsonc['package']" = "Jsonc does not support variable names: 'package'"
 "Jsonc['print-base']" = "Jsonc does not support variable names: 'print-base'"
 "Jsonc['standard-output']" = "Jsonc does not support variable names: 'standard-output'"
-"Jsonnet['Package']" = "Jsonnet does not support variable names: 'Package'"
-"Jsonnet['features']" = "Jsonnet does not support variable names: 'features'"
-"Jsonnet['package']" = "Jsonnet does not support variable names: 'package'"
-"Jsonnet['print-base']" = "Jsonnet does not support variable names: 'print-base'"
-"Jsonnet['standard-output']" = "Jsonnet does not support variable names: 'standard-output'"
 "Yaml['Package']" = "Yaml does not support variable names: 'Package'"
 "Yaml['features']" = "Yaml does not support variable names: 'features'"
 "Yaml['package']" = "Yaml does not support variable names: 'package'"

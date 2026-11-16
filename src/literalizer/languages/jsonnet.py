@@ -25,7 +25,6 @@ from literalizer._formatters.format_entries import (
     format_bytes_hex,
     passthrough_sequence_entry,
     passthrough_set_entry,
-    variable_declaration_formatter,
     variable_formatter,
 )
 from literalizer._formatters.format_floats import (
@@ -203,6 +202,31 @@ else:
 
 
 @beartype
+def _jsonnet_variable_declaration(
+    name: str,
+    value: str,
+    _data: Value,
+    _modifiers: frozenset[enum.Enum],
+) -> str:
+    """Terminate a local binding before its trailing line comments."""
+    lines = value.split(sep="\n")
+    end = len(lines)
+    while end > 0 and (
+        lines[end - 1].strip() == ""
+        or lines[end - 1].lstrip().startswith(("//", "#"))
+    ):
+        end -= 1
+    expression = insert_before_line_comment(
+        statement="\n".join(lines[:end]),
+        text=";",
+        quotes="\"'",
+        line_comment_prefixes=("//", "#"),
+    )
+    trailing = "" if end == len(lines) else "\n" + "\n".join(lines[end:])
+    return f"local {name} = {expression}{trailing}"
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Jsonnet(metaclass=LanguageCls):
     """Jsonnet language specification.
@@ -270,7 +294,7 @@ class Jsonnet(metaclass=LanguageCls):
     pygments_name = "jsonnet"
     stringifies_nested_collections = False
     supports_special_floats = False
-    supports_variable_names = False
+    supports_variable_names = True
     supports_no_variable_wrap_in_file = True
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = True
@@ -420,9 +444,7 @@ class Jsonnet(metaclass=LanguageCls):
         """Declaration style options."""
 
         ASSIGN = DeclarationStyleConfig(
-            formatter=variable_declaration_formatter(
-                template="local {name} = {value};",
-            ),
+            formatter=_jsonnet_variable_declaration,
             supports_redefinition=False,
         )
 
@@ -580,10 +602,15 @@ class Jsonnet(metaclass=LanguageCls):
     ) -> str:
         """Wrap code in a valid Jsonnet file.
 
-        When *variable_name* is empty (call mode), wrap the content
-        lines in an array so the file evaluates to a single expression.
+        A named declaration evaluates to its local binding. Bare call
+        sequences with generated stubs evaluate to an array of results.
         """
         body_preamble = context.body_preamble
+        if context.variable_name != "":
+            preamble = "\n".join(body_preamble)
+            if preamble != "":
+                preamble += "\n"
+            return preamble + content + "\n" + context.variable_name
         if len(body_preamble) == 0:
             return wrap_in_file_noop(
                 content=content,

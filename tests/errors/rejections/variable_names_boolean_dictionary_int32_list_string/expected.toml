@@ -1,4 +1,4 @@
-# languages rejecting: 27; languages accepting: 46
+# languages rejecting: 26; languages accepting: 47
 
 [Accepted]
 "Ada['Boolean']" = ""
@@ -88,6 +88,11 @@
 "JavaScript['Int32']" = ""
 "JavaScript['List']" = ""
 "JavaScript['String']" = ""
+"Jsonnet['Boolean']" = ""
+"Jsonnet['Dictionary']" = ""
+"Jsonnet['Int32']" = ""
+"Jsonnet['List']" = ""
+"Jsonnet['String']" = ""
 "Julia['Boolean']" = ""
 "Julia['Dictionary']" = ""
 "Julia['Int32']" = ""
@@ -324,11 +329,6 @@
 "Jsonc['Int32']" = "Jsonc does not support variable names: 'Int32'"
 "Jsonc['List']" = "Jsonc does not support variable names: 'List'"
 "Jsonc['String']" = "Jsonc does not support variable names: 'String'"
-"Jsonnet['Boolean']" = "Jsonnet does not support variable names: 'Boolean'"
-"Jsonnet['Dictionary']" = "Jsonnet does not support variable names: 'Dictionary'"
-"Jsonnet['Int32']" = "Jsonnet does not support variable names: 'Int32'"
-"Jsonnet['List']" = "Jsonnet does not support variable names: 'List'"
-"Jsonnet['String']" = "Jsonnet does not support variable names: 'String'"
 "Yaml['Boolean']" = "Yaml does not support variable names: 'Boolean'"
 "Yaml['Dictionary']" = "Yaml does not support variable names: 'Dictionary'"
 "Yaml['Int32']" = "Yaml does not support variable names: 'Int32'"

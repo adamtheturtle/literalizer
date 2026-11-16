@@ -1,4 +1,4 @@
-# languages rejecting: 7; languages accepting: 59
+# languages rejecting: 6; languages accepting: 60
 
 [Accepted]
 "Bash['a__b']" = ""
@@ -50,6 +50,8 @@
 "Java['trailing_']" = ""
 "JavaScript['a__b']" = ""
 "JavaScript['trailing_']" = ""
+"Jsonnet['a__b']" = ""
+"Jsonnet['trailing_']" = ""
 "Julia['a__b']" = ""
 "Julia['trailing_']" = ""
 "Kotlin['a__b']" = ""
@@ -131,7 +133,5 @@
 "Json5['trailing_']" = "Json5 does not support variable names: 'trailing_'"
 "Jsonc['a__b']" = "Jsonc does not support variable names: 'a__b'"
 "Jsonc['trailing_']" = "Jsonc does not support variable names: 'trailing_'"
-"Jsonnet['a__b']" = "Jsonnet does not support variable names: 'a__b'"
-"Jsonnet['trailing_']" = "Jsonnet does not support variable names: 'trailing_'"
 "Yaml['a__b']" = "Yaml does not support variable names: 'a__b'"
 "Yaml['trailing_']" = "Yaml does not support variable names: 'trailing_'"

@@ -1,4 +1,4 @@
-{
+local my_data = {
     //
     // document heading
     // before the first entry
@@ -21,4 +21,5 @@
     // trailing inside the object
     // after the root
     // after the document
-}
+};
+my_data

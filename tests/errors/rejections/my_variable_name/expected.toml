@@ -1,4 +1,4 @@
-# languages rejecting: 6; languages accepting: 59
+# languages rejecting: 5; languages accepting: 60
 
 [Accepted]
 "Ada['my']" = ""
@@ -27,6 +27,7 @@
 "Hcl['my']" = ""
 "Java['my']" = ""
 "JavaScript['my']" = ""
+"Jsonnet['my']" = ""
 "Julia['my']" = ""
 "Kotlin['my']" = ""
 "Lua['my']" = ""
@@ -68,5 +69,4 @@
 [VariableNameNotSupportedError]
 "Json5['my']" = "Json5 does not support variable names: 'my'"
 "Jsonc['my']" = "Jsonc does not support variable names: 'my'"
-"Jsonnet['my']" = "Jsonnet does not support variable names: 'my'"
 "Yaml['my']" = "Yaml does not support variable names: 'my'"

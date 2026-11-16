@@ -1,4 +1,4 @@
-# languages rejecting: 23; languages accepting: 60
+# languages rejecting: 22; languages accepting: 61
 
 [Accepted]
 "Bash['abs']" = ""
@@ -96,6 +96,10 @@
 "JavaScript['and']" = ""
 "JavaScript['parallel']" = ""
 "JavaScript['some']" = ""
+"Jsonnet['abs']" = ""
+"Jsonnet['and']" = ""
+"Jsonnet['parallel']" = ""
+"Jsonnet['some']" = ""
 "Julia['abs']" = ""
 "Julia['and']" = ""
 "Julia['parallel']" = ""
@@ -257,10 +261,6 @@
 "Jsonc['and']" = "Jsonc does not support variable names: 'and'"
 "Jsonc['parallel']" = "Jsonc does not support variable names: 'parallel'"
 "Jsonc['some']" = "Jsonc does not support variable names: 'some'"
-"Jsonnet['abs']" = "Jsonnet does not support variable names: 'abs'"
-"Jsonnet['and']" = "Jsonnet does not support variable names: 'and'"
-"Jsonnet['parallel']" = "Jsonnet does not support variable names: 'parallel'"
-"Jsonnet['some']" = "Jsonnet does not support variable names: 'some'"
 "Yaml['abs']" = "Yaml does not support variable names: 'abs'"
 "Yaml['and']" = "Yaml does not support variable names: 'and'"
 "Yaml['parallel']" = "Yaml does not support variable names: 'parallel'"

@@ -59,6 +59,7 @@
 [ReservedVariableNameError]
 "Cobol['self']" = "Cobol cannot use NewVariable name 'self': it is a reserved identifier"
 "Crystal['self']" = "Crystal cannot use NewVariable name 'self': it is a reserved identifier"
+"Jsonnet['self']" = "Jsonnet cannot use NewVariable name 'self': it is a reserved identifier"
 "Mojo['self']" = "Mojo cannot use NewVariable name 'self': it is a reserved identifier"
 "Php['self']" = "Php cannot use NewVariable name 'self': it is a reserved identifier"
 "Ruby['self']" = "Ruby cannot use NewVariable name 'self': it is a reserved identifier"
@@ -68,5 +69,4 @@
 [VariableNameNotSupportedError]
 "Json5['self']" = "Json5 does not support variable names: 'self'"
 "Jsonc['self']" = "Jsonc does not support variable names: 'self'"
-"Jsonnet['self']" = "Jsonnet does not support variable names: 'self'"
 "Yaml['self']" = "Yaml does not support variable names: 'self'"

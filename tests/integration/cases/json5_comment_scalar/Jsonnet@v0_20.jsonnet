@@ -1,5 +1,6 @@
-// scalar heading
+local my_data = // scalar heading
 // second heading line
-42  // scalar inline
+42;  // scalar inline
 // inline continuation
 // scalar trailing
+my_data

@@ -1,3 +1,4 @@
-[
+local my_data = [
     {"a\tb\nc": 1, id: "x"},
-]
+];
+my_data

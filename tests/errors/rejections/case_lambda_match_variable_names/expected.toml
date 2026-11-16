@@ -1,4 +1,4 @@
-# languages rejecting: 45; languages accepting: 58
+# languages rejecting: 44; languages accepting: 59
 
 [Accepted]
 "Ada['lambda']" = ""
@@ -60,6 +60,9 @@
 "Java['match']" = ""
 "JavaScript['lambda']" = ""
 "JavaScript['match']" = ""
+"Jsonnet['case']" = ""
+"Jsonnet['lambda']" = ""
+"Jsonnet['match']" = ""
 "Julia['case']" = ""
 "Julia['lambda']" = ""
 "Julia['match']" = ""
@@ -194,9 +197,6 @@
 "Jsonc['case']" = "Jsonc does not support variable names: 'case'"
 "Jsonc['lambda']" = "Jsonc does not support variable names: 'lambda'"
 "Jsonc['match']" = "Jsonc does not support variable names: 'match'"
-"Jsonnet['case']" = "Jsonnet does not support variable names: 'case'"
-"Jsonnet['lambda']" = "Jsonnet does not support variable names: 'lambda'"
-"Jsonnet['match']" = "Jsonnet does not support variable names: 'match'"
 "Yaml['case']" = "Yaml does not support variable names: 'case'"
 "Yaml['lambda']" = "Yaml does not support variable names: 'lambda'"
 "Yaml['match']" = "Yaml does not support variable names: 'match'"

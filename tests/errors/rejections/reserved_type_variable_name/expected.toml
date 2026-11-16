@@ -1,4 +1,4 @@
-# languages rejecting: 22; languages accepting: 55
+# languages rejecting: 21; languages accepting: 56
 
 [Accepted]
 "Ada['idouble']" = ""
@@ -156,6 +156,13 @@
 "JavaScript['long']" = ""
 "JavaScript['real']" = ""
 "JavaScript['string']" = ""
+"Jsonnet['idouble']" = ""
+"Jsonnet['ifloat']" = ""
+"Jsonnet['int']" = ""
+"Jsonnet['ireal']" = ""
+"Jsonnet['long']" = ""
+"Jsonnet['real']" = ""
+"Jsonnet['string']" = ""
 "Julia['idouble']" = ""
 "Julia['ifloat']" = ""
 "Julia['int']" = ""
@@ -448,13 +455,6 @@
 "Jsonc['long']" = "Jsonc does not support variable names: 'long'"
 "Jsonc['real']" = "Jsonc does not support variable names: 'real'"
 "Jsonc['string']" = "Jsonc does not support variable names: 'string'"
-"Jsonnet['idouble']" = "Jsonnet does not support variable names: 'idouble'"
-"Jsonnet['ifloat']" = "Jsonnet does not support variable names: 'ifloat'"
-"Jsonnet['int']" = "Jsonnet does not support variable names: 'int'"
-"Jsonnet['ireal']" = "Jsonnet does not support variable names: 'ireal'"
-"Jsonnet['long']" = "Jsonnet does not support variable names: 'long'"
-"Jsonnet['real']" = "Jsonnet does not support variable names: 'real'"
-"Jsonnet['string']" = "Jsonnet does not support variable names: 'string'"
 "Yaml['idouble']" = "Yaml does not support variable names: 'idouble'"
 "Yaml['ifloat']" = "Yaml does not support variable names: 'ifloat'"
 "Yaml['int']" = "Yaml does not support variable names: 'int'"

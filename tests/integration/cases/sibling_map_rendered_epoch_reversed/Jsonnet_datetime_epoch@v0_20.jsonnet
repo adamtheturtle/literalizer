@@ -1,4 +1,5 @@
-{
+local my_data = {
     b: {k: 1},
     a: {k: 2208988800},
-}
+};
+my_data

@@ -1,4 +1,4 @@
-{
+local my_data = {
     groups: [
         [
             {
@@ -11,4 +11,5 @@
             },
         ],
     ],
-}
+};
+my_data

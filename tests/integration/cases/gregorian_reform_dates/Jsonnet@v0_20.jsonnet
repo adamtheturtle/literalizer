@@ -1,4 +1,4 @@
-{
+local my_data = {
     ancient_date: "1500-03-01",
     modern_date: "2024-01-15",
     before_date: "1582-10-04",
@@ -10,4 +10,5 @@
     transition_positive: "1582-10-15T00:30:00+18:00",
     transition_negative: "1582-10-15T23:30:00-18:00",
     after_positive: "1582-10-16T00:30:00+18:00",
-}
+};
+my_data

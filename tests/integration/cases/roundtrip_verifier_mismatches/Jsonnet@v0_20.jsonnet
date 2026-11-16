@@ -1,4 +1,4 @@
-{
+local my_data = {
     true_to_one: {value: 1},
     one_to_true: {value: true},
     false_to_zero: {value: 0},
@@ -12,4 +12,5 @@
     null_to_zero: {value: 0},
     string_to_boolean: {value: true},
     object_key_changed: {value: {b: 1}},
-}
+};
+my_data

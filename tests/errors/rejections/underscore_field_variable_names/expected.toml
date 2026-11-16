@@ -1,4 +1,4 @@
-# languages rejecting: 25; languages accepting: 50
+# languages rejecting: 24; languages accepting: 51
 
 [Accepted]
 "Bash['_']" = ""
@@ -38,6 +38,8 @@
 "Java['_field']" = ""
 "JavaScript['_']" = ""
 "JavaScript['_field']" = ""
+"Jsonnet['_']" = ""
+"Jsonnet['_field']" = ""
 "Julia['_']" = ""
 "Julia['_field']" = ""
 "Kotlin['_field']" = ""
@@ -133,7 +135,5 @@
 "Json5['_field']" = "Json5 does not support variable names: '_field'"
 "Jsonc['_']" = "Jsonc does not support variable names: '_'"
 "Jsonc['_field']" = "Jsonc does not support variable names: '_field'"
-"Jsonnet['_']" = "Jsonnet does not support variable names: '_'"
-"Jsonnet['_field']" = "Jsonnet does not support variable names: '_field'"
 "Yaml['_']" = "Yaml does not support variable names: '_'"
 "Yaml['_field']" = "Yaml does not support variable names: '_field'"

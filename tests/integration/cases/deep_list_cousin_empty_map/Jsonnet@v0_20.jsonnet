@@ -1,4 +1,5 @@
-[
+local my_data = [
     {items: [{inner: {x: 1}}, {inner: {}}]},
     {items: [{inner: {x: 2}}, {inner: {}}]},
-]
+];
+my_data

@@ -1,4 +1,4 @@
-# languages rejecting: 16; languages accepting: 49
+# languages rejecting: 15; languages accepting: 50
 
 [Accepted]
 "Bash['__ENCODING__']" = ""
@@ -64,6 +64,9 @@
 "JavaScript['__ENCODING__']" = ""
 "JavaScript['__FILE__']" = ""
 "JavaScript['__LINE__']" = ""
+"Jsonnet['__ENCODING__']" = ""
+"Jsonnet['__FILE__']" = ""
+"Jsonnet['__LINE__']" = ""
 "Julia['__ENCODING__']" = ""
 "Julia['__FILE__']" = ""
 "Julia['__LINE__']" = ""
@@ -196,9 +199,6 @@
 "Jsonc['__ENCODING__']" = "Jsonc does not support variable names: '__ENCODING__'"
 "Jsonc['__FILE__']" = "Jsonc does not support variable names: '__FILE__'"
 "Jsonc['__LINE__']" = "Jsonc does not support variable names: '__LINE__'"
-"Jsonnet['__ENCODING__']" = "Jsonnet does not support variable names: '__ENCODING__'"
-"Jsonnet['__FILE__']" = "Jsonnet does not support variable names: '__FILE__'"
-"Jsonnet['__LINE__']" = "Jsonnet does not support variable names: '__LINE__'"
 "Yaml['__ENCODING__']" = "Yaml does not support variable names: '__ENCODING__'"
 "Yaml['__FILE__']" = "Yaml does not support variable names: '__FILE__'"
 "Yaml['__LINE__']" = "Yaml does not support variable names: '__LINE__'"
