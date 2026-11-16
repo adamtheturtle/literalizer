@@ -1,4 +1,4 @@
-# languages rejecting: 10; languages accepting: 55
+# languages rejecting: 11; languages accepting: 54
 
 [Accepted]
 "Ada['!!omap []']" = ""
@@ -157,12 +157,6 @@
 "Kotlin['{}']" = ""
 "Kotlin['{\"nested\":{}}']" = ""
 "Kotlin['[{}]']" = ""
-"Lua['!!omap []']" = ""
-"Lua['{nested: !!omap []}']" = ""
-"Lua['[!!omap []]']" = ""
-"Lua['{}']" = ""
-"Lua['{\"nested\":{}}']" = ""
-"Lua['[{}]']" = ""
 "Matlab['!!omap []']" = ""
 "Matlab['{nested: !!omap []}']" = ""
 "Matlab['[!!omap []]']" = ""
@@ -393,6 +387,12 @@
 "Nix['[{}]']" = "literalizer does not support function call rendering for Nix"
 
 [UnrepresentableEmptyDictError]
+"Lua['!!omap []']" = "Lua cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
+"Lua['{nested: !!omap []}']" = "Lua cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
+"Lua['[!!omap []]']" = "Lua cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
+"Lua['{}']" = "Lua cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
+"Lua['{\"nested\":{}}']" = "Lua cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
+"Lua['[{}]']" = "Lua cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
 "Php['!!omap []']" = "PHP cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
 "Php['{nested: !!omap []}']" = "PHP cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
 "Php['[!!omap []]']" = "PHP cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
