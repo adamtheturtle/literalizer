@@ -31,6 +31,9 @@ type RefData = (
 )
 
 
+_REF_DATA_ADAPTER = TypeAdapter[RefData](type=RefData)
+
+
 @beartype
 def collect_ref_names(data: RefData, *, ref_key: str) -> Iterator[str]:
     """Yield reference names in document order without intermediate lists.
@@ -84,7 +87,7 @@ def parse_ref_input(
             parsed = tomllib.loads(input_source)
         case _ as unreachable:
             assert_never(unreachable)
-    return TypeAdapter[RefData](type=RefData).validate_python(
+    return _REF_DATA_ADAPTER.validate_python(
         parsed,
         strict=True,
     )
