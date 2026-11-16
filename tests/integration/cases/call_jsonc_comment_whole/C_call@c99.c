@@ -14,7 +14,18 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-static void f(CVal _a0) { (void)_a0; }
+#include <assert.h>
+static int event_index = 0;
+static void observe_event(long long actual) {
+    const long long expected[] = {1, 42};
+    assert(event_index < 2 && actual == expected[event_index]);
+    ++event_index;
+}
+static CVal f(CVal a) {
+    observe_event(1); observe_event(a.i);
+    return (CVal){.i = a.i + 100};
+}
+static void verify_events(void) { assert(event_index == 2); }
 int main(void) {
 // scalar heading
 // second heading line
@@ -22,5 +33,6 @@ int main(void) {
 // inline continuation
 // scalar trailing
 f(((CVal){.i = 42}));
+verify_events();
     return 0;
 }

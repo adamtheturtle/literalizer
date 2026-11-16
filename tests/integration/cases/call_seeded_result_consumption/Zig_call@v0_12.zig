@@ -10,12 +10,20 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-fn make_widget(count: ZVal) ZVal { _ = count; return .nil; }
-fn consume_widget(count: ZVal) void { _ = count; }
+var event_index: usize = 0;
+fn observe_event(actual: i64) void {
+    const expected = [_]i64{2, 0, 1, 1, 2, 101};
+    if (event_index >= 6 or actual != expected[event_index]) @panic("receiver event changed");
+    event_index += 1;
+}
+fn make_widget(count: ZVal) ZVal { observe_event(1); observe_event(count.int); return .{ .int = count.int + 100 }; }
+fn consume_widget(count: ZVal) void { observe_event(2); observe_event(count.int); }
+fn verify_events() void { if (event_index != 6) @panic("missing receiver events"); }
 pub fn main() void {
-    var my_data = make_widget(.{ .int = 0 });
+    var my_data: ZVal = .{ .int = 0 };
     consume_widget(my_data);
     my_data = make_widget(.{ .int = 1 });
     consume_widget(my_data);
+    verify_events();
     _ = &my_data;
 }

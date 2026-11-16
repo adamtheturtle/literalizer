@@ -10,12 +10,26 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-function _VVal make_widget(input _VVal value);
-    make_widget = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""};
+int event_index = 0;
+function automatic void observe_event(longint actual);
+    longint expected[4] = '{1, 42, 2, 142};
+    if (event_index >= 4 || actual != expected[event_index]) $fatal(1, "receiver event changed");
+    event_index++;
 endfunction
-task consume(input _VVal value); endtask
+function automatic _VVal make_widget(_VVal value);
+    observe_event(1); observe_event(value.i);
+    return _VVal'{tag: _VVAL_INT, i: value.i + 100, r: 0.0, s: ""};
+endfunction
+function automatic void consume(_VVal value);
+    observe_event(2); observe_event(value.i);
+endfunction
+function automatic void verify_events();
+    if (event_index != 4) $fatal(1, "missing receiver events");
+    $finish;
+endfunction
 initial begin
 static _VVal my_data = make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""});
 void'(consume(my_data));
+void'(verify_events());
 end
 endmodule

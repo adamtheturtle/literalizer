@@ -3,7 +3,18 @@ module Main
 type Val =
     | FInt of int64
     | FList of Val list
-let ``process`` (_value: obj) : obj = null
+let mutable eventIndex = 0
+let observeEvent (actual: int64) =
+    let expected = [| 1L; -1L; 1L; -2L; 1L; -3L |]
+    if eventIndex >= 6 || actual <> expected[eventIndex] then failwith "receiver event changed"
+    eventIndex <- eventIndex + 1
+let ``process`` (value: Val) =
+    match value with
+    | FInt value -> observeEvent 1L; observeEvent value; FInt (value + 100L)
+    | _ -> failwith "integer argument required"
+let verify_events () =
+    if eventIndex <> 6 then failwith "missing receiver events"
 ``process``(FInt(-1L)) |> ignore
 ``process``(FInt(-2L)) |> ignore
 ``process``(FInt(-3L)) |> ignore
+verify_events() |> ignore

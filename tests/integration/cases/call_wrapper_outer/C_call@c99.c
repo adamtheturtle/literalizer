@@ -14,9 +14,21 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-static CVal process(CVal _a0) { (void)_a0; return (CVal){0}; }
-static void emit(CVal _a0) { (void)_a0; }
+#include <assert.h>
+static int event_index = 0;
+static void observe_event(long long actual) {
+    const long long expected[] = {1, 42, 2, 142};
+    assert(event_index < 4 && actual == expected[event_index]);
+    ++event_index;
+}
+static CVal process(CVal value) {
+    observe_event(1); observe_event(value.i);
+    return (CVal){.i = value.i + 100};
+}
+static void emit(CVal value) { observe_event(2); observe_event(value.i); }
+static void verify_events(void) { assert(event_index == 4); }
 int main(void) {
 emit(process(((CVal){.i = 42})));
+verify_events();
     return 0;
 }

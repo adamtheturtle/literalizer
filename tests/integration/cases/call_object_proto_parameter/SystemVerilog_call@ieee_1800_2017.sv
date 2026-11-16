@@ -10,8 +10,22 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-task capture(input _VVal __proto__); endtask
+int event_index = 0;
+function automatic void observe_event(longint actual);
+    longint expected[2] = '{1, 1};
+    if (event_index >= 2 || actual != expected[event_index]) $fatal(1, "receiver event changed");
+    event_index++;
+endfunction
+function automatic _VVal capture(_VVal __proto__);
+    observe_event(1); observe_event(__proto__.i);
+    return _VVal'{tag: _VVAL_INT, i: __proto__.i + 100, r: 0.0, s: ""};
+endfunction
+function automatic void verify_events();
+    if (event_index != 2) $fatal(1, "missing receiver events");
+    $finish;
+endfunction
 initial begin
 void'(capture(_VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""}));
+void'(verify_events());
 end
 endmodule

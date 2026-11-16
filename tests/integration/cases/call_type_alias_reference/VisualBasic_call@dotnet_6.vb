@@ -1,9 +1,21 @@
+Imports System.Collections.Generic
 Module Check
-    Function process(value As Object) As Object
-        Return Nothing
+    Dim eventIndex As Integer
+    Sub ObserveEvent(actual As Long)
+        Dim expected As Long() = {1, 1}
+        If eventIndex >= 2 OrElse actual <> expected(eventIndex) Then Throw New System.Exception("receiver event changed")
+        eventIndex += 1
+    End Sub
+    Function process(value As Long) As Long
+        ObserveEvent(1) : ObserveEvent(value)
+        Return value + 100
     End Function
+    Private Sub verify_events()
+        If eventIndex <> 2 Then Throw New System.Exception("missing receiver events")
+    End Sub
     Sub _calls()
         Dim value = 1
         process(value)
+        verify_events()
     End Sub
 End Module

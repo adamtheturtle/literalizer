@@ -1,0 +1,562 @@
+# Native unary integer signatures. Selection uses language capabilities.
+
+[python]
+compile = []
+execute = ["{python}", "-I", "{source}"]
+scope = "body"
+state = '''_expected_events = ({events},)
+_event_index = 0
+def observe_event(actual: int, /) -> None:
+    global _event_index
+    assert _event_index < {count} and actual == _expected_events[_event_index]
+    _event_index += 1'''
+target = '''def {target}({parameter}: int) -> int:
+    observe_event(1); observe_event({parameter})
+    return {parameter} + {return_increment}'''
+consumer = '''def {consumer}({parameter}: int) -> None:
+    observe_event(2); observe_event({parameter})'''
+wrapper = '''def {wrapper}(actual: int, zipped: int, /) -> None:
+    observe_event(2); observe_event(actual)
+    observe_event(3); observe_event(zipped)'''
+verify = '''def verify_events() -> None:
+    assert _event_index == {count}'''
+wrapper_unary = '''def {wrapper}({parameter}: int, /) -> None:
+    observe_event(2); observe_event({parameter})'''
+
+[javascript]
+compile = []
+execute = ["node", "{source}"]
+scope = "body"
+state = '''const expectedEvents = [{events}];
+let eventIndex = 0;
+function observeEvent(actual) {{
+    if (eventIndex >= {count} || actual !== expectedEvents[eventIndex]) throw new Error("receiver event changed");
+    eventIndex++;
+}}'''
+target = '''function {target}({{{parameter}}}) {{
+    observeEvent(1); observeEvent({parameter});
+    return {parameter} + {return_increment};
+}}'''
+consumer = '''function {consumer}({{{parameter}}}) {{ observeEvent(2); observeEvent({parameter}); }}'''
+wrapper = '''function {wrapper}(actual, zipped) {{ observeEvent(2); observeEvent(actual); observeEvent(3); observeEvent(zipped); }}'''
+verify = '''function verify_events() {{ if (eventIndex !== {count}) throw new Error("missing receiver events"); }}'''
+wrapper_unary = '''function {wrapper}(actual) {{ observeEvent(2); observeEvent(actual); }}'''
+
+[typescript]
+compile = []
+execute = ["tsx", "{source}"]
+scope = "body"
+state = '''const expectedEvents = [{events}];
+let eventIndex = 0;
+function observeEvent(actual: number) {{
+    if (eventIndex >= {count} || actual !== expectedEvents[eventIndex]) throw new Error("receiver event changed");
+    eventIndex++;
+}}'''
+target = '''function {target}({{{parameter}}}: {{ {parameter}: number }}) {{
+    observeEvent(1); observeEvent({parameter});
+    return {parameter} + {return_increment};
+}}'''
+consumer = '''function {consumer}({{{parameter}}}: {{ {parameter}: number }}) {{ observeEvent(2); observeEvent({parameter}); }}'''
+wrapper = '''function {wrapper}(actual: number, zipped: number) {{ observeEvent(2); observeEvent(actual); observeEvent(3); observeEvent(zipped); }}'''
+verify = '''function verify_events(..._arguments: unknown[]) {{ if (eventIndex !== {count}) throw new Error("missing receiver events"); }}'''
+wrapper_unary = '''function {wrapper}(actual: number) {{ observeEvent(2); observeEvent(actual); }}'''
+
+[cpp]
+compile = ["c++", "-std=c++14", "-Wall", "-Wextra", "-Werror", "{source}", "-o", "{output}"]
+execute = ["{output}"]
+scope = "file_scope"
+state = '''#include <cassert>
+static int event_index = 0;
+static void observe_event(int actual) {{
+    const int expected[] = {{{events}}};
+    assert(event_index < {count} && actual == expected[event_index]);
+    ++event_index;
+}}'''
+target = '''static int {target}(int {parameter}) {{
+    observe_event(1); observe_event({parameter});
+    return {parameter} + {return_increment};
+}}'''
+consumer = '''static void {consumer}(int {parameter}) {{ observe_event(2); observe_event({parameter}); }}'''
+wrapper = '''static void {wrapper}(int actual, int zipped) {{ observe_event(2); observe_event(actual); observe_event(3); observe_event(zipped); }}'''
+verify = '''static void verify_events() {{ assert(event_index == {count}); }}'''
+wrapper_unary = '''static void {wrapper}(int {parameter}) {{ observe_event(2); observe_event({parameter}); }}'''
+
+[c]
+compile = ["clang", "-std=c99", "-Wall", "-Wextra", "-Werror", "{source}", "-o", "{output}"]
+execute = ["{output}"]
+scope = "file_scope"
+state = '''#include <assert.h>
+static int event_index = 0;
+static void observe_event(long long actual) {{
+    const long long expected[] = {{{events}}};
+    assert(event_index < {count} && actual == expected[event_index]);
+    ++event_index;
+}}'''
+target = '''static CVal {target}(CVal {parameter}) {{
+    observe_event(1); observe_event({parameter}.i);
+    return (CVal){{.i = {parameter}.i + {return_increment}}};
+}}'''
+consumer = '''static void {consumer}(CVal {parameter}) {{ observe_event(2); observe_event({parameter}.i); }}'''
+wrapper = '''static void {wrapper}(CVal actual, CVal zipped) {{ observe_event(2); observe_event(actual.i); observe_event(3); observe_event(zipped.i); }}'''
+verify = '''static void verify_events(void) {{ assert(event_index == {count}); }}'''
+wrapper_unary = '''static void {wrapper}(CVal {parameter}) {{ observe_event(2); observe_event({parameter}.i); }}'''
+
+[go]
+compile = ["go", "build", "-o", "{output}", "{source}"]
+execute = ["{output}"]
+scope = "file_scope"
+state = '''var eventIndex = 0
+func observeEvent(actual int) {{
+    expected := []int{{{events}}}
+    if eventIndex >= {count} || actual != expected[eventIndex] {{ panic("receiver event changed") }}
+    eventIndex++
+}}'''
+target = '''func {target}({parameter} int) int {{ observeEvent(1); observeEvent({parameter}); return {parameter} + {return_increment} }}'''
+consumer = '''func {consumer}({parameter} int) {{ observeEvent(2); observeEvent({parameter}) }}'''
+wrapper = '''func {wrapper}(actual int, zipped int) {{ observeEvent(2); observeEvent(actual); observeEvent(3); observeEvent(zipped) }}'''
+verify = '''func verify_events() {{ if eventIndex != {count} {{ panic("missing receiver events") }} }}'''
+wrapper_unary = '''func {wrapper}({parameter} int) {{ observeEvent(2); observeEvent({parameter}) }}'''
+
+[ruby]
+compile = []
+execute = ["ruby", "{source}"]
+scope = "body"
+state = '''$event_index = 0
+def observe_event(actual)
+  expected = [{events}]
+  raise "receiver event changed" unless $event_index < {count} && actual == expected[$event_index]
+  $event_index += 1
+end'''
+target = '''def {target}({parameter}:)
+  observe_event(1); observe_event({parameter})
+  {parameter} + {return_increment}
+end'''
+consumer = '''def {consumer}({parameter}:)
+  observe_event(2); observe_event({parameter})
+end'''
+wrapper = '''def {wrapper}(actual, zipped)
+  observe_event(2); observe_event(actual)
+  observe_event(3); observe_event(zipped)
+end'''
+verify = '''def verify_events
+  raise "missing receiver events" unless $event_index == {count}
+end'''
+wrapper_unary = '''def {wrapper}(actual)
+  observe_event(2); observe_event(actual)
+  observe_event(3); observe_event(zipped)
+end'''
+
+[lua]
+compile = []
+execute = ["lua", "{source}"]
+scope = "body"
+state = '''local expected_events = {{{events}}}
+local event_index = 1
+local function observe_event(actual)
+    assert(event_index <= {count} and actual == expected_events[event_index])
+    event_index = event_index + 1
+end'''
+target = '''local function {target}({parameter})
+    observe_event(1); observe_event({parameter})
+    return {parameter} + {return_increment}
+end'''
+consumer = '''local function {consumer}({parameter}) observe_event(2); observe_event({parameter}) end'''
+wrapper = '''local function {wrapper}(actual, zipped) observe_event(2); observe_event(actual) observe_event(3); observe_event(zipped) end'''
+verify = '''local function verify_events() assert(event_index == {count} + 1) end'''
+wrapper_unary = '''local function {wrapper}({parameter}) observe_event(2); observe_event({parameter}) end'''
+
+[java]
+compile = []
+execute = ["java", "{repository}/CheckJavaSyntax.java", "11", "{source}"]
+scope = "class_scope"
+state = '''private static int eventIndex;
+private static void observeEvent(int actual) {{
+    final int[] expected = {{{events}}};
+    if (eventIndex >= {count} || actual != expected[eventIndex]) throw new AssertionError("receiver event changed");
+    eventIndex++;
+}}'''
+target = '''static int {target}(int {parameter}) {{ observeEvent(1); observeEvent({parameter}); return {parameter} + {return_increment}; }}'''
+consumer = '''static void {consumer}(int {parameter}) {{ observeEvent(2); observeEvent({parameter}); }}'''
+wrapper = '''static void {wrapper}(int actual, int zipped) {{ observeEvent(2); observeEvent(actual); observeEvent(3); observeEvent(zipped); }}'''
+verify = '''static void verify_events() {{ if (eventIndex != {count}) throw new AssertionError("missing receiver events"); }}'''
+wrapper_unary = '''static void {wrapper}(int {parameter}) {{ observeEvent(2); observeEvent({parameter}); }}'''
+
+[csharp]
+compile = []
+execute = ["dotnet", "run", "--project", "{repository}/scripts/lint-csharp"]
+path_on_stdin = true
+scope = "class_scope"
+state = '''static int eventIndex;
+static void ObserveEvent(int actual) {{
+    int[] expected = {{{events}}};
+    if (eventIndex >= {count} || actual != expected[eventIndex]) throw new System.Exception("receiver event changed");
+    eventIndex++;
+}}'''
+target = '''static int {target}(int {parameter}) {{ ObserveEvent(1); ObserveEvent({parameter}); return {parameter} + {return_increment}; }}'''
+consumer = '''static void {consumer}(int {parameter}) {{ ObserveEvent(2); ObserveEvent({parameter}); }}'''
+wrapper = '''static void {wrapper}(int actual, int zipped) {{ ObserveEvent(2); ObserveEvent(actual); ObserveEvent(3); ObserveEvent(zipped); }}'''
+verify = '''static void verify_events() {{ if (eventIndex != {count}) throw new System.Exception("missing receiver events"); }}'''
+wrapper_unary = '''static void {wrapper}(int {parameter}) {{ ObserveEvent(2); ObserveEvent({parameter}); }}'''
+
+[d]
+compile = ["ldc2", "-w", "{source}", "-of={output}"]
+execute = ["{output}"]
+scope = "file_scope"
+state = '''int eventIndex;
+void observeEvent(long actual) {{
+    const long[] expected = [{events}];
+    assert(eventIndex < {count} && actual == expected[eventIndex]);
+    eventIndex++;
+}}'''
+target = '''long {target}(long {parameter}) {{ observeEvent(1); observeEvent({parameter}); return {parameter} + {return_increment}; }}
+long {target}(JSONValue {parameter}) {{ observeEvent(1); observeEvent({parameter}.integer); return {parameter}.integer + {return_increment}; }}'''
+consumer = '''void {consumer}(long {parameter}) {{ observeEvent(2); observeEvent({parameter}); }}
+void {consumer}(JSONValue {parameter}) {{ observeEvent(2); observeEvent({parameter}.integer); }}'''
+wrapper = '''void {wrapper}(long actual, long zipped) {{ observeEvent(2); observeEvent(actual); observeEvent(3); observeEvent(zipped); }}'''
+verify = '''void verify_events() {{ assert(eventIndex == {count}); }}'''
+wrapper_unary = '''void {wrapper}(long {parameter}) {{ observeEvent(2); observeEvent({parameter}); }}'''
+
+[nim]
+target_binding = '''proc {target}({parameter}: int): JsonNode {{.discardable.}} =
+    observeEvent(1); observeEvent({parameter})
+    %({parameter} + {return_increment})
+proc {target}({parameter}: JsonNode): JsonNode {{.discardable.}} =
+    observeEvent(1); observeEvent({parameter}.getInt())
+    %({parameter}.getInt() + {return_increment})'''
+compile = ["nim", "c", "--hints:off", "--nimcache:{directory}/nimcache", "-o:{output}", "{source}"]
+execute = ["{output}"]
+scope = "body"
+state = '''import std/json
+var eventIndex = 0
+proc observeEvent(actual: int) =
+    let expected = [{events}]
+    doAssert eventIndex < {count} and actual == expected[eventIndex]
+    inc eventIndex'''
+target = '''proc {target}({parameter}: int): int {{.discardable.}} =
+    observeEvent(1); observeEvent({parameter})
+    {parameter} + {return_increment}
+proc {target}({parameter}: JsonNode): int {{.discardable.}} =
+    observeEvent(1); observeEvent({parameter}.getInt())
+    {parameter}.getInt() + {return_increment}'''
+consumer = '''proc {consumer}({parameter}: int) = observeEvent(2); observeEvent({parameter})
+proc {consumer}({parameter}: JsonNode) = observeEvent(2); observeEvent({parameter}.getInt())'''
+wrapper = '''proc {wrapper}(actual: int, zipped: int) =
+    observeEvent(2); observeEvent(actual)
+    observeEvent(3); observeEvent(zipped)'''
+verify = '''proc verify_events() = doAssert eventIndex == {count}'''
+wrapper_unary = '''proc {wrapper}({parameter}: int) = observeEvent(2); observeEvent({parameter})'''
+
+[crystal]
+compile = ["crystal", "build", "{source}", "-o", "{output}"]
+execute = ["{output}"]
+scope = "body"
+state = '''class ReceiverEvents
+  @@index = 0
+  def self.observe(actual : Int)
+    expected = [{events}]
+    raise "receiver event changed" unless @@index < {count} && actual == expected[@@index]
+    @@index += 1
+  end
+  def self.verify
+    raise "missing receiver events" unless @@index == {count}
+  end
+end'''
+target = '''def {target}({parameter} : Int)
+  ReceiverEvents.observe(1); ReceiverEvents.observe({parameter})
+  {parameter} + {return_increment}
+end'''
+consumer = '''def {consumer}({parameter} : Int)
+  ReceiverEvents.observe(2); ReceiverEvents.observe({parameter})
+end'''
+wrapper = '''def {wrapper}(actual : Int, zipped : Int)
+  ReceiverEvents.observe(2); ReceiverEvents.observe(actual)
+  ReceiverEvents.observe(3); ReceiverEvents.observe(zipped)
+end'''
+verify = '''def verify_events
+  ReceiverEvents.verify
+end'''
+wrapper_unary = '''def {wrapper}({parameter} : Int)
+  ReceiverEvents.observe(2); ReceiverEvents.observe({parameter})
+end'''
+
+[php]
+compile = []
+execute = ["php", "{source}"]
+scope = "body"
+state = '''$event_index = 0;
+function observe_event(int $actual): void {{
+    global $event_index;
+    $expected = [{events}];
+    if ($event_index >= {count} || $actual !== $expected[$event_index]) throw new RuntimeException("receiver event changed");
+    $event_index++;
+}}'''
+target = '''function {target}(int ${parameter}): int {{ observe_event(1); observe_event(${parameter}); return ${parameter} + {return_increment}; }}'''
+consumer = '''function {consumer}(int ${parameter}): void {{ observe_event(2); observe_event(${parameter}); }}'''
+wrapper = '''function {wrapper}(int $actual, int $zipped): void {{ observe_event(2); observe_event($actual); observe_event(3); observe_event($zipped); }}'''
+verify = '''function verify_events(): void {{ global $event_index; if ($event_index !== {count}) throw new RuntimeException("missing receiver events"); }}'''
+wrapper_unary = '''function {wrapper}(int ${parameter}): void {{ observe_event(2); observe_event(${parameter}); }}'''
+
+[julia]
+compile = []
+execute = ["julia", "--startup-file=no", "{source}"]
+scope = "body"
+state = '''event_index = Ref(1)
+function observe_event(actual::Integer)
+    expected = [{events}]
+    @assert event_index[] <= {count} && actual == expected[event_index[]]
+    event_index[] += 1
+end'''
+target = '''function {target}(; {parameter})
+    observe_event(1); observe_event({parameter})
+    {parameter} + {return_increment}
+end'''
+consumer = '''function {consumer}(; {parameter})
+    observe_event(2); observe_event({parameter})
+end'''
+wrapper = '''function {wrapper}(actual, zipped)
+    observe_event(2); observe_event(actual)
+    observe_event(3); observe_event(zipped)
+end'''
+verify = '''function verify_events()
+    @assert event_index[] == {count} + 1
+end'''
+wrapper_unary = '''function {wrapper}(actual)
+    observe_event(2); observe_event(actual)
+end'''
+
+[groovy]
+compile = []
+execute = ["groovy", "{source}"]
+scope = "body"
+state = '''def expectedEvents = [{events}]
+def eventIndex = [0]
+def observeEvent = {{ long actual ->
+    assert eventIndex[0] < {count} && actual == expectedEvents[eventIndex[0]]
+    eventIndex[0]++
+}}'''
+target = '''def {target} = {{ Map args -> def value = args.{parameter}; observeEvent(1); observeEvent(value); value + {return_increment} }}'''
+consumer = '''def {consumer} = {{ Map args -> observeEvent(2); observeEvent(args.{parameter}) }}'''
+wrapper = '''def {wrapper} = {{ long actual, long zipped -> observeEvent(2); observeEvent(actual); observeEvent(3); observeEvent(zipped) }}'''
+verify = '''def verify_events = {{ -> assert eventIndex[0] == {count} }}'''
+wrapper_unary = '''def {wrapper} = {{ long actual -> observeEvent(2); observeEvent(actual) }}'''
+
+[haxe]
+compile = []
+execute = ["haxe", "--class-path", "{directory}", "--run", "{module_name}"]
+scope = "body"
+state = '''var expectedEvents:Array<Int> = [{events}];
+var eventIndex:Int = 0;
+function observeEvent(actual:Int):Void {{
+    if (eventIndex >= {count} || actual != expectedEvents[eventIndex]) throw "receiver event changed";
+    eventIndex++;
+}}'''
+target = '''function {target}({parameter}:Int):Int {{ observeEvent(1); observeEvent({parameter}); return {parameter} + {return_increment}; }}'''
+consumer = '''function {consumer}({parameter}:Int):Void {{ observeEvent(2); observeEvent({parameter}); }}'''
+wrapper = '''function {wrapper}(actual:Int, zipped:Int):Void {{ observeEvent(2); observeEvent(actual); observeEvent(3); observeEvent(zipped); }}'''
+verify = '''function verify_events():Void {{ if (eventIndex != {count}) throw "missing receiver events"; }}'''
+wrapper_unary = '''function {wrapper}({parameter}:Int):Void {{ observeEvent(2); observeEvent({parameter}); }}'''
+
+[kotlin]
+compile = []
+execute = ["kotlin", "{source}"]
+scope = "body"
+state = '''val expectedEvents = listOf({events})
+var eventIndex = 0
+fun observeEvent(actual: Int) {{
+    check(eventIndex < {count} && actual == expectedEvents[eventIndex])
+    eventIndex++
+}}'''
+target = '''fun {target}({parameter}: Int): Int {{ observeEvent(1); observeEvent({parameter}); return {parameter} + {return_increment} }}'''
+consumer = '''fun {consumer}({parameter}: Int) {{ observeEvent(2); observeEvent({parameter}) }}'''
+wrapper = '''fun {wrapper}(actual: Int, zipped: Int) {{ observeEvent(2); observeEvent(actual); observeEvent(3); observeEvent(zipped) }}'''
+verify = '''fun verify_events() {{ check(eventIndex == {count}) }}'''
+wrapper_unary = '''fun {wrapper}({parameter}: Int) {{ observeEvent(2); observeEvent({parameter}) }}'''
+
+[objective_c]
+compile = ["clang", "-fobjc-arc", "-framework", "Foundation", "-Wall", "-Wextra", "-Werror", "{source}", "-o", "{output}"]
+execute = ["{output}"]
+scope = "file_scope"
+state = '''#include <assert.h>
+static int event_index = 0;
+static void observe_event(long long actual) {{
+    const long long expected[] = {{{events}}};
+    assert(event_index < {count} && actual == expected[event_index]);
+    event_index++;
+}}'''
+target = '''static NSNumber *{target}(NSNumber *{parameter}) {{ observe_event(1); observe_event({parameter}.longLongValue); return @({parameter}.longLongValue + {return_increment}); }}'''
+consumer = '''static void {consumer}(NSNumber *{parameter}) {{ observe_event(2); observe_event({parameter}.longLongValue); }}'''
+wrapper = '''static void {wrapper}(NSNumber *actual, NSNumber *zipped) {{ observe_event(2); observe_event(actual.longLongValue); observe_event(3); observe_event(zipped.longLongValue); }}'''
+verify = '''static void verify_events(void) {{ assert(event_index == {count}); }}'''
+wrapper_unary = '''static void {wrapper}(NSNumber *{parameter}) {{ observe_event(2); observe_event({parameter}.longLongValue); }}'''
+
+[odin]
+compile = ["odin", "build", "{source}", "-file", "-out:{output}"]
+execute = ["{output}"]
+scope = "file_scope"
+state = '''event_index: int
+observe_event :: proc(actual: int) {{
+    expected := [?]int{{{events}}}
+    assert(event_index < {count} && actual == expected[event_index])
+    event_index += 1
+}}'''
+target = '''{target} :: proc({parameter}: int) -> int {{ observe_event(1); observe_event({parameter}); return {parameter} + {return_increment} }}'''
+consumer = '''{consumer} :: proc({parameter}: int) {{ observe_event(2); observe_event({parameter}) }}'''
+wrapper = '''{wrapper} :: proc(actual: int, zipped: int) {{ observe_event(2); observe_event(actual); observe_event(3); observe_event(zipped) }}'''
+verify = '''verify_events :: proc() {{ assert(event_index == {count}) }}'''
+wrapper_unary = '''{wrapper} :: proc({parameter}: int) {{ observe_event(2); observe_event({parameter}) }}'''
+
+[raku]
+compile = []
+execute = ["raku", "{source}"]
+scope = "body"
+state = '''my @expected_events = {events};
+my $event_index = 0;
+sub observe_event(Int $actual) {{
+    die "receiver event changed" unless $event_index < {count} && $actual == @expected_events[$event_index];
+    $event_index++;
+}}'''
+target = '''sub {target}(Int ${parameter}) {{ observe_event(1); observe_event(${parameter}); ${parameter} + {return_increment} }}'''
+consumer = '''sub {consumer}(Int ${parameter}) {{ observe_event(2); observe_event(${parameter}) }}'''
+wrapper = '''sub {wrapper}(Int $actual, Int $zipped) {{ observe_event(2); observe_event($actual); observe_event(3); observe_event($zipped) }}'''
+verify = '''sub verify_events() {{ die "missing receiver events" unless $event_index == {count} }}'''
+wrapper_unary = '''sub {wrapper}(Int ${parameter}) {{ observe_event(2); observe_event(${parameter}) }}'''
+
+[rust]
+compile = ["rustc", "--edition=2021", "-Dwarnings", "--crate-name", "receiver", "{source}", "-o", "{output}"]
+execute = ["{output}"]
+scope = "body"
+state = '''let event_index = std::cell::Cell::new(0_usize);
+let observe_event = |actual: i32| {{
+    let expected = [{events}];
+    let index = event_index.get();
+    assert!(index < {count});
+    assert_eq!(actual, expected[index]);
+    event_index.set(index + 1);
+}};'''
+target = '''let {target} = |{parameter}: i32| {{ observe_event(1); observe_event({parameter}); {parameter} + {return_increment} }};'''
+consumer = '''let {consumer} = |{parameter}: i32| {{ observe_event(2); observe_event({parameter}); }};'''
+wrapper = '''let {wrapper} = |actual: i32, zipped: i32| {{ observe_event(2); observe_event(actual); observe_event(3); observe_event(zipped); }};'''
+verify = '''let verify_events = || {{ assert_eq!(event_index.get(), {count}); }};'''
+wrapper_unary = '''let {wrapper} = |{parameter}: i32| {{ observe_event(2); observe_event({parameter}); }};'''
+
+[scala]
+compile = []
+execute = ["scala", "run", "--server=false", "{source}"]
+scope = "body"
+state = '''private val expectedEvents = List({events})
+private var eventIndex = 0
+def observeEvent(actual: Int): Unit = {{
+    assert(eventIndex < {count} && actual == expectedEvents(eventIndex))
+    eventIndex += 1
+}}'''
+target = '''def {target}({parameter}: Int): Int = {{ observeEvent(1); observeEvent({parameter}); {parameter} + {return_increment} }}'''
+consumer = '''def {consumer}({parameter}: Int): Unit = {{ observeEvent(2); observeEvent({parameter}) }}'''
+wrapper = '''def {wrapper}(actual: Int, zipped: Int): Unit = {{ observeEvent(2); observeEvent(actual); observeEvent(3); observeEvent(zipped) }}'''
+verify = '''def main(args: Array[String]): Unit = ()
+def verify_events(): Unit = {{ assert(eventIndex == {count}) }}'''
+wrapper_unary = '''def {wrapper}({parameter}: Int): Unit = {{ observeEvent(2); observeEvent({parameter}) }}'''
+
+[vb]
+compile = []
+execute = ["dotnet", "run", "--project", "{repository}/scripts/lint-vb"]
+path_on_stdin = true
+scope = "class_scope"
+state = '''Dim eventIndex As Integer
+Sub ObserveEvent(actual As Long)
+    Dim expected As Long() = {{{events}}}
+    If eventIndex >= {count} OrElse actual <> expected(eventIndex) Then Throw New System.Exception("receiver event changed")
+    eventIndex += 1
+End Sub'''
+target = '''Function {target}({parameter} As Long) As Long
+    ObserveEvent(1) : ObserveEvent({parameter})
+    Return {parameter} + {return_increment}
+End Function'''
+consumer = '''Sub {consumer}({parameter} As Long)
+    ObserveEvent(2) : ObserveEvent({parameter})
+End Sub'''
+wrapper = '''Sub {wrapper}(actual As Long, zipped As Long)
+    ObserveEvent(2) : ObserveEvent(actual)
+    ObserveEvent(3) : ObserveEvent(zipped)
+End Sub'''
+verify = '''Private Sub verify_events()
+    If eventIndex <> {count} Then Throw New System.Exception("missing receiver events")
+End Sub'''
+wrapper_unary = '''Sub {wrapper}({parameter} As Long)
+    ObserveEvent(2) : ObserveEvent({parameter})
+End Sub'''
+
+[zig]
+target_void = '''fn {target}({parameter}: ZVal) void {{ observe_event(1); observe_event({parameter}.int); }}'''
+compile = ["zig", "build-exe", "{source}", "-femit-bin={output}"]
+execute = ["{output}"]
+scope = "file_scope"
+state = '''var event_index: usize = 0;
+fn observe_event(actual: i64) void {{
+    const expected = [_]i64{{{events}}};
+    if (event_index >= {count} or actual != expected[event_index]) @panic("receiver event changed");
+    event_index += 1;
+}}'''
+target = '''fn {target}({parameter}: ZVal) ZVal {{ observe_event(1); observe_event({parameter}.int); return .{{ .int = {parameter}.int + {return_increment} }}; }}'''
+consumer = '''fn {consumer}({parameter}: ZVal) void {{ observe_event(2); observe_event({parameter}.int); }}'''
+wrapper = '''fn {wrapper}(actual: ZVal, zipped: ZVal) void {{ observe_event(2); observe_event(actual.int); observe_event(3); observe_event(zipped.int); }}'''
+verify = '''fn verify_events() void {{ if (event_index != {count}) @panic("missing receiver events"); }}'''
+wrapper_unary = '''fn {wrapper}({parameter}: ZVal) void {{ observe_event(2); observe_event({parameter}.int); }}'''
+
+[fsharp]
+compile = []
+execute = ["dotnet", "fsi", "--nologo", "--warnaserror+", "--langversion:8.0", "--exec", "{source}"]
+scope = "body"
+state = '''let mutable eventIndex = 0
+let observeEvent (actual: int64) =
+    let expected = [| {events} |]
+    if eventIndex >= {count} || actual <> expected[eventIndex] then failwith "receiver event changed"
+    eventIndex <- eventIndex + 1'''
+target = '''let ``{target}`` ({parameter}: Val) =
+    match {parameter} with
+    | FInt value -> observeEvent 1L; observeEvent value; FInt (value + {return_increment}L)
+    | _ -> failwith "integer argument required"'''
+consumer = '''let ``{consumer}`` ({parameter}: Val) =
+    match {parameter} with
+    | FInt value -> observeEvent 2L; observeEvent value
+    | _ -> failwith "integer argument required"'''
+wrapper = '''let ``{wrapper}`` (actual: Val, zipped: Val) =
+    match actual, zipped with
+    | FInt value, FInt companion -> observeEvent 2L; observeEvent value; observeEvent 3L; observeEvent companion
+    | _ -> failwith "integer argument required"'''
+verify = '''let verify_events () =
+    if eventIndex <> {count} then failwith "missing receiver events"'''
+wrapper_unary = '''let ``{wrapper}`` ({parameter}: Val) =
+    match {parameter} with
+    | FInt value -> observeEvent 2L; observeEvent value
+    | _ -> failwith "integer argument required"'''
+event_separator = "; "
+event_suffix = "L"
+
+[systemverilog]
+compile = ["verilator", "--binary", "--timing", "--language", "1800-2017", "--Mdir", "{directory}/obj", "-o", "{output}", "{source}"]
+execute = ["{output}"]
+scope = "body"
+state = '''int event_index = 0;
+function automatic void observe_event(longint actual);
+    longint expected[{count}] = '{{{events}}};
+    if (event_index >= {count} || actual != expected[event_index]) $fatal(1, "receiver event changed");
+    event_index++;
+endfunction'''
+target = '''function automatic _VVal {target}(_VVal {parameter});
+    observe_event(1); observe_event({parameter}.i);
+    return _VVal'{{tag: _VVAL_INT, i: {parameter}.i + {return_increment}, r: 0.0, s: ""}};
+endfunction'''
+consumer = '''function automatic void {consumer}(_VVal {parameter});
+    observe_event(2); observe_event({parameter}.i);
+endfunction'''
+wrapper = '''function automatic void {wrapper}(_VVal actual, _VVal zipped);
+    observe_event(2); observe_event(actual.i);
+    observe_event(3); observe_event(zipped.i);
+endfunction'''
+verify = '''function automatic void verify_events();
+    if (event_index != {count}) $fatal(1, "missing receiver events");
+    $finish;
+endfunction'''
+wrapper_unary = '''function automatic void {wrapper}(_VVal {parameter});
+    observe_event(2); observe_event({parameter}.i);
+endfunction'''

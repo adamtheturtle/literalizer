@@ -1,9 +1,18 @@
 #import <Foundation/Foundation.h>
-static id process(id _a0) { (void)_a0; return nil; }
-static void emit(id _a0, id _a1) { (void)_a0, (void)_a1; }
+#include <assert.h>
+static int event_index = 0;
+static void observe_event(long long actual) {
+    const long long expected[] = {1, 1, 2, 101, 3, 42};
+    assert(event_index < 6 && actual == expected[event_index]);
+    event_index++;
+}
+static NSNumber *process(NSNumber *value) { observe_event(1); observe_event(value.longLongValue); return @(value.longLongValue + 100); }
+static void emit(NSNumber *actual, NSNumber *zipped) { observe_event(2); observe_event(actual.longLongValue); observe_event(3); observe_event(zipped.longLongValue); }
+static void verify_events(void) { assert(event_index == 6); }
 int main(void) {
 @autoreleasepool {
 emit(process(@1), @42);
+verify_events();
 }
     return 0;
 }
