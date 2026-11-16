@@ -2,6 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
+integer_receiver_events = [["call", 1]]
 target_function = "process"
 parameter_names = ["data"]
 per_element = false

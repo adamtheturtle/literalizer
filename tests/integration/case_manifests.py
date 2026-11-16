@@ -485,10 +485,18 @@ class CallCaseSpec(
     shared_invocation: bool = False
     parameter_names: manifest_values.StringTuple
     per_element: bool
+    # Independently authored integer events observed by native receivers.
+    # A receiver returns its argument plus 100; wrappers/follow-ups observe
+    # that result and any zipped operand in execution order.
+    integer_receiver_events: manifest_values.IntegerCallEvents | None = None
     # Native built-ins need no synthetic target declaration in a manual file.
     include_target_stub: bool = True
     # Preserve the returned code prefix instead of reconciling its metadata.
     use_unwrapped_code: bool = False
+    # Caller statements around a public fragment, inside the native wrapper.
+    # Preserve every emitted byte, including terminators in open literals.
+    caller_code_prefix: str = ""
+    caller_code_suffix: str = ""
     # Caller-owned imports and declarations in manually composed fixtures.
     caller_imports: manifest_values.StringTuple = Field(
         default_factory=tuple[str, ...]
@@ -646,6 +654,13 @@ class CallCaseSpec(
 
     def _validate_transform_recipe(self) -> None:
         """Require a single recipe for the primary call expression."""
+        if (
+            self.caller_code_prefix != "" or self.caller_code_suffix != ""
+        ) and (not self.use_unwrapped_code or self.wrap_in_file):
+            msg = (
+                "caller code requires use_unwrapped_code without wrap_in_file"
+            )
+            raise ValueError(msg)
         recipes = [
             name
             for name, present in (

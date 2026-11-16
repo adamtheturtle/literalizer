@@ -39,6 +39,11 @@ The accepted fields and consistency checks are defined in ``case_manifests.py``.
 
 Keep typed failures, incomplete fragments, metadata and concurrency contracts in the directories described by ``../README.rst``.
 A complete generated program belongs here; an executable round-trip case should also compare the reconstructed value with the input.
+An open literal that caller-owned code can complete may use ``use_unwrapped_code`` and ``caller_code_suffix``.
+The suffix is appended directly to the public fragment before wrapping; include a native assertion to check the completed value.
+Use ``caller_code_prefix`` for setup statements inside the native wrapper, such as declaring a variable that the fragment assigns.
+The ``incomplete_c_raw_string`` examples in ``cases/call_bound_literal_followup_new`` and ``cases/call_bound_literal_followup_existing`` exercise this boundary.
+The ``incomplete_outer_interpolation`` example in ``cases/call_scalar_result_json_binding`` completes a nested interpolation in the same way.
 
 Checking and regenerating
 -------------------------
@@ -82,3 +87,18 @@ Follow the ordinary literal path in this order:
 The specialized entry points are ``test_calls.py``, ``test_literalize_ref_golden.py``, ``test_literalize_ref_default.py`` and ``test_constructor_targets.py``.
 Backend-specific fixture naming, native consumer scaffolds and sample options live under ``languages/``.
 ``language_specs.py`` applies those naming rules and creates versioned fixture paths.
+
+Observable call receivers
+-------------------------
+
+Ordinary unary integer calls can declare ``integer_receiver_events`` in their call table.
+For example, ``[["call", 1], ["result", 101], ["zipped", 42]]`` checks the actual argument, the returned result and its zipped companion in order.
+Author these expected events independently of renderer metadata.
+The native receiver returns its argument plus 100; separate consumers observe the result and companion, and a final public call checks that every expected event occurred.
+Existing bindings start from literal declarations, with their initial and final values observed through the real consumer.
+
+``call_receivers.toml`` shares implementations by native integer signature and calling convention.
+Capability declarations select participants before the syntax table is consulted.
+Both ordinary and option-variant calls retain their effective spec, and external references retain their original inference hints.
+``runtime/test_observable_calls.py`` compiles and executes positive programs and controls for dropped, repeated and reordered calls, swapped zipped operands and incorrect returned or bound values.
+Public ``wrap_in_file`` cases continue to exercise the library's generated-stub contract.

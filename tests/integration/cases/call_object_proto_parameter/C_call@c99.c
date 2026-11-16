@@ -14,8 +14,20 @@ struct CVal {
     };
 };
 struct CKV { const char *k; CVal v; };
-static void capture(CVal _a0) { (void)_a0; }
+#include <assert.h>
+static int *event_index(void) { static int index = 0; return &index; }
+static void observe_event(long long actual) {
+    const long long expected[] = {1, 1};
+    assert(*event_index() < 2 && actual == expected[*event_index()]);
+    ++*event_index();
+}
+static CVal capture(CVal argument) {
+    observe_event(1); observe_event(argument.i);
+    return (CVal){.i = argument.i + 100};
+}
+static void verify_events(void) { assert(*event_index() == 2); }
 int main(void) {
 capture(((CVal){.i = 1}));
+verify_events();
     return 0;
 }

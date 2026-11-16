@@ -77,6 +77,12 @@ def _name_resolver[NamedT](
 # to be read as the immutable containers the harness holds.  The item
 # type is still checked.
 type StringTuple = Annotated[tuple[str, ...], Field(strict=False)]
+type IntegerCallEvent = Annotated[
+    tuple[Literal["call", "result", "zipped"], int], Field(strict=False)
+]
+type IntegerCallEvents = Annotated[
+    tuple[IntegerCallEvent, ...], Field(strict=False, min_length=1)
+]
 type StringFrozenSet = Annotated[frozenset[str], Field(strict=False)]
 _LANGUAGES_BY_NAME = {
     lang_cls.__name__: lang_cls for lang_cls in ALL_LANGUAGES

@@ -3,6 +3,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
+integer_receiver_events = [["result", 42], ["call", 42], ["result", 142]]
 target_function = "make_widget"
 parameter_names = ["value"]
 per_element = false
@@ -167,3 +168,26 @@ marker = "#"
 
 [call_examples.ref_declarations]
 my_data = "42"
+
+[[call_examples]]
+# Migrated from rust_incomplete_raw_string_existing: preserve the open C raw
+# string and its generated semicolon, then complete it in caller-owned code.
+example = "incomplete_c_raw_string"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "existing"
+include_target_stub = false
+use_unwrapped_code = true
+call_transform = 'make_widget(cr#"// payload'
+caller_body_preamble = [
+    "fn make_widget(value: &'static std::ffi::CStr) -> &'static std::ffi::CStr { value }",
+    'let mut my_data = c"seed";',
+    'assert_eq!(my_data.to_bytes(), b"seed");',
+]
+caller_code_suffix = '"#); assert_eq!(my_data.to_bytes(), b"// payload;");'
+
+[[call_examples.gates]]
+kind = "call_hash_raw_prefix"
+prefix = "cr"
+marker = "#"

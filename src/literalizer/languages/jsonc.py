@@ -81,6 +81,7 @@ from literalizer._language import (
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
+    empty_scalar_preamble,
     identity_call_arg,
     identity_constructor_target,
     no_call_binding_body_preamble,
@@ -196,6 +197,7 @@ class Jsonc(metaclass=LanguageCls):
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = True
     supports_local_binding_documents = False
+    supports_stateful_free_call_consumers = False
     supports_stateful_receiver_result_checks = False
     supports_native_invocations = False
     supports_dotted_calls = True
@@ -727,25 +729,17 @@ class Jsonc(metaclass=LanguageCls):
         """Callable that formats one ordered-map entry."""
         return _format_jsonc_dict_entry
 
-    @cached_property
-    @beartype
-    def format_variable_declaration(
-        self,
-    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+    format_variable_declaration: ClassVar[
+        "staticmethod[[str, str, Value, frozenset[enum.Enum]], str]"
+    ] = staticmethod(DeclarationStyles.ASSIGN.value.formatter)
 
     assignment_declares_binding = declares_binding
     reference_assignment_declares_binding = assignment_declares_binding
     call_assignment_declares_binding = True
 
-    @cached_property
-    @beartype
-    def format_variable_assignment(
-        self,
-    ) -> Callable[[str, str, Value], str]:
-        """Callable that formats an assignment to an existing variable."""
-        return variable_formatter(template="{value}")
+    format_variable_assignment: ClassVar[
+        "staticmethod[[str, str, Value], str]"
+    ] = staticmethod(variable_formatter(template="{value}"))
 
     @cached_property
     @beartype
@@ -753,11 +747,9 @@ class Jsonc(metaclass=LanguageCls):
         """Per-instance scalar preamble (JSONC needs none)."""
         return {}
 
-    @cached_property
-    @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar body preamble (JSONC needs none)."""
-        return {}
+    scalar_body_preamble: ClassVar[
+        cached_property[dict[type, tuple[str, ...]]]
+    ] = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype

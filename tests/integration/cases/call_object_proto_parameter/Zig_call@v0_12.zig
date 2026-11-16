@@ -10,7 +10,15 @@ const ZVal = union(enum) {
     set: []const ZVal,
 };
 const ZKV = struct { key: []const u8, val: ZVal };
-fn capture(__proto__: ZVal) void { _ = __proto__; }
+var event_index: usize = 0;
+fn observe_event(actual: i64) void {
+    const expected = [_]i64{1, 1};
+    if (event_index >= 2 or actual != expected[event_index]) @panic("receiver event changed");
+    event_index += 1;
+}
+fn capture(__proto__: ZVal) void { observe_event(1); observe_event(__proto__.int); }
+fn verify_events() void { if (event_index != 2) @panic("missing receiver events"); }
 pub fn main() void {
     capture(.{ .int = 1 });
+    verify_events();
 }

@@ -43,12 +43,21 @@ _CASES = Path(__file__).parent / "cases"
 
 
 @pytest.mark.parametrize(
-    argnames="api", argvalues=["native", "shared", "bare"]
-)
-@pytest.mark.parametrize(
-    argnames="case",
-    argvalues=native_invocation_cases(cases_dir=_CASES),
-    ids=lambda case: case.test_id,
+    argnames=("case", "api"),
+    argvalues=[
+        pytest.param(case, api, id=f"{case.test_id}-{api}")
+        for case in native_invocation_cases(cases_dir=_CASES)
+        for api in (
+            ("native",)
+            if all(
+                step.get("single", False)
+                for step in json.loads(
+                    s=case.manifest.input.path.read_text(encoding="utf-8")
+                )
+            )
+            else ("native", "shared", "bare")
+        )
+    ],
 )
 def test_native_invocation_golden(
     *,

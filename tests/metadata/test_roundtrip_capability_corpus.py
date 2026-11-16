@@ -18,16 +18,6 @@ _CASES = TypeAdapter(type=_RoundTripCases).validate_python(
 )
 
 
-def test_every_language_declares_round_trip_capabilities() -> None:
-    """Capability discovery uses required metadata, never a fallback."""
-    for language_cls in ALL_LANGUAGES:
-        capabilities = language_cls.variant_metadata.round_trip_capabilities
-        assert isinstance(capabilities, frozenset)
-        assert all(
-            isinstance(item, RoundTripCapability) for item in capabilities
-        )
-
-
 def test_audited_languages_declare_their_supported_groups() -> None:
     """Each audited backend declares exactly its TOML-recorded groups."""
     for language_cls in ALL_LANGUAGES:

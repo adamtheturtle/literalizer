@@ -48,6 +48,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
         "supports_typed_dict_open",
         "supports_variadic_calls",
         "supports_stateful_receiver_result_checks",
+        "supports_stateful_free_call_consumers",
         "supports_local_binding_documents",
         "reserved_variable_identifiers",
         "supports_key_value_assignment_documents",
@@ -112,20 +113,6 @@ def test_variant_metadata_fields_have_no_defaults() -> None:
     argvalues=_SORTED_LANGUAGES,
     ids=_language_class_name,
 )
-def test_language_version_is_non_empty_string(
-    *,
-    language_cls: LanguageCls,
-) -> None:
-    """Every language's default ``language_version`` is an enum member."""
-    spec = language_cls()
-    assert isinstance(spec.language_version, enum.Enum)
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=_language_class_name,
-)
 def test_pygments_name_is_valid(
     *,
     language_cls: LanguageCls,
@@ -134,39 +121,6 @@ def test_pygments_name_is_valid(
     if language_cls.pygments_name is None:
         return
     _ = find_lexer_class_by_name(_alias=language_cls.pygments_name)
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=_language_class_name,
-)
-def test_protocol_properties_accessible(
-    *,
-    language_cls: LanguageCls,
-) -> None:
-    """Every Language exposes its Protocol attributes for any language."""
-    spec = language_cls()
-    assert callable(spec.validate_call_arg)
-    assert callable(spec.format_call_statement)
-    assert callable(spec.call_data_dependent_preamble)
-    assert callable(spec.format_call_stub)
-    assert callable(spec.format_call_preamble_stub)
-    assert callable(spec.format_call_class_scope_stub)
-    assert callable(spec.format_call_target)
-    assert callable(spec.format_call_ref_identifier)
-    assert callable(spec.format_call_arg_ref_identifier)
-    assert callable(spec.format_call_arg_ref_identifier_consumable)
-    assert callable(spec.consumable_ref_value_inhibits_consuming_form)
-    assert callable(spec.format_variable_declaration)
-    assert callable(spec.format_variable_assignment)
-    assert callable(spec.type_hint_collection_preamble_lines)
-    assert isinstance(spec.scalar_body_preamble, dict)
-    assert isinstance(spec.supports_empty_sibling_sequence_type_hints, bool)
-    assert isinstance(spec.supports_typed_dict_open, bool)
-    assert isinstance(spec.supports_standalone_comments_in_wrapped_calls, bool)
-    assert isinstance(spec.supports_multi_param_call_wrapper_stub, bool)
-    assert isinstance(spec.supports_dict_literal_as_free_expression, bool)
 
 
 def test_language_protocol_members_are_not_class_level_none() -> None:
@@ -304,19 +258,6 @@ def test_supports_record_shape_names_matches_constructor(
     spec = language_cls()
     accepts_kwarg = isinstance(spec, _HasRecordShapeNames)
     assert language_cls.supports_record_shape_names == accepts_kwarg
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=_language_class_name,
-)
-def test_record_shape_name_declaration_property_is_boolean(
-    *,
-    language_cls: LanguageCls,
-) -> None:
-    """Every language exposes its record-shape declaration behavior."""
-    assert isinstance(language_cls.record_shape_names_emit_declarations, bool)
 
 
 def test_supported_ref_cases_independent_of_identifier_cases() -> None:

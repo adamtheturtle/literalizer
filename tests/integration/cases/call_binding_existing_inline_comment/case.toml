@@ -3,6 +3,7 @@ owner = "literalize-call"
 
 # Consolidates original regressions: call_binding_existing_comment_inline_d, call_binding_existing_comment_inline_systemverilog.
 [call]
+integer_receiver_events = [["result", 42], ["call", 42], ["result", 142]]
 followup_target_function = "consume_widget"
 followup_source = '{"$ref": "my_data"}'
 gates = [{kind = "capability_flag", flag = "declares_call_styles"}, {kind = "enum_member_present", option = "comment_format", member = "DOUBLE_SLASH"}]

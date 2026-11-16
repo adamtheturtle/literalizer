@@ -334,10 +334,6 @@ def validate_call_parameter_names(
 ) -> None:
     """Raise when call parameter names are invalid or duplicated."""
     language_name = language.__class__.__name__
-    language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):
-        msg = "Call parameter validation requires a LanguageCls language"
-        raise TypeError(msg)
     case_sensitive = language.reserved_variable_identifiers_case_sensitive
     seen: set[str] = set()
     for name in names:
@@ -351,10 +347,8 @@ def validate_call_parameter_names(
                 reason="it is duplicated",
             )
         seen.add(comparison_name)
-        parameter_pattern = (
-            language_cls.reserved_call_parameter_identifier_pattern
-        )
-        if name in language_cls.reserved_call_parameter_identifiers or (
+        parameter_pattern = language.reserved_call_parameter_identifier_pattern
+        if name in language.reserved_call_parameter_identifiers or (
             parameter_pattern is not None
             and parameter_pattern.fullmatch(string=name) is not None
         ):
@@ -363,7 +357,7 @@ def validate_call_parameter_names(
                 parameter_name=name,
                 reason="it is reserved in a call parameter list",
             )
-        if reject_reserved and language_cls.declares_call_parameter_names:
+        if reject_reserved and language.declares_call_parameter_names:
             if language.reserved_variable_identifiers_case_sensitive:
                 reserved = name in language.reserved_variable_identifiers
             else:
@@ -384,7 +378,7 @@ def validate_call_parameter_names(
                     parameter_name=name,
                     reason="it is a reserved identifier",
                 )
-        if not language_cls.new_variable_name_syntax.accepts(name=name) or (
+        if not language.new_variable_name_syntax.accepts(name=name) or (
             language.max_variable_identifier_length is not None
             and len(name) > language.max_variable_identifier_length
         ):
@@ -1643,6 +1637,10 @@ class _LanguageMetadata(_LanguageMetadataBase):
     supports_native_invocations: bool
     supports_local_binding_documents: bool
     """Whether native documents can bind and return local values."""
+    supports_stateful_free_call_consumers: bool
+    """Whether composed files can host unary integer receivers as free
+    functions, retaining state for final verification of observed events.
+    """
     supports_stateful_receiver_result_checks: bool
     """Whether invocation recipes can check a receiver's method or
     function field result while retaining changes to receiver state.
@@ -2060,6 +2058,30 @@ class Language(typing.Protocol):
         ...
 
     @property
+    def declares_call_parameter_names(self) -> bool:
+        """Whether generated call stubs declare their parameter names."""
+        ...
+
+    @property
+    def reserved_call_parameter_identifiers(self) -> frozenset[str]:
+        """Return identifiers reserved specifically in parameter lists."""
+        ...
+
+    @property
+    def stringifies_nested_collections(self) -> bool:
+        """Whether nested collection syntax becomes string payload
+        data.
+        """
+        ...
+
+    @property
+    def wraps_data_dependent_preamble_in_body(self) -> bool:
+        """Whether data-dependent preamble entries belong inside the
+        body.
+        """
+        ...
+
+    @property
     def contextual_call_target_identifiers(self) -> frozenset[str]:
         """Return contextual identifiers permitted as call targets."""
         ...
@@ -2133,6 +2155,15 @@ class Language(typing.Protocol):
         # A class-level ``None`` marks a runtime Protocol member as absent.
         # These optional metadata values therefore remain static-only until
         # https://github.com/python/cpython/issues/156413 is fixed.
+        @property
+        def reserved_call_parameter_identifier_pattern(
+            self,
+        ) -> re.Pattern[str] | None:
+            """Return the reserved call-parameter pattern, when
+            present.
+            """
+            ...
+
         @property
         def call_target_name_syntax(self) -> NewVariableNameSyntax | None:
             """Return the specialized call-target grammar, when
@@ -2404,6 +2435,10 @@ class Language(typing.Protocol):
 
     supports_local_binding_documents: bool
     """Whether native documents can bind and return local values."""
+    supports_stateful_free_call_consumers: bool
+    """Whether composed files can host unary integer receivers as free
+    functions, retaining state for final verification of observed events.
+    """
     supports_stateful_receiver_result_checks: bool
     """Whether invocation recipes can check a receiver's method or
     function field result while retaining changes to receiver state.
@@ -4391,3 +4426,12 @@ def requires_declared_binding(self: Language, _data: Value, /) -> bool:
 def empty_record_shape_names() -> MappingProxyType[frozenset[str], str]:
     """Create the immutable default for custom record shape names."""
     return MappingProxyType[frozenset[str], str](mapping={})
+
+
+@beartype
+def empty_scalar_preamble(
+    language: Language, /
+) -> dict[type, tuple[str, ...]]:
+    """Return a fresh empty scalar preamble for a cached descriptor."""
+    del language
+    return {}
