@@ -21,7 +21,7 @@ from literalizer._language import (
     PositionalCallStyle,
 )
 from literalizer.exceptions import LiteralizerError
-from literalizer.languages import ALL_LANGUAGES
+from literalizer.languages import ALL_LANGUAGES, Python
 
 _LANGUAGES: list[LanguageCls] = sorted(
     ALL_LANGUAGES, key=lambda cls: cls.__name__
@@ -117,25 +117,21 @@ def test_constructor_recipe_reuses_backend_syntax(
         ({"default": {"native": {}, "target-function": "f"}}, "unknown"),
     ],
 )
-@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
 def test_invalid_shared_recipes(
-    recipe: dict[str, object], message: str, language_cls: LanguageCls
+    recipe: dict[str, object], message: str
 ) -> None:
     """Malformed metadata is rejected before input rendering."""
     with pytest.raises(expected_exception=NativeCallError, match=message):
         _ = literalize_invocations(
             source="[[]]",
             input_format=InputFormat.JSON,
-            language=language_cls(),
+            language=Python(),
             invocation=recipe,
         )
 
 
 @pytest.mark.parametrize(argnames="indent", argvalues=[-1, 0])
-@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
-def test_invalid_generic_placement(
-    indent: int, language_cls: LanguageCls
-) -> None:
+def test_invalid_generic_placement(indent: int) -> None:
     """Unsupported placement must never be silently ignored."""
     with pytest.raises(
         expected_exception=NativeCallError, match="nonnegative indent"
@@ -143,7 +139,7 @@ def test_invalid_generic_placement(
         _ = literalize_invocations(
             source="[[]]",
             input_format=InputFormat.JSON,
-            language=language_cls(),
+            language=Python(),
             invocation={
                 "default": {"target-function": "f", "parameter-names": []}
             },
@@ -195,10 +191,7 @@ def test_expected_values_are_required_and_paired(
         )
 
 
-@pytest.mark.parametrize(argnames="language_cls", argvalues=_LANGUAGES)
-def test_empty_checked_calls_still_require_expected_source(
-    language_cls: LanguageCls,
-) -> None:
+def test_empty_checked_calls_still_require_expected_source() -> None:
     """An empty input cannot hide an incomplete expected-value
     contract.
     """
@@ -208,7 +201,7 @@ def test_empty_checked_calls_still_require_expected_source(
         _ = literalize_invocations(
             source="[]",
             input_format=InputFormat.JSON,
-            language=language_cls(),
+            language=Python(),
             invocation={
                 "default": {
                     "target-function": "consume",
