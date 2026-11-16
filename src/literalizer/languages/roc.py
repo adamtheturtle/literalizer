@@ -868,10 +868,7 @@ class Roc(metaclass=LanguageCls):
             string=content,
         )
         variable_name = context.variable_name
-        effective_preamble = self._used_body_preamble(context=context)
-        preamble_str = ""
-        if len(effective_preamble) > 0:
-            preamble_str = "\n".join(effective_preamble) + "\n\n"
+        preamble_str = self._body_preamble_text(context=context)
         if variable_name == "":
             return self._wrap_calls(
                 declarations=(), calls=content, preamble=preamble_str
@@ -894,20 +891,23 @@ class Roc(metaclass=LanguageCls):
         )
 
     @staticmethod
-    def _used_body_preamble(
+    def _body_preamble_text(
         *,
         context: FileWrapperContext,
-    ) -> tuple[str, ...]:
+    ) -> str:
         """Keep generated aliases only for literal-binding
         declarations.
         """
-        if context.has_literal_declarations:
-            return context.body_preamble
-        return tuple(
-            entry
-            for entry in context.body_preamble
-            if entry not in context.generated_body_preamble
-        )
+        effective_preamble = context.body_preamble
+        if not context.has_literal_declarations:
+            effective_preamble = tuple(
+                entry
+                for entry in context.body_preamble
+                if entry not in context.generated_body_preamble
+            )
+        if len(effective_preamble) == 0:
+            return ""
+        return "\n".join(effective_preamble) + "\n\n"
 
     def wrap_calls_with_declarations(
         self,
@@ -918,10 +918,7 @@ class Roc(metaclass=LanguageCls):
         """Keep declarations at app scope and execute calls in
         ``main!``.
         """
-        effective_preamble = self._used_body_preamble(context=context)
-        preamble_str = ""
-        if len(effective_preamble) > 0:
-            preamble_str = "\n".join(effective_preamble) + "\n\n"
+        preamble_str = self._body_preamble_text(context=context)
         return self._wrap_calls(
             declarations=declarations, calls=calls, preamble=preamble_str
         )
