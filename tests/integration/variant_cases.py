@@ -426,8 +426,14 @@ def build_variant_cases() -> list[VariantCase]:
     case-local manifest entries, plus the manifest-selected contextual
     expansions for variable forms, modifiers, and pre-indent coverage.
     """
-    special_float_cases = cases_with_special_floats(cases_dir=_CASES_DIR)
     manifests = load_case_manifests(cases_dir=_CASES_DIR)
+    special_float_cases = cases_with_special_floats(
+        inputs={
+            manifest.case_dir.name: manifest.input
+            for manifest in manifests
+            if len(manifest.variants) > 0
+        }
+    )
     selection_by_case = {
         manifest.case_dir.name: manifest.selection for manifest in manifests
     }

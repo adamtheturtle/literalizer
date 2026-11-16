@@ -6,6 +6,7 @@ This module selects languages and collects the contexts used by
 """
 
 import functools
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal
 
@@ -82,21 +83,20 @@ def _case_data(*, input_info: CaseInput) -> CaseData:
     return load_case_data(input_info=input_info)
 
 
-@functools.cache
 @beartype
 def cases_with_special_floats(
-    cases_dir: Path,
+    *,
+    inputs: Mapping[str, CaseInput],
 ) -> frozenset[str]:
-    """Return case directory names whose input contains a non-finite
-    float that some languages cannot produce at runtime.
+    """Find non-finite values only in the inputs requested by a consumer.
 
-    Every case is parsed by its declared format, so a JSON5/TOML case
-    expressing ``inf``/``nan`` is detected the same as a YAML one.
+    Shared input parsing is cached by _case_data; this selection has no
+    separate cache that would retain unrelated corpus expansions.
     """
     return frozenset(
-        manifest.case_dir.name
-        for manifest in load_case_manifests(cases_dir=cases_dir)
-        if has_special_floats(data=_case_data(input_info=manifest.input))
+        name
+        for name, input_info in inputs.items()
+        if has_special_floats(data=_case_data(input_info=input_info))
     )
 
 
