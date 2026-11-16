@@ -292,7 +292,8 @@ def test_multiline_context_cases_follow_capabilities(
     argvalues=[
         (
             literalizer.languages.Cpp,
-            literalizer.languages.Cpp(
+            make_spec(
+                lang_cls=literalizer.languages.Cpp,
                 json_type=enum_member_by_name(
                     enum_cls=literalizer.languages.Cpp.JsonTypes,
                     name="NLOHMANN_JSON",
@@ -302,7 +303,8 @@ def test_multiline_context_cases_follow_capabilities(
         ),
         (
             literalizer.languages.Haskell,
-            literalizer.languages.Haskell(
+            make_spec(
+                lang_cls=literalizer.languages.Haskell,
                 json_type=enum_member_by_name(
                     enum_cls=literalizer.languages.Haskell.JsonTypes,
                     name="AESON_VALUE",
