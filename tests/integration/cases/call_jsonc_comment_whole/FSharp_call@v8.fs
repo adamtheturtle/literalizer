@@ -8,7 +8,7 @@ let observeEvent (actual: int64) =
     let expected = [| 1L; 42L |]
     if eventIndex >= 2 || actual <> expected[eventIndex] then failwith "receiver event changed"
     eventIndex <- eventIndex + 1
-let ``f`` (a: Val) =
+let ``f`` (a) =
     match a with
     | FInt value -> observeEvent 1L; observeEvent value; FInt (value + 100L)
     | _ -> failwith "integer argument required"

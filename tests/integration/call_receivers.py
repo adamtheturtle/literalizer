@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 import literalizer
 from literalizer._language import CallStubDeclarations
 
-from .case_manifests import CallCaseSpec, CaseManifestError
+from .case_manifests import CallCaseSpec
 
 
 # Omitted table entries retain the ordinary native syntax and placement.
@@ -28,6 +28,7 @@ class IntegerReceiverSyntax(  # noqa: NOD001
     """Explicit native declarations sharing a unary integer signature."""
 
     scope: Literal["body", "class_scope", "file_scope"]
+    file_preamble: list[str] = Field(default_factory=list[str])
     event_separator: str = ", "
     event_suffix: str = ""
     state: str
@@ -73,14 +74,10 @@ def integer_receiver_declarations(
 ) -> CallStubDeclarations:
     """Bind independently authored events to native signature syntax."""
     events = config.integer_receiver_events
-    if events is None or len(events) == 0:
-        msg = "an observable integer receiver needs an authored event stream"
-        raise CaseManifestError(msg)
-    try:
-        syntax = integer_receiver_syntax()[spec.language_id]
-    except KeyError as exc:
-        msg = f"missing integer receiver syntax for {spec.language_id}"
-        raise CaseManifestError(msg) from exc
+    # Selection requires an authored stream; manifest validation rejects
+    # empty streams, and the capability inventory requires native syntax.
+    assert events is not None  # noqa: S101
+    syntax = integer_receiver_syntax()[spec.language_id]
     (parameter,) = config.parameter_names
     tags = {"call": 1, "result": 2, "zipped": 3}
     observations = tuple(
@@ -121,9 +118,13 @@ def integer_receiver_declarations(
         )
     parts.append(syntax.verify)
     code = "\n".join(part.format(**fields) for part in parts)
-    return dataclasses.replace(
+    declarations = dataclasses.replace(
         CallStubDeclarations(body=(), class_scope=(), file_scope=()),
         **{syntax.scope: (code,)},
+    )
+    return dataclasses.replace(
+        declarations,
+        file_scope=(*syntax.file_preamble, *declarations.file_scope),
     )
 
 

@@ -1,16 +1,19 @@
 #include <cassert>
-static int event_index = 0;
-static void observe_event(int actual) {
-    const int expected[] = {1, 42};
-    assert(event_index < 2 && actual == expected[event_index]);
-    ++event_index;
-}
-static int f(int a) {
-    observe_event(1); observe_event(a);
-    return a + 100;
-}
-static void verify_events() { assert(event_index == 2); }
+#include <array>
+#include <cstddef>
+#include <iterator>
 int main() {
+const std::array<int, 2> expected_events{{1, 42}};
+std::ptrdiff_t event_index = 0;
+const auto observe_event = [&expected_events, &event_index](int actual) {
+    assert(event_index < 2 && actual == *std::next(expected_events.cbegin(), event_index));
+    ++event_index;
+};
+const auto f = [&observe_event](int argument) {
+    observe_event(1); observe_event(argument);
+    return argument + 100;
+};
+const auto verify_events = [&event_index] { assert(event_index == 2); };
 // scalar heading
 // second heading line
 // scalar inline

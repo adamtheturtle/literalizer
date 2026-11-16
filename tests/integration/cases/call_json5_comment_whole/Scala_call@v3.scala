@@ -5,7 +5,7 @@ def observeEvent(actual: Int): Unit = {
     assert(eventIndex < 2 && actual == expectedEvents(eventIndex))
     eventIndex += 1
 }
-def f(a: Int): Int = { observeEvent(1); observeEvent(a); a + 100 }
+def f(a : Int): Int = { observeEvent(1); observeEvent(a); a + 100 }
 def main(args: Array[String]): Unit = ()
 def verify_events(): Unit = { assert(eventIndex == 2) }
 // scalar heading

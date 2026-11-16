@@ -5,7 +5,7 @@ def observeEvent(actual: Int): Unit = {
     assert(eventIndex < 2 && actual == expectedEvents(eventIndex))
     eventIndex += 1
 }
-def capture(__proto__: Int): Int = { observeEvent(1); observeEvent(__proto__); __proto__ + 100 }
+def capture(__proto__ : Int): Int = { observeEvent(1); observeEvent(__proto__); __proto__ + 100 }
 def main(args: Array[String]): Unit = ()
 def verify_events(): Unit = { assert(eventIndex == 2) }
 capture(__proto__ = 1)

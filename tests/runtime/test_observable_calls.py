@@ -7,11 +7,13 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
 import literalizer
 from literalizer.exceptions import CallArgNotSupportedError
+from literalizer.languages import FSharp, ObjectiveC, Python
 from tests.integration.call_receivers import (
     compose_integer_calls,
     integer_receiver_syntax,
@@ -98,6 +100,23 @@ def _program(*, spec: literalizer.Language, control: str) -> str:
                 "transform_stub_param_names": ("actual", "zipped"),
             }
         )
+    if control == "unary_wrapper":
+        config = config.model_copy(
+            update={
+                "integer_receiver_events": (
+                    ("call", 1),
+                    ("result", 101),
+                    ("call", 2),
+                    ("result", 102),
+                ),
+                "call_transform_wrapper": CallWrapperSpec(
+                    target="emit",
+                    arguments=("call",),
+                ),
+                "transform_stub_names": ("emit",),
+                "transform_stub_param_names": ("actual",),
+            }
+        )
     fragments: list[literalizer.LiteralizeResult] = []
     if control in {"binding", "wrong_binding"}:
         config = config.model_copy(
@@ -168,44 +187,22 @@ def _program(*, spec: literalizer.Language, control: str) -> str:
     )
 
 
-@pytest.mark.parametrize(
-    argnames="lang_cls",
-    argvalues=[
-        cls
-        for cls in sorted_languages()
-        if cls.supports_stateful_free_call_consumers
-    ],
-    ids=lambda cls: cls.language_id,
-)
-def test_native_receiver_controls(
+def _control_programs(
     *, lang_cls: literalizer.LanguageCls, tmp_path: Path
-) -> None:
-    """Valid calls pass; six behavior mutations fail in the native runtime."""
-    syntax = integer_receiver_syntax()[lang_cls.language_id]
-    command = syntax.compile if len(syntax.compile) > 0 else syntax.execute
-    executable = command[0].format(python=sys.executable)
-    if shutil.which(cmd=executable) is None:
-        pytest.skip(reason=f"{executable} is unavailable")
-    if executable == "dotnet":
-        sdks = subprocess.run(  # noqa: S603 - inspect the selected native tool
-            args=[executable, "--list-sdks"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        if len(sdks.stdout.strip()) == 0:
-            pytest.skip(reason="the .NET SDK is unavailable")
-    if lang_cls.language_id == "objective_c" and sys.platform != "darwin":
-        pytest.skip(reason="Foundation execution requires macOS")
+) -> list[tuple[str, Path, str]]:
+    """Render every control before checking local tool availability."""
     spec = make_spec(lang_cls=lang_cls)
     styles = find_redefinition_styles(spec=spec)
-    if len(styles) > 0:
-        spec = dataclasses.replace(spec, declaration_style=styles[0])
+    spec = dataclasses.replace(
+        spec, declaration_style=next(iter(styles), spec.declaration_style)
+    )
+    programs: list[tuple[str, Path, str]] = []
     for control in (
         "plain",
         "dropped",
         "repeated",
         "reordered",
+        "unary_wrapper",
         "zipped",
         "swapped",
         "wrong_return",
@@ -230,10 +227,46 @@ def test_native_receiver_controls(
             assert control in {"binding", "wrong_binding"}
             continue
         _ = path.write_text(data=program, encoding="utf-8")
+        programs.append((control, path, module_name))
+    return programs
+
+
+@pytest.mark.parametrize(
+    argnames="lang_cls",
+    argvalues=[
+        cls
+        for cls in sorted_languages()
+        if cls.supports_stateful_free_call_consumers
+    ],
+    ids=lambda cls: cls.language_id,
+)
+def test_native_receiver_controls(
+    *, lang_cls: literalizer.LanguageCls, tmp_path: Path
+) -> None:
+    """Valid calls pass; six behavior mutations fail in the native runtime."""
+    programs = _control_programs(lang_cls=lang_cls, tmp_path=tmp_path)
+    syntax = integer_receiver_syntax()[lang_cls.language_id]
+    command = syntax.compile if len(syntax.compile) > 0 else syntax.execute
+    executable = command[0].format(python=sys.executable)
+    if shutil.which(cmd=executable) is None:
+        pytest.skip(reason=f"{executable} is unavailable")
+    if executable == "dotnet":
+        sdks = subprocess.run(  # noqa: S603 - inspect the selected native tool
+            args=[executable, "--list-sdks"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        if len(sdks.stdout.strip()) == 0:
+            pytest.skip(reason="the .NET SDK is unavailable")
+    if lang_cls.language_id == "objective_c" and sys.platform != "darwin":
+        pytest.skip(reason="Foundation execution requires macOS")
+    for control, path, module_name in programs:
+        directory = path.parent
         fields = {
             "python": sys.executable,
             "source": str(object=path),
-            "output": str(object=directory / "run"),
+            "output": str(object=directory / "run.exe"),
             "directory": str(object=directory),
             "module_name": module_name,
             "repository": str(object=Path(__file__).parents[2]),
@@ -257,9 +290,55 @@ def test_native_receiver_controls(
             check=False,
             cwd=directory,
         )
-        expected_success = control in {"plain", "zipped", "binding"}
+        expected_success = control in {
+            "plain",
+            "unary_wrapper",
+            "zipped",
+            "binding",
+        }
         assert (completed.returncode == 0) is expected_success, (
             control,
             completed.stdout,
             completed.stderr,
         )
+
+
+@pytest.mark.parametrize(
+    argnames=("unavailable", "lang_cls", "reason"),
+    argvalues=[
+        ("executable", Python, "is unavailable"),
+        ("sdk", FSharp, "SDK is unavailable"),
+        ("foundation", ObjectiveC, "Foundation execution requires macOS"),
+    ],
+)
+def test_native_controls_require_their_toolchain(
+    *,
+    unavailable: str,
+    lang_cls: literalizer.LanguageCls,
+    reason: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing executable, SDK and platform support produce explicit skips."""
+    monkeypatch.setattr(
+        target=shutil,
+        name="which",
+        value=Mock(
+            return_value=None if unavailable == "executable" else "tool"
+        ),
+    )
+    monkeypatch.setattr(target=sys, name="platform", value="linux")
+    monkeypatch.setattr(
+        target=subprocess,
+        name="run",
+        value=Mock(
+            return_value=subprocess.CompletedProcess(
+                args=["dotnet", "--list-sdks"],
+                returncode=0,
+                stdout="",
+                stderr="",
+            )
+        ),
+    )
+    with pytest.raises(expected_exception=pytest.skip.Exception, match=reason):
+        test_native_receiver_controls(lang_cls=lang_cls, tmp_path=tmp_path)

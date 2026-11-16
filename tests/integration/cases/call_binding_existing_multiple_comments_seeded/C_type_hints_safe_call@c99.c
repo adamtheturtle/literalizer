@@ -15,18 +15,18 @@ struct CVal {
 };
 struct CKV { const char *k; CVal v; };
 #include <assert.h>
-static int event_index = 0;
+static int *event_index(void) { static int index = 0; return &index; }
 static void observe_event(long long actual) {
     const long long expected[] = {2, 42, 1, 42, 2, 142};
-    assert(event_index < 6 && actual == expected[event_index]);
-    ++event_index;
+    assert(*event_index() < 6 && actual == expected[*event_index()]);
+    ++*event_index();
 }
-static CVal make_widget(CVal count) {
-    observe_event(1); observe_event(count.i);
-    return (CVal){.i = count.i + 100};
+static CVal make_widget(CVal argument) {
+    observe_event(1); observe_event(argument.i);
+    return (CVal){.i = argument.i + 100};
 }
-static void consume_widget(CVal count) { observe_event(2); observe_event(count.i); }
-static void verify_events(void) { assert(event_index == 6); }
+static void consume_widget(CVal argument) { observe_event(2); observe_event(argument.i); }
+static void verify_events(void) { assert(*event_index() == 6); }
 int main(void) {
 CVal my_data = ((CVal){.i = 42});
 consume_widget(my_data);

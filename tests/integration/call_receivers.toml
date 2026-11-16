@@ -64,42 +64,42 @@ wrapper_unary = '''function {wrapper}(actual: number) {{ observeEvent(2); observ
 [cpp]
 compile = ["c++", "-std=c++14", "-Wall", "-Wextra", "-Werror", "{source}", "-o", "{output}"]
 execute = ["{output}"]
-scope = "file_scope"
-state = '''#include <cassert>
-static int event_index = 0;
-static void observe_event(int actual) {{
-    const int expected[] = {{{events}}};
-    assert(event_index < {count} && actual == expected[event_index]);
+scope = "body"
+file_preamble = ["#include <cassert>", "#include <array>", "#include <cstddef>", "#include <iterator>"]
+state = '''const std::array<int, {count}> expected_events{{{{{events}}}}};
+std::ptrdiff_t event_index = 0;
+const auto observe_event = [&expected_events, &event_index](int actual) {{
+    assert(event_index < {count} && actual == *std::next(expected_events.cbegin(), event_index));
     ++event_index;
-}}'''
-target = '''static int {target}(int {parameter}) {{
-    observe_event(1); observe_event({parameter});
-    return {parameter} + {return_increment};
-}}'''
-consumer = '''static void {consumer}(int {parameter}) {{ observe_event(2); observe_event({parameter}); }}'''
-wrapper = '''static void {wrapper}(int actual, int zipped) {{ observe_event(2); observe_event(actual); observe_event(3); observe_event(zipped); }}'''
-verify = '''static void verify_events() {{ assert(event_index == {count}); }}'''
-wrapper_unary = '''static void {wrapper}(int {parameter}) {{ observe_event(2); observe_event({parameter}); }}'''
+}};'''
+target = '''const auto {target} = [&observe_event](int argument) {{
+    observe_event(1); observe_event(argument);
+    return argument + {return_increment};
+}};'''
+consumer = '''const auto {consumer} = [&observe_event](int argument) {{ observe_event(2); observe_event(argument); }};'''
+wrapper = '''const auto {wrapper} = [&observe_event](int actual, int zipped) {{ observe_event(2); observe_event(actual); observe_event(3); observe_event(zipped); }};'''
+verify = '''const auto verify_events = [&event_index] {{ assert(event_index == {count}); }};'''
+wrapper_unary = '''const auto {wrapper} = [&observe_event](int argument) {{ observe_event(2); observe_event(argument); }};'''
 
 [c]
 compile = ["clang", "-std=c99", "-Wall", "-Wextra", "-Werror", "{source}", "-o", "{output}"]
 execute = ["{output}"]
 scope = "file_scope"
 state = '''#include <assert.h>
-static int event_index = 0;
+static int *event_index(void) {{ static int index = 0; return &index; }}
 static void observe_event(long long actual) {{
     const long long expected[] = {{{events}}};
-    assert(event_index < {count} && actual == expected[event_index]);
-    ++event_index;
+    assert(*event_index() < {count} && actual == expected[*event_index()]);
+    ++*event_index();
 }}'''
-target = '''static CVal {target}(CVal {parameter}) {{
-    observe_event(1); observe_event({parameter}.i);
-    return (CVal){{.i = {parameter}.i + {return_increment}}};
+target = '''static CVal {target}(CVal argument) {{
+    observe_event(1); observe_event(argument.i);
+    return (CVal){{.i = argument.i + {return_increment}}};
 }}'''
-consumer = '''static void {consumer}(CVal {parameter}) {{ observe_event(2); observe_event({parameter}.i); }}'''
+consumer = '''static void {consumer}(CVal argument) {{ observe_event(2); observe_event(argument.i); }}'''
 wrapper = '''static void {wrapper}(CVal actual, CVal zipped) {{ observe_event(2); observe_event(actual.i); observe_event(3); observe_event(zipped.i); }}'''
-verify = '''static void verify_events(void) {{ assert(event_index == {count}); }}'''
-wrapper_unary = '''static void {wrapper}(CVal {parameter}) {{ observe_event(2); observe_event({parameter}.i); }}'''
+verify = '''static void verify_events(void) {{ assert(*event_index() == {count}); }}'''
+wrapper_unary = '''static void {wrapper}(CVal argument) {{ observe_event(2); observe_event(argument.i); }}'''
 
 [go]
 compile = ["go", "build", "-o", "{output}", "{source}"]
@@ -143,7 +143,6 @@ verify = '''def verify_events
 end'''
 wrapper_unary = '''def {wrapper}(actual)
   observe_event(2); observe_event(actual)
-  observe_event(3); observe_event(zipped)
 end'''
 
 [lua]
@@ -377,17 +376,17 @@ compile = ["clang", "-fobjc-arc", "-framework", "Foundation", "-Wall", "-Wextra"
 execute = ["{output}"]
 scope = "file_scope"
 state = '''#include <assert.h>
-static int event_index = 0;
+static int *event_index(void) {{ static int index = 0; return &index; }}
 static void observe_event(long long actual) {{
     const long long expected[] = {{{events}}};
-    assert(event_index < {count} && actual == expected[event_index]);
-    event_index++;
+    assert(*event_index() < {count} && actual == expected[*event_index()]);
+    ++*event_index();
 }}'''
-target = '''static NSNumber *{target}(NSNumber *{parameter}) {{ observe_event(1); observe_event({parameter}.longLongValue); return @({parameter}.longLongValue + {return_increment}); }}'''
-consumer = '''static void {consumer}(NSNumber *{parameter}) {{ observe_event(2); observe_event({parameter}.longLongValue); }}'''
-wrapper = '''static void {wrapper}(NSNumber *actual, NSNumber *zipped) {{ observe_event(2); observe_event(actual.longLongValue); observe_event(3); observe_event(zipped.longLongValue); }}'''
-verify = '''static void verify_events(void) {{ assert(event_index == {count}); }}'''
-wrapper_unary = '''static void {wrapper}(NSNumber *{parameter}) {{ observe_event(2); observe_event({parameter}.longLongValue); }}'''
+target = '''static NSNumber *{target}(NSNumber *argument) {{ observe_event(1); observe_event(argument.longLongValue); return @(argument.longLongValue + {return_increment}); }}'''
+consumer = '''static void {consumer}(NSNumber *argument) {{ observe_event(2); observe_event(argument.longLongValue); }}'''
+wrapper = '''static void {wrapper}(NSNumber *argument0, NSNumber *argument1) {{ observe_event(2); observe_event(argument0.longLongValue); observe_event(3); observe_event(argument1.longLongValue); }}'''
+verify = '''static void verify_events(void) {{ assert(*event_index() == {count}); }}'''
+wrapper_unary = '''static void {wrapper}(NSNumber *argument) {{ observe_event(2); observe_event(argument.longLongValue); }}'''
 
 [odin]
 compile = ["odin", "build", "{source}", "-file", "-out:{output}"]
@@ -449,12 +448,12 @@ def observeEvent(actual: Int): Unit = {{
     assert(eventIndex < {count} && actual == expectedEvents(eventIndex))
     eventIndex += 1
 }}'''
-target = '''def {target}({parameter}: Int): Int = {{ observeEvent(1); observeEvent({parameter}); {parameter} + {return_increment} }}'''
-consumer = '''def {consumer}({parameter}: Int): Unit = {{ observeEvent(2); observeEvent({parameter}) }}'''
+target = '''def {target}({parameter} : Int): Int = {{ observeEvent(1); observeEvent({parameter}); {parameter} + {return_increment} }}'''
+consumer = '''def {consumer}({parameter} : Int): Unit = {{ observeEvent(2); observeEvent({parameter}) }}'''
 wrapper = '''def {wrapper}(actual: Int, zipped: Int): Unit = {{ observeEvent(2); observeEvent(actual); observeEvent(3); observeEvent(zipped) }}'''
 verify = '''def main(args: Array[String]): Unit = ()
 def verify_events(): Unit = {{ assert(eventIndex == {count}) }}'''
-wrapper_unary = '''def {wrapper}({parameter}: Int): Unit = {{ observeEvent(2); observeEvent({parameter}) }}'''
+wrapper_unary = '''def {wrapper}({parameter} : Int): Unit = {{ observeEvent(2); observeEvent({parameter}) }}'''
 
 [vb]
 compile = []
@@ -511,21 +510,21 @@ let observeEvent (actual: int64) =
     let expected = [| {events} |]
     if eventIndex >= {count} || actual <> expected[eventIndex] then failwith "receiver event changed"
     eventIndex <- eventIndex + 1'''
-target = '''let ``{target}`` ({parameter}: Val) =
+target = '''let ``{target}`` ({parameter}) =
     match {parameter} with
     | FInt value -> observeEvent 1L; observeEvent value; FInt (value + {return_increment}L)
     | _ -> failwith "integer argument required"'''
-consumer = '''let ``{consumer}`` ({parameter}: Val) =
+consumer = '''let ``{consumer}`` ({parameter}) =
     match {parameter} with
     | FInt value -> observeEvent 2L; observeEvent value
     | _ -> failwith "integer argument required"'''
-wrapper = '''let ``{wrapper}`` (actual: Val, zipped: Val) =
+wrapper = '''let ``{wrapper}`` (actual, zipped) =
     match actual, zipped with
     | FInt value, FInt companion -> observeEvent 2L; observeEvent value; observeEvent 3L; observeEvent companion
     | _ -> failwith "integer argument required"'''
 verify = '''let verify_events () =
     if eventIndex <> {count} then failwith "missing receiver events"'''
-wrapper_unary = '''let ``{wrapper}`` ({parameter}: Val) =
+wrapper_unary = '''let ``{wrapper}`` ({parameter}) =
     match {parameter} with
     | FInt value -> observeEvent 2L; observeEvent value
     | _ -> failwith "integer argument required"'''

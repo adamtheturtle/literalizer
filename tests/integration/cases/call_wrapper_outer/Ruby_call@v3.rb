@@ -10,7 +10,6 @@ def process(value:)
 end
 def emit(actual)
   observe_event(2); observe_event(actual)
-  observe_event(3); observe_event(zipped)
 end
 def verify_events
   raise "missing receiver events" unless $event_index == 4

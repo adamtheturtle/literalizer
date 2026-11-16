@@ -8,11 +8,11 @@ let observeEvent (actual: int64) =
     let expected = [| 1L; 42L; 2L; 142L |]
     if eventIndex >= 4 || actual <> expected[eventIndex] then failwith "receiver event changed"
     eventIndex <- eventIndex + 1
-let ``make_widget`` (value: Val) =
+let ``make_widget`` (value) =
     match value with
     | FInt value -> observeEvent 1L; observeEvent value; FInt (value + 100L)
     | _ -> failwith "integer argument required"
-let ``consume`` (value: Val) =
+let ``consume`` (value) =
     match value with
     | FInt value -> observeEvent 2L; observeEvent value
     | _ -> failwith "integer argument required"

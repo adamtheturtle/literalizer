@@ -1,14 +1,14 @@
 #import <Foundation/Foundation.h>
 #include <assert.h>
-static int event_index = 0;
+static int *event_index(void) { static int index = 0; return &index; }
 static void observe_event(long long actual) {
     const long long expected[] = {2, 0, 1, 1, 2, 101};
-    assert(event_index < 6 && actual == expected[event_index]);
-    event_index++;
+    assert(*event_index() < 6 && actual == expected[*event_index()]);
+    ++*event_index();
 }
-static NSNumber *make_widget(NSNumber *count) { observe_event(1); observe_event(count.longLongValue); return @(count.longLongValue + 100); }
-static void consume_widget(NSNumber *count) { observe_event(2); observe_event(count.longLongValue); }
-static void verify_events(void) { assert(event_index == 6); }
+static NSNumber *make_widget(NSNumber *argument) { observe_event(1); observe_event(argument.longLongValue); return @(argument.longLongValue + 100); }
+static void consume_widget(NSNumber *argument) { observe_event(2); observe_event(argument.longLongValue); }
+static void verify_events(void) { assert(*event_index() == 6); }
 int main(void) {
 @autoreleasepool {
 id my_data = @0;
