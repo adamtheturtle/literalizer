@@ -140,3 +140,24 @@ followup_target_function = "consume"
 kind = "call_hash_raw_prefix"
 prefix = "r"
 marker = "#"
+
+[[call_examples]]
+# Migrated from rust_incomplete_raw_string_new: preserve the open C raw
+# string and its generated semicolon, then complete it in caller-owned code.
+example = "incomplete_c_raw_string"
+target_function = "make_widget"
+parameter_names = ["value"]
+per_element = false
+variable_form = "new"
+include_target_stub = false
+use_unwrapped_code = true
+call_transform = 'make_widget(cr#"// payload'
+caller_body_preamble = [
+    "fn make_widget(value: &'static std::ffi::CStr) -> &'static std::ffi::CStr { value }",
+]
+caller_code_suffix = '"#); assert_eq!(my_data.to_bytes(), b"// payload;");'
+
+[[call_examples.gates]]
+kind = "call_hash_raw_prefix"
+prefix = "cr"
+marker = "#"

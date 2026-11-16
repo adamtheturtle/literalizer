@@ -121,6 +121,32 @@ def test_missing_manifest_is_actionable(tmp_path: Path) -> None:
         _ = load_case_manifest(case_dir=case_dir)
 
 
+@pytest.mark.parametrize(
+    argnames=("use_unwrapped_code", "wrap_in_file"),
+    argvalues=[("false", "false"), ("true", "true")],
+)
+def test_call_suffix_cannot_be_silently_ignored(
+    tmp_path: Path, use_unwrapped_code: str, wrap_in_file: str
+) -> None:
+    """A caller suffix requires the runner that preserves raw code."""
+    case_dir = _write_case(
+        tmp_path=tmp_path,
+        manifest=(
+            'schema_version = 1\nowner = "literalize-call"\n[call]\n'
+            'target_function = "target"\nparameter_names = ["value"]\n'
+            'per_element = false\ncaller_code_suffix = "completion"\n'
+            f"use_unwrapped_code = {use_unwrapped_code}\n"
+            f"wrap_in_file = {wrap_in_file}\n"
+        ),
+        input_name="input.yaml",
+    )
+    with pytest.raises(
+        expected_exception=CaseManifestError,
+        match="caller code requires use_unwrapped_code without wrap_in_file",
+    ):
+        _ = load_case_manifest(case_dir=case_dir)
+
+
 def test_manifest_inventory_is_keyed_in_directory_order(
     tmp_path: Path,
 ) -> None:
