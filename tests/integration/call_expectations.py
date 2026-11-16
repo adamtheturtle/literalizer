@@ -320,6 +320,27 @@ def _dotted_helper_parts_collide(
 
 
 @beartype
+def call_style_spec(
+    *,
+    config: CallCaseSpec,
+    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
+) -> literalizer.Language:
+    """Apply the call convention selected by a manifest."""
+    if config.call_style_type is None:
+        return spec
+    style = next(
+        member
+        for member in lang_cls.CallStyles
+        if isinstance(
+            enum_payload(member=member, payload_type=object),
+            config.call_style_type,
+        )
+    )
+    return dataclasses.replace(spec, call_style=style)
+
+
+@beartype
 def expected_call_shape_exception(
     *,
     lang_cls: literalizer.LanguageCls,
@@ -338,16 +359,7 @@ def expected_call_shape_exception(
         )
     if prerequisite_error is not None:
         return prerequisite_error
-    if config.call_style_type is not None:
-        style = next(
-            style
-            for style in lang_cls.CallStyles
-            if isinstance(
-                enum_payload(member=style, payload_type=object),
-                config.call_style_type,
-            )
-        )
-        spec = dataclasses.replace(spec, call_style=style)
+    spec = call_style_spec(config=config, lang_cls=lang_cls, spec=spec)
     effective_style = spec.call_style_config
     bound_refs_wrap = uses_bound_ref_wrapper(config=config)
     rejects_reserved_parameters = (

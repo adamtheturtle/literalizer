@@ -17,7 +17,6 @@ from pydantic import TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer._enums import enum_payload
 from literalizer._formatters.preamble_roles import import_preamble
 from literalizer._language import (
     RenderedCallStub,
@@ -608,17 +607,6 @@ def _render_call_golden_case(
         golden_path=golden_path,
         file_regression=file_regression,
     )
-    if config.call_style_type is not None:
-        # Apply the manifest's style to variant specs as well as defaults.
-        style = next(
-            member
-            for member in lang_cls.CallStyles
-            if isinstance(
-                enum_payload(member=member, payload_type=object),
-                config.call_style_type,
-            )
-        )
-        spec = dataclasses.replace(spec, call_style=style)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
