@@ -134,6 +134,7 @@ lint-scala:
 lint-haxe:
   - *shared
   - tests/integration/cases/**/*.hx
+  - tests/integration/default_module_names/*.hx
 
 lint-dart:
   - *shared
