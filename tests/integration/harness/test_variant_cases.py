@@ -293,14 +293,20 @@ def test_multiline_context_cases_follow_capabilities(
         (
             literalizer.languages.Cpp,
             literalizer.languages.Cpp(
-                json_type=literalizer.languages.Cpp.JsonTypes.NLOHMANN_JSON,
+                json_type=enum_member_by_name(
+                    enum_cls=literalizer.languages.Cpp.JsonTypes,
+                    name="NLOHMANN_JSON",
+                ),
                 json_rendering=literalizer.languages.Cpp.JsonRenderings.INLINE_DOCUMENT,
             ),
         ),
         (
             literalizer.languages.Haskell,
             literalizer.languages.Haskell(
-                json_type=literalizer.languages.Haskell.JsonTypes.AESON_VALUE,
+                json_type=enum_member_by_name(
+                    enum_cls=literalizer.languages.Haskell.JsonTypes,
+                    name="AESON_VALUE",
+                ),
             ),
         ),
     ],
@@ -323,11 +329,10 @@ def test_collection_comments_require_the_effective_configuration(
     )
     # Removing the option restores support even after the disabled spec has
     # populated its cached capability property.
-    restored = (
-        dataclasses.replace(spec, json_type=None, json_rendering=None)
-        if isinstance(spec, literalizer.languages.Cpp)
-        else dataclasses.replace(spec, json_type=None)
-    )
+    reset_options = {"json_type": None}
+    if lang_cls is literalizer.languages.Cpp:
+        reset_options["json_rendering"] = None
+    restored = dataclasses.replace(spec, **reset_options)
     assert variant_supports_capability(
         variant=dataclasses.replace(variant, spec=restored),
         capability="collection_comments",
