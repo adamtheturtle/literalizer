@@ -23,9 +23,17 @@ class _Backend:
     executable: str
     extension: str
     syntax_argument: str
+    # Omitted parser names use the interpreter itself.
+    syntax_executable: str | None = None  # noqa: NOD001
 
 
 _BACKENDS = {
+    "lua": _Backend(
+        executable="lua",
+        extension=".lua",
+        syntax_argument="-p",
+        syntax_executable="luac",
+    ),
     "bash": _Backend(executable="bash", extension=".sh", syntax_argument="-n"),
     "ruby": _Backend(executable="ruby", extension=".rb", syntax_argument="-c"),
     "javascript": _Backend(
@@ -109,11 +117,19 @@ def main(
         for phase in ("syntax", "execution"):
             if check_kind not in ("all", phase):
                 continue
+            phase_executable = executable
+            if phase == "syntax" and config.syntax_executable is not None:
+                parser = shutil.which(cmd=config.syntax_executable)
+                if parser is None:
+                    raise click.ClickException(
+                        message=f"Missing parser: {config.syntax_executable}"
+                    )
+                phase_executable = parser
             futures = [
                 executor.submit(
                     _run,
                     arguments=[
-                        executable,
+                        phase_executable,
                         *(
                             [config.syntax_argument]
                             if phase == "syntax"

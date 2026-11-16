@@ -532,10 +532,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_fortran_roundtrip
 
       - name: Lint Lua
-        run: |-
-          find tests/integration/cases -name '*.lua' -print0 > /tmp/files-lua && test -s /tmp/files-lua
-          xargs -0 luac -p < /tmp/files-lua
-          xargs -0 -P "$(nproc)" -n1 lua < /tmp/files-lua
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures lua
 
       # Basic JSON -> Lua -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Lua toolchain (pinned by the
