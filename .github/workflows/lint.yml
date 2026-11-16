@@ -1771,20 +1771,18 @@ jobs:
       # instead of cold-starting groovyc/groovy per file. A fresh
       # GroovyShell per fixture keeps classloaders isolated, since
       # some fixtures declare top-level classes with shared names.
-      - name: Lint Groovy
-        run: |-
-          find tests/integration/cases -name '*.groovy' -print0 > /tmp/files-groovy && test -s /tmp/files-groovy
-          groovy scripts/lint-groovy.groovy < /tmp/files-groovy
-
-      # `uv` is needed by the `Clojure roundtrip` and `Groovy roundtrip`
-      # steps below; they run their helpers in project mode so
-      # `import literalizer` resolves.
       - name: Install uv
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      - name: Lint Groovy
+        run: uv run --only-group=cli python -m scripts.run_groovy_fixtures
+
+      # `uv` is needed by the `Clojure roundtrip` and `Groovy roundtrip`
+      # steps below; they run their helpers in project mode so
+      # `import literalizer` resolves.
       # Basic JSON -> Clojure -> JSON round-trip (issue 2642). Runs here
       # because this is the job with Babashka (pinned by the
       # `Install clj-kondo and Babashka` step above); `cheshire.core`
