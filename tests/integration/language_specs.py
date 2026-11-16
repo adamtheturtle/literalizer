@@ -9,7 +9,7 @@ test execution.
 import dataclasses
 import enum
 import functools
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 
 from beartype import beartype
@@ -157,3 +157,14 @@ def reference_case_for_declaration_style(
         )
         if case.convert(name="my_data") == name
     )
+
+
+@beartype
+def modifier_entries(
+    *, lang_cls: literalizer.LanguageCls, spec: literalizer.Language
+) -> Iterator[tuple[str, frozenset[enum.Enum]]]:
+    """List individual modifiers followed by declared combinations."""
+    for member in spec.modifiers:
+        yield member.name.lower(), frozenset({member})
+    for combo in lang_cls.modifier_combinations:
+        yield combo.name, combo.modifiers
