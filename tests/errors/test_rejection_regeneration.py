@@ -72,6 +72,8 @@ def _run_snapshot_pytest(
         encoding="utf-8",
     )
     project_root = Path(__file__).resolve().parents[2]
+    config_path = tmp_path / "pytest.ini"
+    _ = config_path.write_text(data="[pytest]\n", encoding="utf-8")
     return subprocess.run(  # noqa: S603 - run the real pytest golden workflow
         args=[
             sys.executable,
@@ -84,9 +86,12 @@ def _run_snapshot_pytest(
             "-m",
             "pytest",
             "-c",
-            str(object=project_root / "pyproject.toml"),
-            "-o",
-            "addopts=",
+            str(object=config_path),
+            "--disable-plugin-autoload",
+            "-p",
+            "pytest_regressions.plugin",
+            "-p",
+            "pytest_datadir.plugin",
             "-q",
             "--tb=short",
             str(object=test_path),
