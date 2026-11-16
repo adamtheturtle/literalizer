@@ -162,6 +162,7 @@ lint-d:
 lint-crystal:
   - *shared
   - tests/integration/cases/**/*.cr
+  - tests/integration/default_module_names/*.cr
 
 lint-mojo:
   - *shared
