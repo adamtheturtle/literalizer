@@ -358,19 +358,19 @@ def one_special_input(
 
 
 @beartype
-def language_supports_capability(
+def spec_supports_capability(
     *,
-    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
     capability: VariantCapabilityName,
 ) -> bool:
-    """Return whether *lang_cls* provides the named capability."""
+    """Evaluate a case requirement against its resolved configuration."""
     match capability:
         case "collection_comments":
-            return make_spec(lang_cls=lang_cls).supports_collection_comments
+            return spec.supports_collection_comments
         case "empty_sibling_sequence_type_hints":
-            return lang_cls.supports_empty_sibling_sequence_type_hints
+            return spec.supports_empty_sibling_sequence_type_hints
         case "special_floats":
-            return lang_cls.supports_special_floats
+            return spec.supports_special_floats
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -456,8 +456,8 @@ def build_variant_cases() -> list[VariantCase]:
             for variant in variants
             if selection.admits_language(lang_cls=variant.lang_cls)
             if all(
-                language_supports_capability(
-                    lang_cls=variant.lang_cls,
+                spec_supports_capability(
+                    spec=variant.spec,
                     capability=capability,
                 )
                 for capability in required

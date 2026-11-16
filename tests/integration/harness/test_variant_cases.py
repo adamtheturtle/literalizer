@@ -27,6 +27,7 @@ from tests.integration.variant_cases import (
     build_variant_cases,
     group_variant_cases_by_language,
     one_special_input,
+    spec_supports_capability,
     variants_for_axis,
 )
 from tests.integration.variant_types import VariantCase
@@ -284,3 +285,42 @@ def test_multiline_context_cases_follow_capabilities(
         if not case.variant.lang_cls.supports_multiline_string_literals
     ]
     assert incapable_indented == []
+
+
+@pytest.mark.parametrize(
+    argnames="spec",
+    argvalues=[
+        literalizer.languages.Cpp(
+            json_type=literalizer.languages.Cpp.JsonTypes.NLOHMANN_JSON,
+            json_rendering=literalizer.languages.Cpp.JsonRenderings.INLINE_DOCUMENT,
+        ),
+        literalizer.languages.Haskell(
+            json_type=literalizer.languages.Haskell.JsonTypes.AESON_VALUE,
+        ),
+    ],
+)
+def test_collection_comments_require_the_effective_configuration(
+    spec: literalizer.Language,
+) -> None:
+    """JSON variants cannot borrow collection comment support from
+    defaults.
+    """
+    assert spec_supports_capability(
+        spec=type(spec)(),
+        capability="collection_comments",
+    )
+    assert not spec_supports_capability(
+        spec=spec,
+        capability="collection_comments",
+    )
+    # Removing the option restores support even after the disabled spec has
+    # populated its cached capability property.
+    restored = (
+        dataclasses.replace(spec, json_type=None, json_rendering=None)
+        if isinstance(spec, literalizer.languages.Cpp)
+        else dataclasses.replace(spec, json_type=None)
+    )
+    assert spec_supports_capability(
+        spec=restored,
+        capability="collection_comments",
+    )
