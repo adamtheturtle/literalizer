@@ -36,14 +36,13 @@ pub fn main() {{
   Nil
 }}
 '''
-Roc = '''module [main]
-{preamble}
+Roc = '''{preamble}
 {body_preamble}
-
-main =
+main! = |_args| {{
     {bare_code}
-    expect created == Playlist (RInt 1)
-    {{}}
+    expect created == Playlist(RInt(1.I128))
+    Ok({{}})
+}}
 '''
 Haskell = '''module {module_name} where
 {preamble}

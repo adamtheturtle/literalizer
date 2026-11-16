@@ -1,0 +1,14 @@
+Val := [
+    RStr(Str),
+    RDict(List((Str, Val))),
+]
+
+my_data : Val
+my_data = RDict([
+    (")json", RStr("x")),
+])
+
+main! = |_args| {
+    _ = my_data
+    Ok({})
+}
