@@ -485,6 +485,10 @@ class CallCaseSpec(
     shared_invocation: bool = False
     parameter_names: manifest_values.StringTuple
     per_element: bool
+    # Independently authored integer events observed by native receivers.
+    # A receiver returns its argument plus 100; wrappers/follow-ups observe
+    # that result and any zipped operand in execution order.
+    integer_receiver_events: manifest_values.IntegerCallEvents | None = None
     # Native built-ins need no synthetic target declaration in a manual file.
     include_target_stub: bool = True
     # Preserve the returned code prefix instead of reconciling its metadata.

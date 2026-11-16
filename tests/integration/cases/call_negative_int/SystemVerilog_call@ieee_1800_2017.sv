@@ -10,10 +10,24 @@ typedef struct {
     _VVal v;
 } _VKV;
 module main;
-task process(input _VVal value); endtask
+int event_index = 0;
+function automatic void observe_event(longint actual);
+    longint expected[6] = '{1, -1, 1, -2, 1, -3};
+    if (event_index >= 6 || actual != expected[event_index]) $fatal(1, "receiver event changed");
+    event_index++;
+endfunction
+function automatic _VVal process(_VVal value);
+    observe_event(1); observe_event(value.i);
+    return _VVal'{tag: _VVAL_INT, i: value.i + 100, r: 0.0, s: ""};
+endfunction
+function automatic void verify_events();
+    if (event_index != 6) $fatal(1, "missing receiver events");
+    $finish;
+endfunction
 initial begin
 void'(process(_VVal'{tag: _VVAL_INT, i: -1, r: 0.0, s: ""}));
 void'(process(_VVal'{tag: _VVAL_INT, i: -2, r: 0.0, s: ""}));
 void'(process(_VVal'{tag: _VVAL_INT, i: -3, r: 0.0, s: ""}));
+void'(verify_events());
 end
 endmodule

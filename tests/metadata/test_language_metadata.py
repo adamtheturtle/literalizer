@@ -48,6 +48,7 @@ _LANGUAGE_OWNED_METADATA = frozenset(
         "supports_typed_dict_open",
         "supports_variadic_calls",
         "supports_stateful_receiver_result_checks",
+        "supports_stateful_free_call_consumers",
         "supports_local_binding_documents",
         "reserved_variable_identifiers",
         "supports_key_value_assignment_documents",

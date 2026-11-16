@@ -87,3 +87,18 @@ Follow the ordinary literal path in this order:
 The specialized entry points are ``test_calls.py``, ``test_literalize_ref_golden.py``, ``test_literalize_ref_default.py`` and ``test_constructor_targets.py``.
 Backend-specific fixture naming, native consumer scaffolds and sample options live under ``languages/``.
 ``language_specs.py`` applies those naming rules and creates versioned fixture paths.
+
+Observable call receivers
+-------------------------
+
+Ordinary unary integer calls can declare ``integer_receiver_events`` in their call table.
+For example, ``[["call", 1], ["result", 101], ["zipped", 42]]`` checks the actual argument, the returned result and its zipped companion in order.
+Author these expected events independently of renderer metadata.
+The native receiver returns its argument plus 100; separate consumers observe the result and companion, and a final public call checks that every expected event occurred.
+Existing bindings start from literal declarations, with their initial and final values observed through the real consumer.
+
+``call_receivers.toml`` shares implementations by native integer signature and calling convention.
+Capability declarations select participants before the syntax table is consulted.
+Both ordinary and option-variant calls retain their effective spec, and external references retain their original inference hints.
+``runtime/test_observable_calls.py`` compiles and executes positive programs and controls for dropped, repeated and reordered calls, swapped zipped operands and incorrect returned or bound values.
+Public ``wrap_in_file`` cases continue to exercise the library's generated-stub contract.

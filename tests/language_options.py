@@ -488,6 +488,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     "supports_local_binding_documents": lambda cls: (
         cls.supports_local_binding_documents
     ),
+    "supports_stateful_free_call_consumers": lambda cls: (
+        cls.supports_stateful_free_call_consumers
+    ),
     "supports_stateful_receiver_result_checks": lambda cls: (
         cls.supports_stateful_receiver_result_checks
     ),

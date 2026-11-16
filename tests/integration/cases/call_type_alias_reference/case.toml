@@ -4,6 +4,7 @@ owner = "literalize-call"
 # Roc aliases are retained only for literal declarations, including custom alias names.
 
 [call]
+integer_receiver_events = [["call", 1]]
 gates = [{kind = "capability_flag", flag = "declares_call_styles"}]
 target_function = "process"
 parameter_names = ["value"]
@@ -12,3 +13,14 @@ ref_declarations = { value = "1" }
 
 [[call.variants]]
 axis = "type_name"
+
+[[call_examples]]
+gates = [{kind = "capability_flag", flag = "supports_stateful_free_call_consumers"}]
+example = "external_integer"
+integer_receiver_events = [["call", 1]]
+target_function = "process"
+parameter_names = ["value"]
+per_element = false
+ref_declarations = { value = "1" }
+unknown_ref_names = ["value"]
+explicit_ref_value_sources = {}

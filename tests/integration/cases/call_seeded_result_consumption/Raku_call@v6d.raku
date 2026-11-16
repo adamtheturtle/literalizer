@@ -1,6 +1,14 @@
-sub make_widget(*@a, *%kw) {}
-sub consume_widget(*@a, *%kw) {}
-my $my_data = make_widget(0);
+my @expected_events = 2, 0, 1, 1, 2, 101;
+my $event_index = 0;
+sub observe_event(Int $actual) {
+    die "receiver event changed" unless $event_index < 6 && $actual == @expected_events[$event_index];
+    $event_index++;
+}
+sub make_widget(Int $count) { observe_event(1); observe_event($count); $count + 100 }
+sub consume_widget(Int $count) { observe_event(2); observe_event($count) }
+sub verify_events() { die "missing receiver events" unless $event_index == 6 }
+my $my_data = 0;
 consume_widget($my_data);
 $my_data = make_widget(1);
 consume_widget($my_data);
+verify_events();
