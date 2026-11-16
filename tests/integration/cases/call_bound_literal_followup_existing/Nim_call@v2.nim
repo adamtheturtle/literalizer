@@ -1,6 +1,21 @@
-proc make_widget[T0](value: T0): int {.discardable.} = 0
-proc consume(argument0: int) = discard
-var my_data = make_widget(42)
+import json
+import std/json
+var eventIndex = 0
+proc observeEvent(actual: int) =
+    let expected = [2, 42, 1, 42, 2, 142]
+    doAssert eventIndex < 6 and actual == expected[eventIndex]
+    inc eventIndex
+proc make_widget(value: int): JsonNode {.discardable.} =
+    observeEvent(1); observeEvent(value)
+    %(value + 100)
+proc make_widget(value: JsonNode): JsonNode {.discardable.} =
+    observeEvent(1); observeEvent(value.getInt())
+    %(value.getInt() + 100)
+proc consume(value: int) = observeEvent(2); observeEvent(value)
+proc consume(value: JsonNode) = observeEvent(2); observeEvent(value.getInt())
+proc verify_events() = doAssert eventIndex == 6
+var my_data = %* 42
 consume(my_data)
 my_data = make_widget(42)
 consume(my_data)
+verify_events()

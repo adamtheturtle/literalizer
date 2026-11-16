@@ -1178,6 +1178,7 @@ class Mojo(metaclass=LanguageCls):
     wraps_data_dependent_preamble_in_body = False
     dict_supports_heterogeneous_values = False
     supports_local_binding_documents = False
+    supports_stateful_free_call_consumers = False
     supports_stateful_receiver_result_checks = True
     supports_native_invocations = False
     supports_dotted_calls = True

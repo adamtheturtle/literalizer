@@ -1,6 +1,17 @@
-function make_widget() {}
-function consume() {}
-let my_data = make_widget({ value: 42 });
+const expectedEvents = [2, 42, 1, 42, 2, 142];
+let eventIndex = 0;
+function observeEvent(actual) {
+    if (eventIndex >= 6 || actual !== expectedEvents[eventIndex]) throw new Error("receiver event changed");
+    eventIndex++;
+}
+function make_widget({value}) {
+    observeEvent(1); observeEvent(value);
+    return value + 100;
+}
+function consume({value}) { observeEvent(2); observeEvent(value); }
+function verify_events() { if (eventIndex !== 6) throw new Error("missing receiver events"); }
+let my_data = 42;
 consume({ value: my_data });
 my_data = make_widget({ value: 42 });
 consume({ value: my_data });
+verify_events({  });

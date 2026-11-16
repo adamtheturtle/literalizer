@@ -2,6 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
+integer_receiver_events = [["call", 1], ["call", 2]]
 # Shared coverage retains call_zip_ignored_preamble.
 target_function = "process"
 parameter_names = ["value"]

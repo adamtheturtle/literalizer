@@ -2,6 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
+integer_receiver_events = [["result", 0], ["call", 1], ["result", 101]]
 # Shared coverage retains call_existing_binding_fortran, call_existing_binding_ada,
 # call_existing_binding_bash and call_existing_binding_nim. The former
 # call_existing_binding_seed_and_result duplicated these exact API arguments.

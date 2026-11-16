@@ -1,8 +1,17 @@
 object Fixture_call_seeded_result_consumption_Scala_call {
-def make_widget(count: Any = null): Any = null
-def consume_widget(count: Any = null): Any = null
-var my_data = make_widget(count = 0)
+private val expectedEvents = List(2, 0, 1, 1, 2, 101)
+private var eventIndex = 0
+def observeEvent(actual: Int): Unit = {
+    assert(eventIndex < 6 && actual == expectedEvents(eventIndex))
+    eventIndex += 1
+}
+def make_widget(count : Int): Int = { observeEvent(1); observeEvent(count); count + 100 }
+def consume_widget(count : Int): Unit = { observeEvent(2); observeEvent(count) }
+def main(args: Array[String]): Unit = ()
+def verify_events(): Unit = { assert(eventIndex == 6) }
+var my_data = 0
 consume_widget(count = my_data)
 my_data = make_widget(count = 1)
 consume_widget(count = my_data)
+verify_events()
 }

@@ -45,6 +45,10 @@ from .call_expectations import (
     invalid_target_grammar,
     skip_unsupported_wrapper,
 )
+from .call_receivers import (
+    compose_integer_calls,
+    uses_integer_receiver,
+)
 from .call_stubs import argument_values_for_stub, target_call_declarations
 from .call_transforms import (
     call_transform_for_case,
@@ -343,7 +347,6 @@ class _CallWithDeclarations:
 
     decl_results: list[literalizer.LiteralizeResult]
     result: literalizer.LiteralizeResult
-    seeded_feedback: bool
     stub_argument_values: Sequence[ParsedValue]
 
 
@@ -362,10 +365,9 @@ def _render_ref_declaration(
     spec: literalizer.Language,
     declaration_name: str,
     ref_source: str,
+    observable: bool,
 ) -> _RefDeclaration:
-    """Seed an existing binding using the synthetic function return
-    carrier.
-    """
+    """Declare caller values, retaining legacy carriers for stub cases."""
     variable_form = literalizer.NewVariable(
         name=declaration_name,
         modifiers=frozenset(),
@@ -388,6 +390,14 @@ def _render_ref_declaration(
             )
         elif len(styles) > 0:
             seed_spec = dataclasses.replace(spec, declaration_style=styles[0])
+        if observable:
+            result = literalizer.literalize(
+                source=ref_source,
+                input_format=config.ref_input_format,
+                language=seed_spec,
+                variable_form=variable_form,
+            )
+            return _RefDeclaration(result=result, seed_argument_values=())
         result = literalizer.literalize_call(
             source=ref_source,
             input_format=config.ref_input_format,
@@ -426,6 +436,7 @@ def _run_call_with_declarations(
     lang_name: str,
     golden_path: Path,
     file_regression: FileRegressionFixture,
+    observable: bool,
 ) -> _CallWithDeclarations:
     """Run ref declarations and the call, skipping on typed unsupported
     signals.
@@ -442,6 +453,7 @@ def _run_call_with_declarations(
                 spec=spec,
                 declaration_name=declaration_names[ref_name],
                 ref_source=ref_source,
+                observable=observable,
             )
             for ref_name, ref_source in config.fixture.ref_declarations.items()
         }
@@ -470,8 +482,11 @@ def _run_call_with_declarations(
         followup_result = None
         followup_target = config.target_function
         if fixture.followup is not None:
-            if fixture.followup.target_function is not None:
-                followup_target = fixture.followup.target_function
+            followup_target = (
+                fixture.followup.target_function
+                if fixture.followup.target_function is not None
+                else config.target_function
+            )
             followup_result = literalizer.literalize_call(
                 source=fixture.followup.source,
                 input_format=input_info.input_format,
@@ -504,6 +519,23 @@ def _run_call_with_declarations(
             ref_values=(effective_ref_values),
             bound_refs=None,
         )
+        if (
+            observable
+            and followup_result is not None
+            and isinstance(config.variable_form, literalizer.ExistingVariable)
+        ):
+            # Observe the caller's initial binding through the same public
+            # consumer before the assignment, without modifying any fragment.
+            decl_results.append(followup_result)
+        if observable:
+            if followup_result is not None:
+                decl_results.append(result)
+                result = followup_result
+            return _CallWithDeclarations(
+                decl_results=decl_results,
+                result=result,
+                stub_argument_values=(),
+            )
         if (
             followup_result is not None
             and isinstance(config.variable_form, literalizer.ExistingVariable)
@@ -553,7 +585,6 @@ def _run_call_with_declarations(
     return _CallWithDeclarations(
         decl_results=decl_results,
         result=result,
-        seeded_feedback=seeded_feedback,
         stub_argument_values=stub_argument_values,
     )
 
@@ -614,13 +645,15 @@ def _render_call_golden_case(
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
     source = input_info.path.read_text(encoding="utf-8")
     golden_path = rendering.golden_path(cases_dir=cases_dir)
-    skip_unsupported_wrapper(
-        config=config,
-        lang_cls=lang_cls,
-        spec=spec,
-        golden_path=golden_path,
-        file_regression=file_regression,
-    )
+    observable = uses_integer_receiver(config=config, spec=spec)
+    if not observable:
+        skip_unsupported_wrapper(
+            config=config,
+            lang_cls=lang_cls,
+            spec=spec,
+            golden_path=golden_path,
+            file_regression=file_regression,
+        )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
@@ -653,7 +686,7 @@ def _render_call_golden_case(
             pytest_config=file_regression.request.config,
         )
         return
-    if isinstance(fixture, BoundCallFixture):
+    if isinstance(fixture, BoundCallFixture) and not observable:
         with GoldenSkips(
             policy=_DECLARATION_SKIPS,
             golden_path=golden_path,
@@ -682,6 +715,11 @@ def _render_call_golden_case(
             file_regression=file_regression,
         )
         return
+    if isinstance(fixture, BoundCallFixture):
+        # Native receivers supply declarations around the same public fragment.
+        fixture = ComposedCallFixture(
+            ref_declarations=fixture.ref_declarations
+        )
     if invalid_target_grammar(
         lang_cls=lang_cls,
         target=config.target_function,
@@ -709,9 +747,25 @@ def _render_call_golden_case(
         lang_name=lang_cls.__name__,
         golden_path=golden_path,
         file_regression=file_regression,
+        observable=observable,
     )
     decl_results = call_outcome.decl_results
     result = call_outcome.result
+    if observable:
+        code = compose_integer_calls(
+            config=config,
+            spec=spec,
+            fragments=(*decl_results, result),
+            return_increment=100,
+        )
+        check_golden(
+            contents=_call_fixture_contents(
+                code=code, spec=spec, config=config
+            ),
+            golden_path=golden_path,
+            file_regression=file_regression,
+        )
+        return
     # Build stub declarations for undefined names.
     target_stubs = target_call_declarations(
         fixture=fixture,

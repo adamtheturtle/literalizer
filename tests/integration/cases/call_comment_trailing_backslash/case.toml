@@ -2,6 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 [call]
+integer_receiver_events = [["call", 1], ["call", 2]]
 target_function = "process"
 parameter_names = ["value"]
 per_element = true
@@ -10,3 +11,19 @@ comment_source = ["trail \\", "second"]
 # into itself in C-family source processing and in Tcl, which
 # swallows the call written there (issue #4466).
 requires_standalone_wrapped_comments = true
+
+[[call_examples]]
+gates = [{kind = "capability_flag", flag = "supports_stateful_free_call_consumers"}]
+example = "zipped_integer_results"
+integer_receiver_events = [["call", 1], ["result", 101], ["zipped", 41], ["call", 2], ["result", 102], ["zipped", 42]]
+target_function = "process"
+parameter_names = ["value"]
+per_element = true
+zip_source = "[41, 42]"
+zip_input_format = "json"
+requires_call_returns_expression = true
+
+[call_examples.transform]
+kind = "wrapper"
+target = "emit"
+arguments = [{role = "call", parameter = "_call"}, {role = "zipped", parameter = "_zip"}]

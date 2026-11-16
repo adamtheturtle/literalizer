@@ -1637,6 +1637,10 @@ class _LanguageMetadata(_LanguageMetadataBase):
     supports_native_invocations: bool
     supports_local_binding_documents: bool
     """Whether native documents can bind and return local values."""
+    supports_stateful_free_call_consumers: bool
+    """Whether composed files can host unary integer receivers as free
+    functions, retaining state for final verification of observed events.
+    """
     supports_stateful_receiver_result_checks: bool
     """Whether invocation recipes can check a receiver's method or
     function field result while retaining changes to receiver state.
@@ -2431,6 +2435,10 @@ class Language(typing.Protocol):
 
     supports_local_binding_documents: bool
     """Whether native documents can bind and return local values."""
+    supports_stateful_free_call_consumers: bool
+    """Whether composed files can host unary integer receivers as free
+    functions, retaining state for final verification of observed events.
+    """
     supports_stateful_receiver_result_checks: bool
     """Whether invocation recipes can check a receiver's method or
     function field result while retaining changes to receiver state.

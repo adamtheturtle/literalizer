@@ -667,6 +667,10 @@ class CallCaseSpec(
     parameter_names: manifest_values.StringTuple
     per_element: bool
     fixture: CallFixture = Field(default_factory=ComposedCallFixture)
+    # Independently authored integer events observed by native receivers.
+    # A receiver returns its argument plus 100; wrappers/follow-ups observe
+    # that result and any zipped operand in execution order.
+    integer_receiver_events: manifest_values.IntegerCallEvents | None = None
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     transform: CallRecipe | None = None
