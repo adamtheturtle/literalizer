@@ -2,7 +2,9 @@
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from click.testing import CliRunner
@@ -13,9 +15,13 @@ from scripts import run_interpreted_fixtures
 def _require_runtime(*, backend: str) -> None:
     """Keep optional native controls portable across Python test hosts."""
     executable = "node" if backend == "javascript" else backend
-    if shutil.which(cmd=executable) is None or (
-        shutil.which(cmd="timeout") is None
-        and shutil.which(cmd="gtimeout") is None
+    if (
+        sys.platform == "win32"
+        or shutil.which(cmd=executable) is None
+        or (
+            shutil.which(cmd="timeout") is None
+            and shutil.which(cmd="gtimeout") is None
+        )
     ):
         pytest.skip(reason=f"{backend} and GNU timeout are required")
     if backend == "bash":
@@ -130,4 +136,113 @@ def test_native_runner_deadline(
         args=["javascript", "--check", "execution", "--timeout", "0.1"],
     )
     assert isinstance(result.exception, subprocess.CalledProcessError)
-    assert result.exception.returncode in (124, 137)
+    assert result.exception.returncode in {124, 137}
+
+
+@pytest.mark.parametrize(
+    argnames="unavailable",
+    argvalues=["interpreter", "timeout", "bash_version"],
+)
+def test_native_controls_require_tools(
+    monkeypatch: pytest.MonkeyPatch,
+    unavailable: str,
+) -> None:
+    """Missing interpreters, deadlines and old Bash versions skip native
+    probes.
+    """
+    monkeypatch.setattr(target=sys, name="platform", value="linux")
+    which = Mock(
+        side_effect=[None]
+        if unavailable == "interpreter"
+        else ["/native/bash", None, None]
+        if unavailable == "timeout"
+        else None,
+        return_value="/native/bash",
+    )
+    monkeypatch.setattr(target=shutil, name="which", value=which)
+    monkeypatch.setattr(
+        target=subprocess,
+        name="run",
+        value=Mock(
+            return_value=subprocess.CompletedProcess(args=[], returncode=1)
+        ),
+    )
+    with pytest.raises(expected_exception=pytest.skip.Exception):
+        _require_runtime(backend="bash")
+
+
+def test_interpreter_command_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Keep selection, phase failures and deadline propagation
+    portable.
+    """
+    monkeypatch.setattr(
+        target=sys.modules[__name__],
+        name="_require_runtime",
+        value=Mock(),
+    )
+    monkeypatch.setattr(
+        target=shutil, name="which", value=Mock(return_value="/native/node")
+    )
+    command = Mock(
+        side_effect=[
+            None,
+            None,
+            subprocess.CalledProcessError(returncode=2, cmd=[]),
+            None,
+            subprocess.CalledProcessError(returncode=3, cmd=[]),
+        ]
+    )
+    monkeypatch.setattr(
+        target=run_interpreted_fixtures, name="_run", value=command
+    )
+    test_native_runner_failures(
+        tmp_path=tmp_path,
+        monkeypatch=monkeypatch,
+        backend="javascript",
+        extension=".js",
+        valid="valid",
+        invalid="invalid",
+        runtime_error="runtime error",
+    )
+    assert [
+        call.kwargs["arguments"][1:-1] for call in command.call_args_list
+    ] == [
+        ["--check"],
+        [],
+        ["--check"],
+        ["--check"],
+        [],
+    ]
+    deadline = tmp_path / "deadline"
+    deadline.mkdir()
+    deadline_command = Mock(
+        side_effect=subprocess.CalledProcessError(returncode=137, cmd=[])
+    )
+    monkeypatch.setattr(
+        target=run_interpreted_fixtures, name="_run", value=deadline_command
+    )
+    test_native_runner_deadline(tmp_path=deadline, monkeypatch=monkeypatch)
+    assert deadline_command.call_args.kwargs["timeout"] == pytest.approx(
+        expected=0.1
+    )
+
+
+@pytest.mark.parametrize(argnames="backend", argvalues=["bash", "javascript"])
+def test_native_control_tool_probe(
+    monkeypatch: pytest.MonkeyPatch,
+    backend: str,
+) -> None:
+    """Accept supported tools independently of the host platform."""
+    monkeypatch.setattr(target=sys, name="platform", value="linux")
+    monkeypatch.setattr(
+        target=shutil, name="which", value=Mock(return_value="/native/tool")
+    )
+    process = Mock(
+        return_value=subprocess.CompletedProcess(args=[], returncode=0)
+    )
+    monkeypatch.setattr(target=subprocess, name="run", value=process)
+    _require_runtime(backend=backend)
+    assert process.call_count == (1 if backend == "bash" else 0)
