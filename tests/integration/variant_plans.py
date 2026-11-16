@@ -1615,14 +1615,10 @@ def _admitted_overrides(
         lang_cls=lang_cls,
         metadata=metadata,
     )
-    behavior_gates = [
-        gate for gate in gates if isinstance(gate, BehaviorFlagGate)
-    ]
-    language_gates = [
-        gate for gate in gates if not isinstance(gate, BehaviorFlagGate)
-    ]
     if not all(
-        admits(gate=gate, spec=default_spec) for gate in language_gates
+        admits(gate=gate, spec=default_spec)
+        for gate in gates
+        if not isinstance(gate, BehaviorFlagGate)
     ):
         return None
     resolved = _resolve_overrides(
@@ -1639,7 +1635,8 @@ def _admitted_overrides(
             gate=gate,
             spec=make_spec(lang_cls=lang_cls, **resolved.kwargs),
         )
-        for gate in behavior_gates
+        for gate in gates
+        if isinstance(gate, BehaviorFlagGate)
     ):
         return None
     return resolved
