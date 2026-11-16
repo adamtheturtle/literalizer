@@ -722,13 +722,6 @@ def _render_call_golden_case(
         file_regression=file_regression,
         lang_name=lang_cls.__name__,
     )
-    body_stubs = [
-        *target_stubs.body,
-        *(import_preamble(code=entry) for entry in config.caller_imports),
-        *config.caller_body_preamble,
-    ]
-    class_stubs = list(target_stubs.class_scope)
-    preamble_stubs = list(target_stubs.file_scope)
     # Statement stubs cover transform wrappers and a separate follow-up
     # consumer. Keep each target's parameter names so their argument
     # counts remain valid in languages with fixed parameter counts.
@@ -740,11 +733,22 @@ def _render_call_golden_case(
             input_format=input_info.input_format,
         ),
     )
-    body_stubs.extend(wrapper_stubs.body)
-    class_stubs.extend(wrapper_stubs.class_scope)
-    preamble_stubs.extend(wrapper_stubs.file_scope)
-    if config.variable_form is not None:
-        preamble_stubs.extend(spec.format_call_binding_file_pragmas())
+    body_stubs = (
+        *target_stubs.body,
+        *(import_preamble(code=entry) for entry in config.caller_imports),
+        *config.caller_body_preamble,
+        *wrapper_stubs.body,
+    )
+    class_stubs = (*target_stubs.class_scope, *wrapper_stubs.class_scope)
+    preamble_stubs = (
+        *target_stubs.file_scope,
+        *wrapper_stubs.file_scope,
+        *(
+            spec.format_call_binding_file_pragmas()
+            if config.variable_form is not None
+            else ()
+        ),
+    )
     # One library entry point assembles the declarations and the call
     # into a single coherent file: it recomputes the body preamble
     # across the union of types in every declaration *and* the call,
@@ -759,18 +763,18 @@ def _render_call_golden_case(
         language=spec,
         declarations=decl_results,
         call=result,
-        extra_body_preamble=tuple(body_stubs),
-        extra_class_preamble=tuple(class_stubs),
-        extra_preamble=tuple(preamble_stubs),
+        extra_body_preamble=body_stubs,
+        extra_class_preamble=class_stubs,
+        extra_preamble=preamble_stubs,
     )
     code = composed.code
     if config.use_unwrapped_code:
         code = _wrap_unwrapped_call(
             spec=spec,
             result=result,
-            body_preamble=tuple(body_stubs),
-            class_preamble=tuple(class_stubs),
-            preamble=tuple(preamble_stubs),
+            body_preamble=body_stubs,
+            class_preamble=class_stubs,
+            preamble=preamble_stubs,
         )
     check_golden(
         contents=_call_fixture_contents(code=code, spec=spec, config=config),
