@@ -74,9 +74,7 @@ def _check(
     type=click.Choice(choices=("all", "syntax", "execution")),
     default="all",
 )
-@click.option(
-    "--jobs", type=click.IntRange(min=1), default=lambda: os.cpu_count() or 1
-)
+@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
 @click.option(
     "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
 )
