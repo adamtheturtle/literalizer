@@ -2848,10 +2848,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.jl' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
       # `version: '1.9'` is `>=` `Julia.language_version` (`V1_9`) in
       # `src/literalizer/languages/julia.py`; keep them in sync so the
       # fixture gate runs under the declared minimum Julia.
@@ -2874,15 +2870,16 @@ jobs:
           mkdir -p /tmp/julia-lint
           julia --startup-file=no --project=/tmp/julia-lint -e \
             'using Pkg; Pkg.add(["DataStructures", "JSON"]); Pkg.precompile()'
-      - name: Run Julia golden files
-        run: xargs -0 -P "$(nproc)" -n1 julia --startup-file=no --project=/tmp/julia-lint
-          < /tmp/files-to-lint
       - name: Install uv
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      - name: Run Julia golden files
+        run: uv run --only-group=cli python -m scripts.run_julia_fixtures --project
+          /tmp/julia-lint
+
       # Basic JSON -> Julia -> JSON round-trip (issue 1867). Runs here
       # because this is the job with `julia` on PATH and the
       # `/tmp/julia-lint` project (with the `JSON` package) already
