@@ -32,6 +32,7 @@ from .golden_checks import (
     GoldenSkips,
     check_golden,
     cleanup_stale_golden,
+    fixture_contents,
     format_consumer,
 )
 from .golden_renderings import GoldenRendering
@@ -163,17 +164,18 @@ def _check_rendering(
             call=result,
         )
     metadata = language_metadata(language_id=spec.language_id)
-    identifier_preamble = (
-        metadata.golden.intentional_identifier_preamble
-        if variable_form is not None
-        and variable_form.name != variable_form.name.lower()
-        and variable_form.name
-        != metadata.variants.declaration_style_variable_names.get(
-            spec.declaration_style.name, "my_data"
-        )
-        else ()
+    contents = fixture_contents(
+        code=result.code,
+        language_id=spec.language_id,
+        intentional_identifier=(
+            variable_form is not None
+            and variable_form.name != variable_form.name.lower()
+            and variable_form.name
+            != metadata.variants.declaration_style_variable_names.get(
+                spec.declaration_style.name, "my_data"
+            )
+        ),
     )
-    contents = "\n".join((*identifier_preamble, result.code, ""))
     if rendering.consumer_template is not None:
         contents = format_consumer(
             template=rendering.consumer_template,

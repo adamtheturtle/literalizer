@@ -64,6 +64,7 @@ from .golden_checks import (
     SkipReason,
     check_golden,
     cleanup_stale_golden,
+    fixture_contents,
 )
 from .language_metadata import language_metadata
 from .language_specs import (
@@ -252,14 +253,11 @@ def _call_fixture_contents(
             if not config.ref_case_per_language
         ),
     )
-    preamble = (
-        language_metadata(
-            language_id=spec.language_id
-        ).golden.intentional_identifier_preamble
-        if any(name != name.lower() for name in names)
-        else ()
+    return fixture_contents(
+        code=code,
+        language_id=spec.language_id,
+        intentional_identifier=any(name != name.lower() for name in names),
     )
-    return "\n".join((*preamble, code, ""))
 
 
 @beartype
