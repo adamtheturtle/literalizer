@@ -165,7 +165,7 @@ def test_toolchain_directories(
 
 
 def test_toolchain_short_help() -> None:
-    """Preserve the argparse builder's short help flag."""
+    """Preserve the builder's short help flag."""
     result = CliRunner().invoke(cli=build_cpp_toolchain.main, args=["-h"])
     assert result.exit_code == 0
     assert "--work-directory" in result.stdout
