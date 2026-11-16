@@ -18,7 +18,7 @@ CASES_DIR: Path = Path("tests/integration/cases")
 
 
 def fixture_paths(*, extension: str, version: str) -> tuple[Path, ...]:
-    """Select the same version-tagged native artifacts for CLI and runners."""
+    """Select native artifacts by extension and version."""
     suffix = f"@{version}{extension}"
     return tuple(
         sorted(
