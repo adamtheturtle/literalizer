@@ -32,7 +32,7 @@ def main(*, case_name: str | None, check_kind: str, timeout: float) -> None:
         for fixture in Path("tests/integration/cases").rglob(pattern="*.ps1")
         if case_name is None or fixture.parent.name == case_name
     )
-    if not fixtures:
+    if len(fixtures) == 0:
         raise click.ClickException(
             message=f"No PowerShell fixtures: {case_name!r}"
         )
