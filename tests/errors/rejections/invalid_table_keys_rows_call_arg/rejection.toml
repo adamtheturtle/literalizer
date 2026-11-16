@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "Call table construction rejects null and NaN indexes, including reference-valued keys (#6987)."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize_call"
+sources = ['[[{ok: 1}], [{null: 1}]]', '[[{ok: 1}], [{.nan: 1}]]', '[[{ok: 1}], [{nested: {null: 1}}]]', '[[{ok: 1}], [[{.nan: 1}]]]', '[[{ok: 1}], [!!omap [{null: 1}]]]', '[[{ok: 1}], [!!omap [{.nan: 1}]]]', '[[{ok: 1}], [{nested: !!omap [{null: 1}]}]]', '[[{ok: 1}], [[!!omap [{.nan: 1}]]]]', '[[{ok: 1}], [{null: {"$ref": "item"}}]]', '[[{ok: 1}], [!!omap [{.nan: {"$ref": "item"}}]]]', '[[{ok: 1}], [!!set {null: null}]]', '[[{ok: 1}], [!!set {.nan: null}]]', '[[{ok: 1}], [{nested: !!set {null: null}}]]', '[[{ok: 1}], [[!!set {.nan: null}]]]']
+input_format = "yaml"
+ref_key = "$ref"
+ref_value_yaml = { item = "42" }
+target_function = "consume"
+parameter_names = ["value"]
+per_element = true

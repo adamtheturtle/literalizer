@@ -1,4 +1,4 @@
-# languages rejecting: 10; languages accepting: 55
+# languages rejecting: 11; languages accepting: 54
 
 [Accepted]
 "Ada['[[!!omap []],[{nested: !!omap []}],[[!!omap []]]]']" = ""
@@ -53,8 +53,6 @@
 "Julia['[[{}],[{\"nested\":{}}],[[{}]]]']" = ""
 "Kotlin['[[!!omap []],[{nested: !!omap []}],[[!!omap []]]]']" = ""
 "Kotlin['[[{}],[{\"nested\":{}}],[[{}]]]']" = ""
-"Lua['[[!!omap []],[{nested: !!omap []}],[[!!omap []]]]']" = ""
-"Lua['[[{}],[{\"nested\":{}}],[[{}]]]']" = ""
 "Matlab['[[!!omap []],[{nested: !!omap []}],[[!!omap []]]]']" = ""
 "Matlab['[[{}],[{\"nested\":{}}],[[{}]]]']" = ""
 "Mojo['[[!!omap []],[{nested: !!omap []}],[[!!omap []]]]']" = ""
@@ -137,5 +135,7 @@
 "Nix['[[{}],[{\"nested\":{}}],[[{}]]]']" = "literalizer does not support function call rendering for Nix"
 
 [UnrepresentableEmptyDictError]
+"Lua['[[!!omap []],[{nested: !!omap []}],[[!!omap []]]]']" = "Lua cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
+"Lua['[[{}],[{\"nested\":{}}],[[{}]]]']" = "Lua cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
 "Php['[[!!omap []],[{nested: !!omap []}],[[!!omap []]]]']" = "PHP cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."
 "Php['[[{}],[{\"nested\":{}}],[[{}]]]']" = "PHP cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round-trip."

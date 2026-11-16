@@ -106,7 +106,7 @@ from literalizer._language import (
     wrap_combined_in_file_noop_static,
     wrap_in_file_noop_static,
 )
-from literalizer._types import Value
+from literalizer._types import Scalar, Value
 from literalizer.exceptions import (
     UnrepresentableInputError,
 )
@@ -193,11 +193,12 @@ def _format_datetime_lua(value: dt.datetime) -> str:
 
 
 @beartype
-def _format_lua_set_entry(_original: Value, item: str) -> str:
+def _format_lua_set_entry(original: Value, item: str) -> str:
     """Format a Lua set entry as a table key with a ``true`` value.
 
     Example: ``'"apple"'`` → ``'["apple"] = true'``.
     """
+    _reject_invalid_table_key(value=original, location="set member table key")
     return f"[{item}] = true"
 
 
@@ -635,6 +636,16 @@ class Lua(metaclass=LanguageCls):
         """Reject mapping shapes that Lua tables cannot represent."""
         reject_empty_dicts(data=data, language_name="Lua")
         _reject_invalid_table_keys(data=data)
+
+    @staticmethod
+    def validate_call_mapping_literal(data: dict[Scalar, Value]) -> None:
+        """Check the source table before null filtering or ref
+        inference.
+        """
+        if len(data) == 0:
+            reject_empty_dicts(data=data, language_name="Lua")
+        for key in data:
+            _reject_invalid_table_key(value=key, location="mapping key")
 
     validate_call_arg = default_validate_call_arg
 

@@ -1343,6 +1343,32 @@ def _format_set_value(
     )
 
 
+@runtime_checkable
+class _CallMappingLiteralLanguage(Protocol):
+    """A language with construction constraints on mapping arguments."""
+
+    def validate_call_mapping_literal(self, data: dict[Scalar, Value]) -> None:
+        """Validate a mapping before filtering or inferring its
+        entries.
+        """
+        ...
+
+
+@beartype
+def _validate_call_mapping_literal(
+    *, value: Value, ctx: _RenderContext
+) -> None:
+    """Check actual argument mappings after recognizing opaque
+    references.
+    """
+    if (
+        ctx.expand_refs
+        and isinstance(value, dict)
+        and isinstance(ctx.spec, _CallMappingLiteralLanguage)
+    ):
+        ctx.spec.validate_call_mapping_literal(data=value)
+
+
 @beartype
 def guard_dict_keys_supported(
     *,
@@ -3013,6 +3039,7 @@ def _format_value(
                 raw_ref_name=raw_ref_name,
                 ctx=ctx,
             )
+    _validate_call_mapping_literal(value=value, ctx=ctx)
     empty_override = ctx.empty_container_overrides.get(id(value))
     if empty_override is not None:
         return empty_container_code(empty_override)
