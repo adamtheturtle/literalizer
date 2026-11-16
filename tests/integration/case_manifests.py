@@ -650,9 +650,9 @@ class CallCaseSpec(
 
     def _validate_transform_recipe(self) -> None:
         """Require a single recipe for the primary call expression."""
-        if (self.caller_code_prefix or self.caller_code_suffix) and (
-            not self.use_unwrapped_code or self.wrap_in_file
-        ):
+        if (
+            self.caller_code_prefix != "" or self.caller_code_suffix != ""
+        ) and (not self.use_unwrapped_code or self.wrap_in_file):
             msg = (
                 "caller code requires use_unwrapped_code without wrap_in_file"
             )
