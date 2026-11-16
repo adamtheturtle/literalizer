@@ -338,14 +338,7 @@ jobs:
       # runner default is the pinned floor; the ``BASH_VERSINFO`` guard
       # below fails the job if that floor ever drifts below 5.1.
       - name: Lint Bash
-        run: |-
-          if (( BASH_VERSINFO[0] < 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] < 1) )); then
-            echo "bash ${BASH_VERSION} is below the pinned V5_1 floor" >&2
-            exit 1
-          fi
-          find tests/integration/cases -name '*.sh' -print0 > /tmp/files-bash && test -s /tmp/files-bash
-          xargs -0 bash -n < /tmp/files-bash
-          xargs -0 -P "$(nproc)" -n1 bash < /tmp/files-bash
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures bash
 
       # Basic JSON -> Bash -> JSON round-trip (issue 2640). Runs here
       # because this is the job with the pinned ``bash`` interpreter (the
@@ -368,10 +361,7 @@ jobs:
           ruby-version: '3.4'
 
       - name: Lint Ruby
-        run: |-
-          find tests/integration/cases -name '*.rb' -print0 > /tmp/files-ruby && test -s /tmp/files-ruby
-          xargs -0 -P "$(nproc)" -n1 ruby -c < /tmp/files-ruby
-          xargs -0 -P "$(nproc)" -n1 ruby < /tmp/files-ruby
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures ruby
 
       # Basic JSON -> Ruby -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Ruby toolchain; `uv run`
@@ -383,10 +373,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_ruby_roundtrip
 
       - name: Lint JavaScript
-        run: |-
-          find tests/integration/cases -name '*.js' -print0 > /tmp/files-js && test -s /tmp/files-js
-          xargs -0 -P "$(nproc)" -n1 node --check < /tmp/files-js
-          xargs -0 -P "$(nproc)" -n1 node < /tmp/files-js
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures javascript
 
       # Basic JSON -> JavaScript -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the Node toolchain (pinned by
