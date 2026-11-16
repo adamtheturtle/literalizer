@@ -7,10 +7,10 @@ from collections import Counter
 from tests.integration.golden_batches import (
     GOLDEN_BATCH_VERSION_LIMIT,
     batch_renderings,
+    golden_groups,
 )
 from tests.integration.golden_scenarios import (
     GOLDEN_SCENARIOS,
-    golden_groups,
 )
 from tests.integration.language_specs import sorted_languages
 
