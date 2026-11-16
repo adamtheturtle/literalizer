@@ -22,11 +22,17 @@ class _Backend:
 
     executable: str
     extension: str
-    syntax_argument: str
+    syntax_argument: str | None
 
 
 _BACKENDS = {
     "bash": _Backend(executable="bash", extension=".sh", syntax_argument="-n"),
+    "tcl": _Backend(
+        executable="tclsh", extension=".tcl", syntax_argument=None
+    ),
+    "wren": _Backend(
+        executable="wren_cli", extension=".wren", syntax_argument=None
+    ),
     "ruby": _Backend(executable="ruby", extension=".rb", syntax_argument="-c"),
     "javascript": _Backend(
         executable="node", extension=".js", syntax_argument="--check"
@@ -105,20 +111,25 @@ def main(
             label="Bash V5_1 interpreter floor",
             timeout=timeout,
         )
+    syntax_arguments = (
+        [] if config.syntax_argument is None else [config.syntax_argument]
+    )
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
         for phase in ("syntax", "execution"):
             if check_kind not in ("all", phase):
+                continue
+            if phase == "syntax" and config.syntax_argument is None:
+                if check_kind == "syntax":
+                    raise click.ClickException(
+                        message=f"{backend} has no separate syntax check."
+                    )
                 continue
             futures = [
                 executor.submit(
                     _run,
                     arguments=[
                         executable,
-                        *(
-                            [config.syntax_argument]
-                            if phase == "syntax"
-                            else []
-                        ),
+                        *(syntax_arguments if phase == "syntax" else []),
                         str(object=fixture),
                     ],
                     label=f"{backend} {phase}: {fixture}",
