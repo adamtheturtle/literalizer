@@ -108,7 +108,8 @@ def discover_cases(
     suite: Literal["base", "combined"],
     lang_cls: literalizer.LanguageCls,
 ) -> tuple[str, ...]:
-    """Select one backend's suite before parsing inputs or building specs.
+    """Select one language and suite before parsing inputs or building
+    specs.
 
     Cases outside the suite or its declared backend selection never need
     their source parsed. Shared inputs are cached by their input identity,
