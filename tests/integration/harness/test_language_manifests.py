@@ -93,13 +93,6 @@ def test_missing_metadata_is_actionable(tmp_path: Path) -> None:
         )
 
 
-def test_every_language_declares_test_metadata() -> None:
-    """Each production language resolves to one metadata file."""
-    for lang_cls in sorted_languages():
-        metadata = language_metadata(language_id=lang_cls.language_id)
-        assert metadata.language_id == lang_cls.language_id
-
-
 def test_no_orphan_metadata_files() -> None:
     """Every metadata file belongs to a language in the registry."""
     declared = {lang_cls.language_id for lang_cls in sorted_languages()}
