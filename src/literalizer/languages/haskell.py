@@ -122,6 +122,7 @@ from literalizer._language import (
     default_format_call_variable_assignment,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
+    empty_scalar_preamble,
     identity_call_arg,
     identity_constructor_target,
     no_call_binding_body_preamble,
@@ -3139,11 +3140,9 @@ class Haskell(metaclass=LanguageCls):
             return {}
         return self._preamble.scalar_preamble
 
-    @cached_property
-    @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar body preamble (Haskell needs none)."""
-        return {}
+    scalar_body_preamble: ClassVar[
+        cached_property[dict[type, tuple[str, ...]]]
+    ] = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype
