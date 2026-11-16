@@ -82,6 +82,7 @@ from literalizer._language import (
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
+    empty_scalar_preamble,
     identity_constructor_target,
     no_call_binding_body_preamble,
     no_call_binding_file_pragmas,
@@ -1249,11 +1250,7 @@ class Ada(metaclass=LanguageCls):
         """Per-instance scalar preamble (Ada needs none)."""
         return {}
 
-    @cached_property
-    @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar body preamble (Ada needs none)."""
-        return {}
+    scalar_body_preamble = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype

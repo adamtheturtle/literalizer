@@ -4391,3 +4391,12 @@ def requires_declared_binding(self: Language, _data: Value, /) -> bool:
 def empty_record_shape_names() -> MappingProxyType[frozenset[str], str]:
     """Create the immutable default for custom record shape names."""
     return MappingProxyType[frozenset[str], str](mapping={})
+
+
+@beartype
+def empty_scalar_preamble(
+    language: Language, /
+) -> dict[type, tuple[str, ...]]:
+    """Return a fresh empty scalar preamble for a cached descriptor."""
+    del language
+    return {}

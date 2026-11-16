@@ -81,6 +81,7 @@ from literalizer._language import (
     default_type_hint_collection_preamble_lines,
     default_validate_call_arg,
     default_wrap_calls_with_declarations,
+    empty_scalar_preamble,
     identity_call_arg,
     identity_constructor_target,
     no_call_binding_body_preamble,
@@ -747,25 +748,17 @@ class Json5(metaclass=LanguageCls):
         """Callable that formats one ordered-map entry."""
         return _format_json5_dict_entry
 
-    @cached_property
-    @beartype
-    def format_variable_declaration(
-        self,
-    ) -> Callable[[str, str, Value, frozenset[enum.Enum]], str]:
-        """Callable that formats a new variable declaration."""
-        return self.declaration_style.value.formatter
+    format_variable_declaration = staticmethod(
+        DeclarationStyles.ASSIGN.value.formatter
+    )
 
     assignment_declares_binding = declares_binding
     reference_assignment_declares_binding = assignment_declares_binding
     call_assignment_declares_binding = True
 
-    @cached_property
-    @beartype
-    def format_variable_assignment(
-        self,
-    ) -> Callable[[str, str, Value], str]:
-        """Callable that formats an assignment to an existing variable."""
-        return variable_formatter(template="{value}")
+    format_variable_assignment = staticmethod(
+        variable_formatter(template="{value}")
+    )
 
     @cached_property
     @beartype
@@ -773,11 +766,7 @@ class Json5(metaclass=LanguageCls):
         """Per-instance scalar preamble (JSON5 needs none)."""
         return {}
 
-    @cached_property
-    @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
-        """Per-instance scalar body preamble (JSON5 needs none)."""
-        return {}
+    scalar_body_preamble = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype
