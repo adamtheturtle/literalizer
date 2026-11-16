@@ -319,7 +319,7 @@ def test_native_controls_require_their_toolchain(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Missing executable, SDK and platform support produce explicit skips."""
+    """Missing tools and platform support produce explicit skips."""
     monkeypatch.setattr(
         target=shutil,
         name="which",
