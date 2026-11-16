@@ -427,14 +427,12 @@ def _run_call_with_declarations(
             )
             for ref_name, ref_source in config.ref_declarations.items()
         }
-        decl_results_by_ref_name = {
-            name: declaration.result
-            for name, declaration in rendered_by_ref_name.items()
-        }
-        decl_results = list(decl_results_by_ref_name.values())
+        decl_results = [
+            declaration.result for declaration in rendered_by_ref_name.values()
+        ]
         ref_values = {
-            ref_name: declaration.source_data
-            for ref_name, declaration in decl_results_by_ref_name.items()
+            ref_name: declaration.result.source_data
+            for ref_name, declaration in rendered_by_ref_name.items()
             if ref_name not in config.unknown_ref_names
         }
         ref_values.update(
@@ -526,8 +524,8 @@ def _run_call_with_declarations(
                     source=source, input_format=input_info.input_format
                 ).data,
                 ref_values={
-                    name: declaration.source_data
-                    for name, declaration in decl_results_by_ref_name.items()
+                    name: declaration.result.source_data
+                    for name, declaration in rendered_by_ref_name.items()
                 },
                 ref_key=config.ref_key,
             )
