@@ -1463,23 +1463,23 @@ def _kwarg_value_selections(
     metadata: LanguageMetadata,
 ) -> list[_Selection]:
     """Return the parameter values an axis passes for one language."""
-    collected_entries: list[_Selection] = []
-    for entry_choice in axis.values:
-        if entry_choice.value is None:
-            effective_kwargs = _sample_kwarg(
-                axis_key=axis_key, kwarg=axis.kwarg, metadata=metadata
-            )
-        else:
-            effective_kwargs = entry_choice.value
-        collected_entries.append(
-            _Selection(
-                kwargs={axis.kwarg: effective_kwargs},
-                format_name=entry_choice.name,
-                tag=None,
-                secondary_name=None,
-            )
+    return [
+        _Selection(
+            kwargs={
+                axis.kwarg: (
+                    _sample_kwarg(
+                        axis_key=axis_key, kwarg=axis.kwarg, metadata=metadata
+                    )
+                    if choice.value is None
+                    else choice.value
+                )
+            },
+            format_name=choice.name,
+            tag=None,
+            secondary_name=None,
         )
-    return collected_entries
+        for choice in axis.values
+    ]
 
 
 @beartype
