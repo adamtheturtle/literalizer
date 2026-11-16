@@ -12,7 +12,7 @@ from literalizer._enums import enum_payload
 from literalizer.exceptions import IncompatibleFormatsError
 
 from .golden_checks import NO_SKIPS, SkipPolicy, SkipReason
-from .language_specs import make_spec, sorted_languages
+from .language_specs import make_spec, modifier_entries, sorted_languages
 
 # A declared modifier may reject a constructor binding; other errors fail.
 _MODIFIER_SKIPS = SkipPolicy(
@@ -94,14 +94,6 @@ def constructor_binding_specs() -> list[ConstructorBindingSpec]:
         )
     for lang_cls in languages:
         spec = make_spec(lang_cls=lang_cls)
-        entries: list[tuple[str, frozenset[enum.Enum]]] = [
-            (member.name.lower(), frozenset({member}))
-            for member in spec.modifiers
-        ]
-        entries.extend(
-            (combo.name, combo.modifiers)
-            for combo in lang_cls.modifier_combinations
-        )
         cases.extend(
             ConstructorBindingSpec(
                 name=f"{lang_cls.__name__}_constructor_call_{modifier_name}",
@@ -110,6 +102,8 @@ def constructor_binding_specs() -> list[ConstructorBindingSpec]:
                 variable_form=NewVariable(name="p", modifiers=modifiers),
                 skip=_MODIFIER_SKIPS,
             )
-            for modifier_name, modifiers in entries
+            for modifier_name, modifiers in modifier_entries(
+                lang_cls=lang_cls, spec=spec
+            )
         )
     return cases
