@@ -1,8 +1,0 @@
-module [my_data]
-
-my_data = {
-    a: [
-        1i128,
-    ],
-    b: [],
-}

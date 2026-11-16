@@ -21,7 +21,6 @@ Haskell = "Haskell cannot represent this call shape: call_transform is only supp
 PowerShell = "PowerShell cannot represent this call shape: call_transform is only supported for languages whose call form is an expression that can be wrapped (positional, keyword, or object call style); this language uses a prefix, postfix, or command call style whose language-native wrapper cannot be built from a context-aware transform"
 PureScript = "PureScript cannot represent this call shape: call_transform is only supported for languages whose call form is an expression that can be wrapped (positional, keyword, or object call style); this language uses a prefix, postfix, or command call style whose language-native wrapper cannot be built from a context-aware transform"
 Racket = "Racket cannot represent this call shape: call_transform is only supported for languages whose call form is an expression that can be wrapped (positional, keyword, or object call style); this language uses a prefix, postfix, or command call style whose language-native wrapper cannot be built from a context-aware transform"
-Roc = "Roc cannot represent this call shape: call_transform is only supported for languages whose call form is an expression that can be wrapped (positional, keyword, or object call style); this language uses a prefix, postfix, or command call style whose language-native wrapper cannot be built from a context-aware transform"
 Scheme = "Scheme cannot represent this call shape: call_transform is only supported for languages whose call form is an expression that can be wrapped (positional, keyword, or object call style); this language uses a prefix, postfix, or command call style whose language-native wrapper cannot be built from a context-aware transform"
 Tcl = "Tcl cannot represent this call shape: call_transform is only supported for languages whose call form is an expression that can be wrapped (positional, keyword, or object call style); this language uses a prefix, postfix, or command call style whose language-native wrapper cannot be built from a context-aware transform"
 
@@ -61,6 +60,7 @@ Php = "zip_source was supplied without a zip_input_format; the companion source 
 Python = "zip_source was supplied without a zip_input_format; the companion source cannot be parsed without its format"
 R = "zip_source was supplied without a zip_input_format; the companion source cannot be parsed without its format"
 Raku = "zip_source was supplied without a zip_input_format; the companion source cannot be parsed without its format"
+Roc = "zip_source was supplied without a zip_input_format; the companion source cannot be parsed without its format"
 Ruby = "zip_source was supplied without a zip_input_format; the companion source cannot be parsed without its format"
 Rust = "zip_source was supplied without a zip_input_format; the companion source cannot be parsed without its format"
 Scala = "zip_source was supplied without a zip_input_format; the companion source cannot be parsed without its format"

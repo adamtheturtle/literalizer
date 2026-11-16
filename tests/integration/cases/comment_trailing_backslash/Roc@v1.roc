@@ -1,0 +1,16 @@
+Val := [
+    RInt(I128),
+    RStr(Str),
+    RDict(List((Str, Val))),
+]
+
+my_data : Val
+my_data = RDict([
+    # comment ending backslash \ .
+    ("x", RInt(1.I128)),
+])
+
+main! = |_args| {
+    _ = my_data
+    Ok({})
+}

@@ -51,7 +51,7 @@
 "Python['? !!binary /w==\\n: bytes\\n? ff\\n: string\\n']" = "Python renders distinct collection scalars b'\\xff' and 'ff' identically as '\"ff\"'"
 "R['? !!binary /w==\\n: bytes\\n? ff\\n: string\\n']" = "R renders distinct collection scalars b'\\xff' and 'ff' identically as '\"ff\"'"
 "Racket['? !!binary /w==\\n: bytes\\n? ff\\n: string\\n']" = "Racket renders distinct collection scalars b'\\xff' and 'ff' identically as '\"ff\"'"
-"Roc['? !!binary /w==\\n: bytes\\n? ff\\n: string\\n']" = "Roc renders distinct collection scalars b'\\xff' and 'ff' identically as 'RStr \"ff\"'"
+"Roc['? !!binary /w==\\n: bytes\\n? ff\\n: string\\n']" = "Roc renders distinct collection scalars b'\\xff' and 'ff' identically as 'RStr(\"ff\")'"
 "Ruby['? !!binary /w==\\n: bytes\\n? ff\\n: string\\n']" = "Ruby renders distinct collection scalars b'\\xff' and 'ff' identically as '\"ff\"'"
 "Rust['? !!binary /w==\\n: bytes\\n? ff\\n: string\\n']" = "Rust renders distinct collection scalars b'\\xff' and 'ff' identically as '\"ff\"'"
 "Scala['? !!binary /w==\\n: bytes\\n? ff\\n: string\\n']" = "Scala renders distinct collection scalars b'\\xff' and 'ff' identically as '\"ff\"'"

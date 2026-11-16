@@ -1,9 +1,0 @@
-module [my_data]
-
-Val : [
-    RInt I128,
-]
-
-my_data : Val
-my_data = # note
-RInt 0x2ai128
