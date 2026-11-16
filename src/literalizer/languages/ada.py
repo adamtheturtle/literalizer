@@ -1250,7 +1250,9 @@ class Ada(metaclass=LanguageCls):
         """Per-instance scalar preamble (Ada needs none)."""
         return {}
 
-    scalar_body_preamble = cached_property(func=empty_scalar_preamble)
+    scalar_body_preamble: ClassVar[
+        cached_property[dict[type, tuple[str, ...]]]
+    ] = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype

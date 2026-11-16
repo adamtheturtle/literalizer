@@ -3140,7 +3140,9 @@ class Haskell(metaclass=LanguageCls):
             return {}
         return self._preamble.scalar_preamble
 
-    scalar_body_preamble = cached_property(func=empty_scalar_preamble)
+    scalar_body_preamble: ClassVar[
+        cached_property[dict[type, tuple[str, ...]]]
+    ] = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype

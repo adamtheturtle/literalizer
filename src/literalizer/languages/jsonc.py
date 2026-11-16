@@ -728,17 +728,17 @@ class Jsonc(metaclass=LanguageCls):
         """Callable that formats one ordered-map entry."""
         return _format_jsonc_dict_entry
 
-    format_variable_declaration = staticmethod(
-        DeclarationStyles.ASSIGN.value.formatter
-    )
+    format_variable_declaration: ClassVar[
+        "staticmethod[[str, str, Value, frozenset[enum.Enum]], str]"
+    ] = staticmethod(DeclarationStyles.ASSIGN.value.formatter)
 
     assignment_declares_binding = declares_binding
     reference_assignment_declares_binding = assignment_declares_binding
     call_assignment_declares_binding = True
 
-    format_variable_assignment = staticmethod(
-        variable_formatter(template="{value}")
-    )
+    format_variable_assignment: ClassVar[
+        "staticmethod[[str, str, Value], str]"
+    ] = staticmethod(variable_formatter(template="{value}"))
 
     @cached_property
     @beartype
@@ -746,7 +746,9 @@ class Jsonc(metaclass=LanguageCls):
         """Per-instance scalar preamble (JSONC needs none)."""
         return {}
 
-    scalar_body_preamble = cached_property(func=empty_scalar_preamble)
+    scalar_body_preamble: ClassVar[
+        cached_property[dict[type, tuple[str, ...]]]
+    ] = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype
