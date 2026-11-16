@@ -51,6 +51,7 @@ urls.Source = "https://github.com/adamtheturtle/literalizer"
 [dependency-groups]
 dev = [
     { include-group = "cli" },
+    { include-group = "norg" },
     "actionlint-py==1.7.12.25",
     "beartype==0.23.1",
     "check-manifest==0.51",
@@ -116,12 +117,6 @@ dev = [
     "strict-kwargs==2026.10.9",
     "tenacity==9.2.1",
     "towncrier==26.9.0",
-    # ``tree-sitter`` resolves the ``tree-sitter-norg`` grammar for the
-    # ``Norg roundtrip`` check (``scripts/run_norg_roundtrip.py``);
-    # listed here so the type checkers resolve its (``py.typed``) imports.
-    # Keep in sync with the ``--with`` pin in the ``Norg roundtrip`` step
-    # of ``.github/workflows/lint.yml``.
-    "tree-sitter==0.26.1",
     "ty==0.0.100",
     "types-pygments==2.21.0.20260819",
     "types-pyyaml==6.0.12.20261103",
@@ -153,6 +148,8 @@ benchmark = [
     "pytest-test-groups==1.2.1",
 ]
 cli = [ "click==8.5.1" ]
+# Python parsers used by the corresponding native checks and round trips.
+norg = [ "tree-sitter==0.26.1" ]
 release = [
     "check-wheel-contents==0.6.3",
     "towncrier==26.9.0",
@@ -164,6 +161,8 @@ roundtrip = [
     "pydantic==2.14.3",
     "tenacity==9.2.1",
 ]
+toml = [ "tomli>=2.4.0" ]
+yaml = [ "pyyaml==6.0.3" ]
 
 [tool.setuptools]
 packages.find.where = [
