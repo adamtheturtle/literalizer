@@ -1,0 +1,13 @@
+{
+  "data": {},
+  "command": [
+    "/Users/adam/worktrees/literalizer-5493-20261116/scripts/run-bounded.sh",
+    "minimized-1",
+    "--signal=KILL",
+    "15s",
+    "php",
+    "/Users/adam/Documents/reports/literalizer-5493-20261116/minimized/1.php"
+  ],
+  "stdout": "{\"is_list\":true,\"first_key_type\":null,\"encoded_value\":\"[]\"}",
+  "stderr": "minimized-1: running: timeout --verbose --signal=KILL 15s php /Users/adam/Documents/reports/literalizer-5493-20261116/minimized/1.php\ntimeout: child terminated: pid=16321, exit=0\n"
+}

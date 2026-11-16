@@ -1,0 +1,991 @@
+{
+  "head": "c0ce16c04f0afc3b04299ca917e095d472cbc220",
+  "registered_languages": [
+    "Ada",
+    "Bash",
+    "C",
+    "CSharp",
+    "Clojure",
+    "Cobol",
+    "CommonLisp",
+    "Cpp",
+    "Crystal",
+    "D",
+    "Dart",
+    "Dhall",
+    "Elixir",
+    "Elm",
+    "Erlang",
+    "FSharp",
+    "Forth",
+    "Fortran",
+    "Gleam",
+    "Go",
+    "Groovy",
+    "Haskell",
+    "Haxe",
+    "Hcl",
+    "Java",
+    "JavaScript",
+    "Json5",
+    "Jsonc",
+    "Jsonnet",
+    "Julia",
+    "Kotlin",
+    "Lua",
+    "Matlab",
+    "Mojo",
+    "Nim",
+    "Nix",
+    "Norg",
+    "OCaml",
+    "ObjectiveC",
+    "Occam",
+    "Odin",
+    "Perl",
+    "Php",
+    "PowerShell",
+    "PureScript",
+    "Python",
+    "R",
+    "Racket",
+    "Raku",
+    "Roc",
+    "Ruby",
+    "Rust",
+    "Scala",
+    "Scheme",
+    "Sml",
+    "Swift",
+    "SystemVerilog",
+    "Tcl",
+    "Toml",
+    "TypeScript",
+    "V",
+    "VisualBasic",
+    "Wren",
+    "Yaml",
+    "Zig"
+  ],
+  "roundtrip_runners": [
+    {
+      "path": "scripts/run_ada_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Ada()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_bash_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Bash()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_c_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "C(json_type=C.json_types.CJSON)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_clojure_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Clojure()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_cobol_roundtrip.py",
+      "render_calls": []
+    },
+    {
+      "path": "scripts/run_common_lisp_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "CommonLisp()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_cpp_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Cpp(json_type=Cpp.json_types.NLOHMANN_JSON)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_crystal_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Crystal(json_type=Crystal.json_types.JSON_ANY)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_csharp_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "CSharp(sequence_format=CSharp.sequence_formats.ARRAY)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "2"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_d_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "D()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_dart_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Dart()",
+            "json_text": "trimmed",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_dhall_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Dhall(heterogeneous_strategy=union_type)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_elixir_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Elixir()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_elm_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Elm(json_type=Elm.json_types.JSON_ENCODE_VALUE)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_erlang_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Erlang(json_type=Erlang.json_types.OTP_JSON)",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_forth_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Forth()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_fortran_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Fortran()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_fsharp_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "FSharp(json_type=FSharp.json_types.SYSTEM_TEXT_JSON_NODE)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_gleam_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Gleam(json_type=Gleam.json_types.GLEAM_JSON_JSON)",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_go_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Go()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_groovy_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Groovy()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_haskell_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Haskell()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_haxe_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Haxe()",
+            "json_text": "trimmed",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_hcl_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Hcl()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_java_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Java()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_javascript_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "JavaScript()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        },
+        {
+          "api": "literalize",
+          "arguments": {
+            "source": "'{\"$ref\": \"stamps\"}'",
+            "input_format": "InputFormat.JSON",
+            "language": "JavaScript()",
+            "variable_form": "NewVariable(name=_VAR_NAME, modifiers=frozenset())",
+            "ref_key": "'$ref'",
+            "bound_refs": "{'stamps': stamps}",
+            "wrap_in_file": "True"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_json5_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "literalize",
+          "arguments": {
+            "source": "json_text",
+            "input_format": "InputFormat.JSON",
+            "language": "Json5()",
+            "pre_indent_level": "0",
+            "include_delimiters": "True",
+            "wrap_in_file": "False"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_jsonnet_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "literalize",
+          "arguments": {
+            "source": "trimmed_json",
+            "input_format": "InputFormat.JSON",
+            "language": "Jsonnet()",
+            "pre_indent_level": "0",
+            "include_delimiters": "True",
+            "variable_form": "NewVariable(name='my_data', modifiers=frozenset())",
+            "wrap_in_file": "True"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_julia_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Julia()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_kotlin_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Kotlin(json_type=Kotlin.json_types.KOTLINX_JSON_ELEMENT)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_lua_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Lua()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_matlab_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Matlab()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_mojo_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Mojo(heterogeneous_strategy=Mojo.heterogeneous_strategies.VARIANT, heterogeneous_value_variant_name=_VARIANT_NAME)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        },
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Mojo()",
+            "json_text": "'[1, 2, 3]'",
+            "var_name": "_LIST_PROBE_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_nim_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Nim(json_type=Nim.json_types.JSON_NODE)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_nix_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Nix()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_norg_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "literalize",
+          "arguments": {
+            "source": "json_text",
+            "input_format": "InputFormat.JSON",
+            "language": "Norg()",
+            "pre_indent_level": "0",
+            "include_delimiters": "True",
+            "variable_form": "NewVariable(name=_VAR_NAME, modifiers=frozenset())",
+            "wrap_in_file": "False"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_objective_c_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "ObjectiveC()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_ocaml_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "OCaml(json_type=OCaml.json_types.YOJSON_SAFE_T)",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_odin_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Odin(json_type=Odin.json_types.JSON_VALUE)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_perl_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "language",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_php_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Php()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_powershell_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "PowerShell()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_purescript_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "PureScript()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_r_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "literalize",
+          "arguments": {
+            "source": "trimmed_json",
+            "input_format": "InputFormat.JSON",
+            "language": "R()",
+            "pre_indent_level": "0",
+            "include_delimiters": "True",
+            "variable_form": "NewVariable(name=_VAR_NAME, modifiers=frozenset())",
+            "wrap_in_file": "False"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_racket_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Racket()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_raku_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Raku()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_roc_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Roc()",
+            "json_text": "trimmed",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_ruby_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Ruby()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        },
+        {
+          "api": "literalize",
+          "arguments": {
+            "source": "source",
+            "input_format": "InputFormat.YAML",
+            "language": "Ruby(date_format=date_format)",
+            "variable_form": "NewVariable(name=_VAR_NAME, modifiers=frozenset())"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_rust_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Rust(json_type=Rust.json_types.SERDE_JSON_VALUE)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_scala_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Scala(json_type=Scala.json_types.CIRCE)",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_scheme_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Scheme(json_type=Scheme.json_types.GUILE_JSON)",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_sml_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Sml()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_swift_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "language",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_systemverilog_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "SystemVerilog()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "2"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_tcl_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Tcl()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_toml_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "literalize",
+          "arguments": {
+            "source": "json_text",
+            "input_format": "InputFormat.JSON",
+            "language": "Toml()",
+            "pre_indent_level": "0",
+            "include_delimiters": "True",
+            "variable_form": "NewVariable(name=_VAR_NAME, modifiers=frozenset())",
+            "wrap_in_file": "False"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_typescript_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "TypeScript()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_v_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "language",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_vb_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "VisualBasic()",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "2"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_wren_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Wren()",
+            "json_text": "json_text",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "0"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_yaml_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "literalize",
+          "arguments": {
+            "source": "json_text",
+            "input_format": "InputFormat.JSON",
+            "language": "Yaml()",
+            "pre_indent_level": "0",
+            "include_delimiters": "True",
+            "wrap_in_file": "False"
+          }
+        }
+      ]
+    },
+    {
+      "path": "scripts/run_zig_roundtrip.py",
+      "render_calls": [
+        {
+          "api": "roundtrip_common.literalize_new_variable",
+          "arguments": {
+            "language": "Zig(json_type=Zig.json_types.STD_JSON_VALUE)",
+            "json_text": "trimmed_json",
+            "var_name": "_VAR_NAME",
+            "pre_indent_level": "1"
+          }
+        }
+      ]
+    }
+  ],
+  "generated_input_tests": [
+    {
+      "path": "tests/integration/test_json_program_roundtrip.py",
+      "given_lines": [
+        175
+      ]
+    },
+    {
+      "path": "tests/integration/test_binary_program_goldens.py",
+      "given_lines": [
+        54
+      ]
+    }
+  ],
+  "note": "Static call inventory: helper indirection may omit dynamically selected options; fixed corpora are not generated-input coverage."
+}

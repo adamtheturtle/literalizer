@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-16",
+  "issue": 5493,
+  "base": "c0ce16c04f0afc3b04299ca917e095d472cbc220",
+  "fix_commit": "05087cf378bf0365506c4c95d742949a494dd6c5",
+  "fix_pr": 6989,
+  "renderer_defects": [
+    6986,
+    6987
+  ],
+  "counting_unit": "executed native programs, not distinct payloads",
+  "seeds": [
+    5493,
+    6569
+  ],
+  "examples_per_context_format_api": 12,
+  "contexts": 7,
+  "input_formats": 3,
+  "api_forms": 4,
+  "generated_programs_passed": 2016,
+  "output_mutations_rejected": 6048,
+  "all_mutation_mapping_keys_unchanged": true,
+  "capability_corpus_programs_passed": 84,
+  "rejection_controls": {
+    "total": 216,
+    "expected_rejections": 204,
+    "supported_native_controls": 12
+  },
+  "native_reference_controls_passed": 36,
+  "budgets": {
+    "controller_seconds_per_seed": 420,
+    "outer_process_seconds": 440,
+    "child_seconds": 15
+  },
+  "observed_seed_seconds": {
+    "5493": 120.24666604099912,
+    "6569": 131.11420483300026
+  },
+  "runtimes": {
+    "python": "3.14.8",
+    "hypothesis": "6.170.15",
+    "node": "26.12.1",
+    "php": "8.5.12",
+    "lua_control": "5.5.1"
+  },
+  "artifact": {
+    "path": "evidence.tar.gz",
+    "git_blob_sha": "9fe020560d22300fc0539dc0b4b9c8d1b471de1f",
+    "sha256": "7d7f1b240705d7848ca212a7d124249ff022a8e545d1a6855bca1d147d73285d",
+    "bytes": 651123,
+    "files": 24924
+  },
+  "broad_local_suite": "inconclusive: repeated ENOSPC, packaging scratch collection, and xdist teardown failures; no clean full-suite or coverage claim"
+}

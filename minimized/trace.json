@@ -1,0 +1,60 @@
+[
+  {
+    "data": {
+      "0": ""
+    },
+    "code": "consume(value: [\"0\" => \"\"]);"
+  },
+  {
+    "data": {
+      "0": ""
+    },
+    "code": "consume(value: [\"0\" => \"\"]);"
+  },
+  {
+    "data": {
+      "0": "0"
+    },
+    "code": "consume(value: [\"0\" => \"0\"]);"
+  },
+  {
+    "data": {
+      "0": "\ud8a6\udda2"
+    },
+    "code": "consume(value: [\"0\" => \"\ud8a6\udda2\"]);"
+  },
+  {
+    "data": {
+      "0": "\uda20\ude9a\udaac\uddaci\u00b2"
+    },
+    "code": "consume(value: [\"0\" => \"\uda20\ude9a\udaac\uddaci\u00b2\"]);"
+  },
+  {
+    "data": {
+      "0": ""
+    },
+    "code": "consume(value: [\"0\" => \"\"]);"
+  },
+  {
+    "data": {},
+    "code": "consume(value: []);"
+  },
+  {
+    "data": {},
+    "code": "consume(value: []);"
+  },
+  {
+    "data": {},
+    "code": "consume(value: []);"
+  },
+  {
+    "data": {
+      "a": {}
+    },
+    "code": "consume(value: [\"a\" => []]);"
+  },
+  {
+    "data": {},
+    "code": "consume(value: []);"
+  }
+]
