@@ -20,6 +20,8 @@ distinct types so ``empty_object`` ``{}`` survives the round-trip.
 
 import shutil
 
+import click
+
 from literalizer.languages import Raku
 from scripts import roundtrip_common
 
@@ -45,6 +47,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Raku backend."""
     json_text = roundtrip_common.input_for_capabilities(

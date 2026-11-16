@@ -21,6 +21,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 _FIXTURE_PREFIX = Path("tests/integration/cases")
 
 
@@ -38,6 +40,7 @@ def _strip_version(*, relative: Path) -> Path:
     return relative.with_name(name=stem + relative.suffix)
 
 
+@click.command()
 def main() -> None:
     """Check syntax of all Gleam golden files passed on stdin."""
     primed_dir = Path(os.environ["LINT_GLEAM_PRIMED_DIR"])

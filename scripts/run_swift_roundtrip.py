@@ -21,6 +21,8 @@ Zig exclusions.
 import shutil
 from pathlib import Path
 
+import click
+
 from literalizer import Language
 from literalizer.languages import Swift
 from scripts import roundtrip_common
@@ -101,6 +103,7 @@ def _check_array_inference(swift: str) -> None:
         )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Swift backend."""
     json_text = roundtrip_common.input_for_capabilities(

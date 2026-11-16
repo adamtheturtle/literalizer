@@ -23,6 +23,8 @@ atom), so no normalization walker is needed.
 
 import shutil
 
+import click
+
 from literalizer.languages import Erlang
 from scripts import roundtrip_common
 
@@ -57,6 +59,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Erlang backend."""
     json_text = roundtrip_common.input_for_capabilities(

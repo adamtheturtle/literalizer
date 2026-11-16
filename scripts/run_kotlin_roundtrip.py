@@ -26,6 +26,8 @@ Rust and Zig-pre-``std.json.Value`` exclusions.
 import shutil
 from pathlib import Path
 
+import click
+
 from literalizer.languages import Kotlin
 from scripts import roundtrip_common
 
@@ -65,6 +67,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Kotlin backend."""
     json_text = roundtrip_common.input_for_capabilities(

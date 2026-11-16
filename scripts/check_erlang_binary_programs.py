@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import click
 from hypothesis import example, given, settings
 from hypothesis import strategies as st
 
@@ -84,6 +85,7 @@ def check_binary_document(data: bytes) -> None:
     _run_program(program=result.code, values=(data,), shape="scalar")
 
 
+@click.command()
 def main() -> None:
     """Check the canonical golden and all generated binary documents."""
     golden = (

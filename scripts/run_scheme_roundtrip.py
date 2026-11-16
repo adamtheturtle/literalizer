@@ -29,6 +29,8 @@ excluded: Guile has arbitrary-precision integers (so the 26-digit
 import os
 import shutil
 
+import click
+
 from literalizer.languages import Scheme
 from scripts import roundtrip_common
 
@@ -60,6 +62,7 @@ def _build_program(json_text: str) -> str:
     return f"{_HEADER}\n{preamble}\n{result.code}\n{emit}\n"
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Scheme backend."""
     json_text = roundtrip_common.input_for_capabilities(

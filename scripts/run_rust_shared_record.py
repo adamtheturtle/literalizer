@@ -17,6 +17,8 @@ toolchain is already available.
 
 import shutil
 
+import click
+
 from literalizer.languages import Rust
 from scripts import roundtrip_common, shared_record_common
 
@@ -62,6 +64,7 @@ def _build_sources() -> tuple[str, str]:
     return program, preamble
 
 
+@click.command()
 def main() -> None:
     """Compile both documents against one set of declarations."""
     program, library = _build_sources()

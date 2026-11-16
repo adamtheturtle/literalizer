@@ -24,6 +24,8 @@ pytest test under ``tests/``.
 
 import shutil
 
+import click
+
 from literalizer.languages import VisualBasic
 from scripts import roundtrip_common
 
@@ -78,6 +80,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the VB.NET backend."""
     json_text = roundtrip_common.input_for_capabilities(

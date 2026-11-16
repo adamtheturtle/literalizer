@@ -8,6 +8,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from scripts.bounded_command import bounded_command
 from scripts.purescript_common import write_lint_environment
 
@@ -83,9 +85,10 @@ def _run_fixture(
     return False
 
 
-def main() -> None:
+@click.command()
+@click.argument("filenames", nargs=-1)
+def main(filenames: tuple[str, ...]) -> None:
     """Run each PureScript golden file end-to-end."""
-    filenames = sys.argv[1:]
     purs_path = shutil.which(cmd="purs")
     if purs_path is None or purs_path == "":
         purs_path = "purs"

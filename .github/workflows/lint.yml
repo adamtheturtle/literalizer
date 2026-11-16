@@ -450,9 +450,9 @@ jobs:
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/jackson-jars/*
         run: |-
-          python3 -m tests.integration.list_fixtures .java jdk_11 > /tmp/files-java-11 && test -s /tmp/files-java-11
+          uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures .java jdk_11 > /tmp/files-java-11 && test -s /tmp/files-java-11
           xargs -0 java CheckJavaSyntax.java 11 < /tmp/files-java-11
-          python3 -m tests.integration.list_fixtures .java jdk_16 > /tmp/files-java-16 && test -s /tmp/files-java-16
+          uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures .java jdk_16 > /tmp/files-java-16 && test -s /tmp/files-java-16
           xargs -0 java CheckJavaSyntax.java 16 < /tmp/files-java-16
 
       # Basic JSON -> Java -> JSON round-trip (issue 1867). Runs here
@@ -520,8 +520,8 @@ jobs:
       # so a selection silently matches no files.
       - name: Lint Fortran
         run: |-
-          python3 -m tests.integration.list_fixtures .f90 v2003 > /tmp/files-fortran2003 && test -s /tmp/files-fortran2003
-          python3 -m tests.integration.list_fixtures .f90 v2008 > /tmp/files-fortran2008 && test -s /tmp/files-fortran2008
+          uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures .f90 v2003 > /tmp/files-fortran2003 && test -s /tmp/files-fortran2003
+          uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures .f90 v2008 > /tmp/files-fortran2008 && test -s /tmp/files-fortran2008
           xargs -0 gfortran -Werror -std=f2003 -fsyntax-only < /tmp/files-fortran2003
           xargs -0 gfortran -Werror -std=f2008 -fsyntax-only < /tmp/files-fortran2008
           cat > /tmp/run-fortran.sh <<'SCRIPT'
@@ -751,6 +751,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Install Odin
         timeout-minutes: 10
         uses: laytan/setup-odin@v2
@@ -759,7 +765,7 @@ jobs:
           release: ${{ env.ODIN_VERSION }}
       - name: Run Odin files
         run: |-
-          mapfile -d '' -t files < <(python3 -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
+          mapfile -d '' -t files < <(uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
           n=${#files[@]}
           test "$n" -gt 0
           for (( i=ODIN_SHARD; i<n; i+=ODIN_SHARDS )); do
@@ -769,14 +775,6 @@ jobs:
             printf 'Running %s\n' "$src"
             bash scripts/lint-odin-fixture.sh "$src"
           done
-      # `uv` is needed by the `Odin roundtrip` step below; it runs the
-      # helper in project mode so `import literalizer` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Odin -> JSON round-trip (issue 2670). Runs here
       # because this is the job with the Odin toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
@@ -1120,7 +1118,7 @@ jobs:
         timeout-minutes: 5
         run: |-
           find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts && test -s /tmp/files-ts
-          xargs -0 uv run --no-project python -m scripts.check_typescript_consumers < /tmp/files-ts
+          xargs -0 uv run --no-project --with 'click==8.5.1' python -m scripts.check_typescript_consumers < /tmp/files-ts
 
   # Execute TypeScript fixtures via tsx. Split from `lint-npm-installed`
   # so the per-fixture tsx startups run in parallel with the tsc syntax
@@ -1300,10 +1298,10 @@ jobs:
       - name: Lint Ada
         run: |-
           find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada && test -s /tmp/files-ada
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.check_ada_syntax < /tmp/files-ada
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project --with 'click==8.5.1' python -m scripts.check_ada_syntax < /tmp/files-ada
       - name: Run Ada files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.run_ada
-          < /tmp/files-ada
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project --with 'click==8.5.1'
+          python -m scripts.run_ada < /tmp/files-ada
 
       # Basic JSON -> Ada -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the GNAT toolchain; ``uv run``
@@ -1340,7 +1338,7 @@ jobs:
       - name: Lint Occam
         run: |-
           find tests/integration/cases -name '*.occ' -print0 > /tmp/files-occam && test -s /tmp/files-occam
-          xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.check_occam_syntax < /tmp/files-occam
+          xargs -0 -P "$(nproc)" -n1 uv run --no-project --with 'click==8.5.1' python -m scripts.check_occam_syntax < /tmp/files-occam
 
       # There is deliberately no Occam JSON round-trip (issues 1867 and 2669),
       # unlike every other language.  A round-trip must compile and run the
@@ -1364,7 +1362,7 @@ jobs:
       - name: Lint Toml
         run: |-
           find tests/integration/cases -name '*.toml' -print0 > /tmp/files-toml && test -s /tmp/files-toml
-          xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --no-project python -m scripts.check_toml_syntax < /tmp/files-toml
+          xargs -0 -P "$(nproc)" -n1 uv run --with 'tomli>=2.4.0' --with 'click==8.5.1' --no-project python -m scripts.check_toml_syntax < /tmp/files-toml
 
       # Basic JSON -> TOML -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the ``tomli`` TOML parser already
@@ -1383,7 +1381,7 @@ jobs:
 
       - name: Lint Yaml
         run: |-
-          python3 -m tests.integration.list_fixtures .yaml v1_2 > /tmp/files-yaml && test -s /tmp/files-yaml
+          uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures .yaml v1_2 > /tmp/files-yaml && test -s /tmp/files-yaml
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-yaml
 
       # Basic JSON -> YAML -> JSON round-trip (issue 1867). Runs here
@@ -1565,6 +1563,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       # The action's build-metadata fetch can fail on transient gateway errors:
       # https://github.com/erlef/setup-beam/issues/496.
       - name: Install Elixir
@@ -1582,17 +1586,9 @@ jobs:
       # per fixture (serial `elixirc` + `elixir` loops).
       - name: Lint Elixir
         run: |-
-          python3 -m tests.integration.list_fixtures .ex "$ELIXIR_FIXTURE_TAG" > /tmp/files-elixir && test -s /tmp/files-elixir
+          uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures .ex "$ELIXIR_FIXTURE_TAG" > /tmp/files-elixir && test -s /tmp/files-elixir
           elixir scripts/lint-elixir.exs < /tmp/files-elixir
 
-      # `uv` is needed by the `Elixir roundtrip` step below; it runs the
-      # helper in project mode so `import literalizer` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Elixir -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Elixir toolchain (`elixir` on
       # PATH, Elixir 1.18's built-in `JSON` module available); `uv run`
@@ -1620,6 +1616,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       # The action's build-metadata fetch can fail on transient gateway errors:
       # https://github.com/erlef/setup-beam/issues/496.
       - name: Install Erlang
@@ -1634,17 +1636,9 @@ jobs:
       # Keep compiler warnings fatal and execute every x/0 entry point.
       - name: Compile and run Erlang files
         run: |-
-          python3 -m tests.integration.list_fixtures .erl "$ERLANG_FIXTURE_TAG" > /tmp/files-erlang && test -s /tmp/files-erlang
+          uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures .erl "$ERLANG_FIXTURE_TAG" > /tmp/files-erlang && test -s /tmp/files-erlang
           escript scripts/run_erlang.escript /tmp/files-erlang
 
-      # `uv` is needed by the `Erlang roundtrip` step below; it runs the
-      # helper in project mode so `import literalizer` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Erlang -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Erlang/OTP toolchain (`escript`
       # on PATH, OTP 27's built-in `json` module available); `uv run`
@@ -1711,8 +1705,8 @@ jobs:
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          python3 -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
-          uv run --no-project python -m scripts.check_gleam_syntax < /tmp/files-gleam
+          uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
+          uv run --no-project --with 'click==8.5.1' python -m scripts.check_gleam_syntax < /tmp/files-gleam
 
       # All ~350 fixtures are run in a single `gleam run` invocation; the
       # script generates a runner module that calls each fixture's `main`
@@ -1722,8 +1716,8 @@ jobs:
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
         run: |-
-          python3 -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
-          uv run --no-project python -m scripts.run_gleam < /tmp/files-gleam
+          uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures .gleam "$GLEAM_FIXTURE_TAG" | tr '\0' '\n' > /tmp/files-gleam && test -s /tmp/files-gleam
+          uv run --no-project --with 'click==8.5.1' python -m scripts.run_gleam < /tmp/files-gleam
 
       # Basic JSON -> Gleam -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Gleam toolchain and the primed
@@ -1977,9 +1971,10 @@ jobs:
       - name: Lint PureScript
         run: |-
           find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript && test -s /tmp/files-purescript
-          xargs -0 -P "$(nproc)" -n 1 uv run --no-project python -m scripts.check_purescript_syntax < /tmp/files-purescript
+          xargs -0 -P "$(nproc)" -n 1 uv run --no-project --with 'click==8.5.1' python -m scripts.check_purescript_syntax < /tmp/files-purescript
       - name: Run PureScript files
-        run: xargs -0 uv run --no-project python -m scripts.run_purescript < /tmp/files-purescript
+        run: xargs -0 uv run --no-project --with 'click==8.5.1' python -m scripts.run_purescript
+          < /tmp/files-purescript
 
       # Basic JSON -> PureScript -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the `purs` binary (from
@@ -2062,6 +2057,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
       - name: Cache the patched C++ toolchain
         id: cpp-toolchain
         uses: actions/cache@v6
@@ -2082,7 +2080,7 @@ jobs:
       - name: Build and verify the C++ toolchain
         if: steps.cpp-toolchain.outputs.cache-hit != 'true'
         run: |-
-          python3 scripts/build_cpp_toolchain.py \
+          uv run --no-project --with 'click==8.5.1' python scripts/build_cpp_toolchain.py \
             --work-directory "$RUNNER_TEMP/clang-build" \
             --output-directory "$RUNNER_TEMP/literalizer-clang"
       # Preserve executable modes and resource-header symlinks in the artifact.
@@ -2381,10 +2379,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: python3 -m tests.integration.list_fixtures .kts "$KOTLIN_FIXTURE_TAG"
-          > /tmp/files-to-lint && test -s /tmp/files-to-lint
+        run: uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures
+          .kts "$KOTLIN_FIXTURE_TAG" > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Kotlin
         timeout-minutes: 10
         uses: fwilhe2/setup-kotlin@v2
@@ -2432,14 +2436,6 @@ jobs:
         # that cannot see the legacy ScriptExpectedLocation runtime API.
         run: kotlin -classpath "$KOTLIN_HOME/lib/kotlin-compiler.jar" scripts/lint-kotlin.kts
           < /tmp/files-to-lint
-      # `uv` is needed by the `Kotlin roundtrip` step below; it runs the
-      # helper in project mode so `import literalizer` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Kotlin -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Kotlin toolchain on hand; the
       # script (issue 2715) routes the shared document through
@@ -3548,8 +3544,8 @@ jobs:
       # ``src/literalizer/languages/python.py``.
       - name: Find Python golden files
         shell: bash
-        run: python3 -m tests.integration.list_fixtures .py "$PYTHON_FIXTURE_TAG"
-          > /tmp/files-python && test -s /tmp/files-python
+        run: uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures
+          .py "$PYTHON_FIXTURE_TAG" > /tmp/files-python && test -s /tmp/files-python
       - name: Check Python syntax
         run: xargs -0 -P "$(nproc)" -n1 uv run --python "$PYTHON_VERSION" --no-project
           python -m py_compile < /tmp/files-python
@@ -3677,10 +3673,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: python3 -m tests.integration.list_fixtures .zig "$ZIG_FIXTURE_TAG" >
-          /tmp/files-to-lint && test -s /tmp/files-to-lint
+        run: uv run --no-project --with 'click==8.5.1' python -m tests.integration.list_fixtures
+          .zig "$ZIG_FIXTURE_TAG" > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Zig
         timeout-minutes: 10
         uses: mlugg/setup-zig@v2
@@ -3717,14 +3719,6 @@ jobs:
             printf '}\n'
           } > "$driver"
           zig run "$driver"
-      # `uv` is needed by the `Zig roundtrip` step below; it runs the
-      # helper in project mode so `import literalizer` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Zig -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Zig toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
@@ -3846,8 +3840,8 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check V syntax
-        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project python -m scripts.check_v_syntax
-          < /tmp/files-to-lint
+        run: xargs -0 -P "$(nproc)" -n1 uv run --no-project --with 'click==8.5.1'
+          python -m scripts.check_v_syntax < /tmp/files-to-lint
       - name: Run V files
         run: xargs -0 -P "$(nproc)" -n1 v -W -cc gcc run < /tmp/files-to-lint
       # Driven from `lint-v` because that is the job where the pinned

@@ -30,6 +30,7 @@ the precision-loss exclusions the typed-language scripts need.
 import json
 import shutil
 
+import click
 from pydantic import JsonValue
 
 from literalizer.languages import Bash
@@ -222,6 +223,7 @@ def _build_program(json_text: str) -> str:
     return f"{preamble}\n{result.code}\n{_JSON_STR_FN}\n{body}\n"
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Bash backend."""
     json_text = roundtrip_common.input_for_capabilities(

@@ -12,6 +12,8 @@ import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
+import click
+
 from scripts.bounded_command import bounded_command
 from scripts.elm_common import (
     ELM_JSON,
@@ -155,11 +157,13 @@ def _run_fixture(
     return True
 
 
-def main() -> None:
+@click.command()
+@click.argument("filenames", nargs=-1)
+def main(filenames: tuple[str, ...]) -> None:
     """Run each Elm golden file end-to-end."""
-    filenames = [
+    selected_filenames = [
         f
-        for f in sys.argv[1:]
+        for f in filenames
         if not any(f.endswith(suffix) for suffix in _SKIP_SUFFIXES)
     ]
     elm_path = shutil.which(cmd="elm")
@@ -183,7 +187,7 @@ def main() -> None:
             initializer=init_worker_elm_home,
             initargs=(str(object=primed), worker_homes_str),
         ) as pool:
-            results = list(pool.map(worker, filenames))
+            results = list(pool.map(worker, selected_filenames))
     if any(results):
         sys.exit(1)
 

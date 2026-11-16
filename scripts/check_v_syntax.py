@@ -18,12 +18,15 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from scripts.bounded_command import bounded_command
 
 
-def main() -> None:
+@click.command()
+@click.argument("filename")
+def main(filename: str) -> None:
     """Check syntax of the given V golden file."""
-    filename = sys.argv[1]
     v_path = shutil.which(cmd="v")
     if v_path is None or v_path == "":
         v_path = "v"

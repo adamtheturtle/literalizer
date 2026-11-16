@@ -15,6 +15,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from literalizer.languages import Matlab
 from scripts.bounded_command import bounded_command
 from tests.integration.shared_checked_cases import shared_checked_cases
@@ -97,6 +99,7 @@ def find_octave() -> str:
     return octave
 
 
+@click.command()
 def main() -> None:
     """Read null-separated fixture paths and execute them in parallel."""
     logging.basicConfig(level=logging.INFO, format="%(message)s")

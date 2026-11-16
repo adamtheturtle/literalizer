@@ -50,6 +50,7 @@ urls.Source = "https://github.com/adamtheturtle/literalizer"
 
 [dependency-groups]
 dev = [
+    { include-group = "cli" },
     "actionlint-py==1.7.12.25",
     "beartype==0.23.1",
     "check-manifest==0.51",
@@ -130,6 +131,7 @@ dev = [
     "zizmor==1.32.0",
 ]
 test = [
+    { include-group = "cli" },
     "beartype==0.23.1",
     "hypothesis==6.170.15",
     "pydantic==2.14.3",
@@ -150,6 +152,7 @@ benchmark = [
     # in the same workflow.
     "pytest-test-groups==1.2.1",
 ]
+cli = [ "click==8.5.1" ]
 release = [
     "check-wheel-contents==0.6.3",
     "towncrier==26.9.0",
@@ -157,6 +160,7 @@ release = [
 # Native checks use the project dependencies plus their shared helpers,
 # without installing the Python test, lint and documentation toolchains.
 roundtrip = [
+    { include-group = "cli" },
     "pydantic==2.14.3",
     "tenacity==9.2.1",
 ]
@@ -408,6 +412,8 @@ SPELLING.spelling-private-dict-file = "spelling_private_dict.txt"
 # Tells whether to store unknown words to indicated private dictionary in
 # --spelling-private-dict-file option instead of raising a message.
 SPELLING.spelling-store-unknown-words = "no"
+# Click commands parse their callback arguments from the command line.
+TYPECHECK.signature-mutators = [ "click.decorators.command" ]
 
 [tool.interrogate]
 fail-under = 100

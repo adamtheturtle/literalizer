@@ -28,6 +28,7 @@ import json
 import os
 import sys
 
+import click
 from tree_sitter import Language, Parser
 
 from literalizer import InputFormat, NewVariable, literalize
@@ -91,6 +92,7 @@ def _extract_code_block(document: str, language: Language) -> str:
     sys.exit(1)
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Norg backend."""
     json_text = roundtrip_common.input_for_capabilities(

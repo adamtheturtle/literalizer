@@ -3,12 +3,14 @@
 import sys
 from pathlib import Path
 
+import click
 import tomli
 
 
-def main() -> None:
+@click.command()
+@click.argument("filename")
+def main(filename: str) -> None:
     """Check syntax of the given TOML file."""
-    filename = sys.argv[1]
     with Path(filename).open(mode="rb") as fp:
         try:
             _ = tomli.load(fp)

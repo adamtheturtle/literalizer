@@ -20,6 +20,8 @@ string-keyed maps, which is everything the shared input carries.
 import shutil
 from pathlib import Path
 
+import click
+
 from literalizer.languages import Elixir
 from scripts import roundtrip_common
 
@@ -39,6 +41,7 @@ def _build_program(json_text: str) -> str:
     return f"{preamble}\n{result.code}\nIO.write(JSON.encode!({_VAR_NAME}))\n"
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Elixir backend."""
     json_text = roundtrip_common.input_for_capabilities(

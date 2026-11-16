@@ -8,6 +8,8 @@ import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
+import click
+
 from scripts.elm_common import (
     ELM_JSON,
     NOINDEX_SUFFIX,
@@ -56,9 +58,10 @@ def _check_fixture(
     return True
 
 
-def main() -> None:
+@click.command()
+@click.argument("filenames", nargs=-1)
+def main(filenames: tuple[str, ...]) -> None:
     """Check syntax of the given Elm golden files."""
-    filenames = sys.argv[1:]
     elm_path = shutil.which(cmd="elm")
     if elm_path is None or elm_path == "":
         elm_path = "elm"

@@ -34,6 +34,8 @@ negative zero, large exponents) rather than re-implementing them.
 
 import shutil
 
+import click
+
 from literalizer.languages import PureScript
 from scripts import roundtrip_common
 from scripts.purescript_common import PRELUDE_JS, PRELUDE_PURS
@@ -156,6 +158,7 @@ def _build_check(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the PureScript backend."""
     json_text = roundtrip_common.input_for_capabilities(

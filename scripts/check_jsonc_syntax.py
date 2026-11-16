@@ -3,13 +3,16 @@
 import sys
 from pathlib import Path
 
+import click
 import jsonc_document
 
 
-def main() -> None:
+@click.command()
+@click.argument("filenames", nargs=-1)
+def main(filenames: tuple[str, ...]) -> None:
     """Report syntax errors in the given JSONC files."""
     failed = False
-    for filename in sys.argv[1:]:
+    for filename in filenames:
         source = Path(filename).read_text(encoding="utf-8")
         try:
             _ = jsonc_document.loads(source=source)

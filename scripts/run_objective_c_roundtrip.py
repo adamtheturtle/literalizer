@@ -22,6 +22,8 @@ C++, Go, TypeScript, Zig, Swift, Rust and D exclusions.
 
 import shutil
 
+import click
+
 from literalizer.languages import ObjectiveC
 from scripts import roundtrip_common
 
@@ -63,6 +65,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Objective-C backend."""
     json_text = roundtrip_common.input_for_capabilities(

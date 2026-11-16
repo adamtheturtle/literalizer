@@ -40,6 +40,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+import click
+
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import R
 from scripts import roundtrip_common
@@ -74,6 +76,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the R backend."""
     json_text = roundtrip_common.input_for_capabilities(

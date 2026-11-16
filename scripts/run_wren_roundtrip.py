@@ -33,6 +33,7 @@ Two top-level keys are excluded from the comparison:
 import shutil
 from collections.abc import Iterable
 
+import click
 from pydantic import JsonValue
 
 from literalizer.languages import Wren
@@ -153,6 +154,7 @@ def _build_program(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Wren backend."""
     json_text = roundtrip_common.input_for_capabilities(

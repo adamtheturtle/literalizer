@@ -32,6 +32,8 @@ import shlex
 import shutil
 import sys
 
+import click
+
 from literalizer.languages import Roc
 from scripts import roundtrip_common
 
@@ -135,6 +137,7 @@ def _log_progress(*, message: str) -> None:
     _ = sys.stderr.flush()
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Roc backend."""
     json_text = roundtrip_common.input_for_capabilities(

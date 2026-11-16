@@ -16,6 +16,8 @@ import json
 import shutil
 from fractions import Fraction
 
+import click
+
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Ruby
 from scripts import roundtrip_common
@@ -156,6 +158,7 @@ def _check_datetime_offsets(*, ruby: str) -> None:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Ruby backend."""
     json_text = roundtrip_common.input_for_capabilities(

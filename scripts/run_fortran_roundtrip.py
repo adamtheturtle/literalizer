@@ -27,6 +27,8 @@ the Rust / C++ / Go / Swift / TypeScript / Zig / D scripts.
 import shutil
 from pathlib import Path
 
+import click
+
 from literalizer.languages import Fortran
 from scripts import roundtrip_common
 
@@ -64,6 +66,7 @@ def _build_main(json_text: str) -> str:
     )
 
 
+@click.command()
 def main() -> None:
     """Round-trip the shared document through the Fortran backend."""
     json_text = roundtrip_common.input_for_capabilities(
