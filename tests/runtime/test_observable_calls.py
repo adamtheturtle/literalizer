@@ -13,7 +13,7 @@ import pytest
 
 import literalizer
 from literalizer.exceptions import CallArgNotSupportedError
-from literalizer.languages import FSharp, ObjectiveC, Python
+from literalizer.languages import FSharp, Go, Kotlin, ObjectiveC, Python
 from tests.integration.call_receivers import (
     compose_integer_calls,
     integer_receiver_syntax,
@@ -248,11 +248,12 @@ def test_native_receiver_controls(
     syntax = integer_receiver_syntax()[lang_cls.language_id]
     command = syntax.compile if len(syntax.compile) > 0 else syntax.execute
     executable = command[0].format(python=sys.executable)
-    if shutil.which(cmd=executable) is None:
+    resolved_executable = shutil.which(cmd=executable)
+    if resolved_executable is None:
         pytest.skip(reason=f"{executable} is unavailable")
     if executable == "dotnet":
         sdks = subprocess.run(  # noqa: S603 - inspect the selected native tool
-            args=[executable, "--list-sdks"],
+            args=[resolved_executable, "--list-sdks"],
             capture_output=True,
             text=True,
             check=True,
@@ -273,16 +274,25 @@ def test_native_receiver_controls(
         }
         if len(syntax.compile) > 0:
             built = subprocess.run(  # noqa: S603 - execute repository-owned native receivers
-                args=[arg.format(**fields) for arg in syntax.compile],
+                args=[
+                    resolved_executable,
+                    *(arg.format(**fields) for arg in syntax.compile[1:]),
+                ],
                 capture_output=True,
                 text=True,
-                timeout=60,
+                timeout=syntax.compile_timeout_seconds,
                 check=False,
                 cwd=directory,
             )
             assert built.returncode == 0, built.stderr + built.stdout
+            execution = [arg.format(**fields) for arg in syntax.execute]
+        else:
+            execution = [
+                resolved_executable,
+                *(arg.format(**fields) for arg in syntax.execute[1:]),
+            ]
         completed = subprocess.run(  # noqa: S603 - execute repository-owned native receivers
-            args=[arg.format(**fields) for arg in syntax.execute],
+            args=execution,
             input=str(object=path) + "\0" if syntax.path_on_stdin else None,
             capture_output=True,
             text=True,
@@ -342,3 +352,32 @@ def test_native_controls_require_their_toolchain(
     )
     with pytest.raises(expected_exception=pytest.skip.Exception, match=reason):
         test_native_receiver_controls(lang_cls=lang_cls, tmp_path=tmp_path)
+
+
+@pytest.mark.parametrize(
+    argnames=("lang_cls", "launcher_name", "timeout"),
+    argvalues=[(Kotlin, "kotlin.bat", 60), (Go, "go.exe", 180)],
+)
+def test_native_controls_use_the_resolved_tool(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    launcher_name: str,
+    timeout: int,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The process uses the resolved tool and its declared time limit."""
+    launcher = str(object=tmp_path / "tool chain" / launcher_name)
+    monkeypatch.setattr(
+        target=shutil,
+        name="which",
+        value=Mock(return_value=launcher),
+    )
+    process = Mock(side_effect=RuntimeError("process inspected"))
+    monkeypatch.setattr(target=subprocess, name="run", value=process)
+    with pytest.raises(
+        expected_exception=RuntimeError, match="process inspected"
+    ):
+        test_native_receiver_controls(lang_cls=lang_cls, tmp_path=tmp_path)
+    assert process.call_args.kwargs["args"][0] == launcher
+    assert process.call_args.kwargs["timeout"] == timeout

@@ -40,6 +40,7 @@ class IntegerReceiverSyntax(  # noqa: NOD001
     wrapper_unary: str
     verify: str
     compile: list[str] = Field(default_factory=list[str])
+    compile_timeout_seconds: int = 60
     execute: list[str]
     path_on_stdin: bool = False
 

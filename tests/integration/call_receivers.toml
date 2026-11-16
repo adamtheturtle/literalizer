@@ -102,6 +102,7 @@ verify = '''static void verify_events(void) {{ assert(*event_index() == {count})
 wrapper_unary = '''static void {wrapper}(CVal argument) {{ observe_event(2); observe_event(argument.i); }}'''
 
 [go]
+compile_timeout_seconds = 180
 compile = ["go", "build", "-o", "{output}", "{source}"]
 execute = ["{output}"]
 scope = "file_scope"
