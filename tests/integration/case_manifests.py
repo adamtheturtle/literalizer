@@ -902,7 +902,6 @@ class CaseManifest:
     """Validated coverage and input metadata for one case directory."""
 
     path: Path
-    case_dir: Path
     schema_version: Literal[1]
     input: CaseInput
     input_roundtrip: InputRoundtripSpec | None
@@ -918,6 +917,11 @@ class CaseManifest:
     ref: RefCaseSpec | None
     call_examples: tuple[CallCaseSpec, ...]
     ref_examples: tuple[RefCaseSpec, ...]
+
+    @property
+    def case_dir(self) -> Path:
+        """Derive the owning directory from the manifest's source path."""
+        return self.path.parent
 
 
 @beartype
@@ -975,7 +979,6 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
 
     return CaseManifest(
         path=path,
-        case_dir=case_dir,
         schema_version=data.schema_version,
         input=input_info,
         input_roundtrip=data.input_roundtrip,
