@@ -904,24 +904,6 @@ def _resolved_axis(
 
 
 @beartype
-def _validate_references(
-    *,
-    axis_key: str,
-    axis: _Axis,
-    axes: Mapping[str, _Axis],
-) -> None:
-    """Check the axes one axis names against the loaded registry."""
-    if isinstance(axis, _FixedOverridesPlan | _CrossProductPlan) and (
-        axis.primary_axis is not None
-    ):
-        _ = _primary_axis_plan(
-            axis_key=axis_key,
-            primary_axis=axis.primary_axis,
-            axes=axes,
-        )
-
-
-@beartype
 def _validate_axis(
     *,
     axis_key: str,
@@ -981,7 +963,8 @@ def load_axis_registry(*, path: Path) -> Mapping[str, _Axis]:
     }
     for axis_key, axis in axes.items():
         _validate_axis(axis_key=axis_key, axis=axis, axes=axes)
-        _validate_references(axis_key=axis_key, axis=axis, axes=axes)
+        if not isinstance(axis, _FilteredPlan):
+            _ = _primary_plan_for(axis_key=axis_key, axis=axis, axes=axes)
     return axes
 
 
