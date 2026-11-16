@@ -84,7 +84,6 @@ from literalizer._language import (
     IdentifierCase,
     KeywordCallStyle,
     Language,
-    LanguageCls,
     ObjectCallStyle,
     PositionalCallStyle,
     PostfixCallStyle,
@@ -915,11 +914,7 @@ def _nested_collection_context(
     """Keep nested collection payload strings layout-independent."""
     if not isinstance(value, (dict, list, set)):
         return ctx
-    language_cls = type(ctx.spec)
-    if not isinstance(language_cls, LanguageCls):
-        msg = "nested collection rendering requires a LanguageCls language"
-        raise TypeError(msg)
-    if not language_cls.stringifies_nested_collections:
+    if not ctx.spec.stringifies_nested_collections:
         return ctx
     return ctx.compact()
 
@@ -5502,11 +5497,7 @@ def _scope_preamble_for_wrap(
     ``case class`` declarations) inside the wrapped body rather than at
     file scope; everything stays at file scope for the rest.
     """
-    language_cls = type(language)
-    if not isinstance(language_cls, LanguageCls):
-        msg = "preamble scoping requires a LanguageCls language"
-        raise TypeError(msg)
-    if not language_cls.wraps_data_dependent_preamble_in_body:
+    if not language.wraps_data_dependent_preamble_in_body:
         return _ScopedWrapPreamble(file_scope=preamble, body=())
     body_entries = set(data_dependent_entries)
     return _ScopedWrapPreamble(

@@ -1,7 +1,5 @@
 """Error contracts for internal call checks."""
 
-import inspect
-
 import pytest
 
 from literalizer import (
@@ -10,23 +8,12 @@ from literalizer import (
     NewVariable,
     literalize_call,
 )
-from literalizer._language import validate_call_parameter_names
 from literalizer.exceptions import VariableNameNotSupportedError
 from literalizer.languages import Jsonnet
 from tests.integration.call_collection import default_call_case_specs
 from tests.integration.call_expectations import (
     expected_call_shape_exception,
 )
-
-
-def test_call_parameter_validation_requires_language_metaclass() -> None:
-    """Malformed internal language objects fail immediately."""
-    validator = inspect.unwrap(func=validate_call_parameter_names)
-    with pytest.raises(
-        expected_exception=TypeError,
-        match="requires a LanguageCls language",
-    ):
-        validator(language=object(), names=(), reject_reserved=True)
 
 
 @pytest.mark.parametrize(
