@@ -17,17 +17,24 @@ import click
 CASES_DIR: Path = Path("tests/integration/cases")
 
 
+def fixture_paths(*, extension: str, version: str) -> tuple[Path, ...]:
+    """Select the same version-tagged native artifacts for CLI and runners."""
+    suffix = f"@{version}{extension}"
+    return tuple(
+        sorted(
+            path
+            for path in CASES_DIR.rglob(pattern=f"*{extension}")
+            if path.name.endswith(suffix)
+        )
+    )
+
+
 @click.command()
 @click.argument("extension")
 @click.argument("version")
 def main(extension: str, version: str) -> None:
     """Emit fixture paths matching *extension* and *version*."""
-    suffix = f"@{version}{extension}"
-    paths = sorted(
-        path
-        for path in CASES_DIR.rglob(pattern=f"*{extension}")
-        if path.name.endswith(suffix)
-    )
+    paths = fixture_paths(extension=extension, version=version)
     output = b"".join(f"{path}".encode() + b"\0" for path in paths)
     _ = sys.stdout.buffer.write(output)
 

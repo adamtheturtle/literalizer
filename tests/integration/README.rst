@@ -102,3 +102,17 @@ Capability declarations select participants before the syntax table is consulted
 Both ordinary and option-variant calls retain their effective spec, and external references retain their original inference hints.
 ``runtime/test_observable_calls.py`` compiles and executes positive programs and controls for dropped, repeated and reordered calls, swapped zipped operands and incorrect returned or bound values.
 Public ``wrap_in_file`` cases continue to exercise the library's generated-stub contract.
+
+Native Java checks
+------------------
+
+With a JDK installed, run the same warm compiler host as CI::
+
+    uv run --only-group=cli python -m scripts.run_java_fixtures
+    uv run --only-group=cli python -m scripts.run_java_fixtures --case scalar_int --release 11
+
+Both JDK 11 and 16 fixture populations are checked by default.
+Set ``LITERALIZER_LINT_CLASSPATH`` to the Jackson jars for JSON-type cases.
+Each batch compiles with the matching ``--release`` and ``-Werror``, then executes initializers and consumer entry points.
+``--batch-size`` retains a warm JVM for up to 512 fixtures; ``--timeout`` bounds each batch.
+An empty selection fails before any fixtures run.
