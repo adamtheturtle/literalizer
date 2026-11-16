@@ -98,6 +98,7 @@ lint-c-tidy:
 build-cpp-toolchain:
   - *shared
   - tests/integration/cases/**/*.{c,cpp}
+  - tests/integration/default_module_names/*.cpp
 
 lint-cpp-tidy:
   - *shared
