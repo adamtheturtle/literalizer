@@ -313,7 +313,8 @@ def test_native_receiver_controls(
             input=str(object=path) + "\0" if syntax.path_on_stdin else None,
             capture_output=True,
             text=True,
-            timeout=60,
+            # Allow cold runtime startup on hosted Windows workers.
+            timeout=180,
             check=False,
             cwd=directory,
         )
@@ -373,7 +374,7 @@ def test_native_controls_require_their_toolchain(
 
 @pytest.mark.parametrize(
     argnames=("lang_cls", "launcher_name", "timeout"),
-    argvalues=[(Kotlin, "kotlin.bat", 60), (Go, "go.exe", 180)],
+    argvalues=[(Kotlin, "kotlin.bat", 180), (Go, "go.exe", 180)],
 )
 def test_native_controls_use_the_resolved_tool(
     *,
