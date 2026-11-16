@@ -75,6 +75,7 @@ from literalizer._language import (
     ModifierCombination,
     NewVariableNameSyntax,
     OrderedMapFormatConfig,
+    PositionalCallStyle,
     RenderedRecordLiteral,
     SequenceFormatConfig,
     SetFormatConfig,
@@ -139,6 +140,16 @@ def _escape_roc_string_body(value: str) -> str:
 def _format_roc_string_literal(value: str) -> str:
     """Wrap *value* in double quotes after applying Roc string escapes."""
     return f'"{_escape_roc_string_body(value=value)}"'
+
+
+@beartype
+def _format_roc_v1_string_literal(value: str) -> str:
+    """Escape unprintable Unicode rejected by the new compiler."""
+    literal = _format_roc_string_literal(value=value)
+    return "".join(
+        character if character.isprintable() else f"\\u({ord(character):04x})"
+        for character in literal
+    )
 
 
 @beartype
@@ -437,6 +448,7 @@ def _build_roc_body_preamble(
     type_name: str,
     constructor_prefix: str,
     datetime_type_produced: type,
+    nominal: bool,
 ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Roc.
 
@@ -456,25 +468,47 @@ def _build_roc_body_preamble(
             int_types.add(dt.datetime)
         else:
             str_types.add(dt.datetime)
+
+        def payload(*, tag: str, value_type: str) -> str:
+            """Apply the selected version's constructor type syntax."""
+            if nominal:
+                return f"{p}{tag}({value_type})"
+            return f"{p}{tag} {value_type}"
+
+        sequence_type = (
+            f"List({type_name})" if nominal else f"(List {type_name})"
+        )
+        dict_type = (
+            f"List((Str, {type_name}))"
+            if nominal
+            else f"(List (Str, {type_name}))"
+        )
         constructors = [
             constructor
             for type_set, constructor in (
                 (frozenset({type(None)}), f"{p}Null"),
-                (frozenset({bool}), f"{p}Bool Bool"),
-                (frozenset(int_types), f"{p}Int I128"),
-                (frozenset({float}), f"{p}Float F64"),
-                (frozenset(str_types), f"{p}Str Str"),
-                (frozenset({list}), f"{p}List (List {type_name})"),
+                (frozenset({bool}), payload(tag="Bool", value_type="Bool")),
+                (frozenset(int_types), payload(tag="Int", value_type="I128")),
+                (frozenset({float}), payload(tag="Float", value_type="F64")),
+                (frozenset(str_types), payload(tag="Str", value_type="Str")),
+                (
+                    frozenset({list}),
+                    payload(tag="List", value_type=sequence_type),
+                ),
                 (
                     frozenset({dict, OrderedMap}),
-                    f"{p}Dict (List (Str, {type_name}))",
+                    payload(tag="Dict", value_type=dict_type),
                 ),
-                (frozenset({set}), f"{p}Set (List {type_name})"),
+                (
+                    frozenset({set}),
+                    payload(tag="Set", value_type=sequence_type),
+                ),
             )
             if len(types & type_set) > 0
         ]
         body = ",\n".join(f"    {c}" for c in constructors)
-        return (f"{type_name} : [\n{body},\n]",)
+        declaration = ":=" if nominal else ":"
+        return (f"{type_name} {declaration} [\n{body},\n]",)
 
     return _compute
 
@@ -700,6 +734,25 @@ def _no_record_body_preamble(
 
 
 @beartype
+def _roc_nominal_scalar[DataT](
+    *, constructor: str | None, formatter: Callable[[DataT], str]
+) -> Callable[[DataT], str]:
+    """Compose a raw scalar formatter with a new-compiler constructor."""
+
+    @beartype
+    def format_value(value: DataT) -> str:
+        """Render a scalar, optionally tagging it for the nominal
+        union.
+        """
+        literal = formatter(value)
+        if constructor is None:
+            return literal
+        return f"{constructor}({literal})"
+
+    return format_value
+
+
+@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Roc(metaclass=LanguageCls):
     """Roc language specification.
@@ -720,6 +773,12 @@ class Roc(metaclass=LanguageCls):
     rejects keys that are not Roc field identifiers, ordered maps, and
     sets; the default tagged representation remains available for them.
     Null has no native Roc literal and remains an inferred ``RNull`` tag.
+
+    ``language_version=Roc.version_formats.V1`` targets the new compiler
+    nightly ``2026-11-15-f25da45``. It uses nominal value unions,
+    parenthesized constructors and calls, and typed numeric literals.
+    Wrapped files are complete default-platform apps with a ``main!``
+    entry point. The default ``V0`` retains the legacy compiler's syntax.
 
     Args:
         date_format: How to format :class:`datetime.date` values.
@@ -1114,6 +1173,7 @@ class Roc(metaclass=LanguageCls):
         """Version options for Roc."""
 
         V0 = enum.auto()
+        V1 = enum.auto()
 
     version_formats = VersionFormats
 
@@ -1180,10 +1240,31 @@ class Roc(metaclass=LanguageCls):
         preamble_str = ""
         if len(effective_preamble) > 0:
             preamble_str = "\n".join(effective_preamble) + "\n\n"
+        if self.language_version is self.version_formats.V1:
+            if variable_name == "":
+                return self._wrap_v1_calls(
+                    declarations=(), calls=content, preamble=preamble_str
+                )
+            return (
+                f"{preamble_str}{content}\n\n"
+                f"main! = |_args| {{\n{self.indent}_ = {variable_name}\n"
+                f"{self.indent}Ok({{}})\n}}"
+            )
         if variable_name == "":
             body = _indent_call_lines(content=content, indent=self.indent)
             content = f"main =\n{body}\n{self.indent}{{}}"
         return f"module [{exposed}]\n\n{preamble_str}{content}"
+
+    def _wrap_v1_calls(
+        self, *, declarations: tuple[str, ...], calls: str, preamble: str
+    ) -> str:
+        """Host pure calls in a complete new-compiler default app."""
+        decl_block = "\n".join(declarations)
+        body = _indent_call_lines(content=calls, indent=self.indent)
+        return (
+            f"{preamble}{decl_block}\n\nmain! = |_args| {{\n"
+            f"{body}\n{self.indent}Ok({{}})\n}}"
+        )
 
     @staticmethod
     def _used_body_preamble(
@@ -1223,6 +1304,10 @@ class Roc(metaclass=LanguageCls):
         preamble_str = ""
         if len(effective_preamble) > 0:
             preamble_str = "\n".join(effective_preamble) + "\n\n"
+        if self.language_version is self.version_formats.V1:
+            return self._wrap_v1_calls(
+                declarations=declarations, calls=calls, preamble=preamble_str
+            )
         return f"module [main]\n\n{preamble_str}{decl_block}{main_block}"
 
     wrap_combined_in_file: ClassVar[
@@ -1262,7 +1347,8 @@ class Roc(metaclass=LanguageCls):
     # the ``Install Roc`` step of ``.github/workflows/lint.yml``. Roc
     # has no stable release and no ``--langversion``-style flag, so the
     # pinned nightly build is the only mechanism for pinning the
-    # version; ``V0`` maps to the ``2025-10-28`` nightly.
+    # version; ``V0`` maps to the ``2025-10-28`` nightly and ``V1`` to
+    # ``2026-11-15-f25da45``. Keep both compiler/platform pairs pinned.
     language_version: VersionFormats = VersionFormats.V0
     indent: str = "    "
     type_name: str = "Val"
@@ -1283,6 +1369,10 @@ class Roc(metaclass=LanguageCls):
     @beartype
     def call_style_config(self) -> CallStyle:
         """Configuration for the Roc call style."""
+        if self.language_version is self.version_formats.V1:
+            return PositionalCallStyle(
+                arg_separator=", ", parenthesize_each_arg=False
+            )
         return self.call_style.value
 
     @cached_property
@@ -1335,6 +1425,22 @@ class Roc(metaclass=LanguageCls):
         """Return stub declarations for a call expression — emitted via
         ``body_preamble`` so they sit after the module header.
         """
+        if self.language_version is self.version_formats.V1:
+
+            @beartype
+            def stub(
+                parts: Sequence[str],
+                params: Sequence[str],
+                _result: StubReturn,
+                _args: Sequence[Value],
+                /,
+            ) -> tuple[str, ...]:
+                """Declare a polymorphic new-compiler function."""
+                name = _roc_format_call_target(parts=parts)
+                wildcards = ", ".join("_" for _ in params)
+                return (f"{name} = |{wildcards}| {{}}",)
+
+            return stub
         return _roc_call_body_stub
 
     format_call_preamble_stub = default_format_call_stub
@@ -1345,6 +1451,8 @@ class Roc(metaclass=LanguageCls):
         """Wrap each call argument in parentheses for the Roc
         space-separated call syntax.
         """
+        if self.language_version is self.version_formats.V1:
+            return passthrough_sequence_entry
         return _roc_format_call_arg
 
     @cached_property
@@ -1375,6 +1483,10 @@ class Roc(metaclass=LanguageCls):
     @beartype
     def true_literal(self) -> str:
         """Literal representing ``True``."""
+        if self.language_version is self.version_formats.V1:
+            if self.dict_format is type(self.dict_format).RECORD:
+                return "Bool.True"
+            return f"{self.constructor_prefix}Bool(Bool.True)"
         if self.dict_format is type(self.dict_format).RECORD:
             return "Bool.true"
         return f"{self.constructor_prefix}Bool Bool.true"
@@ -1383,6 +1495,10 @@ class Roc(metaclass=LanguageCls):
     @beartype
     def false_literal(self) -> str:
         """Literal representing ``False``."""
+        if self.language_version is self.version_formats.V1:
+            if self.dict_format is type(self.dict_format).RECORD:
+                return "Bool.False"
+            return f"{self.constructor_prefix}Bool(Bool.False)"
         if self.dict_format is type(self.dict_format).RECORD:
             return "Bool.false"
         return f"{self.constructor_prefix}Bool Bool.false"
@@ -1393,6 +1509,8 @@ class Roc(metaclass=LanguageCls):
         """Shared sequence opener with configured constructor prefix."""
         if self.dict_format is type(self.dict_format).RECORD:
             return fixed_open(open_str="[")
+        if self.language_version is self.version_formats.V1:
+            return fixed_open(open_str=f"{self.constructor_prefix}List([")
         return fixed_open(
             open_str=f"{self.constructor_prefix}List [",
         )
@@ -1410,6 +1528,12 @@ class Roc(metaclass=LanguageCls):
         return dataclasses.replace(
             self.sequence_format.value,
             sequence_open=self._seq_open,
+            close=(
+                "])"
+                if self.language_version is self.version_formats.V1
+                and self.dict_format is not type(self.dict_format).RECORD
+                else "]"
+            ),
             supports_heterogeneity=(
                 self.dict_format is not type(self.dict_format).RECORD
             ),
@@ -1431,8 +1555,15 @@ class Roc(metaclass=LanguageCls):
         return dataclasses.replace(
             self.set_format.value,
             set_open=fixed_open(
-                open_str=f"{self.constructor_prefix}Set [",
+                open_str=(
+                    f"{self.constructor_prefix}Set(["
+                    if self.language_version is self.version_formats.V1
+                    else f"{self.constructor_prefix}Set ["
+                ),
             ),
+            close="])"
+            if self.language_version is self.version_formats.V1
+            else "]",
         )
 
     @cached_property
@@ -1455,9 +1586,15 @@ class Roc(metaclass=LanguageCls):
             )
         return DictFormatConfig(
             dict_open=fixed_open(
-                open_str=f"{self.constructor_prefix}Dict [",
+                open_str=(
+                    f"{self.constructor_prefix}Dict(["
+                    if self.language_version is self.version_formats.V1
+                    else f"{self.constructor_prefix}Dict ["
+                ),
             ),
-            close="]",
+            close="])"
+            if self.language_version is self.version_formats.V1
+            else "]",
             format_entry=self._dict_entry,
             empty_dict=None,
             preamble_lines=(),
@@ -1476,6 +1613,15 @@ class Roc(metaclass=LanguageCls):
     @beartype
     def format_bytes(self) -> Callable[[bytes], str]:
         """Callable that formats a bytes value as a string literal."""
+        if self.language_version is self.version_formats.V1:
+            return _roc_nominal_scalar(
+                constructor=self._v1_constructor(tag="Str"),
+                formatter=(
+                    format_bytes_hex
+                    if self.bytes_format is self.bytes_formats.HEX
+                    else format_bytes_base64
+                ),
+            )
         if self.dict_format is type(self.dict_format).RECORD:
             tag = f"{self.constructor_prefix}Str "
             formatter = _ROC_BYTES_FORMATTERS[self.bytes_format.name](
@@ -1498,6 +1644,11 @@ class Roc(metaclass=LanguageCls):
     @beartype
     def format_date(self) -> Callable[[dt.date], str]:
         """Callable that formats a date as a string literal."""
+        if self.language_version is self.version_formats.V1:
+            return _roc_nominal_scalar(
+                constructor=self._v1_constructor(tag="Str"),
+                formatter=format_date_iso,
+            )
         if self.dict_format is type(self.dict_format).RECORD:
             formatter = _build_roc_date_iso(prefix=self.constructor_prefix)
             tag = f"{self.constructor_prefix}Str "
@@ -1516,6 +1667,15 @@ class Roc(metaclass=LanguageCls):
     @beartype
     def format_datetime(self) -> Callable[[dt.datetime], str]:
         """Callable that formats a datetime as a string literal."""
+        if self.language_version is self.version_formats.V1:
+            if self.datetime_format is self.datetime_formats.EPOCH:
+                return datetime_epoch_formatter(
+                    format_integer=self.format_integer
+                )
+            return _roc_nominal_scalar(
+                constructor=self._v1_constructor(tag="Str"),
+                formatter=format_datetime_iso,
+            )
         if self.dict_format is type(self.dict_format).RECORD:
             if self.datetime_format is type(self.datetime_format).EPOCH:
                 formatter = _build_roc_datetime_epoch(
@@ -1545,6 +1705,11 @@ class Roc(metaclass=LanguageCls):
     @beartype
     def format_time(self) -> Callable[[dt.time], str]:
         """Callable that formats a time as a string literal."""
+        if self.language_version is self.version_formats.V1:
+            return _roc_nominal_scalar(
+                constructor=self._v1_constructor(tag="Str"),
+                formatter=format_time_iso,
+            )
         formatter = _build_roc_time_iso(prefix=self.constructor_prefix)
         if self.dict_format is type(self.dict_format).RECORD:
             tag = f"{self.constructor_prefix}Str "
@@ -1561,12 +1726,19 @@ class Roc(metaclass=LanguageCls):
     @beartype
     def format_dict_key(self) -> Callable[[str], str]:
         """Render a string key without a value constructor."""
+        if self.language_version is self.version_formats.V1:
+            return _format_roc_v1_string_literal
         return _format_roc_string_literal
 
     @cached_property
     @beartype
     def format_string(self) -> Callable[[str], str]:
         """Callable that formats a string value as a quoted literal."""
+        if self.language_version is self.version_formats.V1:
+            return _roc_nominal_scalar(
+                constructor=self._v1_constructor(tag="Str"),
+                formatter=_format_roc_v1_string_literal,
+            )
         if self.dict_format is type(self.dict_format).RECORD:
             return _format_roc_string_literal
         if self.constructor_prefix == "R":
@@ -1577,6 +1749,25 @@ class Roc(metaclass=LanguageCls):
     @beartype
     def format_integer(self) -> Callable[[int], str]:
         """Callable that formats an int value as a literal."""
+        if self.language_version is self.version_formats.V1:
+            base = _ROC_INT_BASE[self.integer_format.name]
+
+            @beartype
+            def integer(value: int) -> str:
+                """Pin a raw integer to the union's I128 payload type."""
+                return f"{base(value)}.I128"
+
+            return _roc_nominal_scalar(
+                constructor=self._v1_constructor(tag="Int"),
+                formatter=make_overflow_fallback_formatter(
+                    base=integer,
+                    min_value=_I128_MIN,
+                    max_value=_I128_MAX,
+                    fallback=raise_for_unrepresentable_int(
+                        language_name="Roc"
+                    ),
+                ),
+            )
         if self.dict_format is type(self.dict_format).RECORD:
             formatter = _build_roc_integer_formatter(
                 prefix=self.constructor_prefix,
@@ -1601,49 +1792,9 @@ class Roc(metaclass=LanguageCls):
     @beartype
     def format_float(self) -> Callable[[float], str]:
         """Callable that formats a float value as a literal."""
-        if self.dict_format is type(self.dict_format).RECORD:
-            formatter = _build_roc_float_formatter(
-                prefix=self.constructor_prefix,
-                inner=_ROC_FLOAT_BASE[self.float_format.name],
-            )
-            tag = f"{self.constructor_prefix}Float "
-
-            @beartype
-            def _bare_float(value: float) -> str:
-                """Render a float without a tag, including infinities."""
-                if math.isinf(value):
-                    return (
-                        "-Num.infinity_f64"
-                        if value < 0
-                        else "Num.infinity_f64"
-                    )
-                if math.isnan(value):
-                    return "Num.nan_f64"
-                return formatter(value).removeprefix(tag)
-
-            return _bare_float
-        if self.constructor_prefix == "R":
-            return self.float_format
-        _pos_inf = f"{self.constructor_prefix}Float Num.infinity_f64"
-        _neg_inf = f"{self.constructor_prefix}Float -Num.infinity_f64"
-        _nan_val = f"{self.constructor_prefix}Float Num.nan_f64"
-        _float_finite = _build_roc_float_formatter(
-            prefix=self.constructor_prefix,
-            inner=_ROC_FLOAT_BASE[self.float_format.name],
-        )
-
-        @beartype
-        def _format_float_with_specials(value: float) -> str:
-            """Format a float, handling inf and nan."""
-            if math.isinf(value):
-                if value < 0:
-                    return _neg_inf
-                return _pos_inf
-            if math.isnan(value):
-                return _nan_val
-            return _float_finite(value)
-
-        return _format_float_with_specials
+        if self.language_version is self.version_formats.V1:
+            return self._v1_format_float
+        return self._v0_format_float
 
     @cached_property
     @beartype
@@ -1657,9 +1808,15 @@ class Roc(metaclass=LanguageCls):
         """Configuration for ordered-map formatting."""
         return OrderedMapFormatConfig(
             ordered_map_open=fixed_open(
-                open_str=f"{self.constructor_prefix}Dict [",
+                open_str=(
+                    f"{self.constructor_prefix}Dict(["
+                    if self.language_version is self.version_formats.V1
+                    else f"{self.constructor_prefix}Dict ["
+                ),
             ),
-            close="]",
+            close="])"
+            if self.language_version is self.version_formats.V1
+            else "]",
             preamble_lines=(),
         )
 
@@ -1751,4 +1908,79 @@ class Roc(metaclass=LanguageCls):
             type_name=self.type_name,
             constructor_prefix=self.constructor_prefix,
             datetime_type_produced=self.datetime_format.value.type_produced,
+            nominal=self.language_version is self.version_formats.V1,
         )
+
+    def _v1_constructor(self, *, tag: str) -> str | None:
+        """Select a nominal payload constructor or a native scalar."""
+        if self.dict_format is self.dict_formats.RECORD:
+            return None
+        return f"{self.constructor_prefix}{tag}"
+
+    @cached_property
+    @beartype
+    def _v1_format_float(self) -> Callable[[float], str]:
+        """Format the new compiler's finite and special float values."""
+        base = _ROC_FLOAT_BASE[self.float_format.name]
+
+        @beartype
+        def floating(value: float) -> str:
+            """Pin finite literals and spell the new float constants."""
+            if math.isnan(value):
+                return "F64.nan"
+            if math.isinf(value):
+                return "-F64.infinity" if value < 0 else "F64.infinity"
+            return f"{base(value).replace('e+', 'e')}.F64"
+
+        return _roc_nominal_scalar(
+            constructor=self._v1_constructor(tag="Float"),
+            formatter=floating,
+        )
+
+    @cached_property
+    @beartype
+    def _v0_format_float(self) -> Callable[[float], str]:
+        """Keep the legacy compiler's tagged and native float syntax."""
+        if self.dict_format is type(self.dict_format).RECORD:
+            formatter = _build_roc_float_formatter(
+                prefix=self.constructor_prefix,
+                inner=_ROC_FLOAT_BASE[self.float_format.name],
+            )
+            tag = f"{self.constructor_prefix}Float "
+
+            @beartype
+            def _bare_float(value: float) -> str:
+                """Render a float without a tag, including infinities."""
+                if math.isinf(value):
+                    return (
+                        "-Num.infinity_f64"
+                        if value < 0
+                        else "Num.infinity_f64"
+                    )
+                if math.isnan(value):
+                    return "Num.nan_f64"
+                return formatter(value).removeprefix(tag)
+
+            return _bare_float
+        if self.constructor_prefix == "R":
+            return self.float_format
+        _pos_inf = f"{self.constructor_prefix}Float Num.infinity_f64"
+        _neg_inf = f"{self.constructor_prefix}Float -Num.infinity_f64"
+        _nan_val = f"{self.constructor_prefix}Float Num.nan_f64"
+        _float_finite = _build_roc_float_formatter(
+            prefix=self.constructor_prefix,
+            inner=_ROC_FLOAT_BASE[self.float_format.name],
+        )
+
+        @beartype
+        def _format_float_with_specials(value: float) -> str:
+            """Format a float, handling inf and nan."""
+            if math.isinf(value):
+                if value < 0:
+                    return _neg_inf
+                return _pos_inf
+            if math.isnan(value):
+                return _nan_val
+            return _float_finite(value)
+
+        return _format_float_with_specials

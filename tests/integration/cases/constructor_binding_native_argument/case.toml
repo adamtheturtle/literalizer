@@ -56,6 +56,14 @@ main = do
         Playlist (HInt 1) -> pure ()
         _ -> error "changed constructor argument"
 '''
+"Roc@V1" = '''{preamble}
+{body_preamble}
+main! = |_args| {{
+    {bare_code}
+    expect created == Playlist(RInt(1.I128))
+    Ok({{}})
+}}
+'''
 PureScript = '''module Check where
 {preamble}
 data Playlist = Playlist Val

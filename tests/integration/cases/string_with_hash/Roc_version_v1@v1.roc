@@ -1,0 +1,15 @@
+Val := [
+    RStr(Str),
+    RList(List(Val)),
+]
+
+my_data : Val
+my_data = RList([
+    RStr("issue #{42}"),
+    RStr("color #red"),
+])
+
+main! = |_args| {
+    _ = my_data
+    Ok({})
+}

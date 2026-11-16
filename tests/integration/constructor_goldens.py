@@ -41,7 +41,8 @@ def run_constructor_binding_golden_case(
             },
         )
     consumer_template = config.consumer_for_language(
-        language_name=case.lang_cls.__name__
+        language_name=case.lang_cls.__name__,
+        version_name=language.language_version.name,
     )
     source = manifest.input.path.read_text(encoding="utf-8")
     input_format = manifest.input.input_format

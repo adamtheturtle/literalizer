@@ -1,0 +1,14 @@
+Val := [
+    RStr(Str),
+    RDict(List((Str, Val))),
+]
+
+my_data : Val
+my_data = RDict([
+    ("key", RStr("value \" # not a comment")),  # real
+])
+
+main! = |_args| {
+    _ = my_data
+    Ok({})
+}

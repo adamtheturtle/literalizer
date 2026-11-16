@@ -1,0 +1,17 @@
+Val := [
+    RInt(I128),
+    RStr(Str),
+    RList(List(Val)),
+    RDict(List((Str, Val))),
+]
+
+my_data : Val
+my_data = RList([
+    RList([RDict([("value", RInt(1.I128))])]),
+    RList([RDict([("value", RInt(1099511627776.I128))])]),
+])
+
+main! = |_args| {
+    _ = my_data
+    Ok({})
+}

@@ -1,0 +1,15 @@
+Val := [
+    RInt(I128),
+    RSet(List(Val)),
+]
+
+my_data : Val
+my_data = RSet([
+    RInt(0o1.I128),
+    RInt(0o20000000000000.I128),
+])
+
+main! = |_args| {
+    _ = my_data
+    Ok({})
+}
