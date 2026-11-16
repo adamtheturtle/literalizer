@@ -229,6 +229,7 @@ def ref_language_options(
     spec: literalizer.Language,
 ) -> literalizer.Language:
     """Apply the output modes explicitly selected by a reference case."""
+    kwargs: dict[str, object] = {}
     for name, enum_cls, choice in (
         (
             "variable_type_hints",
@@ -250,16 +251,12 @@ def ref_language_options(
         ("dict_format", lang_cls.DictFormats, config.dict_format),
     ):
         if choice is not None:
-            spec = dataclasses.replace(
-                spec,
-                **{name: enum_member_by_name(enum_cls=enum_cls, name=choice)},
-            )
+            kwargs[name] = enum_member_by_name(enum_cls=enum_cls, name=choice)
     if config.default_sequence_element_type is not None:
-        spec = dataclasses.replace(
-            spec,
-            default_sequence_element_type=config.default_sequence_element_type,
+        kwargs["default_sequence_element_type"] = (
+            config.default_sequence_element_type
         )
-    return spec
+    return dataclasses.replace(spec, **kwargs) if len(kwargs) > 0 else spec
 
 
 @beartype
