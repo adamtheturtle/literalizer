@@ -1613,9 +1613,7 @@ jobs:
       # module atom cannot fit in a filesystem component with a .beam suffix.
       # Keep compiler warnings fatal and execute every x/0 entry point.
       - name: Compile and run Erlang files
-        run: |-
-          uv run --only-group=cli python -m tests.integration.list_fixtures .erl "$ERLANG_FIXTURE_TAG" > /tmp/files-erlang && test -s /tmp/files-erlang
-          escript scripts/run_erlang.escript /tmp/files-erlang
+        run: uv run --only-group=cli python -m scripts.run_erlang_fixtures
 
       # Basic JSON -> Erlang -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Erlang/OTP toolchain (`escript`
