@@ -60,7 +60,7 @@ def main(
         raise click.ClickException(
             message=f"Missing interpreter: {guile_name}"
         )
-    arguments = (executable, "--no-auto-compile")
+    arguments: tuple[str, ...] = (executable, "--no-auto-compile")
     if json_path is not None:
         arguments += ("-L", str(object=json_path))
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
