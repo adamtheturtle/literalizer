@@ -106,7 +106,6 @@ from literalizer._parsing import (
     ParsedToml,
     ParsedYaml,
     parse_input,
-    recursion_parse_error,
     reject_excessive_integer_digits,
     unwrap_yaml_scalar,
 )
@@ -5416,23 +5415,21 @@ def literalize_pre_form(
     wrap_in_file: bool,
     bound_ref_names: frozenset[str],
 ) -> _PreFormState:
-    """Run pre-form rendering with typed recursion failures."""
-    try:
-        pre_form = _literalize_pre_form_impl(
-            preserve_ref_values=preserve_ref_values,
-            source=source,
-            input_format=input_format,
-            language=language,
-            pre_indent_level=pre_indent_level,
-            include_delimiters=include_delimiters,
-            ref_case=ref_case,
-            ref_values=ref_values,
-            ref_key=ref_key,
-            record_null_substitutions=record_null_substitutions,
-            collection_layout=collection_layout,
-        )
-    except RecursionError as exc:
-        raise recursion_parse_error(input_format=input_format) from exc
+    """Run pre-form rendering and reject unbound file references."""
+    # Rendering can raise RecursionError; let it bubble up to the caller.
+    pre_form = _literalize_pre_form_impl(
+        preserve_ref_values=preserve_ref_values,
+        source=source,
+        input_format=input_format,
+        language=language,
+        pre_indent_level=pre_indent_level,
+        include_delimiters=include_delimiters,
+        ref_case=ref_case,
+        ref_values=ref_values,
+        ref_key=ref_key,
+        record_null_substitutions=record_null_substitutions,
+        collection_layout=collection_layout,
+    )
     _reject_unbound_refs_in_file(
         data=pre_form.data,
         ref_key=ref_key,
