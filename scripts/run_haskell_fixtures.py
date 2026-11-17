@@ -7,25 +7,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import run_bounded_command
-
-
-def _stage(*, fixtures: list[Path], workspace: Path) -> list[str]:
-    """Preserve source module identities and report every copied
-    fixture.
-    """
-    names: list[str] = []
-    for fixture in fixtures:
-        stem = fixture.stem.rsplit(sep="@", maxsplit=1)[0]
-        name = (
-            "Check"
-            if fixture.parent.name == "default_module_names"
-            else f"Fixture_{fixture.parent.name}_{stem}"
-        )
-        destination = workspace / f"{name}.hs"
-        _ = shutil.copyfile(src=fixture, dst=destination)
-        click.echo(message=f"{destination.name} <- {fixture}")
-        names.append(name)
-    return names
+from scripts.fixture_staging import stage_fixture_modules
 
 
 def _validate(
@@ -90,7 +72,9 @@ def main() -> None:
         suffix="-literalizer-haskell"
     ) as directory:
         workspace = Path(directory)
-        names = _stage(fixtures=fixtures, workspace=workspace)
+        names = stage_fixture_modules(
+            fixtures=fixtures, workspace=workspace, default_module_name="Check"
+        )
         _validate(
             executable=executable,
             names=names,

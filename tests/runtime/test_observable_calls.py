@@ -26,9 +26,9 @@ from tests.integration.case_manifests import (
     ComposedCallFixture,
     FollowupCallSpec,
 )
+from tests.integration.fixture_names import fixture_module_name
 from tests.integration.language_specs import (
     find_redefinition_styles,
-    fixture_module_name,
     make_spec,
     sorted_languages,
     with_per_fixture_module_name,
