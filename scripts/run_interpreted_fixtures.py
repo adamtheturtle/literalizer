@@ -29,6 +29,9 @@ class _Backend:
 
 
 _BACKENDS = {
+    "raku": _Backend(
+        executable="raku", extension=".raku", syntax_argument="-c"
+    ),
     "lua": _Backend(
         executable="lua",
         extension=".lua",
