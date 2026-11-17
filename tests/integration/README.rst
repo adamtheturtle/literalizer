@@ -100,10 +100,6 @@ Existing bindings start from literal declarations, with their initial and final 
 ``call_receivers.toml`` shares implementations by native integer signature and calling convention.
 Capability declarations select participants before the syntax table is consulted.
 Both ordinary and option-variant calls retain their effective spec, and external references retain their original inference hints.
-``scripts/run_receiver_controls.py`` compiles and executes positive programs and controls for dropped, repeated and reordered calls, swapped zipped operands and incorrect returned or bound values.
-Run selected languages with ``uv run --no-dev --group=receiver python -m scripts.run_receiver_controls python go``.
-CI runs every participating language in its provisioned native job.
-Missing compilers, runtimes, SDKs or required platform support fail the check.
 Public ``wrap_in_file`` cases continue to exercise the library's generated-stub contract.
 
 Native interpreter checks

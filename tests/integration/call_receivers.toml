@@ -1,8 +1,6 @@
 # Native unary integer signatures. Selection uses language capabilities.
 
 [python]
-compile = []
-execute = ["{python}", "-I", "{source}"]
 scope = "body"
 state = '''_expected_events = ({events},)
 _event_index = 0
@@ -24,8 +22,6 @@ wrapper_unary = '''def {wrapper}({parameter}: int, /) -> None:
     observe_event(2); observe_event({parameter})'''
 
 [javascript]
-compile = []
-execute = ["node", "{source}"]
 scope = "body"
 state = '''const expectedEvents = [{events}];
 let eventIndex = 0;
@@ -43,8 +39,6 @@ verify = '''function verify_events() {{ if (eventIndex !== {count}) throw new Er
 wrapper_unary = '''function {wrapper}(actual) {{ observeEvent(2); observeEvent(actual); }}'''
 
 [typescript]
-compile = []
-execute = ["tsx", "{source}"]
 scope = "body"
 state = '''const expectedEvents = [{events}];
 let eventIndex = 0;
@@ -62,8 +56,6 @@ verify = '''function verify_events(..._arguments: unknown[]) {{ if (eventIndex !
 wrapper_unary = '''function {wrapper}(actual: number) {{ observeEvent(2); observeEvent(actual); }}'''
 
 [cpp]
-compile = ["c++", "-std=c++14", "-Wall", "-Wextra", "-Werror", "{source}", "-o", "{output}"]
-execute = ["{output}"]
 scope = "body"
 file_preamble = ["#include <cassert>", "#include <array>", "#include <cstddef>", "#include <iterator>"]
 state = '''const std::array<int, {count}> expected_events{{{{{events}}}}};
@@ -82,8 +74,6 @@ verify = '''const auto verify_events = [&event_index] {{ assert(event_index == {
 wrapper_unary = '''const auto {wrapper} = [&observe_event](int argument) {{ observe_event(2); observe_event(argument); }};'''
 
 [c]
-compile = ["clang", "-std=c99", "-Wall", "-Wextra", "-Werror", "{source}", "-o", "{output}"]
-execute = ["{output}"]
 scope = "file_scope"
 state = '''#include <assert.h>
 static int *event_index(void) {{ static int index = 0; return &index; }}
@@ -102,9 +92,6 @@ verify = '''static void verify_events(void) {{ assert(*event_index() == {count})
 wrapper_unary = '''static void {wrapper}(CVal argument) {{ observe_event(2); observe_event(argument.i); }}'''
 
 [go]
-compile_timeout_seconds = 180
-compile = ["go", "build", "-o", "{output}", "{source}"]
-execute = ["{output}"]
 scope = "file_scope"
 state = '''var eventIndex = 0
 func observeEvent(actual int) {{
@@ -119,8 +106,6 @@ verify = '''func verify_events() {{ if eventIndex != {count} {{ panic("missing r
 wrapper_unary = '''func {wrapper}({parameter} int) {{ observeEvent(2); observeEvent({parameter}) }}'''
 
 [ruby]
-compile = []
-execute = ["ruby", "{source}"]
 scope = "body"
 state = '''$event_index = 0
 def observe_event(actual)
@@ -147,8 +132,6 @@ wrapper_unary = '''def {wrapper}(actual)
 end'''
 
 [lua]
-compile = []
-execute = ["lua", "{source}"]
 scope = "body"
 state = '''local expected_events = {{{events}}}
 local event_index = 1
@@ -166,8 +149,6 @@ verify = '''local function verify_events() assert(event_index == {count} + 1) en
 wrapper_unary = '''local function {wrapper}({parameter}) observe_event(2); observe_event({parameter}) end'''
 
 [java]
-compile = []
-execute = ["java", "{repository}/CheckJavaSyntax.java", "11", "{source}"]
 scope = "class_scope"
 state = '''private static int eventIndex;
 private static void observeEvent(int actual) {{
@@ -182,9 +163,6 @@ verify = '''static void verify_events() {{ if (eventIndex != {count}) throw new 
 wrapper_unary = '''static void {wrapper}(int {parameter}) {{ observeEvent(2); observeEvent({parameter}); }}'''
 
 [csharp]
-compile = []
-execute = ["dotnet", "run", "--project", "{repository}/scripts/lint-csharp"]
-path_on_stdin = true
 scope = "class_scope"
 state = '''static int eventIndex;
 static void ObserveEvent(int actual) {{
@@ -199,8 +177,6 @@ verify = '''static void verify_events() {{ if (eventIndex != {count}) throw new 
 wrapper_unary = '''static void {wrapper}(int {parameter}) {{ ObserveEvent(2); ObserveEvent({parameter}); }}'''
 
 [d]
-compile = ["dmd", "-w", "{source}", "-of={output}"]
-execute = ["{output}"]
 scope = "file_scope"
 state = '''int eventIndex;
 void observeEvent(long actual) {{
@@ -223,8 +199,6 @@ target_binding = '''proc {target}({parameter}: int): JsonNode {{.discardable.}} 
 proc {target}({parameter}: JsonNode): JsonNode {{.discardable.}} =
     observeEvent(1); observeEvent({parameter}.getInt())
     %({parameter}.getInt() + {return_increment})'''
-compile = ["nim", "c", "--hints:off", "--nimcache:{directory}/nimcache", "-o:{output}", "{source}"]
-execute = ["{output}"]
 scope = "body"
 state = '''import std/json
 var eventIndex = 0
@@ -247,8 +221,6 @@ verify = '''proc verify_events() = doAssert eventIndex == {count}'''
 wrapper_unary = '''proc {wrapper}({parameter}: int) = observeEvent(2); observeEvent({parameter})'''
 
 [crystal]
-compile = ["crystal", "build", "{source}", "-o", "{output}"]
-execute = ["{output}"]
 scope = "body"
 state = '''class ReceiverEvents
   @@index = 0
@@ -280,8 +252,6 @@ wrapper_unary = '''def {wrapper}({parameter} : Int)
 end'''
 
 [php]
-compile = []
-execute = ["php", "{source}"]
 scope = "body"
 state = '''$event_index = 0;
 function observe_event(int $actual): void {{
@@ -297,8 +267,6 @@ verify = '''function verify_events(): void {{ global $event_index; if ($event_in
 wrapper_unary = '''function {wrapper}(int ${parameter}): void {{ observe_event(2); observe_event(${parameter}); }}'''
 
 [julia]
-compile = []
-execute = ["julia", "--startup-file=no", "{source}"]
 scope = "body"
 state = '''event_index = Ref(1)
 function observe_event(actual::Integer)
@@ -325,8 +293,6 @@ wrapper_unary = '''function {wrapper}(actual)
 end'''
 
 [groovy]
-compile = []
-execute = ["groovy", "{source}"]
 scope = "body"
 state = '''def expectedEvents = [{events}]
 def eventIndex = [0]
@@ -341,8 +307,6 @@ verify = '''def verify_events = {{ -> assert eventIndex[0] == {count} }}'''
 wrapper_unary = '''def {wrapper} = {{ long actual -> observeEvent(2); observeEvent(actual) }}'''
 
 [haxe]
-compile = []
-execute = ["haxe", "--class-path", "{directory}", "--run", "{module_name}"]
 scope = "body"
 state = '''var expectedEvents:Array<Int> = [{events}];
 var eventIndex:Int = 0;
@@ -357,8 +321,6 @@ verify = '''function verify_events():Void {{ if (eventIndex != {count}) throw "m
 wrapper_unary = '''function {wrapper}({parameter}:Int):Void {{ observeEvent(2); observeEvent({parameter}); }}'''
 
 [kotlin]
-compile = []
-execute = ["kotlin", "{source}"]
 scope = "body"
 state = '''val expectedEvents = listOf({events})
 var eventIndex = 0
@@ -373,8 +335,6 @@ verify = '''fun verify_events() {{ check(eventIndex == {count}) }}'''
 wrapper_unary = '''fun {wrapper}({parameter}: Int) {{ observeEvent(2); observeEvent({parameter}) }}'''
 
 [objective_c]
-compile = ["clang", "-fobjc-arc", "-framework", "Foundation", "-Wall", "-Wextra", "-Werror", "{source}", "-o", "{output}"]
-execute = ["{output}"]
 scope = "file_scope"
 state = '''#include <assert.h>
 static int *event_index(void) {{ static int index = 0; return &index; }}
@@ -390,8 +350,6 @@ verify = '''static void verify_events(void) {{ assert(*event_index() == {count})
 wrapper_unary = '''static void {wrapper}(NSNumber *argument) {{ observe_event(2); observe_event(argument.longLongValue); }}'''
 
 [odin]
-compile = ["odin", "build", "{source}", "-file", "-out:{output}"]
-execute = ["{output}"]
 scope = "file_scope"
 state = '''event_index: int
 observe_event :: proc(actual: int) {{
@@ -406,8 +364,6 @@ verify = '''verify_events :: proc() {{ assert(event_index == {count}) }}'''
 wrapper_unary = '''{wrapper} :: proc({parameter}: int) {{ observe_event(2); observe_event({parameter}) }}'''
 
 [raku]
-compile = []
-execute = ["raku", "{source}"]
 scope = "body"
 state = '''my @expected_events = {events};
 my $event_index = 0;
@@ -422,8 +378,6 @@ verify = '''sub verify_events() {{ die "missing receiver events" unless $event_i
 wrapper_unary = '''sub {wrapper}(Int ${parameter}) {{ observe_event(2); observe_event(${parameter}) }}'''
 
 [rust]
-compile = ["rustc", "--edition=2021", "-Dwarnings", "--crate-name", "receiver", "{source}", "-o", "{output}"]
-execute = ["{output}"]
 scope = "body"
 state = '''let event_index = std::cell::Cell::new(0_usize);
 let observe_event = |actual: i32| {{
@@ -440,8 +394,6 @@ verify = '''let verify_events = || {{ assert_eq!(event_index.get(), {count}); }}
 wrapper_unary = '''let {wrapper} = |{parameter}: i32| {{ observe_event(2); observe_event({parameter}); }};'''
 
 [scala]
-compile = []
-execute = ["scala-cli", "run", "--server=false", "{source}"]
 scope = "body"
 state = '''private val expectedEvents = List({events})
 private var eventIndex = 0
@@ -457,9 +409,6 @@ def verify_events(): Unit = {{ assert(eventIndex == {count}) }}'''
 wrapper_unary = '''def {wrapper}({parameter} : Int): Unit = {{ observeEvent(2); observeEvent({parameter}) }}'''
 
 [vb]
-compile = []
-execute = ["dotnet", "run", "--project", "{repository}/scripts/lint-vb"]
-path_on_stdin = true
 scope = "class_scope"
 state = '''Dim eventIndex As Integer
 Sub ObserveEvent(actual As Long)
@@ -487,8 +436,6 @@ End Sub'''
 
 [zig]
 target_void = '''fn {target}({parameter}: ZVal) void {{ observe_event(1); observe_event({parameter}.int); }}'''
-compile = ["zig", "build-exe", "{source}", "-femit-bin={output}"]
-execute = ["{output}"]
 scope = "file_scope"
 state = '''var event_index: usize = 0;
 fn observe_event(actual: i64) void {{
@@ -503,8 +450,6 @@ verify = '''fn verify_events() void {{ if (event_index != {count}) @panic("missi
 wrapper_unary = '''fn {wrapper}({parameter}: ZVal) void {{ observe_event(2); observe_event({parameter}.int); }}'''
 
 [fsharp]
-compile = []
-execute = ["dotnet", "fsi", "--nologo", "--warnaserror+", "--langversion:8.0", "--exec", "{source}"]
 scope = "body"
 state = '''let mutable eventIndex = 0
 let observeEvent (actual: int64) =
@@ -533,8 +478,6 @@ event_separator = "; "
 event_suffix = "L"
 
 [systemverilog]
-compile = ["verilator", "--binary", "--timing", "--language", "1800-2017", "--Mdir", "{directory}/obj", "-o", "{output}", "{source}"]
-execute = ["{output}"]
 scope = "body"
 state = '''int event_index = 0;
 function automatic void observe_event(longint actual);

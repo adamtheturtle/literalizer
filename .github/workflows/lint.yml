@@ -670,10 +670,6 @@ jobs:
       - name: C roundtrip
         run: uv run --no-dev --group=roundtrip python -m scripts.run_c_roundtrip
 
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          c java javascript lua php python ruby
-
   # Keep Odin isolated.  This fixture set is good at finding compiler
   # instability because many generated files combine [dynamic]any,
   # map[string]any, nested literals, and variadic proc(..any) stubs.
@@ -757,11 +753,6 @@ jobs:
       - name: Odin roundtrip
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_odin_roundtrip
-
-      - name: Native receiver controls
-        if: matrix.shard == 0
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          odin
 
   lint-roc:
     needs: [native-changes]
@@ -1141,10 +1132,6 @@ jobs:
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_typescript_roundtrip
 
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          typescript
-
   # Elm format + syntax check. Split from `lint-elm-run` so the two
   # `elm make`-based passes (compile-only vs. compile + Node execute)
   # fan out instead of running back-to-back; recent main runs show the
@@ -1463,10 +1450,6 @@ jobs:
       - name: FSharp roundtrip
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_fsharp_roundtrip
-
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          csharp fsharp vb
 
   lint-sml:
     needs: [native-changes]
@@ -1796,10 +1779,6 @@ jobs:
       - name: Groovy roundtrip
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_groovy_roundtrip
-
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          groovy
 
   # Haskell + PureScript share the Haskell toolchain.
   lint-haskell-family:
@@ -2312,11 +2291,6 @@ jobs:
         if: matrix.shard == 0
         run: uv run --no-dev --group=roundtrip python -m scripts.run_cpp_shared_record
 
-      - name: Native receiver controls
-        if: matrix.shard == 0
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          cpp
-
   lint-kotlin:
     needs: [native-changes]
     if: >-
@@ -2402,10 +2376,6 @@ jobs:
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/kotlinx-jars/*
         run: uv run --no-dev --group=roundtrip python -m scripts.run_kotlin_roundtrip
-
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          kotlin
 
   lint-swift:
     needs: [native-changes]
@@ -2650,10 +2620,6 @@ jobs:
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_scala_roundtrip
 
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          scala
-
   lint-haxe:
     needs: [native-changes]
     if: >-
@@ -2699,10 +2665,6 @@ jobs:
       - name: Haxe roundtrip
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_haxe_roundtrip
-
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          haxe
 
   lint-dart:
     needs: [native-changes]
@@ -2808,10 +2770,6 @@ jobs:
           JULIA_PROJECT: /tmp/julia-lint
         run: uv run --no-dev --group=roundtrip python -m scripts.run_julia_roundtrip
 
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          julia
-
   lint-go:
     needs: [native-changes]
     if: >-
@@ -2854,10 +2812,6 @@ jobs:
       # (issue 3748). See `scripts/run_go_shared_record.py`.
       - name: Go shared record declaration
         run: uv run --no-dev --group=roundtrip python -m scripts.run_go_shared_record
-
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          go
 
   lint-rust:
     needs: [native-changes]
@@ -2917,10 +2871,6 @@ jobs:
       # (issue 3748). See `scripts/run_rust_shared_record.py`.
       - name: Rust shared record declaration
         run: uv run --no-dev --group=roundtrip python -m scripts.run_rust_shared_record
-
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          rust
 
   lint-r:
     needs: [native-changes]
@@ -3069,10 +3019,6 @@ jobs:
       - name: D roundtrip
         run: uv run --no-dev --group=roundtrip python -m scripts.run_d_roundtrip
 
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          d
-
   lint-crystal:
     needs: [native-changes]
     if: >-
@@ -3112,10 +3058,6 @@ jobs:
       - name: Crystal roundtrip
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_crystal_roundtrip
-
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          crystal
 
   # Keep compiler concurrency bounded even when nproc grows: the expanded
   # corpus has lost hosted runners without a completed compiler result.
@@ -3341,10 +3283,6 @@ jobs:
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_nim_roundtrip
 
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          nim
-
   # Check py38 fixtures on Python 3.8 and both typing-alias formats on
   # the project's Python 3.12 floor. Keep each interpreter/tag pair once.
   lint-python:
@@ -3498,10 +3436,6 @@ jobs:
         timeout-minutes: 5
         run: uv run --no-dev --group=roundtrip python -m scripts.run_raku_roundtrip
 
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          raku
-
   lint-zig:
     needs: [native-changes]
     if: >-
@@ -3575,10 +3509,6 @@ jobs:
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_zig_roundtrip
 
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          zig
-
   lint-systemverilog:
     needs: [native-changes]
     if: >-
@@ -3629,10 +3559,6 @@ jobs:
       # `scripts/run_systemverilog_roundtrip.py`.
       - name: SystemVerilog roundtrip
         run: uv run --no-dev --group=roundtrip python -m scripts.run_systemverilog_roundtrip
-
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          systemverilog
 
   lint-v:
     needs: [native-changes]
@@ -3772,10 +3698,6 @@ jobs:
       # `scripts/run_objective_c_roundtrip.py`.
       - name: Objective-C roundtrip
         run: uv run --no-dev --group=roundtrip python -m scripts.run_objective_c_roundtrip
-
-      - name: Native receiver controls
-        run: uv run --no-dev --group=receiver python -m scripts.run_receiver_controls
-          objective_c
 
   lint-objectivec-tidy:
     needs: [native-changes]

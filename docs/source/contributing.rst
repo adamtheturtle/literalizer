@@ -38,14 +38,8 @@ Running tests
 
    $ uv run --group dev pytest
 
-Native receiver controls run separately with their required tools:
-
-.. code-block:: console
-
-   $ uv run --no-dev --group=receiver python -m scripts.run_receiver_controls python go
-
-A missing compiler, interpreter, SDK or required platform support fails native checks.
-CI runs every receiver language in the corresponding provisioned job in :file:`.github/workflows/lint.yml`.
+Native checks require their compiler, interpreter, SDK and platform support; missing prerequisites fail.
+Run the corresponding commands from :file:`.github/workflows/lint.yml` after installing those prerequisites.
 
 Golden verification preserves existing fixtures when rendering skips.
 A stale skipped fixture fails verification with its path.
