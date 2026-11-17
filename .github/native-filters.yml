@@ -23,6 +23,7 @@ lint-fast:
   - tests/integration/cases/**/*.{c,dhall,f90,fth,java,js,lua,nix,php,ps1,rb,scm,sh,tcl,wren}
   - CheckJavaSyntax.java
   - tests/integration/default_module_names/*.c
+  - tests/integration/default_module_names/*.f90
 
 lint-odin:
   - *shared
@@ -102,11 +103,13 @@ lint-c-tidy:
 build-cpp-toolchain:
   - *shared
   - tests/integration/cases/**/*.{c,cpp}
+  - tests/integration/default_module_names/*.cpp
   - tests/integration/default_module_names/*.c
 
 lint-cpp-tidy:
   - *shared
   - tests/integration/cases/**/*.cpp
+  - tests/integration/default_module_names/*.cpp
 
 lint-cobol:
   - *shared
@@ -115,6 +118,7 @@ lint-cobol:
 lint-cpp:
   - *shared
   - tests/integration/cases/**/*.cpp
+  - tests/integration/default_module_names/*.cpp
 
 lint-kotlin:
   - *shared

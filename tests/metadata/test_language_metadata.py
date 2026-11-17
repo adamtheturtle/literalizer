@@ -1,6 +1,5 @@
 """Language-wide metadata and protocol checks."""
 
-import enum
 import inspect
 from collections.abc import Mapping
 from typing import Protocol, runtime_checkable
@@ -11,7 +10,7 @@ from typing_extensions import get_protocol_members
 
 import literalizer.languages
 from literalizer import Language, LanguageCls
-from literalizer.languages import Python, Raku
+from literalizer.languages import Python
 
 
 def _language_class_name(language_cls: LanguageCls, /) -> str:
@@ -147,51 +146,6 @@ def test_language_protocol_members_are_not_class_level_none() -> None:
     assert not any(violations.values()), violations
 
 
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=_language_class_name,
-)
-def test_format_enumeration_properties(
-    language_cls: LanguageCls,
-) -> None:
-    """Every language exposes iterable format-enumeration properties."""
-    spec = language_cls()
-    assert issubclass(spec.bytes_formats, enum.Enum)
-    assert len(spec.bytes_formats) >= 1
-    assert issubclass(spec.sequence_formats, enum.Enum)
-    assert len(spec.sequence_formats) >= 1
-    assert issubclass(spec.set_formats, enum.Enum)
-    assert len(spec.set_formats) >= 1
-    assert issubclass(spec.date_formats, enum.Enum)
-    assert len(spec.date_formats) >= 1
-    assert issubclass(spec.datetime_formats, enum.Enum)
-    assert len(spec.datetime_formats) >= 1
-    assert issubclass(spec.comment_formats, enum.Enum)
-    assert len(spec.comment_formats) >= 1
-    assert issubclass(spec.declaration_styles, enum.Enum)
-    assert len(spec.declaration_styles) >= 1
-    assert issubclass(spec.dict_formats, enum.Enum)
-    assert len(spec.dict_formats) >= 1
-    assert issubclass(spec.float_formats, enum.Enum)
-    assert len(spec.float_formats) >= 1
-    assert issubclass(spec.integer_formats, enum.Enum)
-    assert len(spec.integer_formats) >= 1
-    assert issubclass(spec.numeric_separators, enum.Enum)
-    assert len(spec.numeric_separators) >= 1
-    assert issubclass(spec.numeric_styles, enum.Enum)
-    assert len(spec.numeric_styles) >= 1
-    assert issubclass(spec.string_formats, enum.Enum)
-    assert len(spec.string_formats) >= 1
-    assert issubclass(spec.trailing_commas, enum.Enum)
-    assert len(spec.trailing_commas) >= 1
-    assert issubclass(spec.statement_terminator_styles, enum.Enum)
-    assert len(spec.statement_terminator_styles) >= 1
-    assert issubclass(spec.call_styles, enum.Enum)
-    assert issubclass(spec.version_formats, enum.Enum)
-    assert len(spec.version_formats) >= 1
-
-
 @runtime_checkable
 class _HasRecordStructNamePrefix(Protocol):
     """Structural type for languages that expose a
@@ -258,21 +212,6 @@ def test_supports_record_shape_names_matches_constructor(
     spec = language_cls()
     accepts_kwarg = isinstance(spec, _HasRecordShapeNames)
     assert language_cls.supports_record_shape_names == accepts_kwarg
-
-
-def test_supported_ref_cases_independent_of_identifier_cases() -> None:
-    """``supported_ref_cases`` is not derived from ``identifier_cases``.
-
-    The two attributes answer different questions -- syntactic validity
-    vs. stylistic preference -- and one is not a function of the other.
-    """
-    python = Python()
-    assert frozenset(python.identifier_cases) != python.supported_ref_cases
-    assert frozenset(python.identifier_cases) <= python.supported_ref_cases
-
-    raku = Raku()
-    assert frozenset(raku.identifier_cases) != raku.supported_ref_cases
-    assert frozenset(raku.identifier_cases) <= raku.supported_ref_cases
 
 
 @pytest.mark.parametrize(

@@ -37,13 +37,12 @@ Its corresponding manifest table supplies the API arguments.
 Copy a nearby case using the same API when adding specialized coverage.
 The accepted fields and consistency checks are defined in ``case_manifests.py``.
 
-Keep typed failures, incomplete fragments, metadata and concurrency contracts in the directories described by ``../README.rst``.
+Keep typed failures, metadata and concurrency contracts in the directories described by ``../README.rst``.
 A complete generated program belongs here; an executable round-trip case should also compare the reconstructed value with the input.
-An open literal that caller-owned code can complete may use ``use_unwrapped_code`` and ``caller_code_suffix``.
-The suffix is appended directly to the public fragment before wrapping; include a native assertion to check the completed value.
-Use ``caller_code_prefix`` for setup statements inside the native wrapper, such as declaring a variable that the fragment assigns.
-The ``incomplete_c_raw_string`` examples in ``cases/call_bound_literal_followup_new`` and ``cases/call_bound_literal_followup_existing`` exercise this boundary.
-The ``incomplete_outer_interpolation`` example in ``cases/call_scalar_result_json_binding`` completes a nested interpolation in the same way.
+Native success fixtures should use complete expressions and public composition.
+Do not snapshot incidental output from malformed caller-owned transforms.
+Add focused unit coverage for a demonstrated robustness regression with a meaningful invariant, such as avoiding a crash or hang.
+The comment-placement lexer is not a target-language syntax validator.
 
 Checking and regenerating
 -------------------------
@@ -103,6 +102,20 @@ Both ordinary and option-variant calls retain their effective spec, and external
 ``runtime/test_observable_calls.py`` compiles and executes positive programs and controls for dropped, repeated and reordered calls, swapped zipped operands and incorrect returned or bound values.
 Public ``wrap_in_file`` cases continue to exercise the library's generated-stub contract.
 
+Native Java checks
+------------------
+
+With a JDK installed, run the same warm compiler host as CI::
+
+    uv run --only-group=cli python -m scripts.run_java_fixtures
+    uv run --only-group=cli python -m scripts.run_java_fixtures --release 11
+
+Both JDK 11 and 16 fixture populations are checked by default.
+Set ``LITERALIZER_LINT_CLASSPATH`` to the Jackson jars for JSON-type cases.
+Each batch compiles with the matching ``--release`` and ``-Werror``, then executes initializers and consumer entry points.
+The warm JVM checks up to 512 fixtures per batch, with a 300-second deadline.
+Empty selections fail before execution.
+
 Native interpreter checks
 -------------------------
 
@@ -112,16 +125,16 @@ After installing Bash 5.1+, Ruby or Node, run the same fixture checks as CI::
     uv run --only-group=cli python -m scripts.run_interpreted_fixtures ruby
     uv run --only-group=cli python -m scripts.run_interpreted_fixtures javascript
 
-Each native command has a 60-second deadline.
+Syntax checks complete before execution for interpreters that support a separate syntax phase.
+Each command has a 60-second deadline.
 Missing interpreters and empty selections fail.
 
 Native Dart checks
 ------------------
 
-Run analysis and execution for an explicit fixture::
+Feed the same null-separated fixture paths used by native CI::
 
-    uv run --group=dev python -m scripts.run_dart_fixtures tests/integration/cases/scalar_int/Dart@v3.dart
+    find tests/integration/cases -name '*.dart' -print0 | uv run --group=dev python -m scripts.run_dart_fixtures
 
-The existing null-separated standard input remains available for full CI selections.
-All paths use the same staging, analysis and binding-forcing execution code.
+The runner stages the files, analyzes them and forces their bindings during execution.
 An empty selection fails before starting the toolchain.

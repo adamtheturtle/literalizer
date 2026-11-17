@@ -11,7 +11,7 @@ parameter_names = ["a"]
 per_element = true
 
 [call.fixture]
-kind = "fragment"
+kind = "composed"
 include_target_stub = false
 caller_body_preamble = ["module Module = struct\n  let func _ = ()\nend"]
 [[call_examples]]
@@ -21,7 +21,8 @@ target_function = "Module.func"
 parameter_names = ["a"]
 per_element = true
 
+# Public composition places the caller-owned import before the call.
 [call_examples.fixture]
-kind = "fragment"
+kind = "composed"
 include_target_stub = false
 caller_imports = ["import LiteralizerSupport.CallTarget as Module"]
