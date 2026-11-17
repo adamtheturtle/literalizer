@@ -13,6 +13,8 @@ from hypothesis import strategies as st
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Python
 
+from .case_manifests import load_case_manifest
+from .golden_checks import format_consumer
 from .language_specs import make_golden_path, make_spec
 
 
@@ -109,9 +111,16 @@ def test_binary_octet_goldens_execute(
         lang_cls=Python,
         version=version,
     )
-    assert result.code + "\n" == golden.read_text(encoding="utf-8")
+    manifest = load_case_manifest(case_dir=case_dir)
+    program = format_consumer(
+        template=manifest.base_context.consumer_templates[Python],
+        result=result,
+        golden_path=golden,
+        spec=spec,
+    )
+    assert program == golden.read_text(encoding="utf-8")
     expected = tuple(
         _expected(data=data, bytes_format=bytes_format)
         for data in (b"", bytes(range(256)), bytes(reversed(range(256))))
     )
-    _run_program(program=result.code, expected=expected)
+    _run_program(program=program, expected=expected)
