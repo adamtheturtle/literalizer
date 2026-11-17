@@ -161,6 +161,7 @@ lint-r:
 lint-d:
   - *shared
   - tests/integration/cases/**/*.d
+  - tests/integration/default_module_names/*.d
 
 lint-crystal:
   - *shared
