@@ -119,9 +119,8 @@ Missing interpreters and empty selections fail.
 Native Dart checks
 ------------------
 
-Run analysis and execution for one input or an explicit fixture::
+Run analysis and execution for an explicit fixture::
 
-    uv run --group=dev python -m scripts.run_dart_fixtures --case scalar_int
     uv run --group=dev python -m scripts.run_dart_fixtures tests/integration/cases/scalar_int/Dart@v3.dart
 
 The existing null-separated standard input remains available for full CI selections.

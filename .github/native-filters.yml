@@ -102,11 +102,13 @@ lint-c-tidy:
 build-cpp-toolchain:
   - *shared
   - tests/integration/cases/**/*.{c,cpp}
+  - tests/integration/default_module_names/*.cpp
   - tests/integration/default_module_names/*.c
 
 lint-cpp-tidy:
   - *shared
   - tests/integration/cases/**/*.cpp
+  - tests/integration/default_module_names/*.cpp
 
 lint-cobol:
   - *shared
@@ -115,6 +117,7 @@ lint-cobol:
 lint-cpp:
   - *shared
   - tests/integration/cases/**/*.cpp
+  - tests/integration/default_module_names/*.cpp
 
 lint-kotlin:
   - *shared

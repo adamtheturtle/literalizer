@@ -184,17 +184,10 @@ def write_dart_driver(*, fixtures: Sequence[Path], target: Path) -> None:
     nargs=-1,
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
-@click.option("--case", "case_name", type=str)
 @beartype
-def main(*, paths: tuple[Path, ...], case_name: str | None) -> None:
-    """Select paths, a named case, or the existing null-separated
-    input.
-    """
-    if case_name is not None:
-        if len(paths) > 0:
-            raise click.UsageError(message="Choose either paths or --case.")
-        fixtures = sorted((_CASES_DIR / case_name).glob(pattern="*.dart"))
-    elif len(paths) > 0:
+def main(*, paths: tuple[Path, ...]) -> None:
+    """Consume explicit paths or the existing null-separated input."""
+    if len(paths) > 0:
         fixtures = list(paths)
     else:
         fixtures = [

@@ -15,7 +15,6 @@ _HOST = Path(__file__).resolve().with_name(name="lint-kotlin.kts")
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--version", type=str, default="v2_4", envvar="KOTLIN_FIXTURE_TAG"
 )
@@ -28,9 +27,7 @@ _HOST = Path(__file__).resolve().with_name(name="lint-kotlin.kts")
 @click.option(
     "--timeout", type=click.FloatRange(min=0, min_open=True), default=1800.0
 )
-def main(
-    *, case_name: str | None, version: str, kotlin_home: Path, timeout: float
-) -> None:
+def main(*, version: str, kotlin_home: Path, timeout: float) -> None:
     """Preserve strict compilation, dependencies, execution and script
     timers.
     """
@@ -38,12 +35,9 @@ def main(
         path
         for path in Path("tests/integration/cases").rglob(pattern="*.kts")
         if path.name.endswith(f"@{version}.kts")
-        if case_name is None or path.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No Kotlin {version} fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message=f"No Kotlin {version} fixtures.")
     compiler = kotlin_home / "lib/kotlin-compiler.jar"
     if not compiler.is_file():
         raise click.ClickException(

@@ -102,14 +102,11 @@ def _validate(
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
 )
-def main(*, case_name: str | None, timeout: float) -> None:
-    """Compile and run a case or the complete native fixture
-    collection.
-    """
+def main(*, timeout: float) -> None:
+    """Compile and run the complete native fixture collection."""
     fixtures = sorted(
         path
         for root in (
@@ -117,10 +114,9 @@ def main(*, case_name: str | None, timeout: float) -> None:
             Path("tests/integration/default_module_names"),
         )
         for path in root.rglob(pattern="*.scala")
-        if case_name is None or path.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(message=f"No Scala fixtures: {case_name!r}")
+        raise click.ClickException(message="No Scala fixtures.")
     executable = shutil.which(cmd="scala-cli")
     if executable is None:
         raise click.ClickException(

@@ -77,7 +77,6 @@ def _run(
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--check",
     "check_kind",
@@ -91,7 +90,6 @@ def _run(
 @click.option("--compiler", type=str, default="dmd", envvar="DC")
 def main(
     *,
-    case_name: str | None,
     check_kind: str,
     jobs: int,
     timeout: float,
@@ -107,10 +105,9 @@ def main(
             Path("tests/integration/default_module_names"),
         )
         for path in root.rglob(pattern="*.d")
-        if case_name is None or path.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(message=f"No D fixtures: {case_name!r}")
+        raise click.ClickException(message="No D fixtures.")
     tools: dict[str, str] = {}
     for name in (compiler,):
         executable = shutil.which(cmd=name)

@@ -16,14 +16,13 @@ _HOST = Path(__file__).resolve().with_name(name="run_erlang.escript")
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--version", type=str, default="otp_25", envvar="ERLANG_FIXTURE_TAG"
 )
 @click.option(
     "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
 )
-def main(*, case_name: str | None, version: str, timeout: float) -> None:
+def main(*, version: str, timeout: float) -> None:
     """Keep warnings fatal and invoke every compiled module's entry
     point.
     """
@@ -36,12 +35,9 @@ def main(*, case_name: str | None, version: str, timeout: float) -> None:
         for root in roots
         for path in root.rglob(pattern="*.erl")
         if path.name.endswith(f"@{version}.erl")
-        if case_name is None or path.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No Erlang {version} fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message=f"No Erlang {version} fixtures.")
     executable = shutil.which(cmd="escript")
     if executable is None:
         raise click.ClickException(
