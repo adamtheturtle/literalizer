@@ -66,9 +66,6 @@ def _run(*, arguments: list[str], label: str, timeout: float) -> None:
 @click.command()
 @click.argument("backend", type=click.Choice(choices=tuple(_BACKENDS)))
 @click.option(
-    "--case", "case_name", type=str, help="Select one case directory."
-)
-@click.option(
     "--check",
     "check_kind",
     type=click.Choice(choices=("all", "syntax", "execution")),
@@ -85,7 +82,6 @@ def _run(*, arguments: list[str], label: str, timeout: float) -> None:
 )
 def main(
     backend: str,
-    case_name: str | None,
     check_kind: str,
     jobs: int,
     timeout: float,
@@ -97,14 +93,10 @@ def main(
     """
     config = _BACKENDS[backend]
     fixtures = sorted(
-        path
-        for path in _CASES_DIR.rglob(pattern=f"*{config.extension}")
-        if case_name is None or path.parent.name == case_name
+        path for path in _CASES_DIR.rglob(pattern=f"*{config.extension}")
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No {backend} fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message=f"No {backend} fixtures.")
     executable = shutil.which(cmd=config.executable)
     if executable is None:
         raise click.ClickException(

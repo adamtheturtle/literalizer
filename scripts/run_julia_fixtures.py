@@ -31,7 +31,6 @@ def _run(
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--project",
     type=click.Path(path_type=Path, exists=True, file_okay=False),
@@ -41,17 +40,13 @@ def _run(
 @click.option(
     "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
 )
-def main(
-    *, case_name: str | None, project: Path, jobs: int, timeout: float
-) -> None:
-    """Execute one case or every fixture with the same native command."""
+def main(*, project: Path, jobs: int, timeout: float) -> None:
+    """Execute every fixture with the same native command."""
     fixtures = sorted(
-        path
-        for path in Path("tests/integration/cases").rglob(pattern="*.jl")
-        if case_name is None or path.parent.name == case_name
+        path for path in Path("tests/integration/cases").rglob(pattern="*.jl")
     )
     if len(fixtures) == 0:
-        raise click.ClickException(message=f"No Julia fixtures: {case_name!r}")
+        raise click.ClickException(message="No Julia fixtures.")
     if not (project / "Project.toml").is_file():
         raise click.ClickException(
             message=f"Missing prepared Project.toml: {project}"

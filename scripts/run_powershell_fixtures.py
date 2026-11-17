@@ -13,7 +13,6 @@ _ROOT = Path(__file__).resolve().parents[1]
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--check",
     "check_kind",
@@ -25,17 +24,14 @@ _ROOT = Path(__file__).resolve().parents[1]
     type=click.FloatRange(min=0, min_open=True),
     default=600.0,
 )
-def main(*, case_name: str | None, check_kind: str, timeout: float) -> None:
+def main(*, check_kind: str, timeout: float) -> None:
     """Select a case or validate the complete native fixture corpus."""
     fixtures = sorted(
         fixture
         for fixture in Path("tests/integration/cases").rglob(pattern="*.ps1")
-        if case_name is None or fixture.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No PowerShell fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message="No PowerShell fixtures.")
     executable = shutil.which(cmd="pwsh")
     if executable is None:
         raise click.ClickException(message="The pwsh executable is required.")

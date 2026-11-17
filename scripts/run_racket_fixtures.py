@@ -72,7 +72,6 @@ def _validate(
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--check",
     "check_kind",
@@ -83,19 +82,13 @@ def _validate(
 @click.option(
     "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
 )
-def main(
-    *, case_name: str | None, check_kind: str, jobs: int, timeout: float
-) -> None:
+def main(*, check_kind: str, jobs: int, timeout: float) -> None:
     """Run the same native phases locally and in CI."""
     fixtures = sorted(
-        path
-        for path in Path("tests/integration/cases").rglob(pattern="*.rkt")
-        if case_name is None or path.parent.name == case_name
+        path for path in Path("tests/integration/cases").rglob(pattern="*.rkt")
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No Racket fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message="No Racket fixtures.")
     tools: dict[str, str] = {}
     for name in ("raco", "racket"):
         executable = shutil.which(cmd=name)
