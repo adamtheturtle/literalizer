@@ -109,7 +109,7 @@ Native Java checks
 With a JDK installed, run the same warm compiler host as CI::
 
     uv run --only-group=cli python -m scripts.run_java_fixtures
-    uv run --only-group=cli python -m scripts.run_java_fixtures --case scalar_int --release 11
+    uv run --only-group=cli python -m scripts.run_java_fixtures --release 11
 
 Both JDK 11 and 16 fixture populations are checked by default.
 Set ``LITERALIZER_LINT_CLASSPATH`` to the Jackson jars for JSON-type cases.
@@ -135,7 +135,7 @@ Native Dart checks
 
 Run analysis and execution for one input or an explicit fixture::
 
-    uv run --group=dev python -m scripts.run_dart_fixtures --case scalar_int
+    uv run --group=dev python -m scripts.run_dart_fixtures
     uv run --group=dev python -m scripts.run_dart_fixtures tests/integration/cases/scalar_int/Dart@v3.dart
 
 The existing null-separated standard input remains available for full CI selections.

@@ -24,9 +24,6 @@ _HOST = Path(__file__).resolve().parents[1] / "CheckJavaSyntax.java"
     default=("11", "16"),
     show_default=True,
 )
-@click.option(
-    "--case", "case_name", type=str, help="Select one case directory."
-)
 @click.option("--batch-size", type=click.IntRange(min=1, max=512), default=512)
 @click.option(
     "--timeout",
@@ -37,7 +34,6 @@ _HOST = Path(__file__).resolve().parents[1] / "CheckJavaSyntax.java"
 )
 def main(
     releases: tuple[str, ...],
-    case_name: str | None,
     batch_size: int,
     timeout: float,
 ) -> None:
@@ -55,14 +51,13 @@ def main(
             for path in fixture_paths(
                 extension=".java", version=f"jdk_{release}"
             )
-            if case_name is None or path.parent.name == case_name
         )
         for release in releases
     }
     for release, fixtures in selections.items():
         if len(fixtures) == 0:
             raise click.ClickException(
-                message=f"No Java jdk_{release} fixtures: {case_name!r}"
+                message=f"No Java jdk_{release} fixtures."
             )
     for release, fixtures in selections.items():
         for offset in range(0, len(fixtures), batch_size):
