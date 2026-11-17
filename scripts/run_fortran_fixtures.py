@@ -60,7 +60,6 @@ def _check(
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--version",
     "versions",
@@ -80,22 +79,18 @@ def _check(
 )
 def main(
     *,
-    case_name: str | None,
     versions: tuple[str, ...],
     check_kind: str,
     jobs: int,
     timeout: float,
 ) -> None:
-    """Check selected cases at their declared language standards."""
+    """Check fixtures at their declared language standards."""
     roots = (
         Path("tests/integration/cases"),
         Path("tests/integration/default_module_names"),
     )
     fixtures = sorted(
-        fixture
-        for root in roots
-        for fixture in root.rglob(pattern="*.f90")
-        if case_name is None or fixture.parent.name == case_name
+        fixture for root in roots for fixture in root.rglob(pattern="*.f90")
     )
     selections = {
         version: tuple(
@@ -108,7 +103,7 @@ def main(
     for version, selected in selections.items():
         if len(selected) == 0:
             raise click.ClickException(
-                message=f"No Fortran {version} fixtures: {case_name!r}"
+                message=f"No Fortran {version} fixtures."
             )
     compiler = shutil.which(cmd="gfortran")
     if compiler is None:
