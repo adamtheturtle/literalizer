@@ -1,13 +1,12 @@
 """Share the warm Haskell compiler and include public default modules."""
 
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
+from scripts.bounded_command import run_bounded_command
 
 
 def _stage(*, fixtures: list[Path], workspace: Path) -> list[str]:
@@ -29,19 +28,6 @@ def _stage(*, fixtures: list[Path], workspace: Path) -> list[str]:
     return names
 
 
-def _run(
-    *, arguments: list[str | Path], label: str, workspace: Path, timeout: float
-) -> None:
-    """Bound the native command while retaining compiler diagnostics."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments, fixture=label, timeout_seconds=timeout
-        ),
-        cwd=workspace,
-        check=True,
-    )
-
-
 def _validate(
     *, executable: str, names: list[str], workspace: Path, timeout: float
 ) -> None:
@@ -58,8 +44,8 @@ def _validate(
     output = workspace / "build"
     output.mkdir()
     binary = output / "run"
-    _run(
-        arguments=[
+    run_bounded_command(
+        args=[
             executable,
             "-XGHC2021",
             "-Wall",
@@ -71,15 +57,15 @@ def _validate(
             binary,
             "Main.hs",
         ],
-        label="Haskell compile",
-        workspace=workspace,
-        timeout=timeout,
+        fixture="Haskell compile",
+        timeout_seconds=timeout,
+        cwd=workspace,
     )
-    _run(
-        arguments=[binary],
-        label="Haskell execution",
-        workspace=workspace,
-        timeout=timeout,
+    run_bounded_command(
+        args=[binary],
+        fixture="Haskell execution",
+        timeout_seconds=timeout,
+        cwd=workspace,
     )
 
 

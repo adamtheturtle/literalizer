@@ -1,23 +1,12 @@
 """Compile and execute Rust fixtures against prepared dependency artifacts."""
 
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
-
-
-def _run(*, arguments: list[str | Path], label: str, timeout: float) -> None:
-    """Bound each native phase and retain its original fixture label."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments, fixture=label, timeout_seconds=timeout
-        ),
-        check=True,
-    )
+from scripts.bounded_command import run_bounded_command
 
 
 @click.command()
@@ -58,8 +47,8 @@ def main(*, deps: Path, chrono: Path, serde_json: Path) -> None:
         ) as directory:
             binary = Path(directory) / "run"
             crate = fixture.stem.replace("@", "_")
-            _run(
-                arguments=[
+            run_bounded_command(
+                args=[
                     executable,
                     "--edition",
                     "2021",
@@ -77,13 +66,15 @@ def main(*, deps: Path, chrono: Path, serde_json: Path) -> None:
                     "-o",
                     binary,
                 ],
-                label=f"Rust compile: {fixture}",
-                timeout=timeout,
+                fixture=f"Rust compile: {fixture}",
+                timeout_seconds=timeout,
+                cwd=None,
             )
-            _run(
-                arguments=[binary],
-                label=f"Rust execution: {fixture}",
-                timeout=timeout,
+            run_bounded_command(
+                args=[binary],
+                fixture=f"Rust execution: {fixture}",
+                timeout_seconds=timeout,
+                cwd=None,
             )
 
 
