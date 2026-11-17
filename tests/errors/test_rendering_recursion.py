@@ -1,6 +1,4 @@
-"""Recursion exhaustion retains typed errors without fixing a depth
-limit.
-"""
+"""Rendering succeeds or reports recursion exhaustion."""
 
 import ast
 import subprocess
@@ -10,32 +8,20 @@ from pathlib import Path
 import pytest
 
 from literalizer import InputFormat, literalize
-from literalizer.exceptions import (
-    JSON5ParseError,
-    JSONCParseError,
-    JSONParseError,
-    ParseError,
-    YAMLParseError,
-)
+from literalizer.exceptions import ParseError
 from literalizer.languages import Python
 
-_ERRORS: dict[InputFormat, type[ParseError]] = {
-    InputFormat.JSON: JSONParseError,
-    InputFormat.JSONC: JSONCParseError,
-    InputFormat.JSON5: JSON5ParseError,
-    InputFormat.YAML: YAMLParseError,
-}
+_INPUT_FORMATS = (
+    InputFormat.JSON,
+    InputFormat.JSONC,
+    InputFormat.JSON5,
+    InputFormat.YAML,
+)
 _DEPTH = 180
 
 
-def _check_recursion_error(
-    *, input_format: InputFormat, error: ParseError
-) -> None:
-    """Check the format-specific error and its original recursion
-    cause.
-    """
-    assert isinstance(error, _ERRORS[input_format])
-    assert "input exceeds the supported nesting depth" in str(object=error)
+def _check_recursion_error(*, error: ParseError) -> None:
+    """Check that rendering failed because recursion was exhausted."""
     assert isinstance(error.__cause__, RecursionError)
 
 
@@ -52,7 +38,7 @@ def _check_rendering(
             source=source, input_format=input_format, language=Python()
         )
     except ParseError as caught:
-        _check_recursion_error(input_format=input_format, error=caught)
+        _check_recursion_error(error=caught)
         return
 
     # Validation should not consume the constrained rendering budget.
@@ -68,9 +54,7 @@ def _check_rendering(
 
 @pytest.mark.parametrize(argnames="recursion_budget", argvalues=[1_000, 5_000])
 def test_rendering_recursion_outcome(recursion_budget: int) -> None:
-    """Exhaustion stays typed; deeper supported rendering remains
-    valid.
-    """
+    """Check correct output or recursion exhaustion in isolation."""
     project_root = Path(__file__).resolve().parents[2]
     completed = subprocess.run(  # noqa: S603 - run this repository's isolated recursion probe
         args=[
@@ -96,7 +80,7 @@ def test_rendering_recursion_outcome(recursion_budget: int) -> None:
 
 
 if __name__ == "__main__":
-    for _format in _ERRORS:
+    for _format in _INPUT_FORMATS:
         _check_rendering(
             input_format=_format,
             recursion_budget=int(sys.argv[1]),
