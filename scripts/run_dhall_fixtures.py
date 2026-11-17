@@ -29,12 +29,10 @@ def _check(*, fixture: Path, executable: str, timeout: float) -> None:
 
 
 @click.command()
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
-)
-def main(*, jobs: int, timeout: float) -> None:
+def main() -> None:
     """Validate every generated native document."""
+    jobs = os.cpu_count()
+    timeout = 60.0
     fixtures = sorted(
         fixture
         for fixture in Path("tests/integration/cases").rglob(pattern="*.dhall")
