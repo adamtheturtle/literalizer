@@ -18,11 +18,9 @@ _HOST = Path(__file__).resolve().with_name(name="lint-elixir.exs")
 @click.option(
     "--version", type=str, default="v1_14", envvar="ELIXIR_FIXTURE_TAG"
 )
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(*, version: str, timeout: float) -> None:
+def main(*, version: str) -> None:
     """Compile and execute the complete selected version."""
+    timeout = 600.0
     fixtures = sorted(
         path
         for path in Path("tests/integration/cases").rglob(pattern="*.ex")

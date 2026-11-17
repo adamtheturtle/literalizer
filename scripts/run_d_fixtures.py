@@ -83,21 +83,13 @@ def _run(
     type=click.Choice(choices=("all", "syntax", "execution")),
     default="all",
 )
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
-)
 @click.option("--compiler", type=str, default="dmd", envvar="DC")
-def main(
-    *,
-    check_kind: str,
-    jobs: int,
-    timeout: float,
-    compiler: str,
-) -> None:
+def main(*, check_kind: str, compiler: str) -> None:
     """Validate selected fixtures with isolated temporary compiler
     output.
     """
+    jobs = os.cpu_count()
+    timeout = 60.0
     fixtures = sorted(
         path
         for root in (

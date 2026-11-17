@@ -29,7 +29,7 @@ def _validate(
     fixtures: list[Path],
     tools: dict[str, str],
     phase: str,
-    jobs: int,
+    jobs: int | None,
     timeout: float,
 ) -> None:
     """Keep compilation artifacts outside the source checkout."""
@@ -78,12 +78,10 @@ def _validate(
     type=click.Choice(choices=("all", "syntax", "execution")),
     default="all",
 )
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(*, check_kind: str, jobs: int, timeout: float) -> None:
+def main(*, check_kind: str) -> None:
     """Run the same native phases locally and in CI."""
+    jobs = os.cpu_count()
+    timeout = 600.0
     fixtures = sorted(
         path for path in Path("tests/integration/cases").rglob(pattern="*.rkt")
     )

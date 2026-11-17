@@ -19,13 +19,9 @@ _ROOT = Path(__file__).resolve().parents[1]
     type=click.Choice(choices=("all", "syntax", "execution")),
     default="all",
 )
-@click.option(
-    "--timeout",
-    type=click.FloatRange(min=0, min_open=True),
-    default=600.0,
-)
-def main(*, check_kind: str, timeout: float) -> None:
+def main(*, check_kind: str) -> None:
     """Select a case or validate the complete native fixture corpus."""
+    timeout = 600.0
     fixtures = sorted(
         fixture
         for fixture in Path("tests/integration/cases").rglob(pattern="*.ps1")

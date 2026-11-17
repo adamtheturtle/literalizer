@@ -57,12 +57,10 @@ def _check(*, fixture: Path, compiler: str, timeout: float) -> None:
 
 
 @click.command()
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
-)
-def main(*, jobs: int, timeout: float) -> None:
+def main() -> None:
     """Validate the complete supported native corpus."""
+    jobs = os.cpu_count()
+    timeout = 60.0
     roots = (
         Path("tests/integration/cases"),
         Path("tests/integration/default_module_names"),

@@ -11,13 +11,11 @@ from scripts.bounded_command import bounded_command
 
 
 @click.command()
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(*, timeout: float) -> None:
+def main() -> None:
     """Compile and execute fixtures without rewriting their module
     names.
     """
+    timeout = 600.0
     roots = (
         Path("tests/integration/cases"),
         Path("tests/integration/default_module_names"),

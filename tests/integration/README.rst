@@ -112,8 +112,8 @@ After installing Bash 5.1+, Ruby or Node, run the same fixture checks as CI::
     uv run --only-group=cli python -m scripts.run_interpreted_fixtures ruby
     uv run --only-group=cli python -m scripts.run_interpreted_fixtures javascript
 
-Use ``--check syntax`` or ``--check execution`` to reproduce one phase, and ``--jobs 1`` for serial diagnostics.
-Each command has a 60-second deadline, adjustable with ``--timeout``.
+Use ``--check syntax`` or ``--check execution`` to reproduce one phase.
+Each native command has a 60-second deadline.
 Missing interpreters and empty selections fail.
 
 Native Dart checks

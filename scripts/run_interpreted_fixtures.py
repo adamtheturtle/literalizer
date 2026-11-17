@@ -62,25 +62,14 @@ def _run(*, arguments: list[str], label: str, timeout: float) -> None:
     default="all",
     show_default=True,
 )
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout",
-    type=click.FloatRange(min=0, min_open=True),
-    default=60.0,
-    show_default=True,
-    help="Deadline in seconds for each native command.",
-)
-def main(
-    backend: str,
-    check_kind: str,
-    jobs: int,
-    timeout: float,
-) -> None:
+def main(backend: str, check_kind: str) -> None:
     """Validate the selected BACKEND's fixtures, retaining every version.
 
     Syntax checks complete before execution starts. The independently
     authored assertions in consumer programs run unchanged.
     """
+    jobs = os.cpu_count()
+    timeout = 60.0
     config = _BACKENDS[backend]
     fixtures = sorted(
         path for path in _CASES_DIR.rglob(pattern=f"*{config.extension}")
