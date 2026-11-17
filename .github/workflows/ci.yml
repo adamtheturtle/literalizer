@@ -43,6 +43,12 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
+      - name: Set up Ruby for native corruption controls
+        timeout-minutes: 10
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+
       - name: Download the wheel
         uses: actions/download-artifact@v8
         with:

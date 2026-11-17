@@ -17,12 +17,10 @@ _CASES = Path(__file__).parent / "cases"
 _MINIMUM_RUBY_MAJOR = 3
 
 
-@pytest.fixture(scope="session", name="ruby_available")
-def fixture_ruby_available() -> bool:
-    """Detect a runtime supported by the Ruby backend."""
+def _ruby_executable() -> str:
+    """Resolve a required runtime supported by the Ruby backend."""
     ruby = shutil.which(cmd="ruby")
-    if ruby is None:
-        return False
+    assert ruby is not None, "Ruby 3+ is required"
     result = subprocess.run(  # noqa: S603 - inspect the selected native interpreter
         args=[ruby, "-e", "puts RUBY_VERSION.split('.').first.to_i"],
         capture_output=True,
@@ -30,23 +28,18 @@ def fixture_ruby_available() -> bool:
         check=True,
         timeout=30,
     )
-    return int(result.stdout) >= _MINIMUM_RUBY_MAJOR
+    assert int(result.stdout) >= _MINIMUM_RUBY_MAJOR, "Ruby 3+ is required"
+    return ruby
 
 
-def _execute(
-    *, path: Path, ruby_available: bool
-) -> subprocess.CompletedProcess[str]:
+def _execute(*, path: Path) -> subprocess.CompletedProcess[str]:
     """Use the same self-contained programs executed by the native
     jobs.
     """
     if path.suffix == ".py":
         args = [sys.executable, "-I", str(object=path)]
     else:
-        if not ruby_available:
-            pytest.skip(reason="Ruby 3+ is unavailable")
-        ruby = shutil.which(cmd="ruby")
-        assert ruby is not None
-        args = [ruby, str(object=path)]
+        args = [_ruby_executable(), str(object=path)]
     return subprocess.run(  # noqa: S603 - execute an authored native golden consumer
         args=args,
         capture_output=True,
@@ -171,7 +164,6 @@ def test_native_value_corruptions(
     backend_name: str,
     corruption: Corruption,
     tmp_path: Path,
-    ruby_available: bool,
 ) -> None:
     """Corrupt generated values while retaining the original native
     assertions.
@@ -196,7 +188,7 @@ def test_native_value_corruptions(
         data=declaration.replace(old, new) + _MARKER + consumer,
         encoding="utf-8",
     )
-    result = _execute(path=target, ruby_available=ruby_available)
+    result = _execute(path=target)
     assert result.returncode != 0, (
         f"{path}: native consumer missed {old!r} -> {new!r}"
     )
