@@ -2093,7 +2093,7 @@ jobs:
               printf '%s\0' "$fixture"
             fi
             ((file_index += 1))
-          done < <(find tests/integration/cases -name '*.cpp' -print0 | sort -z) \
+          done < <(find tests/integration/cases tests/integration/default_module_names -name '*.cpp' -print0 | sort -z) \
             > /tmp/files-cpp-tidy
           test -s /tmp/files-cpp-tidy
           xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
@@ -2224,7 +2224,7 @@ jobs:
               printf '%s\0' "$fixture"
             fi
             ((file_index += 1))
-          done < <(find tests/integration/cases -name '*.cpp' -print0 | sort -z) \
+          done < <(find tests/integration/cases tests/integration/default_module_names -name '*.cpp' -print0 | sort -z) \
             > /tmp/files-to-lint
           test -s /tmp/files-to-lint
       # ``nlohmann::json`` fixtures (``Cpp(json_type=NLOHMANN_JSON)``)
