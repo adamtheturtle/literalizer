@@ -89,7 +89,7 @@ dev = [
     # Combined upstream PRs #13/#14; replace with a release when available.
     "pytest-timing @ git+https://github.com/adamtheturtle/pytest-timing.git@f123dfccd871515e78ac56926603b7643934c838",
     "pytest-xdist==3.8.0",
-    "ruff==0.17.4",
+    "ruff==0.17.5",
     # We add shellcheck-py not only for shell scripts and shell code blocks,
     # but also because having it installed means that ``actionlint-py`` will
     # use it to lint shell commands in GitHub workflow files.
@@ -117,9 +117,9 @@ dev = [
     "strict-kwargs==2026.10.9",
     "tenacity==9.2.1",
     "towncrier==26.9.0",
-    "ty==0.0.100",
+    "ty==0.0.104",
     "types-pygments==2.21.0.20260819",
-    "types-pyyaml==6.0.12.20261103",
+    "types-pyyaml==6.0.12.20261113",
     "vale==3.26.0.1",
     "vulture==2.16",
     "yamlfix==1.19.1",

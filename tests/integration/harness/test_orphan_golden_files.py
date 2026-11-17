@@ -16,104 +16,14 @@ from tests.integration.case_manifests import (
     RefCaseSpec,
     load_case_manifests,
 )
-from tests.integration.constructor_cases import (
-    constructor_binding_cases,
-)
-from tests.integration.deep_input_cases import deep_input_golden_paths
-from tests.integration.golden_scenarios import scenario_renderings
-from tests.integration.native_invocation_cases import native_invocation_cases
-from tests.integration.record_snapshot_cases import (
-    record_snapshot_golden_paths,
+from tests.integration.golden_inventory import (
+    call_owned_paths,
+    literal_owned_paths,
+    owned_paths,
 )
 from tests.integration.reference_cases import (
     ref_language_specs,
-    reference_golden_cases,
 )
-from tests.integration.shared_checked_cases import shared_checked_cases
-from tests.integration.unwrapped_result_cases import result_view_golden_paths
-
-
-@beartype
-def _expected_call_golden_files(*, cases_dir: Path) -> set[Path]:
-    """Only successful call renderings can own golden fixtures."""
-    return {
-        rendering.golden_path(cases_dir=cases_dir)
-        for case in call_golden_cases(cases_dir=cases_dir)
-        for rendering in case.renderings
-        if rendering.expected_exception is None
-    }
-
-
-@beartype
-def _expected_literalize_golden_files(*, cases_dir: Path) -> set[Path]:
-    """Read the fixture inventory directly from the golden runner's cases.
-
-    Place paths under *cases_dir*'s parent so temporary inventory tests
-    also cover fixtures in the sibling default_module_names directory.
-    """
-    integration_dir = Path(__file__).parents[1]
-    return {
-        cases_dir.parent
-        / os.path.relpath(
-            path=rendering.golden_path(version=spec.language_version),
-            start=integration_dir,
-        )
-        for renderings in scenario_renderings().values()
-        for rendering in renderings
-        for spec in rendering.specs
-    }
-
-
-@beartype
-def _expected_reference_golden_files(*, cases_dir: Path) -> set[Path]:
-    """Read reference ownership from the renderings executed by pytest."""
-    return {
-        rendering.golden_path(cases_dir=cases_dir)
-        for case in reference_golden_cases()
-        for rendering in case.renderings
-    }
-
-
-@beartype
-def _expected_constructor_golden_files(*, cases_dir: Path) -> set[Path]:
-    """Read constructor fixture ownership from the runner's renderings."""
-    return {
-        rendering.golden_path
-        for case in constructor_binding_cases(cases_dir=cases_dir)
-        for rendering in case.renderings
-    }
-
-
-@beartype
-def _expected_golden_files(cases_dir: Path) -> set[Path]:
-    """Return the set of all golden files that parameterized tests
-    cover.
-    """
-    expected: set[Path] = set()
-
-    for manifest in load_case_manifests(cases_dir=cases_dir):
-        expected.add(manifest.path)
-        expected.add(manifest.input.path)
-
-    expected.update(_expected_constructor_golden_files(cases_dir=cases_dir))
-
-    expected.update(
-        case.golden_path
-        for case in native_invocation_cases(cases_dir=cases_dir)
-    )
-    expected.update(_expected_literalize_golden_files(cases_dir=cases_dir))
-    expected.update(result_view_golden_paths(cases_dir=cases_dir))
-    expected.update(record_snapshot_golden_paths(cases_dir=cases_dir))
-    expected.update(deep_input_golden_paths(cases_dir=cases_dir))
-    expected.update(
-        case.golden_path for case in shared_checked_cases(cases_dir=cases_dir)
-    )
-
-    expected.update(_expected_call_golden_files(cases_dir=cases_dir))
-
-    expected.update(_expected_reference_golden_files(cases_dir=cases_dir))
-
-    return expected
 
 
 @beartype
@@ -138,7 +48,7 @@ def test_no_dead_golden_files(cases_dir: Path) -> None:
     """
     _check_golden_inventory(
         cases_dir=cases_dir,
-        expected=_expected_golden_files(cases_dir=cases_dir),
+        expected=owned_paths(cases_dir=cases_dir),
     )
 
 
@@ -155,9 +65,7 @@ def test_rejected_call_renderings_do_not_own_goldens(
         if rendering.expected_exception is not None
     }
     assert len(rejected) > 0
-    assert rejected.isdisjoint(
-        _expected_call_golden_files(cases_dir=cases_dir)
-    )
+    assert rejected.isdisjoint(call_owned_paths(cases_dir=cases_dir))
 
 
 def test_base_cases_own_effective_golden(cases_dir: Path) -> None:
@@ -178,7 +86,7 @@ def test_effective_language_version_owns_golden(tmp_path: Path) -> None:
     cases_dir = tmp_path / "cases"
     case_dir = cases_dir / "dict_mixed_scalars"
     case_dir.mkdir(parents=True)
-    expected = _expected_literalize_golden_files(cases_dir=cases_dir)
+    expected = literal_owned_paths(cases_dir=cases_dir)
     java_prefix = "Java_heterogeneous_strategy_record_combined@"
     cpp_prefix = "Cpp_heterogeneous_strategy_record_combined@"
     java_golden = case_dir / f"{java_prefix}jdk_16.java"
@@ -219,7 +127,7 @@ def test_variant_version_inventory_preserves_coverage_and_rejects_phantoms(
     cases_dir = tmp_path / "cases"
     case_dir = cases_dir / "binary"
     case_dir.mkdir(parents=True)
-    expected = _expected_literalize_golden_files(cases_dir=cases_dir)
+    expected = literal_owned_paths(cases_dir=cases_dir)
     ordinary_name = "Cpp_bytes_format_base64@"
     pinned_name = "Cpp_version_cpp14@"
     ordinary = {

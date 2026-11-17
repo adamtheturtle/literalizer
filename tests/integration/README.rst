@@ -102,3 +102,28 @@ Capability declarations select participants before the syntax table is consulted
 Both ordinary and option-variant calls retain their effective spec, and external references retain their original inference hints.
 ``runtime/test_observable_calls.py`` compiles and executes positive programs and controls for dropped, repeated and reordered calls, swapped zipped operands and incorrect returned or bound values.
 Public ``wrap_in_file`` cases continue to exercise the library's generated-stub contract.
+
+Native interpreter checks
+-------------------------
+
+After installing Bash 5.1+, Ruby or Node, run the same fixture checks as CI::
+
+    uv run --only-group=cli python -m scripts.run_interpreted_fixtures bash
+    uv run --only-group=cli python -m scripts.run_interpreted_fixtures ruby
+    uv run --only-group=cli python -m scripts.run_interpreted_fixtures javascript
+
+Add ``--case scalar_int`` to select one input, ``--check syntax`` or ``--check execution`` to reproduce one phase, and ``--jobs 1`` for serial diagnostics.
+Each command has a 60-second deadline, adjustable with ``--timeout``.
+Missing interpreters and empty selections fail.
+
+Native Dart checks
+------------------
+
+Run analysis and execution for one input or an explicit fixture::
+
+    uv run --group=dev python -m scripts.run_dart_fixtures --case scalar_int
+    uv run --group=dev python -m scripts.run_dart_fixtures tests/integration/cases/scalar_int/Dart@v3.dart
+
+The existing null-separated standard input remains available for full CI selections.
+All paths use the same staging, analysis and binding-forcing execution code.
+An empty selection fails before starting the toolchain.
