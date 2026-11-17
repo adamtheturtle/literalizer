@@ -13,14 +13,10 @@ from pathlib import Path
 
 import pytest
 from beartype import beartype
-from pydantic import TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 from literalizer._formatters.preamble_roles import import_preamble
-from literalizer._language import (
-    RenderedCallStub,
-)
 from literalizer._literalize import (
     _resolve_refs_for_inference,
     call_result_discard_formatter,
@@ -61,7 +57,6 @@ from .case_manifests import (
     CallCaseSpec,
     CallTransform,
     ComposedCallFixture,
-    FragmentCallFixture,
     WrappedCallFixture,
     case_input,
 )
@@ -427,7 +422,7 @@ def _render_ref_declaration(
 def _run_call_with_declarations(
     *,
     config: CallCaseSpec,
-    fixture: ComposedCallFixture | FragmentCallFixture,
+    fixture: ComposedCallFixture,
     spec: literalizer.Language,
     source: str,
     input_info: CaseInput,
@@ -587,47 +582,6 @@ def _run_call_with_declarations(
         result=result,
         stub_argument_values=stub_argument_values,
     )
-
-
-@beartype
-def _wrap_unwrapped_call(
-    *,
-    spec: literalizer.Language,
-    result: literalizer.LiteralizeResult,
-    caller_code_prefix: str,
-    caller_code_suffix: str,
-    body_preamble: tuple[str | RenderedCallStub, ...],
-    class_preamble: tuple[str, ...],
-    preamble: tuple[str, ...],
-) -> str:
-    """Compile the actual public code prefix, without recomputing it."""
-    prefix = result.code.removesuffix(result.declaration_code).rstrip("\n")
-    wrapped = spec.wrap_calls_with_declarations(
-        declarations=(),
-        calls=(
-            caller_code_prefix + result.declaration_code + caller_code_suffix
-        ),
-        context=literalizer.FileWrapperContext(
-            line_prefix="",
-            bound_variable_names=(),
-            variable_name="",
-            modifiers=frozenset(),
-            body_preamble=(
-                *TypeAdapter(type=tuple[str, ...]).validate_python(
-                    body_preamble, strict=True
-                ),
-                prefix,
-            ),
-            class_preamble=class_preamble,
-            has_literal_declarations=False,
-            generated_body_preamble=(),
-            call_stub_names=frozenset(),
-            root_is_object_literal=False,
-            root_mapping_entries=None,
-            has_existing_bindings=False,
-        ),
-    )
-    return "\n".join((*result.preamble, *preamble, wrapped))
 
 
 @beartype
@@ -823,19 +777,10 @@ def _render_call_golden_case(
         extra_class_preamble=class_stubs,
         extra_preamble=preamble_stubs,
     )
-    code = composed.code
-    if isinstance(fixture, FragmentCallFixture):
-        code = _wrap_unwrapped_call(
-            spec=spec,
-            result=result,
-            caller_code_prefix=fixture.caller_code_prefix,
-            caller_code_suffix=fixture.caller_code_suffix,
-            body_preamble=body_stubs,
-            class_preamble=class_stubs,
-            preamble=preamble_stubs,
-        )
     check_golden(
-        contents=_call_fixture_contents(code=code, spec=spec, config=config),
+        contents=_call_fixture_contents(
+            code=composed.code, spec=spec, config=config
+        ),
         golden_path=golden_path,
         file_regression=file_regression,
     )

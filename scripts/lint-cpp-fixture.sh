@@ -31,9 +31,20 @@ tidy)
 run)
     temporary_directory=$(mktemp -d)
     trap 'rm -rf "$temporary_directory"' EXIT
+    source_path=$fixture_path
+    case "$fixture_path" in
+    */default_module_names/*)
+        # Exercise the public default Module() through caller-owned main().
+        # Keep the generated source bytes and identifiers unchanged.
+        cp "$fixture_path" "$temporary_directory/module.cpp"
+        printf '#include "module.cpp"\nint main() { return Module(); }\n' \
+            > "$temporary_directory/check.cpp"
+        source_path=$temporary_directory/check.cpp
+        ;;
+    esac
     scripts/run-bounded.sh "$fixture_path" --signal=KILL 60s \
         clang++ "-std=$standard" -Werror \
-        "$fixture_path" \
+        "$source_path" \
         -o "$temporary_directory/run"
     scripts/run-bounded.sh "$fixture_path" --signal=KILL 60s \
         "$temporary_directory/run"
