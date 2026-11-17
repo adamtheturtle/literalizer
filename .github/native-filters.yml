@@ -132,6 +132,7 @@ lint-commonlisp:
 lint-scala:
   - *shared
   - tests/integration/cases/**/*.scala
+  - tests/integration/default_module_names/*.scala
 
 lint-haxe:
   - *shared
