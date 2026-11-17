@@ -36,12 +36,10 @@ def _run(
     type=click.Path(path_type=Path, exists=True, file_okay=False),
     required=True,
 )
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
-)
-def main(*, project: Path, jobs: int, timeout: float) -> None:
+def main(*, project: Path) -> None:
     """Execute every fixture with the same native command."""
+    jobs = os.cpu_count()
+    timeout = 60.0
     fixtures = sorted(
         path for path in Path("tests/integration/cases").rglob(pattern="*.jl")
     )

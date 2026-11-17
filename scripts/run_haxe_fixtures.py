@@ -70,11 +70,9 @@ def _validate(
 
 
 @click.command()
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(*, timeout: float) -> None:
+def main() -> None:
     """Compile and run the complete native fixture collection."""
+    timeout = 600.0
     fixtures = sorted(
         path
         for root in (

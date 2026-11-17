@@ -32,18 +32,10 @@ def _check(
     type=click.Path(exists=True, path_type=Path),
     envvar="LITERALIZER_GUILE_JSON_PATH",
 )
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
-)
-def main(
-    *,
-    guile_name: str,
-    json_path: Path | None,
-    jobs: int,
-    timeout: float,
-) -> None:
+def main(*, guile_name: str, json_path: Path | None) -> None:
     """Validate a named input or the complete native fixture corpus."""
+    jobs = os.cpu_count()
+    timeout = 60.0
     fixtures = sorted(
         fixture
         for fixture in Path("tests/integration/cases").rglob(pattern="*.scm")

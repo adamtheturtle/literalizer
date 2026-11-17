@@ -39,19 +39,11 @@ def _run(*, arguments: list[str | Path], label: str, timeout: float) -> None:
     envvar="RUST_SERDE_JSON_RLIB",
     required=True,
 )
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
-)
-def main(
-    *,
-    deps: Path,
-    chrono: Path,
-    serde_json: Path,
-    timeout: float,
-) -> None:
+def main(*, deps: Path, chrono: Path, serde_json: Path) -> None:
     """Preserve the 2021 edition, fatal warnings and serial compiler
     use.
     """
+    timeout = 60.0
     fixtures = sorted(
         path for path in Path("tests/integration/cases").rglob(pattern="*.rs")
     )

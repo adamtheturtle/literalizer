@@ -18,11 +18,9 @@ from scripts.bounded_command import bounded_command
     type=click.Choice(choices=("all", "syntax", "execution")),
     default="all",
 )
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(*, version: str, check_kind: str, timeout: float) -> None:
+def main(*, version: str, check_kind: str) -> None:
     """Keep strict batched builds and the primed dependency project."""
+    timeout = 600.0
     fixtures = sorted(
         path
         for path in Path("tests/integration/cases").rglob(pattern="*.gleam")

@@ -13,13 +13,11 @@ _HOST = Path(__file__).resolve().with_name(name="lint-groovy.groovy")
 
 
 @click.command()
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(*, timeout: float) -> None:
+def main() -> None:
     """Compile and run selected fixtures in one host with private
     shells.
     """
+    timeout = 600.0
     fixtures = sorted(
         path
         for path in Path("tests/integration/cases").rglob(pattern="*.groovy")

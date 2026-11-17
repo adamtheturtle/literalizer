@@ -24,13 +24,11 @@ _HOST = Path(__file__).resolve().with_name(name="lint-kotlin.kts")
     envvar="KOTLIN_HOME",
     required=True,
 )
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=1800.0
-)
-def main(*, version: str, kotlin_home: Path, timeout: float) -> None:
+def main(*, version: str, kotlin_home: Path) -> None:
     """Preserve strict compilation, dependencies, execution and script
     timers.
     """
+    timeout = 1800.0
     fixtures = sorted(
         path
         for path in Path("tests/integration/cases").rglob(pattern="*.kts")

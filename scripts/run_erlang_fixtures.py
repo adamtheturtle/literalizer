@@ -19,13 +19,11 @@ _HOST = Path(__file__).resolve().with_name(name="run_erlang.escript")
 @click.option(
     "--version", type=str, default="otp_25", envvar="ERLANG_FIXTURE_TAG"
 )
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(*, version: str, timeout: float) -> None:
+def main(*, version: str) -> None:
     """Keep warnings fatal and invoke every compiled module's entry
     point.
     """
+    timeout = 600.0
     roots = (
         Path("tests/integration/cases"),
         Path("tests/integration/default_module_names"),
