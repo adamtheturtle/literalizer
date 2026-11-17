@@ -823,8 +823,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_roc_roundtrip
 
   # Octave is a practical CI substitute, but it does not support
-  # every MATLAB builtin.  The per-fixture skip rules (for ``""``
-  # escaped quotes and the ``datetime`` builtin) are retained by
+  # every MATLAB builtin. The datetime and empty-map-key exclusions live in
   # scripts/run_matlab_fixtures.py.
   lint-matlab:
     needs: [native-changes]
