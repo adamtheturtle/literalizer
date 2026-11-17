@@ -121,7 +121,8 @@ Special floats compare by NaN/infinity classification, and finite floats retain 
 Existing JSON roundtrips and specialized native assertions retain their distinct contracts.
 
 The ordinary native jobs execute these self-contained files without another runner or transport format.
-``test_native_value_consumers.py`` discovers their declared consumers, executes every checked fixture with a deadline, and verifies failures after corrupting generated declarations while leaving their assertions unchanged.
+``test_native_value_consumers.py`` verifies failures after corrupting generated declarations while leaving their assertions unchanged, using bounded native execution.
+Successful execution of the original programs remains with the existing native jobs.
 Fixtures without native assertions retain their existing snapshot, compiler and native checks.
 
 After installing Bash 5.1+, Ruby or Node, run the same fixture checks as CI::

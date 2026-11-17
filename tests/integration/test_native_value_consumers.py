@@ -1,6 +1,4 @@
-"""Independent native consumers run through ordinary compiling golden
-files.
-"""
+"""Corruption controls for native assertions in compiling golden files."""
 
 import dataclasses
 import shutil
@@ -10,40 +8,13 @@ from pathlib import Path
 
 import pytest
 
-from .case_manifests import load_case_manifests
+from literalizer.languages import Python, Ruby
+
+from .language_specs import make_golden_path
 
 _MARKER = "# Independent native value checks."
 _CASES = Path(__file__).parent / "cases"
 _MINIMUM_RUBY_MAJOR = 3
-
-
-def _native_programs() -> list[Path]:
-    """Discover self-checking fixtures from their existing case-local
-    consumers.
-    """
-    paths: list[Path] = []
-    for manifest in load_case_manifests(cases_dir=_CASES):
-        consumers = dict(manifest.base_context.consumer_templates)
-        for variant in manifest.variants:
-            consumers.update(variant.consumer_templates)
-            consumers.update(variant.context.consumer_templates)
-        for lang_cls, consumer in consumers.items():
-            if _MARKER not in consumer:
-                continue
-            paths.extend(
-                path
-                for path in manifest.case_dir.glob(
-                    pattern=f"{lang_cls.__name__}*@*{lang_cls.extension}"
-                )
-                if _MARKER in path.read_text(encoding="utf-8")
-            )
-    if len(paths) == 0:
-        message = "no native value consumers were discovered"
-        raise ValueError(message)
-    return sorted(set(paths))
-
-
-_PROGRAMS = _native_programs()
 
 
 @pytest.fixture(scope="session", name="ruby_available")
@@ -83,17 +54,6 @@ def _execute(
         check=False,
         timeout=30,
     )
-
-
-@pytest.mark.parametrize(
-    argnames="path",
-    argvalues=_PROGRAMS,
-    ids=lambda path: f"{path.parent.name}/{path.name}",
-)
-def test_native_value_golden(*, path: Path, ruby_available: bool) -> None:
-    """Every declared native value consumer executes successfully."""
-    result = _execute(path=path, ruby_available=ruby_available)
-    assert result.returncode == 0, f"{path}: {result.stderr}"
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -216,13 +176,12 @@ def test_native_value_corruptions(
     """Corrupt generated values while retaining the original native
     assertions.
     """
-    path = next(
-        path
-        for path in _PROGRAMS
-        if path.parent.name == corruption.case
-        and path.name.startswith(
-            backend_name.title() + corruption.stem_suffix + "@"
-        )
+    lang_cls = {"python": Python, "ruby": Ruby}[backend_name]
+    path = make_golden_path(
+        parent=_CASES / corruption.case,
+        name=lang_cls.__name__ + corruption.stem_suffix,
+        lang_cls=lang_cls,
+        version=next(iter(lang_cls.VersionFormats)),
     )
     declaration, consumer = path.read_text(encoding="utf-8").split(
         sep=_MARKER, maxsplit=1
