@@ -5,6 +5,7 @@ my_data = (
 )
 # Independent native value checks.
 import math
+assert isinstance(my_data, (list, tuple))
 assert all(type(value) is float for value in my_data)
 assert len(my_data) == 3
 assert math.isinf(my_data[0]) and my_data[0] > 0

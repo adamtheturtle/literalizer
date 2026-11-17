@@ -1,7 +1,8 @@
 """Corruption controls for native assertions in compiling golden files."""
 
 import dataclasses
-import shutil
+import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -14,39 +15,24 @@ from .language_specs import make_golden_path
 
 _MARKER = "# Independent native value checks."
 _CASES = Path(__file__).parent / "cases"
-_MINIMUM_RUBY_MAJOR = 3
-
-
-def _ruby_executable() -> str:
-    """Resolve a required runtime supported by the Ruby backend."""
-    ruby = shutil.which(cmd="ruby")
-    assert ruby is not None, "Ruby 3+ is required"
-    result = subprocess.run(  # noqa: S603 - inspect the selected native interpreter
-        args=[ruby, "-e", "puts RUBY_VERSION.split('.').first.to_i"],
-        capture_output=True,
-        text=True,
-        check=True,
-        timeout=30,
-    )
-    assert int(result.stdout) >= _MINIMUM_RUBY_MAJOR, "Ruby 3+ is required"
-    return ruby
-
-
-def _execute(*, path: Path) -> subprocess.CompletedProcess[str]:
-    """Use the same self-contained programs executed by the native
-    jobs.
-    """
-    if path.suffix == ".py":
-        args = [sys.executable, "-I", str(object=path)]
-    else:
-        args = [_ruby_executable(), str(object=path)]
-    return subprocess.run(  # noqa: S603 - execute an authored native golden consumer
-        args=args,
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=30,
-    )
+_BACKENDS = {
+    "python": (
+        Python,
+        (sys.executable, "-I"),
+        r'^\s*File ".*", line (\d+), in ',
+        r"^AssertionError(?::|$)",
+    ),
+    "ruby": (
+        Ruby,
+        ("ruby",),
+        r"^.*?:(\d+):in .* \(RuntimeError\)$",
+        r" \(RuntimeError\)$",
+    ),
+}
+_RUBY_OPT_IN = pytest.mark.skipif(
+    condition=os.environ.get(key="LITERALIZER_TEST_RUBY") != "1",
+    reason="Set LITERALIZER_TEST_RUBY=1 with Ruby 3+ on PATH",
+)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -133,12 +119,24 @@ _CORRUPTIONS = (
 
 @pytest.mark.parametrize(
     argnames=("backend_name", "corruption"),
-    argvalues=[
-        (backend_name, corruption)
-        for backend_name in ("python", "ruby")
+    argvalues=[("python", corruption) for corruption in _CORRUPTIONS]
+    + [
+        pytest.param("ruby", corruption, marks=_RUBY_OPT_IN)
         for corruption in _CORRUPTIONS
     ]
     + [
+        (
+            "python",
+            Corruption(
+                case="list_beyond_i64",
+                stem_suffix="",
+                python=(
+                    "(\n    9223372036854775807,\n    9223372036854775808,\n)",
+                    "{9223372036854775807: None, 9223372036854775808: None}",
+                ),
+                ruby=("", ""),
+            ),
+        ),
         (
             "python",
             Corruption(
@@ -168,7 +166,7 @@ def test_native_value_corruptions(
     """Corrupt generated values while retaining the original native
     assertions.
     """
-    lang_cls = {"python": Python, "ruby": Ruby}[backend_name]
+    lang_cls, command, frame_pattern, error_pattern = _BACKENDS[backend_name]
     path = make_golden_path(
         parent=_CASES / corruption.case,
         name=lang_cls.__name__ + corruption.stem_suffix,
@@ -182,14 +180,36 @@ def test_native_value_corruptions(
         corruption.python if backend_name == "python" else corruption.ruby
     )
     assert old in declaration
-    target = tmp_path / corruption.case / path.name
-    target.parent.mkdir()
-    _ = target.write_text(
-        data=declaration.replace(old, new) + _MARKER + consumer,
-        encoding="utf-8",
+    mutated_declaration = declaration.replace(old, new)
+    program = mutated_declaration + _MARKER + consumer
+    target = tmp_path / path.name
+    _ = target.write_text(data=program, encoding="utf-8")
+    result = subprocess.run(  # noqa: S603 - execute an authored native golden consumer
+        args=[*command, str(object=target)],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
     )
-    result = _execute(path=target)
     assert result.returncode != 0, (
         f"{path}: native consumer missed {old!r} -> {new!r}"
     )
-    assert corruption.case in result.stderr
+
+    # A parse error or a failure while constructing the value cannot
+    # demonstrate that the consumer caught the corruption.
+    error = re.search(
+        pattern=error_pattern, string=result.stderr, flags=re.MULTILINE
+    )
+    assert error is not None, result.stderr
+    frames = re.findall(
+        pattern=frame_pattern, string=result.stderr, flags=re.MULTILINE
+    )
+    assert len(frames) > 0, result.stderr
+    marker_line = mutated_declaration.count("\n") + 1
+    failure_line = int(frames[-1])
+    assert failure_line > marker_line, result.stderr
+    assert (
+        program.splitlines()[failure_line - 1]
+        .lstrip()
+        .startswith(("assert ", "raise "))
+    ), result.stderr

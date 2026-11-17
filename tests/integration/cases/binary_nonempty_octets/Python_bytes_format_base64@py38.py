@@ -6,5 +6,6 @@ my_data = (
 import base64
 octets = [bytes(range(256)), bytes(reversed(range(256)))]
 expected = {"HEX": [value.hex() for value in octets], "BASE64": [base64.b64encode(s=value).decode(encoding="ascii") for value in octets], "PYTHON": octets}["BASE64"]
+assert isinstance(my_data, (list, tuple))
 assert len(my_data) == len(expected)
 assert all(type(actual) is type(wanted) and actual == wanted for actual, wanted in zip(my_data, expected))
