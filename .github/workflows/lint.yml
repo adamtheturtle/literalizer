@@ -455,10 +455,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_java_roundtrip
 
       - name: Lint Php
-        run: |-
-          find tests/integration/cases -name '*.php' -print0 > /tmp/files-php && test -s /tmp/files-php
-          xargs -0 php -l < /tmp/files-php
-          xargs -0 -P "$(nproc)" -n1 php < /tmp/files-php
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures php
 
       # Basic JSON -> PHP -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the PHP toolchain; `uv run` (project
