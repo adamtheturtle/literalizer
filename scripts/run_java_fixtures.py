@@ -24,24 +24,14 @@ _HOST = Path(__file__).resolve().parents[1] / "CheckJavaSyntax.java"
     default=("11", "16"),
     show_default=True,
 )
-@click.option("--batch-size", type=click.IntRange(min=1, max=512), default=512)
-@click.option(
-    "--timeout",
-    type=click.FloatRange(min=0, min_open=True),
-    default=300.0,
-    show_default=True,
-    help="Deadline in seconds for each warm compiler batch.",
-)
-def main(
-    releases: tuple[str, ...],
-    batch_size: int,
-    timeout: float,
-) -> None:
+def main(releases: tuple[str, ...]) -> None:
     """Check selected releases with fatal warnings and native execution.
 
     LITERALIZER_LINT_CLASSPATH supplies supporting jars to the existing
     host's compiler and class loader, exactly as in CI.
     """
+    batch_size = 512
+    timeout = 300.0
     java = shutil.which(cmd="java")
     if java is None:
         raise click.ClickException(message="A JDK with java is required.")

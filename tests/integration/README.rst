@@ -114,7 +114,7 @@ With a JDK installed, run the same warm compiler host as CI::
 Both JDK 11 and 16 fixture populations are checked by default.
 Set ``LITERALIZER_LINT_CLASSPATH`` to the Jackson jars for JSON-type cases.
 Each batch compiles with the matching ``--release`` and ``-Werror``, then executes initializers and consumer entry points.
-``--batch-size`` retains a warm JVM for up to 512 fixtures; ``--timeout`` bounds each batch.
+A warm JVM checks batches of up to 512 fixtures, each with a 300-second deadline.
 An empty selection fails before any fixtures run.
 
 Native interpreter checks
