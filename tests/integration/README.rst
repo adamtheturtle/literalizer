@@ -37,10 +37,11 @@ Its corresponding manifest table supplies the API arguments.
 Copy a nearby case using the same API when adding specialized coverage.
 The accepted fields and consistency checks are defined in ``case_manifests.py``.
 
-Keep typed failures, incomplete fragments, metadata and concurrency contracts in the directories described by ``../README.rst``.
+Keep typed failures, metadata and concurrency contracts in the directories described by ``../README.rst``.
 A complete generated program belongs here; an executable round-trip case should also compare the reconstructed value with the input.
 Native success fixtures should use complete expressions and public composition.
-Keep deliberately incomplete call transforms under ``tests/fragments`` with exact public-output expectations, rather than repairing them with caller-owned suffixes to create a native program.
+Do not snapshot incidental output from malformed caller-owned transforms.
+Add focused unit coverage for a demonstrated robustness regression with a meaningful invariant, such as avoiding a crash or hang.
 The comment-placement lexer is not a target-language syntax validator.
 
 Checking and regenerating
