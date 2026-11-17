@@ -283,6 +283,8 @@ else:
 
 
 _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    validate_transforms=False,
+    nested_block_comments=False,
     prefix="//",
     regex_literals=True,
     raw_string_prefixes=(),

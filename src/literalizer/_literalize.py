@@ -114,6 +114,7 @@ from literalizer._preamble import (
     compute_preamble,
     deduplicate_preamble_entries,
 )
+from literalizer._statements import CallLiteralSyntax
 from literalizer._types import (
     CallPreambleData,
     CollectionValue,
@@ -304,10 +305,13 @@ class _CallTransformUsage:
 
     transform: Callable[[CallContext], str]
     uses_zipped: bool
+    literal_syntax: CallLiteralSyntax | None
 
     def __call__(self, context: CallContext, /) -> str:
         """Retain known usage or handle opaque caller text at its boundary."""
         result = self.transform(context)
+        if self.literal_syntax is not None:
+            self.literal_syntax.validate(result)
         if isinstance(self.transform, _KnownZipUsageTransform):
             emitted_zip = self.transform.uses_zipped
         else:
@@ -9647,7 +9651,9 @@ def literalize_call_parsed(
     rendering_transform = call_transform
     if call_transform is not None:
         transform_usage = _CallTransformUsage(
-            transform=call_transform, uses_zipped=False
+            transform=call_transform,
+            uses_zipped=False,
+            literal_syntax=language.call_literal_syntax,
         )
         rendering_transform = transform_usage
 

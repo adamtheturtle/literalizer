@@ -123,10 +123,10 @@ def test_missing_manifest_is_actionable(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(argnames="kind", argvalues=["composed", "wrapped"])
-def test_call_suffix_requires_fragment_context(
+def test_call_suffix_is_not_a_fixture_option(
     tmp_path: Path, kind: str
 ) -> None:
-    """Only the fragment variant accepts caller source bytes."""
+    """Caller source suffixes are no longer fixture API options."""
     case_dir = _write_case(
         tmp_path=tmp_path,
         manifest=(

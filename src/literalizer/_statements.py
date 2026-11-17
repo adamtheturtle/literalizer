@@ -15,8 +15,19 @@ from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
+from literalizer.exceptions import UnterminatedCallTransformError
+
 _OPENING_BRACKETS = "([{"
 _CLOSING_BRACKETS = ")]}"
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class LiteralSpan:
+    """A scanned token's end and any closer missing at end-of-input."""
+
+    end: int
+    expected: str | None
 
 
 @runtime_checkable
@@ -25,8 +36,10 @@ class LiteralSpanEnd(Protocol):
     position.
     """
 
-    def __call__(self, *, statement: str, cursor: int) -> int | None:
-        """Return the position after a literal, or no match."""
+    def __call__(self, *, statement: str, cursor: int) -> LiteralSpan | None:
+        """Return a literal boundary and any missing closer, or no
+        match.
+        """
         ...
 
 
@@ -42,7 +55,7 @@ class CharacterAndHashRawLiterals:
     hash_marker: str
 
     @beartype
-    def __call__(self, *, statement: str, cursor: int) -> int | None:
+    def __call__(self, *, statement: str, cursor: int) -> LiteralSpan | None:
         """Skip literals while leaving lifetime and raw identifier tokens
         visible.
         """
@@ -60,7 +73,7 @@ class CharacterAndHashRawLiterals:
                 elif statement[cursor + 2 : cursor + 3] == "x":
                     end += 2
             return (
-                end + 1
+                LiteralSpan(end=end + 1, expected=None)
                 if statement[end : end + 1] == self.character_quote
                 else None
             )
@@ -74,7 +87,10 @@ class CharacterAndHashRawLiterals:
                 hashes = statement[cursor + len(marker) : quote_start]
                 delimiter = '"' + hashes
                 end = statement.find(delimiter, quote_start + 1)
-                return len(statement) if end == -1 else end + len(delimiter)
+                return LiteralSpan(
+                    end=len(statement) if end == -1 else end + len(delimiter),
+                    expected=delimiter if end == -1 else None,
+                )
         return None
 
 
@@ -87,7 +103,7 @@ class PrefixedIdentifierSyntax:
     identifier: str
 
     @beartype
-    def __call__(self, *, statement: str, cursor: int) -> int | None:
+    def __call__(self, *, statement: str, cursor: int) -> LiteralSpan | None:
         """Skip a complete prefixed name without opening a quoted
         string.
         """
@@ -95,7 +111,11 @@ class PrefixedIdentifierSyntax:
             return None
         start = cursor + len(self.prefix)
         match = re.match(pattern=self.identifier, string=statement[start:])
-        return None if match is None else start + match.end()
+        return (
+            None
+            if match is None
+            else LiteralSpan(end=start + match.end(), expected=None)
+        )
 
 
 @beartype
@@ -114,6 +134,8 @@ class _TrailingLineComments:
 class CallLiteralSyntax:
     """The literal grammar used to locate a call's trailing comments."""
 
+    validate_transforms: bool
+    nested_block_comments: bool
     prefix: str
     quotes: str
     regex_literals: bool
@@ -128,8 +150,24 @@ class CallLiteralSyntax:
         """Separate final comments using this producer's actual
         grammar.
         """
+        return self._scan(statement=statement, reject_unterminated=False)
+
+    @beartype
+    def validate(self, statement: str, /) -> None:
+        """Reject unfinished literals recognized by the call lexer."""
+        if self.validate_transforms:
+            _ = self._scan(statement=statement, reject_unterminated=True)
+
+    @beartype
+    def _scan(
+        self, *, statement: str, reject_unterminated: bool
+    ) -> _TrailingLineComments:
+        """Share lexical rules between validation and comment
+        placement.
+        """
         return _split_trailing_line_comments(
             statement=statement,
+            nested_block_comments=self.nested_block_comments,
             prefix=self.prefix,
             quotes=self.quotes,
             regex_literals=self.regex_literals,
@@ -138,6 +176,7 @@ class CallLiteralSyntax:
             verbatim_strings=self.verbatim_strings,
             interpolation_syntax=self.interpolation_syntax,
             literal_span_end=self.literal_span_end,
+            reject_unterminated=reject_unterminated,
         )
 
 
@@ -147,6 +186,7 @@ class _CommentScanner:
     """Locate comments outside the configured string literal syntax."""
 
     statement: str
+    nested_block_comments: bool
     prefix: str
     quotes: frozenset[str]
     regex_literals: bool
@@ -155,6 +195,7 @@ class _CommentScanner:
     verbatim_strings: bool
     interpolation_syntax: tuple[str, str] | None
     literal_span_end: LiteralSpanEnd | None
+    reject_unterminated: bool
 
     @beartype
     def split(self) -> _TrailingLineComments:
@@ -192,7 +233,7 @@ class _CommentScanner:
         if self.statement.startswith(self.prefix, cursor):
             return self._end_after(delimiter="\n", cursor=cursor)
         if self.statement.startswith("/*", cursor):
-            return self._end_after(delimiter="*/", cursor=cursor + 2)
+            return self._block_comment_end(cursor=cursor)
         if self.regex_literals and self.statement.startswith("~/", cursor):
             return self._string_end(
                 cursor=cursor + 2,
@@ -204,16 +245,48 @@ class _CommentScanner:
         if self.backtick_strings and self.statement.startswith("`", cursor):
             return self._end_after(delimiter="`", cursor=cursor + 1)
         if self.literal_span_end is not None:
-            end = self.literal_span_end(
+            span = self.literal_span_end(
                 statement=self.statement, cursor=cursor
             )
-            if end is not None:
-                return end
+            if span is not None:
+                if self.reject_unterminated and span.expected is not None:
+                    raise UnterminatedCallTransformError(
+                        position=cursor, expected=span.expected
+                    )
+                return span.end
+        end: int | None
         if self.statement[cursor] in self.quotes:
             end = self._quoted_end(cursor=cursor, raw=False, verbatim=False)
         else:
             end = self._prefixed_string_end(cursor=cursor)
         return end
+
+    @beartype
+    def _block_comment_end(self, *, cursor: int) -> int:
+        """Skip nested comment text without interpreting its quote
+        marks.
+        """
+        opening = cursor
+        depth = 1
+        cursor += 2
+        while cursor < len(self.statement):
+            if self.nested_block_comments and self.statement.startswith(
+                "/*", cursor
+            ):
+                depth += 1
+                cursor += 2
+            elif self.statement.startswith("*/", cursor):
+                depth -= 1
+                cursor += 2
+                if depth == 0:
+                    return cursor
+            else:
+                cursor += 1
+        if self.reject_unterminated:
+            raise UnterminatedCallTransformError(
+                position=opening, expected="*/"
+            )
+        return len(self.statement)
 
     @beartype
     def _prefixed_string_end(self, *, cursor: int) -> int | None:
@@ -280,6 +353,7 @@ class _CommentScanner:
         interpolate: bool,
     ) -> int:
         """Follow escapes and interpolation to the closing delimiter."""
+        opening = cursor - len(delimiter)
         syntax = self.interpolation_syntax if interpolate else None
         while cursor < len(self.statement):
             if (verbatim and self.statement.startswith('""', cursor)) or (
@@ -297,13 +371,19 @@ class _CommentScanner:
             elif syntax is not None and self.statement.startswith(
                 syntax[0], cursor
             ):
-                cursor = self._expression_end(cursor=cursor + len(syntax[0]))
+                cursor = self._expression_end(
+                    cursor=cursor + len(syntax[0]), opening=cursor
+                )
             else:
                 cursor += 1
+        if self.reject_unterminated:
+            raise UnterminatedCallTransformError(
+                position=opening, expected=delimiter
+            )
         return len(self.statement)
 
     @beartype
-    def _expression_end(self, *, cursor: int) -> int:
+    def _expression_end(self, *, cursor: int, opening: int) -> int:
         """Balance interpolation brackets while skipping nested
         literals.
         """
@@ -330,6 +410,10 @@ class _CommentScanner:
                 # An interpolation format tail is text, not an expression.
                 return self._end_after(delimiter="}", cursor=cursor)
             cursor += 1
+        if self.reject_unterminated:
+            raise UnterminatedCallTransformError(
+                position=opening, expected=closing[-1]
+            )
         return len(self.statement)
 
 
@@ -337,6 +421,7 @@ class _CommentScanner:
 def _split_trailing_line_comments(
     *,
     statement: str,
+    nested_block_comments: bool,
     prefix: str,
     regex_literals: bool,
     backtick_strings: bool,
@@ -345,12 +430,14 @@ def _split_trailing_line_comments(
     interpolation_syntax: tuple[str, str] | None,
     quotes: str,
     literal_span_end: LiteralSpanEnd | None,
+    reject_unterminated: bool,
 ) -> _TrailingLineComments:
     """Separate trailing line comments from a C-style expression."""
-    if prefix not in statement:
+    if prefix not in statement and not reject_unterminated:
         return _TrailingLineComments(code=statement, trailing_comments="")
     return _CommentScanner(
         statement=statement,
+        nested_block_comments=nested_block_comments,
         prefix=prefix,
         quotes=frozenset(quotes),
         regex_literals=regex_literals,
@@ -359,6 +446,7 @@ def _split_trailing_line_comments(
         verbatim_strings=verbatim_strings,
         interpolation_syntax=interpolation_syntax,
         literal_span_end=literal_span_end,
+        reject_unterminated=reject_unterminated,
     ).split()
 
 

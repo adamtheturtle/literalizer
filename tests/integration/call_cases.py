@@ -57,7 +57,6 @@ from .case_manifests import (
     CallCaseSpec,
     CallTransform,
     ComposedCallFixture,
-    FragmentCallFixture,
     WrappedCallFixture,
     case_input,
 )
@@ -386,9 +385,7 @@ def _render_ref_declaration(
             )
         elif len(styles) > 0:
             seed_spec = dataclasses.replace(spec, declaration_style=styles[0])
-        # Fragment transforms may replace the callee entirely, so seed
-        # their existing bindings with literal declarations, not calls.
-        if observable or isinstance(config.fixture, FragmentCallFixture):
+        if observable:
             result = literalizer.literalize(
                 source=ref_source,
                 input_format=config.ref_input_format,
@@ -425,7 +422,7 @@ def _render_ref_declaration(
 def _run_call_with_declarations(
     *,
     config: CallCaseSpec,
-    fixture: ComposedCallFixture | FragmentCallFixture,
+    fixture: ComposedCallFixture,
     spec: literalizer.Language,
     source: str,
     input_info: CaseInput,
@@ -772,15 +769,6 @@ def _render_call_golden_case(
     # preamble in front.  The call-stub lines this harness synthesizes
     # for the otherwise-undefined target/transform names are folded in
     # as the ``extra_*`` arguments.
-    if isinstance(fixture, FragmentCallFixture):
-        # Only the lexical completion is caller-owned. Keep the public
-        # fragment verbatim and let the API assemble its declarations.
-        result = dataclasses.replace(
-            result,
-            declaration_code=(
-                result.declaration_code + fixture.caller_code_suffix
-            ),
-        )
     composed = literalizer.literalize_call_with_declarations(
         language=spec,
         declarations=decl_results,

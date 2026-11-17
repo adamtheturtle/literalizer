@@ -539,6 +539,8 @@ def _d_narrow_reject_open(
 
 
 _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    validate_transforms=False,
+    nested_block_comments=False,
     prefix="//",
     backtick_strings=True,
     regex_literals=False,

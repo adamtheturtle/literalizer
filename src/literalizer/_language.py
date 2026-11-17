@@ -2038,6 +2038,13 @@ class Language(typing.Protocol):
     # attribute lookup also exposes it through each instance, which is the
     # interface rendering and validation code consumes.
     @property
+    def call_literal_syntax(self) -> CallLiteralSyntax | None:
+        """The configured lexical syntax for transformed call
+        expressions.
+        """
+        ...
+
+    @property
     def accepts_type_name_call_target(self) -> bool:
         """Whether a bare type name may be a call target."""
         ...

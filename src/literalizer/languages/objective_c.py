@@ -240,6 +240,8 @@ _format_objc_entry_iso = _build_objc_entry_formatter(datetime_as_number=False)
 
 
 _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    validate_transforms=False,
+    nested_block_comments=False,
     prefix="//",
     regex_literals=False,
     backtick_strings=False,

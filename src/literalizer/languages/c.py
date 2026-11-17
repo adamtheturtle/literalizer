@@ -767,6 +767,8 @@ def _c_call_stub(
 
 
 _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    validate_transforms=False,
+    nested_block_comments=False,
     prefix="//",
     regex_literals=False,
     backtick_strings=False,

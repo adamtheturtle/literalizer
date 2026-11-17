@@ -437,6 +437,11 @@ This lets you print an expected value beside each call's actual return value:
 It requires ``zip_input_format`` and a ``call_transform``.
 ``call_transform`` is only supported for languages whose call form is an expression that can be wrapped (positional, keyword, or object call style); prefix-, postfix-, and command-style languages reject it with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
 
+Transforms must return complete expressions.
+Rust and Dart raise :class:`~literalizer.exceptions.UnterminatedCallTransformError` when their configured lexer finds an unfinished string, interpolation or block comment, before adding bindings or statement terminators.
+The error identifies a zero-based character offset and the expected closing delimiter.
+This is a lexical check, not full target-language parsing; other backends and syntax outside the configured lexer still require caller validation.
+
 Annotating each call with a trailing comment
 --------------------------------------------
 

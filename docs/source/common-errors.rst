@@ -167,6 +167,9 @@ See :doc:`function-call-use-case`.
 .. autoexception:: literalizer.exceptions.UnsupportedCallShapeError
    :no-index:
 
+.. autoexception:: literalizer.exceptions.UnterminatedCallTransformError
+   :no-index:
+
 .. autoexception:: literalizer.exceptions.DottedCallTargetNotSupportedError
    :no-index:
 

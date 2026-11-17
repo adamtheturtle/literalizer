@@ -342,6 +342,8 @@ def _sv_call_stub(
 
 
 _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    validate_transforms=False,
+    nested_block_comments=False,
     prefix="//",
     quotes='"',
     regex_literals=False,

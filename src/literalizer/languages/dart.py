@@ -545,6 +545,8 @@ def _dart_is_datetime(value: Value, /) -> bool:
 
 
 _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    validate_transforms=True,
+    nested_block_comments=True,
     prefix="//",
     regex_literals=False,
     raw_string_prefixes=("r",),

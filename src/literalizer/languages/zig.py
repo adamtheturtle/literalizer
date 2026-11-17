@@ -631,6 +631,8 @@ def _zig_render_record_declaration(
 
 
 _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    validate_transforms=False,
+    nested_block_comments=False,
     prefix="//",
     regex_literals=False,
     backtick_strings=False,

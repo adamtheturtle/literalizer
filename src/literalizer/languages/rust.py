@@ -3227,6 +3227,8 @@ def _empty_container_type_hints() -> MappingProxyType[EmptyContainerPath, str]:
 
 
 _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    validate_transforms=True,
+    nested_block_comments=True,
     prefix="//",
     regex_literals=False,
     raw_string_prefixes=(),

@@ -686,7 +686,12 @@ def literalize_call(
         call_transform: Optional callable transforming each generated
             call.  Invoked once per call as ``call_transform(context)``
             with a :class:`CallContext` and returns the transformed
-            string (e.g. ``lambda ctx: f"print({ctx.call})"``). A transform
+            string (e.g. ``lambda ctx: f"print({ctx.call})"``). Return a
+            complete expression. Rust and Dart reject unterminated
+            recognized strings, interpolations and block comments with
+            :class:`~literalizer.exceptions.UnterminatedCallTransformError`.
+            This lexical check does not validate the full target grammar.
+            A transform
             can expose a boolean ``uses_zipped`` attribute to state whether
             its template substitutes the zipped operand. Otherwise, usage
             uses lexical matching against the returned source. The

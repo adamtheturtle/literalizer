@@ -581,6 +581,8 @@ else:
 
 
 _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
+    validate_transforms=False,
+    nested_block_comments=True,
     prefix="//",
     quotes="\"'",
     regex_literals=False,

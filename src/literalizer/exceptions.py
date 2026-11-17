@@ -926,6 +926,25 @@ class ZipValuesLengthMismatchError(LiteralizerError):
 
 
 @beartype
+class UnterminatedCallTransformError(LiteralizerError):
+    """A call transform left a recognized literal, interpolation or
+    comment open.
+
+    Return a complete expression from ``call_transform``. The call lexer
+    checks its configured literal syntax, not the full language grammar.
+    """
+
+    def __init__(self, *, position: int, expected: str) -> None:
+        """Identify the unfinished construct and its expected closer."""
+        super().__init__(
+            "call_transform contains an unterminated literal, interpolation "
+            f"or comment at offset {position}; expected {expected!r}"
+        )
+        self.position: int = position
+        self.expected: str = expected
+
+
+@beartype
 class ZipValuesWithoutCallTransformError(LiteralizerError):
     """Raised when ``literalize_call`` is given a ``zip_source`` but no
     ``call_transform`` to consume the paired values.
