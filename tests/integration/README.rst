@@ -114,8 +114,8 @@ With a JDK installed, run the same warm compiler host as CI::
 Both JDK 11 and 16 fixture populations are checked by default.
 Set ``LITERALIZER_LINT_CLASSPATH`` to the Jackson jars for JSON-type cases.
 Each batch compiles with the matching ``--release`` and ``-Werror``, then executes initializers and consumer entry points.
-A warm JVM checks batches of up to 512 fixtures, each with a 300-second deadline.
-An empty selection fails before any fixtures run.
+The warm JVM checks up to 512 fixtures per batch, with a 300-second deadline.
+Empty selections fail before execution.
 
 Native interpreter checks
 -------------------------
@@ -133,9 +133,8 @@ Missing interpreters and empty selections fail.
 Native Dart checks
 ------------------
 
-Run analysis and execution for one input or an explicit fixture::
+Run analysis and execution for an explicit fixture::
 
-    uv run --group=dev python -m scripts.run_dart_fixtures
     uv run --group=dev python -m scripts.run_dart_fixtures tests/integration/cases/scalar_int/Dart@v3.dart
 
 The existing null-separated standard input remains available for full CI selections.
