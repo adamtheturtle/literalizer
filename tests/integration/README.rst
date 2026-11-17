@@ -115,3 +115,15 @@ After installing Bash 5.1+, Ruby or Node, run the same fixture checks as CI::
 Add ``--case scalar_int`` to select one input, ``--check syntax`` or ``--check execution`` to reproduce one phase, and ``--jobs 1`` for serial diagnostics.
 Each command has a 60-second deadline, adjustable with ``--timeout``.
 Missing interpreters and empty selections fail.
+
+Native Dart checks
+------------------
+
+Run analysis and execution for one input or an explicit fixture::
+
+    uv run --group=dev python -m scripts.run_dart_fixtures --case scalar_int
+    uv run --group=dev python -m scripts.run_dart_fixtures tests/integration/cases/scalar_int/Dart@v3.dart
+
+The existing null-separated standard input remains available for full CI selections.
+All paths use the same staging, analysis and binding-forcing execution code.
+An empty selection fails before starting the toolchain.

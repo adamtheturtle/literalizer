@@ -27,9 +27,10 @@ from tests.integration.variant_cases import (
     build_variant_cases,
     group_variant_cases_by_language,
     one_special_input,
+    variant_supports_capability,
     variants_for_axis,
 )
-from tests.integration.variant_types import VariantCase
+from tests.integration.variant_types import VariantCase, compact_variant
 
 _SampleEnum = enum.Enum(value="_SampleEnum", names=["FIRST"])
 
@@ -284,3 +285,47 @@ def test_multiline_context_cases_follow_capabilities(
         if not case.variant.lang_cls.supports_multiline_string_literals
     ]
     assert incapable_indented == []
+
+
+@pytest.mark.parametrize(
+    argnames=("lang_cls", "spec"),
+    argvalues=[
+        (
+            literalizer.languages.Cpp,
+            make_spec(
+                lang_cls=literalizer.languages.Cpp,
+                json_type=enum_member_by_name(
+                    enum_cls=literalizer.languages.Cpp.JsonTypes,
+                    name="NLOHMANN_JSON",
+                ),
+                json_rendering=literalizer.languages.Cpp.JsonRenderings.INLINE_DOCUMENT,
+            ),
+        ),
+        (
+            literalizer.languages.Haskell,
+            make_spec(
+                lang_cls=literalizer.languages.Haskell,
+                json_type=enum_member_by_name(
+                    enum_cls=literalizer.languages.Haskell.JsonTypes,
+                    name="AESON_VALUE",
+                ),
+            ),
+        ),
+    ],
+)
+def test_collection_comments_require_the_effective_configuration(
+    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
+) -> None:
+    """JSON variants cannot borrow collection comment support from
+    defaults.
+    """
+    variant = compact_variant(name="effective", lang_cls=lang_cls, spec=spec)
+    assert variant_supports_capability(
+        variant=dataclasses.replace(variant, spec=lang_cls()),
+        capability="collection_comments",
+    )
+    assert not variant_supports_capability(
+        variant=variant,
+        capability="collection_comments",
+    )

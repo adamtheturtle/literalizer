@@ -23,19 +23,28 @@ class _Backend:
     executable: str
     extension: str
     syntax_argument: str | None
+    # Omitted parser names use the interpreter itself.
+    syntax_executable: str | None = None  # noqa: NOD001
 
 
 _BACKENDS = {
+    "lua": _Backend(
+        executable="lua",
+        extension=".lua",
+        syntax_argument="-p",
+        syntax_executable="luac",
+    ),
     "bash": _Backend(executable="bash", extension=".sh", syntax_argument="-n"),
+    "php": _Backend(executable="php", extension=".php", syntax_argument="-l"),
+    "ruby": _Backend(executable="ruby", extension=".rb", syntax_argument="-c"),
+    "javascript": _Backend(
+        executable="node", extension=".js", syntax_argument="--check"
+    ),
     "tcl": _Backend(
         executable="tclsh", extension=".tcl", syntax_argument=None
     ),
     "wren": _Backend(
         executable="wren_cli", extension=".wren", syntax_argument=None
-    ),
-    "ruby": _Backend(executable="ruby", extension=".rb", syntax_argument="-c"),
-    "javascript": _Backend(
-        executable="node", extension=".js", syntax_argument="--check"
     ),
 }
 
@@ -48,6 +57,18 @@ def _run(*, arguments: list[str], label: str, timeout: float) -> None:
         ),
         check=True,
     )
+
+
+def _phase_executable(*, config: _Backend, executable: str, phase: str) -> str:
+    """Resolve a separate syntax parser when the backend requires one."""
+    if phase != "syntax" or config.syntax_executable is None:
+        return executable
+    parser = shutil.which(cmd=config.syntax_executable)
+    if parser is None:
+        raise click.ClickException(
+            message=f"Missing parser: {config.syntax_executable}"
+        )
+    return parser
 
 
 @click.command()
@@ -124,11 +145,14 @@ def main(
                         message=f"{backend} has no separate syntax check."
                     )
                 continue
+            phase_executable = _phase_executable(
+                config=config, executable=executable, phase=phase
+            )
             futures = [
                 executor.submit(
                     _run,
                     arguments=[
-                        executable,
+                        phase_executable,
                         *(syntax_arguments if phase == "syntax" else []),
                         str(object=fixture),
                     ],
