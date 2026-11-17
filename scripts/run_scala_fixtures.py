@@ -7,7 +7,7 @@ from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
+from scripts.bounded_command import bounded_command, run_bounded_command
 
 
 def _stage(*, fixtures: list[Path], workspace: Path) -> list[str]:
@@ -27,19 +27,6 @@ def _stage(*, fixtures: list[Path], workspace: Path) -> list[str]:
         click.echo(message=f"{destination.name} <- {fixture}")
         names.append(name)
     return names
-
-
-def _run(
-    *, arguments: list[str | Path], label: str, workspace: Path, timeout: float
-) -> None:
-    """Bound the native command while retaining compiler diagnostics."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments, fixture=label, timeout_seconds=timeout
-        ),
-        cwd=workspace,
-        check=True,
-    )
 
 
 def _validate(
@@ -93,11 +80,11 @@ def _validate(
     _ = arguments.write_text(
         data="".join(f'"{argument}"\n' for argument in escaped)
     )
-    _run(
-        arguments=[command[0], f"@{arguments}"],
-        label="Scala execution",
-        workspace=workspace,
-        timeout=timeout,
+    run_bounded_command(
+        args=[command[0], f"@{arguments}"],
+        fixture="Scala execution",
+        timeout_seconds=timeout,
+        cwd=workspace,
     )
 
 

@@ -5,33 +5,12 @@ CI.
 import concurrent.futures
 import os
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
-
-
-def _command(
-    *,
-    arguments: list[str | Path],
-    fixture: Path,
-    phase: str,
-    timeout: float,
-    directory: Path | None,
-) -> None:
-    """Report the original fixture and retain native diagnostics."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments,
-            fixture=f"Go {phase}: {fixture}",
-            timeout_seconds=timeout,
-        ),
-        cwd=directory,
-        check=True,
-    )
+from scripts.bounded_command import run_bounded_command
 
 
 def _run(
@@ -41,12 +20,11 @@ def _run(
     program.
     """
     if phase == "syntax":
-        _command(
-            arguments=[tools["gofmt"], "-e", fixture],
-            fixture=fixture,
-            phase=phase,
-            timeout=timeout,
-            directory=None,
+        run_bounded_command(
+            args=[tools["gofmt"], "-e", fixture],
+            fixture=f"Go {phase}: {fixture}",
+            timeout_seconds=timeout,
+            cwd=None,
         )
         return
     with tempfile.TemporaryDirectory(suffix="-literalizer-go") as directory:
@@ -54,12 +32,11 @@ def _run(
         _ = shutil.copyfile(src=fixture, dst=root / "main.go")
         _ = (root / "go.mod").write_text(data="module fixture\n\ngo 1.18\n")
         for command in ("vet", "run"):
-            _command(
-                arguments=[tools["go"], command, "./..."],
-                fixture=fixture,
-                phase=command,
-                timeout=timeout,
-                directory=root,
+            run_bounded_command(
+                args=[tools["go"], command, "./..."],
+                fixture=f"Go {command}: {fixture}",
+                timeout_seconds=timeout,
+                cwd=root,
             )
 
 

@@ -5,33 +5,12 @@ CI.
 import concurrent.futures
 import os
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
-
-
-def _command(
-    *,
-    arguments: list[str | Path],
-    fixture: Path,
-    phase: str,
-    timeout: float,
-    directory: Path | None,
-) -> None:
-    """Report the original fixture and retain native diagnostics."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments,
-            fixture=f"Swift {phase}: {fixture}",
-            timeout_seconds=timeout,
-        ),
-        cwd=directory,
-        check=True,
-    )
+from scripts.bounded_command import run_bounded_command
 
 
 def _run(
@@ -41,25 +20,24 @@ def _run(
     consumer.
     """
     if phase == "execution":
-        _command(
-            arguments=[
+        run_bounded_command(
+            args=[
                 tools["swift"],
                 "-swift-version",
                 "5",
                 "-warnings-as-errors",
                 fixture,
             ],
-            fixture=fixture,
-            phase=phase,
-            timeout=timeout,
-            directory=None,
+            fixture=f"Swift {phase}: {fixture}",
+            timeout_seconds=timeout,
+            cwd=None,
         )
         return
     with tempfile.TemporaryDirectory(suffix="-literalizer-swift") as directory:
         source = Path(directory) / "check.swift"
         _ = shutil.copyfile(src=fixture, dst=source)
-        _command(
-            arguments=[
+        run_bounded_command(
+            args=[
                 tools["swiftc"],
                 "-swift-version",
                 "5",
@@ -67,10 +45,9 @@ def _run(
                 "-warnings-as-errors",
                 source,
             ],
-            fixture=fixture,
-            phase=phase,
-            timeout=timeout,
-            directory=None,
+            fixture=f"Swift {phase}: {fixture}",
+            timeout_seconds=timeout,
+            cwd=None,
         )
 
 

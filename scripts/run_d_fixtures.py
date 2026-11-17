@@ -5,33 +5,12 @@ CI.
 import concurrent.futures
 import os
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
-
-
-def _command(
-    *,
-    arguments: list[str | Path],
-    fixture: Path,
-    phase: str,
-    timeout: float,
-    directory: Path | None,
-) -> None:
-    """Report the original fixture and retain native diagnostics."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments,
-            fixture=f"D {phase}: {fixture}",
-            timeout_seconds=timeout,
-        ),
-        cwd=directory,
-        check=True,
-    )
+from scripts.bounded_command import run_bounded_command
 
 
 def _run(
@@ -59,20 +38,18 @@ def _run(
             arguments += ["-o-", "-c"]
         else:
             arguments += [f"-of={root / 'run'}", f"-od={root}"]
-        _command(
-            arguments=[*arguments, *sources],
-            fixture=fixture,
-            phase="compile",
-            timeout=timeout,
-            directory=root,
+        run_bounded_command(
+            args=[*arguments, *sources],
+            fixture=f"D {'compile'}: {fixture}",
+            timeout_seconds=timeout,
+            cwd=root,
         )
         if phase == "execution":
-            _command(
-                arguments=[root / "run"],
-                fixture=fixture,
-                phase=phase,
-                timeout=timeout,
-                directory=root,
+            run_bounded_command(
+                args=[root / "run"],
+                fixture=f"D {phase}: {fixture}",
+                timeout_seconds=timeout,
+                cwd=root,
             )
 
 

@@ -1,13 +1,12 @@
 """Share the warm Haxe compiler and include public default modules."""
 
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
+from scripts.bounded_command import run_bounded_command
 
 
 def _stage(*, fixtures: list[Path], workspace: Path) -> list[str]:
@@ -29,19 +28,6 @@ def _stage(*, fixtures: list[Path], workspace: Path) -> list[str]:
     return names
 
 
-def _run(
-    *, arguments: list[str | Path], label: str, workspace: Path, timeout: float
-) -> None:
-    """Bound the native command while retaining compiler diagnostics."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments, fixture=label, timeout_seconds=timeout
-        ),
-        cwd=workspace,
-        check=True,
-    )
-
-
 def _validate(
     *, executable: str, names: list[str], workspace: Path, timeout: float
 ) -> None:
@@ -54,18 +40,11 @@ def _validate(
         + "  }\n}\n"
     )
     _ = (workspace / "Driver.hx").write_text(data=source)
-    _run(
-        arguments=[
-            executable,
-            "-p",
-            workspace,
-            "--main",
-            "Driver",
-            "--interp",
-        ],
-        label="Haxe compile and execution",
-        workspace=workspace,
-        timeout=timeout,
+    run_bounded_command(
+        args=[executable, "-p", workspace, "--main", "Driver", "--interp"],
+        fixture="Haxe compile and execution",
+        timeout_seconds=timeout,
+        cwd=workspace,
     )
 
 

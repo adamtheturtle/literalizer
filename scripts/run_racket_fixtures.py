@@ -5,23 +5,12 @@ artifacts.
 import concurrent.futures
 import os
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
-
-
-def _run(*, arguments: list[str | Path], label: str, timeout: float) -> None:
-    """Label native diagnostics and bound each process."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments, fixture=label, timeout_seconds=timeout
-        ),
-        check=True,
-    )
+from scripts.bounded_command import run_bounded_command
 
 
 def _validate(
@@ -45,14 +34,15 @@ def _validate(
             sources.append(destination)
         if phase == "syntax":
             for start in range(0, len(sources), 256):
-                _run(
-                    arguments=[
+                run_bounded_command(
+                    args=[
                         tools["raco"],
                         "make",
                         *sources[start : start + 256],
                     ],
-                    label=f"Racket compile: {fixtures[start]}",
-                    timeout=timeout,
+                    fixture=f"Racket compile: {fixtures[start]}",
+                    timeout_seconds=timeout,
+                    cwd=None,
                 )
         else:
             with concurrent.futures.ThreadPoolExecutor(
@@ -60,10 +50,11 @@ def _validate(
             ) as executor:
                 futures = [
                     executor.submit(
-                        _run,
-                        arguments=[tools["racket"], source],
-                        label=f"Racket execution: {fixture}",
-                        timeout=timeout,
+                        run_bounded_command,
+                        args=[tools["racket"], source],
+                        fixture=f"Racket execution: {fixture}",
+                        timeout_seconds=timeout,
+                        cwd=None,
                     )
                     for fixture, source in zip(fixtures, sources, strict=True)
                 ]
