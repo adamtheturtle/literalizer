@@ -116,6 +116,48 @@ Add ``--case scalar_int`` to select one input, ``--check syntax`` or ``--check e
 Each command has a 60-second deadline, adjustable with ``--timeout``.
 Missing interpreters and empty selections fail.
 
+Typed native observations
+-------------------------
+
+Run the deterministic semantic checks with Python 3.12+ and Ruby 3+::
+
+    uv run --no-dev --group=roundtrip python -m scripts.run_typed_roundtrip --backend python --report /tmp/typed-python.json
+    uv run --no-dev --group=roundtrip python -m scripts.run_typed_roundtrip --backend ruby --report /tmp/typed-ruby.json
+
+The runner executes existing golden files and independently decodes their authored JSON, YAML or TOML input.
+Native value substitutions come from the case manifest, including exact datetime offsets.
+Expected values never pass through the renderer.
+``scripts/typed_roundtrip_cases.toml`` selects fixture families by inspector capability; every matching version executes.
+Add inputs to a supported group rather than writing a new native script.
+Missing fixtures, duplicate selections and missing observations fail.
+
+``scripts/native_observation.py`` defines the fixed tagged JSON format:
+
+* ``["null"]``, ``["bool", true]`` and ``["string", "text"]`` retain their types.
+* ``["int", "9223372036854775808"]`` carries exact decimal integers.
+* ``["float", "8000000000000000"]`` carries finite binary64 bits in network order, including signed zero; ``nan``, ``+inf`` and ``-inf`` classify special values.
+  NaN payload bits are outside this contract.
+* ``["bytes", "00ff"]`` carries native octets; ``["date", "2024-01-15"]`` carries a Gregorian date.
+* ``["datetime", "2024-01-15T18:00:00.000000", "19800000000"]`` carries wall time and UTC offset in exact microseconds.
+  ``naive`` distinguishes an absent offset from UTC.
+* ``["sequence", [...]]`` retains element order; ``["mapping", [[key, value], ...]]`` retains typed keys and ignores entry order.
+  Duplicate observed keys fail.
+
+Representation equivalences are explicit in each group's contract.
+Lists and tuples share ordered sequence semantics; Python dataclasses project to mappings of field names.
+Default byte output is hexadecimal text; separate groups exercise Base64 text and Python native bytes.
+Ruby native datetimes treat naive input as UTC, while Python retains naive datetimes.
+Epoch groups compare seconds since UTC epoch, using integers for whole seconds and binary64 for fractional seconds; ISO groups compare the authored ISO text.
+Native datetime groups preserve offsets, including fractional offsets in Ruby.
+The Ruby inspector computes local wall time from the exact rational instant plus offset because ``Time#strftime`` alone exposes misleading fractional seconds for fractional offsets.
+
+Each backend batch has a 60-second deadline and failures name their fixture.
+CI publishes the reports listing every observed fixture and every fixture outside this runner's semantic coverage.
+The latter retain existing snapshot, compiler and other native checks; they receive no new typed assertion.
+Other backends remain outside this typed oracle.
+Existing JSON roundtrips and specialized native assertions remain in place because this initial corpus does not cover all of their behavior.
+``tests/runtime/test_typed_observations.py`` executes altered literals to check detection of value, type, sign, precision, byte, key, date and offset corruption.
+
 Native Dart checks
 ------------------
 
