@@ -523,9 +523,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_nix_roundtrip
 
       - name: Lint Tcl
-        run: |-
-          find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl && test -s /tmp/files-tcl
-          xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-tcl
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures tcl
 
       # Driven from `lint-fast` because that is the job where the `tcl`
       # apt package (pinned by the `Install apt packages` step above) is
@@ -589,9 +587,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_dhall_roundtrip
 
       - name: Lint Wren
-        run: |-
-          find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren && test -s /tmp/files-wren
-          xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures wren
 
       # Driven from `lint-fast` because that is the job where the
       # `wren_cli` binary (pinned by the `Install Wren CLI` step above)

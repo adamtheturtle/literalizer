@@ -22,7 +22,7 @@ class _Backend:
 
     executable: str
     extension: str
-    syntax_argument: str
+    syntax_argument: str | None
     # Omitted parser names use the interpreter itself.
     syntax_executable: str | None = None  # noqa: NOD001
     arguments: tuple[str, ...] = ()  # noqa: NOD001 - omitted flags mean no prefix
@@ -50,6 +50,12 @@ _BACKENDS = {
     "javascript": _Backend(
         executable="node", extension=".js", syntax_argument="--check"
     ),
+    "tcl": _Backend(
+        executable="tclsh", extension=".tcl", syntax_argument=None
+    ),
+    "wren": _Backend(
+        executable="wren_cli", extension=".wren", syntax_argument=None
+    ),
 }
 
 
@@ -63,34 +69,28 @@ def _run(*, arguments: list[str], label: str, timeout: float) -> None:
     )
 
 
+def _phase_executable(*, config: _Backend, executable: str, phase: str) -> str:
+    """Resolve a separate syntax parser when the backend requires one."""
+    if phase != "syntax" or config.syntax_executable is None:
+        return executable
+    parser = shutil.which(cmd=config.syntax_executable)
+    if parser is None:
+        raise click.ClickException(
+            message=f"Missing parser: {config.syntax_executable}"
+        )
+    return parser
+
+
 @click.command()
 @click.argument("backend", type=click.Choice(choices=tuple(_BACKENDS)))
-@click.option(
-    "--check",
-    "check_kind",
-    type=click.Choice(choices=("all", "syntax", "execution")),
-    default="all",
-    show_default=True,
-)
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout",
-    type=click.FloatRange(min=0, min_open=True),
-    default=60.0,
-    show_default=True,
-    help="Deadline in seconds for each native command.",
-)
-def main(
-    backend: str,
-    check_kind: str,
-    jobs: int,
-    timeout: float,
-) -> None:
+def main(backend: str) -> None:
     """Validate the selected BACKEND's fixtures, retaining every version.
 
     Syntax checks complete before execution starts. The independently
     authored assertions in consumer programs run unchanged.
     """
+    jobs = os.cpu_count()
+    timeout = 60.0
     config = _BACKENDS[backend]
     fixtures = sorted(
         path for path in _CASES_DIR.rglob(pattern=f"*{config.extension}")
@@ -116,29 +116,23 @@ def main(
             label="Bash V5_1 interpreter floor",
             timeout=timeout,
         )
+    syntax_arguments = (
+        [] if config.syntax_argument is None else [config.syntax_argument]
+    )
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
         for phase in ("syntax", "execution"):
-            if check_kind not in ("all", phase):
+            if phase == "syntax" and config.syntax_argument is None:
                 continue
-            phase_executable = executable
-            if phase == "syntax" and config.syntax_executable is not None:
-                parser = shutil.which(cmd=config.syntax_executable)
-                if parser is None:
-                    raise click.ClickException(
-                        message=f"Missing parser: {config.syntax_executable}"
-                    )
-                phase_executable = parser
+            phase_executable = _phase_executable(
+                config=config, executable=executable, phase=phase
+            )
             futures = [
                 executor.submit(
                     _run,
                     arguments=[
                         phase_executable,
                         *config.arguments,
-                        *(
-                            [config.syntax_argument]
-                            if phase == "syntax"
-                            else []
-                        ),
+                        *(syntax_arguments if phase == "syntax" else []),
                         str(object=fixture),
                     ],
                     label=f"{backend} {phase}: {fixture}",
