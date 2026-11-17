@@ -900,18 +900,15 @@ jobs:
       - name: Install Perl DateTime
         timeout-minutes: 10
         run: cpanm --notest DateTime
-      - name: Lint Perl
-        run: |-
-          find tests/integration/cases -name '*.pl' -print0 > /tmp/files-perl && test -s /tmp/files-perl
-          xargs -0 -P "$(nproc)" -n1 perl -Mstrict=subs -c < /tmp/files-perl
-          xargs -0 -P "$(nproc)" -n1 perl -Mstrict=subs < /tmp/files-perl
-
       - name: Install uv
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+
+      - name: Lint Perl
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures perl
 
       # Basic JSON -> Perl -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the pinned Perl toolchain; `uv run`
