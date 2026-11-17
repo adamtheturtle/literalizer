@@ -39,12 +39,9 @@ The accepted fields and consistency checks are defined in ``case_manifests.py``.
 
 Keep typed failures, incomplete fragments, metadata and concurrency contracts in the directories described by ``../README.rst``.
 A complete generated program belongs here; an executable round-trip case should also compare the reconstructed value with the input.
-An open literal that caller-owned code can complete may use a ``kind = "fragment"`` fixture with ``caller_code_suffix``.
-The suffix is appended directly to the public fragment before public API composition; include a native assertion to check the completed value.
-Use ``fixture.ref_declarations`` to generate literal seed declarations for a fragment that assigns an existing variable.
-The ``incomplete_c_raw_string`` examples in ``cases/call_bound_literal_followup_new`` and ``cases/call_bound_literal_followup_existing`` exercise this boundary.
-The ``incomplete_outer_interpolation`` example in ``cases/call_scalar_result_json_binding`` completes a nested interpolation in the same way.
-These suffixes close intentionally unfinished literals after the generated statement terminator; completing a call transform earlier would lose that regression boundary.
+Native success fixtures should use complete expressions and public composition.
+Keep deliberately incomplete call transforms under ``tests/fragments`` with exact public-output expectations, rather than repairing them with caller-owned suffixes to create a native program.
+The comment-placement lexer is not a target-language syntax validator.
 
 Checking and regenerating
 -------------------------
