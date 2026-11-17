@@ -199,6 +199,7 @@ lint-zig:
 lint-systemverilog:
   - *shared
   - tests/integration/cases/**/*.sv
+  - tests/integration/default_module_names/*.sv
 
 lint-v:
   - *shared
