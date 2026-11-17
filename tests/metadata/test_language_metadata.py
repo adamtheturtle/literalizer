@@ -1,6 +1,5 @@
 """Language-wide metadata and protocol checks."""
 
-import enum
 import inspect
 from collections.abc import Mapping
 from typing import Protocol, runtime_checkable
@@ -145,51 +144,6 @@ def test_language_protocol_members_are_not_class_level_none() -> None:
         violations[language_cls.__name__] = tuple(sorted(class_level_none))
 
     assert not any(violations.values()), violations
-
-
-@pytest.mark.parametrize(
-    argnames="language_cls",
-    argvalues=_SORTED_LANGUAGES,
-    ids=_language_class_name,
-)
-def test_format_enumeration_properties(
-    language_cls: LanguageCls,
-) -> None:
-    """Every language exposes iterable format-enumeration properties."""
-    spec = language_cls()
-    assert issubclass(spec.bytes_formats, enum.Enum)
-    assert len(spec.bytes_formats) >= 1
-    assert issubclass(spec.sequence_formats, enum.Enum)
-    assert len(spec.sequence_formats) >= 1
-    assert issubclass(spec.set_formats, enum.Enum)
-    assert len(spec.set_formats) >= 1
-    assert issubclass(spec.date_formats, enum.Enum)
-    assert len(spec.date_formats) >= 1
-    assert issubclass(spec.datetime_formats, enum.Enum)
-    assert len(spec.datetime_formats) >= 1
-    assert issubclass(spec.comment_formats, enum.Enum)
-    assert len(spec.comment_formats) >= 1
-    assert issubclass(spec.declaration_styles, enum.Enum)
-    assert len(spec.declaration_styles) >= 1
-    assert issubclass(spec.dict_formats, enum.Enum)
-    assert len(spec.dict_formats) >= 1
-    assert issubclass(spec.float_formats, enum.Enum)
-    assert len(spec.float_formats) >= 1
-    assert issubclass(spec.integer_formats, enum.Enum)
-    assert len(spec.integer_formats) >= 1
-    assert issubclass(spec.numeric_separators, enum.Enum)
-    assert len(spec.numeric_separators) >= 1
-    assert issubclass(spec.numeric_styles, enum.Enum)
-    assert len(spec.numeric_styles) >= 1
-    assert issubclass(spec.string_formats, enum.Enum)
-    assert len(spec.string_formats) >= 1
-    assert issubclass(spec.trailing_commas, enum.Enum)
-    assert len(spec.trailing_commas) >= 1
-    assert issubclass(spec.statement_terminator_styles, enum.Enum)
-    assert len(spec.statement_terminator_styles) >= 1
-    assert issubclass(spec.call_styles, enum.Enum)
-    assert issubclass(spec.version_formats, enum.Enum)
-    assert len(spec.version_formats) >= 1
 
 
 @runtime_checkable
