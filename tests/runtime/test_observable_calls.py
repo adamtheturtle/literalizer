@@ -3,6 +3,7 @@ contract.
 """
 
 import dataclasses
+import os
 import shutil
 import subprocess
 import sys
@@ -327,3 +328,51 @@ def test_native_receiver_controls(
             completed.stdout,
             completed.stderr,
         )
+
+
+@pytest.mark.skipif(
+    condition=shutil.which(cmd="dotnet") is None,
+    reason="the .NET host is unavailable",
+)
+def test_native_receiver_skips_without_dotnet_sdk(*, tmp_path: Path) -> None:
+    """A real .NET host without SDKs skips receiver execution."""
+    executable = shutil.which(cmd="dotnet")
+    assert executable is not None
+    original = Path(executable).resolve()
+    # Retain the real host and its resolver, but leave out the SDK directory.
+    isolated = tmp_path / "dotnet"
+    isolated.mkdir()
+    _ = shutil.copy2(src=original, dst=isolated / original.name)
+    _ = shutil.copytree(src=original.parent / "host", dst=isolated / "host")
+    project_root = Path(__file__).resolve().parents[2]
+    completed = subprocess.run(  # noqa: S603 - exercise real pytest and .NET discovery
+        args=[
+            sys.executable,
+            "-m",
+            "coverage",
+            "run",
+            "--parallel-mode",
+            "--rcfile",
+            str(object=project_root / "pyproject.toml"),
+            "-m",
+            "pytest",
+            "--disable-plugin-autoload",
+            "-o",
+            "addopts=",
+            "-q",
+            "-rs",
+            (
+                "tests/runtime/test_observable_calls.py::"
+                "test_native_receiver_controls[fsharp]"
+            ),
+        ],
+        cwd=project_root,
+        env={**os.environ, "PATH": str(object=isolated)},
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr + completed.stdout
+    assert "1 skipped" in completed.stdout
+    assert "the .NET SDK is unavailable" in completed.stdout
