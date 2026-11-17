@@ -21,3 +21,17 @@ axis = "language_version"
 
 [[variants]]
 axis = "type_hints"
+
+[base_context.consumer_templates]
+Python = '''{code}
+# Independent native value checks.
+import datetime as expected_datetime
+assert type(my_data) is expected_datetime.datetime
+assert my_data.isoformat() == '2024-01-15T12:30:00'
+'''
+Ruby = '''{code}
+# Independent native value checks.
+raise "datetime type changed" unless my_data.instance_of?(Time)
+raise "datetime instant changed" unless my_data.to_r == Rational(1705321800000000, 1000000)
+raise "datetime offset changed" unless my_data.utc_offset == 0
+'''

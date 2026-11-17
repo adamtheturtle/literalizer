@@ -4,3 +4,15 @@ suites = ["base"]
 
 [[variants]]
 axis = "integer_width_strategy"
+
+[base_context.consumer_templates]
+Python = '''{code}
+# Independent native value checks.
+assert all(type(key) is int for key in my_data)
+assert my_data == {{99999999999999999999999999: 'tag'}}
+'''
+Ruby = '''{code}
+# Independent native value checks.
+raise "mapping keys or values changed" unless my_data == {{99999999999999999999999999 => "tag"}}
+raise "mapping key type changed" unless my_data.keys.all? {{ |key| key.instance_of?(Integer) }}
+'''

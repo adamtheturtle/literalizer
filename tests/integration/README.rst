@@ -119,6 +119,30 @@ Empty selections fail before execution.
 Native interpreter checks
 -------------------------
 
+Native value assertions belong in the same case manifests and compiling golden files as their inputs.
+Use ``base_context.consumer_templates`` for the base rendering or ``variants.consumer_templates`` for an option variant.
+Templates receive the generated ``code`` and the selected enum option names, such as ``bytes_format`` and ``datetime_format``.
+These names let an assertion check the intended representation's type as well as its value.
+Other languages and variants retain their existing coverage when no consumer is declared.
+
+Expected values must be independent of the renderer.
+The typed scalar, byte and datetime consumers use native type checks and standard-library inspection: binary64 bit patterns, independently constructed byte ranges, Gregorian dates, and exact datetime instants and offsets.
+Python lists and tuples share ordered sequence semantics; record consumers check authored fields and their native types.
+Byte encodings and epoch/ISO conversions follow the explicitly selected option.
+Python native datetimes retain naive values; Ruby represents naive input in UTC.
+Special floats compare by NaN/infinity classification, and finite floats retain their exact bits.
+Existing JSON roundtrips and specialized native assertions retain their distinct contracts.
+
+The ordinary native jobs execute these self-contained files without another runner or transport format.
+``test_native_value_consumers.py`` verifies failures after corrupting generated declarations while leaving their assertions unchanged, using bounded native execution.
+The Python corruption checks run with the regular pytest suite.
+Run the Ruby checks with Ruby 3 or later on ``PATH``::
+
+    LITERALIZER_TEST_RUBY=1 uv run --no-dev --group=test python -m pytest -n 0 tests/integration/test_native_value_consumers.py -k ruby
+
+Successful execution of the original programs remains with the existing native jobs.
+Fixtures without native assertions retain their existing snapshot, compiler and native checks.
+
 After installing Bash 5.1+, Ruby or Node, run the same fixture checks as CI::
 
     uv run --only-group=cli python -m scripts.run_interpreted_fixtures bash

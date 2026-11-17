@@ -147,6 +147,9 @@ class RenderContext(  # noqa: NOD001
     variable_form: manifest_values.VariableFormName = "new"
     variable_name: str = "my_data"
     collection_layout: CollectionLayoutName | None = None
+    consumer_templates: dict[manifest_values.ManifestLanguage, str] = Field(
+        default_factory=dict[literalizer.LanguageCls, str]
+    )
     pre_indent_level: Annotated[int, Field(ge=0)] = 0
     record_null_substitutions: Mapping[str, ValueInput] | None = None
     record_null_mapping_substitutions: dict[

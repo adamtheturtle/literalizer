@@ -33,3 +33,20 @@ axis = "language_version"
 
 [[variants]]
 axis = "sequence"
+
+[base_context.consumer_templates]
+Python = '''{code}
+# Independent native value checks.
+import math
+assert isinstance(my_data, (list, tuple))
+assert all(type(value) is float for value in my_data)
+assert len(my_data) == 3
+assert math.isinf(my_data[0]) and my_data[0] > 0
+assert math.isinf(my_data[1]) and my_data[1] < 0
+assert math.isnan(my_data[2])
+'''
+Ruby = '''{code}
+# Independent native value checks.
+raise "special float types changed" unless my_data.size == 3 && my_data.all? {{ |value| value.instance_of?(Float) }}
+raise "special float classes changed" unless my_data[0].infinite? == 1 && my_data[1].infinite? == -1 && my_data[2].nan?
+'''
