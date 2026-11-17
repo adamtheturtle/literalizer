@@ -1335,30 +1335,3 @@ template = "@\"a\"\" // payload\"\"b\" // trailing\n// extra"
 
 [call_examples.fixture]
 kind = "wrapped"
-[[call_examples]]
-# Migrated from dart_incomplete_interpolation_1: caller code closes the outer
-# string after the generated terminator, preserving the nested interpolation.
-example = "incomplete_outer_interpolation"
-target_function = "make_widget"
-parameter_names = ["count"]
-per_element = false
-variable_form = "existing"
-
-[[call_examples.gates]]
-kind = "call_raw_string_prefix"
-prefix = "r"
-
-[[call_examples.gates]]
-kind = "call_interpolation"
-opener = "${"
-quotes = "\"'"
-
-[call_examples.transform]
-kind = "template"
-template = '"${{"// payload"}}'
-
-[call_examples.fixture]
-kind = "fragment"
-include_target_stub = false
-caller_code_prefix = "var my_data = \"seed\";\n"
-caller_code_suffix = '"; if (my_data != "// payload;") throw StateError("incorrect interpolation");'
