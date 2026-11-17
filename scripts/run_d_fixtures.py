@@ -77,14 +77,8 @@ def _run(
 
 
 @click.command()
-@click.option(
-    "--check",
-    "check_kind",
-    type=click.Choice(choices=("all", "syntax", "execution")),
-    default="all",
-)
 @click.option("--compiler", type=str, default="dmd", envvar="DC")
-def main(*, check_kind: str, compiler: str) -> None:
+def main(*, compiler: str) -> None:
     """Validate selected fixtures with isolated temporary compiler
     output.
     """
@@ -110,8 +104,6 @@ def main(*, check_kind: str, compiler: str) -> None:
         tools[name] = executable
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
         for phase in ("syntax", "execution"):
-            if check_kind not in {"all", phase}:
-                continue
             futures = [
                 executor.submit(
                     _run,

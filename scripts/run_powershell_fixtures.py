@@ -13,13 +13,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 
 
 @click.command()
-@click.option(
-    "--check",
-    "check_kind",
-    type=click.Choice(choices=("all", "syntax", "execution")),
-    default="all",
-)
-def main(*, check_kind: str) -> None:
+def main() -> None:
     """Select a case or validate the complete native fixture corpus."""
     timeout = 600.0
     fixtures = sorted(
@@ -38,8 +32,6 @@ def main(*, check_kind: str) -> None:
         ("syntax", "lint-powershell.ps1"),
         ("execution", "run-powershell.ps1"),
     ):
-        if check_kind not in ("all", phase):
-            continue
         _ = subprocess.run(
             args=bounded_command(
                 args=[

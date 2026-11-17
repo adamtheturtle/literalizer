@@ -72,13 +72,7 @@ def _validate(
 
 
 @click.command()
-@click.option(
-    "--check",
-    "check_kind",
-    type=click.Choice(choices=("all", "syntax", "execution")),
-    default="all",
-)
-def main(*, check_kind: str) -> None:
+def main() -> None:
     """Run the same native phases locally and in CI."""
     jobs = os.cpu_count()
     timeout = 600.0
@@ -96,14 +90,13 @@ def main(*, check_kind: str) -> None:
             )
         tools[name] = executable
     for phase in ("syntax", "execution"):
-        if check_kind in {"all", phase}:
-            _validate(
-                fixtures=fixtures,
-                tools=tools,
-                phase=phase,
-                jobs=jobs,
-                timeout=timeout,
-            )
+        _validate(
+            fixtures=fixtures,
+            tools=tools,
+            phase=phase,
+            jobs=jobs,
+            timeout=timeout,
+        )
 
 
 if __name__ == "__main__":

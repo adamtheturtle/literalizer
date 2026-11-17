@@ -466,14 +466,9 @@ jobs:
       # The run step reuses the same trick: one pwsh process iterates
       # every fixture, executing its script block in a child scope so
       # `$my_data` (and anything else) does not leak between fixtures.
+
       - name: Lint PowerShell
-        run: uv run --only-group=cli python -m scripts.run_powershell_fixtures --check
-          syntax
-
-      - name: Run PowerShell files
-        run: uv run --only-group=cli python -m scripts.run_powershell_fixtures --check
-          execution
-
+        run: uv run --only-group=cli python -m scripts.run_powershell_fixtures
       # Basic JSON -> PowerShell -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the PowerShell toolchain; `uv
       # run` (project mode, not `--no-project`) is required so `import
@@ -1610,23 +1605,15 @@ jobs:
       # because each Gleam invocation boots the BEAM VM (~1s) and that
       # startup cost -- not the per-fixture compile work -- dominated the
       # old per-file parallel approach.
-      - name: Lint Gleam
-        timeout-minutes: 5
-        env:
-          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: uv run --only-group=cli python -m scripts.run_gleam_fixtures --check
-          syntax
 
       # All ~350 fixtures are run in a single `gleam run` invocation; the
       # script generates a runner module that calls each fixture's `main`
       # in sequence. See the check step for the BEAM-startup rationale.
-      - name: Run Gleam files
-        timeout-minutes: 5
+      - name: Lint Gleam
+        timeout-minutes: 10
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: uv run --only-group=cli python -m scripts.run_gleam_fixtures --check
-          execution
-
+        run: uv run --only-group=cli python -m scripts.run_gleam_fixtures
       # Basic JSON -> Gleam -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Gleam toolchain and the primed
       # project (with `gleam_json` already downloaded) on disk; `uv run`
@@ -1695,14 +1682,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+
       - name: Lint Clojure
-        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures --check
-          syntax
-
-      - name: Run Clojure files
-        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures --check
-          execution
-
+        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures
       # Parse and run every fixture inside a single Groovy JVM via
       # GroovyShell, so the compiler stays warm across iterations
       # instead of cold-starting groovyc/groovy per file. A fresh
@@ -2368,14 +2350,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Check Swift syntax
-        run: uv run --only-group=cli python -m scripts.run_swift_fixtures --check
-          syntax
 
-      - name: Run Swift files
-        run: uv run --only-group=cli python -m scripts.run_swift_fixtures --check
-          execution
-
+      - name: Lint Swift
+        run: uv run --only-group=cli python -m scripts.run_swift_fixtures
       # `uv` is needed by the `Swift roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Swift -> JSON round-trip (issue 1867). Runs here
@@ -2427,9 +2404,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Check OCaml syntax
-        run: uv run --only-group=cli python -m scripts.run_ocaml_fixtures --check
-          syntax
 
       # Fixtures only declare ``module Check = struct ... end`` with a
       # ``my_data`` let-binding; OCaml evaluates struct bodies when the
@@ -2437,10 +2411,8 @@ jobs:
       # the binding's right-hand side to execute.  A small prelude
       # loads ``yojson`` via findlib so the ``Yojson.Safe.t`` json_type
       # fixtures resolve in script mode too.
-      - name: Run OCaml files
-        run: uv run --only-group=cli python -m scripts.run_ocaml_fixtures --check
-          execution
-
+      - name: Lint OCaml
+        run: uv run --only-group=cli python -m scripts.run_ocaml_fixtures
       # ``uv`` is needed by the ``OCaml roundtrip`` step below; it runs
       # the helper in project mode so ``import literalizer`` resolves.
       # Basic JSON -> OCaml -> JSON round-trip (issue 1867). Runs here
@@ -2741,16 +2713,13 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Check Go syntax
-        run: uv run --only-group=cli python -m scripts.run_go_fixtures --check syntax
 
       # `go 1.18` in the generated go.mod matches `Go.language_version`
       # in `src/literalizer/languages/go.py`; keep them in sync. `go vet`
       # and `go run` honour the module's `go` directive when invoked on
       # a file inside a module, so wrap each fixture in a tmpdir module.
-      - name: Check Go compilation and run
-        run: uv run --only-group=cli python -m scripts.run_go_fixtures --check execution
-
+      - name: Lint Go
+        run: uv run --only-group=cli python -m scripts.run_go_fixtures
       # `uv` is needed by the `Go roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Go -> JSON round-trip (issue 1867). Runs here
@@ -2955,15 +2924,12 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Check D syntax
-        run: uv run --only-group=cli python -m scripts.run_d_fixtures --check syntax
 
       # Each fixture defines its own main, so compile and run directly.
       # Each invocation gets a private tmpdir so parallel builds don't
       # clobber each other's intermediate object files or output binary.
-      - name: Run D files
-        run: uv run --only-group=cli python -m scripts.run_d_fixtures --check execution
-
+      - name: Lint D
+        run: uv run --only-group=cli python -m scripts.run_d_fixtures
       # `uv` is needed by the `D roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       # Basic JSON -> D -> JSON round-trip (issue 1867). Runs here
@@ -3314,14 +3280,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Check Racket syntax
-        run: uv run --only-group=cli python -m scripts.run_racket_fixtures --check
-          syntax
 
-      - name: Run Racket files
-        run: uv run --only-group=cli python -m scripts.run_racket_fixtures --check
-          execution
-
+      - name: Lint Racket
+        run: uv run --only-group=cli python -m scripts.run_racket_fixtures
       # `uv` is needed by the `Racket roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Racket -> JSON round-trip (issue 1867). Runs here
