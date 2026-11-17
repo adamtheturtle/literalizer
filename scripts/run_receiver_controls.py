@@ -3,13 +3,13 @@ contract.
 """
 
 import dataclasses
-import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
-import pytest
+import click
 
 import literalizer
 from literalizer.exceptions import CallArgNotSupportedError
@@ -204,9 +204,9 @@ def _program(*, spec: literalizer.Language, control: str) -> str:
 
 
 def _control_programs(
-    *, lang_cls: literalizer.LanguageCls, tmp_path: Path
+    *, lang_cls: literalizer.LanguageCls, root: Path
 ) -> list[tuple[str, Path, str]]:
-    """Render every control before checking local tool availability."""
+    """Render every positive and mutation control for one language."""
     spec = make_spec(lang_cls=lang_cls)
     styles = find_redefinition_styles(spec=spec)
     spec = dataclasses.replace(
@@ -225,7 +225,7 @@ def _control_programs(
         "binding",
         "wrong_binding",
     ):
-        directory = tmp_path / control
+        directory = root / control
         directory.mkdir()
         # The source filename must match the public class name where required.
         # Other backends need an identifier filename without a version tag.
@@ -240,44 +240,25 @@ def _control_programs(
         except CallArgNotSupportedError:
             # Some free-function consumers reject reference arguments in
             # the public API. Retain that boundary without supplying hints.
-            assert control in {"binding", "wrong_binding"}
+            if control not in {"binding", "wrong_binding"}:
+                raise
             continue
         _ = path.write_text(data=program, encoding="utf-8")
         programs.append((control, path, module_name))
     return programs
 
 
-@pytest.mark.parametrize(
-    argnames="lang_cls",
-    argvalues=[
-        cls
-        for cls in sorted_languages()
-        if cls.supports_stateful_free_call_consumers
-    ],
-    ids=lambda cls: cls.language_id,
-)
-def test_native_receiver_controls(
-    *, lang_cls: literalizer.LanguageCls, tmp_path: Path
-) -> None:
+def _run_controls(*, lang_cls: literalizer.LanguageCls, root: Path) -> None:
     """Valid calls pass; six behavior mutations fail in the native runtime."""
-    programs = _control_programs(lang_cls=lang_cls, tmp_path=tmp_path)
+    programs = _control_programs(lang_cls=lang_cls, root=root)
     syntax = integer_receiver_syntax()[lang_cls.language_id]
     command = syntax.compile if len(syntax.compile) > 0 else syntax.execute
     executable = command[0].format(python=sys.executable)
     resolved_executable = shutil.which(cmd=executable)
     if resolved_executable is None:
-        pytest.skip(reason=f"{executable} is unavailable")
-    if executable == "dotnet":
-        sdks = subprocess.run(  # noqa: S603 - inspect the selected native tool
-            args=[resolved_executable, "--list-sdks"],
-            capture_output=True,
-            text=True,
-            check=True,
+        raise click.ClickException(
+            message=f"Missing required tool: {executable}"
         )
-        if len(sdks.stdout.strip()) == 0:
-            pytest.skip(reason="the .NET SDK is unavailable")
-    if lang_cls.language_id == "objective_c" and sys.platform != "darwin":
-        pytest.skip(reason="Foundation execution requires macOS")
     for control, path, module_name in programs:
         directory = path.parent
         fields = {
@@ -286,10 +267,10 @@ def test_native_receiver_controls(
             "output": str(object=directory / "run.exe"),
             "directory": str(object=directory),
             "module_name": module_name,
-            "repository": str(object=Path(__file__).parents[2]),
+            "repository": str(object=Path(__file__).resolve().parents[1]),
         }
         if len(syntax.compile) > 0:
-            built = subprocess.run(  # noqa: S603 - execute repository-owned native receivers
+            built = subprocess.run(
                 args=[
                     resolved_executable,
                     *(arg.format(**fields) for arg in syntax.compile[1:]),
@@ -300,19 +281,24 @@ def test_native_receiver_controls(
                 check=False,
                 cwd=directory,
             )
-            assert built.returncode == 0, built.stderr + built.stdout
+            if built.returncode != 0:
+                raise click.ClickException(
+                    message=f"{lang_cls.language_id}/{control}: "
+                    + built.stderr
+                    + built.stdout
+                )
             execution = [arg.format(**fields) for arg in syntax.execute]
         else:
             execution = [
                 resolved_executable,
                 *(arg.format(**fields) for arg in syntax.execute[1:]),
             ]
-        completed = subprocess.run(  # noqa: S603 - execute repository-owned native receivers
+        completed = subprocess.run(
             args=execution,
             input=str(object=path) + "\0" if syntax.path_on_stdin else None,
             capture_output=True,
             text=True,
-            # Allow cold runtime startup on hosted Windows workers.
+            # Allow cold runtime startup on hosted workers.
             timeout=180,
             check=False,
             cwd=directory,
@@ -323,56 +309,44 @@ def test_native_receiver_controls(
             "zipped",
             "binding",
         }
-        assert (completed.returncode == 0) is expected_success, (
-            control,
-            completed.stdout,
-            completed.stderr,
-        )
+        if (completed.returncode == 0) is not expected_success:
+            raise click.ClickException(
+                message=(
+                    f"{lang_cls.language_id}/{control}: expected "
+                    f"{'success' if expected_success else 'failure'}, "
+                    f"got exit {completed.returncode}\n"
+                    + completed.stdout
+                    + completed.stderr
+                )
+            )
+        click.echo(message=f"{lang_cls.language_id}/{control}: passed")
 
 
-@pytest.mark.skipif(
-    condition=shutil.which(cmd="dotnet") is None,
-    reason="the .NET host is unavailable",
+_LANGUAGES = {
+    cls.language_id: cls
+    for cls in sorted_languages()
+    if cls.supports_stateful_free_call_consumers
+}
+
+
+@click.command()
+@click.argument(
+    "languages",
+    nargs=-1,
+    type=click.Choice(choices=tuple(_LANGUAGES)),
+    required=True,
 )
-def test_native_receiver_skips_without_dotnet_sdk(*, tmp_path: Path) -> None:
-    """A real .NET host without SDKs skips receiver execution."""
-    executable = shutil.which(cmd="dotnet")
-    assert executable is not None
-    original = Path(executable).resolve()
-    # Retain the real host and its resolver, but leave out the SDK directory.
-    isolated = tmp_path / "dotnet"
-    isolated.mkdir()
-    _ = shutil.copy2(src=original, dst=isolated / original.name)
-    _ = shutil.copytree(src=original.parent / "host", dst=isolated / "host")
-    project_root = Path(__file__).resolve().parents[2]
-    completed = subprocess.run(  # noqa: S603 - exercise real pytest and .NET discovery
-        args=[
-            sys.executable,
-            "-m",
-            "coverage",
-            "run",
-            "--parallel-mode",
-            "--rcfile",
-            str(object=project_root / "pyproject.toml"),
-            "-m",
-            "pytest",
-            "--disable-plugin-autoload",
-            "-o",
-            "addopts=",
-            "-q",
-            "-rs",
-            (
-                "tests/runtime/test_observable_calls.py::"
-                "test_native_receiver_controls[fsharp]"
-            ),
-        ],
-        cwd=project_root,
-        env={**os.environ, "PATH": str(object=isolated)},
-        capture_output=True,
-        text=True,
-        timeout=180,
-        check=False,
-    )
-    assert completed.returncode == 0, completed.stderr + completed.stdout
-    assert "1 skipped" in completed.stdout
-    assert "the .NET SDK is unavailable" in completed.stdout
+def main(*, languages: tuple[str, ...]) -> None:
+    """Execute receiver controls with each selected native toolchain.
+
+    Missing compilers, runtimes, SDKs and platform support are failures.
+    """
+    for language in languages:
+        with tempfile.TemporaryDirectory(
+            suffix="-literalizer-receivers"
+        ) as directory:
+            _run_controls(lang_cls=_LANGUAGES[language], root=Path(directory))
+
+
+if __name__ == "__main__":
+    main()

@@ -199,7 +199,7 @@ verify = '''static void verify_events() {{ if (eventIndex != {count}) throw new 
 wrapper_unary = '''static void {wrapper}(int {parameter}) {{ ObserveEvent(2); ObserveEvent({parameter}); }}'''
 
 [d]
-compile = ["ldc2", "-w", "{source}", "-of={output}"]
+compile = ["dmd", "-w", "{source}", "-of={output}"]
 execute = ["{output}"]
 scope = "file_scope"
 state = '''int eventIndex;
@@ -441,7 +441,7 @@ wrapper_unary = '''let {wrapper} = |{parameter}: i32| {{ observe_event(2); obser
 
 [scala]
 compile = []
-execute = ["scala", "run", "--server=false", "{source}"]
+execute = ["scala-cli", "run", "--server=false", "{source}"]
 scope = "body"
 state = '''private val expectedEvents = List({events})
 private var eventIndex = 0

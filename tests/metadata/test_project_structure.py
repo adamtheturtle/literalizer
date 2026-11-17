@@ -1,7 +1,8 @@
 """Meta-tests for project structure and CI configuration."""
 
+import shlex
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 import pytest
 from pydantic import AliasPath, BaseModel, Field
@@ -18,7 +19,14 @@ class _NamedLintStep(BaseModel):
     name: str
 
 
-type _LintStep = _NamedLintStep | dict[str, object]
+class _ReceiverControlStep(BaseModel):
+    """Native receiver invocation owned by a provisioned toolchain job."""
+
+    name: Literal["Native receiver controls"]
+    run: str
+
+
+type _LintStep = _ReceiverControlStep | _NamedLintStep | dict[str, object]
 
 
 class _LintJob(BaseModel):
@@ -93,6 +101,25 @@ def test_all_lint_jobs_in_completion_gate(
 
     lint_jobs = {jid for jid in job_ids if jid.startswith("lint-")}
     assert lint_jobs <= completion_needs
+
+
+def test_every_receiver_language_has_native_execution(
+    lint_workflow: _LintWorkflow,
+) -> None:
+    """Every receiver backend runs once without relying on tool skips."""
+    languages: list[str] = []
+    for job in lint_workflow.jobs.values():
+        for step in job.steps:
+            if isinstance(step, _ReceiverControlStep):
+                command = shlex.split(s=step.run)
+                module = command.index("scripts.run_receiver_controls")
+                languages.extend(command[module + 1 :])
+    assert len(languages) == len(set(languages))
+    assert set(languages) == {
+        cls.language_id
+        for cls in ALL_LANGUAGES
+        if cls.supports_stateful_free_call_consumers
+    }
 
 
 def test_every_language_declares_the_explicit_attributes() -> None:

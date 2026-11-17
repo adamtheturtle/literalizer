@@ -150,6 +150,11 @@ benchmark = [
 cli = [ "click==8.5.1" ]
 # Python parsers used by the corresponding native checks and round trips.
 norg = [ "tree-sitter==0.26.1" ]
+# Receiver controls reuse the golden-suite rendering helpers.
+receiver = [
+    { include-group = "roundtrip" },
+    "beartype==0.23.1",
+]
 release = [
     "check-wheel-contents==0.6.3",
     "towncrier==26.9.0",
