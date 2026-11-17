@@ -24,8 +24,8 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import Language, LiteralizeResult
 
+from .fixture_names import fixture_module_name
 from .language_metadata import language_metadata
-from .language_specs import fixture_module_name
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

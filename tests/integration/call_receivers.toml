@@ -422,6 +422,7 @@ verify = '''sub verify_events() {{ die "missing receiver events" unless $event_i
 wrapper_unary = '''sub {wrapper}(Int ${parameter}) {{ observe_event(2); observe_event(${parameter}) }}'''
 
 [rust]
+compile_timeout_seconds = 180
 compile = ["rustc", "--edition=2021", "-Dwarnings", "--crate-name", "receiver", "{source}", "-o", "{output}"]
 execute = ["{output}"]
 scope = "body"
