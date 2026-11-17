@@ -80,46 +80,20 @@ def _phase_executable(*, config: _Backend, executable: str, phase: str) -> str:
 
 @click.command()
 @click.argument("backend", type=click.Choice(choices=tuple(_BACKENDS)))
-@click.option(
-    "--case", "case_name", type=str, help="Select one case directory."
-)
-@click.option(
-    "--check",
-    "check_kind",
-    type=click.Choice(choices=("all", "syntax", "execution")),
-    default="all",
-    show_default=True,
-)
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout",
-    type=click.FloatRange(min=0, min_open=True),
-    default=60.0,
-    show_default=True,
-    help="Deadline in seconds for each native command.",
-)
-def main(
-    backend: str,
-    case_name: str | None,
-    check_kind: str,
-    jobs: int,
-    timeout: float,
-) -> None:
+def main(backend: str) -> None:
     """Validate the selected BACKEND's fixtures, retaining every version.
 
     Syntax checks complete before execution starts. The independently
     authored assertions in consumer programs run unchanged.
     """
+    jobs = os.cpu_count()
+    timeout = 60.0
     config = _BACKENDS[backend]
     fixtures = sorted(
-        path
-        for path in _CASES_DIR.rglob(pattern=f"*{config.extension}")
-        if case_name is None or path.parent.name == case_name
+        path for path in _CASES_DIR.rglob(pattern=f"*{config.extension}")
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No {backend} fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message=f"No {backend} fixtures.")
     executable = shutil.which(cmd=config.executable)
     if executable is None:
         raise click.ClickException(
@@ -144,13 +118,7 @@ def main(
     )
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
         for phase in ("syntax", "execution"):
-            if check_kind not in ("all", phase):
-                continue
             if phase == "syntax" and config.syntax_argument is None:
-                if check_kind == "syntax":
-                    raise click.ClickException(
-                        message=f"{backend} has no separate syntax check."
-                    )
                 continue
             phase_executable = _phase_executable(
                 config=config, executable=executable, phase=phase
