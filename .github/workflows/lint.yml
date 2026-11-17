@@ -669,15 +669,7 @@ jobs:
       # ``-std=c99`` matches ``C.language_version`` in
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Lint C
-        run: |-
-          find tests/integration/cases -name '*.c' -print0 > /tmp/files-c && test -s /tmp/files-c
-          cat > /tmp/run-c.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          clang -std=c99 -Werror "$1" -o "$tmpdir/run" -lcjson || exit 1
-          "$tmpdir/run" || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-c.sh < /tmp/files-c
+        run: uv run --only-group=cli python -m scripts.run_c_fixtures
 
       # Basic JSON -> C -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the C toolchain (``clang``) set up
@@ -1990,7 +1982,7 @@ jobs:
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files
         run: |-
-          find tests/integration/cases -name '*.c' -print0 > /tmp/files-c-tidy && test -s /tmp/files-c-tidy
+          find tests/integration/cases tests/integration/default_module_names -name '*.c' -print0 > /tmp/files-c-tidy && test -s /tmp/files-c-tidy
           xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
   build-cpp-toolchain:
