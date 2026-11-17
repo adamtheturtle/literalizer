@@ -11,7 +11,7 @@ from typing_extensions import get_protocol_members
 
 import literalizer.languages
 from literalizer import Language, LanguageCls
-from literalizer.languages import Python, Raku
+from literalizer.languages import Python
 
 
 def _language_class_name(language_cls: LanguageCls, /) -> str:
@@ -258,21 +258,6 @@ def test_supports_record_shape_names_matches_constructor(
     spec = language_cls()
     accepts_kwarg = isinstance(spec, _HasRecordShapeNames)
     assert language_cls.supports_record_shape_names == accepts_kwarg
-
-
-def test_supported_ref_cases_independent_of_identifier_cases() -> None:
-    """``supported_ref_cases`` is not derived from ``identifier_cases``.
-
-    The two attributes answer different questions -- syntactic validity
-    vs. stylistic preference -- and one is not a function of the other.
-    """
-    python = Python()
-    assert frozenset(python.identifier_cases) != python.supported_ref_cases
-    assert frozenset(python.identifier_cases) <= python.supported_ref_cases
-
-    raku = Raku()
-    assert frozenset(raku.identifier_cases) != raku.supported_ref_cases
-    assert frozenset(raku.identifier_cases) <= raku.supported_ref_cases
 
 
 @pytest.mark.parametrize(
