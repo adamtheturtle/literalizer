@@ -78,6 +78,7 @@ lint-elixir:
 lint-erlang:
   - *shared
   - tests/integration/cases/**/*.erl
+  - tests/integration/default_module_names/*.erl
 
 lint-gleam:
   - *shared
