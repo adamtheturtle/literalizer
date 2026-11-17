@@ -578,9 +578,7 @@ jobs:
       # default binding (`src/literalizer/languages/forth_prelude.fs`)
       # is exercised end-to-end by the `Forth roundtrip` step below.
       - name: Lint Forth
-        run: |-
-          find tests/integration/cases -name '*.fth' -print0 > /tmp/files-forth && test -s /tmp/files-forth
-          xargs -0 -P "$(nproc)" -I{} gforth scripts/forth_visitor_lint.fs {} -e bye < /tmp/files-forth
+        run: uv run --only-group=cli python -m scripts.run_forth_fixtures
 
       # Basic JSON -> Forth -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `gforth` toolchain on PATH;
