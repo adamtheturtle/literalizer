@@ -1,15 +1,8 @@
-"""The language facts a declared golden case or variant axis gates on.
+"""Language predicates that golden case manifests can declare.
 
-:mod:`tests.language_gates` owns the gates that read a language class
-or the spec it builds, which the error suite shares.  The rest are the
-golden suite's own: they read the test-owned language metadata, a
-spec's nested format configuration, or a rendering behavior of the
-strategy a spec selects.  Both halves make one union here, so a case
-manifest and an axis plan gate on the same vocabulary and every name
-either of them uses is checked against the same registry.
-
-A gate names a property rather than a language, so a selection that
-follows from a property stays right when a language gains or loses it.
+:mod:`tests.language_gates` owns the gates shared with the error suite.
+Golden case manifests may also select on test-owned language metadata,
+nested format configuration and rendering behavior.
 """
 
 from collections.abc import Callable, Mapping, Sequence
@@ -81,10 +74,7 @@ METADATA_FIELDS: Mapping[str, Callable[[LanguageMetadata], str | None]] = {
     ),
 }
 
-# Rendering behaviors a strategy either has or has not.  A gate reads
-# one from the spec the caller supplies, and an axis override picks the
-# option member whose spec has it; the flag is named here once so
-# neither spells it itself.
+# Rendering behaviors a case manifest can require of a strategy.
 BEHAVIOR_FLAGS: Mapping[str, Callable[[literalizer.Language], bool]] = {
     "declaration_disallows_redefinition": (
         lambda spec: (
@@ -108,8 +98,7 @@ BEHAVIOR_FLAGS: Mapping[str, Callable[[literalizer.Language], bool]] = {
     ),
 }
 
-# Optional fields on a spec's nested format configuration, which a
-# language either declares a value for or leaves unset.
+# Optional fields in the nested format configuration of a spec.
 SPEC_CONFIG_FIELDS: Mapping[str, Callable[[literalizer.Language], object]] = {
     "dict_format_config.narrowed_empty_form": (
         lambda spec: spec.dict_format_config.narrowed_empty_form
@@ -198,10 +187,7 @@ class BehaviorFlagGate(
 ):
     """Admit languages whose selected strategy sets a behavior flag.
 
-    Unlike every other gate, this one reads a spec the caller builds
-    rather than one the language alone decides: an axis passes the spec
-    its overrides select, and a case, which selects languages rather
-    than specs, passes the language default.
+    Case selection supplies the language's default spec.
     """
 
     kind: Literal["behavior_flag"]

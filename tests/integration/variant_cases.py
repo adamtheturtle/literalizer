@@ -4,9 +4,8 @@ Each :class:`Variant` pairs a language class with a specific
 non-default formatter spec; each :class:`VariantCase` pairs a variant
 with one of the input case directories under ``tests/integration/cases``.
 
-Axes declare their expansion in ``axes.toml`` and are built by the
-typed plans in :mod:`variant_plans`.  What remains
-here is the assembly of variants and manifest inputs into cases.
+Axis builders in :mod:`variant_axes` expand language options. This module
+pairs their variants with manifest inputs and builds contextual cases.
 """
 
 import dataclasses
@@ -19,6 +18,7 @@ from beartype import beartype
 
 import literalizer
 
+from .axis_builders import AxisError, sequence_format_override
 from .case_discovery import cases_with_special_floats
 from .case_manifests import (
     CaseManifestError,
@@ -34,13 +34,9 @@ from .language_specs import (
     make_spec,
     sorted_languages,
 )
+from .variant_axes import AXES
 from .variant_axis_names import SPECIAL_VARIANT_AXES
 from .variant_metadata_builders import build_modifier_variant_cases
-from .variant_plans import (
-    declared_axis_names,
-    sequence_format_override,
-    variants_for_declared_axis,
-)
 from .variant_types import (
     Variant,
     VariantCase,
@@ -189,10 +185,7 @@ def build_multiline_string_context_cases(
     same valid class-scope context used by the dedicated pre-indent suite.
     """
     cases: list[VariantCase] = []
-    for base_variant in variants_for_declared_axis(
-        axis_key="multiline_string",
-        resolve_axis=variants_for_axis,
-    ):
+    for base_variant in variants_for_axis(axis_key="multiline_string"):
         spec = base_variant.spec
         redefinition_styles = find_redefinition_styles(spec=spec)
         if len(redefinition_styles) > 0:
@@ -246,48 +239,18 @@ def build_multiline_string_context_cases(
     return cases
 
 
-@beartype
-def check_axis_coverage(
-    *,
-    declared: frozenset[str],
-    special: frozenset[str],
-) -> None:
-    """Fail when an axis resolves to more than one expansion.
-
-    Every axis name the case manifests may use comes from exactly one of
-    the two registries, so an axis registered twice would silently
-    expand through whichever one :func:`variants_for_axis` consults
-    first.
-    """
-    contextual = sorted(special & declared)
-    if len(contextual) > 0:
-        msg = (
-            "variant axes are declared as special axes in axes.toml and also "
-            f"expand as ordinary ones: {contextual}"
-        )
-        raise CaseManifestError(msg)
-
-
-check_axis_coverage(
-    declared=declared_axis_names(),
-    special=SPECIAL_VARIANT_AXES,
-)
-
-
+@functools.cache
 @beartype
 def variants_for_axis(*, axis_key: str) -> list[Variant]:
-    """Return the variants for an axis key.
-
-    Custom spec operations and typed plans share the same resolver,
-    including when a call or reference case selects the axis.
-    """
+    """Resolve the same axis for literal, call and reference cases."""
+    build = AXES.get(axis_key)
+    if build is not None:
+        return list(build())
     custom = variants_for_custom_language_axis(axis_key=axis_key)
     if len(custom) > 0:
         return custom
-    return variants_for_declared_axis(
-        axis_key=axis_key,
-        resolve_axis=variants_for_axis,
-    )
+    msg = f"no expansion registered for variant axis {axis_key!r}"
+    raise AxisError(msg)
 
 
 @beartype
@@ -570,7 +533,7 @@ def group_variant_cases_by_language() -> dict[
     The test takes the language as its only pytest axis and iterates
     that language's cases inside the test body with ``subtests``.
     Folding ~2000 cases into ~30 cuts collection and per-test overhead
-    on slower CI runners (notably Windows).
+    on slower workflow runners (notably Windows).
     """
     groups: dict[literalizer.LanguageCls, list[VariantCase]] = {}
     for case in build_variant_cases():
