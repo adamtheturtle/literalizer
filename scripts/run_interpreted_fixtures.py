@@ -55,14 +55,7 @@ def _run(*, arguments: list[str], label: str, timeout: float) -> None:
 
 @click.command()
 @click.argument("backend", type=click.Choice(choices=tuple(_BACKENDS)))
-@click.option(
-    "--check",
-    "check_kind",
-    type=click.Choice(choices=("all", "syntax", "execution")),
-    default="all",
-    show_default=True,
-)
-def main(backend: str, check_kind: str) -> None:
+def main(backend: str) -> None:
     """Validate the selected BACKEND's fixtures, retaining every version.
 
     Syntax checks complete before execution starts. The independently
@@ -97,8 +90,6 @@ def main(backend: str, check_kind: str) -> None:
         )
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
         for phase in ("syntax", "execution"):
-            if check_kind not in ("all", phase):
-                continue
             phase_executable = executable
             if phase == "syntax" and config.syntax_executable is not None:
                 parser = shutil.which(cmd=config.syntax_executable)
