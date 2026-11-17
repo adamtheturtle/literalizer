@@ -67,24 +67,10 @@ def _check(
     multiple=True,
     default=("v2003", "v2008"),
 )
-@click.option(
-    "--check",
-    "check_kind",
-    type=click.Choice(choices=("all", "syntax", "execution")),
-    default="all",
-)
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
-)
-def main(
-    *,
-    versions: tuple[str, ...],
-    check_kind: str,
-    jobs: int,
-    timeout: float,
-) -> None:
+def main(*, versions: tuple[str, ...]) -> None:
     """Check fixtures at their declared language standards."""
+    jobs = os.cpu_count()
+    timeout = 60.0
     roots = (
         Path("tests/integration/cases"),
         Path("tests/integration/default_module_names"),
@@ -112,8 +98,6 @@ def main(
         )
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
         for phase in ("syntax", "execution"):
-            if check_kind not in ("all", phase):
-                continue
             futures = [
                 executor.submit(
                     _check,
