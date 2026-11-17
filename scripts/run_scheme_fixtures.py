@@ -26,7 +26,6 @@ def _check(
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option("--guile", "guile_name", type=str, default="guile-3.0")
 @click.option(
     "--json-path",
@@ -39,7 +38,6 @@ def _check(
 )
 def main(
     *,
-    case_name: str | None,
     guile_name: str,
     json_path: Path | None,
     jobs: int,
@@ -49,12 +47,9 @@ def main(
     fixtures = sorted(
         fixture
         for fixture in Path("tests/integration/cases").rglob(pattern="*.scm")
-        if case_name is None or fixture.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No Scheme fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message="No Scheme fixtures.")
     executable = shutil.which(cmd=guile_name)
     if executable is None:
         raise click.ClickException(

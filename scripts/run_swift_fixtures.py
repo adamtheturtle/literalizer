@@ -75,7 +75,6 @@ def _run(
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--check",
     "check_kind",
@@ -86,9 +85,7 @@ def _run(
 @click.option(
     "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
 )
-def main(
-    *, case_name: str | None, check_kind: str, jobs: int, timeout: float
-) -> None:
+def main(*, check_kind: str, jobs: int, timeout: float) -> None:
     """Validate selected fixtures with isolated temporary compiler
     output.
     """
@@ -96,10 +93,9 @@ def main(
         path
         for root in (Path("tests/integration/cases"),)
         for path in root.rglob(pattern="*.swift")
-        if case_name is None or path.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(message=f"No Swift fixtures: {case_name!r}")
+        raise click.ClickException(message="No Swift fixtures.")
     tools: dict[str, str] = {}
     for name in ("swiftc", "swift"):
         executable = shutil.which(cmd=name)

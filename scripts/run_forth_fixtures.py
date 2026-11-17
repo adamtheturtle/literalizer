@@ -30,20 +30,18 @@ def _check(*, fixture: Path, executable: str, timeout: float) -> None:
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
 @click.option(
     "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
 )
-def main(*, case_name: str | None, jobs: int, timeout: float) -> None:
-    """Validate a named input or every generated visitor stream."""
+def main(*, jobs: int, timeout: float) -> None:
+    """Validate every generated visitor stream."""
     fixtures = sorted(
         fixture
         for fixture in Path("tests/integration/cases").rglob(pattern="*.fth")
-        if case_name is None or fixture.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(message=f"No Forth fixtures: {case_name!r}")
+        raise click.ClickException(message="No Forth fixtures.")
     executable = shutil.which(cmd="gforth")
     if executable is None:
         raise click.ClickException(
