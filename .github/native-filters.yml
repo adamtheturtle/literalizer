@@ -23,6 +23,7 @@ lint-fast:
   - tests/integration/cases/**/*.{c,dhall,f90,fth,java,js,lua,nix,php,ps1,rb,scm,sh,tcl,wren}
   - CheckJavaSyntax.java
   - tests/integration/default_module_names/*.c
+  - tests/integration/default_module_names/*.f90
 
 lint-odin:
   - *shared

@@ -487,38 +487,9 @@ jobs:
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_powershell_roundtrip
 
-      # Every fixture defines its own `fval_m` module, and the syntax
-      # check leaves an `fval_m.mod` in the working directory (gfortran
-      # emits .mod files even under `-fsyntax-only`). gfortran would
-      # then reuse that stale .mod instead of recompiling each file's
-      # inline module, masking references to names defined only in the
-      # current file. Compile each file from inside a private tmpdir so
-      # the stale .mod is not on the module search path and parallel
-      # runs cannot clobber each other's output.
-      # ``Fortran.VersionFormats`` (``src/literalizer/languages/fortran.py``)
-      # has ``V2003`` and ``V2008`` members; golden files are tagged
-      # ``@v2003`` / ``@v2008`` and each is linted with the matching
-      # ``-std=`` flag.  The ``-std=f2003``/``-std=f2008`` flags and the
-      # ``v2003``/``v2008`` selections below mirror those enum members; keep
-      # them in sync.  ``test -s`` fails the job if a version tag drifts
-      # so a selection silently matches no files.
+      # Isolate compiler module files and validate both declared standards.
       - name: Lint Fortran
-        run: |-
-          uv run --only-group=cli python -m tests.integration.list_fixtures .f90 v2003 > /tmp/files-fortran2003 && test -s /tmp/files-fortran2003
-          uv run --only-group=cli python -m tests.integration.list_fixtures .f90 v2008 > /tmp/files-fortran2008 && test -s /tmp/files-fortran2008
-          xargs -0 gfortran -Werror -std=f2003 -fsyntax-only < /tmp/files-fortran2003
-          xargs -0 gfortran -Werror -std=f2008 -fsyntax-only < /tmp/files-fortran2008
-          cat > /tmp/run-fortran.sh <<'SCRIPT'
-          std=$1
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          src=$(realpath "$2")
-          cd "$tmpdir" || exit 1
-          gfortran -Werror "-std=$std" "$src" -o run || exit 1
-          ./run || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2003 < /tmp/files-fortran2003
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2008 < /tmp/files-fortran2008
+        run: uv run --only-group=cli python -m scripts.run_fortran_fixtures
 
       # Basic JSON -> Fortran -> JSON round-trip (issue 2652). Runs here
       # because this is the job with the gfortran toolchain installed;
