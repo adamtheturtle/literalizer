@@ -38,13 +38,13 @@ Running tests
 
    $ uv run --group dev pytest
 
-Native receiver controls run separately with their required toolchains:
+Native receiver controls run separately with their required tools:
 
 .. code-block:: console
 
    $ uv run --no-dev --group=receiver python -m scripts.run_receiver_controls python go
 
-Missing compilers, runtimes, SDKs or required platform support fail native checks.
+A missing compiler, interpreter, SDK or required platform support fails native checks.
 CI runs every receiver language in the corresponding provisioned job in :file:`.github/workflows/lint.yml`.
 
 Golden verification preserves existing fixtures when rendering skips.
