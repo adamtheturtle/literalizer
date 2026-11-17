@@ -132,10 +132,9 @@ Missing interpreters and empty selections fail.
 Native Dart checks
 ------------------
 
-Run analysis and execution for an explicit fixture::
+Feed the same null-separated fixture paths used by native CI::
 
-    uv run --group=dev python -m scripts.run_dart_fixtures tests/integration/cases/scalar_int/Dart@v3.dart
+    find tests/integration/cases -name '*.dart' -print0 | uv run --group=dev python -m scripts.run_dart_fixtures
 
-The existing null-separated standard input remains available for full CI selections.
-All paths use the same staging, analysis and binding-forcing execution code.
+The runner stages the files, analyzes them and forces their bindings during execution.
 An empty selection fails before starting the toolchain.
