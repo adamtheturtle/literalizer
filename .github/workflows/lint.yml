@@ -436,11 +436,7 @@ jobs:
       - name: Lint Java
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/jackson-jars/*
-        run: |-
-          uv run --only-group=cli python -m tests.integration.list_fixtures .java jdk_11 > /tmp/files-java-11 && test -s /tmp/files-java-11
-          xargs -0 java CheckJavaSyntax.java 11 < /tmp/files-java-11
-          uv run --only-group=cli python -m tests.integration.list_fixtures .java jdk_16 > /tmp/files-java-16 && test -s /tmp/files-java-16
-          xargs -0 java CheckJavaSyntax.java 16 < /tmp/files-java-16
+        run: uv run --only-group=cli python -m scripts.run_java_fixtures
 
       # Basic JSON -> Java -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the JDK toolchain and the Jackson

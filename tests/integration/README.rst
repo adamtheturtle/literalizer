@@ -103,6 +103,20 @@ Both ordinary and option-variant calls retain their effective spec, and external
 ``runtime/test_observable_calls.py`` compiles and executes positive programs and controls for dropped, repeated and reordered calls, swapped zipped operands and incorrect returned or bound values.
 Public ``wrap_in_file`` cases continue to exercise the library's generated-stub contract.
 
+Native Java checks
+------------------
+
+With a JDK installed, run the same warm compiler host as CI::
+
+    uv run --only-group=cli python -m scripts.run_java_fixtures
+    uv run --only-group=cli python -m scripts.run_java_fixtures --release 11
+
+Both JDK 11 and 16 fixture populations are checked by default.
+Set ``LITERALIZER_LINT_CLASSPATH`` to the Jackson jars for JSON-type cases.
+Each batch compiles with the matching ``--release`` and ``-Werror``, then executes initializers and consumer entry points.
+The warm JVM checks up to 512 fixtures per batch, with a 300-second deadline.
+Empty selections fail before execution.
+
 Native interpreter checks
 -------------------------
 
