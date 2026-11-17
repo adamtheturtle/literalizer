@@ -1904,30 +1904,7 @@ jobs:
       # ``-XGHC2021`` matches ``Haskell.language_version`` in
       # ``src/literalizer/languages/haskell.py``; keep them in sync.
       - name: Lint Haskell
-        run: |-
-          find tests/integration/cases -name '*.hs' -print0 > /tmp/files-haskell && test -s /tmp/files-haskell
-          workspace=$(mktemp -d)
-          tmpdir=$(mktemp -d)
-          imports=$(mktemp)
-          calls=$(mktemp)
-          while IFS= read -r -d '' f; do
-            dir=$(basename "$(dirname "$f")")
-            stem=$(basename "$f" .hs)
-            stem="${stem%@*}"  # strip @version so Main.hs imports a valid module
-            mod="Fixture_${dir}_${stem}"
-            cp "$f" "$workspace/${mod}.hs"
-            printf '%s.hs <- %s\n' "$mod" "$f"
-            printf 'import qualified %s\n' "$mod" >> "$imports"
-            printf '  %s.main\n' "$mod" >> "$calls"
-          done < /tmp/files-haskell
-          {
-            printf 'module Main where\n'
-            cat "$imports"
-            printf 'main :: IO ()\nmain = do\n'
-            cat "$calls"
-          } > "$workspace/Main.hs"
-          (cd "$workspace" && ghc -XGHC2021 -Wall -Werror -j -outputdir "$tmpdir" -o "$tmpdir/run" Main.hs)
-          "$tmpdir/run"
+        run: uv run --only-group=cli python -m scripts.run_haskell_fixtures
 
       # Basic JSON -> Haskell -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the GHC toolchain; `uv run`

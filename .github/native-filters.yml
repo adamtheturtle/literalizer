@@ -91,6 +91,7 @@ lint-jvm-mini:
 lint-haskell-family:
   - *shared
   - tests/integration/cases/**/*.{hs,purs}
+  - tests/integration/default_module_names/*.hs
 
 lint-c-tidy:
   - *shared
