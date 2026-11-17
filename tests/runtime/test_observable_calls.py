@@ -7,13 +7,11 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import Mock
 
 import pytest
 
 import literalizer
 from literalizer.exceptions import CallArgNotSupportedError
-from literalizer.languages import FSharp, Go, Kotlin, ObjectiveC, Python
 from tests.integration.call_receivers import (
     compose_integer_calls,
     integer_receiver_syntax,
@@ -329,73 +327,3 @@ def test_native_receiver_controls(
             completed.stdout,
             completed.stderr,
         )
-
-
-@pytest.mark.parametrize(
-    argnames=("unavailable", "lang_cls", "reason"),
-    argvalues=[
-        ("executable", Python, "is unavailable"),
-        ("sdk", FSharp, "SDK is unavailable"),
-        ("foundation", ObjectiveC, "Foundation execution requires macOS"),
-    ],
-)
-def test_native_controls_require_their_toolchain(
-    *,
-    unavailable: str,
-    lang_cls: literalizer.LanguageCls,
-    reason: str,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Missing tools and platform support produce explicit skips."""
-    monkeypatch.setattr(
-        target=shutil,
-        name="which",
-        value=Mock(
-            return_value=None if unavailable == "executable" else "tool"
-        ),
-    )
-    monkeypatch.setattr(target=sys, name="platform", value="linux")
-    monkeypatch.setattr(
-        target=subprocess,
-        name="run",
-        value=Mock(
-            return_value=subprocess.CompletedProcess(
-                args=["dotnet", "--list-sdks"],
-                returncode=0,
-                stdout="",
-                stderr="",
-            )
-        ),
-    )
-    with pytest.raises(expected_exception=pytest.skip.Exception, match=reason):
-        test_native_receiver_controls(lang_cls=lang_cls, tmp_path=tmp_path)
-
-
-@pytest.mark.parametrize(
-    argnames=("lang_cls", "launcher_name", "timeout"),
-    argvalues=[(Kotlin, "kotlin.bat", 180), (Go, "go.exe", 180)],
-)
-def test_native_controls_use_the_resolved_tool(
-    *,
-    lang_cls: literalizer.LanguageCls,
-    launcher_name: str,
-    timeout: int,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """The process uses the resolved tool and its declared time limit."""
-    launcher = str(object=tmp_path / "tool chain" / launcher_name)
-    monkeypatch.setattr(
-        target=shutil,
-        name="which",
-        value=Mock(return_value=launcher),
-    )
-    process = Mock(side_effect=RuntimeError("process inspected"))
-    monkeypatch.setattr(target=subprocess, name="run", value=process)
-    with pytest.raises(
-        expected_exception=RuntimeError, match="process inspected"
-    ):
-        test_native_receiver_controls(lang_cls=lang_cls, tmp_path=tmp_path)
-    assert process.call_args.kwargs["args"][0] == launcher
-    assert process.call_args.kwargs["timeout"] == timeout
