@@ -371,16 +371,6 @@ jobs:
       - name: Ruby roundtrip
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_ruby_roundtrip
-      - name: Ruby typed golden observations
-        timeout-minutes: 3
-        run: uv run --no-dev --group=roundtrip python -m scripts.run_typed_roundtrip
-          --backend ruby --report /tmp/typed-ruby.json
-      - name: Upload Ruby typed coverage
-        uses: actions/upload-artifact@v7
-        with:
-          name: typed-ruby
-          path: /tmp/typed-ruby.json
-          retention-days: 1
 
       - name: Lint JavaScript
         run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures javascript
@@ -3342,18 +3332,6 @@ jobs:
       - name: Run Python golden files
         run: xargs -0 -P "$(nproc)" -n1 uv run --python "$PYTHON_VERSION" --no-project
           python < /tmp/files-python
-      - name: Python typed golden observations
-        if: matrix.python-version == '3.12' && matrix.fixture-tag == 'py39'
-        timeout-minutes: 3
-        run: uv run --python 3.12 --no-dev --group=roundtrip python -m scripts.run_typed_roundtrip
-          --backend python --report /tmp/typed-python.json
-      - name: Upload Python typed coverage
-        if: matrix.python-version == '3.12' && matrix.fixture-tag == 'py39'
-        uses: actions/upload-artifact@v7
-        with:
-          name: typed-python
-          path: /tmp/typed-python.json
-          retention-days: 1
 
   lint-racket:
     needs: [native-changes]

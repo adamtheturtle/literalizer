@@ -49,6 +49,7 @@ def test_shared_checked_golden(
         ),
         result=result,
         golden_path=case.golden_path,
+        spec=case.spec,
     )
     check_golden(
         contents=program,

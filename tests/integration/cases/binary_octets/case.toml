@@ -7,5 +7,52 @@ suites = ["base"]
 axis = "bytes_format"
 
 # JSON carriers can retain an empty encoded byte string without padding.
+
+[variants.consumer_templates]
+Python = '''{code}
+# Independent native value checks.
+import base64
+octets = [b"", bytes(range(256)), bytes(reversed(range(256)))]
+expected = {{"HEX": [value.hex() for value in octets], "BASE64": [base64.b64encode(s=value).decode(encoding="ascii") for value in octets], "PYTHON": octets}}["{bytes_format}"]
+assert len(my_data) == len(expected)
+assert all(type(actual) is type(wanted) and actual == wanted for actual, wanted in zip(my_data, expected))
+'''
+Ruby = '''{code}
+# Independent native value checks.
+expected = [[], (0..255).to_a, (0..255).to_a.reverse]
+case "{bytes_format}"
+when "HEX"
+  expected = expected.map {{ |octets| octets.pack("C*").unpack1("H*") }}
+when "BASE64"
+  expected = expected.map {{ |octets| [octets.pack("C*")].pack("m0") }}
+else
+  raise "unchecked bytes representation"
+end
+raise "byte values or types changed" unless my_data.all? {{ |value| value.instance_of?(String) }} && my_data == expected
+'''
 [[variants]]
 axis = "json_type"
+
+
+[base_context.consumer_templates]
+Python = '''{code}
+# Independent native value checks.
+import base64
+octets = [b"", bytes(range(256)), bytes(reversed(range(256)))]
+expected = {{"HEX": [value.hex() for value in octets], "BASE64": [base64.b64encode(s=value).decode(encoding="ascii") for value in octets], "PYTHON": octets}}["{bytes_format}"]
+assert len(my_data) == len(expected)
+assert all(type(actual) is type(wanted) and actual == wanted for actual, wanted in zip(my_data, expected))
+'''
+Ruby = '''{code}
+# Independent native value checks.
+expected = [[], (0..255).to_a, (0..255).to_a.reverse]
+case "{bytes_format}"
+when "HEX"
+  expected = expected.map {{ |octets| octets.pack("C*").unpack1("H*") }}
+when "BASE64"
+  expected = expected.map {{ |octets| [octets.pack("C*")].pack("m0") }}
+else
+  raise "unchecked bytes representation"
+end
+raise "byte values or types changed" unless my_data.all? {{ |value| value.instance_of?(String) }} && my_data == expected
+'''

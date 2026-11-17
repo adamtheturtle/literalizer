@@ -21,3 +21,16 @@ axis = "type_hints"
 
 [[variants]]
 axis = "numeric_separator"
+
+[base_context.consumer_templates]
+Python = '''{code}
+# Independent native value checks.
+import struct
+assert all(type(value) is float for value in my_data)
+assert [struct.pack("!d", value).hex() for value in my_data] == ['8000000000000000', '3ff8000000000000']
+'''
+Ruby = '''{code}
+# Independent native value checks.
+raise "float type changed" unless my_data.all? {{ |value| value.instance_of?(Float) }}
+raise "float precision or sign changed" unless my_data.map {{ |value| [value].pack("G").unpack1("H*") }} == ["8000000000000000", "3ff8000000000000"]
+'''

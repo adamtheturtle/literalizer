@@ -16,9 +16,9 @@ type coverage (wide ints, large-exponent / negative-zero floats, unicode
 and escaped strings, empty/nested arrays and objects, heterogeneous
 arrays) lives in that one file rather than in many small cases.
 
-Special floats are not JSON capability-corpus entries. The complementary
-``run_typed_roundtrip`` runner observes deterministic native goldens through
-the tagged format in ``native_observation`` instead.
+Special floats are not capability-corpus entries because strict JSON cannot
+transport NaN or infinity. They remain language error/golden cases until a
+typed, non-JSON round-trip transport is introduced.
 
 The helpers below collapse the boilerplate shared across the per-language
 scripts: :func:`trim_keys` drops the language-specific lossy fields from
@@ -244,35 +244,6 @@ def execute(
     line is written to stdout.  Callers do not need to emit that line
     themselves.
     """
-    last_stdout = run_program(
-        label=label,
-        source_filename=source_filename,
-        program=program,
-        steps=steps,
-        extra_files=extra_files,
-    )
-    verify(
-        label=label,
-        produced_json=last_stdout,
-        exclude_keys=excluded_keys,
-        expected_json=expected_json,
-    )
-    _ = sys.stdout.write(f"{label} round-trip OK\n")
-
-
-def run_program(
-    *,
-    label: str,
-    source_filename: str,
-    program: str,
-    steps: Sequence[Step],
-    extra_files: Mapping[str, str] | None,
-) -> str:
-    """Execute the existing native runner steps and return final stdout.
-
-    Typed observations and JSON roundtrips share file creation, toolchain
-    execution and failure diagnostics; each retains its own comparator.
-    """
     extras: Mapping[str, str]
     extras = dict[str, str]()
     if extra_files is not None:
@@ -311,4 +282,10 @@ def run_program(
                 _ = sys.stderr.write(f"\nProgram:\n{program}\n")
                 sys.exit(1)
             last_stdout = result.stdout
-    return last_stdout
+    verify(
+        label=label,
+        produced_json=last_stdout,
+        exclude_keys=excluded_keys,
+        expected_json=expected_json,
+    )
+    _ = sys.stdout.write(f"{label} round-trip OK\n")

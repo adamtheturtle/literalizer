@@ -5,6 +5,19 @@ owner = "variant"
 axis = "float_format"
 
 # Check extreme and subnormal floating values in explicitly typed and alternate native containers.
+
+[variants.consumer_templates]
+Python = '''{code}
+# Independent native value checks.
+import struct
+assert all(type(value) is float for value in my_data)
+assert [struct.pack("!d", value).hex() for value in my_data] == ['0000000000000001', '0010000000000000', '0031fa182c40c60d', '444b1ae4d6e2ef50', 'fe41eb2d66005835', '7fefffffffffffff', 'ffefffffffffffff']
+'''
+Ruby = '''{code}
+# Independent native value checks.
+raise "float type changed" unless my_data.all? {{ |value| value.instance_of?(Float) }}
+raise "float precision or sign changed" unless my_data.map {{ |value| [value].pack("G").unpack1("H*") }} == ["0000000000000001", "0010000000000000", "0031fa182c40c60d", "444b1ae4d6e2ef50", "fe41eb2d66005835", "7fefffffffffffff", "ffefffffffffffff"]
+'''
 [[variants]]
 axis = "type_hints"
 

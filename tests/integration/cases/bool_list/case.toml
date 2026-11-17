@@ -17,3 +17,14 @@ axis = "bool_format"
 
 [[variants]]
 axis = "sequence"
+
+[base_context.consumer_templates]
+Python = '''{code}
+# Independent native value checks.
+assert all(type(value) is bool for value in my_data)
+assert tuple(my_data) == (True, False, True)
+'''
+Ruby = '''{code}
+# Independent native value checks.
+raise "boolean values changed" unless my_data == [true, false, true]
+'''

@@ -99,6 +99,7 @@ def run_constructor_binding_golden_case(
                 template=consumer_template,
                 result=result,
                 golden_path=golden_path,
+                spec=language,
             )
     check_golden(
         contents=contents,
