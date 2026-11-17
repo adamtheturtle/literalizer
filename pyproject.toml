@@ -119,7 +119,7 @@ dev = [
     "towncrier==26.9.0",
     "ty==0.0.100",
     "types-pygments==2.21.0.20260819",
-    "types-pyyaml==6.0.12.20261103",
+    "types-pyyaml==6.0.12.20261113",
     "vale==3.26.0.1",
     "vulture==2.16",
     "yamlfix==1.19.1",
