@@ -18,18 +18,8 @@ import literalizer
 from literalizer._language import redefinition_config
 from literalizer.languages import ALL_LANGUAGES
 
+from .fixture_names import fixture_module_name
 from .language_metadata import language_metadata
-
-
-@beartype
-def fixture_module_name(*, golden_path: Path) -> str:
-    """Return a fixture's module name without its version suffix.
-
-    Native consumers and language wrappers share this identifier across
-    every supported version of the same fixture.
-    """
-    stem = golden_path.stem.rsplit(sep="@", maxsplit=1)[0]
-    return f"Fixture_{golden_path.parent.name}_{stem}"
 
 
 @beartype

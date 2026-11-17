@@ -1,5 +1,6 @@
 """Build invocations of the shared GNU timeout command wrapper."""
 
+import subprocess
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -11,7 +12,7 @@ def bounded_command(
 ) -> list[str]:
     """Give a compiler or executable its own deadline and fixture label.
 
-    The absolute wrapper path also works when subprocesses run in temporary
+    The absolute wrapper path also works when processes run in temporary
     directories. GNU timeout owns deadlines and process termination; the
     wrapper only discovers it and adds diagnostics. Standard output remains
     unchanged. Keep this adapter free of third-party imports so standalone
@@ -24,3 +25,20 @@ def bounded_command(
         f"{timeout_seconds:g}s",
         *(str(object=arg) for arg in args),
     ]
+
+
+def run_bounded_command(
+    *,
+    args: Sequence[str | Path],
+    fixture: str,
+    timeout_seconds: float,
+    cwd: Path | None,
+) -> None:
+    """Run a labeled native command with its existing process deadline."""
+    _ = subprocess.run(
+        args=bounded_command(
+            args=args, fixture=fixture, timeout_seconds=timeout_seconds
+        ),
+        cwd=cwd,
+        check=True,
+    )

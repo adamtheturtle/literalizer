@@ -3,22 +3,11 @@
 import concurrent.futures
 import os
 import shutil
-import subprocess
 from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
-
-
-def _run(*, arguments: list[str | Path], label: str, timeout: float) -> None:
-    """Retain native diagnostics and label each bounded invocation."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments, fixture=label, timeout_seconds=timeout
-        ),
-        check=True,
-    )
+from scripts.bounded_command import run_bounded_command
 
 
 @click.command()
@@ -31,7 +20,7 @@ def main() -> None:
     )
     if len(fixtures) == 0:
         raise click.ClickException(message="No Clojure fixtures.")
-    tools = {}
+    tools: dict[str, str] = {}
     for name in ("clj-kondo", "bb"):
         executable = shutil.which(cmd=name)
         if executable is None:
@@ -41,24 +30,26 @@ def main() -> None:
         tools[name] = executable
     for start in range(0, len(fixtures), 256):
         batch = fixtures[start : start + 256]
-        _run(
-            arguments=[
+        run_bounded_command(
+            args=[
                 tools["clj-kondo"],
                 "--config",
                 "{:linters {:unresolved-namespace {:level :off}}}",
                 "--lint",
                 *batch,
             ],
-            label=f"Clojure syntax: {batch[0]} through {batch[-1]}",
-            timeout=timeout,
+            fixture=f"Clojure syntax: {batch[0]} through {batch[-1]}",
+            timeout_seconds=timeout,
+            cwd=None,
         )
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
         futures = [
             executor.submit(
-                _run,
-                arguments=[tools["bb"], fixture],
-                label=f"Clojure execution: {fixture}",
-                timeout=timeout,
+                run_bounded_command,
+                args=[tools["bb"], fixture],
+                fixture=f"Clojure execution: {fixture}",
+                timeout_seconds=timeout,
+                cwd=None,
             )
             for fixture in fixtures
         ]

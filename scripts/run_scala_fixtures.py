@@ -7,39 +7,8 @@ from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
-
-
-def _stage(*, fixtures: list[Path], workspace: Path) -> list[str]:
-    """Preserve source module identities and report every copied
-    fixture.
-    """
-    names: list[str] = []
-    for fixture in fixtures:
-        stem = fixture.stem.rsplit(sep="@", maxsplit=1)[0]
-        name = (
-            "Check"
-            if fixture.parent.name == "default_module_names"
-            else f"Fixture_{fixture.parent.name}_{stem}"
-        )
-        destination = workspace / f"{name}.scala"
-        _ = shutil.copyfile(src=fixture, dst=destination)
-        click.echo(message=f"{destination.name} <- {fixture}")
-        names.append(name)
-    return names
-
-
-def _run(
-    *, arguments: list[str | Path], label: str, workspace: Path, timeout: float
-) -> None:
-    """Bound the native command while retaining compiler diagnostics."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments, fixture=label, timeout_seconds=timeout
-        ),
-        cwd=workspace,
-        check=True,
-    )
+from scripts.bounded_command import bounded_command, run_bounded_command
+from scripts.fixture_staging import stage_fixture_modules
 
 
 def _validate(
@@ -93,11 +62,11 @@ def _validate(
     _ = arguments.write_text(
         data="".join(f'"{argument}"\n' for argument in escaped)
     )
-    _run(
-        arguments=[command[0], f"@{arguments}"],
-        label="Scala execution",
-        workspace=workspace,
-        timeout=timeout,
+    run_bounded_command(
+        args=[command[0], f"@{arguments}"],
+        fixture="Scala execution",
+        timeout_seconds=timeout,
+        cwd=workspace,
     )
 
 
@@ -122,7 +91,9 @@ def main() -> None:
         )
     with tempfile.TemporaryDirectory(suffix="-literalizer-scala") as directory:
         workspace = Path(directory)
-        names = _stage(fixtures=fixtures, workspace=workspace)
+        names = stage_fixture_modules(
+            fixtures=fixtures, workspace=workspace, default_module_name="Check"
+        )
         _validate(
             executable=executable,
             names=names,

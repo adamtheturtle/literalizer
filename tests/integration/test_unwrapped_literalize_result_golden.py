@@ -8,9 +8,9 @@ from pytest_regressions.file_regression import FileRegressionFixture
 import literalizer
 from literalizer import FileWrapperContext, InputFormat, NewVariable
 
+from .fixture_names import fixture_module_name
 from .golden_checks import check_golden
 from .language_specs import (
-    fixture_module_name,
     with_per_fixture_module_name,
 )
 from .unwrapped_result_cases import RESULT_CASES as _CASES

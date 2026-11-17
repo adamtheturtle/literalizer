@@ -6,12 +6,11 @@ import concurrent.futures
 import dataclasses
 import os
 import shutil
-import subprocess
 from pathlib import Path
 
 import click
 
-from scripts.bounded_command import bounded_command
+from scripts.bounded_command import run_bounded_command
 
 _CASES_DIR = Path("tests/integration/cases")
 
@@ -59,16 +58,6 @@ _BACKENDS = {
 }
 
 
-def _run(*, arguments: list[str], label: str, timeout: float) -> None:
-    """Report the fixture, phase and command, with a process deadline."""
-    _ = subprocess.run(
-        args=bounded_command(
-            args=arguments, fixture=label, timeout_seconds=timeout
-        ),
-        check=True,
-    )
-
-
 def _phase_executable(*, config: _Backend, executable: str, phase: str) -> str:
     """Resolve a separate syntax parser when the backend requires one."""
     if phase != "syntax" or config.syntax_executable is None:
@@ -103,8 +92,8 @@ def main(backend: str) -> None:
             message=f"Missing interpreter: {config.executable}"
         )
     if backend == "bash":
-        _run(
-            arguments=[
+        run_bounded_command(
+            args=[
                 executable,
                 "-c",
                 (
@@ -113,8 +102,9 @@ def main(backend: str) -> None:
                     "|| { echo 'Bash 5.1 or later is required' >&2; exit 1; }"
                 ),
             ],
-            label="Bash V5_1 interpreter floor",
-            timeout=timeout,
+            fixture="Bash V5_1 interpreter floor",
+            timeout_seconds=timeout,
+            cwd=None,
         )
     syntax_arguments = (
         [] if config.syntax_argument is None else [config.syntax_argument]
@@ -128,15 +118,16 @@ def main(backend: str) -> None:
             )
             futures = [
                 executor.submit(
-                    _run,
-                    arguments=[
+                    run_bounded_command,
+                    args=[
                         phase_executable,
                         *config.arguments,
                         *(syntax_arguments if phase == "syntax" else []),
                         str(object=fixture),
                     ],
-                    label=f"{backend} {phase}: {fixture}",
-                    timeout=timeout,
+                    fixture=f"{backend} {phase}: {fixture}",
+                    timeout_seconds=timeout,
+                    cwd=None,
                 )
                 for fixture in fixtures
             ]
