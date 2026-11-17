@@ -33,9 +33,7 @@ class CapabilitySelection(  # noqa: NOD001
 ):
     """Select participation through declared properties and syntax support.
 
-    A gate reads the language default spec: a case selects languages,
-    while a variant axis selects the specs its overrides build. Named
-    language lists are not part of the root, reference or call schema.
+    Gates read properties of the language and its default spec.
     """
 
     gates: list[SuiteGate] = Field(default_factory=list[SuiteGate])

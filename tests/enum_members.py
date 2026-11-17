@@ -1,9 +1,7 @@
-"""Look up a language option's enum member by the name a file spells.
+"""Look up named option members across languages' distinct enums.
 
-Every declared test file -- an axis in ``axes.toml``, a rejection
-manifest, a language's own metadata -- names an option member as a
-string.  Both are resolved here, so the suites that read one share a
-spelling and an error message.
+Axis builders, rejection manifests and language metadata use the same
+lookup when a formatter choice has a shared spelling across languages.
 """
 
 import enum

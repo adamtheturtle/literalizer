@@ -1,125 +1,37 @@
-"""Tests for the declared variant-axis expansion plans."""
+"""Tests for variant-axis registration and expansion."""
 
 from collections import Counter
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
-from pydantic import BaseModel
 
 from literalizer import CollectionLayout, CommentConfig, LanguageCls
 from literalizer._enums import enum_payload
 from literalizer.languages import ALL_LANGUAGES, Java
 from tests.enum_members import enum_member_by_name, find_enum_member
-from tests.integration.case_manifests import CaseManifestError
+from tests.integration.axis_builders import (
+    AxisError,
+    Override,
+    expand,
+    metadata_member,
+    named,
+    sample,
+)
 from tests.integration.language_metadata import language_metadata
 from tests.integration.language_specs import make_spec
-from tests.integration.variant_axis_names import (
-    KNOWN_VARIANT_AXES,
-    SPECIAL_VARIANT_AXES,
-)
-from tests.integration.variant_cases import (
-    HasJsonType,
-    check_axis_coverage,
-    variants_for_axis,
-)
-from tests.integration.variant_plans import (
-    AxisPlanError,
-    declared_axis_names,
-    load_axis_registry,
-    special_axis_names,
-    variants_for_declared_axis,
-    variants_for_registry_axis,
-)
+from tests.integration.variant_axes import AXES
+from tests.integration.variant_axis_names import registered_names
+from tests.integration.variant_cases import HasJsonType, variants_for_axis
 from tests.language_options import OPTIONS
-from tests.toml_cases import load_toml_cases
 
 if TYPE_CHECKING:
     import enum
 
 
-class _AxisErrorCase(BaseModel, extra="forbid", frozen=True):
-    """One named manifest-owned regression scenario."""
-
-    name: str
-    contents: str
-    message: str
-
-
-class _Cases(BaseModel, extra="forbid", frozen=True):
-    """The complete declarative regression corpus."""
-
-    cases: tuple[_AxisErrorCase, ...]
-    missing_metadata: tuple[_AxisErrorCase, ...]
-
-
-_CASES = _Cases.model_validate(
-    obj=load_toml_cases(name="axis_plan_validation")
-)
-
-
-_VALID_FIXED_AXIS = """
-schema_version = 1
-
-[axes.example]
-plan = "fixed_overrides"
-name_template = "{lang}_example"
-"""
-
-
-def _write_registry(*, tmp_path: Path, contents: str) -> Path:
-    """Write one temporary axis registry and return its path."""
-    path = tmp_path / "axes.toml"
-    _ = path.write_text(data=contents, encoding="utf-8")
-    return path
-
-
-def test_every_axis_resolves_to_exactly_one_expansion() -> None:
-    """Each expandable axis has a declared plan."""
-    declared = declared_axis_names()
-
-    assert declared & SPECIAL_VARIANT_AXES == frozenset()
-    assert declared == KNOWN_VARIANT_AXES - SPECIAL_VARIANT_AXES
-
-
-def test_special_axes_are_declared() -> None:
-    """The context-assembled axes come from ``axes.toml`` as well."""
-    assert special_axis_names() == SPECIAL_VARIANT_AXES
-    assert (
-        frozenset(
-            {
-                "json_type_modifiers",
-                "json_type_variable_form",
-                "modifier_sequence_format",
-                "modifiers",
-                "record_modifiers",
-                "multiline_string_combined",
-                "multiline_string_pre_indent",
-                "plain_collection_callbacks",
-                "typed_collection_callback",
-                "custom_zig_null_policy",
-                "existing_integer_suffix",
-                "date_formatter_datetime_view",
-                "copied_json_to_native",
-                "copied_native_to_record",
-                "copied_native_to_json",
-            }
-        )
-        == SPECIAL_VARIANT_AXES
-    )
-
-
 def test_every_declared_axis_expands() -> None:
-    """No declared plan silently expands to nothing."""
-    for axis_key in sorted(declared_axis_names()):
-        assert (
-            len(
-                variants_for_declared_axis(
-                    axis_key=axis_key, resolve_axis=variants_for_axis
-                )
-            )
-            > 0
-        ), axis_key
+    """Every registered builder expands to at least one variant."""
+    for axis_key in AXES:
+        assert len(variants_for_axis(axis_key=axis_key)) > 0, axis_key
 
 
 def test_format_options_cover_versions_without_overriding_pins() -> None:
@@ -161,17 +73,10 @@ def test_format_options_cover_versions_without_overriding_pins() -> None:
     ] == [enum_member_by_name(enum_cls=Java.VersionFormats, name="JDK_16")]
 
 
-def test_axis_can_cover_only_default_version(
-    tmp_path: Path,
-) -> None:
-    """An explicit plan opt-out still renders its one default version."""
-    axis_path = tmp_path / "axes.toml"
-    _ = axis_path.write_text(data=_VALID_FIXED_AXIS + "per_version = false\n")
-    variants = variants_for_registry_axis(
-        axis_key="example",
-        path=axis_path,
-        resolve_axis=variants_for_axis,
-    )
+def test_axis_can_cover_only_default_version() -> None:
+    """An axis can opt in to rendering its default version only."""
+    build = expand(name=named(suffix="example"), per_version=False)
+    variants = build()
     assert Counter(
         (variant.lang_cls, variant.spec.language_version)
         for variant in variants
@@ -183,25 +88,21 @@ def test_axis_can_cover_only_default_version(
     )
 
 
-def test_optional_metadata_version_pins_only_languages_declaring_it(
-    tmp_path: Path,
-) -> None:
-    """A declared metadata pin wins; languages omitting it keep
-    coverage.
-    """
-    axis_path = _write_registry(
-        tmp_path=tmp_path,
-        contents=_VALID_FIXED_AXIS
-        + 'overrides = [{ kind = "metadata_enum_member", '
-        'option = "language_version", '
-        'field = "heterogeneous_value_variant_name_language_version", '
-        "optional = true }]\n",
+def test_optional_metadata_version_pins_only_languages_declaring_it() -> None:
+    """A metadata version pin wins wherever a language declares one."""
+    build = expand(
+        name=named(suffix="example"),
+        overrides=(
+            metadata_member(
+                option=OPTIONS["language_version"],
+                read=lambda metadata: (
+                    metadata.variants.heterogeneous_value_variant_name_language_version
+                ),
+                optional=True,
+            ),
+        ),
     )
-    variants = variants_for_registry_axis(
-        path=axis_path,
-        axis_key="example",
-        resolve_axis=variants_for_axis,
-    )
+    variants = build()
     expected: dict[tuple[LanguageCls, enum.Enum], int] = {}
     for lang_cls in ALL_LANGUAGES:
         pin = language_metadata(
@@ -224,14 +125,11 @@ def test_optional_metadata_version_pins_only_languages_declaring_it(
 
 
 def test_declared_axis_names_are_unique_per_language() -> None:
-    """A plan never gives one language two identically named
+    """A builder never gives one language two identically named
     variants.
     """
-    for axis_key in sorted(declared_axis_names()):
-        variants = variants_for_declared_axis(
-            axis_key=axis_key,
-            resolve_axis=variants_for_axis,
-        )
+    for axis_key in AXES:
+        variants = variants_for_axis(axis_key=axis_key)
         keyed = {
             (variant.name, variant.spec.language_version)
             for variant in variants
@@ -241,7 +139,7 @@ def test_declared_axis_names_are_unique_per_language() -> None:
 
 
 def test_filtered_axis_narrows_its_base() -> None:
-    """A filtered plan keeps its base axis's variants for the languages
+    """A filtered axis keeps its base axis's variants for the languages
     its gates admit, and nothing else.
     """
     base = variants_for_axis(axis_key="json_type")
@@ -393,7 +291,7 @@ def test_member_flags_select_terminated_comment_formats() -> None:
     assert defaults != set()
 
 
-def test_sole_member_template_drops_a_pointless_format_name() -> None:
+def test_sole_member_name_omits_the_format() -> None:
     """One participating format is named by the language alone.
 
     A language offering several string formats renders one golden per
@@ -428,67 +326,48 @@ def test_sole_member_template_drops_a_pointless_format_name() -> None:
 
 
 def test_unknown_axis_is_actionable() -> None:
-    """An axis with no declared plan names the missing axis."""
+    """An axis with no expansion names the missing registration."""
     with pytest.raises(
-        expected_exception=AxisPlanError,
-        match="no plan declared for variant axis 'mystery'",
+        expected_exception=AxisError,
+        match="no expansion registered for variant axis 'mystery'",
     ):
         _ = variants_for_axis(axis_key="mystery")
 
 
 @pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
+    argnames=("ordinary", "special"),
+    argvalues=[(("date",), ("date",)), ((), ("date", "date"))],
 )
-def test_invalid_registry_is_actionable(
-    tmp_path: Path, case: _AxisErrorCase
+def test_duplicate_registrations_are_actionable(
+    ordinary: tuple[str, ...], special: tuple[str, ...]
 ) -> None:
-    """Bad plan data fails when the registry loads, not at render
-    time.
-    """
-    path = _write_registry(tmp_path=tmp_path, contents=case.contents)
-    with pytest.raises(expected_exception=AxisPlanError, match=case.message):
-        _ = load_axis_registry(path=path)
-
-
-def test_invalid_toml_is_actionable(tmp_path: Path) -> None:
-    """TOML syntax errors retain the file path and parser detail."""
-    path = _write_registry(tmp_path=tmp_path, contents="axes = [\n")
+    """Duplicate registrations name the conflicting axis."""
     with pytest.raises(
-        expected_exception=AxisPlanError,
-        match="invalid TOML",
+        expected_exception=AxisError,
+        match=r"duplicate variant axis registrations: \['date'\]",
     ):
-        _ = load_axis_registry(path=path)
-
-
-def test_axis_coverage_gaps_are_actionable() -> None:
-    """An axis registered twice names what to do about it."""
-    with pytest.raises(
-        expected_exception=CaseManifestError,
-        match=r"also expand as ordinary ones: \['date'\]",
-    ):
-        check_axis_coverage(
-            declared=frozenset({"date"}),
-            special=frozenset({"date"}),
-        )
+        _ = registered_names(ordinary=ordinary, special=special)
 
 
 @pytest.mark.parametrize(
-    argnames="case",
-    argvalues=_CASES.missing_metadata,
-    ids=lambda case: case.name,
+    argnames=("override", "message"),
+    argvalues=[
+        (
+            sample(kwarg="missing_option"),
+            "declares no sample value for 'missing_option'",
+        ),
+        (
+            metadata_member(
+                option=OPTIONS["language_version"], read=lambda _metadata: None
+            ),
+            "declares no member for 'language_version'",
+        ),
+    ],
 )
-def test_missing_language_metadata_is_actionable(
-    tmp_path: Path, case: _AxisErrorCase
+def test_missing_override_metadata_is_actionable(
+    override: Override, message: str
 ) -> None:
-    """A plan reading absent metadata names the file that lacks it.
-
-    Language metadata and the axis registry are separate files, so an
-    override with no matching gate can outlive the value it reads.
-    Expansion says which language file is missing what, rather than
-    building a spec from a silently dropped setting.
-    """
-    path = _write_registry(tmp_path=tmp_path, contents=case.contents)
-    with pytest.raises(expected_exception=AxisPlanError, match=case.message):
-        _ = variants_for_registry_axis(
-            path=path, axis_key="example", resolve_axis=variants_for_axis
-        )
+    """Overrides requiring metadata report a missing declaration."""
+    build = expand(name=named(suffix="example"), overrides=(override,))
+    with pytest.raises(expected_exception=AxisError, match=message):
+        _ = build()

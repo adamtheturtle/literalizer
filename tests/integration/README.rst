@@ -22,7 +22,9 @@ A complete literal rendering needs one input file and a manifest like this::
 
 ``base`` renders the input using its ``base_context`` and each selected language's defaults.
 ``combined`` exercises declaration followed by assignment where supported.
-Each ``variants`` entry adds an option expansion declared in ``axes.toml``.
+Each ``variants`` entry selects a named expansion defined in ``variant_axes.py``.
+To add an axis, use the shared helpers in ``axis_builders.py`` for option members, pairings and version coverage.
+Select languages by the relevant capability or option, and use the axis name in the case manifest.
 Omit suites and axes that the input cannot exercise.
 For example, ``cases/scalar_int`` exercises integer formats, while ``cases/binary`` exercises byte formats.
 
@@ -78,7 +80,7 @@ Finding the implementation
 Follow the ordinary literal path in this order:
 
 1. ``case_manifests.py`` validates ``case.toml`` and resolves its input.
-2. ``case_discovery.py`` selects representable inputs; ``variant_cases.py`` pairs inputs with options expanded by ``variant_plans.py`` from ``axes.toml``.
+2. ``case_discovery.py`` selects representable inputs; ``variant_cases.py`` pairs inputs with options expanded by the builders in ``variant_axes.py``.
 3. ``golden_scenarios.py`` assembles ``GoldenRendering`` records from ``golden_renderings.py``; ``golden_batches.py`` bounds pytest work items.
 4. ``test_literalize_golden.py`` renders each effective spec and ``golden_checks.py`` compares the result or handles declared skips.
 5. ``harness/test_orphan_golden_files.py`` checks fixture ownership across all runners.

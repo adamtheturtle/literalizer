@@ -14,7 +14,7 @@ manifest = '''schema_version = 1
 suites = ["base"]
 gates = [{kind = "metadata_field", field = "language_id", value = "python"}]
 '''
-message = "unknown metadata field 'language_id'"
+message = "Input tag 'metadata_field'.*does not match any of the expected tags"
 
 [[cases]]
 name = "expected_error_must_be_public_literalizer_error"
@@ -516,6 +516,22 @@ gates = [{ kind = "enum_member_present", option = "vibe", member = "RECORD" }]
 message = "gates: unknown option 'vibe'"
 
 [[cases]]
+name = "unknown_gate_spec_field"
+manifest = '''schema_version = 1
+suites = ["base"]
+gates = [{ kind = "spec_field_present", field = "vibe" }]
+'''
+message = "gates: unknown spec field 'vibe'"
+
+[[cases]]
+name = "unknown_gate_behavior_flag"
+manifest = '''schema_version = 1
+suites = ["base"]
+gates = [{ kind = "behavior_flag", flag = "vibes" }]
+'''
+message = "gates: unknown behavior flag 'vibes'"
+
+[[cases]]
 name = "legacy_ref_language_list"
 manifest = '''schema_version = 1
 owner = "literalize-ref"
@@ -530,7 +546,7 @@ manifest = '''schema_version = 1
 suites = ["base"]
 gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
 '''
-message = "unknown metadata field 'language_id'"
+message = "Input tag 'metadata_field'.*does not match any of the expected tags"
 
 [[cases]]
 name = "ref_language_id_selection_gate"
@@ -539,7 +555,7 @@ owner = "literalize-ref"
 [ref]
 gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
 '''
-message = "unknown metadata field 'language_id'"
+message = "Input tag 'metadata_field'.*does not match any of the expected tags"
 
 [[cases]]
 name = "call_language_id_selection_gate"
@@ -551,7 +567,7 @@ parameter_names = ["value"]
 per_element = false
 gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
 '''
-message = "unknown metadata field 'language_id'"
+message = "Input tag 'metadata_field'.*does not match any of the expected tags"
 
 [[cases]]
 name = "ref_example_language_id_selection_gate"
@@ -562,7 +578,7 @@ owner = "literalize-ref"
 example = "sampled"
 gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
 '''
-message = "unknown metadata field 'language_id'"
+message = "Input tag 'metadata_field'.*does not match any of the expected tags"
 
 [[cases]]
 name = "call_example_language_id_selection_gate"
@@ -579,7 +595,7 @@ parameter_names = ["value"]
 per_element = false
 gates = [{ kind = "metadata_field", field = "language_id", value = "Python" }]
 '''
-message = "unknown metadata field 'language_id'"
+message = "Input tag 'metadata_field'.*does not match any of the expected tags"
 
 [[cases]]
 name = "legacy_call_language_list"

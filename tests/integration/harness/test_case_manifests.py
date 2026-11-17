@@ -252,8 +252,8 @@ def test_gates_select_the_languages_declaring_the_property(
         manifest=(
             "schema_version = 1\n"
             'suites = ["base"]\n'
-            'gates = [{ kind = "metadata_field", '
-            'field = "nested_list_widening", value = "integer_width" }]\n'
+            'gates = [{ kind = "spec_field_present", '
+            'field = "native_argument_layout" }]\n'
         ),
         input_name="input.yaml",
     )
@@ -263,7 +263,7 @@ def test_gates_select_the_languages_declaring_the_property(
         for lang_cls in literalizer.languages.ALL_LANGUAGES
         if manifest.selection.admits_language(lang_cls=lang_cls)
     ]
-    assert sorted(selected) == ["Nim", "V"]
+    assert selected == ["ObjectiveC"]
 
 
 def test_an_ungated_case_selects_every_language(tmp_path: Path) -> None:
