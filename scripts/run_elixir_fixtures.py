@@ -15,25 +15,19 @@ _HOST = Path(__file__).resolve().with_name(name="lint-elixir.exs")
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--version", type=str, default="v1_14", envvar="ELIXIR_FIXTURE_TAG"
 )
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(*, case_name: str | None, version: str, timeout: float) -> None:
-    """Compile and execute a case or the complete selected version."""
+def main(*, version: str) -> None:
+    """Compile and execute the complete selected version."""
+    timeout = 600.0
     fixtures = sorted(
         path
         for path in Path("tests/integration/cases").rglob(pattern="*.ex")
         if path.name.endswith(f"@{version}.ex")
-        if case_name is None or path.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No Elixir {version} fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message=f"No Elixir {version} fixtures.")
     executable = shutil.which(cmd="elixir")
     if executable is None:
         raise click.ClickException(

@@ -13,6 +13,7 @@ them.
 """
 
 import dataclasses
+import enum
 from pathlib import Path
 from types import TracebackType
 from typing import NoReturn, Protocol, runtime_checkable
@@ -21,7 +22,7 @@ import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import LiteralizeResult
+from literalizer import Language, LiteralizeResult
 
 from .language_metadata import language_metadata
 from .language_specs import fixture_module_name
@@ -162,10 +163,19 @@ def check_golden(
 
 @beartype
 def format_consumer(
-    *, template: str, result: LiteralizeResult, golden_path: Path
+    *,
+    template: str,
+    result: LiteralizeResult,
+    golden_path: Path,
+    spec: Language,
 ) -> str:
     """Format a native consumer from the result and fixture path."""
     return template.format(
+        **{
+            name: value.name
+            for name, value in vars(spec).items()
+            if isinstance(value, enum.Enum)
+        },
         preamble="\n".join(result.preamble),
         body_preamble="\n".join(result.body_preamble),
         code=result.code,

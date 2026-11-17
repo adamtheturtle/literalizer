@@ -37,13 +37,12 @@ Its corresponding manifest table supplies the API arguments.
 Copy a nearby case using the same API when adding specialized coverage.
 The accepted fields and consistency checks are defined in ``case_manifests.py``.
 
-Keep typed failures, incomplete fragments, metadata and concurrency contracts in the directories described by ``../README.rst``.
+Keep typed failures, metadata and concurrency contracts in the directories described by ``../README.rst``.
 A complete generated program belongs here; an executable round-trip case should also compare the reconstructed value with the input.
-An open literal that caller-owned code can complete may use ``use_unwrapped_code`` and ``caller_code_suffix``.
-The suffix is appended directly to the public fragment before wrapping; include a native assertion to check the completed value.
-Use ``caller_code_prefix`` for setup statements inside the native wrapper, such as declaring a variable that the fragment assigns.
-The ``incomplete_c_raw_string`` examples in ``cases/call_bound_literal_followup_new`` and ``cases/call_bound_literal_followup_existing`` exercise this boundary.
-The ``incomplete_outer_interpolation`` example in ``cases/call_scalar_result_json_binding`` completes a nested interpolation in the same way.
+Native success fixtures should use complete expressions and public composition.
+Do not snapshot incidental output from malformed caller-owned transforms.
+Add focused unit coverage for a demonstrated robustness regression with a meaningful invariant, such as avoiding a crash or hang.
+The comment-placement lexer is not a target-language syntax validator.
 
 Checking and regenerating
 -------------------------
@@ -102,8 +101,46 @@ Capability declarations select participants before the syntax table is consulted
 Both ordinary and option-variant calls retain their effective spec, and external references retain their original inference hints.
 Public ``wrap_in_file`` cases continue to exercise the library's generated-stub contract.
 
+Native Java checks
+------------------
+
+With a JDK installed, run the same warm compiler host as CI::
+
+    uv run --only-group=cli python -m scripts.run_java_fixtures
+    uv run --only-group=cli python -m scripts.run_java_fixtures --release 11
+
+Both JDK 11 and 16 fixture populations are checked by default.
+Set ``LITERALIZER_LINT_CLASSPATH`` to the Jackson jars for JSON-type cases.
+Each batch compiles with the matching ``--release`` and ``-Werror``, then executes initializers and consumer entry points.
+The warm JVM checks up to 512 fixtures per batch, with a 300-second deadline.
+Empty selections fail before execution.
+
 Native interpreter checks
 -------------------------
+
+Native value assertions belong in the same case manifests and compiling golden files as their inputs.
+Use ``base_context.consumer_templates`` for the base rendering or ``variants.consumer_templates`` for an option variant.
+Templates receive the generated ``code`` and the selected enum option names, such as ``bytes_format`` and ``datetime_format``.
+These names let an assertion check the intended representation's type as well as its value.
+Other languages and variants retain their existing coverage when no consumer is declared.
+
+Expected values must be independent of the renderer.
+The typed scalar, byte and datetime consumers use native type checks and standard-library inspection: binary64 bit patterns, independently constructed byte ranges, Gregorian dates, and exact datetime instants and offsets.
+Python lists and tuples share ordered sequence semantics; record consumers check authored fields and their native types.
+Byte encodings and epoch/ISO conversions follow the explicitly selected option.
+Python native datetimes retain naive values; Ruby represents naive input in UTC.
+Special floats compare by NaN/infinity classification, and finite floats retain their exact bits.
+Existing JSON roundtrips and specialized native assertions retain their distinct contracts.
+
+The ordinary native jobs execute these self-contained files without another runner or transport format.
+``test_native_value_consumers.py`` verifies failures after corrupting generated declarations while leaving their assertions unchanged, using bounded native execution.
+The Python corruption checks run with the regular pytest suite.
+Run the Ruby checks with Ruby 3 or later on ``PATH``::
+
+    LITERALIZER_TEST_RUBY=1 uv run --no-dev --group=test python -m pytest -n 0 tests/integration/test_native_value_consumers.py -k ruby
+
+Successful execution of the original programs remains with the existing native jobs.
+Fixtures without native assertions retain their existing snapshot, compiler and native checks.
 
 After installing Bash 5.1+, Ruby or Node, run the same fixture checks as CI::
 
@@ -111,18 +148,16 @@ After installing Bash 5.1+, Ruby or Node, run the same fixture checks as CI::
     uv run --only-group=cli python -m scripts.run_interpreted_fixtures ruby
     uv run --only-group=cli python -m scripts.run_interpreted_fixtures javascript
 
-Add ``--case scalar_int`` to select one input, ``--check syntax`` or ``--check execution`` to reproduce one phase, and ``--jobs 1`` for serial diagnostics.
-Each command has a 60-second deadline, adjustable with ``--timeout``.
+Syntax checks complete before execution for interpreters that support a separate syntax phase.
+Each command has a 60-second deadline.
 Missing interpreters and empty selections fail.
 
 Native Dart checks
 ------------------
 
-Run analysis and execution for one input or an explicit fixture::
+Feed the same null-separated fixture paths used by native CI::
 
-    uv run --group=dev python -m scripts.run_dart_fixtures --case scalar_int
-    uv run --group=dev python -m scripts.run_dart_fixtures tests/integration/cases/scalar_int/Dart@v3.dart
+    find tests/integration/cases -name '*.dart' -print0 | uv run --group=dev python -m scripts.run_dart_fixtures
 
-The existing null-separated standard input remains available for full CI selections.
-All paths use the same staging, analysis and binding-forcing execution code.
+The runner stages the files, analyzes them and forces their bindings during execution.
 An empty selection fails before starting the toolchain.

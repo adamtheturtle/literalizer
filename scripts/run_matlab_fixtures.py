@@ -42,8 +42,6 @@ def fixture_entrypoints() -> dict[Path, str]:
 
 def _skip_reason(*, source: str) -> str | None:
     """Retain the existing MATLAB features unsupported by Octave."""
-    if '""' in source:
-        return "MATLAB-escaped double quotes"
     if re.search(pattern=r"\bdatetime\b", string=source) is not None:
         return "datetime() is not implemented in Octave"
     if "containers.Map({''" in source:

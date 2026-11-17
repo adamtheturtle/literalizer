@@ -29,7 +29,7 @@ def _validate(
     fixtures: list[Path],
     tools: dict[str, str],
     phase: str,
-    jobs: int,
+    jobs: int | None,
     timeout: float,
 ) -> None:
     """Keep compilation artifacts outside the source checkout."""
@@ -72,30 +72,15 @@ def _validate(
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
-@click.option(
-    "--check",
-    "check_kind",
-    type=click.Choice(choices=("all", "syntax", "execution")),
-    default="all",
-)
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(
-    *, case_name: str | None, check_kind: str, jobs: int, timeout: float
-) -> None:
+def main() -> None:
     """Run the same native phases locally and in CI."""
+    jobs = os.cpu_count()
+    timeout = 600.0
     fixtures = sorted(
-        path
-        for path in Path("tests/integration/cases").rglob(pattern="*.rkt")
-        if case_name is None or path.parent.name == case_name
+        path for path in Path("tests/integration/cases").rglob(pattern="*.rkt")
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No Racket fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message="No Racket fixtures.")
     tools: dict[str, str] = {}
     for name in ("raco", "racket"):
         executable = shutil.which(cmd=name)
@@ -105,14 +90,13 @@ def main(
             )
         tools[name] = executable
     for phase in ("syntax", "execution"):
-        if check_kind in {"all", phase}:
-            _validate(
-                fixtures=fixtures,
-                tools=tools,
-                phase=phase,
-                jobs=jobs,
-                timeout=timeout,
-            )
+        _validate(
+            fixtures=fixtures,
+            tools=tools,
+            phase=phase,
+            jobs=jobs,
+            timeout=timeout,
+        )
 
 
 if __name__ == "__main__":

@@ -363,6 +363,14 @@ jobs:
       - name: Lint Ruby
         run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures ruby
 
+      - name: Test Ruby native corruption controls
+        timeout-minutes: 5
+        env:
+          LITERALIZER_TEST_RUBY: '1'
+        run: >-
+          uv run --no-dev --group=test python -m pytest -n 0
+          tests/integration/test_native_value_consumers.py -k ruby
+
       # Basic JSON -> Ruby -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Ruby toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
@@ -436,11 +444,7 @@ jobs:
       - name: Lint Java
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/jackson-jars/*
-        run: |-
-          uv run --only-group=cli python -m tests.integration.list_fixtures .java jdk_11 > /tmp/files-java-11 && test -s /tmp/files-java-11
-          xargs -0 java CheckJavaSyntax.java 11 < /tmp/files-java-11
-          uv run --only-group=cli python -m tests.integration.list_fixtures .java jdk_16 > /tmp/files-java-16 && test -s /tmp/files-java-16
-          xargs -0 java CheckJavaSyntax.java 16 < /tmp/files-java-16
+        run: uv run --only-group=cli python -m scripts.run_java_fixtures
 
       # Basic JSON -> Java -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the JDK toolchain and the Jackson
@@ -470,14 +474,9 @@ jobs:
       # The run step reuses the same trick: one pwsh process iterates
       # every fixture, executing its script block in a child scope so
       # `$my_data` (and anything else) does not leak between fixtures.
+
       - name: Lint PowerShell
-        run: uv run --only-group=cli python -m scripts.run_powershell_fixtures --check
-          syntax
-
-      - name: Run PowerShell files
-        run: uv run --only-group=cli python -m scripts.run_powershell_fixtures --check
-          execution
-
+        run: uv run --only-group=cli python -m scripts.run_powershell_fixtures
       # Basic JSON -> PowerShell -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the PowerShell toolchain; `uv
       # run` (project mode, not `--no-project`) is required so `import
@@ -487,38 +486,9 @@ jobs:
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.run_powershell_roundtrip
 
-      # Every fixture defines its own `fval_m` module, and the syntax
-      # check leaves an `fval_m.mod` in the working directory (gfortran
-      # emits .mod files even under `-fsyntax-only`). gfortran would
-      # then reuse that stale .mod instead of recompiling each file's
-      # inline module, masking references to names defined only in the
-      # current file. Compile each file from inside a private tmpdir so
-      # the stale .mod is not on the module search path and parallel
-      # runs cannot clobber each other's output.
-      # ``Fortran.VersionFormats`` (``src/literalizer/languages/fortran.py``)
-      # has ``V2003`` and ``V2008`` members; golden files are tagged
-      # ``@v2003`` / ``@v2008`` and each is linted with the matching
-      # ``-std=`` flag.  The ``-std=f2003``/``-std=f2008`` flags and the
-      # ``v2003``/``v2008`` selections below mirror those enum members; keep
-      # them in sync.  ``test -s`` fails the job if a version tag drifts
-      # so a selection silently matches no files.
+      # Isolate compiler module files and validate both declared standards.
       - name: Lint Fortran
-        run: |-
-          uv run --only-group=cli python -m tests.integration.list_fixtures .f90 v2003 > /tmp/files-fortran2003 && test -s /tmp/files-fortran2003
-          uv run --only-group=cli python -m tests.integration.list_fixtures .f90 v2008 > /tmp/files-fortran2008 && test -s /tmp/files-fortran2008
-          xargs -0 gfortran -Werror -std=f2003 -fsyntax-only < /tmp/files-fortran2003
-          xargs -0 gfortran -Werror -std=f2008 -fsyntax-only < /tmp/files-fortran2008
-          cat > /tmp/run-fortran.sh <<'SCRIPT'
-          std=$1
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          src=$(realpath "$2")
-          cd "$tmpdir" || exit 1
-          gfortran -Werror "-std=$std" "$src" -o run || exit 1
-          ./run || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2003 < /tmp/files-fortran2003
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-fortran.sh f2008 < /tmp/files-fortran2008
+        run: uv run --only-group=cli python -m scripts.run_fortran_fixtures
 
       # Basic JSON -> Fortran -> JSON round-trip (issue 2652). Runs here
       # because this is the job with the gfortran toolchain installed;
@@ -556,9 +526,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_nix_roundtrip
 
       - name: Lint Tcl
-        run: |-
-          find tests/integration/cases -name '*.tcl' -print0 > /tmp/files-tcl && test -s /tmp/files-tcl
-          xargs -0 -P "$(nproc)" -n1 tclsh < /tmp/files-tcl
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures tcl
 
       # Driven from `lint-fast` because that is the job where the `tcl`
       # apt package (pinned by the `Install apt packages` step above) is
@@ -610,12 +578,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_scheme_roundtrip
 
       - name: Lint Dhall
-        run: |-
-          find tests/integration/cases -name '*.dhall' -print0 > /tmp/files-dhall && test -s /tmp/files-dhall
-          cat > /tmp/check-dhall.sh <<'SCRIPT'
-          dhall < "$1" > /dev/null
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-dhall.sh < /tmp/files-dhall
+        run: uv run --only-group=cli python -m scripts.run_dhall_fixtures
 
       # Basic JSON -> Dhall -> JSON round-trip (issue 1867).  Runs here
       # because this is the job with the `dhall` binary on PATH (the
@@ -627,9 +590,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_dhall_roundtrip
 
       - name: Lint Wren
-        run: |-
-          find tests/integration/cases -name '*.wren' -print0 > /tmp/files-wren && test -s /tmp/files-wren
-          xargs -0 -P "$(nproc)" -n1 wren_cli < /tmp/files-wren
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures wren
 
       # Driven from `lint-fast` because that is the job where the
       # `wren_cli` binary (pinned by the `Install Wren CLI` step above)
@@ -823,8 +784,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_roc_roundtrip
 
   # Octave is a practical CI substitute, but it does not support
-  # every MATLAB builtin.  The per-fixture skip rules (for ``""``
-  # escaped quotes and the ``datetime`` builtin) are retained by
+  # every MATLAB builtin. The datetime and empty-map-key exclusions live in
   # scripts/run_matlab_fixtures.py.
   lint-matlab:
     needs: [native-changes]
@@ -904,18 +864,15 @@ jobs:
       - name: Install Perl DateTime
         timeout-minutes: 10
         run: cpanm --notest DateTime
-      - name: Lint Perl
-        run: |-
-          find tests/integration/cases -name '*.pl' -print0 > /tmp/files-perl && test -s /tmp/files-perl
-          xargs -0 -P "$(nproc)" -n1 perl -Mstrict=subs -c < /tmp/files-perl
-          xargs -0 -P "$(nproc)" -n1 perl -Mstrict=subs < /tmp/files-perl
-
       - name: Install uv
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+
+      - name: Lint Perl
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures perl
 
       # Basic JSON -> Perl -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the pinned Perl toolchain; `uv run`
@@ -1656,23 +1613,15 @@ jobs:
       # because each Gleam invocation boots the BEAM VM (~1s) and that
       # startup cost -- not the per-fixture compile work -- dominated the
       # old per-file parallel approach.
-      - name: Lint Gleam
-        timeout-minutes: 5
-        env:
-          LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: uv run --only-group=cli python -m scripts.run_gleam_fixtures --check
-          syntax
 
       # All ~350 fixtures are run in a single `gleam run` invocation; the
       # script generates a runner module that calls each fixture's `main`
       # in sequence. See the check step for the BEAM-startup rationale.
-      - name: Run Gleam files
-        timeout-minutes: 5
+      - name: Lint Gleam
+        timeout-minutes: 10
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: uv run --only-group=cli python -m scripts.run_gleam_fixtures --check
-          execution
-
+        run: uv run --only-group=cli python -m scripts.run_gleam_fixtures
       # Basic JSON -> Gleam -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Gleam toolchain and the primed
       # project (with `gleam_json` already downloaded) on disk; `uv run`
@@ -1741,14 +1690,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+
       - name: Lint Clojure
-        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures --check
-          syntax
-
-      - name: Run Clojure files
-        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures --check
-          execution
-
+        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures
       # Parse and run every fixture inside a single Groovy JVM via
       # GroovyShell, so the compiler stays warm across iterations
       # instead of cold-starting groovyc/groovy per file. A fresh
@@ -2093,7 +2037,7 @@ jobs:
               printf '%s\0' "$fixture"
             fi
             ((file_index += 1))
-          done < <(find tests/integration/cases -name '*.cpp' -print0 | sort -z) \
+          done < <(find tests/integration/cases tests/integration/default_module_names -name '*.cpp' -print0 | sort -z) \
             > /tmp/files-cpp-tidy
           test -s /tmp/files-cpp-tidy
           xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
@@ -2224,7 +2168,7 @@ jobs:
               printf '%s\0' "$fixture"
             fi
             ((file_index += 1))
-          done < <(find tests/integration/cases -name '*.cpp' -print0 | sort -z) \
+          done < <(find tests/integration/cases tests/integration/default_module_names -name '*.cpp' -print0 | sort -z) \
             > /tmp/files-to-lint
           test -s /tmp/files-to-lint
       # ``nlohmann::json`` fixtures (``Cpp(json_type=NLOHMANN_JSON)``)
@@ -2414,14 +2358,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Check Swift syntax
-        run: uv run --only-group=cli python -m scripts.run_swift_fixtures --check
-          syntax
 
-      - name: Run Swift files
-        run: uv run --only-group=cli python -m scripts.run_swift_fixtures --check
-          execution
-
+      - name: Lint Swift
+        run: uv run --only-group=cli python -m scripts.run_swift_fixtures
       # `uv` is needed by the `Swift roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Swift -> JSON round-trip (issue 1867). Runs here
@@ -2473,9 +2412,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Check OCaml syntax
-        run: uv run --only-group=cli python -m scripts.run_ocaml_fixtures --check
-          syntax
 
       # Fixtures only declare ``module Check = struct ... end`` with a
       # ``my_data`` let-binding; OCaml evaluates struct bodies when the
@@ -2483,10 +2419,8 @@ jobs:
       # the binding's right-hand side to execute.  A small prelude
       # loads ``yojson`` via findlib so the ``Yojson.Safe.t`` json_type
       # fixtures resolve in script mode too.
-      - name: Run OCaml files
-        run: uv run --only-group=cli python -m scripts.run_ocaml_fixtures --check
-          execution
-
+      - name: Lint OCaml
+        run: uv run --only-group=cli python -m scripts.run_ocaml_fixtures
       # ``uv`` is needed by the ``OCaml roundtrip`` step below; it runs
       # the helper in project mode so ``import literalizer`` resolves.
       # Basic JSON -> OCaml -> JSON round-trip (issue 1867). Runs here
@@ -2787,16 +2721,13 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Check Go syntax
-        run: uv run --only-group=cli python -m scripts.run_go_fixtures --check syntax
 
       # `go 1.18` in the generated go.mod matches `Go.language_version`
       # in `src/literalizer/languages/go.py`; keep them in sync. `go vet`
       # and `go run` honour the module's `go` directive when invoked on
       # a file inside a module, so wrap each fixture in a tmpdir module.
-      - name: Check Go compilation and run
-        run: uv run --only-group=cli python -m scripts.run_go_fixtures --check execution
-
+      - name: Lint Go
+        run: uv run --only-group=cli python -m scripts.run_go_fixtures
       # `uv` is needed by the `Go roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Go -> JSON round-trip (issue 1867). Runs here
@@ -3001,15 +2932,12 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Check D syntax
-        run: uv run --only-group=cli python -m scripts.run_d_fixtures --check syntax
 
       # Each fixture defines its own main, so compile and run directly.
       # Each invocation gets a private tmpdir so parallel builds don't
       # clobber each other's intermediate object files or output binary.
-      - name: Run D files
-        run: uv run --only-group=cli python -m scripts.run_d_fixtures --check execution
-
+      - name: Lint D
+        run: uv run --only-group=cli python -m scripts.run_d_fixtures
       # `uv` is needed by the `D roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       # Basic JSON -> D -> JSON round-trip (issue 1867). Runs here
@@ -3360,14 +3288,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Check Racket syntax
-        run: uv run --only-group=cli python -m scripts.run_racket_fixtures --check
-          syntax
 
-      - name: Run Racket files
-        run: uv run --only-group=cli python -m scripts.run_racket_fixtures --check
-          execution
-
+      - name: Lint Racket
+        run: uv run --only-group=cli python -m scripts.run_racket_fixtures
       # `uv` is needed by the `Racket roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Racket -> JSON round-trip (issue 1867). Runs here
@@ -3397,10 +3320,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Find files to lint
-        shell: bash
-        run: find tests/integration/cases -name '*.raku' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
       - name: Install Raku
         timeout-minutes: 10
         uses: Raku/setup-raku@v1
@@ -3414,17 +3333,15 @@ jobs:
       - name: Install JSON::Fast
         timeout-minutes: 10
         run: zef install --/test JSON::Fast
-      - name: Check Raku syntax
-        run: xargs -0 -P "$(nproc)" -n1 raku -c < /tmp/files-to-lint
-      - name: Run Raku files
-        run: xargs -0 -P "$(nproc)" -n1 raku < /tmp/files-to-lint
-
       - name: Install uv
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+
+      - name: Check Raku syntax and run files
+        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures raku
 
       # Basic JSON -> Raku -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Raku toolchain (pinned by the

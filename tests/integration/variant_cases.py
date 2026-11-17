@@ -340,7 +340,7 @@ def case_for_manifest_variant(
         ),
         pre_indent_level=context.pre_indent_level,
         consumer_template=manifest_variant.consumer_templates.get(
-            variant.lang_cls
+            variant.lang_cls, context.consumer_templates.get(variant.lang_cls)
         ),
         expected_errors=tuple(manifest_variant.expected_errors),
     )

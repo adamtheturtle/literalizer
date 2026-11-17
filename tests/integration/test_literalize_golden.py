@@ -178,6 +178,7 @@ def _check_rendering(
             template=rendering.consumer_template,
             result=result,
             golden_path=golden_path,
+            spec=spec,
         )
     check_golden(
         contents=contents,

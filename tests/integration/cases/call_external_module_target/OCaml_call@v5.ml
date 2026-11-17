@@ -1,11 +1,11 @@
 module Check = struct
 
-module Module = struct
-  let func _ = ()
-end
 type val_t =
   | OInt of int
   | OList of val_t list
+module Module = struct
+  let func _ = ()
+end
 let _ = Module.func(OInt 1)
 
 end

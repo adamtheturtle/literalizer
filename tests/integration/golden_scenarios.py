@@ -113,23 +113,28 @@ def _base_renderings(
             else context.collection_layout
         )
         renderings.append(
-            unprefixed_rendering(
-                lang_cls=lang_cls,
-                case_dir_name=case_name,
-                golden_name=lang_cls.__name__,
-                spec_source={},
-                render=RenderArguments(
-                    variable_form=variable_form_for_context(context=context),
-                    pre_indent_level=context.pre_indent_level,
-                    collection_layout=literalizer.CollectionLayout(
-                        value=(effective_value)
+            dataclasses.replace(
+                unprefixed_rendering(
+                    lang_cls=lang_cls,
+                    case_dir_name=case_name,
+                    golden_name=lang_cls.__name__,
+                    spec_source={},
+                    render=RenderArguments(
+                        variable_form=variable_form_for_context(
+                            context=context
+                        ),
+                        pre_indent_level=context.pre_indent_level,
+                        collection_layout=literalizer.CollectionLayout(
+                            value=(effective_value)
+                        ),
+                        record_null_substitutions=(
+                            context.resolved_record_null_substitutions()
+                        ),
+                        wrap_in_file=True,
                     ),
-                    record_null_substitutions=(
-                        context.resolved_record_null_substitutions()
-                    ),
-                    wrap_in_file=True,
+                    skip=scenario_skips.LANGUAGE_SKIPS,
                 ),
-                skip=scenario_skips.LANGUAGE_SKIPS,
+                consumer_template=context.consumer_templates.get(lang_cls),
             )
         )
     return tuple(renderings)

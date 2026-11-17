@@ -11,31 +11,17 @@ from scripts.bounded_command import bounded_command
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option("--version", type=str, default="v1", envvar="GLEAM_FIXTURE_TAG")
-@click.option(
-    "--check",
-    "check_kind",
-    type=click.Choice(choices=("all", "syntax", "execution")),
-    default="all",
-)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(
-    *, case_name: str | None, version: str, check_kind: str, timeout: float
-) -> None:
+def main(*, version: str) -> None:
     """Keep strict batched builds and the primed dependency project."""
+    timeout = 300.0
     fixtures = sorted(
         path
         for path in Path("tests/integration/cases").rglob(pattern="*.gleam")
         if path.name.endswith(f"@{version}.gleam")
-        if case_name is None or path.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No Gleam {version} fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message=f"No Gleam {version} fixtures.")
     primed = os.environ.get(key="LINT_GLEAM_PRIMED_DIR")
     if primed is None or not (Path(primed) / "gleam.toml").is_file():
         raise click.ClickException(
@@ -46,8 +32,6 @@ def main(
         ("syntax", "scripts.check_gleam_syntax"),
         ("execution", "scripts.run_gleam"),
     ):
-        if check_kind not in ("all", phase):
-            continue
         _ = subprocess.run(
             args=bounded_command(
                 args=[sys.executable, "-m", module],

@@ -22,7 +22,6 @@ from .case_manifests import (
     CallCaseSpec,
     CallWrapperSpec,
     ComposedCallFixture,
-    FragmentCallFixture,
     WrappedCallFixture,
 )
 
@@ -88,9 +87,7 @@ def integer_receiver_declarations(
     )
     followup = (
         config.fixture.followup
-        if isinstance(
-            config.fixture, (ComposedCallFixture, FragmentCallFixture)
-        )
+        if isinstance(config.fixture, ComposedCallFixture)
         else None
     )
     wrapper = (

@@ -14,7 +14,6 @@ from literalizer.exceptions import HeterogeneousCollectionError
 from .case_manifests import (
     CallCaseSpec,
     ComposedCallFixture,
-    FragmentCallFixture,
 )
 from .golden_checks import GoldenSkips, SkipPolicy, SkipReason
 from .parsed_values import ParsedValue
@@ -80,7 +79,7 @@ def call_stub_spec(
 def target_call_declarations(
     *,
     config: CallCaseSpec,
-    fixture: ComposedCallFixture | FragmentCallFixture,
+    fixture: ComposedCallFixture,
     spec: literalizer.Language,
     argument_values: Sequence[ParsedValue],
     golden_path: Path,

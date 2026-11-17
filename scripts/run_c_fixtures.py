@@ -57,25 +57,19 @@ def _check(*, fixture: Path, compiler: str, timeout: float) -> None:
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
-@click.option("--jobs", type=click.IntRange(min=1), default=os.cpu_count)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
-)
-def main(*, case_name: str | None, jobs: int, timeout: float) -> None:
-    """Validate a named case or the complete supported native corpus."""
+def main() -> None:
+    """Validate the complete supported native corpus."""
+    jobs = os.cpu_count()
+    timeout = 60.0
     roots = (
         Path("tests/integration/cases"),
         Path("tests/integration/default_module_names"),
     )
     fixtures = sorted(
-        fixture
-        for root in roots
-        for fixture in root.rglob(pattern="*.c")
-        if case_name is None or fixture.parent.name == case_name
+        fixture for root in roots for fixture in root.rglob(pattern="*.c")
     )
     if len(fixtures) == 0:
-        raise click.ClickException(message=f"No C fixtures: {case_name!r}")
+        raise click.ClickException(message="No C fixtures.")
     compiler = shutil.which(cmd="clang")
     if compiler is None:
         raise click.ClickException(message="The clang executable is required.")

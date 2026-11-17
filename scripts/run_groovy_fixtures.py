@@ -13,23 +13,17 @@ _HOST = Path(__file__).resolve().with_name(name="lint-groovy.groovy")
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(*, case_name: str | None, timeout: float) -> None:
+def main() -> None:
     """Compile and run selected fixtures in one host with private
     shells.
     """
+    timeout = 600.0
     fixtures = sorted(
         path
         for path in Path("tests/integration/cases").rglob(pattern="*.groovy")
-        if case_name is None or path.parent.name == case_name
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No Groovy fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message="No Groovy fixtures.")
     executable = shutil.which(cmd="groovy")
     if executable is None:
         raise click.ClickException(

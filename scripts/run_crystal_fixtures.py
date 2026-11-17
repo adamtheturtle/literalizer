@@ -11,28 +11,20 @@ from scripts.bounded_command import bounded_command
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=600.0
-)
-def main(*, case_name: str | None, timeout: float) -> None:
+def main() -> None:
     """Compile and execute fixtures without rewriting their module
     names.
     """
+    timeout = 600.0
     roots = (
         Path("tests/integration/cases"),
         Path("tests/integration/default_module_names"),
     )
     fixtures = sorted(
-        fixture
-        for root in roots
-        for fixture in root.rglob(pattern="*.cr")
-        if case_name is None or fixture.parent.name == case_name
+        fixture for root in roots for fixture in root.rglob(pattern="*.cr")
     )
     if len(fixtures) == 0:
-        raise click.ClickException(
-            message=f"No Crystal fixtures: {case_name!r}"
-        )
+        raise click.ClickException(message="No Crystal fixtures.")
     compiler = shutil.which(cmd="crystal")
     if compiler is None:
         raise click.ClickException(

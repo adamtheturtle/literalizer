@@ -3,3 +3,16 @@ owner = "variant"
 
 [[variants]]
 axis = "scientific_float_precision"
+
+[variants.consumer_templates]
+Python = '''{code}
+# Independent native value checks.
+import struct
+assert type(my_data["value"]) is float
+assert struct.pack("!d", my_data["value"]).hex() == "3ff3c0ca428c59fb"
+'''
+Ruby = '''{code}
+# Independent native value checks.
+value = my_data.fetch("value")
+raise "float precision changed" unless value.instance_of?(Float) && [value].pack("G").unpack1("H*") == "3ff3c0ca428c59fb"
+'''

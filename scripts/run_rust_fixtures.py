@@ -21,7 +21,6 @@ def _run(*, arguments: list[str | Path], label: str, timeout: float) -> None:
 
 
 @click.command()
-@click.option("--case", "case_name", type=str)
 @click.option(
     "--deps",
     type=click.Path(path_type=Path, exists=True, file_okay=False),
@@ -40,27 +39,16 @@ def _run(*, arguments: list[str | Path], label: str, timeout: float) -> None:
     envvar="RUST_SERDE_JSON_RLIB",
     required=True,
 )
-@click.option(
-    "--timeout", type=click.FloatRange(min=0, min_open=True), default=60.0
-)
-def main(
-    *,
-    case_name: str | None,
-    deps: Path,
-    chrono: Path,
-    serde_json: Path,
-    timeout: float,
-) -> None:
+def main(*, deps: Path, chrono: Path, serde_json: Path) -> None:
     """Preserve the 2021 edition, fatal warnings and serial compiler
     use.
     """
+    timeout = 60.0
     fixtures = sorted(
-        path
-        for path in Path("tests/integration/cases").rglob(pattern="*.rs")
-        if case_name is None or path.parent.name == case_name
+        path for path in Path("tests/integration/cases").rglob(pattern="*.rs")
     )
     if len(fixtures) == 0:
-        raise click.ClickException(message=f"No Rust fixtures: {case_name!r}")
+        raise click.ClickException(message="No Rust fixtures.")
     executable = shutil.which(cmd="rustc")
     if executable is None:
         raise click.ClickException(message="The rustc executable is required.")

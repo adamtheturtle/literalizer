@@ -147,6 +147,9 @@ class RenderContext(  # noqa: NOD001
     variable_form: manifest_values.VariableFormName = "new"
     variable_name: str = "my_data"
     collection_layout: CollectionLayoutName | None = None
+    consumer_templates: dict[manifest_values.ManifestLanguage, str] = Field(
+        default_factory=dict[literalizer.LanguageCls, str]
+    )
     pre_indent_level: Annotated[int, Field(ge=0)] = 0
     record_null_substitutions: Mapping[str, ValueInput] | None = None
     record_null_mapping_substitutions: dict[
@@ -619,21 +622,8 @@ class ComposedCallFixture(  # noqa: NOD001
     kind: Literal["composed"] = "composed"
 
 
-class FragmentCallFixture(  # noqa: NOD001
-    _ComposedCallFixture, frozen=True
-):
-    """Preserve the public fragment between caller-owned source bytes."""
-
-    kind: Literal["fragment"]
-    caller_code_prefix: str = ""
-    caller_code_suffix: str = ""
-
-
 type CallFixture = Annotated[
-    WrappedCallFixture
-    | BoundCallFixture
-    | ComposedCallFixture
-    | FragmentCallFixture,
+    WrappedCallFixture | BoundCallFixture | ComposedCallFixture,
     Field(discriminator="kind"),
 ]
 
@@ -757,9 +747,7 @@ class CallCaseSpec(
         default per-language matrix names at least one, so no call case
         declares itself into having no coverage at all.
         """
-        if isinstance(
-            self.fixture, (ComposedCallFixture, FragmentCallFixture)
-        ):
+        if isinstance(self.fixture, ComposedCallFixture):
             followup = self.fixture.followup
             if (
                 followup is not None
