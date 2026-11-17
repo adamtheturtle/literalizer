@@ -1760,11 +1760,12 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Lint Clojure
-        run: |-
-          find tests/integration/cases -name '*.clj' -print0 > /tmp/files-clj && test -s /tmp/files-clj
-          xargs -0 clj-kondo --config '{:linters {:unresolved-namespace {:level :off}}}' --lint < /tmp/files-clj
+        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures --check
+          syntax
+
       - name: Run Clojure files
-        run: xargs -0 -P "$(nproc)" -n1 bb < /tmp/files-clj
+        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures --check
+          execution
 
       # Parse and run every fixture inside a single Groovy JVM via
       # GroovyShell, so the compiler stays warm across iterations
