@@ -622,10 +622,9 @@ class ComposedCallFixture(  # noqa: NOD001
 class FragmentCallFixture(  # noqa: NOD001
     _ComposedCallFixture, frozen=True
 ):
-    """Preserve the public fragment between caller-owned source bytes."""
+    """Complete a public fragment before composing its declarations."""
 
     kind: Literal["fragment"]
-    caller_code_prefix: str = ""
     caller_code_suffix: str = ""
 
 

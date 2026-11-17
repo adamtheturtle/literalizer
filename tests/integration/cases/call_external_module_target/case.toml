@@ -11,7 +11,7 @@ parameter_names = ["a"]
 per_element = true
 
 [call.fixture]
-kind = "fragment"
+kind = "composed"
 include_target_stub = false
 caller_body_preamble = ["module Module = struct\n  let func _ = ()\nend"]
 [[call_examples]]

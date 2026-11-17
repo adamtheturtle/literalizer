@@ -1360,5 +1360,7 @@ template = '"${{"// payload"}}'
 [call_examples.fixture]
 kind = "fragment"
 include_target_stub = false
-caller_code_prefix = "var my_data = \"seed\";\n"
 caller_code_suffix = '"; if (my_data != "// payload;") throw StateError("incorrect interpolation");'
+
+[call_examples.fixture.ref_declarations]
+my_data = '"seed"'
