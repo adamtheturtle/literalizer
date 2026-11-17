@@ -619,21 +619,8 @@ class ComposedCallFixture(  # noqa: NOD001
     kind: Literal["composed"] = "composed"
 
 
-class FragmentCallFixture(  # noqa: NOD001
-    _ComposedCallFixture, frozen=True
-):
-    """Preserve the public fragment between caller-owned source bytes."""
-
-    kind: Literal["fragment"]
-    caller_code_prefix: str = ""
-    caller_code_suffix: str = ""
-
-
 type CallFixture = Annotated[
-    WrappedCallFixture
-    | BoundCallFixture
-    | ComposedCallFixture
-    | FragmentCallFixture,
+    WrappedCallFixture | BoundCallFixture | ComposedCallFixture,
     Field(discriminator="kind"),
 ]
 
@@ -757,9 +744,7 @@ class CallCaseSpec(
         default per-language matrix names at least one, so no call case
         declares itself into having no coverage at all.
         """
-        if isinstance(
-            self.fixture, (ComposedCallFixture, FragmentCallFixture)
-        ):
+        if isinstance(self.fixture, ComposedCallFixture):
             followup = self.fixture.followup
             if (
                 followup is not None

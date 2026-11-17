@@ -22,12 +22,16 @@ class _Backend:
 
     executable: str
     extension: str
-    syntax_argument: str
+    syntax_argument: str | None
     # Omitted parser names use the interpreter itself.
     syntax_executable: str | None = None  # noqa: NOD001
+    arguments: tuple[str, ...] = ()  # noqa: NOD001 - omitted flags mean no prefix
 
 
 _BACKENDS = {
+    "raku": _Backend(
+        executable="raku", extension=".raku", syntax_argument="-c"
+    ),
     "lua": _Backend(
         executable="lua",
         extension=".lua",
@@ -36,9 +40,21 @@ _BACKENDS = {
     ),
     "bash": _Backend(executable="bash", extension=".sh", syntax_argument="-n"),
     "php": _Backend(executable="php", extension=".php", syntax_argument="-l"),
+    "perl": _Backend(
+        executable="perl",
+        extension=".pl",
+        syntax_argument="-c",
+        arguments=("-Mstrict=subs",),
+    ),
     "ruby": _Backend(executable="ruby", extension=".rb", syntax_argument="-c"),
     "javascript": _Backend(
         executable="node", extension=".js", syntax_argument="--check"
+    ),
+    "tcl": _Backend(
+        executable="tclsh", extension=".tcl", syntax_argument=None
+    ),
+    "wren": _Backend(
+        executable="wren_cli", extension=".wren", syntax_argument=None
     ),
 }
 
@@ -53,16 +69,21 @@ def _run(*, arguments: list[str], label: str, timeout: float) -> None:
     )
 
 
+def _phase_executable(*, config: _Backend, executable: str, phase: str) -> str:
+    """Resolve a separate syntax parser when the backend requires one."""
+    if phase != "syntax" or config.syntax_executable is None:
+        return executable
+    parser = shutil.which(cmd=config.syntax_executable)
+    if parser is None:
+        raise click.ClickException(
+            message=f"Missing parser: {config.syntax_executable}"
+        )
+    return parser
+
+
 @click.command()
 @click.argument("backend", type=click.Choice(choices=tuple(_BACKENDS)))
-@click.option(
-    "--check",
-    "check_kind",
-    type=click.Choice(choices=("all", "syntax", "execution")),
-    default="all",
-    show_default=True,
-)
-def main(backend: str, check_kind: str) -> None:
+def main(backend: str) -> None:
     """Validate the selected BACKEND's fixtures, retaining every version.
 
     Syntax checks complete before execution starts. The independently
@@ -95,28 +116,23 @@ def main(backend: str, check_kind: str) -> None:
             label="Bash V5_1 interpreter floor",
             timeout=timeout,
         )
+    syntax_arguments = (
+        [] if config.syntax_argument is None else [config.syntax_argument]
+    )
     with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
         for phase in ("syntax", "execution"):
-            if check_kind not in ("all", phase):
+            if phase == "syntax" and config.syntax_argument is None:
                 continue
-            phase_executable = executable
-            if phase == "syntax" and config.syntax_executable is not None:
-                parser = shutil.which(cmd=config.syntax_executable)
-                if parser is None:
-                    raise click.ClickException(
-                        message=f"Missing parser: {config.syntax_executable}"
-                    )
-                phase_executable = parser
+            phase_executable = _phase_executable(
+                config=config, executable=executable, phase=phase
+            )
             futures = [
                 executor.submit(
                     _run,
                     arguments=[
                         phase_executable,
-                        *(
-                            [config.syntax_argument]
-                            if phase == "syntax"
-                            else []
-                        ),
+                        *config.arguments,
+                        *(syntax_arguments if phase == "syntax" else []),
                         str(object=fixture),
                     ],
                     label=f"{backend} {phase}: {fixture}",
