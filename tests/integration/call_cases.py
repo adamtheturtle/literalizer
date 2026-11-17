@@ -710,7 +710,6 @@ def _render_call_golden_case(
             config=config,
             spec=spec,
             fragments=(*decl_results, result),
-            return_increment=100,
         )
         check_golden(
             contents=_call_fixture_contents(

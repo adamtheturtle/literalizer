@@ -99,7 +99,6 @@ Existing bindings start from literal declarations, with their initial and final 
 ``call_receivers.toml`` shares implementations by native integer signature and calling convention.
 Capability declarations select participants before the syntax table is consulted.
 Both ordinary and option-variant calls retain their effective spec, and external references retain their original inference hints.
-``runtime/test_observable_calls.py`` compiles and executes positive programs and controls for dropped, repeated and reordered calls, swapped zipped operands and incorrect returned or bound values.
 Public ``wrap_in_file`` cases continue to exercise the library's generated-stub contract.
 
 Native Java checks

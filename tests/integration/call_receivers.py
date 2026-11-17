@@ -44,10 +44,6 @@ class IntegerReceiverSyntax(  # noqa: NOD001
     wrapper: str
     wrapper_unary: str
     verify: str
-    compile: list[str] = Field(default_factory=list[str])
-    compile_timeout_seconds: int = 180
-    execute: list[str]
-    path_on_stdin: bool = False
 
 
 @functools.cache
@@ -76,7 +72,7 @@ def uses_integer_receiver(
 
 
 def integer_receiver_declarations(
-    *, config: CallCaseSpec, spec: literalizer.Language, return_increment: int
+    *, config: CallCaseSpec, spec: literalizer.Language
 ) -> CallStubDeclarations:
     """Bind independently authored events to native signature syntax."""
     events = config.integer_receiver_events
@@ -104,7 +100,7 @@ def integer_receiver_declarations(
             str(object=value) + syntax.event_suffix for value in observations
         ),
         "count": len(observations),
-        "return_increment": return_increment,
+        "return_increment": 100,
         "target": config.target_function,
         "parameter": parameter,
         "consumer": None if followup is None else followup.target_function,
@@ -145,12 +141,9 @@ def compose_integer_calls(
     config: CallCaseSpec,
     spec: literalizer.Language,
     fragments: Sequence[literalizer.LiteralizeResult],
-    return_increment: int,
 ) -> str:
     """Assemble real calls and a final count check using public APIs."""
-    receiver = integer_receiver_declarations(
-        config=config, spec=spec, return_increment=return_increment
-    )
+    receiver = integer_receiver_declarations(config=config, spec=spec)
     return literalizer.literalize_call_with_declarations(
         language=spec,
         declarations=fragments,

@@ -38,6 +38,9 @@ Running tests
 
    $ uv run --group dev pytest
 
+Native checks require their compiler, interpreter, SDK and platform support; missing prerequisites fail.
+Run the corresponding commands from :file:`.github/workflows/lint.yml` after installing those prerequisites.
+
 Golden verification preserves existing fixtures when rendering skips.
 A stale skipped fixture fails verification with its path.
 To remove it, run the corresponding golden test with ``--regen-all``.
