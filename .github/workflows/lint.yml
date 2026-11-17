@@ -471,12 +471,12 @@ jobs:
       # every fixture, executing its script block in a child scope so
       # `$my_data` (and anything else) does not leak between fixtures.
       - name: Lint PowerShell
-        run: |-
-          find tests/integration/cases -name '*.ps1' -print0 > /tmp/files-ps1 && test -s /tmp/files-ps1
-          pwsh -NoProfile -NonInteractive -File scripts/lint-powershell.ps1 < /tmp/files-ps1
+        run: uv run --only-group=cli python -m scripts.run_powershell_fixtures --check
+          syntax
 
       - name: Run PowerShell files
-        run: pwsh -NoProfile -NonInteractive -File scripts/run-powershell.ps1 < /tmp/files-ps1
+        run: uv run --only-group=cli python -m scripts.run_powershell_fixtures --check
+          execution
 
       # Basic JSON -> PowerShell -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the PowerShell toolchain; `uv
