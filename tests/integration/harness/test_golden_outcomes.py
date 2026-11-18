@@ -87,7 +87,7 @@ def test_rejection(file_regression):
     config_path = tmp_path / "pytest.ini"
     _ = config_path.write_text(data="[pytest]\n", encoding="utf-8")
     project_root = Path(__file__).resolve().parents[3]
-    completed = subprocess.run(  # noqa: S603 - exercise the real pytest CLI
+    completed = subprocess.run(  # noqa: S603 - verify the pytest command
         args=[
             sys.executable,
             "-m",
