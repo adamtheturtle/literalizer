@@ -10,9 +10,10 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
-from tests.integration.list_fixtures import fixture_paths
+from tests.integration.list_fixtures import CASES_DIR, fixture_paths
 
 _HOST = Path(__file__).resolve().parents[1] / "CheckJavaSyntax.java"
+_DEFAULT_MODULES = CASES_DIR.parent / "default_module_names"
 
 
 @click.command()
@@ -35,20 +36,24 @@ def main(releases: tuple[str, ...]) -> None:
     java = shutil.which(cmd="java")
     if java is None:
         raise click.ClickException(message="A JDK with java is required.")
-    selections = {
-        release: tuple(
-            path
-            for path in fixture_paths(
-                extension=".java", version=f"jdk_{release}"
-            )
+    selections: dict[str, tuple[Path, ...]] = {}
+    for release in releases:
+        version = f"jdk_{release}"
+        ordinary = fixture_paths(
+            extension=".java", version=version, root=CASES_DIR
         )
-        for release in releases
-    }
-    for release, fixtures in selections.items():
-        if len(fixtures) == 0:
+        defaults = fixture_paths(
+            extension=".java", version=version, root=_DEFAULT_MODULES
+        )
+        if len(ordinary) == 0:
             raise click.ClickException(
-                message=f"No Java jdk_{release} fixtures."
+                message=f"No ordinary Java {version} fixtures."
             )
+        if len(defaults) == 0:
+            raise click.ClickException(
+                message=f"No default-module Java {version} fixtures."
+            )
+        selections[release] = (*ordinary, *defaults)
     for release, fixtures in selections.items():
         for offset in range(0, len(fixtures), batch_size):
             batch = fixtures[offset : offset + batch_size]

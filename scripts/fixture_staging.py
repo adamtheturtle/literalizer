@@ -9,6 +9,14 @@ import click
 from tests.integration.fixture_names import fixture_module_name
 
 
+def stage_ada_fixture(*, fixture: Path, workspace: Path) -> Path:
+    """Stage the fixture under its Ada library-unit filename."""
+    name = "check" if fixture.parent.name == "default_module_names" else "main"
+    destination = workspace / f"{name}.adb"
+    _ = shutil.copyfile(src=fixture, dst=destination)
+    return destination
+
+
 def stage_fixture_modules(
     *,
     fixtures: Sequence[Path],

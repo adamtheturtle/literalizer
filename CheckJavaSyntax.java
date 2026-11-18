@@ -25,7 +25,8 @@ import javax.tools.ToolProvider;
 // host triggers static-init, constructs a `Main` instance to run any
 // instance-field initializers, and invokes `main()` when present, so
 // runtime errors (e.g. a bad `Instant.parse` argument) surface here
-// instead of passing silently.
+// instead of passing silently. The default-module goldens instead expose
+// `Module.module()` and exercise that entry point directly.
 public class CheckJavaSyntax {
     public static void main(final String[] args) throws IOException {
         final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -37,11 +38,8 @@ public class CheckJavaSyntax {
             System.err.println("Usage: CheckJavaSyntax <release> <file>...");
             System.exit(2);
         }
-        // The `--release` value is supplied as the first argument by the
-        // `Lint Java` step in `.github/workflows/lint.yml`, which passes
-        // the literal matching each fixture's `@jdk_<release>` golden tag
-        // (`11` for `JDK_11`, `16` for `JDK_16` in `Java.VersionFormats`
-        // in `src/literalizer/languages/java.py`). Keep them in sync.
+        // The runner passes the release matching each selected fixture's
+        // `@jdk_<release>` golden tag.
         final String release = args[0];
         // Optional `LITERALIZER_LINT_CLASSPATH` (colon-separated, with
         // `dir/*` wildcards expanded to every jar in `dir/`) is added to
@@ -55,8 +53,8 @@ public class CheckJavaSyntax {
                 compiler.getStandardFileManager(null, null, null)) {
             for (int i = 1; i < args.length; i++) {
                 final String filename = args[i];
-                // Each fixture declares `class Main`, so give every file
-                // its own output directory to avoid class-name collisions.
+                // Each fixture gets a private output directory to keep
+                // repeated class names isolated.
                 final Path classDir = Files.createTempDirectory("javac");
                 final Iterable<? extends JavaFileObject> units =
                         fileManager.getJavaFileObjectsFromStrings(List.of(filename));
@@ -122,11 +120,9 @@ public class CheckJavaSyntax {
         return String.join(":", parts);
     }
 
-    // Load `Main` from a private class loader rooted at *classDir*,
-    // construct an instance (forcing both static- and instance-field
-    // initializers), and invoke `main()` if the fixture defines one.
-    // `Main` is package-private in every fixture, so `setAccessible`
-    // is required before invoking members reflectively.
+    // Load the fixture from a private class loader rooted at *classDir*.
+    // Generated classes are package-private, so invoking their members
+    // reflectively requires `setAccessible`.
     private static boolean runFixture(
             final String filename,
             final Path classDir,
@@ -143,6 +139,14 @@ public class CheckJavaSyntax {
         }
         final URL[] urls = urlList.toArray(new URL[0]);
         try (final URLClassLoader loader = new URLClassLoader(urls)) {
+            final Path parent = Path.of(filename).getParent();
+            if (parent != null && parent.endsWith("default_module_names")) {
+                final Class<?> moduleClass = Class.forName("Module", true, loader);
+                final Method module = moduleClass.getDeclaredMethod("module");
+                module.setAccessible(true);
+                module.invoke(null);
+                return true;
+            }
             final Class<?> checkClass = Class.forName("Main", true, loader);
             final Constructor<?> constructor = checkClass.getDeclaredConstructor();
             constructor.setAccessible(true);
