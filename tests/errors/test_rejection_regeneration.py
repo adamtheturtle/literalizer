@@ -55,7 +55,7 @@ def _run_snapshot_pytest(
     """Exercise the golden runner with real pytest command-line
     options.
     """
-    # Keep the runner and its fixture types loaded across pytester runs.
+    # Keep the runner and its fixture types loaded across nested pytest runs.
     test_path = pytester.makepyfile(
         test_snapshot=(
             "from pathlib import Path\n"
