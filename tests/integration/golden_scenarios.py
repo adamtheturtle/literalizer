@@ -157,7 +157,7 @@ def _default_module_name_renderings(
             lang_cls=lang_cls,
             case_dir_name=case_name,
             golden_name=f"{lang_cls.__name__}_default_module_name",
-            golden_parent=_CASES_DIR.parent / "default_module_names",
+            golden_parent=_CASES_DIR / case_name,
             spec_source=lang_cls(language_version=version),
             render=compact_render(
                 variable_form=literalizer.NewVariable(

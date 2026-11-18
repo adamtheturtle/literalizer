@@ -139,8 +139,7 @@ public class CheckJavaSyntax {
         }
         final URL[] urls = urlList.toArray(new URL[0]);
         try (final URLClassLoader loader = new URLClassLoader(urls)) {
-            final Path parent = Path.of(filename).getParent();
-            if (parent != null && parent.endsWith("default_module_names")) {
+            if (Path.of(filename).endsWith("default_module_name.java")) {
                 final Class<?> moduleClass = Class.forName("Module", true, loader);
                 final Method module = moduleClass.getDeclaredMethod("module");
                 module.setAccessible(true);

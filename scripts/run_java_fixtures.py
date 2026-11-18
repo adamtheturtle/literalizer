@@ -10,10 +10,10 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
-from tests.integration.list_fixtures import CASES_DIR, fixture_paths
+from tests.integration.fixture_names import is_default_module_fixture
+from tests.integration.list_fixtures import fixture_paths
 
 _HOST = Path(__file__).resolve().parents[1] / "CheckJavaSyntax.java"
-_DEFAULT_MODULES = CASES_DIR.parent / "default_module_names"
 
 
 @click.command()
@@ -45,10 +45,12 @@ def main(releases: tuple[str, ...]) -> None:
             include_default_module_names=True,
         )
         ordinary = tuple(
-            path for path in fixtures if CASES_DIR in path.parents
+            path
+            for path in fixtures
+            if not is_default_module_fixture(path=path)
         )
         defaults = tuple(
-            path for path in fixtures if _DEFAULT_MODULES in path.parents
+            path for path in fixtures if is_default_module_fixture(path=path)
         )
         if len(ordinary) == 0:
             raise click.ClickException(

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import click
 
+from .fixture_names import is_default_module_fixture
 from .golden_artifacts import GoldenArtifact
 from .golden_inventory import authored_paths, golden_artifacts
 
@@ -50,7 +51,8 @@ def fixture_paths(
         if (version is None or artifact.version.name.lower() == version)
         and (language is None or artifact.language.__name__ == language)
         and (
-            include_default_module_names or CASES_DIR in artifact.path.parents
+            include_default_module_names
+            or not is_default_module_fixture(path=artifact.path)
         )
     }
     if include_authored:

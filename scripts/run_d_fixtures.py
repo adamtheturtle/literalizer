@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import run_bounded_command
+from tests.integration.fixture_names import is_default_module_fixture
 from tests.integration.list_fixtures import fixture_paths
 
 
@@ -29,7 +30,7 @@ def _run(
         root = Path(directory)
         _ = shutil.copyfile(src=fixture, dst=root / "check.d")
         sources = ["check.d"]
-        if fixture.parent.name == "default_module_names":
+        if is_default_module_fixture(path=fixture):
             _ = (root / "driver.d").write_text(
                 data="import check; void main() { check.Module(); }\n"
             )

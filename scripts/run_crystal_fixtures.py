@@ -8,6 +8,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.fixture_names import fixture_module_name
 from tests.integration.list_fixtures import fixture_paths
 
 
@@ -33,8 +34,7 @@ def main() -> None:
         directory = Path(temporary)
         imports: list[str] = []
         for fixture in fixtures:
-            stem = fixture.stem.rsplit(sep="@", maxsplit=1)[0]
-            name = f"Fixture_{fixture.parent.name}_{stem}"
+            name = fixture_module_name(golden_path=fixture)
             _ = shutil.copyfile(src=fixture, dst=directory / f"{name}.cr")
             imports.append(f'require "./{name}"')
             click.echo(message=f"{name}.cr <- {fixture}")
