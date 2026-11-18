@@ -2834,10 +2834,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .R > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # The Azure mirror can stall each dependency download before falling
       # back to this archive, causing R installation to time out.
       - name: Use Ubuntu archive for R dependencies
@@ -2852,11 +2848,8 @@ jobs:
           # this pin `setup-r` installs whatever it considers `release`,
           # so the R that compiles the fixtures drifts.
           r-version: 4.4.0
-      - name: Check R syntax
-        run: xargs -0 Rscript -e 'for (f in commandArgs(trailingOnly=TRUE)) parse(file=f)'
-          < /tmp/files-to-lint
-      - name: Run R files
-        run: xargs -0 -P "$(nproc)" -n1 Rscript < /tmp/files-to-lint
+      - name: Validate native fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_r_fixtures
       # `jsonlite` is needed by the `R roundtrip` step below (see
       # `scripts/run_r_roundtrip.py`); install it into a
       # per-job library directory and point `R_LIBS_USER` at it so the
