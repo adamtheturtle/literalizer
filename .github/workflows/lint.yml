@@ -1303,10 +1303,9 @@ jobs:
       - name: Json5 roundtrip
         run: uv run --no-dev --group=roundtrip python -m scripts.run_json5_roundtrip
 
-      - name: Lint Yaml
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .yaml v1_2 > /tmp/files-yaml && test -s /tmp/files-yaml
-          xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-yaml
+      - name: Validate YAML fixtures
+        run: uv run --no-dev --group=fixture-inventory --group=yaml-lint python -m
+          scripts.run_yaml_fixtures
 
       # Basic JSON -> YAML -> JSON round-trip (issue 1867). Runs here
       # alongside the existing Yaml syntax check; ``uv run`` (project
