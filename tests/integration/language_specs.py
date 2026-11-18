@@ -93,12 +93,14 @@ def make_golden_artifact(
     name: str,
     lang_cls: literalizer.LanguageCls,
     version: enum.Enum,
+    case_name: str | None = None,  # noqa: NOD001 - sibling fixture roots
 ) -> GoldenArtifact:
     """Resolve a generated artifact for the effective language version."""
     return GoldenArtifact(
         path=make_golden_path(
             parent=parent, name=name, lang_cls=lang_cls, version=version
         ),
+        case_name=parent.name if case_name is None else case_name,
         language=lang_cls,
         version=version,
     )

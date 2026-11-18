@@ -31,10 +31,16 @@ def call_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
     )
 
 
-def literal_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
-    """Include ordinary renderings and sibling default-module fixtures."""
+def literal_artifacts(
+    *,
+    cases_dir: Path,
+    scenario_name: str | None = None,  # noqa: NOD001 - optionally scope ownership
+) -> Iterator[GoldenArtifact]:
+    """Resolve fixtures for the selected literal scenarios."""
     integration_dir = Path(__file__).parent
-    for renderings in scenario_renderings().values():
+    for (name, _), renderings in scenario_renderings().items():
+        if scenario_name is not None and name != scenario_name:
+            continue
         for rendering in renderings:
             for spec in rendering.specs:
                 if rendering.rejection(spec=spec) is not None:
@@ -49,11 +55,16 @@ def literal_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
                 )
 
 
-def authored_paths(*, cases_dir: Path) -> Iterator[Path]:
+def authored_paths(
+    *,
+    cases_dir: Path,
+    case_name: str | None = None,  # noqa: NOD001 - optionally scope ownership
+) -> Iterator[Path]:
     """Return manifests and source inputs owned by the corpus."""
     for manifest in load_case_manifests(cases_dir=cases_dir):
-        yield manifest.path
-        yield manifest.input.path
+        if case_name is None or manifest.case_dir.name == case_name:
+            yield manifest.path
+            yield manifest.input.path
 
 
 def golden_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:

@@ -9,8 +9,9 @@ from literalizer import LanguageCls
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class GoldenArtifact:
-    """One generated fixture and the effective target that produced it."""
+    """One generated fixture, its owning case and its effective target."""
 
     path: Path
+    case_name: str
     language: LanguageCls
     version: enum.Enum

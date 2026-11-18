@@ -51,6 +51,17 @@ Find a golden test
 
 The manifest declares coverage; the following test modules collect the matching cases.
 
+To find checked-in goldens owned by a case, pass its directory name to the fixture inventory.
+You can narrow the list by language or version.
+The case lookup also includes any fixtures for that case stored under :file:`tests/integration/default_module_names/`.
+
+.. code-block:: console
+
+   $ uv run --no-dev --group fixture-inventory python -m tests.integration.list_fixtures .cpp cpp17 --case binary
+
+The command emits null-terminated paths for use with tools such as ``xargs -0``.
+Pass ``--include-authored`` to include the case manifest and input, subject to any extension filter.
+
 .. list-table:: Golden test entry points
    :header-rows: 1
 

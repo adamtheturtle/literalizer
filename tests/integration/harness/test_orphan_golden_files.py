@@ -72,11 +72,17 @@ def test_rejected_call_renderings_do_not_own_goldens(
 
 def test_base_cases_own_effective_golden(cases_dir: Path) -> None:
     """A declared success case must not silently skip every target."""
+    covered = {
+        artifact.case_name
+        for artifact in literal_artifacts(
+            cases_dir=cases_dir, scenario_name="base"
+        )
+        if artifact.path.is_file()
+    }
     empty = [
         manifest.case_dir.name
         for manifest in load_case_manifests(cases_dir=cases_dir)
-        if "base" in manifest.suites
-        and not any(manifest.case_dir.glob(pattern="*@*"))
+        if "base" in manifest.suites and manifest.case_dir.name not in covered
     ]
     assert empty == [], f"Base cases without effective goldens: {empty}"
 

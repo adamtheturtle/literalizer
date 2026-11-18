@@ -113,6 +113,7 @@ class GoldenRendering:
             name=self.golden_name,
             lang_cls=self.lang_cls,
             version=version,
+            case_name=self.case_dir_name,
         )
 
 
