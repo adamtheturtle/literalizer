@@ -69,6 +69,6 @@ def check_outcome(
             assert_rejection(
                 outcome=outcome, render=render, golden_path=golden_path
             )
-        case Exclusion():
+        case _:
             assert_no_golden(golden_path=golden_path)
             pytest.skip(reason=outcome.reason)
