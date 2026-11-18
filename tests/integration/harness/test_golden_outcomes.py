@@ -1,8 +1,6 @@
 """A resolved golden expectation governs execution and fixture writes."""
 
 import functools
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -12,6 +10,8 @@ from literalizer import InputFormat, literalize_call
 from literalizer.exceptions import CallArgNotSupportedError
 from literalizer.languages import Bash
 from tests.integration.golden_outcomes import SUCCESS, check_outcome
+
+pytest_plugins: tuple[str, ...] = ("pytester",)
 
 
 def _bash_call(*, source: str) -> str:
@@ -45,12 +45,11 @@ def test_success_propagates_a_previous_skip_error(
 
 @pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
 def test_rejection_preserves_fixture_ownership(
-    *, tmp_path: Path, regenerate: bool
+    *, pytester: pytest.Pytester, regenerate: bool
 ) -> None:
     """Exercise the real verification and regeneration command lines."""
-    test_path = tmp_path / "test_rejection.py"
-    _ = test_path.write_text(
-        data="""\
+    _ = pytester.makepyfile(
+        """\
 from pathlib import Path
 import pytest
 from literalizer.exceptions import CallArgNotSupportedError
@@ -79,45 +78,21 @@ def test_rejection(file_regression):
             file_regression=file_regression,
         )
 """,
-        encoding="utf-8",
     )
-    stale_path = tmp_path / "stale.sh"
+    stale_path = pytester.path / "stale.sh"
     original = b"stale\n"
     _ = stale_path.write_bytes(data=original)
-    config_path = tmp_path / "pytest.ini"
-    _ = config_path.write_text(data="[pytest]\n", encoding="utf-8")
-    project_root = Path(__file__).resolve().parents[3]
-    completed = subprocess.run(  # noqa: S603 - verify the pytest command
-        args=[
-            sys.executable,
-            "-m",
-            "coverage",
-            "run",
-            "--parallel-mode",
-            "--rcfile",
-            str(object=project_root / "pyproject.toml"),
-            "-m",
-            "pytest",
-            "-c",
-            str(object=config_path),
-            "--disable-plugin-autoload",
-            "-p",
-            "pytest_regressions.plugin",
-            "-p",
-            "pytest_datadir.plugin",
-            "-q",
-            "--tb=short",
-            str(object=test_path),
-            *(["--regen-all"] if regenerate else []),
-        ],
-        cwd=project_root,
-        capture_output=True,
-        text=True,
-        timeout=180,
-        check=False,
+    _ = pytester.makeini(source="[pytest]")
+    pytester.syspathinsert(path=Path(__file__).resolve().parents[3])
+    result = pytester.runpytest_inprocess(
+        "--disable-plugin-autoload",
+        "-p",
+        "pytest_regressions.plugin",
+        "-p",
+        "pytest_datadir.plugin",
+        "-q",
+        *(["--regen-all"] if regenerate else []),
     )
-    assert completed.returncode == pytest.ExitCode.OK, (
-        completed.stdout + completed.stderr
-    )
+    result.assert_outcomes(passed=1)
     assert stale_path.read_bytes() == original
-    assert not (tmp_path / "rejected.sh").exists()
+    assert not (pytester.path / "rejected.sh").exists()
