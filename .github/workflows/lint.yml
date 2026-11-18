@@ -338,7 +338,8 @@ jobs:
       # runner default is the pinned floor; the ``BASH_VERSINFO`` guard
       # below fails the job if that floor ever drifts below 5.1.
       - name: Lint Bash
-        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures bash
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_interpreted_fixtures
+          bash
 
       # Basic JSON -> Bash -> JSON round-trip (issue 2640). Runs here
       # because this is the job with the pinned ``bash`` interpreter (the
@@ -361,7 +362,8 @@ jobs:
           ruby-version: '3.4'
 
       - name: Lint Ruby
-        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures ruby
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_interpreted_fixtures
+          ruby
 
       - name: Test Ruby native corruption controls
         timeout-minutes: 5
@@ -381,7 +383,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_ruby_roundtrip
 
       - name: Lint JavaScript
-        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures javascript
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_interpreted_fixtures
+          javascript
 
       # Basic JSON -> JavaScript -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the Node toolchain (pinned by
@@ -444,7 +447,7 @@ jobs:
       - name: Lint Java
         env:
           LITERALIZER_LINT_CLASSPATH: /tmp/jackson-jars/*
-        run: uv run --only-group=cli python -m scripts.run_java_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_java_fixtures
 
       # Basic JSON -> Java -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the JDK toolchain and the Jackson
@@ -459,7 +462,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_java_roundtrip
 
       - name: Lint Php
-        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures php
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_interpreted_fixtures
+          php
 
       # Basic JSON -> PHP -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the PHP toolchain; `uv run` (project
@@ -476,7 +480,7 @@ jobs:
       # `$my_data` (and anything else) does not leak between fixtures.
 
       - name: Lint PowerShell
-        run: uv run --only-group=cli python -m scripts.run_powershell_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_powershell_fixtures
       # Basic JSON -> PowerShell -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the PowerShell toolchain; `uv
       # run` (project mode, not `--no-project`) is required so `import
@@ -488,7 +492,7 @@ jobs:
 
       # Isolate compiler module files and validate both declared standards.
       - name: Lint Fortran
-        run: uv run --only-group=cli python -m scripts.run_fortran_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_fortran_fixtures
 
       # Basic JSON -> Fortran -> JSON round-trip (issue 2652). Runs here
       # because this is the job with the gfortran toolchain installed;
@@ -499,7 +503,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_fortran_roundtrip
 
       - name: Lint Lua
-        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures lua
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_interpreted_fixtures
+          lua
 
       # Basic JSON -> Lua -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Lua toolchain (pinned by the
@@ -513,7 +518,7 @@ jobs:
 
       - name: Lint Nix
         run: |-
-          find tests/integration/cases -name '*.nix' -print0 > /tmp/files-nix && test -s /tmp/files-nix
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .nix > /tmp/files-nix && test -s /tmp/files-nix
           xargs -0 -P "$(nproc)" -n1 nix-instantiate --parse < /tmp/files-nix > /dev/null
 
       # Basic JSON -> Nix -> JSON round-trip (issue 2666). Runs here
@@ -526,7 +531,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_nix_roundtrip
 
       - name: Lint Tcl
-        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures tcl
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_interpreted_fixtures
+          tcl
 
       # Driven from `lint-fast` because that is the job where the `tcl`
       # apt package (pinned by the `Install apt packages` step above) is
@@ -546,7 +552,7 @@ jobs:
       # default binding (`src/literalizer/languages/forth_prelude.fs`)
       # is exercised end-to-end by the `Forth roundtrip` step below.
       - name: Lint Forth
-        run: uv run --only-group=cli python -m scripts.run_forth_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_forth_fixtures
 
       # Basic JSON -> Forth -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `gforth` toolchain on PATH;
@@ -566,7 +572,7 @@ jobs:
       # variant,  # 2760) resolve there; ``--no-auto-compile`` keeps the
       # run from writing a ``.go`` cache for it.
       - name: Lint Scheme
-        run: uv run --only-group=cli python -m scripts.run_scheme_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_scheme_fixtures
 
       # Basic JSON -> Scheme -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `guile-3.0` toolchain on PATH;
@@ -578,7 +584,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_scheme_roundtrip
 
       - name: Lint Dhall
-        run: uv run --only-group=cli python -m scripts.run_dhall_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_dhall_fixtures
 
       # Basic JSON -> Dhall -> JSON round-trip (issue 1867).  Runs here
       # because this is the job with the `dhall` binary on PATH (the
@@ -590,7 +596,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_dhall_roundtrip
 
       - name: Lint Wren
-        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures wren
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_interpreted_fixtures
+          wren
 
       # Driven from `lint-fast` because that is the job where the
       # `wren_cli` binary (pinned by the `Install Wren CLI` step above)
@@ -620,7 +627,7 @@ jobs:
       # ``-std=c99`` matches ``C.language_version`` in
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Lint C
-        run: uv run --only-group=cli python -m scripts.run_c_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_c_fixtures
 
       # Basic JSON -> C -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the C toolchain (``clang``) set up
@@ -695,7 +702,7 @@ jobs:
           release: ${{ env.ODIN_VERSION }}
       - name: Run Odin files
         run: |-
-          mapfile -d '' -t files < <(uv run --only-group=cli python -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
+          mapfile -d '' -t files < <(uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
           n=${#files[@]}
           test "$n" -gt 0
           for (( i=ODIN_SHARD; i<n; i+=ODIN_SHARDS )); do
@@ -731,6 +738,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Download Roc
         timeout-minutes: 3
         uses: nick-fields/retry@v4.0.0
@@ -759,17 +772,9 @@ jobs:
           sudo install "/tmp/roc-nightly/$ROC_NIGHTLY_BUILD/roc" /usr/local/bin/roc
       - name: Lint Roc
         run: |-
-          find tests/integration/cases -name '*.roc' -print0 > /tmp/files-roc && test -s /tmp/files-roc
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .roc > /tmp/files-roc && test -s /tmp/files-roc
           xargs -0 -P "$(nproc)" -n1 roc check < /tmp/files-roc
 
-      # `uv` is needed by the `Roc roundtrip` step below; it runs the
-      # helper in project mode so `import literalizer` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Roc -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Roc toolchain (the pinned
       # nightly installed above); `uv run` (project mode, not
@@ -825,7 +830,7 @@ jobs:
 
       - name: Lint Matlab
         run: |-
-          find tests/integration/cases -name 'Matlab*.m' -print0 > /tmp/files-matlab && test -s /tmp/files-matlab
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .m --language Matlab > /tmp/files-matlab && test -s /tmp/files-matlab
           uv run --no-dev --group=roundtrip python -m scripts.run_matlab_fixtures < /tmp/files-matlab
 
       # Basic JSON -> MATLAB -> JSON round-trip (issue 2663). Runs here
@@ -872,7 +877,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Perl
-        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures perl
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_interpreted_fixtures
+          perl
 
       # Basic JSON -> Perl -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the pinned Perl toolchain; `uv run`
@@ -917,7 +923,7 @@ jobs:
 
       - name: Lint Jsonnet
         run: |-
-          find tests/integration/cases -name '*.jsonnet' -print0 > /tmp/files-jsonnet && test -s /tmp/files-jsonnet
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .jsonnet > /tmp/files-jsonnet && test -s /tmp/files-jsonnet
           xargs -0 -P "$(nproc)" -n1 jsonnet < /tmp/files-jsonnet > /dev/null
       # Basic JSON -> Jsonnet -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `jsonnet` binary (from the
@@ -931,7 +937,7 @@ jobs:
 
       - name: Lint Hcl
         run: |-
-          find tests/integration/cases -name '*.hcl' -print0 > /tmp/files-hcl && test -s /tmp/files-hcl
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .hcl > /tmp/files-hcl && test -s /tmp/files-hcl
           xargs -0 -P "$(nproc)" -n1 hcl2json < /tmp/files-hcl > /dev/null
       # Basic JSON -> HCL -> JSON round-trip (issue 2657). Runs here
       # because this is the job with the `hcl2json` binary (from the
@@ -994,17 +1000,17 @@ jobs:
 
       - name: Lint Json5
         run: |-
-          find tests/integration/cases -name '*.json5' -print0 > /tmp/files-json5 && test -s /tmp/files-json5
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .json5 --include-authored > /tmp/files-json5 && test -s /tmp/files-json5
           xargs -0 -P "$(nproc)" -n1 json5 < /tmp/files-json5 > /dev/null
 
       - name: Lint Jsonc
         run: |-
-          find tests/integration/cases -name '*.jsonc' -print0 > /tmp/files-jsonc && test -s /tmp/files-jsonc
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .jsonc --include-authored > /tmp/files-jsonc && test -s /tmp/files-jsonc
           xargs -0 uv run --no-dev --group=roundtrip python -m scripts.check_jsonc_syntax < /tmp/files-jsonc
 
       - name: Lint Norg
         run: |-
-          find tests/integration/cases -name '*.norg' -print0 > /tmp/files-norg && test -s /tmp/files-norg
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .norg > /tmp/files-norg && test -s /tmp/files-norg
           xargs -0 tree-sitter parse --lib-path /tmp/norg.so --lang-name norg --quiet < /tmp/files-norg
       # Basic JSON -> Norg -> JSON round-trip (issue 2667). Runs here
       # because this is the job that builds the `tree-sitter-norg` grammar
@@ -1034,7 +1040,7 @@ jobs:
       - name: Lint TypeScript
         timeout-minutes: 5
         run: |-
-          find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts && test -s /tmp/files-ts
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .ts > /tmp/files-ts && test -s /tmp/files-ts
           xargs -0 uv run --only-group=cli python -m scripts.check_typescript_consumers < /tmp/files-ts
 
   # Execute TypeScript fixtures via tsx. Split from `lint-npm-installed`
@@ -1077,7 +1083,7 @@ jobs:
 
       - name: Run TypeScript files
         run: |-
-          find tests/integration/cases -name '*.ts' -print0 > /tmp/files-ts && test -s /tmp/files-ts
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .ts > /tmp/files-ts && test -s /tmp/files-ts
           xargs -0 -P "$(nproc)" -n1 tsx < /tmp/files-ts
 
       # Basic JSON -> TypeScript -> JSON round-trip (issue 1867).  Runs
@@ -1129,7 +1135,7 @@ jobs:
 
       - name: Lint Elm
         run: |-
-          find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .elm > /tmp/files-elm && test -s /tmp/files-elm
           while IFS= read -r -d '' f; do
             label="Elm formatting: $f"
             scripts/run-bounded.sh "$label" --kill-after=5s 60s elm-format --stdin < "$f" > /dev/null || exit "$?"
@@ -1173,7 +1179,7 @@ jobs:
 
       - name: Run Elm
         run: |-
-          find tests/integration/cases -name '*.elm' -print0 > /tmp/files-elm && test -s /tmp/files-elm
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .elm > /tmp/files-elm && test -s /tmp/files-elm
           xargs -0 uv run --no-dev --group=roundtrip python -m scripts.run_elm < /tmp/files-elm
       # Basic JSON -> Elm -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `elm` binary (from the
@@ -1214,7 +1220,7 @@ jobs:
 
       - name: Lint Ada
         run: |-
-          find tests/integration/cases -name '*.adb' -print0 > /tmp/files-ada && test -s /tmp/files-ada
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .adb > /tmp/files-ada && test -s /tmp/files-ada
           xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.check_ada_syntax < /tmp/files-ada
       - name: Run Ada files
         run: xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.run_ada
@@ -1254,7 +1260,7 @@ jobs:
       # KRoC, we fall back to this Python-based structural checker.
       - name: Lint Occam
         run: |-
-          find tests/integration/cases -name '*.occ' -print0 > /tmp/files-occam && test -s /tmp/files-occam
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .occ > /tmp/files-occam && test -s /tmp/files-occam
           xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.check_occam_syntax < /tmp/files-occam
 
       # There is deliberately no Occam JSON round-trip (issues 1867 and 2669),
@@ -1276,9 +1282,10 @@ jobs:
       # Because nothing can execute the literalized output, Occam is the one
       # issue-1867 language with no ``run_occam_roundtrip.py`` helper.
 
+      # TOML, JSON5 and JSONC parser checks also cover authored inputs.
       - name: Lint Toml
         run: |-
-          find tests/integration/cases -name '*.toml' -print0 > /tmp/files-toml && test -s /tmp/files-toml
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .toml --include-authored > /tmp/files-toml && test -s /tmp/files-toml
           xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli --only-group=toml python -m scripts.check_toml_syntax < /tmp/files-toml
 
       # Basic JSON -> TOML -> JSON round-trip (issue 1867). Runs here
@@ -1298,7 +1305,7 @@ jobs:
 
       - name: Lint Yaml
         run: |-
-          uv run --only-group=cli python -m tests.integration.list_fixtures .yaml v1_2 > /tmp/files-yaml && test -s /tmp/files-yaml
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .yaml v1_2 > /tmp/files-yaml && test -s /tmp/files-yaml
           xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-yaml
 
       # Basic JSON -> YAML -> JSON round-trip (issue 1867). Runs here
@@ -1322,6 +1329,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Initialize .NET runtime
         run: |
           mkdir -p /tmp/.dotnet/shm
@@ -1346,17 +1359,11 @@ jobs:
       # (e.g. undefined members on an unstubbed object) both fail here.
       - name: Lint CSharp
         run: |-
-          find tests/integration/cases -name '*.cs' -print0 > /tmp/files-cs && test -s /tmp/files-cs
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .cs > /tmp/files-cs && test -s /tmp/files-cs
           dotnet /tmp/lint-csharp/lint-csharp.dll < /tmp/files-cs
 
       # `uv` is needed by the `CSharp roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
 
       # Basic JSON -> C# -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the .NET toolchain; `uv run`
@@ -1369,7 +1376,7 @@ jobs:
 
       - name: Lint VisualBasic
         run: |-
-          find tests/integration/cases -name '*.vb' -print0 > /tmp/files-vb && test -s /tmp/files-vb
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .vb > /tmp/files-vb && test -s /tmp/files-vb
           dotnet /tmp/lint-vb/lint-vb.dll < /tmp/files-vb
 
       # Basic JSON -> VB.NET -> JSON round-trip (issue 2682). Runs here
@@ -1391,7 +1398,7 @@ jobs:
       # ``src/literalizer/languages/fsharp.py``; keep them in sync.
       - name: Lint FSharp
         run: |-
-          find tests/integration/cases \( -name '*.fs' -o -name '*.fsi' \) -print0 > /tmp/files-fs && test -s /tmp/files-fs
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures --language FSharp > /tmp/files-fs && test -s /tmp/files-fs
           driver=$(mktemp -d)/driver.fsx
           while IFS= read -r -d '' f; do
             printf '#load "%s"\n' "$(realpath "$f")"
@@ -1446,7 +1453,7 @@ jobs:
       # so parallel builds don't clobber each other's output binary.
       - name: Lint Sml
         run: |-
-          find tests/integration/cases -name '*.sml' -print0 > /tmp/files-sml && test -s /tmp/files-sml
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .sml > /tmp/files-sml && test -s /tmp/files-sml
           cat > /tmp/run-sml.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
@@ -1502,7 +1509,7 @@ jobs:
       # single BEAM VM, paying the cold-start cost once instead of twice
       # per fixture (serial `elixirc` + `elixir` loops).
       - name: Lint Elixir
-        run: uv run --only-group=cli python -m scripts.run_elixir_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_elixir_fixtures
 
       # Basic JSON -> Elixir -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Elixir toolchain (`elixir` on
@@ -1550,7 +1557,7 @@ jobs:
       # module atom cannot fit in a filesystem component with a .beam suffix.
       # Keep compiler warnings fatal and execute every x/0 entry point.
       - name: Compile and run Erlang files
-        run: uv run --only-group=cli python -m scripts.run_erlang_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_erlang_fixtures
 
       # Basic JSON -> Erlang -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Erlang/OTP toolchain (`escript`
@@ -1621,7 +1628,7 @@ jobs:
         timeout-minutes: 10
         env:
           LINT_GLEAM_PRIMED_DIR: ${{ runner.temp }}/lint-gleam-primed
-        run: uv run --only-group=cli python -m scripts.run_gleam_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_gleam_fixtures
       # Basic JSON -> Gleam -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Gleam toolchain and the primed
       # project (with `gleam_json` already downloaded) on disk; `uv run`
@@ -1692,14 +1699,14 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Clojure
-        run: uv run --only-group=cli python -m scripts.run_clojure_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_clojure_fixtures
       # Parse and run every fixture inside a single Groovy JVM via
       # GroovyShell, so the compiler stays warm across iterations
       # instead of cold-starting groovyc/groovy per file. A fresh
       # GroovyShell per fixture keeps classloaders isolated, since
       # some fixtures declare top-level classes with shared names.
       - name: Lint Groovy
-        run: uv run --only-group=cli python -m scripts.run_groovy_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_groovy_fixtures
 
       # `uv` is needed by the `Clojure roundtrip` and `Groovy roundtrip`
       # steps below; they run their helpers in project mode so
@@ -1830,7 +1837,7 @@ jobs:
       # ``-XGHC2021`` matches ``Haskell.language_version`` in
       # ``src/literalizer/languages/haskell.py``; keep them in sync.
       - name: Lint Haskell
-        run: uv run --only-group=cli python -m scripts.run_haskell_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_haskell_fixtures
 
       # Basic JSON -> Haskell -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the GHC toolchain; `uv run`
@@ -1844,7 +1851,7 @@ jobs:
 
       - name: Lint PureScript
         run: |-
-          find tests/integration/cases -name '*.purs' -print0 > /tmp/files-purescript && test -s /tmp/files-purescript
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .purs > /tmp/files-purescript && test -s /tmp/files-purescript
           xargs -0 -P "$(nproc)" -n 1 uv run --only-group=cli python -m scripts.check_purescript_syntax < /tmp/files-purescript
       - name: Run PureScript files
         run: xargs -0 uv run --only-group=cli python -m scripts.run_purescript < /tmp/files-purescript
@@ -1876,6 +1883,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Download the Clang toolchain
         uses: actions/download-artifact@v8
         with:
@@ -1916,7 +1929,7 @@ jobs:
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files
         run: |-
-          find tests/integration/cases tests/integration/default_module_names -name '*.c' -print0 > /tmp/files-c-tidy && test -s /tmp/files-c-tidy
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .c --include-default-module-names > /tmp/files-c-tidy && test -s /tmp/files-c-tidy
           xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
 
   build-cpp-toolchain:
@@ -1986,6 +1999,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Download the C++ toolchain
         uses: actions/download-artifact@v8
         with:
@@ -2037,7 +2056,7 @@ jobs:
               printf '%s\0' "$fixture"
             fi
             ((file_index += 1))
-          done < <(find tests/integration/cases tests/integration/default_module_names -name '*.cpp' -print0 | sort -z) \
+          done < <(uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .cpp --include-default-module-names) \
             > /tmp/files-cpp-tidy
           test -s /tmp/files-cpp-tidy
           xargs -0 -P "$(nproc)" -n1 bash scripts/lint-cpp-fixture.sh tidy < /tmp/files-cpp-tidy
@@ -2060,10 +2079,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.cob' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
+          .cob > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # ``setup-cobol-action`` builds GnuCOBOL from source with a bare
       # ``./configure``; without a JSON handler library present at that
       # point ``configure`` disables JSON I/O ("JSON library: not
@@ -2085,12 +2110,6 @@ jobs:
         uses: fabasoad/setup-cobol-action@v1.7.0
         with:
           version: ${{ env.GNUCOBOL_VERSION }}
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # GnuCOBOL caps the file base name length and rejects ``@``-laden
       # names that exceed it, so copy each fixture to a fixed short
       # filename before invoking ``cobc``.
@@ -2146,6 +2165,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Download the C++ toolchain
         uses: actions/download-artifact@v8
         with:
@@ -2168,7 +2193,7 @@ jobs:
               printf '%s\0' "$fixture"
             fi
             ((file_index += 1))
-          done < <(find tests/integration/cases tests/integration/default_module_names -name '*.cpp' -print0 | sort -z) \
+          done < <(uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .cpp --include-default-module-names) \
             > /tmp/files-to-lint
           test -s /tmp/files-to-lint
       # ``nlohmann::json`` fixtures (``Cpp(json_type=NLOHMANN_JSON)``)
@@ -2212,13 +2237,6 @@ jobs:
       # identical check runs once rather than once per shard. Only that shard
       # needs `uv`; the helper runs in project mode so `import literalizer`
       # resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        if: matrix.shard == 0
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> C++ -> JSON round-trip (issue 1867). Shard 0 is only
       # the designated owner of this shard-independent check; it has no
       # additional fixture coverage. See `scripts/run_cpp_roundtrip.py`.
@@ -2303,7 +2321,7 @@ jobs:
         # Use the distribution's compiler in a plain script. A `.main.kts`
         # host loads duplicate scripting classes in an isolated class loader
         # that cannot see the legacy ScriptExpectedLocation runtime API.
-        run: uv run --only-group=cli python -m scripts.run_kotlin_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_kotlin_fixtures
 
       # Basic JSON -> Kotlin -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Kotlin toolchain on hand; the
@@ -2360,7 +2378,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Swift
-        run: uv run --only-group=cli python -m scripts.run_swift_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_swift_fixtures
       # `uv` is needed by the `Swift roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Swift -> JSON round-trip (issue 1867). Runs here
@@ -2420,7 +2438,7 @@ jobs:
       # loads ``yojson`` via findlib so the ``Yojson.Safe.t`` json_type
       # fixtures resolve in script mode too.
       - name: Lint OCaml
-        run: uv run --only-group=cli python -m scripts.run_ocaml_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_ocaml_fixtures
       # ``uv`` is needed by the ``OCaml roundtrip`` step below; it runs
       # the helper in project mode so ``import literalizer`` resolves.
       # Basic JSON -> OCaml -> JSON round-trip (issue 1867). Runs here
@@ -2452,10 +2470,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.lisp' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
+          .lisp > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install SBCL
         timeout-minutes: 10
         uses: 40ants/setup-lisp@v4
@@ -2477,15 +2501,6 @@ jobs:
       - name: Install com.inuoe.jzon
         timeout-minutes: 10
         run: scripts/retry.sh ros install com.inuoe.jzon
-      # ``uv`` is needed by the ``Common Lisp roundtrip`` step below; it
-      # runs the helper in project mode so ``import literalizer``
-      # resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Common Lisp -> JSON round-trip (issue 2644). Runs
       # here because this is the job with the SBCL toolchain (``ros run``
       # pinned by the ``Install SBCL`` step above) and the
@@ -2540,7 +2555,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Run Scala files
-        run: uv run --only-group=cli python -m scripts.run_scala_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_scala_fixtures
 
       # `uv` is needed by the `Scala roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
@@ -2586,7 +2601,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Haxe syntax and run fixtures
-        run: uv run --only-group=cli python -m scripts.run_haxe_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_haxe_fixtures
 
       # `uv` is needed by the `Haxe roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
@@ -2611,10 +2626,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.dart' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
+          .dart > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Dart
         timeout-minutes: 10
         uses: dart-lang/setup-dart@v1
@@ -2629,15 +2650,9 @@ jobs:
       # Top-level final bindings initialize lazily. Resolve their names
       # from the golden registries, then reference each one in a driver
       # to force evaluation without interpreting Dart source text.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       - name: Check Dart syntax and run fixtures
-        # This helper imports the pytest golden registry to identify bindings.
-        run: uv run --group=dev python -m scripts.run_dart_fixtures < /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_dart_fixtures
+          < /tmp/files-to-lint
       # Basic JSON -> Dart -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Dart toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
@@ -2687,8 +2702,8 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Run Julia golden files
-        run: uv run --only-group=cli python -m scripts.run_julia_fixtures --project
-          /tmp/julia-lint
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_julia_fixtures
+          --project /tmp/julia-lint
 
       # Basic JSON -> Julia -> JSON round-trip (issue 1867). Runs here
       # because this is the job with `julia` on PATH and the
@@ -2727,7 +2742,7 @@ jobs:
       # and `go run` honour the module's `go` directive when invoked on
       # a file inside a module, so wrap each fixture in a tmpdir module.
       - name: Lint Go
-        run: uv run --only-group=cli python -m scripts.run_go_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_go_fixtures
       # `uv` is needed by the `Go roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Go -> JSON round-trip (issue 1867). Runs here
@@ -2784,7 +2799,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Check Rust syntax and run binaries
-        run: uv run --only-group=cli python -m scripts.run_rust_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_rust_fixtures
 
       # `uv` is needed by the `Rust roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
@@ -2814,10 +2829,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.R' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
+          .R > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # The Azure mirror can stall each dependency download before falling
       # back to this archive, causing R installation to time out.
       - name: Use Ubuntu archive for R dependencies
@@ -2846,12 +2867,6 @@ jobs:
         run: |
           mkdir -p /tmp/r-lint-libs
           Rscript -e 'install.packages("jsonlite", lib="/tmp/r-lint-libs", repos="https://cloud.r-project.org")'
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> R -> JSON round-trip (issue 1867). Runs here
       # because this is the job with `Rscript` on PATH and the
       # `/tmp/r-lint-libs` library (with the `jsonlite` package) already
@@ -2937,7 +2952,7 @@ jobs:
       # Each invocation gets a private tmpdir so parallel builds don't
       # clobber each other's intermediate object files or output binary.
       - name: Lint D
-        run: uv run --only-group=cli python -m scripts.run_d_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_d_fixtures
       # `uv` is needed by the `D roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
       # Basic JSON -> D -> JSON round-trip (issue 1867). Runs here
@@ -2975,7 +2990,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
       - name: Run Crystal files
-        run: uv run --only-group=cli python -m scripts.run_crystal_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_crystal_fixtures
       # `uv` is needed by the `Crystal roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Crystal -> JSON round-trip (issue 1867). Runs here
@@ -3011,6 +3026,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
         env:
@@ -3026,17 +3047,11 @@ jobs:
               ((selected_count += 1))
             fi
             ((file_index += 1))
-          done < <(find tests/integration/cases -name '*.mojo' -print0 | sort -z) \
+          done < <(uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .mojo) \
             > /tmp/files-to-lint
           test -s /tmp/files-to-lint
           printf 'Mojo shard %s/%s: %s of %s fixtures\n' \
             "$((SHARD_INDEX + 1))" "$SHARD_COUNT" "$selected_count" "$file_index"
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Mojo 1.2 compiles the depth-30 native List regression within the
       # existing fixture budget; Mojo 1.0 exceeds it for the same source.
       # ``mojo-compiler==1.2.0`` is >= the ``VersionFormats.V24_5``
@@ -3170,10 +3185,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.nim' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
+          .nim > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Nim
         timeout-minutes: 10
         uses: jiro4989/setup-nim-action@v2
@@ -3194,14 +3215,6 @@ jobs:
           SCRIPT
           xargs -0 -P "$(nproc)" -n1 bash /tmp/run-nim.sh < /tmp/files-to-lint
 
-      # ``uv`` is needed by the ``Nim roundtrip`` step below; it runs
-      # the helper in project mode so ``import literalizer`` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Nim -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Nim toolchain (pinned by the
       # ``Install Nim`` step above); ``uv run`` (project mode, not
@@ -3252,7 +3265,7 @@ jobs:
       # The fixture checks below retain the requested runtime.
       - name: Find Python golden files
         shell: bash
-        run: uv run --python 3.12 --only-group=cli python -m tests.integration.list_fixtures
+        run: uv run --python 3.12 --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
           .py "$PYTHON_FIXTURE_TAG" > /tmp/files-python && test -s /tmp/files-python
       - name: Check Python syntax
         run: xargs -0 -P "$(nproc)" -n1 uv run --python "$PYTHON_VERSION" --no-project
@@ -3290,7 +3303,7 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Racket
-        run: uv run --only-group=cli python -m scripts.run_racket_fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_racket_fixtures
       # `uv` is needed by the `Racket roundtrip` step below; it runs
       # the helper in project mode so `import literalizer` resolves.
       # Basic JSON -> Racket -> JSON round-trip (issue 1867). Runs here
@@ -3341,7 +3354,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Check Raku syntax and run files
-        run: uv run --only-group=cli python -m scripts.run_interpreted_fixtures raku
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_interpreted_fixtures
+          raku
 
       # Basic JSON -> Raku -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Raku toolchain (pinned by the
@@ -3378,8 +3392,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: uv run --only-group=cli python -m tests.integration.list_fixtures .zig
-          "$ZIG_FIXTURE_TAG" > /tmp/files-to-lint && test -s /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
+          .zig "$ZIG_FIXTURE_TAG" > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Zig
         timeout-minutes: 10
         uses: mlugg/setup-zig@v2
@@ -3437,10 +3451,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases tests/integration/default_module_names -name
-          '*.sv' -print0 > /tmp/files-to-lint && test -s /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
+          .sv --include-default-module-names > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # Pinned to 5.046 rather than `latest`: Verilator 5.048 hits an
       # internal "Underflow of indentation" codegen error
       # (`V3File.h:160`) when building the `run_systemverilog_roundtrip.py`
@@ -3461,14 +3481,6 @@ jobs:
       - name: Check SystemVerilog syntax
         run: xargs -0 -P "$(nproc)" -n1 verilator --lint-only --language 1800-2017
           -Wno-REALCVT < /tmp/files-to-lint
-      # `uv` is needed by the `SystemVerilog roundtrip` step below; it
-      # runs the helper in project mode so `import literalizer` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> SystemVerilog -> JSON round-trip (issue 1867). Runs
       # here because this is the job with Verilator installed; `uv run`
       # (project mode, not `--no-project`) is required so
@@ -3488,10 +3500,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name '*.v' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
+          .v > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # The pinned ``weekly.2026.08`` release is ``>=`` the ``V0_4``
       # default of ``V.language_version`` in
       # ``src/literalizer/languages/v.py``; keep them in sync.  Use a
@@ -3530,12 +3548,6 @@ jobs:
           # every lazily-created directory exists beforehand.
           echo 'fn main() {}' > /tmp/v-warmup.v
           v -cc gcc run /tmp/v-warmup.v > /dev/null 2>&1 || true
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       - name: Check V syntax
         run: xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.check_v_syntax
           < /tmp/files-to-lint
@@ -3568,12 +3580,18 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Install GNU timeout
         run: brew install --quiet coreutils
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
+          .m --language ObjectiveC > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # Every fixture `#import`s `<Foundation/Foundation.h>`, whose parse
       # cost dominates each tiny TU. Precompile Foundation once and
       # preload it in the syntax-check and build-and-run steps so the
@@ -3599,14 +3617,6 @@ jobs:
           "$tmpdir/out" || exit 1
           SCRIPT
           xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
-      # `uv` is needed by the `Objective-C roundtrip` step below; it runs
-      # the helper in project mode so `import literalizer` resolves.
-      - name: Install uv
-        timeout-minutes: 10
-        uses: astral-sh/setup-uv@v10.3.3
-        with:
-          enable-cache: true
-          cache-dependency-glob: '**/pyproject.toml'
       # Basic JSON -> Objective-C -> JSON round-trip (issue 2668). Runs
       # here because this is the job with the Objective-C toolchain
       # (Apple `clang` plus the `Foundation` framework); `uv run`
@@ -3632,10 +3642,16 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Install uv
+        timeout-minutes: 10
+        uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
       - name: Find files to lint
         shell: bash
-        run: find tests/integration/cases -name 'ObjectiveC*.m' -print0 > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
+          .m --language ObjectiveC > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
       # from Homebrew's llvm formula. The PyPI clang-tidy (used in the
       # Ubuntu jobs) doesn't work here: it can't find Apple's Foundation

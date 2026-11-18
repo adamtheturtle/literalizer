@@ -3,10 +3,8 @@
 import dataclasses
 import re
 from collections.abc import Sequence
-from pathlib import Path
 
 from beartype import beartype
-from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 from literalizer._enums import enum_payload
@@ -35,9 +33,6 @@ from .case_manifests import (
     BoundCallFixture,
     CallCaseSpec,
     WrappedCallFixture,
-)
-from .golden_checks import (
-    skip_golden,
 )
 from .language_specs import (
     find_redefinition_styles,
@@ -75,7 +70,7 @@ def _call_transform_style_unsupported(
 
 
 @beartype
-def _wrapper_capability_skip_reason(
+def wrapper_capability_skip_reason(
     *,
     lang_cls: literalizer.LanguageCls,
     config: CallCaseSpec,
@@ -137,30 +132,6 @@ def _wrapper_capability_skip_reason(
                 f"for {wrapper_name!r}"
             )
     return None
-
-
-@beartype
-def skip_unsupported_wrapper(
-    *,
-    config: CallCaseSpec,
-    lang_cls: literalizer.LanguageCls,
-    spec: literalizer.Language,
-    golden_path: Path,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Skip (and check any stale golden) when this language cannot host
-    the case's wrapper stub.
-    """
-    reason = _wrapper_capability_skip_reason(
-        lang_cls=lang_cls, config=config, spec=spec
-    )
-    if reason is not None:
-        skip_golden(
-            reason=reason,
-            golden_path=golden_path,
-            unlink=True,
-            config=file_regression.request.config,
-        )
 
 
 @beartype

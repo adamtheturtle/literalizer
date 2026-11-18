@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 _HOST = Path(__file__).resolve().with_name(name="run_erlang.escript")
 
@@ -24,15 +25,8 @@ def main(*, version: str) -> None:
     point.
     """
     timeout = 600.0
-    roots = (
-        Path("tests/integration/cases"),
-        Path("tests/integration/default_module_names"),
-    )
-    fixtures = sorted(
-        path
-        for root in roots
-        for path in root.rglob(pattern="*.erl")
-        if path.name.endswith(f"@{version}.erl")
+    fixtures = fixture_paths(
+        extension=".erl", version=version, include_default_module_names=True
     )
     if len(fixtures) == 0:
         raise click.ClickException(message=f"No Erlang {version} fixtures.")

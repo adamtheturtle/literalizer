@@ -1,10 +1,9 @@
 """Expected warnings for fixtures that deliberately reuse YAML anchors."""
 
-import re
+import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
 
-import pytest
 from beartype import beartype
 from ruamel.yaml.error import ReusedAnchorWarning
 
@@ -16,31 +15,35 @@ from .case_inputs import ReusedAnchorWarningSpec
 def expected_yaml_warnings(
     *, expectation: ReusedAnchorWarningSpec | None
 ) -> Generator[None]:
-    """Assert the duplicate-anchor warning declared by a fixture's
-    manifest.
-
-    ``pytest.warns`` re-emits warnings that do not match, so unrelated
-    warnings remain visible while loading a fixture with an expectation.
-    """
-    if expectation is not None:
-        with pytest.warns(
-            expected_warning=ReusedAnchorWarning,
-            match=re.escape(
-                pattern=f"found duplicate anchor {expectation.anchor!r}",
-            ),
-        ) as recorded:
-            yield
-        anchor_warnings = [
-            warning
-            for warning in recorded
-            if isinstance(warning.message, ReusedAnchorWarning)
-        ]
-        if len(anchor_warnings) != expectation.count:
-            pytest.fail(
-                reason=(
-                    f"Expected {expectation.count} reused-anchor warnings "
-                    f"for {expectation.anchor!r}, got {len(anchor_warnings)}"
-                ),
-            )
-    else:
+    """Check the declared anchor and count, re-emitting unrelated warnings."""
+    if expectation is None:
         yield
+        return
+
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter(action="always")
+        yield
+
+    expected_text = f"found duplicate anchor {expectation.anchor!r}"
+    reused_count = 0
+    matched = False
+    for warning in recorded:
+        if isinstance(warning.message, ReusedAnchorWarning):
+            reused_count += 1
+            if expected_text in str(object=warning.message):
+                matched = True
+                continue
+        warnings.warn_explicit(
+            message=warning.message,
+            category=warning.category,
+            filename=warning.filename,
+            lineno=warning.lineno,
+            source=warning.source,
+        )
+
+    if not matched or reused_count != expectation.count:
+        msg = (
+            f"Expected {expectation.count} reused-anchor warnings "
+            f"for {expectation.anchor!r}, got {reused_count}"
+        )
+        raise AssertionError(msg)

@@ -2,6 +2,7 @@
 
 import enum
 import tomllib
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Literal
 
@@ -9,7 +10,8 @@ from pydantic import BaseModel
 
 import literalizer
 
-from .language_specs import make_golden_path, make_spec
+from .golden_artifacts import GoldenArtifact
+from .language_specs import make_golden_artifact, make_spec
 from .manifest_values import (
     ManifestLanguage,
     ManifestLanguages,
@@ -74,14 +76,14 @@ def record_consumer_specs(
     return tuple({spec.language_version: spec for spec in specs}.values())
 
 
-def prefix_result_golden_path(
+def prefix_result_artifact(
     *,
     cases_dir: Path,
     lang_cls: literalizer.LanguageCls,
     attribute: ResultAttribute,
-) -> Path:
+) -> GoldenArtifact:
     """Locate the unwrapped result view for a commented scalar."""
-    return make_golden_path(
+    return make_golden_artifact(
         parent=cases_dir / RESULT_CASES.prefix.input_case,
         name=f"{lang_cls.__name__}_unwrapped_{attribute}",
         lang_cls=lang_cls,
@@ -89,15 +91,15 @@ def prefix_result_golden_path(
     )
 
 
-def record_result_golden_path(
+def record_result_artifact(
     *,
     cases_dir: Path,
     consumer: RecordConsumer,
     attribute: ResultAttribute,
     version: enum.Enum,
-) -> Path:
+) -> GoldenArtifact:
     """Locate a versioned caller-owned record consumer."""
-    return make_golden_path(
+    return make_golden_artifact(
         parent=cases_dir / RESULT_CASES.record_input_case,
         name=f"{consumer.language.__name__}_unwrapped_record_{attribute}",
         lang_cls=consumer.language,
@@ -105,26 +107,21 @@ def record_result_golden_path(
     )
 
 
-def result_view_golden_paths(*, cases_dir: Path) -> set[Path]:
-    """Return the compiling paths owned by the result-view runner."""
-    paths = {
-        prefix_result_golden_path(
-            cases_dir=cases_dir,
-            lang_cls=lang_cls,
-            attribute=attribute,
-        )
-        for lang_cls in RESULT_CASES.prefix.languages
-        for attribute in RESULT_CASES.attributes
-    }
-    paths.update(
-        record_result_golden_path(
-            cases_dir=cases_dir,
-            consumer=consumer,
-            attribute=attribute,
-            version=spec.language_version,
-        )
-        for consumer in RESULT_CASES.record_consumers
-        for attribute in RESULT_CASES.attributes
-        for spec in record_consumer_specs(consumer=consumer)
-    )
-    return paths
+def result_view_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
+    """Expose the result-view fixtures using the runners' effective
+    specs.
+    """
+    for lang_cls in RESULT_CASES.prefix.languages:
+        for attribute in RESULT_CASES.attributes:
+            yield prefix_result_artifact(
+                cases_dir=cases_dir, lang_cls=lang_cls, attribute=attribute
+            )
+    for consumer in RESULT_CASES.record_consumers:
+        for spec in record_consumer_specs(consumer=consumer):
+            for attribute in RESULT_CASES.attributes:
+                yield record_result_artifact(
+                    cases_dir=cases_dir,
+                    consumer=consumer,
+                    attribute=attribute,
+                    version=spec.language_version,
+                )

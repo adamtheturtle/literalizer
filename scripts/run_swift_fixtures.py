@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import run_bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 def _run(
@@ -58,11 +59,7 @@ def main() -> None:
     """
     jobs = os.cpu_count()
     timeout = 60.0
-    fixtures = sorted(
-        path
-        for root in (Path("tests/integration/cases"),)
-        for path in root.rglob(pattern="*.swift")
-    )
+    fixtures = fixture_paths(extension=".swift")
     if len(fixtures) == 0:
         raise click.ClickException(message="No Swift fixtures.")
     tools: dict[str, str] = {}

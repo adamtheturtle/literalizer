@@ -70,9 +70,9 @@ def test_record_snapshot_golden(
                 before=before.code,
                 after=after.code,
             )
-            path = case.golden_path(
+            path = case.artifact(
                 cases_dir=cases_dir, version=seed.language_version
-            )
+            ).path
             check_golden(
                 contents=contents,
                 golden_path=path,

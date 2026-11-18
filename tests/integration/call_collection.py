@@ -11,7 +11,8 @@ from literalizer._enums import enum_payload
 
 from .call_expectations import call_style_spec, expected_call_shape_exception
 from .case_manifests import CallCaseSpec, call_case_specs
-from .language_specs import make_golden_path, make_spec, sorted_languages
+from .golden_artifacts import GoldenArtifact
+from .language_specs import make_golden_artifact, make_spec, sorted_languages
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -26,11 +27,11 @@ class CallRendering:
     golden_name: str
     expected_exception: type[Exception] | None
 
-    def golden_path(self, *, cases_dir: Path) -> Path:
+    def artifact(self, *, cases_dir: Path) -> GoldenArtifact:
         """Return the fixture used for comparison and stale-file
         cleanup.
         """
-        return make_golden_path(
+        return make_golden_artifact(
             parent=cases_dir / self.config.case_dir_name,
             name=self.config.golden_name(name=self.golden_name),
             lang_cls=self.lang_cls,

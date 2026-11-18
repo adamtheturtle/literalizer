@@ -20,7 +20,7 @@ def run_constructor_binding_golden_case(
 ) -> None:
     """Check one constructor binding golden file."""
     case = rendering.case
-    golden_path = rendering.golden_path
+    golden_path = rendering.artifact.path
     manifest = case.manifest
     language = with_per_fixture_module_name(
         spec=rendering.spec, golden_path=golden_path

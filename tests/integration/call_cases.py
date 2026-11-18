@@ -39,7 +39,7 @@ from tests.enum_members import enum_member_by_name
 from .call_collection import CallRendering
 from .call_expectations import (
     invalid_target_grammar,
-    skip_unsupported_wrapper,
+    wrapper_capability_skip_reason,
 )
 from .call_receivers import (
     compose_integer_calls,
@@ -62,12 +62,12 @@ from .case_manifests import (
 )
 from .golden_checks import (
     GoldenSkips,
-    SkipPolicy,
-    SkipReason,
     check_golden,
     cleanup_stale_golden,
     fixture_contents,
+    skip_golden,
 )
+from .golden_skip_policy import SkipPolicy, SkipReason
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
@@ -598,16 +598,19 @@ def _render_call_golden_case(
     lang_cls = rendering.lang_cls
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
     source = input_info.path.read_text(encoding="utf-8")
-    golden_path = rendering.golden_path(cases_dir=cases_dir)
+    golden_path = rendering.artifact(cases_dir=cases_dir).path
     observable = uses_integer_receiver(config=config, spec=spec)
     if not observable:
-        skip_unsupported_wrapper(
-            config=config,
-            lang_cls=lang_cls,
-            spec=spec,
-            golden_path=golden_path,
-            file_regression=file_regression,
+        reason = wrapper_capability_skip_reason(
+            config=config, lang_cls=lang_cls, spec=spec
         )
+        if reason is not None:
+            skip_golden(
+                reason=reason,
+                golden_path=golden_path,
+                unlink=True,
+                config=file_regression.request.config,
+            )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
@@ -808,6 +811,6 @@ def run_call_golden_case(
             file_regression=file_regression,
         )
     cleanup_stale_golden(
-        golden_path=rendering.golden_path(cases_dir=cases_dir),
+        golden_path=rendering.artifact(cases_dir=cases_dir).path,
         config=pytest_config,
     )

@@ -6,10 +6,7 @@ ways: the render succeeded and its text is compared against a
 checked-in fixture, or it raised something the language was never
 expected to represent and the case is skipped.
 
-Both endings live here so neither can be spelled two ways.  The skip
-vocabulary (:class:`SkipReason`, :class:`SkipPolicy`) is declared here
-as well; the tables built from it belong to the scenarios that use
-them.
+The rendering records supply the applicable skip policies.
 """
 
 import dataclasses
@@ -25,40 +22,8 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from literalizer import Language, LiteralizeResult
 
 from .fixture_names import fixture_module_name
+from .golden_skip_policy import SkipPolicy
 from .language_metadata import language_metadata
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class SkipReason:
-    """Why one error skips a golden rather than failing it.
-
-    ``unlink`` marks an earlier golden as stale. Explicit regeneration
-    removes it; ordinary verification reports it without modifying it.
-    """
-
-    error: type[Exception]
-    reason: str
-    unlink: bool
-
-
-type SkipReasons = tuple[SkipReason, ...]
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class SkipPolicy:
-    """Which errors skip a rendering, and what the skip message says.
-
-    ``suffix`` is appended to the reason, so a skip that turns on more
-    than the error type -- the strategy the golden was rendered under,
-    say -- says so without restating the reason.
-    """
-
-    reasons: SkipReasons
-    suffix: str
-
-
-NO_SKIPS: SkipPolicy = SkipPolicy(reasons=(), suffix="")
-"""Every error is a real failure."""
 
 
 @runtime_checkable

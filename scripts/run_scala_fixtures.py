@@ -9,6 +9,7 @@ import click
 
 from scripts.bounded_command import bounded_command, run_bounded_command
 from scripts.fixture_staging import stage_fixture_modules
+from tests.integration.list_fixtures import fixture_paths
 
 
 def _validate(
@@ -74,13 +75,8 @@ def _validate(
 def main() -> None:
     """Compile and run the complete native fixture collection."""
     timeout = 600.0
-    fixtures = sorted(
-        path
-        for root in (
-            Path("tests/integration/cases"),
-            Path("tests/integration/default_module_names"),
-        )
-        for path in root.rglob(pattern="*.scala")
+    fixtures = fixture_paths(
+        extension=".scala", include_default_module_names=True
     )
     if len(fixtures) == 0:
         raise click.ClickException(message="No Scala fixtures.")

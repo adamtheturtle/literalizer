@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 def _check(*, fixture: Path, compiler: str, timeout: float) -> None:
@@ -61,13 +62,7 @@ def main() -> None:
     """Validate the complete supported native corpus."""
     jobs = os.cpu_count()
     timeout = 60.0
-    roots = (
-        Path("tests/integration/cases"),
-        Path("tests/integration/default_module_names"),
-    )
-    fixtures = sorted(
-        fixture for root in roots for fixture in root.rglob(pattern="*.c")
-    )
+    fixtures = fixture_paths(extension=".c", include_default_module_names=True)
     if len(fixtures) == 0:
         raise click.ClickException(message="No C fixtures.")
     compiler = shutil.which(cmd="clang")

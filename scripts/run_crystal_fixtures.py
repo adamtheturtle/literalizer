@@ -8,6 +8,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 @click.command()
@@ -16,12 +17,8 @@ def main() -> None:
     names.
     """
     timeout = 600.0
-    roots = (
-        Path("tests/integration/cases"),
-        Path("tests/integration/default_module_names"),
-    )
-    fixtures = sorted(
-        fixture for root in roots for fixture in root.rglob(pattern="*.cr")
+    fixtures = fixture_paths(
+        extension=".cr", include_default_module_names=True
     )
     if len(fixtures) == 0:
         raise click.ClickException(message="No Crystal fixtures.")

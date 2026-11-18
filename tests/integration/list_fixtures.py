@@ -1,40 +1,92 @@
-"""Print null-byte-terminated fixture paths for a CI lint job.
+"""Print null-byte-terminated paths selected from the golden inventory."""
 
-Each per-language lint workflow shells out to this script instead of
-``find``.  The script keeps only fixtures whose stem ends with
-``@<version>`` so the lint job sees exactly the fixtures generated
-under its compiler pin.
-
-Invoked from CI as
-``python -m tests.integration.list_fixtures <.ext> <version>``.
-"""
-
+import functools
 import sys
 from pathlib import Path
 
 import click
 
+from .golden_artifacts import GoldenArtifact
+from .golden_inventory import authored_paths, golden_artifacts
+
 CASES_DIR: Path = Path("tests/integration/cases")
 
 
-def fixture_paths(*, extension: str, version: str) -> tuple[Path, ...]:
-    """Select native artifacts by extension and version."""
-    suffix = f"@{version}{extension}"
-    return tuple(
-        sorted(
-            path
-            for path in CASES_DIR.rglob(pattern=f"*{extension}")
-            if path.name.endswith(suffix)
+@functools.cache
+def _artifacts_by_extension() -> dict[str, set[GoldenArtifact]]:
+    """Index resolved artifacts once for callers selecting several
+    versions.
+    """
+    by_extension: dict[str, set[GoldenArtifact]] = {}
+    for artifact in golden_artifacts(cases_dir=CASES_DIR):
+        by_extension.setdefault(artifact.language.extension, set()).add(
+            artifact
         )
+    return by_extension
+
+
+def fixture_paths(
+    *,
+    extension: str | None,
+    version: str | None = None,  # noqa: NOD001 - version pins are opt-in
+    include_default_module_names: bool = False,  # noqa: NOD001 - job coverage
+    language: str | None = None,  # noqa: NOD001 - disambiguate shared extensions
+    include_authored: bool = False,  # noqa: NOD001 - parser coverage only
+) -> tuple[Path, ...]:
+    """Select existing golden files, optionally including authored inputs.
+
+    Some renderings skip at runtime, so the ownership inventory can
+    include paths that have no checked-in golden.
+    """
+    by_extension = _artifacts_by_extension()
+    artifacts = (
+        (artifact for group in by_extension.values() for artifact in group)
+        if extension is None
+        else iter(by_extension.get(extension, ()))
     )
+    paths = {
+        artifact.path
+        for artifact in artifacts
+        if (version is None or artifact.version.name.lower() == version)
+        and (language is None or artifact.language.__name__ == language)
+        and (
+            include_default_module_names or CASES_DIR in artifact.path.parents
+        )
+    }
+    if include_authored:
+        paths.update(
+            path
+            for path in authored_paths(cases_dir=CASES_DIR)
+            if path.suffix == extension
+        )
+    return tuple(sorted(path for path in paths if path.is_file()))
 
 
 @click.command()
-@click.argument("extension")
-@click.argument("version")
-def main(extension: str, version: str) -> None:
-    """Emit fixture paths matching *extension* and *version*."""
-    paths = fixture_paths(extension=extension, version=version)
+@click.argument("extension", required=False)
+@click.argument("version", required=False)
+@click.option("--include-default-module-names", is_flag=True)
+@click.option("--language")
+@click.option("--include-authored", is_flag=True)
+def main(
+    extension: str | None,
+    version: str | None,
+    *,
+    include_default_module_names: bool,
+    language: str | None,
+    include_authored: bool,
+) -> None:
+    """Emit fixture paths by extension, language and version."""
+    if extension is None and language is None:
+        msg = "Provide an extension or --language."
+        raise click.UsageError(message=msg)
+    paths = fixture_paths(
+        extension=extension,
+        version=version,
+        include_default_module_names=include_default_module_names,
+        language=language,
+        include_authored=include_authored,
+    )
     output = b"".join(f"{path}".encode() + b"\0" for path in paths)
     _ = sys.stdout.buffer.write(output)
 

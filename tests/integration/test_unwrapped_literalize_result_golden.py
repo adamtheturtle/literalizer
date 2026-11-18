@@ -17,9 +17,9 @@ from .unwrapped_result_cases import RESULT_CASES as _CASES
 from .unwrapped_result_cases import (
     RecordConsumer,
     ResultAttribute,
-    prefix_result_golden_path,
+    prefix_result_artifact,
     record_consumer_specs,
-    record_result_golden_path,
+    record_result_artifact,
 )
 
 
@@ -37,11 +37,11 @@ def test_unwrapped_literalize_result_golden(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Compile each result view, supplying only its missing preamble."""
-    golden_path = prefix_result_golden_path(
+    golden_path = prefix_result_artifact(
         cases_dir=cases_dir,
         lang_cls=lang_cls,
         attribute=attribute,
-    )
+    ).path
     spec = with_per_fixture_module_name(
         spec=lang_cls(), golden_path=golden_path
     )
@@ -111,12 +111,12 @@ def test_unwrapped_record_collection_golden(
     for record_spec in record_consumer_specs(consumer=consumer):
         version = record_spec.language_version
         with subtests.test(version=version.name):
-            golden_path = record_result_golden_path(
+            golden_path = record_result_artifact(
                 cases_dir=cases_dir,
                 consumer=consumer,
                 attribute=attribute,
                 version=version,
-            )
+            ).path
             spec = with_per_fixture_module_name(
                 spec=record_spec,
                 golden_path=golden_path,

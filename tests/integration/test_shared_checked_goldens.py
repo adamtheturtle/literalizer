@@ -48,18 +48,20 @@ def test_shared_checked_golden(
             "{expected_calls}", str(object=recipe.expected_calls)
         ),
         result=result,
-        golden_path=case.golden_path,
+        golden_path=case.artifact.path,
         spec=case.spec,
     )
     check_golden(
         contents=program,
-        golden_path=case.golden_path,
+        golden_path=case.artifact.path,
         file_regression=file_regression,
     )
     if len(case.consumer.execution) > 0:
         completed = subprocess.run(  # noqa: S603 - execute complete native fixtures
             args=[
-                arg.format(python=sys.executable, golden_path=case.golden_path)
+                arg.format(
+                    python=sys.executable, golden_path=case.artifact.path
+                )
                 for arg in case.consumer.execution
             ],
             capture_output=True,

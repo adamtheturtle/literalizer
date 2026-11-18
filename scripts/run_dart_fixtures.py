@@ -33,7 +33,7 @@ def _binding_name(*, variable_form: VariableForm | None) -> str:
 def _literalize_bindings() -> dict[Path, str | None]:
     """Read roots, using None for native programs with a main function."""
     return {
-        rendering.golden_path(version=spec.language_version).resolve(): (
+        rendering.artifact(version=spec.language_version).path.resolve(): (
             None
             if rendering.consumer_template is not None
             else _binding_name(variable_form=rendering.render.variable_form)
@@ -51,7 +51,7 @@ def _call_bindings() -> dict[Path, str]:
     records.
     """
     return {
-        rendering.golden_path(cases_dir=_CASES_DIR).resolve(): _binding_name(
+        rendering.artifact(cases_dir=_CASES_DIR).path.resolve(): _binding_name(
             variable_form=rendering.config.variable_form
         )
         for case in call_golden_cases(cases_dir=_CASES_DIR)
@@ -75,9 +75,9 @@ def _ref_binding_name(*, config: RefCaseSpec) -> str | None:
 def _ref_bindings() -> dict[Path, str | None]:
     """Read roots or native entry points from the reference renderings."""
     return {
-        rendering.golden_path(
+        rendering.artifact(
             cases_dir=_CASES_DIR
-        ).resolve(): _ref_binding_name(config=rendering.config)
+        ).path.resolve(): _ref_binding_name(config=rendering.config)
         for case in reference_golden_cases()
         if case.lang_cls is Dart
         for rendering in case.renderings
@@ -96,7 +96,7 @@ def _constructor_bindings() -> dict[Path, str]:
             msg = f"Missing constructor metadata for {case.name}."
             raise ValueError(msg)
         for rendering in case.renderings:
-            bindings[rendering.golden_path.resolve()] = config.variable_name
+            bindings[rendering.artifact.path.resolve()] = config.variable_name
     return bindings
 
 

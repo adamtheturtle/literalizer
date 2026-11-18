@@ -26,7 +26,7 @@ def test_deep_input_golden_program(
     result = literalize(
         source=recipe.source,
         input_format=recipe.input_format,
-        language=recipe.language(),
+        language=case.spec,
     )
     contents = recipe.consumer_template.format(
         preamble="\n".join(result.preamble),
@@ -36,6 +36,6 @@ def test_deep_input_golden_program(
     )
     check_golden(
         contents=contents,
-        golden_path=case.golden_path,
+        golden_path=case.artifact.path,
         file_regression=file_regression,
     )

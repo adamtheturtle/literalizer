@@ -69,7 +69,7 @@ def _check_rendering(
             input_format=roundtrip.input_format,
             expected_reused_anchor_warning=None,
         )
-    golden_path = rendering.golden_path(version=spec.language_version)
+    golden_path = rendering.artifact(version=spec.language_version).path
     if rendering.apply_fixture_module_name:
         spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     variable_form = (

@@ -6,13 +6,11 @@ import concurrent.futures
 import dataclasses
 import os
 import shutil
-from pathlib import Path
 
 import click
 
 from scripts.bounded_command import run_bounded_command
-
-_CASES_DIR = Path("tests/integration/cases")
+from tests.integration.list_fixtures import fixture_paths
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -81,9 +79,7 @@ def main(backend: str) -> None:
     jobs = os.cpu_count()
     timeout = 60.0
     config = _BACKENDS[backend]
-    fixtures = sorted(
-        path for path in _CASES_DIR.rglob(pattern=f"*{config.extension}")
-    )
+    fixtures = fixture_paths(extension=config.extension)
     if len(fixtures) == 0:
         raise click.ClickException(message=f"No {backend} fixtures.")
     executable = shutil.which(cmd=config.executable)

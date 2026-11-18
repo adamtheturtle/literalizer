@@ -11,7 +11,7 @@ from literalizer import NewVariable
 from literalizer._enums import enum_payload
 from literalizer.exceptions import IncompatibleFormatsError
 
-from .golden_checks import NO_SKIPS, SkipPolicy, SkipReason
+from .golden_skip_policy import NO_SKIPS, SkipPolicy, SkipReason
 from .language_specs import make_spec, modifier_entries, sorted_languages
 
 # A declared modifier may reject a constructor binding; other errors fail.

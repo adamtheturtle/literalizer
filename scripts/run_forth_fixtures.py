@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 _PRELUDE = Path(__file__).resolve().with_name(name="forth_visitor_lint.fs")
 
@@ -34,10 +35,7 @@ def main() -> None:
     """Validate every generated visitor stream."""
     jobs = os.cpu_count()
     timeout = 60.0
-    fixtures = sorted(
-        fixture
-        for fixture in Path("tests/integration/cases").rglob(pattern="*.fth")
-    )
+    fixtures = fixture_paths(extension=".fth")
     if len(fixtures) == 0:
         raise click.ClickException(message="No Forth fixtures.")
     executable = shutil.which(cmd="gforth")

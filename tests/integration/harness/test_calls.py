@@ -211,7 +211,7 @@ def test_call_rejection_handles_stale_fixture(
         source_dir=cases_dir / rendering.config.case_dir_name,
         target_dir=case_dir,
     )
-    golden_path = rendering.golden_path(cases_dir=tmp_path)
+    golden_path = rendering.artifact(cases_dir=tmp_path).path
     _ = golden_path.write_text(data="stale\n")
     if regenerate:
         run_call_golden_case(

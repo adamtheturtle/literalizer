@@ -149,6 +149,10 @@ benchmark = [
     "pytest-test-groups==1.2.1",
 ]
 cli = [ "click==8.5.1" ]
+fixture-inventory = [
+    { include-group = "cli" },
+    "pydantic==2.14.3",
+]
 # Python parsers used by the corresponding native checks and round trips.
 norg = [ "tree-sitter==0.26.1" ]
 release = [

@@ -11,7 +11,8 @@ from .case_manifests import (
     CaseManifest,
     load_case_manifests,
 )
-from .language_specs import make_golden_path
+from .golden_artifacts import GoldenArtifact
+from .language_specs import make_golden_artifact
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -25,13 +26,18 @@ class NativeInvocationCase:
     version: enum.Enum
 
     @property
-    def golden_path(self) -> Path:
+    def spec(self) -> literalizer.Language:
+        """Use the declared language version with constructor defaults."""
+        return self.lang_cls(language_version=self.version)
+
+    @property
+    def artifact(self) -> GoldenArtifact:
         """Locate this case's fixture from its manifest and target version."""
-        return make_golden_path(
+        return make_golden_artifact(
             parent=self.manifest.case_dir,
             name=f"{self.lang_cls.__name__}_native_invocations",
             lang_cls=self.lang_cls,
-            version=self.version,
+            version=self.spec.language_version,
         )
 
     @property
