@@ -24,6 +24,7 @@ lint-fast:
   - CheckJavaSyntax.java
   - tests/integration/default_module_names/*.c
   - tests/integration/default_module_names/*.f90
+  - tests/integration/default_module_names/*.java
 
 lint-odin:
   - *shared

@@ -17,13 +17,15 @@ import click
 CASES_DIR: Path = Path("tests/integration/cases")
 
 
-def fixture_paths(*, extension: str, version: str) -> tuple[Path, ...]:
+def fixture_paths(
+    *, extension: str, version: str, root: Path
+) -> tuple[Path, ...]:
     """Select native artifacts by extension and version."""
     suffix = f"@{version}{extension}"
     return tuple(
         sorted(
             path
-            for path in CASES_DIR.rglob(pattern=f"*{extension}")
+            for path in root.rglob(pattern=f"*{extension}")
             if path.name.endswith(suffix)
         )
     )
@@ -34,7 +36,7 @@ def fixture_paths(*, extension: str, version: str) -> tuple[Path, ...]:
 @click.argument("version")
 def main(extension: str, version: str) -> None:
     """Emit fixture paths matching *extension* and *version*."""
-    paths = fixture_paths(extension=extension, version=version)
+    paths = fixture_paths(extension=extension, version=version, root=CASES_DIR)
     output = b"".join(f"{path}".encode() + b"\0" for path in paths)
     _ = sys.stdout.buffer.write(output)
 
