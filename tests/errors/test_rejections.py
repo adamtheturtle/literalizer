@@ -11,11 +11,8 @@ regeneration preserves entries for every other Python version.
 """
 
 import contextlib
-import re
 import sys
-import tomllib
 from collections.abc import Callable, Generator, Mapping
-from pathlib import Path
 from typing import assert_never
 
 import pytest
@@ -39,6 +36,11 @@ from .rejection_cases import (
     declaration_style_config,
     rejection_cases,
 )
+from .rejection_expectations import (
+    ExpectedMessage,
+    ExpectedMessages,
+    load_expected_messages,
+)
 from .rejection_manifests import (
     REJECTIONS_DIR,
     CallSpec,
@@ -57,39 +59,6 @@ _BOUND_VALUE = TypeAdapter[literalizer.ValueInput](
     type=literalizer.ValueInput,
     config=ConfigDict(arbitrary_types_allowed=True),
 )
-
-
-type ExpectedMessage = str | dict[str, str]
-type ExpectedMessages = dict[str, dict[str, ExpectedMessage]]
-
-_EXPECTED_MESSAGES = TypeAdapter[ExpectedMessages](type=ExpectedMessages)
-
-
-@beartype
-def _load_expected_messages(*, golden_path: Path) -> ExpectedMessages:
-    """Read messages and validate each optional Python-version map."""
-    if not golden_path.exists():
-        return {}
-    expected = _EXPECTED_MESSAGES.validate_python(
-        tomllib.loads(golden_path.read_text(encoding="utf-8")), strict=True
-    )
-    for cases in expected.values():
-        for message in cases.values():
-            if isinstance(message, dict):
-                if "default" not in message:
-                    msg = "a versioned message requires a default"
-                    raise ValueError(msg)
-                for version in message:
-                    if (
-                        version != "default"
-                        and re.fullmatch(
-                            pattern=r"[0-9]+\.[0-9]+", string=version
-                        )
-                        is None
-                    ):
-                        msg = f"invalid Python version key: {version!r}"
-                        raise ValueError(msg)
-    return expected
 
 
 @beartype
@@ -564,7 +533,7 @@ def test_rejection_messages(
     check_golden(
         contents=_rejection_document(
             messages_by_exception=messages_by_exception,
-            expected=_load_expected_messages(golden_path=manifest.golden_path),
+            expected=load_expected_messages(golden_path=manifest.golden_path),
             rejecting=len(rejecting),
             accepting=len(accepting),
             python_version=f"{sys.version_info.major}.{sys.version_info.minor}",

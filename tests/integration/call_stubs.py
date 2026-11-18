@@ -2,10 +2,10 @@
 
 import dataclasses
 from collections.abc import Sequence
+from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 
 from beartype import beartype
-from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 from literalizer._language import CallStubDeclarations
@@ -18,7 +18,7 @@ from .case_manifests import (
 from .golden_checks import GoldenSkips, SkipPolicy, SkipReason
 from .parsed_values import ParsedValue
 
-# The typed preamble stub restates the call's argument types, which a
+# The typed preamble stub restates the types of the call arguments, which a
 # language with no type for a heterogeneous collection cannot write even
 # where the call itself renders.
 _PREAMBLE_STUB_SKIPS: SkipPolicy = SkipPolicy(
@@ -29,11 +29,22 @@ _PREAMBLE_STUB_SKIPS: SkipPolicy = SkipPolicy(
                 "cannot represent this heterogeneous input in its typed "
                 "call stub"
             ),
-            unlink=True,
         ),
     ),
     suffix="",
 )
+
+
+@beartype
+def call_render_scope(
+    *, policy: SkipPolicy, golden_path: Path, strict: bool
+) -> AbstractContextManager[None]:
+    """Apply legacy skips only to calls without an asserted error."""
+    if strict:
+        return nullcontext()
+    return GoldenSkips(
+        policy=policy, golden_path=golden_path, prefix=golden_path.name
+    )
 
 
 @beartype
@@ -83,8 +94,7 @@ def target_call_declarations(
     spec: literalizer.Language,
     argument_values: Sequence[ParsedValue],
     golden_path: Path,
-    file_regression: FileRegressionFixture,
-    lang_name: str,
+    strict: bool,
 ) -> CallStubDeclarations:
     """Declare synthetic targets unless the case uses a built-in."""
     if not fixture.include_target_stub:
@@ -102,11 +112,8 @@ def target_call_declarations(
     class_scope = stub_spec.format_call_class_scope_stub(
         target_parts, config.parameter_names, stub_return, argument_values
     )
-    with GoldenSkips(
-        policy=_PREAMBLE_STUB_SKIPS,
-        golden_path=golden_path,
-        prefix=lang_name,
-        config=file_regression.request.config,
+    with call_render_scope(
+        policy=_PREAMBLE_STUB_SKIPS, golden_path=golden_path, strict=strict
     ):
         file_scope = stub_spec.format_call_preamble_stub(
             target_parts,

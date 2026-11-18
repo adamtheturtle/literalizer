@@ -1,22 +1,14 @@
-"""The one way an integration test compares output to a golden file.
+"""Golden comparison and the remaining legacy skip policies.
 
-Every golden-file harness -- ``literalize``, ``literalize_call``, the
-``$ref`` cases and the constructor targets -- finishes the same two
-ways: the render succeeded and its text is compared against a
-checked-in fixture, or it raised something the language was never
-expected to represent and the case is skipped.
-
-Both endings live here so neither can be spelled two ways.  The skip
-vocabulary (:class:`SkipReason`, :class:`SkipPolicy`) is declared here
-as well; the tables built from it belong to the scenarios that use
-them.
+Expected outcomes are resolved by the individual runners. The legacy
+skip policies cover constraints still evaluated during rendering.
 """
 
 import dataclasses
 import enum
 from pathlib import Path
 from types import TracebackType
-from typing import NoReturn, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 import pytest
 from beartype import beartype
@@ -30,15 +22,10 @@ from .language_metadata import language_metadata
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SkipReason:
-    """Why one error skips a golden rather than failing it.
-
-    ``unlink`` marks an earlier golden as stale. Explicit regeneration
-    removes it; ordinary verification reports it without modifying it.
-    """
+    """Why one error skips a golden rather than failing it."""
 
     error: type[Exception]
     reason: str
-    unlink: bool
 
 
 type SkipReasons = tuple[SkipReason, ...]
@@ -69,49 +56,24 @@ class _ReasonedError(Protocol):
 
 
 @beartype
-def cleanup_stale_golden(*, golden_path: Path, config: pytest.Config) -> None:
-    """Remove a skipped fixture only during explicit regeneration."""
-    if config.getoption(name="regen_all") is True:
-        golden_path.unlink(missing_ok=True)
-    elif golden_path.exists():
+def assert_no_golden(*, golden_path: Path) -> None:
+    """Fail when an unsuccessful rendering still has a success fixture."""
+    if golden_path.exists():
         pytest.fail(
-            reason=(
-                f"Stale golden file: {golden_path}. "
-                "Run its golden test with --regen-all to remove it."
-            ),
+            reason=f"Unexpected success fixture: {golden_path}",
         )
-
-
-@beartype
-def skip_golden(
-    *,
-    reason: str,
-    golden_path: Path,
-    unlink: bool,
-    config: pytest.Config,
-) -> NoReturn:
-    """Skip the current golden case with *reason*.
-
-    A stale fixture fails ordinary verification without modifying the
-    file. Explicit regeneration removes it before skipping the case.
-    """
-    if unlink:
-        cleanup_stale_golden(golden_path=golden_path, config=config)
-    pytest.skip(reason=reason)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class GoldenSkips:
     """A block whose declared errors skip the golden rather than fail it.
 
-    The first matching policy entry supplies both the skip message and
-    the stale-fixture policy. Errors without a matching entry propagate.
+    Errors outside the policy propagate. Every skip checks ownership.
     """
 
     policy: SkipPolicy
     golden_path: Path
     prefix: str
-    config: pytest.Config
 
     def __enter__(self) -> None:
         """Enter the guarded rendering."""
@@ -130,14 +92,12 @@ class GoldenSkips:
                     if isinstance(exc, _ReasonedError)
                     else ""
                 )
-                skip_golden(
+                assert_no_golden(golden_path=self.golden_path)
+                pytest.skip(
                     reason=(
                         f"{self.prefix} {entry.reason}"
                         f"{detail}{self.policy.suffix}"
-                    ),
-                    golden_path=self.golden_path,
-                    unlink=entry.unlink,
-                    config=self.config,
+                    )
                 )
 
 

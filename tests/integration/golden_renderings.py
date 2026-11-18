@@ -11,7 +11,9 @@ import literalizer
 from literalizer import ValueInput
 
 from .golden_checks import SkipPolicy
+from .golden_outcomes import Rejection
 from .language_specs import make_golden_path, make_spec
+from .literal_expectations import literal_rejection
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -91,8 +93,20 @@ class GoldenRendering:
                 specs.append(spec)
         return tuple(specs)
 
+    def rejection(self, *, spec: literalizer.Language) -> Rejection | None:
+        """Report documented errors without invoking the renderer."""
+        return literal_rejection(
+            spec=spec,
+            variable_form=(
+                self.render.variable_form
+                if spec.supports_variable_names
+                else None
+            ),
+            case_dir=self.golden_parent,
+        )
+
     def golden_path(self, *, version: enum.Enum) -> Path:
-        """Return this rendering's fixture path for one effective
+        """Return the fixture path for one effective
         version.
         """
         return make_golden_path(

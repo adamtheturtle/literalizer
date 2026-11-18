@@ -9,25 +9,8 @@ from beartype import beartype
 import literalizer
 from literalizer import NewVariable
 from literalizer._enums import enum_payload
-from literalizer.exceptions import IncompatibleFormatsError
 
-from .golden_checks import NO_SKIPS, SkipPolicy, SkipReason
 from .language_specs import make_spec, modifier_entries, sorted_languages
-
-# A declared modifier may reject a constructor binding; other errors fail.
-_MODIFIER_SKIPS = SkipPolicy(
-    reasons=(
-        SkipReason(
-            error=IncompatibleFormatsError,
-            reason=(
-                "modifier combination cannot represent this constructor "
-                "call binding"
-            ),
-            unlink=True,
-        ),
-    ),
-    suffix="",
-)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -38,7 +21,6 @@ class ConstructorBindingSpec:
     lang_cls: literalizer.LanguageCls
     spec_overrides: Mapping[str, object]
     variable_form: literalizer.VariableForm
-    skip: SkipPolicy
 
 
 @beartype
@@ -70,7 +52,6 @@ def constructor_binding_specs() -> list[ConstructorBindingSpec]:
             lang_cls=lang_cls,
             spec_overrides={},
             variable_form=NewVariable(name="p", modifiers=frozenset()),
-            skip=NO_SKIPS,
         )
         for lang_cls in languages
     ]
@@ -86,7 +67,6 @@ def constructor_binding_specs() -> list[ConstructorBindingSpec]:
                 lang_cls=lang_cls,
                 spec_overrides={"call_style": call_style},
                 variable_form=NewVariable(name="p", modifiers=frozenset()),
-                skip=NO_SKIPS,
             )
             for call_style in spec.call_styles
             if enum_payload(member=call_style, payload_type=object)
@@ -100,7 +80,6 @@ def constructor_binding_specs() -> list[ConstructorBindingSpec]:
                 lang_cls=lang_cls,
                 spec_overrides={},
                 variable_form=NewVariable(name="p", modifiers=modifiers),
-                skip=_MODIFIER_SKIPS,
             )
             for modifier_name, modifiers in modifier_entries(
                 lang_cls=lang_cls, spec=spec

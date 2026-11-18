@@ -3,10 +3,8 @@
 import dataclasses
 import re
 from collections.abc import Sequence
-from pathlib import Path
 
 from beartype import beartype
-from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 from literalizer._enums import enum_payload
@@ -35,9 +33,6 @@ from .case_manifests import (
     BoundCallFixture,
     CallCaseSpec,
     WrappedCallFixture,
-)
-from .golden_checks import (
-    skip_golden,
 )
 from .language_specs import (
     find_redefinition_styles,
@@ -75,7 +70,7 @@ def _call_transform_style_unsupported(
 
 
 @beartype
-def _wrapper_capability_skip_reason(
+def wrapper_capability_exclusion(
     *,
     lang_cls: literalizer.LanguageCls,
     config: CallCaseSpec,
@@ -89,7 +84,7 @@ def _wrapper_capability_skip_reason(
     compile in this language: a dotted wrapper (e.g. ``tracer.emit``)
     needs ``supports_dotted_call_stub``; a bare wrapper (e.g. ``emit``)
     needs ``has_free_function_calls``.  A wrapper invoked with more than
-    one parameter (the call's result alongside another value, e.g. the
+    one parameter (the call result alongside another value, e.g. the
     ``$zipped`` companion) needs
     ``supports_multi_param_call_wrapper_stub``; a case that splices a
     map literal as a free expression needs
@@ -137,30 +132,6 @@ def _wrapper_capability_skip_reason(
                 f"for {wrapper_name!r}"
             )
     return None
-
-
-@beartype
-def skip_unsupported_wrapper(
-    *,
-    config: CallCaseSpec,
-    lang_cls: literalizer.LanguageCls,
-    spec: literalizer.Language,
-    golden_path: Path,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Skip (and check any stale golden) when this language cannot host
-    the case's wrapper stub.
-    """
-    reason = _wrapper_capability_skip_reason(
-        lang_cls=lang_cls, config=config, spec=spec
-    )
-    if reason is not None:
-        skip_golden(
-            reason=reason,
-            golden_path=golden_path,
-            unlink=True,
-            config=file_regression.request.config,
-        )
 
 
 @beartype

@@ -10,10 +10,10 @@ set to the language's default identifier case.  The runner
 
 import copy
 import dataclasses
+import functools
 import json
 from pathlib import Path
 
-import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
@@ -39,12 +39,8 @@ from .case_manifests import (
     RefExpressionContext,
     case_input,
 )
-from .golden_checks import (
-    GoldenSkips,
-    SkipPolicy,
-    SkipReason,
-    check_golden,
-)
+from .golden_checks import GoldenSkips, SkipPolicy, SkipReason, check_golden
+from .golden_outcomes import check_outcome
 from .language_specs import (
     find_redefinition_styles,
     with_per_fixture_module_name,
@@ -60,6 +56,7 @@ from .reference_inputs import bound_ref_inputs, parse_ref_input
 
 CASES_DIR = Path(__file__).parent / "cases"
 
+
 # A ``$ref`` case is written once for every language, so an input a
 # language cannot represent, or a ref identifier it will not spell,
 # skips rather than fails.
@@ -68,59 +65,48 @@ _REF_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=CallsNotSupportedByLanguageError,
             reason="has no generated consumer call syntax",
-            unlink=True,
         ),
         SkipReason(
             error=CallsNotSupportedByToolError,
             reason="cannot generate consumer calls",
-            unlink=True,
         ),
         SkipReason(
             error=IncompatibleFormatsError,
             reason="reference input is incompatible with the selected formats",
-            unlink=True,
         ),
         SkipReason(
             error=ReservedVariableNameError,
             reason="rejects a declared reference identifier",
-            unlink=True,
         ),
         SkipReason(
             error=VariableNameNotSupportedError,
             reason="cannot declare the reference binding",
-            unlink=True,
         ),
         SkipReason(
             error=ExistingVariableNotSelfContainedError,
             reason=(
                 "cannot wrap an assignment without its destination declaration"
             ),
-            unlink=True,
         ),
         SkipReason(
             error=NullInCollectionError,
             reason="cannot represent null in this collection",
-            unlink=True,
         ),
         SkipReason(
             error=HeterogeneousCollectionError,
             reason="cannot represent this heterogeneous input",
-            unlink=True,
         ),
         SkipReason(
             error=UnrepresentableInputError,
             reason="cannot represent this heterogeneous input",
-            unlink=True,
         ),
         SkipReason(
             error=CallArgNotSupportedError,
             reason="rejected ref identifier",
-            unlink=True,
         ),
         SkipReason(
             error=InvalidDictKeyError,
             reason="cannot represent a dictionary key",
-            unlink=True,
         ),
     ),
     suffix="",
@@ -128,13 +114,11 @@ _REF_SKIPS: SkipPolicy = SkipPolicy(
 
 
 @beartype
-def run_literalize_ref_golden_case(
+def _render_reference_golden(
     *,
     rendering: RefRendering,
     cases_dir: Path,
-    file_regression: FileRegressionFixture,
-    pytest_config: pytest.Config,
-) -> None:
+) -> str:
     """Run one collected reference rendering against its golden file.
 
     Selected ref cases use the language's identifier spelling.
@@ -172,90 +156,105 @@ def run_literalize_ref_golden_case(
                 for name in config.variable_modifiers
             ),
         )
-    with GoldenSkips(
-        policy=_REF_SKIPS,
-        golden_path=golden_path,
-        prefix=lang_cls.__name__,
-        config=pytest_config,
-    ):
-        try:
-            _ = literalizer.literalize(
-                source='{"key": "value"}',
-                input_format=literalizer.InputFormat.JSON,
-                language=spec,
-                variable_form=variable_form_obj,
-                wrap_in_file=wrap_in_file,
-            )
-        except VariableNameNotSupportedError:
-            variable_form_obj = None
-        raw_data = parse_ref_input(
-            input_format=input_info.input_format,
-            input_source=input_source,
-        )
-        effective_bound_refs = None
-        if isinstance(context, ExternalRefContext):
-            spec = external_assignment_spec(
-                context=context,
-                spec=spec,
-                config=config,
-                raw_data=raw_data,
-            )
-        else:
-            bound_refs_input = bound_ref_inputs(
-                context=context,
-                config=config,
-                raw_data=raw_data,
-                lang_cls=lang_cls,
-            )
-            if len(bound_refs_input) > 0:
-                effective_bound_refs = bound_refs_input
-        effective_ref_values = None
-        if config.explicit_ref_value_sources is not None:
-            effective_ref_values = {
-                name: json.loads(s=source)
-                for name, source in (config.explicit_ref_value_sources.items())
-            }
-        original_ref_values = copy.deepcopy(x=effective_ref_values)
-        result = literalizer.literalize(
-            source=input_source,
-            input_format=input_info.input_format,
-            language=spec,
-            variable_form=variable_form_obj,
-            wrap_in_file=wrap_in_file,
-            ref_case=ref_case,
-            bound_refs=(effective_bound_refs),
-            ref_values=(effective_ref_values),
-            ref_key=config.ref_key,
-            include_delimiters=config.include_delimiters,
-            pre_indent_level=config.pre_indent_level,
-            collection_layout=literalizer.CollectionLayout(
-                value=config.collection_layout
-            ),
-        )
-        assert effective_ref_values == original_ref_values, (  # noqa: S101
-            "literalize mutated caller-owned ref_values"
-        )
-        if isinstance(context, RefExpressionContext):
-            result = compose_ref_expression_fixture(
-                context=context,
-                spec=spec,
-                result=result,
-            )
-        elif isinstance(context, ExternalRefContext):
-            result = compose_external_ref_fixture(
-                context=context,
-                config=config,
-                spec=spec,
-                result=result,
-                raw_data=raw_data,
-            )
-    check_golden(
-        contents=ref_fixture_contents(
-            code=result.code,
+    if not spec.supports_variable_names:
+        variable_form_obj = None
+    raw_data = parse_ref_input(
+        input_format=input_info.input_format,
+        input_source=input_source,
+    )
+    effective_bound_refs = None
+    if isinstance(context, ExternalRefContext):
+        spec = external_assignment_spec(
+            context=context,
             spec=spec,
+            config=config,
+            raw_data=raw_data,
+        )
+    else:
+        bound_refs_input = bound_ref_inputs(
+            context=context,
+            config=config,
+            raw_data=raw_data,
             lang_cls=lang_cls,
-            ref_case=ref_case,
+        )
+        if len(bound_refs_input) > 0:
+            effective_bound_refs = bound_refs_input
+    effective_ref_values = None
+    if config.explicit_ref_value_sources is not None:
+        effective_ref_values = {
+            name: json.loads(s=source)
+            for name, source in (config.explicit_ref_value_sources.items())
+        }
+    original_ref_values = copy.deepcopy(x=effective_ref_values)
+    result = literalizer.literalize(
+        source=input_source,
+        input_format=input_info.input_format,
+        language=spec,
+        variable_form=variable_form_obj,
+        wrap_in_file=wrap_in_file,
+        ref_case=ref_case,
+        bound_refs=(effective_bound_refs),
+        ref_values=(effective_ref_values),
+        ref_key=config.ref_key,
+        include_delimiters=config.include_delimiters,
+        pre_indent_level=config.pre_indent_level,
+        collection_layout=literalizer.CollectionLayout(
+            value=config.collection_layout
         ),
+    )
+    assert effective_ref_values == original_ref_values, (  # noqa: S101
+        "literalize mutated caller-owned ref_values"
+    )
+    if isinstance(context, RefExpressionContext):
+        result = compose_ref_expression_fixture(
+            context=context,
+            spec=spec,
+            result=result,
+        )
+    elif isinstance(context, ExternalRefContext):
+        result = compose_external_ref_fixture(
+            context=context,
+            config=config,
+            spec=spec,
+            result=result,
+            raw_data=raw_data,
+        )
+    return ref_fixture_contents(
+        code=result.code,
+        spec=spec,
+        lang_cls=lang_cls,
+        ref_case=ref_case,
+    )
+
+
+@beartype
+def run_literalize_ref_golden_case(
+    *,
+    rendering: RefRendering,
+    cases_dir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Exercise the resolved expectation for the reference."""
+    golden_path = rendering.golden_path(cases_dir=cases_dir)
+    render = functools.partial(
+        _render_reference_golden, rendering=rendering, cases_dir=cases_dir
+    )
+    if rendering.outcome is None:
+        with GoldenSkips(
+            policy=_REF_SKIPS,
+            golden_path=golden_path,
+            prefix=rendering.lang_cls.__name__,
+        ):
+            contents = render()
+        check_golden(
+            contents=contents,
+            golden_path=golden_path,
+            file_regression=file_regression,
+        )
+        return
+    check_outcome(
+        outcome=rendering.outcome,
+        render=render,
         golden_path=golden_path,
         file_regression=file_regression,
     )

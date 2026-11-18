@@ -11,7 +11,6 @@ import functools
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-import pytest
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
@@ -37,15 +36,16 @@ from literalizer.exceptions import (
 from tests.enum_members import enum_member_by_name
 
 from .call_collection import CallRendering
-from .call_expectations import (
-    invalid_target_grammar,
-    skip_unsupported_wrapper,
-)
+from .call_expectations import invalid_target_grammar
 from .call_receivers import (
     compose_integer_calls,
     uses_integer_receiver,
 )
-from .call_stubs import argument_values_for_stub, target_call_declarations
+from .call_stubs import (
+    argument_values_for_stub,
+    call_render_scope,
+    target_call_declarations,
+)
 from .call_transforms import (
     call_transform_for_case,
     followup_result_slots,
@@ -61,13 +61,12 @@ from .case_manifests import (
     case_input,
 )
 from .golden_checks import (
-    GoldenSkips,
     SkipPolicy,
     SkipReason,
     check_golden,
-    cleanup_stale_golden,
     fixture_contents,
 )
+from .golden_outcomes import Rejection, check_outcome
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
@@ -83,32 +82,26 @@ _WRAP_IN_FILE_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=HeterogeneousCollectionError,
             reason="cannot represent this heterogeneous input",
-            unlink=True,
         ),
         SkipReason(
             error=UnrepresentableInputError,
             reason="cannot represent these call arguments",
-            unlink=True,
         ),
         SkipReason(
             error=UnrepresentableEmptyDictError,
             reason="cannot preserve an empty mapping call argument",
-            unlink=True,
         ),
         SkipReason(
             error=IncompatibleFormatsError,
             reason="cannot combine these call and representation options",
-            unlink=True,
         ),
         SkipReason(
             error=ReservedVariableNameError,
             reason="rejects a declared reference identifier",
-            unlink=True,
         ),
         SkipReason(
             error=CallArgNotSupportedError,
             reason="rejected call arg",
-            unlink=True,
         ),
         SkipReason(
             error=ExistingVariableNotSelfContainedError,
@@ -116,7 +109,6 @@ _WRAP_IN_FILE_SKIPS: SkipPolicy = SkipPolicy(
                 "binds a call result by assignment to a name a whole "
                 "file never declares"
             ),
-            unlink=True,
         ),
     ),
     suffix="",
@@ -130,44 +122,36 @@ _DECLARATION_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=IncompatibleFormatsError,
             reason="cannot combine these call and representation options",
-            unlink=True,
         ),
         SkipReason(
             error=ReservedVariableNameError,
             reason="rejects a declared reference identifier",
-            unlink=True,
         ),
         SkipReason(
             error=VariableNameNotSupportedError,
             reason=(
                 "does not support variable-name wrapping for ref declarations"
             ),
-            unlink=True,
         ),
         SkipReason(
             error=HeterogeneousCollectionError,
             reason="cannot represent this heterogeneous input",
-            unlink=True,
         ),
         SkipReason(
             error=UnrepresentableInputError,
             reason="cannot represent this heterogeneous input",
-            unlink=True,
         ),
         SkipReason(
             error=UnrepresentableEmptyDictError,
             reason="cannot preserve an empty mapping call argument",
-            unlink=True,
         ),
         SkipReason(
             error=DottedCallTargetNotSupportedError,
             reason="does not support dotted call targets",
-            unlink=True,
         ),
         SkipReason(
             error=CallArgNotSupportedError,
             reason="rejected call arg",
-            unlink=True,
         ),
     ),
     suffix="",
@@ -285,28 +269,21 @@ def _parse_ref_sources(
 
 
 @beartype
-def run_wrap_in_file_case(
+def _render_wrapped_call(
     *,
     config: CallCaseSpec,
     spec: literalizer.Language,
     source: str,
     input_info: CaseInput,
     effective_ref_case: literalizer.IdentifierCase | None,
-    lang_name: str,
     golden_path: Path,
-    file_regression: FileRegressionFixture,
-    pytest_config: pytest.Config,
-) -> None:
-    """Run ``literalize_call(..., wrap_in_file=True)`` and check
-    golden.
-    """
-    with GoldenSkips(
-        policy=_WRAP_IN_FILE_SKIPS,
-        golden_path=golden_path,
-        prefix=lang_name,
-        config=pytest_config,
+    strict: bool,
+) -> str:
+    """Render a call with its own file wrapper."""
+    with call_render_scope(
+        policy=_WRAP_IN_FILE_SKIPS, golden_path=golden_path, strict=strict
     ):
-        wrap_result = _literalize_call_case(
+        result = _literalize_call_case(
             config=config,
             spec=spec,
             source=source,
@@ -327,13 +304,7 @@ def run_wrap_in_file_case(
                 input_format=config.ref_input_format,
             ),
         )
-    check_golden(
-        contents=_call_fixture_contents(
-            code=wrap_result.code, spec=spec, config=config
-        ),
-        golden_path=golden_path,
-        file_regression=file_regression,
-    )
+    return _call_fixture_contents(code=result.code, spec=spec, config=config)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -428,19 +399,13 @@ def _run_call_with_declarations(
     input_info: CaseInput,
     declaration_names: dict[str, str],
     effective_ref_case: literalizer.IdentifierCase | None,
-    lang_name: str,
-    golden_path: Path,
-    file_regression: FileRegressionFixture,
     observable: bool,
+    golden_path: Path,
+    strict: bool,
 ) -> _CallWithDeclarations:
-    """Run ref declarations and the call, skipping on typed unsupported
-    signals.
-    """
-    with GoldenSkips(
-        policy=_DECLARATION_SKIPS,
-        golden_path=golden_path,
-        prefix=lang_name,
-        config=file_regression.request.config,
+    """Run the declarations and the call for a composed fixture."""
+    with call_render_scope(
+        policy=_DECLARATION_SKIPS, golden_path=golden_path, strict=strict
     ):
         rendered_by_ref_name: dict[str, _RefDeclaration] = {
             ref_name: _render_ref_declaration(
@@ -589,9 +554,9 @@ def _render_call_golden_case(
     *,
     rendering: CallRendering,
     cases_dir: Path,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Assemble one call rendering and compare its native golden file."""
+    strict: bool,
+) -> str:
+    """Assemble one call rendering as native source."""
     config = rendering.config
     fixture = config.fixture
     spec = rendering.spec
@@ -600,14 +565,6 @@ def _render_call_golden_case(
     source = input_info.path.read_text(encoding="utf-8")
     golden_path = rendering.golden_path(cases_dir=cases_dir)
     observable = uses_integer_receiver(config=config, spec=spec)
-    if not observable:
-        skip_unsupported_wrapper(
-            config=config,
-            lang_cls=lang_cls,
-            spec=spec,
-            golden_path=golden_path,
-            file_regression=file_regression,
-        )
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:
@@ -628,24 +585,18 @@ def _render_call_golden_case(
             ref_name: ref_name for ref_name in fixture.ref_declarations
         }
     if isinstance(fixture, WrappedCallFixture):
-        run_wrap_in_file_case(
+        return _render_wrapped_call(
             config=config,
             spec=spec,
             source=source,
             input_info=input_info,
             effective_ref_case=effective_ref_case,
-            lang_name=lang_cls.__name__,
             golden_path=golden_path,
-            file_regression=file_regression,
-            pytest_config=file_regression.request.config,
+            strict=strict,
         )
-        return
     if isinstance(fixture, BoundCallFixture) and not observable:
-        with GoldenSkips(
-            policy=_DECLARATION_SKIPS,
-            golden_path=golden_path,
-            prefix=lang_cls.__name__,
-            config=file_regression.request.config,
+        with call_render_scope(
+            policy=_DECLARATION_SKIPS, golden_path=golden_path, strict=strict
         ):
             bound = _literalize_call_case(
                 config=config,
@@ -661,14 +612,9 @@ def _render_call_golden_case(
                     input_format=config.ref_input_format,
                 ),
             )
-        check_golden(
-            contents=_call_fixture_contents(
-                code=bound.code, spec=spec, config=config
-            ),
-            golden_path=golden_path,
-            file_regression=file_regression,
+        return _call_fixture_contents(
+            code=bound.code, spec=spec, config=config
         )
-        return
     if isinstance(fixture, BoundCallFixture):
         # Native receivers supply declarations around the same public fragment.
         fixture = ComposedCallFixture(
@@ -698,10 +644,9 @@ def _render_call_golden_case(
         input_info=input_info,
         declaration_names=declaration_names,
         effective_ref_case=effective_ref_case,
-        lang_name=lang_cls.__name__,
-        golden_path=golden_path,
-        file_regression=file_regression,
         observable=observable,
+        golden_path=golden_path,
+        strict=strict,
     )
     decl_results = call_outcome.decl_results
     result = call_outcome.result
@@ -711,14 +656,7 @@ def _render_call_golden_case(
             spec=spec,
             fragments=(*decl_results, result),
         )
-        check_golden(
-            contents=_call_fixture_contents(
-                code=code, spec=spec, config=config
-            ),
-            golden_path=golden_path,
-            file_regression=file_regression,
-        )
-        return
+        return _call_fixture_contents(code=code, spec=spec, config=config)
     # Build stub declarations for undefined names.
     target_stubs = target_call_declarations(
         fixture=fixture,
@@ -726,8 +664,7 @@ def _render_call_golden_case(
         spec=spec,
         argument_values=call_outcome.stub_argument_values,
         golden_path=golden_path,
-        file_regression=file_regression,
-        lang_name=lang_cls.__name__,
+        strict=strict,
     )
     # Statement stubs cover transform wrappers and a separate follow-up
     # consumer. Keep each target's parameter names so their argument
@@ -776,13 +713,7 @@ def _render_call_golden_case(
         extra_class_preamble=class_stubs,
         extra_preamble=preamble_stubs,
     )
-    check_golden(
-        contents=_call_fixture_contents(
-            code=composed.code, spec=spec, config=config
-        ),
-        golden_path=golden_path,
-        file_regression=file_regression,
-    )
+    return _call_fixture_contents(code=composed.code, spec=spec, config=config)
 
 
 @beartype
@@ -791,23 +722,26 @@ def run_call_golden_case(
     rendering: CallRendering,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
-    pytest_config: pytest.Config,
 ) -> None:
-    """Check a call rendering, including its declared rejection policy."""
-    if rendering.expected_exception is None:
-        _render_call_golden_case(
-            rendering=rendering,
-            cases_dir=cases_dir,
+    """Check the expectation derived for a call rendering."""
+    outcome = rendering.outcome
+    golden_path = rendering.golden_path(cases_dir=cases_dir)
+    render = functools.partial(
+        _render_call_golden_case,
+        rendering=rendering,
+        cases_dir=cases_dir,
+        strict=isinstance(outcome, Rejection),
+    )
+    if outcome is None:
+        check_golden(
+            contents=render(),
+            golden_path=golden_path,
             file_regression=file_regression,
         )
         return
-    with pytest.raises(expected_exception=rendering.expected_exception):
-        _render_call_golden_case(
-            rendering=rendering,
-            cases_dir=cases_dir,
-            file_regression=file_regression,
-        )
-    cleanup_stale_golden(
-        golden_path=rendering.golden_path(cases_dir=cases_dir),
-        config=pytest_config,
+    check_outcome(
+        outcome=outcome,
+        render=render,
+        golden_path=golden_path,
+        file_regression=file_regression,
     )

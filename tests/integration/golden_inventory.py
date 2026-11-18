@@ -11,6 +11,7 @@ from .call_variant_cases import call_golden_cases
 from .case_manifests import load_case_manifests
 from .constructor_cases import constructor_binding_cases
 from .deep_input_cases import deep_input_golden_paths
+from .golden_outcomes import Success
 from .golden_scenarios import scenario_renderings
 from .native_invocation_cases import native_invocation_cases
 from .record_snapshot_cases import record_snapshot_golden_paths
@@ -26,7 +27,7 @@ def call_owned_paths(*, cases_dir: Path) -> set[Path]:
         rendering.golden_path(cases_dir=cases_dir)
         for case in call_golden_cases(cases_dir=cases_dir)
         for rendering in case.renderings
-        if rendering.expected_exception is None
+        if rendering.outcome is None
     }
 
 
@@ -47,6 +48,7 @@ def literal_owned_paths(*, cases_dir: Path) -> set[Path]:
         for renderings in scenario_renderings().values()
         for rendering in renderings
         for spec in rendering.specs
+        if rendering.rejection(spec=spec) is None
     }
 
 
@@ -67,6 +69,7 @@ def _constructor_owned_paths(*, cases_dir: Path) -> set[Path]:
         rendering.golden_path
         for case in constructor_binding_cases(cases_dir=cases_dir)
         for rendering in case.renderings
+        if isinstance(rendering.outcome, Success)
     }
 
 

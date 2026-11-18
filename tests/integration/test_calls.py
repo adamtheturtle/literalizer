@@ -25,7 +25,6 @@ def test_call_golden_file(
     cases_dir: Path,
     file_regression: FileRegressionFixture,
     subtests: pytest.Subtests,
-    pytestconfig: pytest.Config,
 ) -> None:
     """Every call rendering matches its fixture or declared rejection."""
     for rendering in call_case.renderings:
@@ -34,5 +33,4 @@ def test_call_golden_file(
                 rendering=rendering,
                 cases_dir=cases_dir,
                 file_regression=file_regression,
-                pytest_config=pytestconfig,
             )

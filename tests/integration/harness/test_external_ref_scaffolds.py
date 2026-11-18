@@ -1,5 +1,6 @@
 """Typed scaffold refusals must not leave executable stale fixtures."""
 
+import dataclasses
 from functools import cached_property
 from pathlib import Path
 from typing import override
@@ -12,6 +13,7 @@ from literalizer.exceptions import UnrepresentableInputError
 from literalizer.languages import CSharp, Elm
 from tests.integration import literalize_ref_cases
 from tests.integration.case_manifests import load_case_manifest
+from tests.integration.golden_outcomes import Rejection
 from tests.integration.reference_cases import LiteralizeRefCase
 
 
@@ -59,16 +61,19 @@ def test_scaffold_refusal_through_golden_runner(
     tmp_path: Path,
     file_regression: FileRegressionFixture,
     regenerate: bool,
-    regeneration_config: pytest.Config,
+    monkeypatch: pytest.MonkeyPatch,
     stale_fixture: bool,
     case_name: str,
     lang_cls: LanguageCls,
     sequence_format: str | None,
     message: str,
 ) -> None:
-    """Exercise manifest-owned inputs, native scaffold refusal and
-    stale-file policy through the complete reference runner.
-    """
+    """Assert a documented reference rejection through the full runner."""
+    monkeypatch.setattr(
+        target=file_regression.request.config.option,
+        name="regen_all",
+        value=regenerate,
+    )
     original = load_case_manifest(case_dir=cases_dir / case_name)
     case_dir = tmp_path / case_name
     case_dir.mkdir()
@@ -91,26 +96,29 @@ def test_scaffold_refusal_through_golden_runner(
     )
     assert len(case.renderings) > 0
     for rendering in case.renderings:
+        rejected = dataclasses.replace(
+            rendering,
+            outcome=Rejection(error=UnrepresentableInputError, match=message),
+        )
         golden_path = rendering.golden_path(cases_dir=tmp_path)
         if stale_fixture:
             _ = golden_path.write_text(
                 data="stale fixture\n", encoding="utf-8"
             )
-        outcome = (
-            pytest.fail.Exception
-            if stale_fixture and not regenerate
-            else pytest.skip.Exception
-        )
-        with pytest.raises(expected_exception=outcome) as caught:
+            with pytest.raises(
+                expected_exception=pytest.fail.Exception,
+                match="Unexpected success fixture",
+            ):
+                literalize_ref_cases.run_literalize_ref_golden_case(
+                    rendering=rejected,
+                    cases_dir=tmp_path,
+                    file_regression=file_regression,
+                )
+            assert golden_path.read_text(encoding="utf-8") == "stale fixture\n"
+        else:
             literalize_ref_cases.run_literalize_ref_golden_case(
-                rendering=rendering,
+                rendering=rejected,
                 cases_dir=tmp_path,
                 file_regression=file_regression,
-                pytest_config=regeneration_config,
             )
-        refusal = caught.value.__context__
-        assert isinstance(refusal, UnrepresentableInputError)
-        assert message in str(object=refusal)
-        assert golden_path.exists() is (stale_fixture and not regenerate)
-        if golden_path.exists():
-            assert golden_path.read_text(encoding="utf-8") == "stale fixture\n"
+            assert not golden_path.exists()

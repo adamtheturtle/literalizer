@@ -9,8 +9,14 @@ from beartype import beartype
 import literalizer
 from literalizer._enums import enum_payload
 
-from .call_expectations import call_style_spec, expected_call_shape_exception
+from .call_expectations import (
+    call_style_spec,
+    expected_call_shape_exception,
+    wrapper_capability_exclusion,
+)
+from .call_receivers import uses_integer_receiver
 from .case_manifests import CallCaseSpec, call_case_specs
+from .golden_outcomes import Exclusion, Rejection
 from .language_specs import make_golden_path, make_spec, sorted_languages
 
 CASES_DIR = Path(__file__).parent / "cases"
@@ -26,10 +32,25 @@ class CallRendering:
     golden_name: str
     expected_exception: type[Exception] | None
 
-    def golden_path(self, *, cases_dir: Path) -> Path:
-        """Return the fixture used for comparison and stale-file
-        cleanup.
+    @property
+    def outcome(self) -> Rejection | Exclusion | None:
+        """Report documented errors and exclusions before rendering.
+
+        A missing outcome leaves the call in the legacy runner until its
+        representation constraints have been migrated.
         """
+        if not uses_integer_receiver(config=self.config, spec=self.spec):
+            reason = wrapper_capability_exclusion(
+                config=self.config, lang_cls=self.lang_cls, spec=self.spec
+            )
+            if reason is not None:
+                return Exclusion(reason=reason)
+        if self.expected_exception is not None:
+            return Rejection(error=self.expected_exception, match=None)
+        return None
+
+    def golden_path(self, *, cases_dir: Path) -> Path:
+        """Return the fixture path reserved by a successful rendering."""
         return make_golden_path(
             parent=cases_dir / self.config.case_dir_name,
             name=self.config.golden_name(name=self.golden_name),

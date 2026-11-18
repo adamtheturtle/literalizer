@@ -13,6 +13,7 @@ set of golden files.
 """
 
 import dataclasses
+import functools
 from pathlib import Path
 
 import pytest
@@ -20,21 +21,16 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer._language import is_reserved_identifier, redefinition_config
-from literalizer.exceptions import (
-    InvalidNewVariableNameError,
-    ReservedVariableNameError,
-)
 
 from .case_manifests import load_case_manifest
 from .golden_batches import GoldenGroup, golden_groups
 from .golden_checks import (
     GoldenSkips,
     check_golden,
-    cleanup_stale_golden,
     fixture_contents,
     format_consumer,
 )
+from .golden_outcomes import assert_rejection
 from .golden_renderings import GoldenRendering
 from .language_metadata import language_metadata
 from .language_specs import with_per_fixture_module_name
@@ -77,54 +73,25 @@ def _check_rendering(
         if spec.supports_variable_names
         else None
     )
-    expected_error: type[Exception] | None = None
-    expected_message = ""
-    if isinstance(variable_form, literalizer.BothVariableForms) and not (
-        redefinition_config(spec.declaration_style).supports_redefinition
-    ):
-        expected_error = ValueError
-        expected_message = "BothVariableForms requires a declaration_style"
-    elif variable_form is not None and (
-        is_reserved_identifier(
-            case_sensitive=spec.reserved_variable_identifiers_case_sensitive,
-            name=variable_form.name,
-            reserved_identifiers=spec.reserved_variable_identifiers,
-        )
-        or (
-            spec.reserved_variable_identifier_pattern is not None
-            and spec.reserved_variable_identifier_pattern.fullmatch(
-                string=variable_form.name
-            )
-            is not None
-        )
-    ):
-        expected_error = ReservedVariableNameError
-        expected_message = "reserved"
-    elif variable_form is not None and not (
-        spec.new_variable_name_syntax.accepts(name=variable_form.name)
-    ):
-        expected_error = InvalidNewVariableNameError
-        expected_message = "it is not a valid identifier"
-    if expected_error is not None:
-        with pytest.raises(
-            expected_exception=expected_error, match=expected_message
-        ):
-            _ = literalize_rendering(
+    rejection = rendering.rejection(spec=spec)
+    if rejection is not None:
+        assert_rejection(
+            outcome=rejection,
+            golden_path=golden_path,
+            render=functools.partial(
+                literalize_rendering,
                 rendering=rendering,
                 spec=spec,
                 input_info=input_info,
                 source_text=source_text,
                 variable_form=variable_form,
-            )
-        cleanup_stale_golden(
-            golden_path=golden_path, config=file_regression.request.config
+            ),
         )
         return
     with GoldenSkips(
         policy=rendering.skip,
         golden_path=golden_path,
         prefix=rendering.lang_cls.__name__,
-        config=file_regression.request.config,
     ):
         result = literalize_rendering(
             rendering=rendering,

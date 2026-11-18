@@ -7,6 +7,8 @@ from pathlib import Path
 from beartype import beartype
 
 from literalizer import Language, NewVariable
+from literalizer.exceptions import IncompatibleFormatsError
+from literalizer.languages import CSharp
 
 from .case_manifests import (
     CaseManifest,
@@ -17,7 +19,7 @@ from .constructor_variants import (
     ConstructorBindingSpec,
     constructor_binding_specs,
 )
-from .golden_checks import NO_SKIPS
+from .golden_outcomes import SUCCESS, Rejection, Success
 from .language_specs import make_golden_path, make_spec, sorted_languages
 
 CASES_DIR = Path(__file__).parent / "cases"
@@ -53,6 +55,21 @@ class ConstructorRendering:
     case: ConstructorBindingCase
     version: enum.Enum
     spec: Language
+
+    @property
+    def outcome(self) -> Success | Rejection:
+        """Classify binding modifiers before calling the renderer."""
+        form = self.case.variable_form
+        if (
+            isinstance(self.spec, CSharp)
+            and isinstance(form, NewVariable)
+            and CSharp.Modifiers["CONST"] in form.modifiers
+        ):
+            return Rejection(
+                error=IncompatibleFormatsError,
+                match="const.*cannot bind a runtime call result",
+            )
+        return SUCCESS
 
     @property
     def golden_path(self) -> Path:
@@ -104,7 +121,6 @@ def constructor_binding_cases(
                     lang_cls=case.lang_cls,
                     spec_overrides=case.spec_overrides,
                     variable_form=case.variable_form,
-                    skip=case.skip,
                     manifest=manifest,
                 )
             )
@@ -122,7 +138,6 @@ def constructor_binding_cases(
                         variable_form=NewVariable(
                             name="p", modifiers=frozenset()
                         ),
-                        skip=NO_SKIPS,
                         manifest=manifest,
                     )
                 )

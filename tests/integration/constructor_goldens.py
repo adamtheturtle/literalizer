@@ -1,6 +1,7 @@
 """Render and compare constructor-binding golden fixtures."""
 
 import dataclasses
+import functools
 
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -8,17 +9,17 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from literalizer import NewVariable, literalize, literalize_call
 
 from .constructor_cases import ConstructorRendering
-from .golden_checks import GoldenSkips, check_golden, format_consumer
+from .golden_checks import format_consumer
+from .golden_outcomes import check_outcome
 from .language_specs import make_spec, with_per_fixture_module_name
 
 
 @beartype
-def run_constructor_binding_golden_case(
+def _render_constructor_binding(
     *,
     rendering: ConstructorRendering,
-    file_regression: FileRegressionFixture,
-) -> None:
-    """Check one constructor binding golden file."""
+) -> str:
+    """Render the selected constructor binding in its native context."""
     case = rendering.case
     golden_path = rendering.golden_path
     manifest = case.manifest
@@ -74,25 +75,19 @@ def run_constructor_binding_golden_case(
         )
         contents = result.code + "\n"
     else:
-        with GoldenSkips(
-            policy=case.skip,
-            golden_path=golden_path,
-            prefix=case.lang_cls.__name__,
-            config=file_regression.request.config,
-        ):
-            result = literalize_call(
-                source=source,
-                input_format=input_format,
-                language=language,
-                target_function=language.format_constructor_target(
-                    config.class_name,
-                ),
-                parameter_names=config.parameter_names,
-                wrap_in_file=consumer_template is None,
-                variable_form=dataclasses.replace(
-                    case.variable_form, name=config.variable_name
-                ),
-            )
+        result = literalize_call(
+            source=source,
+            input_format=input_format,
+            language=language,
+            target_function=language.format_constructor_target(
+                config.class_name,
+            ),
+            parameter_names=config.parameter_names,
+            wrap_in_file=consumer_template is None,
+            variable_form=dataclasses.replace(
+                case.variable_form, name=config.variable_name
+            ),
+        )
         contents = result.code + "\n"
         if consumer_template is not None:
             contents = format_consumer(
@@ -101,8 +96,21 @@ def run_constructor_binding_golden_case(
                 golden_path=golden_path,
                 spec=language,
             )
-    check_golden(
-        contents=contents,
-        golden_path=golden_path,
+    return contents
+
+
+@beartype
+def run_constructor_binding_golden_case(
+    *,
+    rendering: ConstructorRendering,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Compare the native fixture for a supported constructor binding."""
+    check_outcome(
+        outcome=rendering.outcome,
+        render=functools.partial(
+            _render_constructor_binding, rendering=rendering
+        ),
+        golden_path=rendering.golden_path,
         file_regression=file_regression,
     )

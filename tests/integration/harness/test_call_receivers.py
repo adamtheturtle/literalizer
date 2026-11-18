@@ -32,7 +32,6 @@ def test_external_integer_receiver_keeps_absent_inference_hints(
     *,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
-    pytestconfig: pytest.Config,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """An observable external call needs neither stub inference nor
@@ -68,7 +67,6 @@ def test_external_integer_receiver_keeps_absent_inference_hints(
         ),
         cases_dir=cases_dir,
         file_regression=file_regression,
-        pytest_config=pytestconfig,
     )
     calls = [
         call.kwargs
