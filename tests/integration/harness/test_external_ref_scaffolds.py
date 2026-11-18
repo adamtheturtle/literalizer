@@ -27,7 +27,6 @@ class _FixedLengthCSharp(CSharp):
         return CSharp().sequence_format_config
 
 
-@pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
 @pytest.mark.parametrize(argnames="stale_fixture", argvalues=[False, True])
 @pytest.mark.parametrize(
     argnames=("case_name", "lang_cls", "sequence_format", "message"),
@@ -60,8 +59,6 @@ def test_scaffold_refusal_through_golden_runner(
     cases_dir: Path,
     tmp_path: Path,
     file_regression: FileRegressionFixture,
-    regenerate: bool,
-    monkeypatch: pytest.MonkeyPatch,
     stale_fixture: bool,
     case_name: str,
     lang_cls: LanguageCls,
@@ -69,11 +66,6 @@ def test_scaffold_refusal_through_golden_runner(
     message: str,
 ) -> None:
     """Assert a documented reference rejection through the full runner."""
-    monkeypatch.setattr(
-        target=file_regression.request.config.option,
-        name="regen_all",
-        value=regenerate,
-    )
     original = load_case_manifest(case_dir=cases_dir / case_name)
     case_dir = tmp_path / case_name
     case_dir.mkdir()

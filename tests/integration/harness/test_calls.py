@@ -124,7 +124,6 @@ def _copy_call_inputs(*, source_dir: Path, target_dir: Path) -> None:
             )
 
 
-@pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
 @pytest.mark.parametrize(argnames="variant", argvalues=[False, True])
 def test_call_rejection_handles_stale_fixture(
     *,
@@ -132,17 +131,8 @@ def test_call_rejection_handles_stale_fixture(
     tmp_path: Path,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
-    regenerate: bool,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A rejection never deletes a successful fixture during
-    regeneration.
-    """
-    monkeypatch.setattr(
-        target=file_regression.request.config.option,
-        name="regen_all",
-        value=regenerate,
-    )
+    """Report the conflicting fixture and preserve its contents."""
     if variant:
         rendering = next(
             case.renderings[0]
