@@ -59,6 +59,7 @@ def _reference_owned_paths(*, cases_dir: Path) -> set[Path]:
         rendering.golden_path(cases_dir=cases_dir)
         for case in reference_golden_cases()
         for rendering in case.renderings
+        if rendering.outcome is None or isinstance(rendering.outcome, Success)
     }
 
 

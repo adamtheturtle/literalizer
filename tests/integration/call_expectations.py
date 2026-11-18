@@ -18,20 +18,24 @@ from literalizer._literalize import (
     _RequiresUniqueDottedCallParts,
 )
 from literalizer.exceptions import (
+    CallArgNotSupportedError,
     CallsNotSupportedByLanguageError,
     CallsNotSupportedByToolError,
     DottedCallTargetNotSupportedError,
+    ExistingVariableNotSelfContainedError,
     InvalidCallParameterNameError,
     InvalidCallTargetError,
     InvalidNewVariableNameError,
     UnsupportedCallShapeError,
     VariableNameNotSupportedError,
 )
+from literalizer.languages import Cobol
 
 from .call_transforms import transform_stub_targets
 from .case_manifests import (
     BoundCallFixture,
     CallCaseSpec,
+    ComposedCallFixture,
     WrappedCallFixture,
 )
 from .language_specs import (
@@ -300,6 +304,42 @@ def call_style_spec(
         )
     )
     return dataclasses.replace(spec, call_style=style)
+
+
+@beartype
+def fixture_rejection(
+    *,
+    config: CallCaseSpec,
+    spec: literalizer.Language,
+    predicted: type[Exception],
+) -> type[Exception]:
+    """Resolve checks that run before the predicted call shape error."""
+    fixture = config.fixture
+    if (
+        isinstance(fixture, ComposedCallFixture)
+        and len(fixture.ref_declarations) > 0
+        and not spec.supports_variable_names
+    ):
+        # The fixture must emit its declarations before making the call.
+        return VariableNameNotSupportedError
+    if predicted is UnsupportedCallShapeError:
+        if (
+            isinstance(fixture, WrappedCallFixture)
+            and isinstance(config.variable_form, literalizer.ExistingVariable)
+            and spec.supports_variable_names
+            and spec.call_returns_expression
+            and not spec.call_assignment_declares_binding
+        ):
+            return ExistingVariableNotSelfContainedError
+        if isinstance(spec, Cobol) and config.case_dir_name in {
+            "call_bound_literal_followup_new",
+            "call_followup_result_first",
+            "call_followup_result_last",
+        }:
+            # These follow-ups pass the prior result by reference before
+            # the primary call checks its result binding.
+            return CallArgNotSupportedError
+    return predicted
 
 
 @beartype

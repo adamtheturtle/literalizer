@@ -12,6 +12,7 @@ from literalizer._enums import enum_payload
 from .call_expectations import (
     call_style_spec,
     expected_call_shape_exception,
+    fixture_rejection,
     wrapper_capability_exclusion,
 )
 from .call_receivers import uses_integer_receiver
@@ -46,7 +47,14 @@ class CallRendering:
             if reason is not None:
                 return Exclusion(reason=reason)
         if self.expected_exception is not None:
-            return Rejection(error=self.expected_exception, match=None)
+            return Rejection(
+                error=fixture_rejection(
+                    config=self.config,
+                    spec=self.spec,
+                    predicted=self.expected_exception,
+                ),
+                match=None,
+            )
         return None
 
     def golden_path(self, *, cases_dir: Path) -> Path:
