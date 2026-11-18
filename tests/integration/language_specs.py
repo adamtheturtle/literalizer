@@ -19,6 +19,7 @@ from literalizer._language import redefinition_config
 from literalizer.languages import ALL_LANGUAGES
 
 from .fixture_names import fixture_module_name
+from .golden_artifacts import GoldenArtifact
 from .language_metadata import language_metadata
 
 
@@ -83,6 +84,24 @@ def make_golden_path(
     if golden.filename_lowercase:
         filename = filename.lower()
     return parent / filename
+
+
+@beartype
+def make_golden_artifact(
+    *,
+    parent: Path,
+    name: str,
+    lang_cls: literalizer.LanguageCls,
+    version: enum.Enum,
+) -> GoldenArtifact:
+    """Resolve a generated artifact for the effective language version."""
+    return GoldenArtifact(
+        path=make_golden_path(
+            parent=parent, name=name, lang_cls=lang_cls, version=version
+        ),
+        language=lang_cls,
+        version=version,
+    )
 
 
 @functools.cache

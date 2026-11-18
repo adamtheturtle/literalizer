@@ -57,7 +57,7 @@ def test_concurrent_yaml_golden_files(cases_dir: Path) -> None:
         input_info = case_input(case_dir=cases_dir / rendering.case_dir_name)
         assert input_info.input_format is InputFormat.YAML
         for spec in rendering.specs:
-            path = rendering.golden_path(version=spec.language_version)
+            path = rendering.artifact(version=spec.language_version).path
             # The base suite omits input shapes a backend cannot represent.
             if not path.is_file():
                 continue

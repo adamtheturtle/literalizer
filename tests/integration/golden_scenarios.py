@@ -37,15 +37,15 @@ from .case_manifests import (
     OwnerName,
     variable_form_for_context,
 )
-from .golden_checks import (
-    NO_SKIPS,
-    SkipPolicy,
-)
 from .golden_renderings import (
     GoldenRendering,
     RenderArguments,
     compact_render,
     unprefixed_rendering,
+)
+from .golden_skip_policy import (
+    NO_SKIPS,
+    SkipPolicy,
 )
 from .language_metadata import language_metadata
 from .language_specs import (

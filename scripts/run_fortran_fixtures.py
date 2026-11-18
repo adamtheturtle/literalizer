@@ -12,6 +12,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 def _check(
@@ -71,18 +72,11 @@ def main(*, versions: tuple[str, ...]) -> None:
     """Check fixtures at their declared language standards."""
     jobs = os.cpu_count()
     timeout = 60.0
-    roots = (
-        Path("tests/integration/cases"),
-        Path("tests/integration/default_module_names"),
-    )
-    fixtures = sorted(
-        fixture for root in roots for fixture in root.rglob(pattern="*.f90")
-    )
     selections = {
-        version: tuple(
-            fixture
-            for fixture in fixtures
-            if fixture.name.endswith(f"@{version}.f90")
+        version: fixture_paths(
+            extension=".f90",
+            version=version,
+            include_default_module_names=True,
         )
         for version in versions
     }

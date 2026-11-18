@@ -8,6 +8,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 @click.command()
@@ -15,11 +16,7 @@ from scripts.bounded_command import bounded_command
 def main(*, version: str) -> None:
     """Keep strict batched builds and the primed dependency project."""
     timeout = 300.0
-    fixtures = sorted(
-        path
-        for path in Path("tests/integration/cases").rglob(pattern="*.gleam")
-        if path.name.endswith(f"@{version}.gleam")
-    )
+    fixtures = fixture_paths(extension=".gleam", version=version)
     if len(fixtures) == 0:
         raise click.ClickException(message=f"No Gleam {version} fixtures.")
     primed = os.environ.get(key="LINT_GLEAM_PRIMED_DIR")

@@ -17,8 +17,8 @@ from tests.integration.case_manifests import (
     load_case_manifests,
 )
 from tests.integration.golden_inventory import (
-    call_owned_paths,
-    literal_owned_paths,
+    call_artifacts,
+    literal_artifacts,
     owned_paths,
 )
 from tests.integration.reference_cases import (
@@ -58,14 +58,16 @@ def test_rejected_call_renderings_do_not_own_goldens(
 ) -> None:
     """A call that checks an error cannot keep an unverified fixture alive."""
     rejected = {
-        rendering.golden_path(cases_dir=cases_dir)
+        rendering.artifact(cases_dir=cases_dir).path
         for case in call_golden_cases(cases_dir=cases_dir)
         if isinstance(case, CallVariantCase) is variant
         for rendering in case.renderings
         if rendering.expected_exception is not None
     }
     assert len(rejected) > 0
-    assert rejected.isdisjoint(call_owned_paths(cases_dir=cases_dir))
+    assert rejected.isdisjoint(
+        artifact.path for artifact in call_artifacts(cases_dir=cases_dir)
+    )
 
 
 def test_base_cases_own_effective_golden(cases_dir: Path) -> None:
@@ -86,7 +88,9 @@ def test_effective_language_version_owns_golden(tmp_path: Path) -> None:
     cases_dir = tmp_path / "cases"
     case_dir = cases_dir / "dict_mixed_scalars"
     case_dir.mkdir(parents=True)
-    expected = literal_owned_paths(cases_dir=cases_dir)
+    expected = {
+        artifact.path for artifact in literal_artifacts(cases_dir=cases_dir)
+    }
     java_prefix = "Java_heterogeneous_strategy_record_combined@"
     cpp_prefix = "Cpp_heterogeneous_strategy_record_combined@"
     java_golden = case_dir / f"{java_prefix}jdk_16.java"
@@ -127,7 +131,9 @@ def test_variant_version_inventory_preserves_coverage_and_rejects_phantoms(
     cases_dir = tmp_path / "cases"
     case_dir = cases_dir / "binary"
     case_dir.mkdir(parents=True)
-    expected = literal_owned_paths(cases_dir=cases_dir)
+    expected = {
+        artifact.path for artifact in literal_artifacts(cases_dir=cases_dir)
+    }
     ordinary_name = "Cpp_bytes_format_base64@"
     pinned_name = "Cpp_version_cpp14@"
     ordinary = {

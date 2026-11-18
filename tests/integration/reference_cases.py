@@ -17,10 +17,11 @@ from .case_manifests import (
     RefCaseSpec,
     ref_case_specs,
 )
+from .golden_artifacts import GoldenArtifact
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
-    make_golden_path,
+    make_golden_artifact,
     make_spec,
     reference_case_for_declaration_style,
     sorted_languages,
@@ -44,9 +45,9 @@ class RefRendering:
     golden_name: str
     ref_case: literalizer.IdentifierCase | None
 
-    def golden_path(self, *, cases_dir: Path) -> Path:
+    def artifact(self, *, cases_dir: Path) -> GoldenArtifact:
         """Locate the fixture used by execution and inventory checks."""
-        return make_golden_path(
+        return make_golden_artifact(
             parent=cases_dir / self.config.case_dir_name,
             name=self.config.golden_name(name=self.golden_name),
             lang_cls=self.lang_cls,

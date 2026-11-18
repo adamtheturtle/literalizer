@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import run_bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 def _run(
@@ -61,14 +62,7 @@ def main(*, compiler: str) -> None:
     """
     jobs = os.cpu_count()
     timeout = 60.0
-    fixtures = sorted(
-        path
-        for root in (
-            Path("tests/integration/cases"),
-            Path("tests/integration/default_module_names"),
-        )
-        for path in root.rglob(pattern="*.d")
-    )
+    fixtures = fixture_paths(extension=".d", include_default_module_names=True)
     if len(fixtures) == 0:
         raise click.ClickException(message="No D fixtures.")
     tools: dict[str, str] = {}

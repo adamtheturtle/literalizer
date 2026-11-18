@@ -87,7 +87,7 @@ def test_record_names_are_caller_independent(
     *, rendering: GoldenRendering, seed: Language, warm_cache: bool
 ) -> None:
     """Mutating caller mappings cannot change cold or cached native output."""
-    path = rendering.golden_path(version=seed.language_version)
+    path = rendering.artifact(version=seed.language_version).path
     configured = with_per_fixture_module_name(spec=seed, golden_path=path)
     assert isinstance(configured, _HasRecordNames)
     caller_names = dict(configured.record_shape_names)

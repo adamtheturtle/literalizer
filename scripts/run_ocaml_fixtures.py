@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import run_bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 _PRELUDE = """# use "topfind";;
 # require "yojson";;
@@ -62,11 +63,7 @@ def main() -> None:
     """
     jobs = os.cpu_count()
     timeout = 60.0
-    fixtures = sorted(
-        path
-        for root in (Path("tests/integration/cases"),)
-        for path in root.rglob(pattern="*.ml")
-    )
+    fixtures = fixture_paths(extension=".ml")
     if len(fixtures) == 0:
         raise click.ClickException(message="No OCaml fixtures.")
     tools: dict[str, str] = {}

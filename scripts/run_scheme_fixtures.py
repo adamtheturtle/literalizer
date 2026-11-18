@@ -9,6 +9,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 def _check(
@@ -36,10 +37,7 @@ def main(*, guile_name: str, json_path: Path | None) -> None:
     """Validate a named input or the complete native fixture corpus."""
     jobs = os.cpu_count()
     timeout = 60.0
-    fixtures = sorted(
-        fixture
-        for fixture in Path("tests/integration/cases").rglob(pattern="*.scm")
-    )
+    fixtures = fixture_paths(extension=".scm")
     if len(fixtures) == 0:
         raise click.ClickException(message="No Scheme fixtures.")
     executable = shutil.which(cmd=guile_name)

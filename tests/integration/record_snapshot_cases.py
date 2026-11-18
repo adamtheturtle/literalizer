@@ -2,15 +2,17 @@
 
 import enum
 import tomllib
+from collections.abc import Iterator
 from pathlib import Path
 
 from pydantic import BaseModel, TypeAdapter
 
 from literalizer.languages import Rust
 
+from .golden_artifacts import GoldenArtifact
 from .golden_renderings import GoldenRendering
 from .golden_scenarios import scenario_renderings
-from .language_specs import make_golden_path
+from .language_specs import make_golden_artifact
 
 
 class RecordSnapshotCase(BaseModel, extra="forbid", frozen=True):
@@ -25,9 +27,11 @@ class RecordSnapshotCase(BaseModel, extra="forbid", frozen=True):
     child_name: str
     consumer_template: str
 
-    def golden_path(self, *, cases_dir: Path, version: enum.Enum) -> Path:
+    def artifact(
+        self, *, cases_dir: Path, version: enum.Enum
+    ) -> GoldenArtifact:
         """Locate the native fixture for one target version."""
-        return make_golden_path(
+        return make_golden_artifact(
             parent=cases_dir / self.case_name,
             name=self.golden_name,
             lang_cls=Rust,
@@ -56,12 +60,12 @@ def snapshot_rendering(*, case: RecordSnapshotCase) -> GoldenRendering:
     )
 
 
-def record_snapshot_golden_paths(*, cases_dir: Path) -> set[Path]:
+def record_snapshot_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
     """Own every native program produced from the declared snapshot
     cases.
     """
-    return {
-        case.golden_path(cases_dir=cases_dir, version=spec.language_version)
+    return (
+        case.artifact(cases_dir=cases_dir, version=spec.language_version)
         for case in RECORD_SNAPSHOT_CASES
         for spec in snapshot_rendering(case=case).specs
-    }
+    )

@@ -3,11 +3,11 @@
 import concurrent.futures
 import os
 import shutil
-from pathlib import Path
 
 import click
 
 from scripts.bounded_command import run_bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 @click.command()
@@ -15,9 +15,7 @@ def main() -> None:
     """Batch the static checks before running fixtures independently."""
     jobs = os.cpu_count()
     timeout = 60.0
-    fixtures = sorted(
-        path for path in Path("tests/integration/cases").rglob(pattern="*.clj")
-    )
+    fixtures = fixture_paths(extension=".clj")
     if len(fixtures) == 0:
         raise click.ClickException(message="No Clojure fixtures.")
     tools: dict[str, str] = {}

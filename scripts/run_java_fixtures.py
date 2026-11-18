@@ -39,11 +39,16 @@ def main(releases: tuple[str, ...]) -> None:
     selections: dict[str, tuple[Path, ...]] = {}
     for release in releases:
         version = f"jdk_{release}"
-        ordinary = fixture_paths(
-            extension=".java", version=version, root=CASES_DIR
+        fixtures = fixture_paths(
+            extension=".java",
+            version=version,
+            include_default_module_names=True,
         )
-        defaults = fixture_paths(
-            extension=".java", version=version, root=_DEFAULT_MODULES
+        ordinary = tuple(
+            path for path in fixtures if CASES_DIR in path.parents
+        )
+        defaults = tuple(
+            path for path in fixtures if _DEFAULT_MODULES in path.parents
         )
         if len(ordinary) == 0:
             raise click.ClickException(

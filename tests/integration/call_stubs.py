@@ -15,7 +15,8 @@ from .case_manifests import (
     CallCaseSpec,
     ComposedCallFixture,
 )
-from .golden_checks import GoldenSkips, SkipPolicy, SkipReason
+from .golden_checks import GoldenSkips
+from .golden_skip_policy import SkipPolicy, SkipReason
 from .parsed_values import ParsedValue
 
 # The typed preamble stub restates the call's argument types, which a

@@ -7,6 +7,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import run_bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 @click.command()
@@ -33,9 +34,7 @@ def main(*, deps: Path, chrono: Path, serde_json: Path) -> None:
     use.
     """
     timeout = 60.0
-    fixtures = sorted(
-        path for path in Path("tests/integration/cases").rglob(pattern="*.rs")
-    )
+    fixtures = fixture_paths(extension=".rs")
     if len(fixtures) == 0:
         raise click.ClickException(message="No Rust fixtures.")
     executable = shutil.which(cmd="rustc")

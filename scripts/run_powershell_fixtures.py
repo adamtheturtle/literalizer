@@ -8,6 +8,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 _ROOT = Path(__file__).resolve().parents[1]
 
@@ -16,10 +17,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 def main() -> None:
     """Select a case or validate the complete native fixture corpus."""
     timeout = 600.0
-    fixtures = sorted(
-        fixture
-        for fixture in Path("tests/integration/cases").rglob(pattern="*.ps1")
-    )
+    fixtures = fixture_paths(extension=".ps1")
     if len(fixtures) == 0:
         raise click.ClickException(message="No PowerShell fixtures.")
     executable = shutil.which(cmd="pwsh")

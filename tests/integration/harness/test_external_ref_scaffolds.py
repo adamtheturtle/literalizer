@@ -91,7 +91,7 @@ def test_scaffold_refusal_through_golden_runner(
     )
     assert len(case.renderings) > 0
     for rendering in case.renderings:
-        golden_path = rendering.golden_path(cases_dir=tmp_path)
+        golden_path = rendering.artifact(cases_dir=tmp_path).path
         if stale_fixture:
             _ = golden_path.write_text(
                 data="stale fixture\n", encoding="utf-8"
