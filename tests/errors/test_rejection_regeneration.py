@@ -2,7 +2,6 @@
 regeneration.
 """
 
-import subprocess
 import sys
 import tomllib
 from pathlib import Path
@@ -10,10 +9,13 @@ from pathlib import Path
 import pytest
 from pydantic import TypeAdapter
 
+from tests.errors import test_rejections as rejection_runner
 from tests.errors.rejection_manifests import (
     RejectionManifest,
     load_rejection_manifest,
 )
+
+pytest_plugins: tuple[str, ...] = ("pytester",)
 
 type _Messages = dict[str, dict[str, str | dict[str, str]]]
 
@@ -48,16 +50,16 @@ def _reserved_name_manifest(*, tmp_path: Path) -> RejectionManifest:
 
 
 def _run_snapshot_pytest(
-    *, tmp_path: Path, regenerate: bool
-) -> subprocess.CompletedProcess[str]:
+    *, pytester: pytest.Pytester, regenerate: bool
+) -> pytest.RunResult:
     """Exercise the golden runner with real pytest command-line
     options.
     """
-    test_path = tmp_path / "test_snapshot.py"
-    _ = test_path.write_text(
-        data=(
+    # Keep the runner and its fixture types loaded across nested pytest runs.
+    test_path = pytester.makepyfile(
+        test_snapshot=(
             "from pathlib import Path\n"
-            "from tests.errors import test_rejections as runner\n"
+            f"import {rejection_runner.__name__} as runner\n"
             "from tests.errors.rejection_manifests import "
             "load_rejection_manifest\n\n"
             "def test_snapshot(file_regression):\n"
@@ -69,40 +71,18 @@ def _run_snapshot_pytest(
             "        manifest=manifest, file_regression=file_regression\n"
             "    )\n"
         ),
-        encoding="utf-8",
     )
-    project_root = Path(__file__).resolve().parents[2]
-    config_path = tmp_path / "pytest.ini"
-    _ = config_path.write_text(data="[pytest]\n", encoding="utf-8")
-    return subprocess.run(  # noqa: S603 - run the real pytest golden workflow
-        args=[
-            sys.executable,
-            "-m",
-            "coverage",
-            "run",
-            "--parallel-mode",
-            "--rcfile",
-            str(object=project_root / "pyproject.toml"),
-            "-m",
-            "pytest",
-            "-c",
-            str(object=config_path),
-            "--disable-plugin-autoload",
-            "-p",
-            "pytest_regressions.plugin",
-            "-p",
-            "pytest_datadir.plugin",
-            "-q",
-            "--tb=short",
-            str(object=test_path),
-            *(["--regen-all"] if regenerate else []),
-        ],
-        cwd=project_root,
-        capture_output=True,
-        text=True,
-        # Coverage startup can exceed a minute on hosted Windows runners.
-        timeout=180,
-        check=False,
+    _ = pytester.makeini(source="[pytest]")
+    return pytester.runpytest_inprocess(
+        "--disable-plugin-autoload",
+        "-p",
+        "pytest_regressions.plugin",
+        "-p",
+        "pytest_datadir.plugin",
+        "-q",
+        "--tb=short",
+        test_path,
+        *(["--regen-all"] if regenerate else []),
     )
 
 
@@ -133,7 +113,7 @@ def _run_snapshot_pytest(
 )
 def test_invalid_snapshot_survives_verification_and_regeneration(
     *,
-    tmp_path: Path,
+    pytester: pytest.Pytester,
     message: str,
     diagnostic: str,
     regenerate: bool,
@@ -141,18 +121,16 @@ def test_invalid_snapshot_survives_verification_and_regeneration(
     """Reject malformed snapshots in both modes without overwriting
     them.
     """
-    case_dir = tmp_path / "case"
+    case_dir = pytester.path / "case"
     case_dir.mkdir()
     manifest = _reserved_name_manifest(tmp_path=case_dir)
     original = (
         "[ReservedVariableNameError]\n\"Python['class']\" = " + message + "\n"
     ).encode(encoding="utf-8")
     _ = manifest.golden_path.write_bytes(data=original)
-    completed = _run_snapshot_pytest(tmp_path=tmp_path, regenerate=regenerate)
-    assert completed.returncode == pytest.ExitCode.TESTS_FAILED, (
-        completed.stdout + completed.stderr
-    )
-    assert diagnostic in completed.stdout
+    result = _run_snapshot_pytest(pytester=pytester, regenerate=regenerate)
+    assert result.ret == pytest.ExitCode.TESTS_FAILED
+    assert diagnostic in result.stdout.str()
     assert manifest.golden_path.read_bytes() == original
     assert {path.name for path in case_dir.iterdir()} == {
         "rejection.toml",
@@ -161,17 +139,15 @@ def test_invalid_snapshot_survives_verification_and_regeneration(
 
 
 def test_missing_snapshot_can_be_regenerated_and_verified(
-    tmp_path: Path,
+    pytester: pytest.Pytester,
 ) -> None:
     """Generate a new snapshot from public errors, then verify it."""
-    case_dir = tmp_path / "case"
+    case_dir = pytester.path / "case"
     case_dir.mkdir()
     manifest = _reserved_name_manifest(tmp_path=case_dir)
     assert not manifest.golden_path.exists()
-    regenerated = _run_snapshot_pytest(tmp_path=tmp_path, regenerate=True)
-    assert regenerated.returncode == pytest.ExitCode.OK, (
-        regenerated.stdout + regenerated.stderr
-    )
+    regenerated = _run_snapshot_pytest(pytester=pytester, regenerate=True)
+    assert regenerated.ret == pytest.ExitCode.OK
     generated = manifest.golden_path.read_bytes()
     messages = TypeAdapter[_Messages](type=_Messages).validate_python(
         tomllib.loads(generated.decode(encoding="utf-8"))
@@ -180,10 +156,8 @@ def test_missing_snapshot_can_be_regenerated_and_verified(
         "Python cannot use NewVariable name 'class': "
         "it is a reserved identifier"
     )
-    verified = _run_snapshot_pytest(tmp_path=tmp_path, regenerate=False)
-    assert verified.returncode == pytest.ExitCode.OK, (
-        verified.stdout + verified.stderr
-    )
+    verified = _run_snapshot_pytest(pytester=pytester, regenerate=False)
+    assert verified.ret == pytest.ExitCode.OK
     assert manifest.golden_path.read_bytes() == generated
 
 
@@ -194,11 +168,11 @@ def test_missing_snapshot_can_be_regenerated_and_verified(
 )
 def test_versioned_rejection_snapshot_regeneration(
     *,
-    tmp_path: Path,
+    pytester: pytest.Pytester,
     active_override: bool,
 ) -> None:
     """Preserve inactive variants and verify real runtime diagnostics."""
-    case_dir = tmp_path / "case"
+    case_dir = pytester.path / "case"
     case_dir.mkdir()
     manifest = _reserved_name_manifest(tmp_path=case_dir)
     current_version = f"{sys.version_info.major}.{sys.version_info.minor}"
@@ -208,10 +182,8 @@ def test_versioned_rejection_snapshot_regeneration(
     _ = golden_path.write_text(
         data=_INITIAL.replace('"3.12"', f'"{version}"'), encoding="utf-8"
     )
-    regenerated = _run_snapshot_pytest(tmp_path=tmp_path, regenerate=True)
-    assert regenerated.returncode == pytest.ExitCode.OK, (
-        regenerated.stdout + regenerated.stderr
-    )
+    regenerated = _run_snapshot_pytest(pytester=pytester, regenerate=True)
+    assert regenerated.ret == pytest.ExitCode.OK
     generated = golden_path.read_text(encoding="utf-8")
     messages = TypeAdapter[_Messages](type=_Messages).validate_python(
         tomllib.loads(generated)
@@ -233,16 +205,12 @@ def test_versioned_rejection_snapshot_regeneration(
         )
     assert "Python['stale']" not in actual
     assert "StaleError" not in messages
-    verified = _run_snapshot_pytest(tmp_path=tmp_path, regenerate=False)
-    assert verified.returncode == pytest.ExitCode.OK, (
-        verified.stdout + verified.stderr
-    )
+    verified = _run_snapshot_pytest(pytester=pytester, regenerate=False)
+    assert verified.ret == pytest.ExitCode.OK
     assert golden_path.read_text(encoding="utf-8") == generated
     corrupted = generated.replace(class_message, "incorrect active message")
     _ = golden_path.write_text(data=corrupted, encoding="utf-8")
-    failed = _run_snapshot_pytest(tmp_path=tmp_path, regenerate=False)
-    assert failed.returncode == pytest.ExitCode.TESTS_FAILED, (
-        failed.stdout + failed.stderr
-    )
-    assert "incorrect active message" in failed.stdout
+    failed = _run_snapshot_pytest(pytester=pytester, regenerate=False)
+    assert failed.ret == pytest.ExitCode.TESTS_FAILED
+    assert "incorrect active message" in failed.stdout.str()
     assert golden_path.read_text(encoding="utf-8") == corrupted
