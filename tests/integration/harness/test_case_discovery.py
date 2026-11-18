@@ -5,8 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from literalizer.languages import Dart
+from literalizer.languages import Dart, Jsonc, Python
 from tests.integration import case_discovery
+from tests.integration.golden_outcomes import SUCCESS, Exclusion
 
 
 def test_discovery_selects_before_parsing(
@@ -38,3 +39,28 @@ def test_discovery_selects_before_parsing(
             suite="combined",
             lang_cls=Dart,
         )
+
+
+def test_excluded_control_key_lists_its_reason(tmp_path: Path) -> None:
+    """The authored key contract excludes Python and admits JSONC."""
+    case_dir = tmp_path / "control_key"
+    case_dir.mkdir()
+    _ = (case_dir / "case.toml").write_text(
+        data='schema_version = 1\nsuites = ["base"]\n',
+        encoding="utf-8",
+    )
+    _ = (case_dir / "input.json").write_text(
+        data=r'{"a\u0001b": 1}',
+        encoding="utf-8",
+    )
+    (entry,) = case_discovery.discover_case_admissions(
+        cases_dir=tmp_path, suite="base", lang_cls=Python
+    )
+    assert entry.case_name == "control_key"
+    assert isinstance(entry.outcome, Exclusion)
+    assert "documented control-key rejection" in entry.outcome.reason
+
+    (accepted,) = case_discovery.discover_case_admissions(
+        cases_dir=tmp_path, suite="base", lang_cls=Jsonc
+    )
+    assert accepted.outcome is SUCCESS

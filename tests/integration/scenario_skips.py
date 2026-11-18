@@ -21,22 +21,18 @@ _COMMON_SKIP_REASONS: SkipReasons = (
     SkipReason(
         error=ExcessiveNestingError,
         reason="exceeds the target's safe collection nesting limit",
-        unlink=True,
     ),
     SkipReason(
         error=ExistingVariableNotSelfContainedError,
         reason="complete file cannot contain an undeclared existing variable",
-        unlink=True,
     ),
     SkipReason(
         error=UnrepresentableIntegerError,
         reason="cannot represent integer in this input",
-        unlink=True,
     ),
     SkipReason(
         error=UnrepresentableEmptyDictError,
         reason="cannot represent an empty dict",
-        unlink=True,
     ),
 )
 
@@ -45,17 +41,14 @@ LANGUAGE_SKIP_REASONS: SkipReasons = (
     SkipReason(
         error=HeterogeneousCollectionError,
         reason="cannot represent this heterogeneous input",
-        unlink=True,
     ),
     SkipReason(
         error=NullInCollectionError,
         reason="cannot represent null in a collection",
-        unlink=True,
     ),
     SkipReason(
         error=UnrepresentableInputError,
         reason="cannot represent this input",
-        unlink=True,
     ),
 )
 
@@ -64,27 +57,22 @@ VARIANT_SKIP_REASONS: SkipReasons = (
     SkipReason(
         error=NullInCollectionError,
         reason="rejects null elements in this input",
-        unlink=False,
     ),
     SkipReason(
         error=HeterogeneousCollectionError,
         reason="cannot represent this heterogeneous input",
-        unlink=True,
     ),
     SkipReason(
         error=IncompatibleFormatsError,
         reason="combination cannot represent this input",
-        unlink=True,
     ),
     SkipReason(
         error=UnrepresentableSpecialFloatError,
         reason="cannot represent special floats in this input",
-        unlink=True,
     ),
     SkipReason(
         error=UnrepresentableInputError,
         reason="cannot represent this input",
-        unlink=True,
     ),
 )
 
@@ -133,7 +121,6 @@ VARIANT_MAPPING_KEY_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=InvalidDictKeyError,
             reason="cannot represent a mapping key",
-            unlink=True,
         ),
     ),
     suffix=VARIANT_SKIPS.suffix,

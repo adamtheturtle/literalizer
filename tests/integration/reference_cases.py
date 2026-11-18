@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 import literalizer
+from literalizer.languages import Rust
 from tests.enum_members import enum_member_by_name
 
 from .case_manifests import (
@@ -18,6 +19,7 @@ from .case_manifests import (
     ref_case_specs,
 )
 from .golden_artifacts import GoldenArtifact
+from .golden_outcomes import SUCCESS, GoldenOutcome, Success
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
@@ -44,6 +46,8 @@ class RefRendering:
     spec: literalizer.Language
     golden_name: str
     ref_case: literalizer.IdentifierCase | None
+
+    outcome: GoldenOutcome | None
 
     def artifact(self, *, cases_dir: Path) -> GoldenArtifact:
         """Locate the fixture used by execution and inventory checks."""
@@ -76,6 +80,7 @@ class LiteralizeRefCase:
         return tuple(
             RefRendering(
                 config=self.config,
+                outcome=None,
                 lang_cls=self.lang_cls,
                 spec=spec,
                 golden_name=f"{self.lang_cls.__name__}_{suffix}",
@@ -142,11 +147,26 @@ class LiteralizeRefVariantCase:
         return f"{self.variant.name}_{suffix}"
 
     @property
+    def outcome(self) -> Success | None:
+        """Pin the scalar reference for Rust's constant and static
+        bindings.
+        """
+        spec = self.variant.spec
+        if (
+            self.config.case_dir_name == "literalize_ref_scalar"
+            and isinstance(spec, Rust)
+            and spec.declaration_style.name in {"CONST", "STATIC"}
+        ):
+            return SUCCESS
+        return None
+
+    @property
     def renderings(self) -> tuple[RefRendering, ...]:
         """Retain the exact spec and ref spelling selected by the axis."""
         return (
             RefRendering(
                 config=self.config,
+                outcome=self.outcome,
                 lang_cls=self.lang_cls,
                 spec=self.variant.spec,
                 golden_name=self.golden_name,

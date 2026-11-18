@@ -9,10 +9,9 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import InputFormat, LanguageCls, literalize_call
 from literalizer.exceptions import InvalidCallTargetError
-from literalizer.languages import ALL_LANGUAGES, Bash, V
+from literalizer.languages import ALL_LANGUAGES, V
 from tests.integration.call_cases import (
     run_call_golden_case,
-    run_wrap_in_file_case,
 )
 from tests.integration.call_collection import (
     CallRendering,
@@ -22,7 +21,6 @@ from tests.integration.call_collection import (
 from tests.integration.call_variant_cases import (
     build_call_variant_cases,
 )
-from tests.integration.case_inputs import CaseInput
 from tests.integration.case_manifests import CaseManifestError
 from tests.integration.language_specs import (
     find_redefinition_styles,
@@ -34,7 +32,6 @@ def test_manual_scaffold_rejects_declaration_only_target_error(
     *,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
-    pytestconfig: pytest.Config,
 ) -> None:
     """A valid V fragment must not become an invalid method scaffold."""
     config = next(
@@ -63,7 +60,6 @@ def test_manual_scaffold_rejects_declaration_only_target_error(
             ),
             cases_dir=cases_dir,
             file_regression=file_regression,
-            pytest_config=pytestconfig,
         )
 
 
@@ -91,7 +87,6 @@ def test_seeded_scaffold_rejects_immutable_binding(
     lang_cls: LanguageCls,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
-    pytestconfig: pytest.Config,
 ) -> None:
     """A synthetic seed cannot precede a second immutable binding."""
     config = next(
@@ -114,57 +109,7 @@ def test_seeded_scaffold_rejects_immutable_binding(
             ),
             cases_dir=cases_dir,
             file_regression=file_regression,
-            pytest_config=pytestconfig,
         )
-
-
-@pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
-def test_wrap_in_file_case_handles_stale_rejected_call_arg(
-    *,
-    tmp_path: Path,
-    file_regression: FileRegressionFixture,
-    regenerate: bool,
-    regeneration_config: pytest.Config,
-) -> None:
-    """A rejected Bash collection preserves or explicitly removes its
-    stale fixture.
-    """
-    config = next(
-        config
-        for config in default_call_case_specs()
-        if config.case_dir_name == "call_multiline_list_argument"
-    ).model_copy(update={"per_element": False})
-    golden_path = tmp_path / "stale.sh"
-    _ = golden_path.write_text(data="stale\n")
-
-    expected_exception: type[BaseException] = pytest.fail.Exception
-    expected_message = r"Stale golden file: .*stale\.sh.*--regen-all"
-    if regenerate:
-        expected_exception = pytest.skip.Exception
-        expected_message = "Bash rejected call arg: list values"
-    with pytest.raises(
-        expected_exception=expected_exception, match=expected_message
-    ):
-        run_wrap_in_file_case(
-            config=config,
-            spec=make_spec(lang_cls=Bash),
-            source="[]\n",
-            input_info=CaseInput(
-                path=tmp_path / "input.yaml",
-                input_format=InputFormat.YAML,
-                expected_reused_anchor_warning=None,
-            ),
-            effective_ref_case=None,
-            lang_name="Bash",
-            golden_path=golden_path,
-            file_regression=file_regression,
-            pytest_config=regeneration_config,
-        )
-
-    if regenerate:
-        assert not golden_path.exists()
-    else:
-        assert golden_path.read_text(encoding="utf-8") == "stale\n"
 
 
 def _copy_call_inputs(*, source_dir: Path, target_dir: Path) -> None:
@@ -179,7 +124,6 @@ def _copy_call_inputs(*, source_dir: Path, target_dir: Path) -> None:
             )
 
 
-@pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
 @pytest.mark.parametrize(argnames="variant", argvalues=[False, True])
 def test_call_rejection_handles_stale_fixture(
     *,
@@ -187,10 +131,8 @@ def test_call_rejection_handles_stale_fixture(
     tmp_path: Path,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
-    regenerate: bool,
-    regeneration_config: pytest.Config,
 ) -> None:
-    """Default and variant refusals share regeneration-only cleanup."""
+    """Report the conflicting fixture and preserve its contents."""
     if variant:
         rendering = next(
             case.renderings[0]
@@ -213,31 +155,21 @@ def test_call_rejection_handles_stale_fixture(
     )
     golden_path = rendering.artifact(cases_dir=tmp_path).path
     _ = golden_path.write_text(data="stale\n")
-    if regenerate:
+    with pytest.raises(
+        expected_exception=pytest.fail.Exception,
+        match="Unexpected success fixture",
+    ):
         run_call_golden_case(
             rendering=rendering,
             cases_dir=tmp_path,
             file_regression=file_regression,
-            pytest_config=regeneration_config,
         )
-        assert not golden_path.exists()
-    else:
-        with pytest.raises(
-            expected_exception=pytest.fail.Exception, match="Stale golden file"
-        ):
-            run_call_golden_case(
-                rendering=rendering,
-                cases_dir=tmp_path,
-                file_regression=file_regression,
-                pytest_config=regeneration_config,
-            )
-        assert golden_path.read_text(encoding="utf-8") == "stale\n"
+    assert golden_path.read_text(encoding="utf-8") == "stale\n"
 
 
 def test_variant_rejection_preserves_unexpected_errors(
     *,
     tmp_path: Path,
-    pytestconfig: pytest.Config,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
 ) -> None:
@@ -262,5 +194,4 @@ def test_variant_rejection_preserves_unexpected_errors(
             rendering=case.renderings[0],
             cases_dir=tmp_path,
             file_regression=file_regression,
-            pytest_config=pytestconfig,
         )

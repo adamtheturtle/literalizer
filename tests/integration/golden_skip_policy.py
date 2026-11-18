@@ -5,15 +5,10 @@ import dataclasses
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SkipReason:
-    """Why one error skips a golden rather than failing it.
-
-    ``unlink`` marks an earlier golden as stale. Explicit regeneration
-    removes it; ordinary verification reports it without modifying it.
-    """
+    """Why one error skips a golden rather than failing it."""
 
     error: type[Exception]
     reason: str
-    unlink: bool
 
 
 type SkipReasons = tuple[SkipReason, ...]

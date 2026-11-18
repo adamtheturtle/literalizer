@@ -67,7 +67,11 @@ Run the owning test module to regenerate all languages for a changed case; for t
     UV_PYTHON=3.14 uvx uv@0.13.0 run --group=dev pytest tests/integration/test_literalize_golden.py --regen-all
 
 Review the generated diff, then rerun the owning tests without ``--regen-all`` and run ``harness/test_orphan_golden_files.py``.
-Rendering errors declared as skips can leave stale fixtures: verification reports them, while explicit regeneration removes those marked stale.
+A declared success compares rendered text, a declared rejection asserts its exception, and a capability exclusion reports its reason.
+A rejected or excluded rendering that still has a native fixture fails even with ``--regen-all``.
+Review the expectation and fixture diff when support changes.
+Unmigrated representation constraints still use the legacy skip policies.
+Those skips also fail if a native fixture exists.
 Keep the effective configuration matrix when renaming a case, including role references, axis suffixes and path-derived module names.
 
 The Python golden checks verify rendered text and harness contracts.

@@ -25,7 +25,6 @@ def test_literalize_ref_default_golden_file(
     cases_dir: Path,
     file_regression: FileRegressionFixture,
     subtests: pytest.Subtests,
-    pytestconfig: pytest.Config,
 ) -> None:
     """``literalize`` renders ref markers without requiring
     ``ref_case``.
@@ -36,5 +35,4 @@ def test_literalize_ref_default_golden_file(
                 rendering=rendering,
                 cases_dir=cases_dir,
                 file_regression=file_regression,
-                pytest_config=pytestconfig,
             )

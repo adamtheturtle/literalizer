@@ -12,6 +12,7 @@ from .case_manifests import load_case_manifests
 from .constructor_cases import constructor_binding_cases
 from .deep_input_cases import deep_input_cases
 from .golden_artifacts import GoldenArtifact
+from .golden_outcomes import Success
 from .golden_scenarios import scenario_renderings
 from .native_invocation_cases import native_invocation_cases
 from .record_snapshot_cases import record_snapshot_artifacts
@@ -26,7 +27,7 @@ def call_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
         rendering.artifact(cases_dir=cases_dir)
         for case in call_golden_cases(cases_dir=cases_dir)
         for rendering in case.renderings
-        if rendering.expected_exception is None
+        if rendering.outcome is None
     )
 
 
@@ -36,6 +37,8 @@ def literal_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
     for renderings in scenario_renderings().values():
         for rendering in renderings:
             for spec in rendering.specs:
+                if rendering.rejection(spec=spec) is not None:
+                    continue
                 artifact = rendering.artifact(version=spec.language_version)
                 yield dataclasses.replace(
                     artifact,
@@ -61,11 +64,13 @@ def golden_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
         rendering.artifact(cases_dir=cases_dir)
         for case in reference_golden_cases()
         for rendering in case.renderings
+        if rendering.outcome is None or isinstance(rendering.outcome, Success)
     )
     yield from (
         rendering.artifact
         for case in constructor_binding_cases(cases_dir=cases_dir)
         for rendering in case.renderings
+        if isinstance(rendering.outcome, Success)
     )
     yield from (
         case.artifact for case in native_invocation_cases(cases_dir=cases_dir)

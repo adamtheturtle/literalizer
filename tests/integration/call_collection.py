@@ -9,9 +9,16 @@ from beartype import beartype
 import literalizer
 from literalizer._enums import enum_payload
 
-from .call_expectations import call_style_spec, expected_call_shape_exception
+from .call_expectations import (
+    call_style_spec,
+    expected_call_shape_exception,
+    fixture_rejection,
+    wrapper_capability_exclusion,
+)
+from .call_receivers import uses_integer_receiver
 from .case_manifests import CallCaseSpec, call_case_specs
 from .golden_artifacts import GoldenArtifact
+from .golden_outcomes import Exclusion, Rejection
 from .language_specs import make_golden_artifact, make_spec, sorted_languages
 
 CASES_DIR = Path(__file__).parent / "cases"
@@ -26,6 +33,30 @@ class CallRendering:
     spec: literalizer.Language
     golden_name: str
     expected_exception: type[Exception] | None
+
+    @property
+    def outcome(self) -> Rejection | Exclusion | None:
+        """Report documented errors and exclusions before rendering.
+
+        A missing outcome leaves the call in the legacy runner until its
+        representation constraints have been migrated.
+        """
+        if not uses_integer_receiver(config=self.config, spec=self.spec):
+            reason = wrapper_capability_exclusion(
+                config=self.config, lang_cls=self.lang_cls, spec=self.spec
+            )
+            if reason is not None:
+                return Exclusion(reason=reason)
+        if self.expected_exception is not None:
+            return Rejection(
+                error=fixture_rejection(
+                    config=self.config,
+                    spec=self.spec,
+                    predicted=self.expected_exception,
+                ),
+                match=None,
+            )
+        return None
 
     def artifact(self, *, cases_dir: Path) -> GoldenArtifact:
         """Return the fixture used for comparison and stale-file

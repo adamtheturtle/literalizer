@@ -5,6 +5,7 @@ This module selects languages and collects the contexts used by
 :mod:`golden_scenarios`.
 """
 
+import dataclasses
 import functools
 from pathlib import Path
 from typing import Literal
@@ -12,9 +13,11 @@ from typing import Literal
 from beartype import beartype
 
 import literalizer
-from literalizer.exceptions import (
-    InvalidDictKeyError,
-    UnrepresentableStringError,
+from tests.errors.rejection_cases import rejection_cases
+from tests.errors.rejection_expectations import load_expected_messages
+from tests.errors.rejection_manifests import (
+    REJECTIONS_DIR,
+    load_rejection_manifest,
 )
 
 from .case_data import (
@@ -28,6 +31,7 @@ from .case_inputs import CaseInput
 from .case_manifests import (
     load_case_manifests,
 )
+from .golden_outcomes import SUCCESS, Exclusion, Success
 from .language_specs import (
     make_spec,
     sorted_languages,
@@ -55,24 +59,31 @@ def primed_new_variable_languages() -> tuple[literalizer.LanguageCls, ...]:
 
 
 @functools.cache
-def _lang_raises_for_non_printable_ascii_dict_keys(
-    lang_cls: literalizer.LanguageCls,
-) -> bool:
-    """Return whether a language rejects a non-printable ASCII dict key.
-
-    Used to skip golden-file cases whose input contains such keys for
-    languages whose contract is to reject those inputs rather than
-    produce rendered output.
+def _control_key_rejecting_languages() -> frozenset[literalizer.LanguageCls]:
+    """Read the existing error contract for control-bearing mapping
+    keys.
     """
-    try:
-        _ = literalizer.literalize(
-            source='{"key\\u0001": 2}',
-            input_format=literalizer.InputFormat.JSON,
-            language=lang_cls(),
-        )
-    except (InvalidDictKeyError, UnrepresentableStringError):
-        return True
-    return False
+    manifest = load_rejection_manifest(
+        manifest_path=REJECTIONS_DIR / "struct_field_names" / "rejection.toml"
+    )
+    expectations = load_expected_messages(golden_path=manifest.golden_path)
+    rejected = (
+        expectations["InvalidDictKeyError"].keys()
+        | expectations["UnrepresentableStringError"].keys()
+    )
+    return frozenset(
+        case.lang_cls
+        for case in rejection_cases(manifest=manifest)
+        if case.source == r'{"a\u0001b": "value"}' and case.case_id in rejected
+    )
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class CaseAdmission:
+    """One admitted manifest and its structural discovery outcome."""
+
+    case_name: str
+    outcome: Success | Exclusion
 
 
 @functools.cache
@@ -100,6 +111,58 @@ def cases_with_special_floats(
     )
 
 
+@beartype
+def _discovery_outcome(
+    *, data: CaseData, lang_cls: literalizer.LanguageCls
+) -> Success | Exclusion:
+    """Decide structural participation from input and target contracts."""
+    key_syntax = make_spec(lang_cls=lang_cls).dict_format_config.key_syntax
+    if key_syntax is not None and has_invalid_dict_keys(
+        data=data, key_syntax=key_syntax
+    ):
+        return Exclusion(reason="mapping key does not fit the target grammar")
+    if has_non_printable_ascii_dict_keys(data=data) and (
+        lang_cls in _control_key_rejecting_languages()
+    ):
+        return Exclusion(
+            reason=(
+                "non-printable or non-ASCII key on a target with "
+                "a documented control-key rejection"
+            )
+        )
+    if has_special_floats(data=data) and not lang_cls.supports_special_floats:
+        return Exclusion(
+            reason="target does not support non-finite float literals"
+        )
+    return SUCCESS
+
+
+@functools.cache
+@beartype
+def discover_case_admissions(
+    *,
+    cases_dir: Path,
+    suite: Literal["base", "combined"],
+    lang_cls: literalizer.LanguageCls,
+) -> tuple[CaseAdmission, ...]:
+    """List structural outcomes for cases whose manifests select the suite.
+
+    Cases outside the suite or its declared backend selection never need
+    their source parsed. Shared inputs are cached by their input identity.
+    """
+    return tuple(
+        CaseAdmission(
+            case_name=manifest.case_dir.name,
+            outcome=_discovery_outcome(
+                data=_case_data(input_info=manifest.input), lang_cls=lang_cls
+            ),
+        )
+        for manifest in load_case_manifests(cases_dir=cases_dir)
+        if suite in manifest.suites
+        and manifest.selection.admits_language(lang_cls=lang_cls)
+    )
+
+
 @functools.cache
 @beartype
 def discover_cases(
@@ -108,34 +171,11 @@ def discover_cases(
     suite: Literal["base", "combined"],
     lang_cls: literalizer.LanguageCls,
 ) -> tuple[str, ...]:
-    """Select one language and suite before parsing inputs or building
-    specs.
-
-    Cases outside the suite or its declared backend selection never need
-    their source parsed. Shared inputs are cached by their input identity,
-    so full-corpus discovery still parses each source at most once.
-    """
-    names: list[str] = []
-    key_syntax = make_spec(lang_cls=lang_cls).dict_format_config.key_syntax
-    for manifest in load_case_manifests(cases_dir=cases_dir):
-        if (
-            suite not in manifest.suites
-            or not manifest.selection.admits_language(lang_cls=lang_cls)
-        ):
-            continue
-        data = _case_data(input_info=manifest.input)
-        if key_syntax is not None and has_invalid_dict_keys(
-            data=data, key_syntax=key_syntax
-        ):
-            continue
-        if has_non_printable_ascii_dict_keys(data=data) and (
-            _lang_raises_for_non_printable_ascii_dict_keys(lang_cls=lang_cls)
-        ):
-            continue
-        if (
-            has_special_floats(data=data)
-            and not lang_cls.supports_special_floats
-        ):
-            continue
-        names.append(manifest.case_dir.name)
-    return tuple(names)
+    """Return the selected cases for the ordinary literal runner."""
+    return tuple(
+        entry.case_name
+        for entry in discover_case_admissions(
+            cases_dir=cases_dir, suite=suite, lang_cls=lang_cls
+        )
+        if isinstance(entry.outcome, Success)
+    )
