@@ -828,10 +828,9 @@ jobs:
         timeout-minutes: 3
         run: uv run --no-dev --group=roundtrip python -m scripts.check_matlab_fixture_execution
 
-      - name: Lint Matlab
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .m --language Matlab > /tmp/files-matlab && test -s /tmp/files-matlab
-          uv run --no-dev --group=roundtrip python -m scripts.run_matlab_fixtures < /tmp/files-matlab
+      - name: Validate MATLAB fixtures
+        run: uv run --no-dev --group=fixture-inventory --group=roundtrip python -m
+          scripts.run_matlab_fixtures --all-fixtures
 
       # Basic JSON -> MATLAB -> JSON round-trip (issue 2663). Runs here
       # because this is the job with the MATLAB toolchain (Octave, the
