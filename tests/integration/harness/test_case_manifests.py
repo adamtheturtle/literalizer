@@ -1,12 +1,15 @@
 """Validation tests for case-local golden coverage manifests."""
 
+import warnings
 from pathlib import Path
 
 import pytest
 from pydantic import BaseModel
+from ruamel.yaml.error import ReusedAnchorWarning
 
 import literalizer.languages
 from tests.integration.case_data import load_case_data
+from tests.integration.case_inputs import ReusedAnchorWarningSpec
 from tests.integration.case_manifests import (
     CASE_ROLE_NAMES,
     INDENT_ROLE,
@@ -27,6 +30,7 @@ from tests.integration.variant_cases import (
     build_variant_cases,
     validate_unique_variant_targets,
 )
+from tests.integration.yaml_warnings import expected_yaml_warnings
 from tests.language_gates import CapabilityFlagGate, language_gate_admits
 from tests.toml_cases import load_toml_cases
 
@@ -222,6 +226,30 @@ def test_anchor_warning_count_must_match_input(
         match=f"Expected {count} reused-anchor warnings for 'other\\+', got 2",
     ):
         _ = load_case_data(input_info=case_input(case_dir=case_dir))
+
+
+def test_expected_anchor_warning_preserves_unrelated_warnings() -> None:
+    """Consume the declared warning and forward every unrelated
+    warning.
+    """
+    expectation = ReusedAnchorWarningSpec(anchor="expected", count=2)
+    other_anchor = ReusedAnchorWarning("found duplicate anchor 'other'")
+    unrelated = UserWarning("an unrelated YAML warning")
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter(action="always")
+        with expected_yaml_warnings(expectation=expectation):
+            warnings.warn(
+                message=ReusedAnchorWarning(
+                    "found duplicate anchor 'expected'"
+                ),
+                stacklevel=1,
+            )
+            warnings.warn(message=other_anchor, stacklevel=1)
+            warnings.warn(message=unrelated, stacklevel=1)
+    assert [warning.message for warning in recorded] == [
+        other_anchor,
+        unrelated,
+    ]
 
 
 def test_anchor_warning_requires_yaml(tmp_path: Path) -> None:
