@@ -160,7 +160,7 @@ def test_variant_version_inventory_preserves_coverage_and_rejects_phantoms(
     _ = phantom.write_bytes(data=pinned.read_bytes())
     with pytest.raises(
         expected_exception=AssertionError,
-        match=r"cpp20/version_cpp14\.cpp",
+        match=r"cpp20[/\\]+version_cpp14\.cpp",
     ):
         _check_golden_inventory(cases_dir=cases_dir, expected=expected)
 

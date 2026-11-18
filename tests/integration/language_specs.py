@@ -68,7 +68,7 @@ def make_golden_path(
     """Return the on-disk path for a golden fixture file.
 
     The effective language version appears in the nested fixture's
-    directory or in the flat filename's ``@<version>`` suffix.
+    directory or in the ``@<version>`` suffix of a flat filename.
     """
     version_tag = version.name.lower()
     golden = language_metadata(language_id=lang_cls.language_id).golden

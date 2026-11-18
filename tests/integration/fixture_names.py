@@ -15,7 +15,7 @@ def nested_golden_path(
     version: str,
     extension: str,
 ) -> Path | None:
-    """Resolve the scenario path for a case using nested goldens."""
+    """Resolve the scenario path for a case using nested fixtures."""
     if case_dir.name not in _NESTED_CASES:
         return None
     scenario = (
@@ -40,10 +40,12 @@ def is_default_module_fixture(*, path: Path) -> bool:
 @functools.cache
 def _fixture_language_name(*, language_id: str) -> str:
     """Look up the spelling used in existing generated identifiers."""
-    # Ada staging can run with only the CLI dependencies installed.
+    # Ada staging can run with only the command-line dependencies installed.
+    # pylint: disable=import-outside-toplevel
     from literalizer.languages import ALL_LANGUAGES  # noqa: PLC0415
 
     from .language_metadata import language_metadata  # noqa: PLC0415
+    # pylint: enable=import-outside-toplevel
 
     language = next(
         cls for cls in ALL_LANGUAGES if cls.language_id == language_id
