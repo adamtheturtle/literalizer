@@ -3587,41 +3587,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install GNU timeout
         run: brew install --quiet coreutils
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .m --language ObjectiveC --include-default-module-names > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
-      # Every fixture `#import`s `<Foundation/Foundation.h>`, whose parse
-      # cost dominates each tiny TU. Precompile Foundation once and
-      # preload it in the syntax-check and build-and-run steps so the
-      # parsed AST is reused instead of re-parsed per fixture. clang-tidy
-      # runs in a separate job (`lint-objectivec-tidy`) and deliberately
-      # skips the PCH — see the note on `lint-cpp-tidy`.
-      - name: Build precompiled header
-        run: clang -fobjc-arc -x objective-c-header scripts/lint-objc-pch.h -o /tmp/pch.h.pch
-      - name: Check Objective-C syntax
-        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fobjc-arc -fsyntax-only
-          -Werror -include-pch /tmp/pch.h.pch < /tmp/files-to-lint
-      # The public default uses a caller that invokes Module().
-      # Link against Foundation and execute to surface runtime errors.
-      # Each invocation gets a private tmpdir so parallel builds don't
-      # clobber each other's output binary.
-      - name: Run Objective-C files
-        run: |-
-          cat > /tmp/run-objc.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          sources=("$1")
-          if [[ "$1" == */goldens/objective_c/*/default_module_name.m ]]; then
-            printf 'int Module(void);\nint main(void) { return Module(); }\n' > "$tmpdir/main.m"
-            sources+=("$tmpdir/main.m")
-          fi
-          clang -fobjc-arc -framework Foundation -Werror -include-pch /tmp/pch.h.pch "${sources[@]}" \
-            -o "$tmpdir/out" || exit 1
-          "$tmpdir/out" || exit 1
-          SCRIPT
-          xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
+      - name: Validate native fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_objective_c_fixtures
       # Basic JSON -> Objective-C -> JSON round-trip (issue 2668). Runs
       # here because this is the job with the Objective-C toolchain
       # (Apple `clang` plus the `Foundation` framework); `uv run`
