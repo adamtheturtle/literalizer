@@ -999,14 +999,12 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Json5
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .json5 --include-authored > /tmp/files-json5 && test -s /tmp/files-json5
-          xargs -0 -P "$(nproc)" -n1 json5 < /tmp/files-json5 > /dev/null
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_json_document_fixtures
+          json5
 
       - name: Lint Jsonc
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .jsonc --include-authored > /tmp/files-jsonc && test -s /tmp/files-jsonc
-          xargs -0 uv run --no-dev --group=roundtrip python -m scripts.check_jsonc_syntax < /tmp/files-jsonc
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_json_document_fixtures
+          jsonc
 
       - name: Lint Norg
         run: |-
