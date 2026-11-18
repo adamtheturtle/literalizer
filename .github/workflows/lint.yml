@@ -1218,13 +1218,8 @@ jobs:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
 
-      - name: Lint Ada
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .adb --include-default-module-names > /tmp/files-ada && test -s /tmp/files-ada
-          xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.check_ada_syntax < /tmp/files-ada
-      - name: Run Ada files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.run_ada
-          < /tmp/files-ada
+      - name: Validate Ada fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_ada_fixtures
 
       # Basic JSON -> Ada -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the GNAT toolchain; ``uv run``
