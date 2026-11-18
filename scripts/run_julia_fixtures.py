@@ -9,6 +9,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 def _run(
@@ -40,9 +41,7 @@ def main(*, project: Path) -> None:
     """Execute every fixture with the same native command."""
     jobs = os.cpu_count()
     timeout = 60.0
-    fixtures = sorted(
-        path for path in Path("tests/integration/cases").rglob(pattern="*.jl")
-    )
+    fixtures = fixture_paths(extension=".jl")
     if len(fixtures) == 0:
         raise click.ClickException(message="No Julia fixtures.")
     if not (project / "Project.toml").is_file():

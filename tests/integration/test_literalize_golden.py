@@ -26,11 +26,11 @@ from .case_manifests import load_case_manifest
 from .golden_batches import GoldenGroup, golden_groups
 from .golden_checks import (
     GoldenSkips,
+    assert_rejection,
     check_golden,
     fixture_contents,
     format_consumer,
 )
-from .golden_outcomes import assert_rejection
 from .golden_renderings import GoldenRendering
 from .language_metadata import language_metadata
 from .language_specs import with_per_fixture_module_name
@@ -65,7 +65,7 @@ def _check_rendering(
             input_format=roundtrip.input_format,
             expected_reused_anchor_warning=None,
         )
-    golden_path = rendering.golden_path(version=spec.language_version)
+    golden_path = rendering.artifact(version=spec.language_version).path
     if rendering.apply_fixture_module_name:
         spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     variable_form = (

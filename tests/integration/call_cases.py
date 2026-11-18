@@ -61,12 +61,12 @@ from .case_manifests import (
     case_input,
 )
 from .golden_checks import (
-    SkipPolicy,
-    SkipReason,
     check_golden,
+    check_outcome,
     fixture_contents,
 )
-from .golden_outcomes import Rejection, check_outcome
+from .golden_outcomes import Rejection
+from .golden_skip_policy import SkipPolicy, SkipReason
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
@@ -563,7 +563,7 @@ def _render_call_golden_case(
     lang_cls = rendering.lang_cls
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
     source = input_info.path.read_text(encoding="utf-8")
-    golden_path = rendering.golden_path(cases_dir=cases_dir)
+    golden_path = rendering.artifact(cases_dir=cases_dir).path
     observable = uses_integer_receiver(config=config, spec=spec)
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
@@ -725,7 +725,7 @@ def run_call_golden_case(
 ) -> None:
     """Check the expectation derived for a call rendering."""
     outcome = rendering.outcome
-    golden_path = rendering.golden_path(cases_dir=cases_dir)
+    golden_path = rendering.artifact(cases_dir=cases_dir).path
     render = functools.partial(
         _render_call_golden_case,
         rendering=rendering,

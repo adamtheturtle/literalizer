@@ -36,7 +36,7 @@ def fixture_entrypoints() -> dict[Path, str]:
                     f"MATLAB function consumer has no entry point: {case.name}"
                 )
                 raise ValueError(msg)
-            entrypoints[case.golden_path.resolve()] = entrypoint
+            entrypoints[case.artifact.path.resolve()] = entrypoint
     return entrypoints
 
 

@@ -10,9 +10,10 @@ from beartype import beartype
 import literalizer
 from literalizer import ValueInput
 
-from .golden_checks import SkipPolicy
+from .golden_artifacts import GoldenArtifact
 from .golden_outcomes import Rejection
-from .language_specs import make_golden_path, make_spec
+from .golden_skip_policy import SkipPolicy
+from .language_specs import make_golden_artifact, make_spec
 from .literal_expectations import literal_rejection
 
 _CASES_DIR = Path(__file__).parent / "cases"
@@ -105,11 +106,9 @@ class GoldenRendering:
             case_dir=self.golden_parent,
         )
 
-    def golden_path(self, *, version: enum.Enum) -> Path:
-        """Return the fixture path for one effective
-        version.
-        """
-        return make_golden_path(
+    def artifact(self, *, version: enum.Enum) -> GoldenArtifact:
+        """Resolve this fixture for one effective version."""
+        return make_golden_artifact(
             parent=self.golden_parent,
             name=self.golden_name,
             lang_cls=self.lang_cls,

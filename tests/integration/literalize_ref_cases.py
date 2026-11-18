@@ -39,8 +39,12 @@ from .case_manifests import (
     RefExpressionContext,
     case_input,
 )
-from .golden_checks import GoldenSkips, SkipPolicy, SkipReason, check_golden
-from .golden_outcomes import check_outcome
+from .golden_checks import (
+    GoldenSkips,
+    check_golden,
+    check_outcome,
+)
+from .golden_skip_policy import SkipPolicy, SkipReason
 from .language_specs import (
     find_redefinition_styles,
     with_per_fixture_module_name,
@@ -134,7 +138,7 @@ def _render_reference_golden(
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
     input_path = input_info.path
     input_source = input_path.read_text(encoding="utf-8")
-    golden_path = rendering.golden_path(cases_dir=cases_dir)
+    golden_path = rendering.artifact(cases_dir=cases_dir).path
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     if (
         config.variable_form == "both"
@@ -235,7 +239,7 @@ def run_literalize_ref_golden_case(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Exercise the resolved expectation for the reference."""
-    golden_path = rendering.golden_path(cases_dir=cases_dir)
+    golden_path = rendering.artifact(cases_dir=cases_dir).path
     render = functools.partial(
         _render_reference_golden, rendering=rendering, cases_dir=cases_dir
     )

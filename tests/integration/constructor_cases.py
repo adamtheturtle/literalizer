@@ -19,8 +19,9 @@ from .constructor_variants import (
     ConstructorBindingSpec,
     constructor_binding_specs,
 )
+from .golden_artifacts import GoldenArtifact
 from .golden_outcomes import SUCCESS, Rejection, Success
-from .language_specs import make_golden_path, make_spec, sorted_languages
+from .language_specs import make_golden_artifact, make_spec, sorted_languages
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -72,15 +73,15 @@ class ConstructorRendering:
         return SUCCESS
 
     @property
-    def golden_path(self) -> Path:
+    def artifact(self) -> GoldenArtifact:
         """Locate the native fixture compared by the constructor
         runner.
         """
-        return make_golden_path(
+        return make_golden_artifact(
             parent=self.case.manifest.case_dir,
             name=self.case.name,
             lang_cls=self.case.lang_cls,
-            version=self.version,
+            version=self.spec.language_version,
         )
 
 

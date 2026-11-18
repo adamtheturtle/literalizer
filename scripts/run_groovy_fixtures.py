@@ -8,6 +8,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 _HOST = Path(__file__).resolve().with_name(name="lint-groovy.groovy")
 
@@ -18,10 +19,7 @@ def main() -> None:
     shells.
     """
     timeout = 600.0
-    fixtures = sorted(
-        path
-        for path in Path("tests/integration/cases").rglob(pattern="*.groovy")
-    )
+    fixtures = fixture_paths(extension=".groovy")
     if len(fixtures) == 0:
         raise click.ClickException(message="No Groovy fixtures.")
     executable = shutil.which(cmd="groovy")

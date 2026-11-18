@@ -15,7 +15,8 @@ from literalizer._language import PositionalCallStyle
 from tests.enum_members import enum_member_by_name
 
 from .case_manifests import CaseManifestError, load_case_manifests
-from .language_specs import make_golden_path, make_spec, sorted_languages
+from .golden_artifacts import GoldenArtifact
+from .language_specs import make_golden_artifact, make_spec, sorted_languages
 
 
 class CheckedRecipe(BaseModel, extra="forbid", frozen=True):
@@ -71,7 +72,7 @@ class SharedCheckedCase:
     spec: Language
     consumer: CheckedConsumer
     version: enum.Enum
-    golden_path: Path
+    artifact: GoldenArtifact
 
 
 def shared_checked_cases(*, cases_dir: Path) -> tuple[SharedCheckedCase, ...]:
@@ -89,25 +90,26 @@ def shared_checked_cases(*, cases_dir: Path) -> tuple[SharedCheckedCase, ...]:
             consumer = checked_consumer_for_language(
                 language_name=lang_cls.__name__
             )
-            cases.extend(
-                SharedCheckedCase(
-                    name=manifest.case_dir.name,
-                    recipe=recipe,
-                    lang_cls=lang_cls,
-                    spec=_checked_spec(
-                        lang_cls=lang_cls, version=version, consumer=consumer
-                    ),
-                    consumer=consumer,
-                    version=version,
-                    golden_path=make_golden_path(
-                        parent=manifest.case_dir,
-                        name=f"{lang_cls.__name__}_shared_checked",
-                        lang_cls=lang_cls,
-                        version=version,
-                    ),
+            for version in lang_cls.VersionFormats:
+                spec = _checked_spec(
+                    lang_cls=lang_cls, version=version, consumer=consumer
                 )
-                for version in lang_cls.VersionFormats
-            )
+                cases.append(
+                    SharedCheckedCase(
+                        name=manifest.case_dir.name,
+                        recipe=recipe,
+                        lang_cls=lang_cls,
+                        spec=spec,
+                        consumer=consumer,
+                        version=version,
+                        artifact=make_golden_artifact(
+                            parent=manifest.case_dir,
+                            name=f"{lang_cls.__name__}_shared_checked",
+                            lang_cls=lang_cls,
+                            version=spec.language_version,
+                        ),
+                    )
+                )
     return tuple(cases)
 
 

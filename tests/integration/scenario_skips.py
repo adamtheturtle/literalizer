@@ -15,7 +15,7 @@ from literalizer.exceptions import (
     UnrepresentableSpecialFloatError,
 )
 
-from .golden_checks import SkipPolicy, SkipReason, SkipReasons
+from .golden_skip_policy import SkipPolicy, SkipReason, SkipReasons
 
 _COMMON_SKIP_REASONS: SkipReasons = (
     SkipReason(

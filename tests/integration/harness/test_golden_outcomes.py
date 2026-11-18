@@ -9,7 +9,8 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from literalizer import InputFormat, literalize_call
 from literalizer.exceptions import CallArgNotSupportedError
 from literalizer.languages import Bash
-from tests.integration.golden_outcomes import SUCCESS, check_outcome
+from tests.integration.golden_checks import check_outcome
+from tests.integration.golden_outcomes import SUCCESS
 
 pytest_plugins: tuple[str, ...] = ("pytester",)
 
@@ -53,7 +54,8 @@ def test_rejection_preserves_fixture_ownership(
 from pathlib import Path
 import pytest
 from literalizer.exceptions import CallArgNotSupportedError
-from tests.integration.golden_outcomes import Rejection, check_outcome
+from tests.integration.golden_checks import check_outcome
+from tests.integration.golden_outcomes import Rejection
 from tests.integration.harness.test_golden_outcomes import _bash_call
 
 

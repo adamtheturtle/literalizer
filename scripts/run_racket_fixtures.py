@@ -11,11 +11,12 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import run_bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 def _validate(
     *,
-    fixtures: list[Path],
+    fixtures: tuple[Path, ...],
     tools: dict[str, str],
     phase: str,
     jobs: int | None,
@@ -67,9 +68,7 @@ def main() -> None:
     """Run the same native phases locally and in CI."""
     jobs = os.cpu_count()
     timeout = 600.0
-    fixtures = sorted(
-        path for path in Path("tests/integration/cases").rglob(pattern="*.rkt")
-    )
+    fixtures = fixture_paths(extension=".rkt")
     if len(fixtures) == 0:
         raise click.ClickException(message="No Racket fixtures.")
     tools: dict[str, str] = {}

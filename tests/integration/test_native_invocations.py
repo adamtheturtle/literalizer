@@ -68,7 +68,7 @@ def test_native_invocation_golden(
     """Generate a real class consumer, not function-pointer stand-ins."""
     manifest = case.manifest
     steps = json.loads(s=manifest.input.path.read_text(encoding="utf-8"))
-    spec = case.lang_cls(language_version=case.version)
+    spec = case.spec
     fragments: list[str] = []
     for step in steps:
         kwargs: dict[str, object] = {}
@@ -159,7 +159,7 @@ def test_native_invocation_golden(
     program = manifest.native_invocation.consumer_template.format(
         code="\n".join(fragments)
     )
-    file_regression.check(contents=program, fullpath=case.golden_path)
+    file_regression.check(contents=program, fullpath=case.artifact.path)
 
 
 def test_original_objective_c_native_callback() -> None:

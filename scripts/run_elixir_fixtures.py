@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 _HOST = Path(__file__).resolve().with_name(name="lint-elixir.exs")
 
@@ -21,11 +22,7 @@ _HOST = Path(__file__).resolve().with_name(name="lint-elixir.exs")
 def main(*, version: str) -> None:
     """Compile and execute the complete selected version."""
     timeout = 600.0
-    fixtures = sorted(
-        path
-        for path in Path("tests/integration/cases").rglob(pattern="*.ex")
-        if path.name.endswith(f"@{version}.ex")
-    )
+    fixtures = fixture_paths(extension=".ex", version=version)
     if len(fixtures) == 0:
         raise click.ClickException(message=f"No Elixir {version} fixtures.")
     executable = shutil.which(cmd="elixir")

@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 
 def _check(*, fixture: Path, executable: str, timeout: float) -> None:
@@ -33,10 +34,7 @@ def main() -> None:
     """Validate every generated native document."""
     jobs = os.cpu_count()
     timeout = 60.0
-    fixtures = sorted(
-        fixture
-        for fixture in Path("tests/integration/cases").rglob(pattern="*.dhall")
-    )
+    fixtures = fixture_paths(extension=".dhall")
     if len(fixtures) == 0:
         raise click.ClickException(message="No Dhall fixtures.")
     executable = shutil.which(cmd="dhall")

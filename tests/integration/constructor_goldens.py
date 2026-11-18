@@ -9,8 +9,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from literalizer import NewVariable, literalize, literalize_call
 
 from .constructor_cases import ConstructorRendering
-from .golden_checks import format_consumer
-from .golden_outcomes import check_outcome
+from .golden_checks import check_outcome, format_consumer
 from .language_specs import make_spec, with_per_fixture_module_name
 
 
@@ -21,7 +20,7 @@ def _render_constructor_binding(
 ) -> str:
     """Render the selected constructor binding in its native context."""
     case = rendering.case
-    golden_path = rendering.golden_path
+    golden_path = rendering.artifact.path
     manifest = case.manifest
     language = with_per_fixture_module_name(
         spec=rendering.spec, golden_path=golden_path
@@ -111,6 +110,6 @@ def run_constructor_binding_golden_case(
         render=functools.partial(
             _render_constructor_binding, rendering=rendering
         ),
-        golden_path=rendering.golden_path,
+        golden_path=rendering.artifact.path,
         file_regression=file_regression,
     )

@@ -27,7 +27,7 @@ def read_state_golden(
 ) -> StateGolden:
     """Load input and expected native output before state is exercised."""
     input_info = case_input(case_dir=_CASES_DIR / rendering.case_dir_name)
-    path = rendering.golden_path(version=language.language_version)
+    path = rendering.artifact(version=language.language_version).path
     return StateGolden(
         rendering=rendering,
         language=language,

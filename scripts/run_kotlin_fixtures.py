@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 
 _HOST = Path(__file__).resolve().with_name(name="lint-kotlin.kts")
 
@@ -29,11 +30,7 @@ def main(*, version: str, kotlin_home: Path) -> None:
     timers.
     """
     timeout = 1800.0
-    fixtures = sorted(
-        path
-        for path in Path("tests/integration/cases").rglob(pattern="*.kts")
-        if path.name.endswith(f"@{version}.kts")
-    )
+    fixtures = fixture_paths(extension=".kts", version=version)
     if len(fixtures) == 0:
         raise click.ClickException(message=f"No Kotlin {version} fixtures.")
     compiler = kotlin_home / "lib/kotlin-compiler.jar"

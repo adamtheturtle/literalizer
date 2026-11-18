@@ -6,6 +6,7 @@ skip policies cover constraints still evaluated during rendering.
 
 import dataclasses
 import enum
+from collections.abc import Callable
 from pathlib import Path
 from types import TracebackType
 from typing import Protocol, runtime_checkable
@@ -17,35 +18,9 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from literalizer import Language, LiteralizeResult
 
 from .fixture_names import fixture_module_name
+from .golden_outcomes import GoldenOutcome, Rejection, Success
+from .golden_skip_policy import SkipPolicy
 from .language_metadata import language_metadata
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class SkipReason:
-    """Why one error skips a golden rather than failing it."""
-
-    error: type[Exception]
-    reason: str
-
-
-type SkipReasons = tuple[SkipReason, ...]
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class SkipPolicy:
-    """Which errors skip a rendering, and what the skip message says.
-
-    ``suffix`` is appended to the reason, so a skip that turns on more
-    than the error type -- the strategy the golden was rendered under,
-    say -- says so without restating the reason.
-    """
-
-    reasons: SkipReasons
-    suffix: str
-
-
-NO_SKIPS: SkipPolicy = SkipPolicy(reasons=(), suffix="")
-"""Every error is a real failure."""
 
 
 @runtime_checkable
@@ -159,3 +134,41 @@ def fixture_contents(
         else ()
     )
     return "\n".join((*preamble, code, ""))
+
+
+@beartype
+def assert_rejection(
+    *,
+    outcome: Rejection,
+    render: Callable[[], object],
+    golden_path: Path,
+) -> None:
+    """Exercise a rejection and prohibit a success fixture at its path."""
+    assert_no_golden(golden_path=golden_path)
+    with pytest.raises(expected_exception=outcome.error, match=outcome.match):
+        _ = render()
+
+
+@beartype
+def check_outcome(
+    *,
+    outcome: GoldenOutcome,
+    render: Callable[[], str],
+    golden_path: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Run the expected outcome, allowing regeneration only on success."""
+    match outcome:
+        case Success():
+            check_golden(
+                contents=render(),
+                golden_path=golden_path,
+                file_regression=file_regression,
+            )
+        case Rejection():
+            assert_rejection(
+                outcome=outcome, render=render, golden_path=golden_path
+            )
+        case _:
+            assert_no_golden(golden_path=golden_path)
+            pytest.skip(reason=outcome.reason)

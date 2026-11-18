@@ -17,8 +17,9 @@ from .call_expectations import (
 )
 from .call_receivers import uses_integer_receiver
 from .case_manifests import CallCaseSpec, call_case_specs
+from .golden_artifacts import GoldenArtifact
 from .golden_outcomes import Exclusion, Rejection
-from .language_specs import make_golden_path, make_spec, sorted_languages
+from .language_specs import make_golden_artifact, make_spec, sorted_languages
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -57,9 +58,11 @@ class CallRendering:
             )
         return None
 
-    def golden_path(self, *, cases_dir: Path) -> Path:
-        """Return the fixture path reserved by a successful rendering."""
-        return make_golden_path(
+    def artifact(self, *, cases_dir: Path) -> GoldenArtifact:
+        """Return the fixture used for comparison and stale-file
+        cleanup.
+        """
+        return make_golden_artifact(
             parent=cases_dir / self.config.case_dir_name,
             name=self.config.golden_name(name=self.golden_name),
             lang_cls=self.lang_cls,

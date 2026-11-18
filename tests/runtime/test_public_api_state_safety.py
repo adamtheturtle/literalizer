@@ -92,7 +92,7 @@ def test_language_instance_is_thread_safe(scenario: _ThreadCase) -> None:
                 language=(
                     with_per_fixture_module_name(
                         spec=shared_language,
-                        golden_path=rendering.golden_path(version=version),
+                        golden_path=rendering.artifact(version=version).path,
                     )
                     if rendering.apply_fixture_module_name
                     else shared_language
@@ -101,7 +101,7 @@ def test_language_instance_is_thread_safe(scenario: _ThreadCase) -> None:
             for rendering in renderings
             # The base suite omits shapes a backend cannot represent.
             # Exercise its complete native fixtures without a language list.
-            if rendering.golden_path(version=version).is_file()
+            if rendering.artifact(version=version).path.is_file()
         )
     assert len(cases) > 0
 
