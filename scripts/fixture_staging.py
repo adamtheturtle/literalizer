@@ -6,12 +6,15 @@ from pathlib import Path
 
 import click
 
-from tests.integration.fixture_names import fixture_module_name
+from tests.integration.fixture_names import (
+    fixture_module_name,
+    is_default_module_fixture,
+)
 
 
 def stage_ada_fixture(*, fixture: Path, workspace: Path) -> Path:
     """Stage the fixture under its Ada library-unit filename."""
-    name = "check" if fixture.parent.name == "default_module_names" else "main"
+    name = "check" if is_default_module_fixture(path=fixture) else "main"
     destination = workspace / f"{name}.adb"
     _ = shutil.copyfile(src=fixture, dst=destination)
     return destination
@@ -30,7 +33,7 @@ def stage_fixture_modules(
     for fixture in fixtures:
         name = (
             default_module_name
-            if fixture.parent.name == "default_module_names"
+            if is_default_module_fixture(path=fixture)
             else fixture_module_name(golden_path=fixture)
         )
         destination = workspace / f"{name}{fixture.suffix}"

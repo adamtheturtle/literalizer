@@ -18,7 +18,7 @@ import literalizer
 from literalizer._language import redefinition_config
 from literalizer.languages import ALL_LANGUAGES
 
-from .fixture_names import fixture_module_name
+from .fixture_names import fixture_module_name, nested_golden_path
 from .golden_artifacts import GoldenArtifact
 from .language_metadata import language_metadata
 
@@ -67,20 +67,23 @@ def make_golden_path(
 ) -> Path:
     """Return the on-disk path for a golden fixture file.
 
-    Every golden filename embeds a ``@<version>`` tag derived from a
-    member of the language's ``VersionFormats`` enum so adding a second
-    version member automatically produces a parallel set of golden
-    files.  The tag uses the member's lower-cased ``name`` (e.g.
-    ``PY39`` -> ``py39``).
-
-    A language's test metadata declares whether the entire filename must
-    be lower-cased (for example, so it is also a valid module
-    identifier).  The logical name retains its original casing in pytest
-    IDs and error messages.
+    The effective language version appears in the nested fixture's
+    directory or in the ``@<version>`` suffix of a flat filename.
     """
     version_tag = version.name.lower()
-    filename = f"{name}@{version_tag}{lang_cls.extension}"
     golden = language_metadata(language_id=lang_cls.language_id).golden
+    stem = name.lower() if golden.filename_lowercase else name
+    nested_path = nested_golden_path(
+        case_dir=parent,
+        stem=stem,
+        language_name=lang_cls.__name__,
+        language_id=lang_cls.language_id,
+        version=version_tag,
+        extension=lang_cls.extension,
+    )
+    if nested_path is not None:
+        return nested_path
+    filename = f"{stem}@{version_tag}{lang_cls.extension}"
     if golden.filename_lowercase:
         filename = filename.lower()
     return parent / filename

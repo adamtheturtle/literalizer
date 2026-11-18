@@ -151,8 +151,10 @@ The default module-name suite checks each constructor's public default across it
    suites = ["default-module-name"]
    gates = [{ kind = "capability_flag", flag = "supports_module_name" }]
 
-Its input lives beside the manifest, while its golden files remain under :file:`tests/integration/default_module_names/`.
-Those files retain the default module names; regular compiler fixtures use unique names derived from their paths.
+The ``binary`` and ``default_module_name`` cases store generated files under ``goldens/<language-id>/<version>/<scenario>.<ext>`` inside the case directory.
+For example, :file:`tests/integration/cases/binary/goldens/cpp/cpp17/bytes_format_base64.cpp` records the C++17 Base64 byte format.
+The base scenario is named ``base``, and the default module-name scenario is named ``default_module_name``.
+Other cases use flat filenames with an ``@<version>`` suffix during the layout pilot.
 
 A variant-only case declares its specialized owner and the axes that consume it.
 A suffix distinguishes multiple logical uses of one input:

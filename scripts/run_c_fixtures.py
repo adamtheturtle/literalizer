@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from tests.integration.fixture_names import is_default_module_fixture
 from tests.integration.list_fixtures import fixture_paths
 
 
@@ -20,7 +21,7 @@ def _check(*, fixture: Path, compiler: str, timeout: float) -> None:
     with tempfile.TemporaryDirectory(suffix="-literalizer-c") as temporary:
         directory = Path(temporary)
         source = fixture
-        if fixture.parent.name == "default_module_names":
+        if is_default_module_fixture(path=fixture):
             _ = shutil.copyfile(src=fixture, dst=directory / "module.c")
             source = directory / "check.c"
             _ = source.write_text(

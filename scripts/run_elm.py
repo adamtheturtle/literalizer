@@ -92,10 +92,9 @@ def _run_fixture(
         check_path = src_dir / "Check.elm"
         output_js = tmpdir / "main.js"
         src = Path(filename)
-        # Strip the ``@<version>`` tag every fixture filename carries before
-        # checking for the ``_call`` suffix that selects the call-mode driver.
+        # Flat filenames carry the version and language alongside the scenario.
         logical_stem = src.stem.split(sep="@", maxsplit=1)[0]
-        is_call = logical_stem.endswith("_call")
+        is_call = logical_stem == "call" or logical_stem.endswith("_call")
         source = src.read_text(encoding="utf-8")
         effective_data = _CALL_MAIN_ELM
         if not is_call:

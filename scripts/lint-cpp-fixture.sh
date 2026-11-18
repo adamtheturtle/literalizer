@@ -6,8 +6,8 @@ mode=$1
 fixture_path=$2
 
 case "$fixture_path" in
-*@cpp14.cpp) standard=c++14 ;;
-*@cpp17.cpp) standard=c++17 ;;
+*@cpp14.cpp | */goldens/cpp/cpp14/*.cpp) standard=c++14 ;;
+*@cpp17.cpp | */goldens/cpp/cpp17/*.cpp) standard=c++17 ;;
 *) standard=c++20 ;;
 esac
 
@@ -33,7 +33,7 @@ run)
     trap 'rm -rf "$temporary_directory"' EXIT
     source_path=$fixture_path
     case "$fixture_path" in
-    */default_module_names/*)
+    */goldens/cpp/*/default_module_name.cpp)
         # Exercise the public default Module() through caller-owned main().
         # Keep the generated source bytes and identifiers unchanged.
         cp "$fixture_path" "$temporary_directory/module.cpp"

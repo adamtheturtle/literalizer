@@ -32,7 +32,7 @@ def call_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
 
 
 def literal_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
-    """Include ordinary renderings and sibling default-module fixtures."""
+    """Include ordinary and default-module renderings."""
     integration_dir = Path(__file__).parent
     for renderings in scenario_renderings().values():
         for rendering in renderings:

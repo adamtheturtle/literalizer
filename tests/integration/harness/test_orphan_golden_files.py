@@ -29,12 +29,7 @@ from tests.integration.reference_cases import (
 @beartype
 def _check_golden_inventory(*, cases_dir: Path, expected: set[Path]) -> None:
     """Reject files outside the exercised golden inventory."""
-    actual = {
-        path
-        for parent in (cases_dir, cases_dir.parent / "default_module_names")
-        for path in parent.rglob(pattern="*")
-        if path.is_file()
-    }
+    actual = {path for path in cases_dir.rglob(pattern="*") if path.is_file()}
     dead_files = sorted(
         os.path.relpath(path=path, start=cases_dir)
         for path in actual - expected
@@ -77,6 +72,7 @@ def test_base_cases_own_effective_golden(cases_dir: Path) -> None:
         for manifest in load_case_manifests(cases_dir=cases_dir)
         if "base" in manifest.suites
         and not any(manifest.case_dir.glob(pattern="*@*"))
+        and not any(manifest.case_dir.glob(pattern="goldens/*/*/base.*"))
     ]
     assert empty == [], f"Base cases without effective goldens: {empty}"
 
@@ -134,33 +130,37 @@ def test_variant_version_inventory_preserves_coverage_and_rejects_phantoms(
     expected = {
         artifact.path for artifact in literal_artifacts(cases_dir=cases_dir)
     }
-    ordinary_name = "Cpp_bytes_format_base64@"
-    pinned_name = "Cpp_version_cpp14@"
+    cpp_dir = case_dir / "goldens" / "cpp"
     ordinary = {
-        case_dir / f"{ordinary_name}{version}.cpp"
+        cpp_dir / version / "bytes_format_base64.cpp"
         for version in ("cpp14", "cpp17", "cpp20")
     }
-    pinned = case_dir / f"{pinned_name}cpp14.cpp"
+    pinned = cpp_dir / "cpp14" / "version_cpp14.cpp"
     assert {
         path
         for path in expected
-        if path.parent == case_dir and path.name.startswith(ordinary_name)
+        if cpp_dir in path.parents and path.name == "bytes_format_base64.cpp"
     } == ordinary
     assert {
         path
         for path in expected
-        if path.parent == case_dir and path.name.startswith(pinned_name)
+        if cpp_dir in path.parents and path.name == "version_cpp14.cpp"
     } == {pinned}
     for path in ordinary | {pinned}:
-        actual = Path(__file__).parents[1] / "cases" / "binary" / path.name
+        actual = (
+            Path(__file__).parents[1]
+            / "cases"
+            / os.path.relpath(path=path, start=cases_dir)
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
         _ = path.write_bytes(data=actual.read_bytes())
     _check_golden_inventory(cases_dir=cases_dir, expected=expected)
 
-    phantom = case_dir / f"{pinned_name}cpp20.cpp"
+    phantom = cpp_dir / "cpp20" / "version_cpp14.cpp"
     _ = phantom.write_bytes(data=pinned.read_bytes())
     with pytest.raises(
         expected_exception=AssertionError,
-        match="Cpp_version_cpp14@cpp20",
+        match=r"cpp20[/\\]+version_cpp14\.cpp",
     ):
         _check_golden_inventory(cases_dir=cases_dir, expected=expected)
 

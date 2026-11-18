@@ -22,9 +22,6 @@ lint-fast:
   - *shared
   - tests/integration/cases/**/*.{c,dhall,f90,fth,java,js,lua,nix,php,ps1,rb,scm,sh,tcl,wren}
   - CheckJavaSyntax.java
-  - tests/integration/default_module_names/*.c
-  - tests/integration/default_module_names/*.f90
-  - tests/integration/default_module_names/*.java
 
 lint-odin:
   - *shared
@@ -36,7 +33,8 @@ lint-roc:
 
 lint-matlab:
   - *shared
-  - tests/integration/cases/**/*.m
+  - tests/integration/cases/*/*.m
+  - tests/integration/cases/*/goldens/matlab/*/*.m
 
 lint-perl:
   - *shared
@@ -65,12 +63,10 @@ lint-elm-run:
 lint-uv-scripts:
   - *shared
   - tests/integration/cases/**/*.{adb,occ,toml,yaml}
-  - tests/integration/default_module_names/*.{adb,occ}
 
 lint-dotnet:
   - *shared
   - tests/integration/cases/**/*.{cs,fs,fsi,vb}
-  - tests/integration/default_module_names/*.fs
 
 lint-sml:
   - *shared
@@ -83,7 +79,6 @@ lint-elixir:
 lint-erlang:
   - *shared
   - tests/integration/cases/**/*.erl
-  - tests/integration/default_module_names/*.erl
 
 lint-gleam:
   - *shared
@@ -96,23 +91,18 @@ lint-jvm-mini:
 lint-haskell-family:
   - *shared
   - tests/integration/cases/**/*.{hs,purs}
-  - tests/integration/default_module_names/*.hs
 
 lint-c-tidy:
   - *shared
   - tests/integration/cases/**/*.c
-  - tests/integration/default_module_names/*.c
 
 build-cpp-toolchain:
   - *shared
   - tests/integration/cases/**/*.{c,cpp}
-  - tests/integration/default_module_names/*.cpp
-  - tests/integration/default_module_names/*.c
 
 lint-cpp-tidy:
   - *shared
   - tests/integration/cases/**/*.cpp
-  - tests/integration/default_module_names/*.cpp
 
 lint-cobol:
   - *shared
@@ -121,7 +111,6 @@ lint-cobol:
 lint-cpp:
   - *shared
   - tests/integration/cases/**/*.cpp
-  - tests/integration/default_module_names/*.cpp
 
 lint-kotlin:
   - *shared
@@ -142,12 +131,10 @@ lint-commonlisp:
 lint-scala:
   - *shared
   - tests/integration/cases/**/*.scala
-  - tests/integration/default_module_names/*.scala
 
 lint-haxe:
   - *shared
   - tests/integration/cases/**/*.hx
-  - tests/integration/default_module_names/*.hx
 
 lint-dart:
   - *shared
@@ -172,12 +159,10 @@ lint-r:
 lint-d:
   - *shared
   - tests/integration/cases/**/*.d
-  - tests/integration/default_module_names/*.d
 
 lint-crystal:
   - *shared
   - tests/integration/cases/**/*.cr
-  - tests/integration/default_module_names/*.cr
 
 lint-mojo:
   - *shared
@@ -206,7 +191,6 @@ lint-zig:
 lint-systemverilog:
   - *shared
   - tests/integration/cases/**/*.sv
-  - tests/integration/default_module_names/*.sv
 
 lint-v:
   - *shared
@@ -214,10 +198,10 @@ lint-v:
 
 lint-objectivec:
   - *shared
-  - tests/integration/cases/**/*.m
-  - tests/integration/default_module_names/ObjectiveC*.m
+  - tests/integration/cases/*/*.m
+  - tests/integration/cases/*/goldens/objective_c/*/*.m
 
 lint-objectivec-tidy:
   - *shared
-  - tests/integration/cases/**/*.m
-  - tests/integration/default_module_names/ObjectiveC*.m
+  - tests/integration/cases/*/*.m
+  - tests/integration/cases/*/goldens/objective_c/*/*.m

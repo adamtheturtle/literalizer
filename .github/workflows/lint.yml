@@ -3613,7 +3613,7 @@ jobs:
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
           sources=("$1")
-          if [[ "$1" == tests/integration/default_module_names/* ]]; then
+          if [[ "$1" == */goldens/objective_c/*/default_module_name.m ]]; then
             printf 'int Module(void);\nint main(void) { return Module(); }\n' > "$tmpdir/main.m"
             sources+=("$tmpdir/main.m")
           fi
