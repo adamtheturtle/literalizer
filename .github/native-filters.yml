@@ -64,10 +64,12 @@ lint-elm-run:
 lint-uv-scripts:
   - *shared
   - tests/integration/cases/**/*.{adb,occ,toml,yaml}
+  - tests/integration/default_module_names/*.{adb,occ}
 
 lint-dotnet:
   - *shared
   - tests/integration/cases/**/*.{cs,fs,fsi,vb}
+  - tests/integration/default_module_names/*.fs
 
 lint-sml:
   - *shared
@@ -212,7 +214,9 @@ lint-v:
 lint-objectivec:
   - *shared
   - tests/integration/cases/**/*.m
+  - tests/integration/default_module_names/ObjectiveC*.m
 
 lint-objectivec-tidy:
   - *shared
   - tests/integration/cases/**/*.m
+  - tests/integration/default_module_names/ObjectiveC*.m

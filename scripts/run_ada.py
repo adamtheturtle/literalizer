@@ -15,6 +15,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from scripts.fixture_staging import stage_ada_fixture
 
 _REPO_ROOT = Path(__file__).resolve().parent
 _STUB_SOURCES = ("a_stub.ads", "a_stub.adb")
@@ -27,14 +28,9 @@ def main(filename: str) -> None:
     gnatmake_path = shutil.which(cmd="gnatmake")
     if gnatmake_path is None or gnatmake_path == "":
         gnatmake_path = "gnatmake"
-    src = Path(filename)
     with tempfile.TemporaryDirectory() as tmpdir_name:
         tmpdir = Path(tmpdir_name)
-        tmp_src = tmpdir / "main.adb"
-        _ = tmp_src.write_text(
-            data=src.read_text(encoding="utf-8"),
-            encoding="utf-8",
-        )
+        tmp_src = stage_ada_fixture(fixture=Path(filename), workspace=tmpdir)
         for stub_name in _STUB_SOURCES:
             _ = shutil.copy(src=_REPO_ROOT / stub_name, dst=tmpdir / stub_name)
         # `-gnat2022` matches `Ada.language_version` in
@@ -46,7 +42,7 @@ def main(filename: str) -> None:
                     "-gnat2022",
                     "-gnatwe",
                     "-Werror",
-                    "main.adb",
+                    tmp_src.name,
                 ],
                 fixture=filename,
                 timeout_seconds=60,
@@ -64,7 +60,9 @@ def main(filename: str) -> None:
             sys.exit(1)
         run_result = subprocess.run(
             args=bounded_command(
-                args=[tmpdir / "main"], fixture=filename, timeout_seconds=60
+                args=[tmp_src.with_suffix(suffix="")],
+                fixture=filename,
+                timeout_seconds=60,
             ),
             capture_output=True,
             text=True,
