@@ -1220,7 +1220,7 @@ jobs:
 
       - name: Lint Ada
         run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .adb > /tmp/files-ada && test -s /tmp/files-ada
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .adb --include-default-module-names > /tmp/files-ada && test -s /tmp/files-ada
           xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.check_ada_syntax < /tmp/files-ada
       - name: Run Ada files
         run: xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.run_ada
@@ -1260,7 +1260,7 @@ jobs:
       # KRoC, we fall back to this Python-based structural checker.
       - name: Lint Occam
         run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .occ > /tmp/files-occam && test -s /tmp/files-occam
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .occ --include-default-module-names > /tmp/files-occam && test -s /tmp/files-occam
           xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.check_occam_syntax < /tmp/files-occam
 
       # There is deliberately no Occam JSON round-trip (issues 1867 and 2669),
@@ -1391,14 +1391,13 @@ jobs:
       # Generate an FSX driver that `#load`s every fixture, then
       # evaluate it in a single `dotnet fsi --exec` invocation so the
       # .NET runtime and FSI compiler start up once instead of per
-      # fixture. Each fixture re-declares `module Check`; FSI shadows
-      # the previous definition, which is fine because the top-level
-      # bindings still execute at load time.
+      # fixture. FSI shadows repeated `module Check` declarations and
+      # evaluates each fixture's top-level bindings at load time.
       # ``--langversion:8.0`` matches ``FSharp.language_version`` in
       # ``src/literalizer/languages/fsharp.py``; keep them in sync.
       - name: Lint FSharp
         run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures --language FSharp > /tmp/files-fs && test -s /tmp/files-fs
+          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures --language FSharp --include-default-module-names > /tmp/files-fs && test -s /tmp/files-fs
           driver=$(mktemp -d)/driver.fsx
           while IFS= read -r -d '' f; do
             printf '#load "%s"\n' "$(realpath "$f")"
@@ -3591,7 +3590,8 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .m --language ObjectiveC > /tmp/files-to-lint && test -s /tmp/files-to-lint
+          .m --language ObjectiveC --include-default-module-names > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       # Every fixture `#import`s `<Foundation/Foundation.h>`, whose parse
       # cost dominates each tiny TU. Precompile Foundation once and
       # preload it in the syntax-check and build-and-run steps so the
@@ -3603,7 +3603,7 @@ jobs:
       - name: Check Objective-C syntax
         run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fobjc-arc -fsyntax-only
           -Werror -include-pch /tmp/pch.h.pch < /tmp/files-to-lint
-      # Each fixture defines its own main, so compile and run directly.
+      # The public default uses a caller that invokes Module().
       # Link against Foundation and execute to surface runtime errors.
       # Each invocation gets a private tmpdir so parallel builds don't
       # clobber each other's output binary.
@@ -3612,7 +3612,12 @@ jobs:
           cat > /tmp/run-objc.sh <<'SCRIPT'
           tmpdir=$(mktemp -d)
           trap 'rm -rf "$tmpdir"' EXIT
-          clang -fobjc-arc -framework Foundation -Werror -include-pch /tmp/pch.h.pch "$1" \
+          sources=("$1")
+          if [[ "$1" == tests/integration/default_module_names/* ]]; then
+            printf 'int Module(void);\nint main(void) { return Module(); }\n' > "$tmpdir/main.m"
+            sources+=("$tmpdir/main.m")
+          fi
+          clang -fobjc-arc -framework Foundation -Werror -include-pch /tmp/pch.h.pch "${sources[@]}" \
             -o "$tmpdir/out" || exit 1
           "$tmpdir/out" || exit 1
           SCRIPT
@@ -3651,7 +3656,8 @@ jobs:
       - name: Find files to lint
         shell: bash
         run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .m --language ObjectiveC > /tmp/files-to-lint && test -s /tmp/files-to-lint
+          .m --language ObjectiveC --include-default-module-names > /tmp/files-to-lint
+          && test -s /tmp/files-to-lint
       # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
       # from Homebrew's llvm formula. The PyPI clang-tidy (used in the
       # Ubuntu jobs) doesn't work here: it can't find Apple's Foundation

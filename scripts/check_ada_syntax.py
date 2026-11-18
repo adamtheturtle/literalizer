@@ -9,6 +9,7 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import bounded_command
+from scripts.fixture_staging import stage_ada_fixture
 
 
 @click.command()
@@ -18,11 +19,10 @@ def main(filename: str) -> None:
     gnatmake_path = shutil.which(cmd="gnatmake")
     if gnatmake_path is None or gnatmake_path == "":
         gnatmake_path = "gnatmake"
-    src = Path(filename)
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_src = Path(tmpdir) / "main.adb"
-        content: str = src.read_text(encoding="utf-8")
-        _ = tmp_src.write_text(data=content, encoding="utf-8")
+        tmp_src = stage_ada_fixture(
+            fixture=Path(filename), workspace=Path(tmpdir)
+        )
         # `-gnat2022` matches `Ada.language_version` in
         # `src/literalizer/languages/ada.py`; keep them in sync.
         result = subprocess.run(
@@ -33,7 +33,7 @@ def main(filename: str) -> None:
                     "-gnatwe",
                     "-Werror",
                     "-gnats",
-                    "main.adb",
+                    tmp_src.name,
                 ],
                 fixture=filename,
                 timeout_seconds=60,

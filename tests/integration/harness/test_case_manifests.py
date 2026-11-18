@@ -218,7 +218,7 @@ def test_anchor_warning_count_must_match_input(
     ).read_text(encoding="utf-8")
     _ = (case_dir / "input.yaml").write_text(data=source, encoding="utf-8")
     with pytest.raises(
-        expected_exception=pytest.fail.Exception,
+        expected_exception=AssertionError,
         match=f"Expected {count} reused-anchor warnings for 'other\\+', got 2",
     ):
         _ = load_case_data(input_info=case_input(case_dir=case_dir))
