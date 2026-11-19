@@ -1,7 +1,7 @@
 schema_version = 1
 owner = "literalize-call"
 
-# Preserve group -> suffix -> outer composition with native integer
+# Compose grouped calls with outer templates using native integer
 # expressions. Zip data must reach either template that consumes it.
 [call]
 gates = [{kind = "integer_call_stub"}]
@@ -15,8 +15,7 @@ zip_input_format = "json"
 [call.transform]
 kind = "group"
 body = "{call}"
-suffix = " + 1"
-outer = "({call}) * {zipped}"
+outer = "({call} + 1) * {zipped}"
 
 [call.fixture]
 kind = "wrapped"
@@ -33,8 +32,7 @@ zip_input_format = "json"
 [call_examples.transform]
 kind = "group"
 body = "{call} * {zipped}"
-suffix = " + 1"
-outer = "({call}) * 2"
+outer = "({call} + 1) * 2"
 
 [call_examples.fixture]
 kind = "wrapped"
@@ -49,8 +47,7 @@ variable_form = "new"
 [call_examples.transform]
 kind = "group"
 body = "{call}"
-suffix = " + 1"
-outer = "({call}) * 2"
+outer = "({call} + 1) * 2"
 
 [call_examples.fixture]
 kind = "wrapped"
@@ -71,7 +68,6 @@ marker = "#"
 [call_examples.transform]
 kind = "group"
 body = "wrap_widget({call}, r#\"// group\"#)"
-suffix = ""
 outer = "zip_widget({call}, {zipped})"
 stub_names = ["wrap_widget", "zip_widget"]
 stub_param_names = ["value", "extra"]
@@ -99,7 +95,6 @@ marker = "#"
 [call_examples.transform]
 kind = "group"
 body = "zip_widget({call}, {zipped})"
-suffix = ""
 outer = "wrap_widget({call}, r#\"// group\"#)"
 stub_names = ["wrap_widget", "zip_widget"]
 stub_param_names = ["value", "extra"]
@@ -127,7 +122,6 @@ marker = "#"
 [call_examples.transform]
 kind = "group"
 body = "wrap_widget({call}, r#\"// group\"#)"
-suffix = ""
 outer = "{call}"
 stub_names = ["wrap_widget"]
 stub_param_names = ["value", "extra"]

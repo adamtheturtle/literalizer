@@ -13,7 +13,7 @@ variable_form = "existing"
 [call.transform]
 kind = "arguments"
 arguments = ['`// payload`']
-suffix = " // note"
+outer = "{call} // note"
 [call.fixture]
 kind = "composed"
 ref_declarations = {my_data = "42"}

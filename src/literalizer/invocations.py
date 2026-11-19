@@ -22,10 +22,10 @@ from literalizer.api import literalize_call
 from literalizer.exceptions import NativeCallError
 from literalizer.languages import ALL_LANGUAGES
 from literalizer.native_call_data import (
-    literalize_native_calls,
     native_recipe_list,
     native_recipe_mapping,
     native_recipe_text,
+    render_native_recipe,
     validate_native_fields,
 )
 
@@ -96,7 +96,7 @@ def literalize_invocations(
     pre_indent_level: int = 0,
     initial_column: int = 0,
 ) -> LiteralizeResult:
-    """Render a shared recipe or a backwards-compatible bare native recipe.
+    """Render a shared invocation recipe or a bare native recipe.
 
     A shared recipe has a generic ``default`` and optional ``languages``
     overrides keyed by Pygments ID. Generic overrides amend the default;
@@ -113,7 +113,7 @@ def literalize_invocations(
     )
     if "native" in selected:
         validate_native_fields(selected, {"native"}, {"native"})
-        return literalize_native_calls(
+        return render_native_recipe(
             source=source,
             input_format=input_format,
             language=language,

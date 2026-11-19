@@ -83,7 +83,6 @@ class GroupedCallTransform:
     """Retain operand metadata while grouping a generated expression."""
 
     body: CallTransform
-    suffix: str
     outer: CallTransform | None
     group: Callable[[str], str]
 
@@ -97,7 +96,7 @@ class GroupedCallTransform:
 
     def __call__(self, context: literalizer.CallContext, /) -> str:
         """Apply native grouping before the optional outer transform."""
-        expression = self.group(self.body(context)) + self.suffix
+        expression = self.group(self.body(context))
         return _apply_outer_transform(
             context=context, expression=expression, outer=self.outer
         )
@@ -108,7 +107,6 @@ class LiteralArgumentsTransform:
     """An expression with native operands and a real call convention."""
 
     call: str
-    suffix: str
     outer: CallTransform | None
 
     @property
@@ -118,9 +116,8 @@ class LiteralArgumentsTransform:
 
     def __call__(self, context: literalizer.CallContext, /) -> str:
         """Insert native operands before applying the outer transform."""
-        expression = self.call + self.suffix
         return _apply_outer_transform(
-            context=context, expression=expression, outer=self.outer
+            context=context, expression=self.call, outer=self.outer
         )
 
 
@@ -523,7 +520,6 @@ def _arguments_transform(
         call=assemble_call_expression(
             target_function=target, args_str=args, style=style
         ),
-        suffix=recipe.suffix,
         outer=recipe.outer,
     )
 
@@ -554,7 +550,6 @@ def call_transform_for_case(
             )
             return GroupedCallTransform(
                 body=recipe.body,
-                suffix=recipe.suffix,
                 outer=recipe.outer,
                 group=group,
             )

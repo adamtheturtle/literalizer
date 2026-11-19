@@ -24,8 +24,8 @@ from scripts.elm_common import (
     worker_elm_home,
 )
 
-# Wrap the fixture root in a ``Platform.worker`` so loading the compiled
-# JavaScript evaluates the fixture's top-level value, surfacing runtime
+# Wrap the fixture root in a ``Platform.worker`` so starting the app
+# evaluates the fixture's top-level value, surfacing runtime
 # crashes such as ``Debug.todo`` or references that pass type-checking
 # but fail at evaluation.
 _MAIN_ELM = """\
@@ -140,7 +140,12 @@ def _run_fixture(
             return True
         run_result = subprocess.run(
             args=bounded_command(
-                args=[node_path, str(object=output_js)],
+                args=[
+                    node_path,
+                    "-e",
+                    "require(process.argv[1]).Elm.Main.init();",
+                    str(object=output_js),
+                ],
                 fixture=filename,
                 timeout_seconds=60,
             ),

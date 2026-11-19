@@ -14,7 +14,7 @@ zip_input_format = "yaml"
 [call.transform]
 kind = "arguments"
 arguments = ['''r"a\ // payload"''']
-suffix = " // note"
+outer = "{call} // note"
 [call.fixture]
 kind = "composed"
 ref_declarations = {my_data = "42"}

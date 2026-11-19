@@ -12,13 +12,8 @@ from scripts.bounded_command import bounded_command
 from scripts.purescript_common import write_lint_environment
 
 
-@click.command()
-@click.argument("filename")
-def main(filename: str) -> None:
-    """Check syntax of a single PureScript file."""
-    purs_path = shutil.which(cmd="purs")
-    if purs_path is None or purs_path == "":
-        purs_path = "purs"
+def check_fixture(filename: str, *, purs_path: str) -> bool:
+    """Compile one fixture in a private workspace."""
     with tempfile.TemporaryDirectory() as tmpdir:
         env_purs_paths = write_lint_environment(tmpdir=Path(tmpdir))
         output_dir = Path(tmpdir) / "output"
@@ -46,7 +41,19 @@ def main(filename: str) -> None:
                 f"{result.stderr}{result.stdout}"
             )
             _ = sys.stderr.write(msg)
-            sys.exit(1)
+            return False
+    return True
+
+
+@click.command()
+@click.argument("filename")
+def main(filename: str) -> None:
+    """Check syntax of a single PureScript file."""
+    purs_path = shutil.which(cmd="purs")
+    if purs_path is None or purs_path == "":
+        purs_path = "purs"
+    if not check_fixture(filename=filename, purs_path=purs_path):
+        sys.exit(1)
 
 
 if __name__ == "__main__":

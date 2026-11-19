@@ -8,22 +8,68 @@ Everything documented here is importable directly from the top-level ``literaliz
 Core functions
 --------------
 
+- Use :func:`literalize` to render a data value as source code.
+- Use :func:`literalize_call` to render calls when you supply the target and parameters directly.
+- Use :func:`literalize_invocations` to render calls from a recipe, with optional language overrides.
+
 .. autofunction:: literalize
 
 .. autofunction:: literalize_call
 
-.. autofunction:: literalize_call_with_declarations
-
 .. autofunction:: literalize_invocations
 
+File composition
+----------------
+
+Use :func:`literalize_call_with_declarations` to assemble separately rendered fragments into a file or add custom scaffolding.
+When Literalizer can generate all the declarations from data, use :func:`literalize_call` with ``bound_refs`` and ``wrap_in_file=True``.
+
+.. autofunction:: literalize_call_with_declarations
+
+.. _callable-description-recipes:
+
+Callable descriptions
+---------------------
+
+Use :func:`describe_callable` to render a short callable reference for prose without sample data.
+
 .. autofunction:: describe_callable
+
+.. code-block:: python
+
+    """Describe one callable in two languages."""
+
+    from literalizer import describe_callable
+    from literalizer.languages import ObjectiveC, Python
+
+    description = {
+        "default": {
+            "name": "accept",
+            "parameter-names": ["value"],
+        },
+        "languages": {"objective-c": {"selector": "accept:"}},
+    }
+    assert (
+        describe_callable(language=Python(), description=description)
+        == "accept(value)"
+    )
+    assert (
+        describe_callable(language=ObjectiveC(), description=description)
+        == "accept:"
+    )
+
+Generic language overrides amend the default.
+Pass ``name_renamer`` and ``parameter_renamer`` callbacks to apply existing naming conventions to default names.
+Explicit language overrides take precedence over these callbacks.
+Selectors and optional ``return-annotation`` display spellings are never renamed.
+Optional boolean ``space-before-paren`` and ``space-after-paren`` settings preserve the presentation of existing prose.
+A ``selector`` requires a native-message backend and exactly one label per parameter.
+Unknown fields and language keys, malformed names, and multiline descriptions are rejected.
 
 Native invocations
 ------------------
 
 .. autofunction:: literalize_native_call
-
-.. autofunction:: literalize_native_calls
 
 .. autofunction:: native_invocation_from_data
 
@@ -152,41 +198,3 @@ Exceptions
 
 .. automodule:: literalizer.exceptions
    :members:
-
-Callable description recipes
-----------------------------
-
-``describe_callable`` renders a short reference for prose, not a function declaration.
-It does not generate argument values, receivers, or stubs.
-For example:
-
-.. code-block:: python
-
-    """Describe one callable in two languages."""
-
-    from literalizer import describe_callable
-    from literalizer.languages import ObjectiveC, Python
-
-    description = {
-        "default": {
-            "name": "accept",
-            "parameter-names": ["value"],
-        },
-        "languages": {"objective-c": {"selector": "accept:"}},
-    }
-    assert (
-        describe_callable(language=Python(), description=description)
-        == "accept(value)"
-    )
-    assert (
-        describe_callable(language=ObjectiveC(), description=description)
-        == "accept:"
-    )
-
-Generic language overrides amend the default.
-Pass ``name_renamer`` and ``parameter_renamer`` callbacks to apply existing naming conventions to default names.
-Explicit language overrides take precedence over these callbacks.
-Selectors and optional ``return-annotation`` display spellings are never renamed.
-Optional boolean ``space-before-paren`` and ``space-after-paren`` settings preserve the presentation of existing prose.
-A ``selector`` requires a native-message backend and exactly one label per parameter.
-Unknown fields and language keys, malformed names, and multiline descriptions are rejected.
