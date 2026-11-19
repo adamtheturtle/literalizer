@@ -2716,43 +2716,18 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      # Build chrono + serde_json once and stash the rlib paths in
-      # `$GITHUB_ENV`; both the per-fixture compile step below and the
-      # `Rust roundtrip` step reuse them. The build tmpdir is kept for
-      # the rest of the job (the runner is ephemeral).
-      - name: Build Rust dependencies
-        run: |-
-          tmpdir=$(mktemp -d)
-          cargo init "$tmpdir/chrono-check"
-          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
-          cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" serde_json
-          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml" \
-            --message-format=json > "$tmpdir/artifacts.jsonl"
-          # Cargo 1.100 groups intermediate artifacts by package. Use the
-          # reported paths and stage the libraries for rustc's -L lookup.
-          deps="$tmpdir/deps"
-          mkdir "$deps"
-          jq -r 'select(.reason == "compiler-artifact") | .filenames[] | select(endswith(".rlib"))' \
-            "$tmpdir/artifacts.jsonl" > "$tmpdir/rlibs"
-          while IFS= read -r rlib; do
-            ln "$rlib" "$deps/"
-          done < "$tmpdir/rlibs"
-          chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
-          test -n "$chrono_rlib"
-          serde_json_rlib=$(find "$deps" -name "libserde_json-*.rlib" -print -quit)
-          test -n "$serde_json_rlib"
-          {
-            echo "RUST_TMPDIR=$tmpdir"
-            echo "RUST_DEPS=$deps"
-            echo "RUST_CHRONO_RLIB=$chrono_rlib"
-            echo "RUST_SERDE_JSON_RLIB=$serde_json_rlib"
-          } >> "$GITHUB_ENV"
       - name: Install uv
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.3
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
+      # The native fixtures and JSON roundtrip share one Cargo build.
+      - name: Stage Rust dependencies
+        run: |-
+          workspace=$(mktemp -d)
+          uv run --only-group=cli python -m scripts.stage_rust_dependencies \
+            "$workspace/deps" --github-env >> "$GITHUB_ENV"
       - name: Check Rust syntax and run binaries
         run: uv run --no-dev --group=fixture-inventory python -m scripts.run_rust_fixtures
 
