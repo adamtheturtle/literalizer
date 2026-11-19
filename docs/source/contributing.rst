@@ -355,8 +355,6 @@ Continuous integration
 Tests are run on GitHub Actions.
 The configuration for this is in :file:`.github/workflows/`.
 
-Pull requests and main pushes run the full test suite with branch coverage on Linux and Windows using Python 3.14, with every supported Python version covered by nightly and manual CI runs.
-
 The Lint workflow checks native fixtures for matching changes on pull requests and covers the full fixture corpus in nightly and manual runs.
 
 Code generation benchmarks
