@@ -2977,26 +2977,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        env:
-          SHARD_COUNT: 2
-          SHARD_INDEX: ${{ matrix.shard }}
-        # Sorted round-robin assignment preserves every fixture exactly once.
-        run: |-
-          file_index=0
-          selected_count=0
-          while IFS= read -r -d '' fixture; do
-            if ((file_index % SHARD_COUNT == SHARD_INDEX)); then
-              printf '%s\0' "$fixture"
-              ((selected_count += 1))
-            fi
-            ((file_index += 1))
-          done < <(uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .mojo) \
-            > /tmp/files-to-lint
-          test -s /tmp/files-to-lint
-          printf 'Mojo shard %s/%s: %s of %s fixtures\n' \
-            "$((SHARD_INDEX + 1))" "$SHARD_COUNT" "$selected_count" "$file_index"
       # Mojo 1.2 compiles the depth-30 native List regression within the
       # existing fixture budget; Mojo 1.0 exceeds it for the same source.
       # ``mojo-compiler==1.2.0`` is >= the ``VersionFormats.V24_5``
@@ -3014,11 +2994,10 @@ jobs:
           fi
           mojo --version
       - name: Check Mojo syntax
-        run: |-
-          printf 'Mojo compiler workers: 4; compiler threads per worker: 1; pool ceiling: 4 GiB; hard fixture deadline: 60s\n'
-          free -m
-          df -h /tmp
-          scripts/lint-mojo.sh < /tmp/files-to-lint
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_mojo_fixtures
+          --shards 2 --shard "$SHARD_INDEX"
       # Basic JSON -> Mojo -> JSON round-trip (issue 2664). Runs here
       # because this is the job with the Mojo toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
