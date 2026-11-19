@@ -23,8 +23,6 @@ Native invocations
 
 .. autofunction:: literalize_native_call
 
-.. autofunction:: literalize_native_calls
-
 .. autofunction:: native_invocation_from_data
 
 .. autoclass:: ScalarType
