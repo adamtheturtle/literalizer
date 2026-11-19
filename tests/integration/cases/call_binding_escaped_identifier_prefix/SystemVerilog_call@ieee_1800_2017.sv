@@ -13,10 +13,10 @@ module main;
 function _VVal make_widget(input _VVal value);
     make_widget = _VVal'{tag: _VVAL_STR, i: 0, r: 0.0, s: ""};
 endfunction
-localparam int \`+ = 1;
 task consume(input _VVal value); endtask
 initial begin
-static _VVal my_data = (\`+ == 1) ? make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}) : make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}); // note
+static _VVal \`+  = _VVal'{tag: _VVAL_INT, i: 1, r: 0.0, s: ""};
+static _VVal my_data = (\`+ .i == 1) ? make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}) : make_widget(_VVal'{tag: _VVAL_INT, i: 42, r: 0.0, s: ""}); // note
 void'(consume(my_data));
 end
 endmodule
