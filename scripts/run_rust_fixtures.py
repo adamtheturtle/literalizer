@@ -7,7 +7,6 @@ from pathlib import Path
 import click
 
 from scripts.bounded_command import run_bounded_command
-from scripts.reference_observations import run_reference_fixture
 from tests.integration.list_fixtures import fixture_paths
 
 
@@ -70,8 +69,11 @@ def main(*, deps: Path, chrono: Path, serde_json: Path) -> None:
                 timeout_seconds=timeout,
                 cwd=None,
             )
-            run_reference_fixture(
-                fixture=fixture, executable=binary, timeout_seconds=timeout
+            run_bounded_command(
+                args=[binary],
+                fixture=f"Rust execution: {fixture}",
+                timeout_seconds=timeout,
+                cwd=None,
             )
 
 

@@ -29,7 +29,7 @@ from .case_manifests import (
     RefValueCheckSpec,
 )
 from .golden_checks import fixture_contents
-from .language_metadata import ReferenceObserverSpec, language_metadata
+from .language_metadata import ReferenceCheckSpec, language_metadata
 from .language_specs import (
     find_redefinition_styles,
     reference_case_for_declaration_style,
@@ -38,32 +38,52 @@ from .reference_inputs import RefData
 
 
 @beartype
-def _compose_ref_observations(
+def _render_reference_check(
     *,
-    context: ExternalRefContext,
-    observer: ReferenceObserverSpec,
+    expected_source: str,
+    check: ReferenceCheckSpec,
     spec: literalizer.Language,
-    declarations: list[literalizer.LiteralizeResult],
-    result: literalizer.LiteralizeResult,
 ) -> literalizer.LiteralizeResult:
-    """Expose live bindings for the native runner to compare."""
-    observation = literalizer.literalize_call(
+    """Compare one live binding with the independent JSON expectation."""
+    return literalizer.literalize_call(
         source='{"$ref": "my_data"}',
-        target_function=observer.target_function,
-        call_transform=observer.transform,
+        target_function=check.target_function,
+        call_transform=check.transform,
         parameter_names=("value",),
         input_format=literalizer.InputFormat.JSON,
         language=spec,
         per_element=False,
         ref_key="$ref",
+        zip_source=json.dumps(obj=expected_source),
+        zip_input_format=literalizer.InputFormat.JSON,
     )
-    if "my_data" in context.declarations:
-        declarations.append(observation)
+
+
+@beartype
+def _compose_ref_value_check(
+    *,
+    context: ExternalRefContext,
+    consumer: RefValueCheckSpec,
+    check: ReferenceCheckSpec,
+    spec: literalizer.Language,
+    declarations: list[literalizer.LiteralizeResult],
+    result: literalizer.LiteralizeResult,
+) -> literalizer.LiteralizeResult:
+    """Check initial and final values independently of reference inference."""
+    initial_source = context.declarations.get("my_data")
+    if initial_source is not None:
+        declarations.append(
+            _render_reference_check(
+                expected_source=initial_source, check=check, spec=spec
+            )
+        )
     return literalizer.literalize_call_with_declarations(
         language=spec,
         declarations=[*declarations, result],
-        call=observation,
-        extra_preamble=(observer.preamble.rstrip(),),
+        call=_render_reference_check(
+            expected_source=consumer.expected_source, check=check, spec=spec
+        ),
+        extra_preamble=(check.preamble.rstrip(),),
     )
 
 
@@ -299,11 +319,12 @@ def compose_external_ref_fixture(
     consumer = context.consumer
     if isinstance(consumer, RefValueCheckSpec):
         metadata = language_metadata(language_id=spec.language_id)
-        observer = metadata.golden.reference_observer
-        if observer is not None:
-            return _compose_ref_observations(
+        check = metadata.golden.reference_check
+        if check is not None:
+            return _compose_ref_value_check(
                 context=context,
-                observer=observer,
+                consumer=consumer,
+                check=check,
                 spec=spec,
                 declarations=declarations,
                 result=result,

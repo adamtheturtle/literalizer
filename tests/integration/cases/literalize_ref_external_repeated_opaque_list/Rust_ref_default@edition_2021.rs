@@ -5,5 +5,5 @@ fn main() {
         item.clone(),
         item.clone(),
     ];
-    println!("{}", to_value(my_data.clone()).unwrap());
+    if to_value(my_data.clone()).unwrap() != serde_json::from_str::<serde_json::Value>("[[], []]").unwrap() { std::process::exit(1); };
 }

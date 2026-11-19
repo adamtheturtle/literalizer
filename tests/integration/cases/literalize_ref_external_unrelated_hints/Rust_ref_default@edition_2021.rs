@@ -5,5 +5,5 @@ fn main() {
         2,
     ];
     let my_data = missing;
-    println!("{}", to_value(my_data.clone()).unwrap());
+    if to_value(my_data.clone()).unwrap() != serde_json::from_str::<serde_json::Value>("[1, 2]").unwrap() { std::process::exit(1); };
 }

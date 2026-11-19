@@ -1,6 +1,6 @@
 #include <utility>
 #include <vector>
-#include <iostream>
+#include <cstdlib>
 #include <nlohmann/json.hpp>
 using nlohmann::json;
 int main() {
@@ -9,6 +9,6 @@ auto my_data = std::vector<int>{
     std::move_if_noexcept(a),
     1,
 };
-std::cout << json(my_data).dump() << '\n';
+(json(my_data) == json::parse("[0, 1]") ? static_cast<void>(0) : std::abort());
     return 0;
 }

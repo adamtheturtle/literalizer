@@ -1,10 +1,10 @@
 schema_version = 1
 
-[golden.reference_observer]
+[golden.reference_check]
 target_function = "json"
-transform = "std::cout << {call}.dump() << '\\n'"
+transform = '({call} == json::parse({zipped}) ? static_cast<void>(0) : std::abort())'
 preamble = '''
-#include <iostream>
+#include <cstdlib>
 #include <nlohmann/json.hpp>
 using nlohmann::json;
 '''

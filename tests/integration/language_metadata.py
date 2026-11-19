@@ -57,12 +57,10 @@ class LanguageMetadataError(ValueError):
     """A language metadata file is missing or invalid."""
 
 
-class ReferenceObserverSpec(
+class ReferenceCheckSpec(
     BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
 ):
-    """Native call recipe that writes one reference value as a JSON
-    line.
-    """
+    """Native call recipe that signals a mismatched reference value."""
 
     target_function: str
     transform: CallTransformTemplate
@@ -102,8 +100,8 @@ class GoldenPolicy(  # noqa: NOD001
     )
     """Mutable declaration style for a caller-owned call-result seed."""
 
-    reference_observer: ReferenceObserverSpec | None = None
-    """Test consumer that emits a reference value as a JSON line."""
+    reference_check: ReferenceCheckSpec | None = None
+    """Test consumer for an independently authored reference value."""
 
     fixture_module_name_lowercase: bool = False
     """Whether a formatted per-fixture module name is lower-cased."""
