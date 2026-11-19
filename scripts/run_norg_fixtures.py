@@ -16,7 +16,9 @@ from tests.integration.list_fixtures import fixture_paths
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
 def main(*, parser: Path) -> None:
-    """Parse the complete Norg corpus with the provided grammar library."""
+    """Parse the complete Norg corpus with the provided grammar
+    library.
+    """
     executable = shutil.which(cmd="tree-sitter")
     if executable is None:
         raise click.ClickException(
