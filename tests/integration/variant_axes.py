@@ -1109,6 +1109,14 @@ AXES: Mapping[str, Axis] = _registry(
         ),
         overrides=(member(option=_HETEROGENEOUS_STRATEGY, name="RECORD"),),
     ),
+    qualified_import_call=expand(
+        name=lambda target, _label: f"{target.name}_qualified_import",
+        requires=(has_option(option="qualified_imports"),),
+        overrides=(
+            member(option=_DICT_FORMAT, name="RECORD"),
+            fixed_options(qualified_imports=(("Prelude", "Numbers"),)),
+        ),
+    ),
     record_shape_names=expand(
         name=lambda target, _label: (
             f"{target.name}_record_shape_names_{_NAMED_RECORD}"

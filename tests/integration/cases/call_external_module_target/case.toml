@@ -2,7 +2,7 @@ schema_version = 1
 owner = "literalize-call"
 
 # Exercise qualified calls against the standard library in OCaml and a
-# caller-supplied module alias in PureScript.
+# generated module alias in PureScript.
 [call]
 gates = [{kind = "enum_member_present", option = "date_format", member = "OCAML"}]
 target_function = "stdlib.ignore"
@@ -15,13 +15,15 @@ include_target_stub = false
 
 [[call_examples]]
 example = "import_alias"
-gates = [{kind = "enum_member_present", option = "language_version", member = "V0_15"}]
-target_function = "Module.func"
+target_function = "Numbers.negate"
 parameter_names = ["a"]
 per_element = true
 
-# Public composition places the caller-owned import before the call.
+variant_only = true
+
+[[call_examples.variants]]
+axis = "qualified_import_call"
+
 [call_examples.fixture]
 kind = "composed"
 include_target_stub = false
-caller_imports = ["import LiteralizerSupport.CallTarget as Module"]

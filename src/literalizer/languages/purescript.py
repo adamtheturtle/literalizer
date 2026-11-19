@@ -1108,6 +1108,11 @@ def _reject_negative_zero_call_arg(value: Value, /) -> None:
     reject_negative_zero(data=value, language_name="PureScript")
 
 
+_MODULE_NAME = re.compile(
+    pattern=r"[A-Z][A-Za-z0-9_]*(?:\.[A-Z][A-Za-z0-9_]*)*"
+)
+
+
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class PureScript(metaclass=LanguageCls):
@@ -1738,6 +1743,8 @@ class PureScript(metaclass=LanguageCls):
     indent: str = "    "
     type_name: str = "Val"
     constructor_prefix: str = "P"
+    qualified_imports: tuple[tuple[str, str], ...] = ()
+    """Module and alias pairs for qualified imports, in emission order."""
 
     indent_closing_delimiter: ClassVar[bool] = False
     element_separator: ClassVar[str] = ", "
@@ -1748,6 +1755,16 @@ class PureScript(metaclass=LanguageCls):
     static_preamble: ClassVar[Sequence[str]] = ()
     static_body_preamble: ClassVar[Sequence[str]] = ()
     special_float_preamble: ClassVar[tuple[str, ...]] = ()
+
+    def __post_init__(self) -> None:
+        """Reject names outside the qualified module syntax."""
+        for module, alias in self.qualified_imports:
+            if (
+                _MODULE_NAME.fullmatch(string=module) is None
+                or _MODULE_NAME.fullmatch(string=alias) is None
+            ):
+                msg = f"Invalid qualified import {module!r} as {alias!r}"
+                raise ValueError(msg)
 
     @cached_property
     @beartype
@@ -2209,14 +2226,33 @@ class PureScript(metaclass=LanguageCls):
         ``Tuple`` helper are not emitted.
         """
         if self._json_type_active:
-            return _argonaut_value_body_preamble
-        if self.dict_format is type(self.dict_format).RECORD:
-            return _purescript_native_body_preamble
-        return _build_purescript_body_preamble(
-            type_name=self.type_name,
-            constructor_prefix=self.constructor_prefix,
-            datetime_type_produced=self.datetime_format.value.type_produced,
+            preamble = _argonaut_value_body_preamble
+        elif self.dict_format is type(self.dict_format).RECORD:
+            preamble = _purescript_native_body_preamble
+        else:
+            preamble = _build_purescript_body_preamble(
+                type_name=self.type_name,
+                constructor_prefix=self.constructor_prefix,
+                datetime_type_produced=self.datetime_format.value.type_produced,
+            )
+        imports = tuple(
+            import_preamble(code=f"import {module} as {alias}")
+            for module, alias in self.qualified_imports
         )
+        if len(imports) == 0:
+            return preamble
+
+        @beartype
+        def _with_qualified_imports(
+            types: frozenset[type], data: Value, /
+        ) -> tuple[str, ...]:
+            """Keep qualified imports inside the generated module."""
+            return imports_first(
+                entries=(*preamble(types, data), *imports),
+                deduplicate_imports=True,
+            )
+
+        return _with_qualified_imports
 
 
 register_json_native_document_fast(language_cls=PureScript)
