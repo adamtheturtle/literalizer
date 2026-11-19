@@ -1912,9 +1912,7 @@ jobs:
       # ``-std=c99`` matches ``C.language_version`` in
       # ``src/literalizer/languages/c.py``; keep them in sync.
       - name: Run clang-tidy on C files
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .c --include-default-module-names > /tmp/files-c-tidy && test -s /tmp/files-c-tidy
-          xargs -0 -P "$(nproc)" -n1 -I{} clang-tidy {} -- -std=c99 < /tmp/files-c-tidy
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_c_tidy_fixtures
 
   build-cpp-toolchain:
     needs: [native-changes]
