@@ -1,11 +1,12 @@
-#include "../../cpp_support/include/move_only_record.hpp"
 #include <utility>
+#include <memory>
+struct UserRecord { int move_guard{}; std::unique_ptr<int> move_guardx = nullptr; };
 struct Record0 { UserRecord child; };
 auto consume_widget(auto...) { return 0; }
 int main() {
 auto first = Record0{
     .child = {
-        .value = 1,
+        .move_guard = 1,
     },
 };
 consume_widget(std::move(first));

@@ -320,16 +320,11 @@ class _RefBindings(  # noqa: NOD001
     )
 
 
-class ExternalRefContext(  # noqa: NOD001
-    BaseModel, extra="forbid", frozen=True, strict=True
-):
+class ExternalRefContext(BaseModel, extra="forbid", frozen=True, strict=True):
     """Caller-owned declarations composed after API rendering."""
 
     kind: Literal["external"]
     declarations: Annotated[dict[str, str], Field(min_length=1)]
-    caller_preamble: manifest_values.StringTuple = Field(
-        default_factory=tuple[str, ...]
-    )
     consumer: RefConsumer
 
 

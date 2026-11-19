@@ -317,15 +317,7 @@ def compose_external_ref_fixture(
                 name=name, modifiers=frozenset()
             ),
         )
-        declarations.append(
-            dataclasses.replace(
-                declaration,
-                preamble=(*context.caller_preamble, *declaration.preamble),
-            )
-        )
-    result = dataclasses.replace(
-        result, preamble=(*context.caller_preamble, *result.preamble)
-    )
+        declarations.append(declaration)
     assertion_helper = (
         Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
     )

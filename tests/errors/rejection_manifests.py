@@ -254,6 +254,14 @@ class TextKwarg(
     value: str
 
 
+class TextSetKwarg(BaseModel, extra="forbid", frozen=True, strict=True):
+    """Pass an immutable set of strings as a constructor argument."""
+
+    kind: Literal["text_set"]
+    kwarg: DeclaredName
+    values: Annotated[tuple[str, ...], Field(strict=False)]
+
+
 class RecordShapeNamesKwarg(
     BaseModel,
     extra="forbid",
@@ -306,6 +314,7 @@ type RejectionKwarg = Annotated[
     | OptionUnsetKwarg
     | BooleanKwarg
     | TextKwarg
+    | TextSetKwarg
     | EmptyContainerTypeHintsKwarg
     | RecordShapeNamesKwarg,
     Field(discriminator="kind"),
@@ -738,6 +747,8 @@ def _kwarg_templates(*, kwarg: RejectionKwarg) -> tuple[str, ...]:
     match kwarg:
         case TextKwarg():
             templates = (kwarg.value,)
+        case TextSetKwarg():
+            templates = kwarg.values
         case EmptyContainerTypeHintsKwarg():
             templates = ()
         case RecordShapeNamesKwarg():

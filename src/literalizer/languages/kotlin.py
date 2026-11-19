@@ -1793,7 +1793,7 @@ class Kotlin(metaclass=LanguageCls):
             render_declaration=_kotlin_render_declaration,
             render_literal=_kotlin_record_literal,
             field_type_names_nested_records=False,
-            suppress_custom_name_declarations=False,
+            suppressed_custom_names=frozenset(),
         )
 
     @cached_property

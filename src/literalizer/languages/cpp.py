@@ -2299,6 +2299,8 @@ def _cpp_render_record_declaration(
     name: str,
     fields: Sequence[RecordDeclarationField],
     /,
+    *,
+    move_only_record_names: frozenset[str],
 ) -> str:
     """Render a C++ aggregate ``struct Name { Type field{}; ... };``.
 
@@ -2317,12 +2319,23 @@ def _cpp_render_record_declaration(
             f"{entry_field.type_name} {entry_field.identifier}"
             f"{effective_value};"
         )
+    headers = frozenset[str]().union(
+        *(_cpp_type_headers(field.type_name) for field in fields)
+    )
+    if name in move_only_record_names:
+        # A defaulted ownership member makes the type non-copyable while
+        # preserving aggregate initialization in every supported standard.
+        field_names = {field.identifier for field in fields}
+        guard_name = "move_guard"
+        while guard_name in field_names:
+            guard_name += "x"
+        collected_members.append(
+            f"std::unique_ptr<int> {guard_name} = nullptr;"
+        )
+        headers = headers | {"#include <memory>"}
     members = " ".join(collected_members)
     return _CppRecordDeclaration(
-        f"struct {name} {{ {members} }};",
-        headers=frozenset[str]().union(
-            *(_cpp_type_headers(field.type_name) for field in fields)
-        ),
+        f"struct {name} {{ {members} }};", headers=headers
     )
 
 
@@ -2518,6 +2531,7 @@ def _cpp_record_field_headers(
         "#include <set>",
         "#include <tuple>",
         "#include <utility>",
+        "#include <memory>",
         "#include <chrono>",
         "#include <cstddef>",
         "#include <variant>",
@@ -3965,11 +3979,10 @@ class Cpp(metaclass=LanguageCls):
             )
 
     def _validate_record_naming(self) -> None:
-        """Validate externally declared C++ record type names.
+        """Validate custom C++ record type names.
 
-        Mapped names are referenced but never declared by literalizer, so
-        they must be unambiguous PascalCase C++ identifiers and must not
-        collide with a generated ``RecordN`` name.
+        Mapped names must be unambiguous PascalCase C++ identifiers and
+        must not collide with a generated ``RecordN`` name.
         """
         auto_name_pattern = re.compile(
             pattern=(
@@ -4028,6 +4041,17 @@ class Cpp(metaclass=LanguageCls):
                 )
                 raise InvalidRecordNameError(msg)
             seen_names.add(name)
+
+        if len(self.move_only_record_names) > 0 and (
+            self.heterogeneous_strategy
+            is not self.heterogeneous_strategies.RECORD
+            or not self.move_only_record_names.issubset(seen_names)
+        ):
+            msg = (
+                "move_only_record_names requires the C++ RECORD strategy "
+                "and must name types in record_shape_names."
+            )
+            raise InvalidRecordNameError(msg)
 
     def _validate_json_type_spec(self) -> None:
         """Reject ``json_type`` combinations the generator cannot emit.
@@ -4298,6 +4322,14 @@ class Cpp(metaclass=LanguageCls):
         default_factory=empty_record_shape_names,
         hash=False,
     )
+    move_only_record_names: frozenset[str] = frozenset()
+    """Named record types to declare as generated move-only aggregates.
+
+    Requires the ``RECORD`` heterogeneous strategy. Names must appear in
+    :attr:`record_shape_names`. The generated aggregate has an additional
+    default-constructed ownership member, so it must be moved when passed
+    by value.
+    """
     record_map_value_typing: RecordMapValueTypings = (
         RecordMapValueTypings.NARROW
     )
@@ -4843,10 +4875,16 @@ class Cpp(metaclass=LanguageCls):
             ),
             field_identifier_key=identity_field_identifier_key,
             field_type=self._cpp_record_field_type,
-            render_declaration=_cpp_render_record_declaration,
+            render_declaration=functools.partial(
+                _cpp_render_record_declaration,
+                move_only_record_names=self.move_only_record_names,
+            ),
             render_literal=(effective_render_literal),
             field_type_names_nested_records=True,
-            suppress_custom_name_declarations=True,
+            suppressed_custom_names=(
+                frozenset(self.record_shape_names.values())
+                - self.move_only_record_names
+            ),
         )
 
     @cached_property

@@ -1527,7 +1527,7 @@ AXES: Mapping[str, Axis] = _registry(
         requires=(has_option(option="list_rendering_policy"),),
         overrides=(member(option=_DICT_FORMAT, name="RECORD"),),
     ),
-    # This caller fixture uses C++ aggregates with move-only record fields.
+    # Render an external C++ binding with a move-only record field.
     cpp_external_record_move=expand(
         name=lambda target, _label: (
             f"{target.name}_external_record_move_{_MOVE_ONLY_RECORD}"
@@ -1538,7 +1538,10 @@ AXES: Mapping[str, Axis] = _registry(
         overrides=(
             member(option=_HETEROGENEOUS_STRATEGY, name="RECORD"),
             fixed_options(
-                record_shape_names={frozenset(("value",)): _MOVE_ONLY_RECORD}
+                record_shape_names={
+                    frozenset(("move_guard",)): _MOVE_ONLY_RECORD
+                },
+                move_only_record_names=frozenset({_MOVE_ONLY_RECORD}),
             ),
         ),
     ),

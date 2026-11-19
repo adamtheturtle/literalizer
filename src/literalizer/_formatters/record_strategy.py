@@ -178,14 +178,8 @@ class RecordRenderer:
     record instead cannot, so its refinement reads those shapes as part
     of the signature (issue #4500).
     """
-    suppress_custom_name_declarations: bool
-    """Whether a shape named through ``record_shape_names`` is declared
-    by the caller rather than emitted in this literal's preamble.
-
-    C++ uses this for starter-code types: the mapping supplies a type name
-    for the aggregate literal, but emitting ``struct`` again would conflict
-    with the declaration already in the surrounding program.
-    """
+    suppressed_custom_names: frozenset[str]
+    """Custom record names already declared by the caller."""
 
 
 @beartype
@@ -1087,10 +1081,8 @@ class _RecordStrategyState:
         """
         blocks: list[str] = []
         for shape in self.emit_order:
-            if (
-                self.renderer.suppress_custom_name_declarations
-                and frozenset(shape.keys) in self.renderer.record_shape_names
-            ):
+            name = self.name_by_shape[shape]
+            if name in self.renderer.suppressed_custom_names:
                 continue
             requests = self.request_by_shape[shape]
             fields = [
@@ -1101,10 +1093,7 @@ class _RecordStrategyState:
                 for key in shape.keys
             ]
             blocks.append(
-                self.renderer.render_declaration(
-                    self.name_by_shape[shape],
-                    fields,
-                ),
+                self.renderer.render_declaration(name, fields),
             )
         return self.preamble_by_value.setdefault(repr(data), tuple(blocks))
 

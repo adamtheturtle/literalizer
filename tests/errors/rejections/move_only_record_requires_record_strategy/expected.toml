@@ -1,0 +1,4 @@
+# languages rejecting: 1; languages accepting: 0
+
+[InvalidRecordNameError]
+Cpp = "move_only_record_names requires the C++ RECORD strategy and must name types in record_shape_names."
