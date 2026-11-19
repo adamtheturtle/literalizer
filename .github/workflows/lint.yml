@@ -3203,22 +3203,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      # ``test -s`` guards against the version tags drifting and
-      # silently dropping every fixture; see the
-      # ``Python.VersionFormats`` enum in
-      # ``src/literalizer/languages/python.py``.
-      # Run the Click-based lister with the project's minimum Python.
-      # The fixture checks below retain the requested runtime.
-      - name: Find Python golden files
-        shell: bash
-        run: uv run --python 3.12 --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .py "$PYTHON_FIXTURE_TAG" > /tmp/files-python && test -s /tmp/files-python
-      - name: Check Python syntax
-        run: xargs -0 -P "$(nproc)" -n1 uv run --python "$PYTHON_VERSION" --no-project
-          python -m py_compile < /tmp/files-python
-      - name: Run Python golden files
-        run: xargs -0 -P "$(nproc)" -n1 uv run --python "$PYTHON_VERSION" --no-project
-          python < /tmp/files-python
+      # Resolve the inventory with the project minimum Python, then
+      # run the selected fixtures with the matrix runtime.
+      - name: Validate Python fixtures
+        run: uv run --python 3.12 --no-dev --group=fixture-inventory python -m scripts.run_python_fixtures
+          "$PYTHON_FIXTURE_TAG" --runtime "$PYTHON_VERSION"
 
   lint-racket:
     needs: [native-changes]
