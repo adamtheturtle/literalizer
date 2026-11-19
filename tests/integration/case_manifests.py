@@ -504,7 +504,6 @@ class CallGroupSpec(NativeCallRecipeSpec, frozen=True):
 
     kind: Literal["group"]
     body: manifest_values.CallTransformTemplate
-    suffix: str
 
 
 class CallArgumentsSpec(NativeCallRecipeSpec, frozen=True):
@@ -514,7 +513,6 @@ class CallArgumentsSpec(NativeCallRecipeSpec, frozen=True):
 
     kind: Literal["arguments"]
     arguments: manifest_values.StringTuple
-    suffix: str
 
 
 class CallOperandSpec(BaseModel, extra="forbid", frozen=True, strict=True):
@@ -596,30 +594,25 @@ class WrappedCallFixture(CallFixtureSpec, frozen=True):
     kind: Literal["wrapped"]
 
 
-class _ComposedCallFixture(  # noqa: NOD001
+class ComposedCallFixture(  # noqa: NOD001
     CallFixtureSpec, frozen=True
 ):
-    """Compose declarations and synthetic stubs around the call result."""
+    """Assemble a complete file from result metadata and declarations."""
 
+    kind: Literal["composed"] = "composed"
     followup: FollowupCallSpec | None = None
     unknown_ref_names: manifest_values.StringFrozenSet = Field(
         default_factory=frozenset[str]
     )
     include_target_stub: bool = True
+    # Native dependencies supplied by the caller, such as an import alias
+    # or a declaration with syntax outside the literal API.
     caller_imports: manifest_values.StringTuple = Field(
         default_factory=tuple[str, ...]
     )
     caller_body_preamble: manifest_values.StringTuple = Field(
         default_factory=tuple[str, ...]
     )
-
-
-class ComposedCallFixture(  # noqa: NOD001
-    _ComposedCallFixture, frozen=True
-):
-    """Assemble a complete file from result metadata and declarations."""
-
-    kind: Literal["composed"] = "composed"
 
 
 type CallFixture = Annotated[
