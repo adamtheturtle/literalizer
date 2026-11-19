@@ -476,7 +476,10 @@ class SystemVerilog(metaclass=LanguageCls):
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )
-    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
+    # Wrapped dotted calls derive helper class names from target components.
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = (
+        NewVariableNameSyntax.ASCII
+    )
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 

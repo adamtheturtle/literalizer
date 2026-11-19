@@ -8,12 +8,29 @@ from literalizer import (
     NewVariable,
     literalize_call,
 )
-from literalizer.exceptions import VariableNameNotSupportedError
-from literalizer.languages import Jsonnet
+from literalizer.exceptions import (
+    InvalidCallTargetError,
+    VariableNameNotSupportedError,
+)
+from literalizer.languages import Jsonnet, SystemVerilog
 from tests.integration.call_collection import default_call_case_specs
 from tests.integration.call_expectations import (
     expected_call_shape_exception,
 )
+
+
+def test_systemverilog_rejects_escaped_call_target_components() -> None:
+    """Wrapped dotted calls require names that can form helper classes."""
+    with pytest.raises(expected_exception=InvalidCallTargetError):
+        _ = literalize_call(
+            source="1",
+            input_format=InputFormat.JSON,
+            language=SystemVerilog(),
+            target_function=r"\bad-name .method",
+            parameter_names=("value",),
+            per_element=False,
+            wrap_in_file=True,
+        )
 
 
 @pytest.mark.parametrize(
