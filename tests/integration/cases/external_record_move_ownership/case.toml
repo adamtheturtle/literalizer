@@ -13,7 +13,6 @@ axis = "cpp_external_record_move"
 [ref.context]
 kind = "external"
 declarations = {first = '{"child":{"value":1}}'}
-caller_preamble = ['#include "../../cpp_support/include/move_only_record.hpp"']
 
 [ref.context.consumer]
 kind = "call"

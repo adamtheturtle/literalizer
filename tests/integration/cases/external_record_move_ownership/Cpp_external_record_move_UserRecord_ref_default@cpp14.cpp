@@ -1,5 +1,6 @@
-#include "../../cpp_support/include/move_only_record.hpp"
 #include <utility>
+#include <memory>
+struct UserRecord { int value{}; std::unique_ptr<int> move_guard = nullptr; };
 struct Record0 { UserRecord child; };
 template <typename... Args> auto consume_widget(Args...) { return 0; }
 int main() {

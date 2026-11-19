@@ -187,6 +187,9 @@ class RecordRenderer:
     with the declaration already in the surrounding program.
     """
 
+    emitted_custom_names: frozenset[str] = frozenset()  # noqa: NOD001
+    """Exceptions to the caller-owned custom-name policy."""
+
 
 @beartype
 @dataclasses.dataclass(frozen=True)
@@ -1087,9 +1090,11 @@ class _RecordStrategyState:
         """
         blocks: list[str] = []
         for shape in self.emit_order:
+            name = self.name_by_shape[shape]
             if (
                 self.renderer.suppress_custom_name_declarations
                 and frozenset(shape.keys) in self.renderer.record_shape_names
+                and name not in self.renderer.emitted_custom_names
             ):
                 continue
             requests = self.request_by_shape[shape]
@@ -1101,10 +1106,7 @@ class _RecordStrategyState:
                 for key in shape.keys
             ]
             blocks.append(
-                self.renderer.render_declaration(
-                    self.name_by_shape[shape],
-                    fields,
-                ),
+                self.renderer.render_declaration(name, fields),
             )
         return self.preamble_by_value.setdefault(repr(data), tuple(blocks))
 
