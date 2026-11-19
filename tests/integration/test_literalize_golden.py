@@ -118,9 +118,16 @@ def _check_rendering(
                     ),
                 )
             )
-        # External types must be available before generated record definitions.
+        # Keep fixture-provided dependencies ahead of the external types,
+        # even when the consumer also requests those dependencies.
         result = dataclasses.replace(
-            result, preamble=rendering.extra_preamble + result.preamble
+            result,
+            preamble=rendering.extra_preamble + result.preamble,
+            data_dependent_preamble=tuple(
+                entry
+                for entry in result.data_dependent_preamble
+                if entry not in rendering.extra_preamble
+            ),
         )
         result = literalizer.literalize_call_with_declarations(
             language=spec,

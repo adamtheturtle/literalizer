@@ -120,7 +120,6 @@ from literalizer._language import (
     IdentifierCase,
     IntegerCallStubResult,
     JsonType,
-    Language,
     LanguageCls,
     ModifierCombination,
     NewVariableNameSyntax,
@@ -161,10 +160,7 @@ from literalizer._language import (
     no_leading_preamble,
     prepend_body_preamble,
     requires_declared_binding,
-    validate_new_variable_name,
 )
-from literalizer._literalize import LiteralizeResult
-from literalizer._parsing import InputFormat
 from literalizer._statements import (
     CallLiteralSyntax,
 )
@@ -175,7 +171,6 @@ from literalizer._types import (
     Value,
     ValueInput,
 )
-from literalizer.api import literalize
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidCppRawStringDelimiterError,
@@ -3272,28 +3267,6 @@ _CALL_LITERAL_SYNTAX = CallLiteralSyntax(
 
 
 @beartype
-def literalize_cpp_type_alias(
-    *, language: Language, name: str, source: str, input_format: InputFormat
-) -> LiteralizeResult:
-    """Declare the exact C++ type of a rendered example expression.
-
-    Supply a C++ language spec and include the result's preamble before
-    the alias. The example appears in ``decltype`` and is never evaluated.
-    """
-    if language.language_id != "cpp":
-        msg = "C++ type alias rendering requires a C++ language spec."
-        raise TypeError(msg)
-    validate_new_variable_name(
-        language=language, name=name, name_source="NewVariable"
-    )
-    result = literalize(
-        language=language, source=source, input_format=input_format
-    )
-    alias = f"using {name} = decltype({result.declaration_code});"
-    return dataclasses.replace(result, declaration_code=alias)
-
-
-@beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class Cpp(metaclass=LanguageCls):
     """C++ language specification.
@@ -5655,14 +5628,7 @@ class Cpp(metaclass=LanguageCls):
                 ),
                 *declarations,
             )
-        unique: list[str] = []
-        covered_imports: set[str] = set()
-        for entry in dict.fromkeys(entries):
-            if entry in covered_imports:
-                continue
-            unique.append(entry)
-            covered_imports.update(preamble_imports((entry,)))
-        return tuple(unique)
+        return tuple(dict.fromkeys(entries))
 
     def reference_value_preamble(
         self,

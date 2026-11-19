@@ -7,8 +7,6 @@ from typing import Protocol, runtime_checkable
 
 import literalizer
 from literalizer._enums import enum_payload
-from literalizer._formatters.preamble_roles import join_preamble
-from literalizer.languages.cpp import literalize_cpp_type_alias
 from tests.enum_members import enum_member_by_name
 from tests.language_options import CAPABILITY_FLAGS, OPTIONS
 
@@ -165,15 +163,16 @@ def _external_cpp_type_preamble(
         ),
         record_struct_name_prefix="FixtureRecord",
     )
-    declaration = literalize_cpp_type_alias(
+    example = literalizer.literalize(
         language=cpp,
-        name=name,
         source=source,
         input_format=literalizer.InputFormat.JSON,
     )
-    # The separate declaration is one preamble entry so reconciliation
-    # cannot detach its includes or move it after dependent types.
-    return (join_preamble(entries=(*declaration.preamble, declaration.code)),)
+    return (
+        *example.preamble,
+        *example.body_preamble,
+        f"using {name} = decltype({example.declaration_code});",
+    )
 
 
 def _named_sample(*, suffix: str, option: str) -> Name:
