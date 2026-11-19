@@ -3380,11 +3380,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .m --language ObjectiveC --include-default-module-names > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
       # macos-15-arm64 ships Apple's clang but no clang-tidy, so pull it
       # from Homebrew's llvm formula. The PyPI clang-tidy (used in the
       # Ubuntu jobs) doesn't work here: it can't find Apple's Foundation
@@ -3399,9 +3394,10 @@ jobs:
         run: |-
           brew install --quiet llvm
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+      - name: Install GNU timeout
+        run: brew install --quiet coreutils
       - name: Run clang-tidy
-        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang-tidy --extra-arg=-fobjc-arc
-          < /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_objective_c_tidy_fixtures
 
   completion-lint:
     needs:
