@@ -58,10 +58,8 @@ def _check_fixture(
     return True
 
 
-@click.command()
-@click.argument("filenames", nargs=-1)
-def main(filenames: tuple[str, ...]) -> None:
-    """Check syntax of the given Elm golden files."""
+def check_files(*, filenames: tuple[str, ...]) -> bool:
+    """Compile the given fixtures and return success."""
     elm_path = shutil.which(cmd="elm")
     if elm_path is None or elm_path == "":
         elm_path = "elm"
@@ -77,7 +75,14 @@ def main(filenames: tuple[str, ...]) -> None:
             initargs=(str(object=primed), worker_homes_str),
         ) as pool:
             results = list(pool.map(worker, filenames))
-    if any(results):
+    return not any(results)
+
+
+@click.command()
+@click.argument("filenames", nargs=-1)
+def main(filenames: tuple[str, ...]) -> None:
+    """Check syntax of the given Elm golden files."""
+    if not check_files(filenames=filenames):
         sys.exit(1)
 
 

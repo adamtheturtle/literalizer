@@ -27,11 +27,17 @@ env:
     mkdir -p "$(dirname "$ARTIFACT_DESTINATION")"
     temporary=$(mktemp "${ARTIFACT_DESTINATION}.XXXXXX")
     trap 'rm -f "$temporary"' EXIT
-    printf 'download %s\n' "$ARTIFACT_URL"
-    curl --fail --show-error --silent --location \
-      --connect-timeout 10 --max-time 30 \
-      --write-out 'download HTTP %{http_code}\n' \
-      "$ARTIFACT_URL" --output "$temporary"
+    download() {
+      printf 'download %s\n' "$1"
+      curl --fail --show-error --silent --location \
+        --connect-timeout 10 --max-time 30 \
+        --write-out 'download HTTP %{http_code}\n' \
+        "$1" --output "$temporary"
+    }
+    if ! download "$ARTIFACT_URL"; then
+      [ -n "${ARTIFACT_FALLBACK_URL:-}" ] || exit 1
+      download "$ARTIFACT_FALLBACK_URL" || exit "$?"
+    fi
     mv "$temporary" "$ARTIFACT_DESTINATION"
 
 # Most toolchain installers and apt package versions target Ubuntu 24.04.
@@ -418,7 +424,7 @@ jobs:
           ARTIFACT_DESTINATION: /tmp/jackson-jars/jackson-databind-${{ env.JACKSON_VERSION }}.jar
           ARTIFACT_URL: https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/${{ env.JACKSON_VERSION }}/jackson-databind-${{
             env.JACKSON_VERSION }}.jar
-          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/${{ env.JACKSON_VERSION }}/jackson-databind-${{
+          ARTIFACT_FALLBACK_URL: https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-databind/${{ env.JACKSON_VERSION }}/jackson-databind-${{
             env.JACKSON_VERSION }}.jar
         with: *download
 
@@ -429,7 +435,7 @@ jobs:
           ARTIFACT_DESTINATION: /tmp/jackson-jars/jackson-core-${{ env.JACKSON_VERSION }}.jar
           ARTIFACT_URL: https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/${{ env.JACKSON_VERSION }}/jackson-core-${{
             env.JACKSON_VERSION }}.jar
-          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/${{ env.JACKSON_VERSION }}/jackson-core-${{
+          ARTIFACT_FALLBACK_URL: https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-core/${{ env.JACKSON_VERSION }}/jackson-core-${{
             env.JACKSON_VERSION }}.jar
         with: *download
 
@@ -440,7 +446,7 @@ jobs:
           ARTIFACT_DESTINATION: /tmp/jackson-jars/jackson-annotations-${{ env.JACKSON_VERSION }}.jar
           ARTIFACT_URL: https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-annotations/${{ env.JACKSON_VERSION }}/jackson-annotations-${{
             env.JACKSON_VERSION }}.jar
-          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/${{ env.JACKSON_VERSION }}/jackson-annotations-${{
+          ARTIFACT_FALLBACK_URL: https://maven-central.storage-download.googleapis.com/maven2/com/fasterxml/jackson/core/jackson-annotations/${{ env.JACKSON_VERSION }}/jackson-annotations-${{
             env.JACKSON_VERSION }}.jar
         with: *download
 
@@ -999,19 +1005,16 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Json5
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .json5 --include-authored > /tmp/files-json5 && test -s /tmp/files-json5
-          xargs -0 -P "$(nproc)" -n1 json5 < /tmp/files-json5 > /dev/null
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_json_document_fixtures
+          json5
 
       - name: Lint Jsonc
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .jsonc --include-authored > /tmp/files-jsonc && test -s /tmp/files-jsonc
-          xargs -0 uv run --no-dev --group=roundtrip python -m scripts.check_jsonc_syntax < /tmp/files-jsonc
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_json_document_fixtures
+          jsonc
 
       - name: Lint Norg
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .norg > /tmp/files-norg && test -s /tmp/files-norg
-          xargs -0 tree-sitter parse --lib-path /tmp/norg.so --lang-name norg --quiet < /tmp/files-norg
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_norg_fixtures
+          --parser /tmp/norg.so
       # Basic JSON -> Norg -> JSON round-trip (issue 2667). Runs here
       # because this is the job that builds the `tree-sitter-norg` grammar
       # (`/tmp/norg.so`) the helper loads through the `tree-sitter` Python
@@ -1034,14 +1037,11 @@ jobs:
       # ``src/literalizer/languages/typescript.py`` and ``--target es2015
       # --lib es2015`` matches ``JavaScript.language_version`` (``ES2015``)
       # in ``src/literalizer/languages/javascript.py``. Keep all three in
-      # sync. ``uv run --no-project`` suffices because the helper only
-      # drives ``tsc``; every fixture is a module, so one ``tsc`` process
-      # checks them all.
+      # sync. The local runner preserves batched compiler invocations.
       - name: Lint TypeScript
         timeout-minutes: 5
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .ts > /tmp/files-ts && test -s /tmp/files-ts
-          xargs -0 uv run --only-group=cli python -m scripts.check_typescript_consumers < /tmp/files-ts
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_typescript_fixtures
+          typecheck
 
   # Execute TypeScript fixtures via tsx. Split from `lint-npm-installed`
   # so the per-fixture tsx startups run in parallel with the tsc syntax
@@ -1082,9 +1082,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Run TypeScript files
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .ts > /tmp/files-ts && test -s /tmp/files-ts
-          xargs -0 -P "$(nproc)" -n1 tsx < /tmp/files-ts
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_typescript_fixtures
+          run
 
       # Basic JSON -> TypeScript -> JSON round-trip (issue 1867).  Runs
       # here because this is the job with the Node + `tsx` toolchain;
@@ -1134,13 +1133,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Elm
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .elm > /tmp/files-elm && test -s /tmp/files-elm
-          while IFS= read -r -d '' f; do
-            label="Elm formatting: $f"
-            scripts/run-bounded.sh "$label" --kill-after=5s 60s elm-format --stdin < "$f" > /dev/null || exit "$?"
-          done < /tmp/files-elm
-          xargs -0 uv run --no-dev --group=roundtrip python -m scripts.check_elm_syntax < /tmp/files-elm
+        run: uv run --no-dev --group=fixture-inventory --group=roundtrip python -m
+          scripts.run_elm_fixtures lint
 
   # Elm runtime check. Sibling to `lint-elm` so the compile + Node
   # execute pass runs in parallel with the format + compile-only pass.
@@ -1178,9 +1172,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Run Elm
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .elm > /tmp/files-elm && test -s /tmp/files-elm
-          xargs -0 uv run --no-dev --group=roundtrip python -m scripts.run_elm < /tmp/files-elm
+        run: uv run --no-dev --group=fixture-inventory --group=roundtrip python -m
+          scripts.run_elm_fixtures run
       # Basic JSON -> Elm -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `elm` binary (from the
       # npm-linters install above) and Node 22 already on PATH; `uv run`
@@ -1282,9 +1275,7 @@ jobs:
 
       # TOML, JSON5 and JSONC parser checks also cover authored inputs.
       - name: Lint Toml
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .toml --include-authored > /tmp/files-toml && test -s /tmp/files-toml
-          xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli --only-group=toml python -m scripts.check_toml_syntax < /tmp/files-toml
+        run: uv run --no-dev --group=fixture-inventory --group=toml python -m scripts.run_toml_fixtures
 
       # Basic JSON -> TOML -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the ``tomli`` TOML parser already
@@ -1674,7 +1665,7 @@ jobs:
         env:
           ARTIFACT_DESTINATION: /tmp/groovy.zip
           ARTIFACT_URL: https://repo.maven.apache.org/maven2/org/apache/groovy/groovy-binary/4.0.32/groovy-binary-4.0.32.zip
-          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/org/apache/groovy/groovy-binary/4.0.32/groovy-binary-4.0.32.zip
+          ARTIFACT_FALLBACK_URL: https://maven-central.storage-download.googleapis.com/maven2/org/apache/groovy/groovy-binary/4.0.32/groovy-binary-4.0.32.zip
         with: *download
 
       - name: Install Groovy
@@ -2082,10 +2073,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .cob > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # ``setup-cobol-action`` builds GnuCOBOL from source with a bare
       # ``./configure``; without a JSON handler library present at that
       # point ``configure`` disables JSON I/O ("JSON library: not
@@ -2107,33 +2094,8 @@ jobs:
         uses: fabasoad/setup-cobol-action@v1.7.0
         with:
           version: ${{ env.GNUCOBOL_VERSION }}
-      # GnuCOBOL caps the file base name length and rejects ``@``-laden
-      # names that exceed it, so copy each fixture to a fixed short
-      # filename before invoking ``cobc``.
-      - name: Check COBOL syntax
-        run: |-
-          cat > /tmp/check-cobol.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cp "$1" "$tmpdir/check.cob"
-          cobc -Werror -free -fsyntax-only "$tmpdir/check.cob"
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/check-cobol.sh < /tmp/files-to-lint
-      # ``-lcjson`` links the cJSON library that the
-      # ``json_type=CJSON`` fixtures reach through COBOL's C ``CALL``
-      # interface (``cJSON_Create*`` / ``cJSON_AddItemTo*``).  The flag
-      # is harmless for the record-mode fixtures that do not call into
-      # it, so every fixture builds with the same command.
-      - name: Run COBOL files
-        run: |-
-          cat > /tmp/run-cobol.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cp "$1" "$tmpdir/check.cob"
-          cobc -Werror -x -free "$tmpdir/check.cob" -o "$tmpdir/run" -lcjson || exit 1
-          "$tmpdir/run" || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-cobol.sh < /tmp/files-to-lint
+      - name: Validate COBOL fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_cobol_fixtures
 
       # Basic JSON -> COBOL -> JSON round-trip (issue 2643). Runs here
       # because this is the job with the pinned GnuCOBOL toolchain
@@ -2294,7 +2256,7 @@ jobs:
           ARTIFACT_DESTINATION: /tmp/kotlinx-jars/kotlinx-serialization-json-jvm-${{ env.KOTLINX_SERIALIZATION_VERSION }}.jar
           ARTIFACT_URL: https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-json-jvm-${{
             env.KOTLINX_SERIALIZATION_VERSION }}.jar
-          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-json-jvm-${{
+          ARTIFACT_FALLBACK_URL: https://maven-central.storage-download.googleapis.com/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-json-jvm-${{
             env.KOTLINX_SERIALIZATION_VERSION }}.jar
         with: *download
 
@@ -2305,7 +2267,7 @@ jobs:
           ARTIFACT_DESTINATION: /tmp/kotlinx-jars/kotlinx-serialization-core-jvm-${{ env.KOTLINX_SERIALIZATION_VERSION }}.jar
           ARTIFACT_URL: https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-core-jvm-${{
             env.KOTLINX_SERIALIZATION_VERSION }}.jar
-          ARTIFACT_FALLBACK_URL: https://repo1.maven.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-core-jvm-${{
+          ARTIFACT_FALLBACK_URL: https://maven-central.storage-download.googleapis.com/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/${{ env.KOTLINX_SERIALIZATION_VERSION }}/kotlinx-serialization-core-jvm-${{
             env.KOTLINX_SERIALIZATION_VERSION }}.jar
         with: *download
       # Invoke K2JVMCompiler from a single `.kts` JVM instead of
@@ -2473,20 +2435,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .lisp > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install SBCL
         timeout-minutes: 10
         uses: 40ants/setup-lisp@v4
-      - name: Check Common Lisp syntax
-        run: >-
-          xargs -0 -P "$(nproc)" -I{} ros run
-          --eval '(sb-ext:disable-debugger)'
-          --load {}
-          --quit
-          < /tmp/files-to-lint
+      - name: Validate native fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_common_lisp_fixtures
 
       # ``com.inuoe.jzon`` is a modern, actively maintained Common
       # Lisp JSON library; the ``Common Lisp roundtrip`` step below
@@ -2777,8 +2730,17 @@ jobs:
           cargo init "$tmpdir/chrono-check"
           cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" chrono
           cargo add --manifest-path "$tmpdir/chrono-check/Cargo.toml" serde_json
-          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml"
-          deps="$tmpdir/chrono-check/target/debug/deps"
+          cargo build --manifest-path "$tmpdir/chrono-check/Cargo.toml" \
+            --message-format=json > "$tmpdir/artifacts.jsonl"
+          # Cargo 1.100 groups intermediate artifacts by package. Use the
+          # reported paths and stage the libraries for rustc's -L lookup.
+          deps="$tmpdir/deps"
+          mkdir "$deps"
+          jq -r 'select(.reason == "compiler-artifact") | .filenames[] | select(endswith(".rlib"))' \
+            "$tmpdir/artifacts.jsonl" > "$tmpdir/rlibs"
+          while IFS= read -r rlib; do
+            ln "$rlib" "$deps/"
+          done < "$tmpdir/rlibs"
           chrono_rlib=$(find "$deps" -name "libchrono-*.rlib" -print -quit)
           test -n "$chrono_rlib"
           serde_json_rlib=$(find "$deps" -name "libserde_json-*.rlib" -print -quit)
@@ -3387,46 +3349,14 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .zig "$ZIG_FIXTURE_TAG" > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Zig
         timeout-minutes: 10
         uses: mlugg/setup-zig@v2
         with:
           version: ${{ env.ZIG_VERSION }}
-      # Compile every fixture in a single `zig run` invocation to pay
-      # the Zig compiler + std parse cost once instead of per fixture.
-      # Fixtures all declare `pub fn main() void`, renamed to a unique
-      # `pub fn fixtureN()` and `@import`-ed from a generated driver
-      # that calls each one so every fixture body still executes. The
-      # mapping is printed so failures still point back to the original
-      # path.
-      - name: Run Zig files
-        run: |-
-          workspace=$(mktemp -d)
-          driver="$workspace/main.zig"
-          imports="$workspace/imports.zig.part"
-          calls="$workspace/calls.zig.part"
-          : > "$imports"
-          : > "$calls"
-          i=0
-          while IFS= read -r -d '' f; do
-            sed "s/^pub fn main(/pub fn fixture$i(/" "$f" \
-              > "$workspace/fixture_$i.zig"
-            printf 'const fix%d = @import("fixture_%d.zig");\n' "$i" "$i" >> "$imports"
-            printf '    fix%d.fixture%d();\n' "$i" "$i" >> "$calls"
-            printf 'fixture_%d.zig <- %s\n' "$i" "$f"
-            i=$((i+1))
-          done < /tmp/files-to-lint
-          {
-            cat "$imports"
-            printf 'pub fn main() void {\n'
-            cat "$calls"
-            printf '}\n'
-          } > "$driver"
-          zig run "$driver"
+      - name: Validate native fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_zig_fixtures
+          "$ZIG_FIXTURE_TAG"
       # Basic JSON -> Zig -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Zig toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
@@ -3585,41 +3515,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
       - name: Install GNU timeout
         run: brew install --quiet coreutils
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .m --language ObjectiveC --include-default-module-names > /tmp/files-to-lint
-          && test -s /tmp/files-to-lint
-      # Every fixture `#import`s `<Foundation/Foundation.h>`, whose parse
-      # cost dominates each tiny TU. Precompile Foundation once and
-      # preload it in the syntax-check and build-and-run steps so the
-      # parsed AST is reused instead of re-parsed per fixture. clang-tidy
-      # runs in a separate job (`lint-objectivec-tidy`) and deliberately
-      # skips the PCH — see the note on `lint-cpp-tidy`.
-      - name: Build precompiled header
-        run: clang -fobjc-arc -x objective-c-header scripts/lint-objc-pch.h -o /tmp/pch.h.pch
-      - name: Check Objective-C syntax
-        run: xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 clang -fobjc-arc -fsyntax-only
-          -Werror -include-pch /tmp/pch.h.pch < /tmp/files-to-lint
-      # The public default uses a caller that invokes Module().
-      # Link against Foundation and execute to surface runtime errors.
-      # Each invocation gets a private tmpdir so parallel builds don't
-      # clobber each other's output binary.
-      - name: Run Objective-C files
-        run: |-
-          cat > /tmp/run-objc.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          sources=("$1")
-          if [[ "$1" == */goldens/objective_c/*/default_module_name.m ]]; then
-            printf 'int Module(void);\nint main(void) { return Module(); }\n' > "$tmpdir/main.m"
-            sources+=("$tmpdir/main.m")
-          fi
-          clang -fobjc-arc -framework Foundation -Werror -include-pch /tmp/pch.h.pch "${sources[@]}" \
-            -o "$tmpdir/out" || exit 1
-          "$tmpdir/out" || exit 1
-          SCRIPT
-          xargs -0 -P "$(sysctl -n hw.ncpu)" -n1 bash /tmp/run-objc.sh < /tmp/files-to-lint
+      - name: Validate native fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_objective_c_fixtures
       # Basic JSON -> Objective-C -> JSON round-trip (issue 2668). Runs
       # here because this is the job with the Objective-C toolchain
       # (Apple `clang` plus the `Foundation` framework); `uv run`
