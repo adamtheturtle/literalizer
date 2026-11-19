@@ -927,9 +927,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Jsonnet
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .jsonnet > /tmp/files-jsonnet && test -s /tmp/files-jsonnet
-          xargs -0 -P "$(nproc)" -n1 jsonnet < /tmp/files-jsonnet > /dev/null
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_go_document_fixtures
+          jsonnet
       # Basic JSON -> Jsonnet -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `jsonnet` binary (from the
       # `go install` above) already on PATH; `uv run` (project mode, not
@@ -941,9 +940,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_jsonnet_roundtrip
 
       - name: Lint Hcl
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .hcl > /tmp/files-hcl && test -s /tmp/files-hcl
-          xargs -0 -P "$(nproc)" -n1 hcl2json < /tmp/files-hcl > /dev/null
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_go_document_fixtures
+          hcl
       # Basic JSON -> HCL -> JSON round-trip (issue 2657). Runs here
       # because this is the job with the `hcl2json` binary (from the
       # `go install` above) already on PATH; `uv run` (project mode, not
@@ -1246,9 +1244,7 @@ jobs:
       # Because the fixture format itself is structurally incompatible with
       # KRoC, we fall back to this Python-based structural checker.
       - name: Lint Occam
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .occ --include-default-module-names > /tmp/files-occam && test -s /tmp/files-occam
-          xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.check_occam_syntax < /tmp/files-occam
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_occam_fixtures
 
       # There is deliberately no Occam JSON round-trip (issues 1867 and 2669),
       # unlike every other language.  A round-trip must compile and run the
@@ -1289,9 +1285,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_json5_roundtrip
 
       - name: Lint Yaml
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .yaml v1_2 > /tmp/files-yaml && test -s /tmp/files-yaml
-          xargs -0 uvx yamllint --strict -d '{extends: default, rules: {document-start: disable, line-length: disable}}' -- < /tmp/files-yaml
+        run: uv run --no-dev --group=fixture-inventory --group=yaml-lint python -m
+          scripts.run_yaml_fixtures
 
       # Basic JSON -> YAML -> JSON round-trip (issue 1867). Runs here
       # alongside the existing Yaml syntax check; ``uv run`` (project
@@ -1432,20 +1427,8 @@ jobs:
         timeout-minutes: 10
         uses: astral-sh/setup-uv@v10.3.3
 
-      # Every fixture defines its own entry point at top level, so compile
-      # and run each file directly. Each invocation gets a private tmpdir
-      # so parallel builds don't clobber each other's output binary.
-      - name: Lint Sml
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .sml > /tmp/files-sml && test -s /tmp/files-sml
-          cat > /tmp/run-sml.sh <<'SCRIPT'
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cp "$1" "$tmpdir/check.sml"
-          mlton -output "$tmpdir/out" "$tmpdir/check.sml" || exit 1
-          "$tmpdir/out" || exit 1
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-sml.sh < /tmp/files-sml
+      - name: Validate native fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_sml_fixtures
 
       # Driven from `lint-sml` because that is the job where MLton (pinned
       # by the `Install MLton` step above) is installed; `uv run` (project
@@ -3362,10 +3345,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .sv --include-default-module-names > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # Pinned to 5.046 rather than `latest`: Verilator 5.048 hits an
       # internal "Underflow of indentation" codegen error
       # (`V3File.h:160`) when building the `run_systemverilog_roundtrip.py`
@@ -3383,9 +3362,8 @@ jobs:
       # `src/literalizer/languages/systemverilog.py`
       # (`SystemVerilog.VersionFormats.IEEE_1800_2017` maps to the
       # IEEE 1800-2017 SystemVerilog standard); keep them in sync.
-      - name: Check SystemVerilog syntax
-        run: xargs -0 -P "$(nproc)" -n1 verilator --lint-only --language 1800-2017
-          -Wno-REALCVT < /tmp/files-to-lint
+      - name: Validate native fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_systemverilog_fixtures
       # Basic JSON -> SystemVerilog -> JSON round-trip (issue 1867). Runs
       # here because this is the job with Verilator installed; `uv run`
       # (project mode, not `--no-project`) is required so
@@ -3411,10 +3389,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .v > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # The pinned ``weekly.2026.08`` release is ``>=`` the ``V0_4``
       # default of ``V.language_version`` in
       # ``src/literalizer/languages/v.py``; keep them in sync.  Use a
@@ -3443,21 +3417,8 @@ jobs:
         run: |-
           unzip -q /tmp/v_linux.zip -d /tmp
           sudo ln -s /tmp/v/v /usr/local/bin/v
-          # The prebuilt binary lazily creates ``~/.vmodules`` (and the
-          # C compile cache) on its first run.  The ``Check V syntax``
-          # and ``Run V files`` steps each fan out across ``nproc``
-          # parallel ``v`` processes, which otherwise race to create
-          # those folders and panic (``V panic: folder: ~/.vmodules/,
-          # error: File exists``).  Warm up once, serially, with the
-          # same ``v -cc gcc run`` invocation the parallel step uses so
-          # every lazily-created directory exists beforehand.
-          echo 'fn main() {}' > /tmp/v-warmup.v
-          v -cc gcc run /tmp/v-warmup.v > /dev/null 2>&1 || true
-      - name: Check V syntax
-        run: xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.check_v_syntax
-          < /tmp/files-to-lint
-      - name: Run V files
-        run: xargs -0 -P "$(nproc)" -n1 v -W -cc gcc run < /tmp/files-to-lint
+      - name: Validate V fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_v_fixtures
       # Driven from `lint-v` because that is the job where the pinned
       # `v` binary (installed by the `Install V` step above) is on
       # `PATH`; `uv run` (project mode, not `--no-project`) is required
@@ -3540,6 +3501,8 @@ jobs:
         run: |-
           brew install --quiet llvm
           echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+      - name: Install GNU timeout
+        run: brew install --quiet coreutils
       - name: Run clang-tidy
         run: uv run --no-dev --group=fixture-inventory python -m scripts.run_objective_c_tidy_fixtures
 

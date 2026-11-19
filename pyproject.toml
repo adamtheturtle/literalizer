@@ -169,6 +169,7 @@ roundtrip = [
 ]
 toml = [ "tomli>=2.4.0" ]
 yaml = [ "pyyaml==6.0.3" ]
+yaml-lint = [ "yamllint==1.38.0" ]
 
 [tool.setuptools]
 packages.find.where = [
