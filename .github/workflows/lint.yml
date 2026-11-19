@@ -1324,27 +1324,12 @@ jobs:
           mkdir -p /tmp/.dotnet/shm
           dotnet --info
 
-      # Build a small Roslyn host once, then feed every fixture through
-      # its stdin so the .NET runtime and C# compiler load once instead
-      # of per fixture. Replaces `dotnet build` per fixture, which paid
-      # MSBuild + NuGet restore + compiler startup each time.
-      - name: Build C# lint host
-        run: dotnet publish scripts/lint-csharp/lint-csharp.csproj -c Release -o /tmp/lint-csharp
-          --nologo
-      # Build a small Roslyn host once, then feed every fixture through
-      # its stdin so the .NET runtime and VB compiler load once instead
-      # of per fixture.
-      - name: Build VB lint host
-        run: dotnet publish scripts/lint-vb/lint-vb.csproj -c Release -o /tmp/lint-vb
-          --nologo
-
       # The host compiles each fixture into an in-memory assembly and
       # invokes its entry point, so emit-success and runtime errors
       # (e.g. undefined members on an unstubbed object) both fail here.
       - name: Lint CSharp
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .cs > /tmp/files-cs && test -s /tmp/files-cs
-          dotnet /tmp/lint-csharp/lint-csharp.dll < /tmp/files-cs
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_roslyn_fixtures
+          csharp
 
       # `uv` is needed by the `CSharp roundtrip` step below; it runs the
       # helper in project mode so `import literalizer` resolves.
@@ -1359,9 +1344,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_csharp_roundtrip
 
       - name: Lint VisualBasic
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .vb > /tmp/files-vb && test -s /tmp/files-vb
-          dotnet /tmp/lint-vb/lint-vb.dll < /tmp/files-vb
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_roslyn_fixtures
+          vb
 
       # Basic JSON -> VB.NET -> JSON round-trip (issue 2682). Runs here
       # because this is the job with the .NET toolchain; `uv run`
