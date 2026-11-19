@@ -130,6 +130,7 @@ lint-commonlisp:
 
 lint-scala:
   - *shared
+  - .github/coursier-mirror.properties
   - tests/integration/cases/**/*.scala
 
 lint-haxe:
