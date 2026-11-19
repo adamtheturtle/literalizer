@@ -19,6 +19,7 @@ import click
 
 from literalizer.languages import Matlab
 from scripts.bounded_command import bounded_command
+from tests.integration.list_fixtures import fixture_paths
 from tests.integration.shared_checked_cases import shared_checked_cases
 
 _LOGGER = logging.getLogger(name=__name__)
@@ -89,7 +90,7 @@ def run_fixture(*, fixture: Path, entrypoint: str | None, octave: str) -> None:
 
 
 def find_octave() -> str:
-    """Require the native runtime supplied by the MATLAB CI job."""
+    """Require the native runtime supplied by the MATLAB job."""
     octave = shutil.which(cmd="octave")
     if octave is None:
         msg = "Octave executable was not found."
@@ -98,14 +99,21 @@ def find_octave() -> str:
 
 
 @click.command()
-def main() -> None:
-    """Read null-separated fixture paths and execute them in parallel."""
+@click.option("--all-fixtures", is_flag=True)
+def main(*, all_fixtures: bool) -> None:
+    """Execute all MATLAB fixtures or read null-separated paths from stdin."""
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    fixtures = [
-        Path(os.fsdecode(filename=name)).resolve()
-        for name in sys.stdin.buffer.read().split(sep=b"\0")
-        if len(name) > 0
-    ]
+    if all_fixtures:
+        fixtures = [
+            path.resolve()
+            for path in fixture_paths(extension=".m", language="Matlab")
+        ]
+    else:
+        fixtures = [
+            Path(os.fsdecode(filename=name)).resolve()
+            for name in sys.stdin.buffer.read().split(sep=b"\0")
+            if len(name) > 0
+        ]
     if len(fixtures) == 0:
         msg = "No MATLAB fixture paths were provided."
         raise ValueError(msg)

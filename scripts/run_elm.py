@@ -156,10 +156,8 @@ def _run_fixture(
     return True
 
 
-@click.command()
-@click.argument("filenames", nargs=-1)
-def main(filenames: tuple[str, ...]) -> None:
-    """Run each Elm golden file end-to-end."""
+def run_files(*, filenames: tuple[str, ...]) -> bool:
+    """Compile and execute the fixtures and return success."""
     selected_filenames = [
         f
         for f in filenames
@@ -187,7 +185,14 @@ def main(filenames: tuple[str, ...]) -> None:
             initargs=(str(object=primed), worker_homes_str),
         ) as pool:
             results = list(pool.map(worker, selected_filenames))
-    if any(results):
+    return not any(results)
+
+
+@click.command()
+@click.argument("filenames", nargs=-1)
+def main(filenames: tuple[str, ...]) -> None:
+    """Run each Elm golden file end-to-end."""
+    if not run_files(filenames=filenames):
         sys.exit(1)
 
 
