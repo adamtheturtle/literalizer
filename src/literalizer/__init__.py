@@ -47,6 +47,10 @@ from literalizer.api import (
     literalize_call_with_declarations,
 )
 from literalizer.callable_descriptions import describe_callable
+from literalizer.equality_assertions import (
+    EqualityAssertion,
+    equality_assertion_for,
+)
 from literalizer.exceptions import LiteralizerError, NativeCallError
 from literalizer.invocations import literalize_invocations
 from literalizer.native_call_data import (
@@ -79,6 +83,7 @@ __all__ = [
     "DateFormatConfig",
     "DatetimeFormatConfig",
     "DictFormatConfig",
+    "EqualityAssertion",
     "ExistingVariable",
     "FileSection",
     "FileWrapperContext",
@@ -114,6 +119,7 @@ __all__ = [
     "ValueInput",
     "VariableForm",
     "describe_callable",
+    "equality_assertion_for",
     "fixed_open",
     "literalize",
     "literalize_call",

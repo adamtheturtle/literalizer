@@ -171,6 +171,7 @@ from literalizer._types import (
     Value,
     ValueInput,
 )
+from literalizer.equality_assertions import EqualityAssertion
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidCppRawStringDelimiterError,
@@ -2978,6 +2979,14 @@ def _renders_as_string_literal(
 
 
 @beartype
+def _format_equality_assertion(actual: str, expected: str, /) -> str:
+    """Compare two expressions with an active failure path."""
+    return (
+        f"(({actual}) != ({expected}) ? std::abort() : static_cast<void>(0))"
+    )
+
+
+@beartype
 def _cpp_call_stub(
     parts: Sequence[str],
     _params: Sequence[str],
@@ -3552,6 +3561,10 @@ class Cpp(metaclass=LanguageCls):
     supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
+    equality_assertion: ClassVar[EqualityAssertion] = EqualityAssertion(
+        format_assertion=_format_equality_assertion,
+        preamble=("#include <cstdlib>",),
+    )
     language_id: ClassVar[str] = "cpp"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         round_trip_capabilities=frozenset(

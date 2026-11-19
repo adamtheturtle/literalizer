@@ -150,6 +150,11 @@ Function calls
    :members:
    :undoc-members:
 
+.. autofunction:: equality_assertion_for
+
+.. autoclass:: EqualityAssertion
+   :members:
+
 A language renders a call using one of these call styles.
 
 .. autodata:: CallStyle

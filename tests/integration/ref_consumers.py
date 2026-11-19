@@ -1,7 +1,6 @@
 """Compose native consumers around rendered reference results."""
 
 import dataclasses
-import functools
 import json
 
 from beartype import beartype
@@ -38,25 +37,11 @@ from .reference_inputs import RefData
 
 
 @beartype
-def _assert_equal(
-    context: literalizer.CallContext, /, *, spec: literalizer.Language
-) -> str:
-    """Compare two rendered operands with an active native failure
-    path.
-    """
-    actual, expected = context.arguments
-    if spec.language_id == "rust":
-        return f"assert_eq!({actual}, {expected})"
-    return (
-        f"(({actual}) != ({expected}) ? std::abort() : static_cast<void>(0))"
-    )
-
-
-@beartype
 def _compose_ref_value_check(
     *,
     context: ExternalRefContext,
     consumer: RefValueCheckSpec,
+    equality_assertion: literalizer.EqualityAssertion,
     spec: literalizer.Language,
     declarations: list[literalizer.LiteralizeResult],
     result: literalizer.LiteralizeResult,
@@ -66,13 +51,12 @@ def _compose_ref_value_check(
     Expected data is rendered separately, after the operation under test,
     and never participates in its reference inference.
     """
-    transform = functools.partial(_assert_equal, spec=spec)
     if "my_data" in context.declarations:
         initial_source = context.declarations["my_data"]
         initial_check = literalizer.literalize_call(
             source=f'[[{{"$ref": "my_data"}}, {initial_source}]]',
             target_function="assert_equal",
-            call_transform=transform,
+            call_transform=equality_assertion,
             parameter_names=("actual", "expected"),
             input_format=literalizer.InputFormat.JSON,
             language=spec,
@@ -90,7 +74,7 @@ def _compose_ref_value_check(
     assertion = literalizer.literalize_call(
         source='[[{"$ref": "my_data"}, {"$ref": "expected_data"}]]',
         target_function="assert_equal",
-        call_transform=transform,
+        call_transform=equality_assertion,
         parameter_names=("actual", "expected"),
         input_format=literalizer.InputFormat.JSON,
         language=spec,
@@ -100,9 +84,7 @@ def _compose_ref_value_check(
         language=spec,
         declarations=[*declarations, result, expected],
         call=assertion,
-        extra_preamble=("#include <cstdlib>",)
-        if spec.language_id == "cpp"
-        else (),
+        extra_preamble=equality_assertion.preamble,
     )
 
 
@@ -336,18 +318,17 @@ def compose_external_ref_fixture(
         )
         declarations.append(declaration)
     consumer = context.consumer
-    if isinstance(consumer, RefValueCheckSpec) and spec.language_id in {
-        "cpp",
-        "rust",
-    }:
-        return _compose_ref_value_check(
-            context=context,
-            consumer=consumer,
-            spec=spec,
-            declarations=declarations,
-            result=result,
-        )
     if isinstance(consumer, RefValueCheckSpec):
+        equality_assertion = literalizer.equality_assertion_for(language=spec)
+        if equality_assertion is not None:
+            return _compose_ref_value_check(
+                context=context,
+                consumer=consumer,
+                equality_assertion=equality_assertion,
+                spec=spec,
+                declarations=declarations,
+                result=result,
+            )
         if (
             config.variable_form == "existing"
             and "my_data" in context.declarations
