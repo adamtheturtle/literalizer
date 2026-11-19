@@ -7,7 +7,7 @@ shared: &shared
   - src/literalizer/languages/__init__.py
   - scripts/{__init__,bounded_command,fixture_staging,roundtrip_common,shared_record_common}.py
   - scripts/{roundtrip_input,roundtrip_capability_input}.json
-  - scripts/retry.sh
+  - scripts/{retry,run-bounded}.sh
   - tests/*.py
   - tests/integration/*.py
   - tests/integration/*.toml
@@ -167,13 +167,13 @@ build-cpp-toolchain:
   - scripts/build_cpp_toolchain.py
   - ci/clang/**
   - .clang-tidy
-  - scripts/{lint-cpp-fixture,run-bounded}.sh
+  - scripts/lint-cpp-fixture.sh
   - tests/integration/cases/**/*.{c,cpp}
 
 lint-cpp-tidy:
   - *shared
   - '{src/literalizer/languages,tests/integration/languages}/cpp.{py,toml}'
-  - scripts/{lint-cpp-fixture,run-bounded}.sh
+  - scripts/lint-cpp-fixture.sh
   - ci/clang/**
   - scripts/build_cpp_toolchain.py
   - .clang-tidy
@@ -189,7 +189,7 @@ lint-cpp:
   - *shared
   - '{src/literalizer/languages,tests/integration/languages}/cpp.{py,toml}'
   - scripts/run_cpp{,_*}.py
-  - scripts/{lint-cpp-fixture,run-bounded}.sh
+  - scripts/lint-cpp-fixture.sh
   - ci/clang/**
   - scripts/build_cpp_toolchain.py
   - tests/integration/cases/**/*.cpp
@@ -205,7 +205,7 @@ lint-swift:
   - *shared
   - '{src/literalizer/languages,tests/integration/languages}/swift.{py,toml}'
   - scripts/run_swift{,_*}.py
-  - scripts/{run-bounded,swift-gpg,test-swift-gpg}.sh
+  - scripts/{swift-gpg,test-swift-gpg}.sh
   - tests/integration/cases/**/*.swift
 
 lint-ocaml:
