@@ -1,207 +1,342 @@
 ---
-# Native jobs match their fixture types plus these shared inputs.
+# Native jobs match their fixtures, language modules, manifests and runners.
+# Common renderer, fixture inventory and runner inputs select every job.
 shared: &shared
-  - src/**
-  - scripts/**
+  - src/literalizer/*
+  - src/literalizer/_formatters/**
+  - src/literalizer/languages/__init__.py
+  - scripts/{__init__,bounded_command,fixture_staging,roundtrip_common,shared_record_common}.py
+  - scripts/{roundtrip_input,roundtrip_capability_input}.json
+  - scripts/retry.sh
   - tests/*.py
   - tests/integration/*.py
   - tests/integration/*.toml
-  - tests/integration/languages/**
   - tests/integration/cases/**/case.toml
   - tests/integration/cases/**/input.*
-  - ci/**
   - .github/workflows/lint.yml
   - .github/native-filters.yml
-  - .github/npm-linters/**
-  - .clang-tidy
-  - .clj-kondo/**
   - pyproject.toml
   - uv.lock
 
 lint-fast:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/{bash,c,dhall,forth,fortran,java,javascript,lua,nix,php,powershell,ruby,scheme,tcl,wren}.{py,toml}'
+  - scripts/run_{bash,c,dhall,forth,fortran,java,javascript,lua,nix,php,powershell,ruby,scheme,tcl,wren}{,_*}.py
+  - src/literalizer/languages/forth_prelude.fs
+  - scripts/run_interpreted_fixtures.py
+  - scripts/{forth_visitor_lint.fs,fval_m.f90,lint-powershell.ps1,run-powershell.ps1}
   - tests/integration/cases/**/*.{c,dhall,f90,fth,java,js,lua,nix,php,ps1,rb,scm,sh,tcl,wren}
   - CheckJavaSyntax.java
 
 lint-odin:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/odin.{py,toml}'
+  - scripts/run_odin{,_*}.py
+  - scripts/lint-odin-fixture.sh
   - tests/integration/cases/**/*.odin
 
 lint-roc:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/roc.{py,toml}'
+  - scripts/run_roc{,_*}.py
   - tests/integration/cases/**/*.roc
 
 lint-matlab:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/matlab.{py,toml}'
+  - scripts/run_matlab{,_*}.py
+  - scripts/check_matlab_fixture_execution.py
   - tests/integration/cases/*/*.m
   - tests/integration/cases/*/goldens/matlab/*/*.m
 
 lint-perl:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/perl.{py,toml}'
+  - scripts/run_perl{,_*}.py
+  - scripts/run_interpreted_fixtures.py
   - tests/integration/cases/**/*.pl
 
 lint-go-installed:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/{hcl,jsonnet}.{py,toml}'
+  - scripts/run_{hcl,jsonnet}{,_*}.py
   - tests/integration/cases/**/*.{hcl,jsonnet}
 
 lint-npm-installed:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/{json5,jsonc,norg,typescript}.{py,toml}'
+  - scripts/run_{json5,jsonc,norg,typescript}{,_*}.py
+  - scripts/{run_json_document_fixtures,check_jsonc_syntax,check_typescript_consumers}.py
+  - .github/npm-linters/**
   - tests/integration/cases/**/*.{json5,jsonc,norg,ts}
 
 lint-typescript-run:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/typescript.{py,toml}'
+  - scripts/run_typescript{,_*}.py
+  - scripts/check_typescript_consumers.py
+  - .github/npm-linters/**
   - tests/integration/cases/**/*.ts
 
 lint-elm:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/elm.{py,toml}'
+  - scripts/run_elm{,_*}.py
+  - scripts/{check_elm_syntax,elm_common}.py
+  - .github/npm-linters/**
   - tests/integration/cases/**/*.elm
 
 lint-elm-run:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/elm.{py,toml}'
+  - scripts/run_elm{,_*}.py
+  - scripts/{check_elm_syntax,elm_common}.py
+  - .github/npm-linters/**
   - tests/integration/cases/**/*.elm
 
 lint-uv-scripts:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/{ada,json5,occam,toml,yaml}.{py,toml}'
+  - scripts/run_{ada,json5,occam,toml,yaml}{,_*}.py
+  - scripts/check_{ada,occam,toml}_syntax.py
+  - scripts/{a_stub,roundtrip_a_stub}.{adb,ads}
   - tests/integration/cases/**/*.{adb,occ,toml,yaml}
 
 lint-dotnet:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/{csharp,fsharp,vb}.{py,toml}'
+  - scripts/run_{csharp,fsharp,vb}{,_*}.py
+  - scripts/lint-{csharp,vb}/**
   - tests/integration/cases/**/*.{cs,fs,fsi,vb}
 
 lint-sml:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/sml.{py,toml}'
+  - scripts/run_sml{,_*}.py
   - tests/integration/cases/**/*.sml
 
 lint-elixir:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/elixir.{py,toml}'
+  - scripts/run_elixir{,_*}.py
+  - scripts/{lint-elixir,run-elixir-strict}.exs
   - tests/integration/cases/**/*.ex
 
 lint-erlang:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/erlang.{py,toml}'
+  - scripts/run_erlang{,_*}.py
+  - scripts/{check_erlang_binary_programs.py,run_erlang.escript}
   - tests/integration/cases/**/*.erl
 
 lint-gleam:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/gleam.{py,toml}'
+  - scripts/run_gleam{,_*}.py
+  - scripts/{check_gleam_syntax.py,lint-gleam.toml}
   - tests/integration/cases/**/*.gleam
 
 lint-jvm-mini:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/{clojure,groovy}.{py,toml}'
+  - scripts/run_{clojure,groovy}{,_*}.py
+  - .clj-kondo/**
+  - scripts/lint-groovy.groovy
   - tests/integration/cases/**/*.{clj,groovy}
 
 lint-haskell-family:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/{haskell,purescript}.{py,toml}'
+  - scripts/run_{haskell,purescript}{,_*}.py
+  - scripts/{check_purescript_syntax,purescript_common}.py
   - tests/integration/cases/**/*.{hs,purs}
 
 lint-c-tidy:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/c.{py,toml}'
+  - ci/clang/**
+  - scripts/build_cpp_toolchain.py
+  - .clang-tidy
   - tests/integration/cases/**/*.c
 
+# Include the paths that select jobs needing this toolchain artifact.
 build-cpp-toolchain:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/{c,cpp}.{py,toml}'
+  - scripts/run_cpp{,_*}.py
+  - scripts/build_cpp_toolchain.py
+  - ci/clang/**
+  - .clang-tidy
+  - scripts/{lint-cpp-fixture,run-bounded}.sh
   - tests/integration/cases/**/*.{c,cpp}
 
 lint-cpp-tidy:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/cpp.{py,toml}'
+  - scripts/{lint-cpp-fixture,run-bounded}.sh
+  - ci/clang/**
+  - scripts/build_cpp_toolchain.py
+  - .clang-tidy
   - tests/integration/cases/**/*.cpp
 
 lint-cobol:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/cobol.{py,toml}'
+  - scripts/run_cobol{,_*}.py
   - tests/integration/cases/**/*.cob
 
 lint-cpp:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/cpp.{py,toml}'
+  - scripts/run_cpp{,_*}.py
+  - scripts/{lint-cpp-fixture,run-bounded}.sh
+  - ci/clang/**
+  - scripts/build_cpp_toolchain.py
   - tests/integration/cases/**/*.cpp
 
 lint-kotlin:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/kotlin.{py,toml}'
+  - scripts/run_kotlin{,_*}.py
+  - scripts/lint-kotlin.kts
   - tests/integration/cases/**/*.kts
 
 lint-swift:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/swift.{py,toml}'
+  - scripts/run_swift{,_*}.py
+  - scripts/{run-bounded,swift-gpg,test-swift-gpg}.sh
   - tests/integration/cases/**/*.swift
 
 lint-ocaml:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/ocaml.{py,toml}'
+  - scripts/run_ocaml{,_*}.py
   - tests/integration/cases/**/*.ml
 
 lint-commonlisp:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/common_lisp.{py,toml}'
+  - scripts/run_common_lisp{,_*}.py
   - tests/integration/cases/**/*.lisp
 
 lint-scala:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/scala.{py,toml}'
+  - scripts/run_scala{,_*}.py
+  - .github/coursier-mirror.properties
   - tests/integration/cases/**/*.scala
 
 lint-haxe:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/haxe.{py,toml}'
+  - scripts/run_haxe{,_*}.py
   - tests/integration/cases/**/*.hx
 
 lint-dart:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/dart.{py,toml}'
+  - scripts/run_dart{,_*}.py
   - tests/integration/cases/**/*.dart
 
 lint-julia:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/julia.{py,toml}'
+  - scripts/run_julia{,_*}.py
   - tests/integration/cases/**/*.jl
 
 lint-go:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/go.{py,toml}'
+  - scripts/run_go{,_*}.py
   - tests/integration/cases/**/*.go
 
 lint-rust:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/rust.{py,toml}'
+  - scripts/run_rust{,_*}.py
   - tests/integration/cases/**/*.rs
 
 lint-r:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/r.{py,toml}'
+  - scripts/run_r{,_*}.py
   - tests/integration/cases/**/*.R
 
 lint-d:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/d.{py,toml}'
+  - scripts/run_d{,_*}.py
   - tests/integration/cases/**/*.d
 
 lint-crystal:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/crystal.{py,toml}'
+  - scripts/run_crystal{,_*}.py
   - tests/integration/cases/**/*.cr
 
 lint-mojo:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/mojo.{py,toml}'
+  - scripts/run_mojo{,_*}.py
+  - scripts/lint-mojo{,-fixture}.sh
   - tests/integration/cases/**/*.mojo
 
 lint-nim:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/nim.{py,toml}'
+  - scripts/run_nim{,_*}.py
   - tests/integration/cases/**/*.nim
 
 lint-python:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/python.{py,toml}'
+  - scripts/run_python{,_*}.py
   - tests/integration/cases/**/*.py
 
 lint-racket:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/racket.{py,toml}'
+  - scripts/run_racket{,_*}.py
   - tests/integration/cases/**/*.rkt
 
 lint-raku:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/raku.{py,toml}'
+  - scripts/run_raku{,_*}.py
+  - scripts/run_interpreted_fixtures.py
   - tests/integration/cases/**/*.raku
 
 lint-zig:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/zig.{py,toml}'
+  - scripts/run_zig{,_*}.py
   - tests/integration/cases/**/*.zig
 
 lint-systemverilog:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/systemverilog.{py,toml}'
+  - scripts/run_systemverilog{,_*}.py
   - tests/integration/cases/**/*.sv
 
 lint-v:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/v.{py,toml}'
+  - scripts/run_v{,_*}.py
+  - scripts/check_v_syntax.py
   - tests/integration/cases/**/*.v
 
 lint-objectivec:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/objective_c.{py,toml}'
+  - scripts/run_objective_c{,_*}.py
+  - scripts/lint-objc-pch.h
   - tests/integration/cases/*/*.m
   - tests/integration/cases/*/goldens/objective_c/*/*.m
 
 lint-objectivec-tidy:
   - *shared
+  - '{src/literalizer/languages,tests/integration/languages}/objective_c.{py,toml}'
+  - .clang-tidy
   - tests/integration/cases/*/*.m
   - tests/integration/cases/*/goldens/objective_c/*/*.m
