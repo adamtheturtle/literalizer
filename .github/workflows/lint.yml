@@ -1801,11 +1801,7 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_haskell_roundtrip
 
       - name: Lint PureScript
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .purs > /tmp/files-purescript && test -s /tmp/files-purescript
-          xargs -0 -P "$(nproc)" -n 1 uv run --only-group=cli python -m scripts.check_purescript_syntax < /tmp/files-purescript
-      - name: Run PureScript files
-        run: xargs -0 uv run --only-group=cli python -m scripts.run_purescript < /tmp/files-purescript
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_purescript_fixtures
 
       # Basic JSON -> PureScript -> JSON round-trip (issue 1867). Runs
       # here because this is the job with the `purs` binary (from
