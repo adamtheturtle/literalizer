@@ -145,8 +145,6 @@ class VariantPolicy(  # noqa: NOD001
     record_language_version: str | None = None
     """``VersionFormats`` member name the record variants select."""
 
-    """Fixture preamble hosting an externally declared record shape."""
-
     heterogeneous_value_variant_name_strategy: str | None = None
     """Strategy name the value-variant-name goldens select."""
 
