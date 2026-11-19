@@ -177,11 +177,14 @@ def _scalar_collection_rejection(
             match="cannot preserve native set semantics",
         )
     if (
-        native
-        and isinstance(data, dict)
-        and not spec.supports_non_string_dict_keys
-        and spec.dict_format.name not in {"RECORD", "ANONYMOUS_RECORD"}
-        and all(isinstance(item, (int, str)) for item in data.values())
+        not native
+        or not isinstance(data, dict)
+        or spec.supports_non_string_dict_keys
+        or spec.dict_format.name in {"RECORD", "ANONYMOUS_RECORD"}
+    ):
+        return None
+    if (
+        all(isinstance(item, (int, str)) for item in data.values())
         and len({type(key) for key in data}) == 1
         and all(
             isinstance(key, (dt.date, dt.time))
