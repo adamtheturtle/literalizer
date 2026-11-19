@@ -17,7 +17,7 @@ zip_input_format = "yaml"
 [call.transform]
 kind = "arguments"
 arguments = ['''r"a\ // payload"''']
-suffix = " // note"
+outer = "{call} // note"
 
 [call.fixture]
 kind = "composed"
@@ -38,8 +38,7 @@ zip_input_format = "yaml"
 [call_examples.transform]
 kind = "arguments"
 arguments = ['r#"a\ // payload"#']
-suffix = " // note"
-outer = "wrap_widget(\n    {call}\n)"
+outer = "wrap_widget(\n    {call} // note\n)"
 stub_names = ["wrap_widget"]
 stub_param_names = ["value"]
 
@@ -62,8 +61,7 @@ zip_input_format = "json"
 [call_examples.transform]
 kind = "arguments"
 arguments = ['r#"a\ // payload"#']
-suffix = " // note"
-outer = "wrap_widget(\n    {call}\n    , {zipped}\n)"
+outer = "wrap_widget(\n    {call} // note\n    , {zipped}\n)"
 stub_names = ["wrap_widget"]
 stub_param_names = ["value", "zipped"]
 
@@ -86,8 +84,7 @@ zip_input_format = "yaml"
 [call_examples.transform]
 kind = "arguments"
 arguments = ['r#"a\ // payload"#']
-suffix = " // note"
-outer = "wrap_widget(\n    {call}\n    , {zipped}\n)"
+outer = "wrap_widget(\n    {call} // note\n    , {zipped}\n)"
 stub_names = ["wrap_widget"]
 stub_param_names = ["value", "zipped"]
 

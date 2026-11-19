@@ -13,7 +13,7 @@ variable_form = "new"
 [call.transform]
 kind = "arguments"
 arguments = ['`// payload`']
-suffix = " // note"
+outer = "{call} // note"
 
 [call.fixture]
 kind = "composed"
