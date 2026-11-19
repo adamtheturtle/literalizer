@@ -24,13 +24,13 @@ program is even produced.  Same shape as the Go, TypeScript, Zig,
 Swift, Rust, D, and C++ exclusions.
 """
 
-import os
 import shutil
 
 import click
 
 from literalizer.languages import Nim
 from scripts import roundtrip_common
+from scripts.nim_warning_flags import NIM_WARNING_FLAGS
 
 _VAR_NAME = "myData"
 _LABEL = "Nim"
@@ -76,7 +76,7 @@ def main() -> None:
                     "c",
                     "-r",
                     "--hints:off",
-                    *os.environ["NIM_WARNING_FLAGS"].split(),
+                    *NIM_WARNING_FLAGS,
                     "--nimcache:.",
                     "main.nim",
                 ],
