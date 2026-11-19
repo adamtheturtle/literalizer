@@ -5,6 +5,11 @@ schema_version = 1
 # Keep the compiler's other warnings fatal for these fixtures.
 intentional_identifier_preamble = ["// Preserve intentional caller identifier spelling.", "#![allow(non_snake_case)]"]
 
+[golden.reference_observer]
+target_function = "to_value"
+transform = 'println!("{{}}", {call}.unwrap())'
+preamble = 'use serde_json::to_value;'
+
 [variants]
 supports_special_float_dict_keys = false
 record = ["field_type_split", "keyword_field", "unify_optional_fields"]

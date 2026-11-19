@@ -144,7 +144,6 @@ from literalizer._statements import (
     CharacterAndHashRawLiterals,
 )
 from literalizer._types import CallPreambleData, OrderedMap, Scalar, Value
-from literalizer.equality_assertions import EqualityAssertion
 from literalizer.exceptions import (
     IncompatibleFormatsError,
     InvalidRecordNameError,
@@ -3135,12 +3134,6 @@ def _rust_type_var(*, index: int) -> str:
 
 
 @beartype
-def _format_equality_assertion(actual: str, expected: str, /) -> str:
-    """Compare two expressions with an active failure path."""
-    return f"assert_eq!({actual}, {expected})"
-
-
-@beartype
 def _rust_call_stub(
     parts: Sequence[str],
     params: Sequence[str],
@@ -3476,10 +3469,6 @@ class Rust(metaclass=LanguageCls):
     supports_multiline_string_literals = True
     supports_empty_sibling_sequence_type_hints = True
     supports_typed_dict_open = False
-    equality_assertion: ClassVar[EqualityAssertion] = EqualityAssertion(
-        format_assertion=_format_equality_assertion,
-        preamble=(),
-    )
     language_id: ClassVar[str] = "rust"
     variant_metadata: ClassVar[VariantMetadata] = VariantMetadata(
         round_trip_capabilities=frozenset(

@@ -46,8 +46,16 @@ run)
         clang++ "-std=$standard" -Werror \
         "$source_path" \
         -o "$temporary_directory/run"
-    scripts/run-bounded.sh "$fixture_path" --signal=KILL 60s \
-        "$temporary_directory/run"
+    case_manifest="${fixture_path%/*}/case.toml"
+    if [[ "$fixture_path" == */Cpp*_ref_default@*.cpp ]] &&
+        grep -qsF 'value-check' "$case_manifest"; then
+        uv run --no-dev --group=fixture-inventory \
+            python -m scripts.reference_observations \
+            "$fixture_path" "$temporary_directory/run"
+    else
+        scripts/run-bounded.sh "$fixture_path" --signal=KILL 60s \
+            "$temporary_directory/run"
+    fi
     ;;
 *)
     echo "Unknown C++ fixture lint mode: $mode" >&2

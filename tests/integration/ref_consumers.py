@@ -29,6 +29,7 @@ from .case_manifests import (
     RefValueCheckSpec,
 )
 from .golden_checks import fixture_contents
+from .language_metadata import ReferenceObserverSpec, language_metadata
 from .language_specs import (
     find_redefinition_styles,
     reference_case_for_declaration_style,
@@ -37,54 +38,32 @@ from .reference_inputs import RefData
 
 
 @beartype
-def _compose_ref_value_check(
+def _compose_ref_observations(
     *,
     context: ExternalRefContext,
-    consumer: RefValueCheckSpec,
-    equality_assertion: literalizer.EqualityAssertion,
+    observer: ReferenceObserverSpec,
     spec: literalizer.Language,
     declarations: list[literalizer.LiteralizeResult],
     result: literalizer.LiteralizeResult,
 ) -> literalizer.LiteralizeResult:
-    """Assert a reference result against an independently rendered value.
-
-    Expected data is rendered separately, after the operation under test,
-    and never participates in its reference inference.
-    """
-    if "my_data" in context.declarations:
-        initial_source = context.declarations["my_data"]
-        initial_check = literalizer.literalize_call(
-            source=f'[[{{"$ref": "my_data"}}, {initial_source}]]',
-            target_function="assert_equal",
-            call_transform=equality_assertion,
-            parameter_names=("actual", "expected"),
-            input_format=literalizer.InputFormat.JSON,
-            language=spec,
-            ref_key="$ref",
-        )
-        declarations.append(initial_check)
-    expected = literalizer.literalize(
-        source=consumer.expected_source,
+    """Expose live bindings for the native runner to compare."""
+    observation = literalizer.literalize_call(
+        source='{"$ref": "my_data"}',
+        target_function=observer.target_function,
+        call_transform=observer.transform,
+        parameter_names=("value",),
         input_format=literalizer.InputFormat.JSON,
         language=spec,
-        variable_form=literalizer.NewVariable(
-            name="expected_data", modifiers=frozenset()
-        ),
-    )
-    assertion = literalizer.literalize_call(
-        source='[[{"$ref": "my_data"}, {"$ref": "expected_data"}]]',
-        target_function="assert_equal",
-        call_transform=equality_assertion,
-        parameter_names=("actual", "expected"),
-        input_format=literalizer.InputFormat.JSON,
-        language=spec,
+        per_element=False,
         ref_key="$ref",
     )
+    if "my_data" in context.declarations:
+        declarations.append(observation)
     return literalizer.literalize_call_with_declarations(
         language=spec,
-        declarations=[*declarations, result, expected],
-        call=assertion,
-        extra_preamble=equality_assertion.preamble,
+        declarations=[*declarations, result],
+        call=observation,
+        extra_preamble=(observer.preamble.rstrip(),),
     )
 
 
@@ -319,12 +298,12 @@ def compose_external_ref_fixture(
         declarations.append(declaration)
     consumer = context.consumer
     if isinstance(consumer, RefValueCheckSpec):
-        equality_assertion = literalizer.equality_assertion_for(language=spec)
-        if equality_assertion is not None:
-            return _compose_ref_value_check(
+        metadata = language_metadata(language_id=spec.language_id)
+        observer = metadata.golden.reference_observer
+        if observer is not None:
+            return _compose_ref_observations(
                 context=context,
-                consumer=consumer,
-                equality_assertion=equality_assertion,
+                observer=observer,
                 spec=spec,
                 declarations=declarations,
                 result=result,

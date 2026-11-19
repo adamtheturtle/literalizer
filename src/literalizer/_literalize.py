@@ -14,7 +14,6 @@ from typing import (
     TypeGuard,
     assert_never,
     overload,
-    override,
     runtime_checkable,
 )
 
@@ -288,28 +287,6 @@ class CallContext:
     language-native literal, or ``None`` when no ``zip_source`` was
     supplied.
     """
-
-    @property
-    def arguments(self) -> tuple[str, ...]:
-        """Rendered operands in source order, before call-style delimiters.
-
-        Contexts constructed directly have no rendered operands.
-        """
-        return ()
-
-
-@beartype
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class _RenderedCallContext(CallContext):
-    """A transform context populated by the call renderer."""
-
-    rendered_arguments: tuple[str, ...]
-
-    @property
-    @override
-    def arguments(self) -> tuple[str, ...]:
-        """Return the operands already rendered for this call."""
-        return self.rendered_arguments
 
 
 @runtime_checkable
@@ -7405,15 +7382,6 @@ def format_rendered_call_arguments(
 
 
 @beartype
-@dataclasses.dataclass(frozen=True)
-class _RenderedCallArguments:
-    """Individual operands and their assembled call-style syntax."""
-
-    operands: tuple[str, ...]
-    syntax: str
-
-
-@beartype
 def _format_call_args(
     *,
     values: Sequence[Value],
@@ -7431,7 +7399,7 @@ def _format_call_args(
     consume_inhibited_ref_names: frozenset[str],
     ref_key: str,
     collection_layout: CollectionLayout,
-) -> _RenderedCallArguments:
+) -> str:
     """Format argument values for a single function call.
 
     For infix styles returns the parenthesized argument list
@@ -7474,14 +7442,12 @@ def _format_call_args(
         for slot_index, arg_value in enumerate(iterable=values)
     ]
 
-    syntax = format_rendered_call_arguments(
+    return format_rendered_call_arguments(
         formatted=formatted,
         params=params,
         style=style,
         allows_empty_call_parens=language.allows_empty_call_parens,
     )
-
-    return _RenderedCallArguments(operands=tuple(formatted), syntax=syntax)
 
 
 @beartype
@@ -7553,7 +7519,7 @@ def _assemble_call(
     *,
     identity_statement_formatter: Callable[[str], str] | None,
     target_function: str,
-    arguments: _RenderedCallArguments,
+    args_str: str,
     call_transform: Callable[[CallContext], str] | None,
     statement_terminator: str,
     style: CallStyle,
@@ -7570,17 +7536,16 @@ def _assemble_call(
     """
     call_expr = assemble_call_expression(
         target_function=target_function,
-        args_str=arguments.syntax,
+        args_str=args_str,
         style=style,
     )
     if call_transform is not None:
         transformed_call = call_transform(
-            _RenderedCallContext(
+            CallContext(
                 call=call_expr,
                 index=index,
                 row=row,
                 zipped=zipped,
-                rendered_arguments=arguments.operands,
             )
         )
         if (
@@ -7657,7 +7622,7 @@ def _resolve_comment_literals(
 def _render_variable_bound_call(
     *,
     target_function: str,
-    arguments: _RenderedCallArguments,
+    args_str: str,
     call_transform: Callable[[CallContext], str] | None,
     style: CallStyle,
     index: int,
@@ -7680,7 +7645,7 @@ def _render_variable_bound_call(
     call_expr = _assemble_call(
         identity_statement_formatter=None,
         target_function=target_function,
-        arguments=arguments,
+        args_str=args_str,
         call_transform=call_transform,
         statement_terminator="",
         style=style,
@@ -7793,7 +7758,7 @@ def _render_call_per_element(
             data=non_ref_args,
             spec=language,
         )
-        arguments = _format_call_args(
+        args_str = _format_call_args(
             values=arg_values,
             params=parameter_names,
             language=language,
@@ -7823,7 +7788,7 @@ def _render_call_per_element(
             rendered_elements.append(
                 _render_variable_bound_call(
                     target_function=target_function,
-                    arguments=arguments,
+                    args_str=args_str,
                     call_transform=call_transform,
                     style=style,
                     index=index,
@@ -7844,7 +7809,7 @@ def _render_call_per_element(
                                 language=language
                             ),
                             target_function=target_function,
-                            arguments=arguments,
+                            args_str=args_str,
                             call_transform=call_transform,
                             statement_terminator=(
                                 language.statement_terminator
@@ -7912,7 +7877,7 @@ def _render_call_whole(
     else:
         call_wrap_ids = frozenset[int]()
         call_tuple_list_ids = frozenset[int]()
-    arguments = _format_call_args(
+    args_str = _format_call_args(
         values=[data],
         params=parameter_names,
         language=language,
@@ -7947,7 +7912,7 @@ def _render_call_whole(
                         language=language
                     ),
                     target_function=target_function,
-                    arguments=arguments,
+                    args_str=args_str,
                     call_transform=call_transform,
                     statement_terminator=language.statement_terminator,
                     style=style,
@@ -7961,7 +7926,7 @@ def _render_call_whole(
         )
     return _render_variable_bound_call(
         target_function=target_function,
-        arguments=arguments,
+        args_str=args_str,
         call_transform=call_transform,
         style=style,
         index=0,

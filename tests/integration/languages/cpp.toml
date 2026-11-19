@@ -1,5 +1,14 @@
 schema_version = 1
 
+[golden.reference_observer]
+target_function = "json"
+transform = "std::cout << {call}.dump() << '\\n'"
+preamble = '''
+#include <iostream>
+#include <nlohmann/json.hpp>
+using nlohmann::json;
+'''
+
 [variants]
 pre_indent_comment_scalar = true
 record = ["field_type_split"]

@@ -1,12 +1,9 @@
+use serde_json::to_value;
 fn main() {
     let a = 0;
     let my_data = vec![
         a,
         1,
     ];
-    let expected_data = vec![
-        0,
-        1,
-    ];
-    assert_eq!(my_data.clone(), expected_data.clone());
+    println!("{}", to_value(my_data.clone()).unwrap());
 }
