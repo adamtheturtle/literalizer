@@ -705,17 +705,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release: ${{ env.ODIN_VERSION }}
       - name: Run Odin files
-        run: |-
-          mapfile -d '' -t files < <(uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .odin "$ODIN_FIXTURE_TAG")
-          n=${#files[@]}
-          test "$n" -gt 0
-          for (( i=ODIN_SHARD; i<n; i+=ODIN_SHARDS )); do
-            src=$(realpath "${files[i]}")
-            # Print before running so a timeout log identifies the
-            # fixture to minimize for an upstream Odin bug report.
-            printf 'Running %s\n' "$src"
-            bash scripts/lint-odin-fixture.sh "$src"
-          done
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_odin_fixtures
+          "$ODIN_FIXTURE_TAG" --shard "$ODIN_SHARD" --shards "$ODIN_SHARDS"
       # Basic JSON -> Odin -> JSON round-trip (issue 2670). Runs here
       # because this is the job with the Odin toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
