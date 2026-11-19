@@ -1,8 +1,8 @@
 """Compose native consumers around rendered reference results."""
 
 import dataclasses
+import functools
 import json
-from pathlib import Path
 
 from beartype import beartype
 from pydantic import TypeAdapter
@@ -38,6 +38,21 @@ from .reference_inputs import RefData
 
 
 @beartype
+def _assert_equal(
+    context: literalizer.CallContext, /, *, spec: literalizer.Language
+) -> str:
+    """Compare two rendered operands with an active native failure
+    path.
+    """
+    actual, expected = context.arguments
+    if spec.language_id == "rust":
+        return f"assert_eq!({actual}, {expected})"
+    return (
+        f"(({actual}) != ({expected}) ? std::abort() : static_cast<void>(0))"
+    )
+
+
+@beartype
 def _compose_ref_value_check(
     *,
     context: ExternalRefContext,
@@ -51,11 +66,13 @@ def _compose_ref_value_check(
     Expected data is rendered separately, after the operation under test,
     and never participates in its reference inference.
     """
+    transform = functools.partial(_assert_equal, spec=spec)
     if "my_data" in context.declarations:
         initial_source = context.declarations["my_data"]
         initial_check = literalizer.literalize_call(
             source=f'[[{{"$ref": "my_data"}}, {initial_source}]]',
             target_function="assert_equal",
+            call_transform=transform,
             parameter_names=("actual", "expected"),
             input_format=literalizer.InputFormat.JSON,
             language=spec,
@@ -73,19 +90,19 @@ def _compose_ref_value_check(
     assertion = literalizer.literalize_call(
         source='[[{"$ref": "my_data"}, {"$ref": "expected_data"}]]',
         target_function="assert_equal",
+        call_transform=transform,
         parameter_names=("actual", "expected"),
         input_format=literalizer.InputFormat.JSON,
         language=spec,
         ref_key="$ref",
     )
-    helper = (
-        Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
-    )
     return literalizer.literalize_call_with_declarations(
         language=spec,
         declarations=[*declarations, result, expected],
         call=assertion,
-        extra_preamble=(helper.read_text(encoding="utf-8").rstrip(),),
+        extra_preamble=("#include <cstdlib>",)
+        if spec.language_id == "cpp"
+        else (),
     )
 
 
@@ -318,11 +335,11 @@ def compose_external_ref_fixture(
             ),
         )
         declarations.append(declaration)
-    assertion_helper = (
-        Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
-    )
     consumer = context.consumer
-    if isinstance(consumer, RefValueCheckSpec) and assertion_helper.is_file():
+    if isinstance(consumer, RefValueCheckSpec) and spec.language_id in {
+        "cpp",
+        "rust",
+    }:
         return _compose_ref_value_check(
             context=context,
             consumer=consumer,

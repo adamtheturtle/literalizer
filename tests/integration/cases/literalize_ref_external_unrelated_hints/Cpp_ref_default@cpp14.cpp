@@ -1,11 +1,6 @@
 #include <vector>
 #include <utility>
 #include <cstdlib>
-
-template <typename Actual, typename Expected>
-void assert_equal(const Actual& actual, const Expected& expected) {
-    if (actual != expected) { std::abort(); }
-}
 int main() {
 auto missing = std::vector<int>{
     1,
@@ -16,6 +11,6 @@ auto expected_data = std::vector<int>{
     1,
     2,
 };
-assert_equal(my_data, expected_data);
+((my_data) != (expected_data) ? std::abort() : static_cast<void>(0));
     return 0;
 }

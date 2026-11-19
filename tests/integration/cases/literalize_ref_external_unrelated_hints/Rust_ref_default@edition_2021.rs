@@ -1,10 +1,3 @@
-fn assert_equal<Actual, Expected>(actual: Actual, expected: Expected)
-where
-    Actual: std::fmt::Debug + PartialEq<Expected>,
-    Expected: std::fmt::Debug,
-{
-    assert_eq!(actual, expected);
-}
 fn main() {
     let missing = vec![
         1,
@@ -15,5 +8,5 @@ fn main() {
         1,
         2,
     ];
-    assert_equal(my_data.clone(), expected_data.clone());
+    assert_eq!(my_data.clone(), expected_data.clone());
 }
