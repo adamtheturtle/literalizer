@@ -12,17 +12,10 @@ from scripts.bounded_command import bounded_command
 from scripts.fixture_staging import stage_ada_fixture
 
 
-@click.command()
-@click.argument("filename")
-def main(filename: str) -> None:
-    """Check syntax of the given Ada golden file."""
-    gnatmake_path = shutil.which(cmd="gnatmake")
-    if gnatmake_path is None or gnatmake_path == "":
-        gnatmake_path = "gnatmake"
+def check_fixture(*, fixture: Path, gnatmake_path: str) -> bool:
+    """Check syntax of one staged Ada fixture."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_src = stage_ada_fixture(
-            fixture=Path(filename), workspace=Path(tmpdir)
-        )
+        tmp_src = stage_ada_fixture(fixture=fixture, workspace=Path(tmpdir))
         # `-gnat2022` matches `Ada.language_version` in
         # `src/literalizer/languages/ada.py`; keep them in sync.
         result = subprocess.run(
@@ -35,7 +28,7 @@ def main(filename: str) -> None:
                     "-gnats",
                     tmp_src.name,
                 ],
-                fixture=filename,
+                fixture=str(object=fixture),
                 timeout_seconds=60,
             ),
             capture_output=True,
@@ -44,8 +37,21 @@ def main(filename: str) -> None:
             cwd=tmpdir,
         )
     if result.returncode != 0:
-        msg = f"{filename}: Ada syntax error\n{result.stderr}"
+        msg = f"{fixture}: Ada syntax error\n{result.stderr}"
         _ = sys.stderr.write(msg)
+        return False
+
+    return True
+
+
+@click.command()
+@click.argument("filename")
+def main(filename: str) -> None:
+    """Check syntax of the given Ada golden file."""
+    gnatmake_path = shutil.which(cmd="gnatmake")
+    if gnatmake_path is None or gnatmake_path == "":
+        gnatmake_path = "gnatmake"
+    if not check_fixture(fixture=Path(filename), gnatmake_path=gnatmake_path):
         sys.exit(1)
 
 
