@@ -1538,7 +1538,9 @@ AXES: Mapping[str, Axis] = _registry(
         overrides=(
             member(option=_HETEROGENEOUS_STRATEGY, name="RECORD"),
             fixed_options(
-                record_shape_names={frozenset(("value",)): _MOVE_ONLY_RECORD},
+                record_shape_names={
+                    frozenset(("move_guard",)): _MOVE_ONLY_RECORD
+                },
                 move_only_record_names=frozenset({_MOVE_ONLY_RECORD}),
             ),
         ),

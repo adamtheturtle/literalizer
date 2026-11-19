@@ -1,0 +1,12 @@
+schema_version = 1
+summary = "Move-only records must name a configured record shape."
+exceptions = ["InvalidRecordNameError"]
+gates = [{kind = "spec_field_present", field = "move_only_record_names"}]
+
+[call]
+api = "constructor"
+kwargs = [
+  {kind = "option_member", option = "heterogeneous_strategy", member = "RECORD"},
+  {kind = "record_shape_names", key_sets = [["value"]], names = ["UserRecord"]},
+  {kind = "text_set", kwarg = "move_only_record_names", values = ["UnknownRecord"]},
+]
