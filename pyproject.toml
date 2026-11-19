@@ -120,7 +120,7 @@ dev = [
     "tenacity==9.2.1",
     "towncrier==26.9.0",
     "ty==0.0.104",
-    "types-pygments==2.21.0.20260819",
+    "types-pygments==2.21.0.20261115",
     "types-pyyaml==6.0.12.20261113",
     "vale==3.27.0.0",
     "vulture==2.16",
