@@ -355,6 +355,8 @@ Continuous integration
 Tests are run on GitHub Actions.
 The configuration for this is in :file:`.github/workflows/`.
 
+The Lint workflow selects native jobs on pull requests based on changes to fixtures, language modules, manifests, and runners, with full native validation for shared inputs, pushes to ``main``, and nightly or manual runs.
+
 Code generation benchmarks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

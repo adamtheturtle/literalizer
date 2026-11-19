@@ -60,7 +60,7 @@ def _empty_mapping_contract() -> frozenset[literalizer.LanguageCls]:
             contract="empty_dict_indistinct_from_sequence",
             error=UnrepresentableEmptyDictError,
         )
-        # COBOL checks several lossy representations in source order.
+        # COBOL checks for loss of information in source order.
         # The presence of an empty mapping alone does not predict its error.
         if case.lang_cls.language_id != "cobol"
     )
