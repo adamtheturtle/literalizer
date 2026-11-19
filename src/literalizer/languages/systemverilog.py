@@ -415,11 +415,11 @@ else:
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SystemVerilog(metaclass=LanguageCls):
-    r"""SystemVerilog language specification.
+    """SystemVerilog language specification.
 
-    An escaped variable name such as ``\`+ `` includes its leading
-    backslash and its terminating space. Use the simple spelling for
-    names that already match the simple identifier grammar.
+    An escaped variable name includes its leading backslash and
+    terminating space. Use the simple spelling for names that already
+    match the simple identifier grammar.
     """
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
