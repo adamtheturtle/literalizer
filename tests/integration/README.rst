@@ -138,15 +138,25 @@ Python native datetimes retain naive values; Ruby represents naive input in UTC.
 Special floats compare by NaN/infinity classification, and finite floats retain their exact bits.
 Existing JSON roundtrips and specialized native assertions retain their distinct contracts.
 
-The ordinary native jobs execute these self-contained files without another runner or transport format.
-``test_native_value_consumers.py`` verifies failures after corrupting generated declarations while leaving their assertions unchanged, using bounded native execution.
-The Python corruption checks run with the regular pytest suite.
-Run the Ruby checks with Ruby 3 or later on ``PATH``::
+The ordinary native jobs execute the self-contained files and their assertions.
+The same consumer marker also selects Python and Ruby fixtures for the shared typed oracle.
+The oracle executes the saved declaration with a standard-library inspector and compares the resulting observation to the authored JSON, YAML and native substitutions.
+Each JSON node carries a type tag.
+Integers use decimal strings, finite binary64 values use exact bits, and non-finite values use their classification.
+Native bytes use hex and datetimes carry exact epoch microseconds and offset microseconds separately.
+Mapping entries retain typed keys and compare independently of entry order.
+Dataclass variants project their declared fields to a mapping only after checking that a native dataclass was produced.
+
+``test_native_value_consumers.py`` checks both the embedded assertions and the typed oracle by corrupting generated declarations.
+An offset corruption that preserves the instant must still fail.
+The Python checks run with the regular pytest suite.
+Run the Ruby observations and corruption controls with Ruby 3 or later on ``PATH``::
 
     LITERALIZER_TEST_RUBY=1 uv run --no-dev --group=test python -m pytest -n 0 tests/integration/test_native_value_consumers.py -k ruby
 
-Successful execution of the original programs remains with the existing native jobs.
-Fixtures without native assertions retain their existing snapshot, compiler and native checks.
+Use ``pytest --collect-only -q tests/integration/test_native_value_consumers.py -k observation`` to list the fixtures with shared typed coverage.
+Cases, backends and variants absent from that list receive their ordinary snapshot and, where available, compile or execution checks.
+The Go and Ruby JSON roundtrips also compare the signed-zero field through the typed oracle while comparing the rest of the document under the JSON contract.
 
 After installing Bash 5.1+, Ruby or Node, run the same fixture checks as CI::
 

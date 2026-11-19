@@ -1,19 +1,25 @@
-"""Corruption controls for native assertions in compiling golden files."""
+"""Typed observations and corruption controls for native golden files."""
 
 import dataclasses
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 import pytest
+from pydantic import JsonValue
 
 from literalizer.languages import Python, Ruby
+from scripts.native_golden_observations import (
+    CONSUMER_MARKER,
+    check_golden_observation,
+    expected_observation,
+    run_golden_program,
+)
 
+from .case_manifests import load_case_manifest
 from .language_specs import make_golden_path
 
-_MARKER = "# Independent native value checks."
 _CASES = Path(__file__).parent / "cases"
 _BACKENDS = {
     "python": (
@@ -33,6 +39,60 @@ _RUBY_OPT_IN = pytest.mark.skipif(
     condition=os.environ.get(key="LITERALIZER_TEST_RUBY") != "1",
     reason="Set LITERALIZER_TEST_RUBY=1 with Ruby 3+ on PATH",
 )
+
+
+def _expected(*, fixture: Path) -> JsonValue:
+    """Read the original input with its authored native substitutions."""
+    manifest = load_case_manifest(case_dir=fixture.parent)
+    return expected_observation(
+        fixture=fixture,
+        input_path=manifest.input.path,
+        substitutions=manifest.base_context.resolved_record_null_substitutions(),
+    )
+
+
+def _observed_fixtures() -> list[pytest.ParameterSet]:
+    """Select the capability groups with authored native consumers."""
+    params: list[pytest.ParameterSet] = []
+    for manifest in sorted(_CASES.glob(pattern="*/case.toml")):
+        if CONSUMER_MARKER not in manifest.read_text(encoding="utf-8"):
+            continue
+        for fixture in sorted(manifest.parent.iterdir()):
+            if fixture.suffix not in {".py", ".rb"}:
+                continue
+            if CONSUMER_MARKER not in fixture.read_text(encoding="utf-8"):
+                continue
+            backend = "python" if fixture.suffix == ".py" else "ruby"
+            params.append(
+                pytest.param(
+                    backend,
+                    fixture,
+                    marks=() if backend == "python" else _RUBY_OPT_IN,
+                    id=f"{fixture.parent.name}/{fixture.name}",
+                )
+            )
+    return params
+
+
+@pytest.mark.parametrize(
+    argnames=("backend_name", "fixture"),
+    argvalues=_observed_fixtures(),
+)
+def test_native_golden_observation(
+    *, backend_name: str, fixture: Path, tmp_path: Path
+) -> None:
+    """Compare native values with the authored input and selected contract."""
+    _, command, _, _ = _BACKENDS[backend_name]
+    declaration, _ = fixture.read_text(encoding="utf-8").split(
+        sep=CONSUMER_MARKER, maxsplit=1
+    )
+    check_golden_observation(
+        fixture=fixture,
+        declaration=declaration,
+        command=command,
+        expected=_expected(fixture=fixture),
+        scratch=tmp_path,
+    )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -114,6 +174,17 @@ _CORRUPTIONS = (
         python=("minutes=30", "minutes=0"),
         ruby=("+05:30", "+05:00"),
     ),
+    Corruption(
+        case="scalar_datetime_non_utc",
+        stem_suffix="",
+        python=(
+            "hour=18, minute=0, second=0, tzinfo=datetime.timezone"
+            "(offset=datetime.timedelta(hours=5, minutes=30))",
+            "hour=17, minute=30, second=0, tzinfo=datetime.timezone"
+            "(offset=datetime.timedelta(hours=5))",
+        ),
+        ruby=('18, 0, 0, "+05:30"', '17, 30, 0, "+05:00"'),
+    ),
 )
 
 
@@ -174,22 +245,16 @@ def test_native_value_corruptions(
         version=next(iter(lang_cls.VersionFormats)),
     )
     declaration, consumer = path.read_text(encoding="utf-8").split(
-        sep=_MARKER, maxsplit=1
+        sep=CONSUMER_MARKER, maxsplit=1
     )
     old, new = (
         corruption.python if backend_name == "python" else corruption.ruby
     )
     assert old in declaration
     mutated_declaration = declaration.replace(old, new)
-    program = mutated_declaration + _MARKER + consumer
-    target = tmp_path / path.name
-    _ = target.write_text(data=program, encoding="utf-8")
-    result = subprocess.run(  # noqa: S603 - execute an authored native golden consumer
-        args=[*command, str(object=target)],
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=30,
+    program = mutated_declaration + CONSUMER_MARKER + consumer
+    result = run_golden_program(
+        fixture=path, command=command, program=program, scratch=tmp_path
     )
     assert result.returncode != 0, (
         f"{path}: native consumer missed {old!r} -> {new!r}"
@@ -213,3 +278,14 @@ def test_native_value_corruptions(
         .lstrip()
         .startswith(("assert ", "raise "))
     ), result.stderr
+
+    with pytest.raises(
+        expected_exception=AssertionError, match="native observation mismatch"
+    ):
+        check_golden_observation(
+            fixture=path,
+            declaration=mutated_declaration,
+            command=command,
+            expected=_expected(fixture=path),
+            scratch=tmp_path,
+        )

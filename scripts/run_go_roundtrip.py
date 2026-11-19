@@ -25,6 +25,7 @@ import click
 
 from literalizer.languages import Go
 from scripts import roundtrip_common
+from scripts.native_value_python import observe
 
 _VAR_NAME = "myData"
 _LABEL = "Go"
@@ -66,11 +67,14 @@ def _build_program(json_text: str) -> str:
         "\n"
         "func main() {\n"
         f"{result.code}\n"
-        f'\tnegativeZero, ok := {_VAR_NAME}["negative_zero"].(float64)\n'
-        "\tif !ok || negativeZero != 0 || !math.Signbit(negativeZero) {\n"
-        '\t\tpanic("negative_zero lost its sign")\n'
+        "\tvar observation []string\n"
+        f'\tif value, ok := {_VAR_NAME}["negative_zero"].(float64); ok {{\n'
+        '\t\tbits := fmt.Sprintf("%016x", math.Float64bits(value))\n'
+        '\t\tobservation = []string{"float", bits}\n'
         "\t}\n"
-        f"\tout, err := json.Marshal({_VAR_NAME})\n"
+        "\tout, err := json.Marshal(map[string]interface{}{\n"
+        f'\t\t"data": {_VAR_NAME}, "observation": observation,\n'
+        "\t})\n"
         "\tif err != nil {\n"
         "\t\tfmt.Fprintln(os.Stderr, err)\n"
         "\t\tos.Exit(1)\n"
@@ -103,6 +107,11 @@ def main() -> None:
         excluded_keys=_EXCLUDED_KEYS,
         expected_json=json_text,
         extra_files={"go.mod": _GO_MOD},
+        expected_observation=observe(
+            value=roundtrip_common.expected(json_text=json_text)[
+                "negative_zero"
+            ]
+        ),
     )
 
 

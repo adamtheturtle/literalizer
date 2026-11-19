@@ -15,15 +15,18 @@ import datetime as dt
 import json
 import shutil
 from fractions import Fraction
+from pathlib import Path
 
 import click
 
 from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import Ruby
 from scripts import roundtrip_common
+from scripts.native_value_python import observe
 
 _VAR_NAME = "myData"
 _LABEL = "Ruby"
+_INSPECTOR = Path(__file__).resolve().with_name(name="native_value_ruby.rb")
 
 
 def _build_program(json_text: str) -> str:
@@ -38,15 +41,12 @@ def _build_program(json_text: str) -> str:
     return (
         "# frozen_string_literal: true\n"
         "\n"
-        "require 'json'\n"
+        f"require {json.dumps(obj=str(object=_INSPECTOR))}\n"
         f"{preamble}\n"
         f"{result.code}\n"
-        f'negative_zero = {_VAR_NAME}.fetch("negative_zero")\n'
-        "unless negative_zero.is_a?(Float) && negative_zero.zero? &&\n"
-        "       (1.0 / negative_zero).negative?\n"
-        '  raise "negative_zero lost its sign"\n'
-        "end\n"
-        f"STDOUT.write(JSON.generate({_VAR_NAME}))\n"
+        f'observation = observe_native({_VAR_NAME}.fetch("negative_zero"))\n'
+        f"STDOUT.write(JSON.generate(data: {_VAR_NAME}, "
+        "observation: observation))\n"
     )
 
 
@@ -181,6 +181,11 @@ def main() -> None:
         excluded_keys=(),
         expected_json=json_text,
         extra_files=None,
+        expected_observation=observe(
+            value=roundtrip_common.expected(json_text=json_text)[
+                "negative_zero"
+            ]
+        ),
     )
     _check_date_calendars(ruby=ruby)
     _check_datetime_offsets(ruby=ruby)

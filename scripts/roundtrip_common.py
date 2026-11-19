@@ -16,9 +16,8 @@ type coverage (wide ints, large-exponent / negative-zero floats, unicode
 and escaped strings, empty/nested arrays and objects, heterogeneous
 arrays) lives in that one file rather than in many small cases.
 
-Special floats are not capability-corpus entries because strict JSON cannot
-transport NaN or infinity. They remain language error/golden cases until a
-typed, non-JSON round-trip transport is introduced.
+Special floats use the typed golden observations below. The JSON value
+corpus contains only values representable in ordinary JSON.
 
 The helpers below collapse the boilerplate shared across the per-language
 scripts: :func:`trim_keys` drops the language-specific lossy fields from
@@ -166,6 +165,63 @@ def verify(
         sys.exit(1)
 
 
+def _ordered_observation(value: JsonValue) -> JsonValue:
+    """Canonicalize entry order without coercing typed mapping keys."""
+    if isinstance(value, list):
+        match value:
+            case ["mapping", list(entries)]:
+                return [
+                    "mapping",
+                    sorted(
+                        (
+                            _ordered_observation(value=entry)
+                            for entry in entries
+                        ),
+                        key=json.dumps,
+                    ),
+                ]
+            case _:
+                return [_ordered_observation(value=item) for item in value]
+    return value
+
+
+def verify_observation(
+    *, label: str, produced_json: str, expected_observation: JsonValue
+) -> None:
+    """Verify a native observation against its independently authored value.
+
+    Each node is a tag and a payload. Integers, binary64 bits and exact
+    datetime components are decimal or hexadecimal strings. Mappings
+    carry typed key/value pairs, while sequence order remains significant.
+    """
+    try:
+        actual = TypeAdapter[JsonValue](type=JsonValue).validate_json(
+            produced_json, strict=True
+        )
+    except ValueError as exc:
+        msg = f"{label}: invalid native observation: {produced_json!r}"
+        raise ValueError(msg) from exc
+    _verify_observation_value(
+        label=label, actual=actual, expected_observation=expected_observation
+    )
+
+
+def _verify_observation_value(
+    *, label: str, actual: JsonValue, expected_observation: JsonValue
+) -> None:
+    """Compare decoded observations from either transport envelope."""
+    if not _json_values_equal(
+        left=_ordered_observation(value=actual),
+        right=_ordered_observation(value=expected_observation),
+    ):
+        msg = (
+            f"{label}: native observation mismatch\n"
+            f"  expected: {expected_observation!r}\n"
+            f"  got:      {actual!r}"
+        )
+        raise AssertionError(msg)
+
+
 def trim_keys(json_text: str, excluded_keys: tuple[str, ...]) -> str:
     """Return *json_text* with *excluded_keys* removed at the top level.
 
@@ -228,6 +284,7 @@ def execute(
     excluded_keys: tuple[str, ...],
     expected_json: str | None,
     extra_files: Mapping[str, str] | None,
+    expected_observation: JsonValue = None,  # noqa: NOD001 - existing JSON-only callers have no observation
 ) -> None:
     """Run *program* through *steps* and verify the final stdout.
 
@@ -241,8 +298,8 @@ def execute(
 
     On success, the *last* step's stdout is passed to :func:`verify`
     with *label* and *excluded_keys*, and a ``"{label} round-trip OK"``
-    line is written to stdout.  Callers do not need to emit that line
-    themselves.
+    line is written to stdout. When a typed observation is requested, stdout
+    carries both the ordinary JSON document and the separate observation.
     """
     extras: Mapping[str, str]
     extras = dict[str, str]()
@@ -260,7 +317,7 @@ def execute(
             _ = extra_path.write_text(data=content, encoding="utf-8")
         for step in steps:
             args = list(step.args)
-            if len(steps) > 1:
+            if len(steps) > 1 or expected_observation is not None:
                 args = bounded_command(
                     args=args,
                     fixture=str(object=source_path),
@@ -282,6 +339,22 @@ def execute(
                 _ = sys.stderr.write(f"\nProgram:\n{program}\n")
                 sys.exit(1)
             last_stdout = result.stdout
+    if expected_observation is not None:
+        try:
+            envelope = json_object_from_text(text=last_stdout)
+            observation = envelope["observation"]
+            data = envelope["data"]
+        except (ValueError, KeyError) as exc:
+            msg = (
+                f"{label}: invalid native round-trip envelope: {last_stdout!r}"
+            )
+            raise ValueError(msg) from exc
+        _verify_observation_value(
+            label=label,
+            actual=observation,
+            expected_observation=expected_observation,
+        )
+        last_stdout = json.dumps(obj=data)
     verify(
         label=label,
         produced_json=last_stdout,
