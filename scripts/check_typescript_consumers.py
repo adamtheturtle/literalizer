@@ -20,6 +20,8 @@ from pathlib import Path
 
 import click
 
+from scripts.bounded_command import bounded_command
+
 # ``tsc`` type-checks the fixtures at ``TypeScript.language_version``
 # (``V5``) in ``src/literalizer/languages/typescript.py``; ``--target
 # es2015 --lib es2015`` matches ``JavaScript.language_version``
@@ -63,10 +65,8 @@ def _probe(*, text: str) -> str:
     return f"void {name};\n"
 
 
-@click.command()
-@click.argument("filenames", nargs=-1)
-def main(filenames: tuple[str, ...]) -> None:
-    """Type-check the given TypeScript golden files with probes."""
+def check_files(*, filenames: tuple[str, ...]) -> bool:
+    """Type-check staged fixtures with probes and return success."""
     tsc = shutil.which(cmd="tsc")
     if tsc is None or tsc == "":
         tsc = "tsc"
@@ -81,7 +81,11 @@ def main(filenames: tuple[str, ...]) -> None:
                 encoding="utf-8",
             )
         result = subprocess.run(
-            args=[tsc, *_TSC_FLAGS, *names],
+            args=bounded_command(
+                args=[tsc, *_TSC_FLAGS, *names],
+                fixture=f"TypeScript V5 consumer probes ({len(names)} files)",
+                timeout_seconds=240.0,
+            ),
             capture_output=True,
             text=True,
             check=False,
@@ -92,6 +96,14 @@ def main(filenames: tuple[str, ...]) -> None:
         _ = sys.stderr.write(
             f"tsc --strict failed\n{result.stdout}{result.stderr}"
         )
+    return result.returncode == 0
+
+
+@click.command()
+@click.argument("filenames", nargs=-1)
+def main(filenames: tuple[str, ...]) -> None:
+    """Type-check the given TypeScript golden files with probes."""
+    if not check_files(filenames=filenames):
         sys.exit(1)
 
 
