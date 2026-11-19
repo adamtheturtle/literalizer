@@ -127,14 +127,20 @@ def _check_file(path: Path) -> str | None:
     return _check_brackets(lines=lines)
 
 
+def check_file(*, path: Path) -> bool:
+    """Report any structural error and return whether the file passed."""
+    error = _check_file(path=path)
+    if error is not None:
+        _ = sys.stderr.write(f"{path}: Occam-pi syntax error: {error}\n")
+        return False
+    return True
+
+
 @click.command()
 @click.argument("filename")
 def main(filename: str) -> None:
     """Check syntax of the given Occam-pi golden file."""
-    src = Path(filename)
-    error = _check_file(path=src)
-    if error is not None:
-        _ = sys.stderr.write(f"{filename}: Occam-pi syntax error: {error}\n")
+    if not check_file(path=Path(filename)):
         sys.exit(1)
 
 
