@@ -2903,92 +2903,9 @@ jobs:
       || contains(fromJSON(needs.native-changes.outputs.jobs), 'lint-nim')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    # Promote every Nim warning to a CI failure. Nim's
-    # ``--warningAsError`` rejects ``all:on`` and bare ``on``, so list
-    # each warning name explicitly. The catalogue comes from
-    # ``nim check --warnings:list`` — revisit when Nim is upgraded in
-    # case new warnings have been added. Shared across both the syntax
-    # check and the run step via a job-level env var.
+    # Keep this pin and scripts/nim_warning_flags.py in sync.
     env:
-      # Pin the Nim toolchain so the installed compiler does not drift.
-      # ``2.2.10`` is ``>=`` the ``Nim.language_version`` (``V2``, i.e.
-      # Nim 2.x) default in ``src/literalizer/languages/nim.py``; keep
-      # them in sync. The ``NIM_WARNING_FLAGS`` catalogue below is
-      # Nim-version-sensitive (it must list exactly the warnings the
-      # pinned compiler's ``nim check --warnings:list`` reports, e.g.
-      # ``ImplicitRangeConversion`` is absent in older 2.2.x patch
-      # releases such as 2.2.4), so regenerate that list when bumping
-      # this pin.
       NIM_VERSION: 2.2.10
-      NIM_WARNING_FLAGS: >-
-        --warningAsError:AboveMaxSizeSet:on
-        --warningAsError:AmbiguousLink:on
-        --warningAsError:AnyEnumConv:on
-        --warningAsError:BareExcept:on
-        --warningAsError:BrokenLink:on
-        --warningAsError:CStringConv:on
-        --warningAsError:CannotOpen:on
-        --warningAsError:CannotOpenFile:on
-        --warningAsError:CaseTransition:on
-        --warningAsError:CastSizes:on
-        --warningAsError:CommentXIgnored:on
-        --warningAsError:ConfigDeprecated:on
-        --warningAsError:CycleCreated:on
-        --warningAsError:Deprecated:on
-        --warningAsError:Destructor:on
-        --warningAsError:DotLikeOps:on
-        --warningAsError:EachIdentIsTuple:on
-        --warningAsError:Effect:on
-        --warningAsError:EnumConv:on
-        --warningAsError:FieldXNotSupported:on
-        --warningAsError:FileChanged:on
-        --warningAsError:GcMem:on
-        --warningAsError:GcUnsafe:on
-        --warningAsError:GcUnsafe2:on
-        --warningAsError:GlobalVarConstructorTemporary:on
-        --warningAsError:HoleEnumConv:on
-        --warningAsError:IgnoredSymbolInjection:on
-        --warningAsError:ImplicitDefaultValue:on
-        --warningAsError:ImplicitRangeConversion:on
-        --warningAsError:ImplicitTemplateRedefinition:on
-        --warningAsError:IndexCheck:on
-        --warningAsError:InheritFromException:on
-        --warningAsError:LanguageXNotSupported:on
-        --warningAsError:LockLevel:on
-        --warningAsError:LongLiterals:on
-        --warningAsError:ObservableStores:on
-        --warningAsError:OctalEscape:on
-        --warningAsError:ProveField:on
-        --warningAsError:ProveIndex:on
-        --warningAsError:ProveInit:on
-        --warningAsError:PtrToCstringConv:on
-        --warningAsError:RedefinitionOfLabel:on
-        --warningAsError:ResultShadowed:on
-        --warningAsError:ResultUsed:on
-        --warningAsError:SmallLshouldNotBeUsed:on
-        --warningAsError:Spacing:on
-        --warningAsError:StdPrefix:on
-        --warningAsError:StmtListLambda:on
-        --warningAsError:StrictNotNil:on
-        --warningAsError:TypelessParam:on
-        --warningAsError:Uninit:on
-        --warningAsError:UnknownMagic:on
-        --warningAsError:UnknownNotes:on
-        --warningAsError:UnknownSubstitutionX:on
-        --warningAsError:UnnamedBreak:on
-        --warningAsError:UnreachableCode:on
-        --warningAsError:UnreachableElse:on
-        --warningAsError:UnsafeCode:on
-        --warningAsError:UnsafeDefault:on
-        --warningAsError:UnsafeSetLen:on
-        --warningAsError:UnusedImport:on
-        --warningAsError:UnusedImportdoc:on
-        --warningAsError:UseBase:on
-        --warningAsError:User:on
-        --warningAsError:WriteToForeignHeap:on
-        --warningAsError:XIsNeverRead:on
-        --warningAsError:XmightNotBeenInit:on
-        --warningAsError:warnRstStyle:on
     steps:
       - uses: actions/checkout@v7
         with:
@@ -2999,29 +2916,13 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .nim > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Nim
         timeout-minutes: 10
         uses: jiro4989/setup-nim-action@v2
         with:
           nim-version: ${{ env.NIM_VERSION }}
-      # Nim derives the module name from the source filename and
-      # rejects ``@`` as a non-identifier character, so copy each
-      # fixture to a sanitized name before invoking ``nim c -r``.
       - name: Run Nim files
-        run: |-
-          cat > /tmp/run-nim.sh <<'SCRIPT'
-          read -r -a warning_flags <<< "$NIM_WARNING_FLAGS"
-          tmpdir=$(mktemp -d)
-          trap 'rm -rf "$tmpdir"' EXIT
-          cp "$1" "$tmpdir/check.nim"
-          nim c -r --hints:off "${warning_flags[@]}" \
-            --nimcache:"$tmpdir" "$tmpdir/check.nim"
-          SCRIPT
-          xargs -0 -P "$(nproc)" -n1 bash /tmp/run-nim.sh < /tmp/files-to-lint
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_nim_fixtures
 
       # Basic JSON -> Nim -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Nim toolchain (pinned by the
