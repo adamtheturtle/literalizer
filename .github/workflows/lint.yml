@@ -927,9 +927,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Jsonnet
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .jsonnet > /tmp/files-jsonnet && test -s /tmp/files-jsonnet
-          xargs -0 -P "$(nproc)" -n1 jsonnet < /tmp/files-jsonnet > /dev/null
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_go_document_fixtures
+          jsonnet
       # Basic JSON -> Jsonnet -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `jsonnet` binary (from the
       # `go install` above) already on PATH; `uv run` (project mode, not
@@ -941,9 +940,8 @@ jobs:
         run: uv run --no-dev --group=roundtrip python -m scripts.run_jsonnet_roundtrip
 
       - name: Lint Hcl
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .hcl > /tmp/files-hcl && test -s /tmp/files-hcl
-          xargs -0 -P "$(nproc)" -n1 hcl2json < /tmp/files-hcl > /dev/null
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_go_document_fixtures
+          hcl
       # Basic JSON -> HCL -> JSON round-trip (issue 2657). Runs here
       # because this is the job with the `hcl2json` binary (from the
       # `go install` above) already on PATH; `uv run` (project mode, not
