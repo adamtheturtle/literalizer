@@ -1,4 +1,6 @@
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -48,9 +50,12 @@ public class CheckJavaSyntax {
         // See `Lint Java` in `.github/workflows/lint.yml` for the wiring.
         final List<Path> extraClasspath = resolveExtraClasspath();
         final String classpathArg = classpathArg(extraClasspath);
+        final String reportPath = System.getProperty("literalizer.java.coverage");
         boolean failed = false;
         try (final StandardJavaFileManager fileManager =
-                compiler.getStandardFileManager(null, null, null)) {
+                compiler.getStandardFileManager(null, null, null);
+             final Writer report = reportPath == null
+                ? Writer.nullWriter() : Files.newBufferedWriter(Path.of(reportPath))) {
             for (int i = 1; i < args.length; i++) {
                 final String filename = args[i];
                 // Each fixture gets a private output directory to keep
@@ -76,12 +81,32 @@ public class CheckJavaSyntax {
                     failed = true;
                     continue;
                 }
-                if (!runFixture(filename, classDir, extraClasspath)) {
+                final int actualRelease = reportPath == null
+                        ? 0 : compiledRelease(filename, classDir);
+                report.write(actualRelease + "\tcompile\t" + filename + "\n");
+                if (runFixture(filename, classDir, extraClasspath)) {
+                    report.write(actualRelease + "\texecute\t" + filename + "\n");
+                } else {
                     failed = true;
                 }
             }
         }
         System.exit(failed ? 1 : 0);
+    }
+
+    private static boolean isDefaultModule(final String filename) {
+        return Path.of(filename).endsWith("default_module_name.java");
+    }
+
+    private static int compiledRelease(final String filename, final Path classDir)
+            throws IOException {
+        final String entryClass = isDefaultModule(filename) ? "Module.class" : "Main.class";
+        try (final DataInputStream bytecode =
+                new DataInputStream(Files.newInputStream(classDir.resolve(entryClass)))) {
+            // Magic and minor version precede the major version. Java 1.1 started at 45.
+            bytecode.skipNBytes(6);
+            return bytecode.readUnsignedShort() - 44;
+        }
     }
 
     private static List<Path> resolveExtraClasspath() throws IOException {
@@ -139,7 +164,7 @@ public class CheckJavaSyntax {
         }
         final URL[] urls = urlList.toArray(new URL[0]);
         try (final URLClassLoader loader = new URLClassLoader(urls)) {
-            if (Path.of(filename).endsWith("default_module_name.java")) {
+            if (isDefaultModule(filename)) {
                 final Class<?> moduleClass = Class.forName("Module", true, loader);
                 final Method module = moduleClass.getDeclaredMethod("module");
                 module.setAccessible(true);
