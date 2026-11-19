@@ -1007,9 +1007,8 @@ jobs:
           jsonc
 
       - name: Lint Norg
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .norg > /tmp/files-norg && test -s /tmp/files-norg
-          xargs -0 tree-sitter parse --lib-path /tmp/norg.so --lang-name norg --quiet < /tmp/files-norg
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_norg_fixtures
+          --parser /tmp/norg.so
       # Basic JSON -> Norg -> JSON round-trip (issue 2667). Runs here
       # because this is the job that builds the `tree-sitter-norg` grammar
       # (`/tmp/norg.so`) the helper loads through the `tree-sitter` Python
