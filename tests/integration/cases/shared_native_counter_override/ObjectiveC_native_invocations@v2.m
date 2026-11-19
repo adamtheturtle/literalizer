@@ -19,13 +19,13 @@ static void checkResult(BOOL actual, NSArray *expected) {
     (*checkCount())++;
 }
 int main(void) {
-    @autoreleasepool {
+@autoreleasepool {
         Counter *counter = [[Counter alloc] init];
         checkResult([counter accept:@"user_1" timestamp:100.0], @[
             @YES,
             @"first",
         ]);
         NSCAssert(counter.calls == 1 && *checkCount() == 1, @"native call was skipped");
-    }
+}
     return 0;
 }

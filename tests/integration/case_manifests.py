@@ -810,10 +810,14 @@ class ConstructorCaseSpec(  # noqa: NOD001
 
 
 # Defaults stand in for omitted keys, as above.
-class NativeInvocationCaseSpec(BaseModel, extra="forbid", frozen=True):
-    """A real caller program for a native invocation recipe sequence."""
+class NativeInvocationCaseSpec(  # noqa: NOD001
+    BaseModel, extra="forbid", frozen=True
+):
+    """Caller declarations and checks for a native invocation sequence."""
 
-    consumer_template: str
+    file_declarations: str
+    before_calls: str | None = None
+    after_calls: str
 
 
 class _CaseManifestData(

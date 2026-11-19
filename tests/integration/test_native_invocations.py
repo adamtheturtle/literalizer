@@ -69,7 +69,7 @@ def test_native_invocation_golden(
     manifest = case.manifest
     steps = json.loads(s=manifest.input.path.read_text(encoding="utf-8"))
     spec = case.spec
-    fragments: list[str] = []
+    fragments: list[literalizer.LiteralizeResult] = []
     for step in steps:
         kwargs: dict[str, object] = {}
         for name, value in step.get("options", {}).items():
@@ -154,12 +154,33 @@ def test_native_invocation_golden(
             if step.get("prefix_initial_column", False)
             else ""
         )
-        fragments.append(prefix + result.code)
-    assert manifest.native_invocation is not None
-    program = manifest.native_invocation.consumer_template.format(
-        code="\n".join(fragments)
+        fragments.append(
+            dataclasses.replace(
+                result, declaration_code=prefix + result.declaration_code
+            )
+        )
+    consumer = manifest.native_invocation
+    assert consumer is not None
+    last_call = fragments.pop()
+    program = literalizer.literalize_call_with_declarations(
+        language=dataclasses.replace(spec, module_name="main"),
+        declarations=fragments,
+        call=dataclasses.replace(
+            last_call,
+            declaration_code=(
+                f"{last_call.declaration_code}\n{consumer.after_calls.rstrip()}"
+            ),
+        ),
+        extra_body_preamble=(
+            ()
+            if consumer.before_calls is None
+            else (consumer.before_calls.rstrip(),)
+        ),
+        extra_preamble=(consumer.file_declarations.rstrip(),),
     )
-    file_regression.check(contents=program, fullpath=case.artifact.path)
+    file_regression.check(
+        contents=program.code + "\n", fullpath=case.artifact.path
+    )
 
 
 def test_original_objective_c_native_callback() -> None:

@@ -41,7 +41,7 @@ static void verifyDictionary(NSDictionary<NSString *, NSArray<NSString *> *> *va
     NSCAssert([value[@"group"][0] isEqualToString:@"native"], @"generic values changed");
 }
 int main(void) {
-    @autoreleasepool {
+@autoreleasepool {
         NativeCounter *counter = [[NativeCounter alloc] initWithCount:5];
         BOOL allowed = [counter accept:@"user_1" timestamp:100.0];
         verifyObject(@(allowed));
@@ -74,6 +74,6 @@ int main(void) {
         NSCAssert([label isEqualToString:@"native"], @"class message changed");
         NSCAssert(finalCount == 0 && nestedCount == 3, @"constructor or reset changed");
         NSCAssert([names[0] isEqualToString:@"native"], @"generic binding changed");
-    }
+}
     return 0;
 }

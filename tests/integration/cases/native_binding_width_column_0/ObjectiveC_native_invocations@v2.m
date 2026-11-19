@@ -10,11 +10,11 @@ static BOOL emitValues(NSString *first, NSString *second) {
     return YES;
 }
 int main(void) {
-    @autoreleasepool {
+@autoreleasepool {
 emitValues(@"first", @"second");
 BOOL allowed = emitValues(@"first",
                           @"second");
         NSCAssert(allowed && *callCount() == 2, @"bound call did not execute");
-    }
+}
     return 0;
 }
