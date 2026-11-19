@@ -2541,10 +2541,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .dart > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Dart
         timeout-minutes: 10
         uses: dart-lang/setup-dart@v1
@@ -2561,7 +2557,7 @@ jobs:
       # to force evaluation without interpreting Dart source text.
       - name: Check Dart syntax and run fixtures
         run: uv run --no-dev --group=fixture-inventory python -m scripts.run_dart_fixtures
-          < /tmp/files-to-lint
+          --all-fixtures
       # Basic JSON -> Dart -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Dart toolchain; `uv run`
       # (project mode, not `--no-project`) is required so `import
