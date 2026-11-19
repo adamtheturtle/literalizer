@@ -85,16 +85,10 @@ def _run_fixture(
     return False
 
 
-@click.command()
-@click.argument("filenames", nargs=-1)
-def main(filenames: tuple[str, ...]) -> None:
-    """Run each PureScript golden file end-to-end."""
-    purs_path = shutil.which(cmd="purs")
-    if purs_path is None or purs_path == "":
-        purs_path = "purs"
-    node_path = shutil.which(cmd="node")
-    if node_path is None or node_path == "":
-        node_path = "node"
+def run_fixtures(
+    *, filenames: tuple[str, ...], purs_path: str, node_path: str
+) -> bool:
+    """Compile and run fixtures through one reusable workspace."""
     failed = False
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
@@ -112,7 +106,22 @@ def main(filenames: tuple[str, ...]) -> None:
                 node_path=node_path,
             ):
                 failed = True
-    if failed:
+    return not failed
+
+
+@click.command()
+@click.argument("filenames", nargs=-1)
+def main(filenames: tuple[str, ...]) -> None:
+    """Run each PureScript golden file end-to-end."""
+    purs_path = shutil.which(cmd="purs")
+    if purs_path is None or purs_path == "":
+        purs_path = "purs"
+    node_path = shutil.which(cmd="node")
+    if node_path is None or node_path == "":
+        node_path = "node"
+    if not run_fixtures(
+        filenames=filenames, purs_path=purs_path, node_path=node_path
+    ):
         sys.exit(1)
 
 
