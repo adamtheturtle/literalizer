@@ -2618,7 +2618,7 @@ class Haskell(metaclass=LanguageCls):
                 render_declaration=_haskell_native_record_declaration,
                 render_literal=_haskell_native_record_literal,
                 field_type_names_nested_records=True,
-                suppress_custom_name_declarations=False,
+                suppressed_custom_names=frozenset(),
             ),
             widen_unrecordizable_nested_sibling_maps=False,
             derecordized_map_open=None,

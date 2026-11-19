@@ -1955,7 +1955,7 @@ class CSharp(metaclass=LanguageCls):
             render_declaration=_csharp_render_record_declaration,
             render_literal=_csharp_record_literal,
             field_type_names_nested_records=False,
-            suppress_custom_name_declarations=False,
+            suppressed_custom_names=frozenset(),
         )
 
     @cached_property

@@ -4881,8 +4881,10 @@ class Cpp(metaclass=LanguageCls):
             ),
             render_literal=(effective_render_literal),
             field_type_names_nested_records=True,
-            suppress_custom_name_declarations=True,
-            emitted_custom_names=self.move_only_record_names,
+            suppressed_custom_names=(
+                frozenset(self.record_shape_names.values())
+                - self.move_only_record_names
+            ),
         )
 
     @cached_property

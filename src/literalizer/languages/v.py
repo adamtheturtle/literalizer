@@ -1603,7 +1603,7 @@ class V(metaclass=LanguageCls):
             render_declaration=self._v_render_record_declaration,
             render_literal=_v_record_literal,
             field_type_names_nested_records=True,
-            suppress_custom_name_declarations=False,
+            suppressed_custom_names=frozenset(),
         )
 
     @cached_property

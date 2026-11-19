@@ -1589,7 +1589,7 @@ class Crystal(metaclass=LanguageCls):
             render_declaration=_crystal_render_record_declaration,
             render_literal=_crystal_record_literal,
             field_type_names_nested_records=True,
-            suppress_custom_name_declarations=False,
+            suppressed_custom_names=frozenset(),
         )
 
     @cached_property
