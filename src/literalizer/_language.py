@@ -221,6 +221,14 @@ class NewVariableNameSyntax(enum.Enum):
     (issue #3989).
     """
 
+    SYSTEMVERILOG = (
+        r"[A-Za-z_][A-Za-z0-9_]*|\\(?![A-Za-z_][A-Za-z0-9_$]* )[!-~]+ "
+    )
+    """A simple name or a printable escaped name with a trailing space.
+
+    Require the simple spelling when both forms name the same identifier.
+    """
+
     def accepts(self, *, name: str) -> bool:
         """Return whether *name* matches this lexical grammar."""
         return re.fullmatch(pattern=self.value, string=name) is not None

@@ -415,7 +415,12 @@ else:
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SystemVerilog(metaclass=LanguageCls):
-    """SystemVerilog language specification."""
+    r"""SystemVerilog language specification.
+
+    An escaped variable name such as ``\`+ `` includes its leading
+    backslash and its terminating space. Use the simple spelling for
+    names that already match the simple identifier grammar.
+    """
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -442,7 +447,7 @@ class SystemVerilog(metaclass=LanguageCls):
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
-    new_variable_name_syntax = NewVariableNameSyntax.ASCII
+    new_variable_name_syntax = NewVariableNameSyntax.SYSTEMVERILOG
     max_variable_identifier_length: ClassVar[int | None] = None
     call_stub_result: ClassVar[CallStubResult | None] = None
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (

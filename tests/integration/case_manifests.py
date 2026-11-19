@@ -605,12 +605,7 @@ class ComposedCallFixture(  # noqa: NOD001
         default_factory=frozenset[str]
     )
     include_target_stub: bool = True
-    # Native dependencies supplied by the caller, such as an import alias
-    # or a declaration with syntax outside the literal API.
     caller_imports: manifest_values.StringTuple = Field(
-        default_factory=tuple[str, ...]
-    )
-    caller_body_preamble: manifest_values.StringTuple = Field(
         default_factory=tuple[str, ...]
     )
 

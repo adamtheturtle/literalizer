@@ -682,7 +682,6 @@ def _render_call_golden_case(
     body_stubs = (
         *target_stubs.body,
         *(import_preamble(code=entry) for entry in fixture.caller_imports),
-        *fixture.caller_body_preamble,
         *wrapper_stubs.body,
     )
     class_stubs = (*target_stubs.class_scope, *wrapper_stubs.class_scope)
