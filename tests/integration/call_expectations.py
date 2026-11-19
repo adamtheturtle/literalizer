@@ -323,13 +323,7 @@ def fixture_rejection(
         # The fixture must emit its declarations before making the call.
         return VariableNameNotSupportedError
     if predicted is UnsupportedCallShapeError:
-        if (
-            isinstance(fixture, WrappedCallFixture)
-            and isinstance(config.variable_form, literalizer.ExistingVariable)
-            and spec.supports_variable_names
-            and spec.call_returns_expression
-            and not spec.call_assignment_declares_binding
-        ):
+        if wrapped_call_needs_prior_binding(config=config, spec=spec):
             return ExistingVariableNotSelfContainedError
         if isinstance(spec, Cobol) and config.case_dir_name in {
             "call_bound_literal_followup_new",
@@ -340,6 +334,20 @@ def fixture_rejection(
             # the primary call checks its result binding.
             return CallArgNotSupportedError
     return predicted
+
+
+@beartype
+def wrapped_call_needs_prior_binding(
+    *, config: CallCaseSpec, spec: literalizer.Language
+) -> bool:
+    """A standalone assignment must declare its own result binding."""
+    return (
+        isinstance(config.fixture, WrappedCallFixture)
+        and isinstance(config.variable_form, literalizer.ExistingVariable)
+        and spec.supports_variable_names
+        and spec.call_returns_expression
+        and not spec.call_assignment_declares_binding
+    )
 
 
 @beartype

@@ -13,11 +13,9 @@ from typing import Literal
 from beartype import beartype
 
 import literalizer
-from tests.errors.rejection_cases import rejection_cases
-from tests.errors.rejection_expectations import load_expected_messages
-from tests.errors.rejection_manifests import (
-    REJECTIONS_DIR,
-    load_rejection_manifest,
+from literalizer.exceptions import (
+    InvalidDictKeyError,
+    UnrepresentableStringError,
 )
 
 from .case_data import (
@@ -36,6 +34,7 @@ from .language_specs import (
     make_spec,
     sorted_languages,
 )
+from .rejection_contracts import rejected_examples
 
 
 @beartype
@@ -63,18 +62,13 @@ def _control_key_rejecting_languages() -> frozenset[literalizer.LanguageCls]:
     """Read the existing error contract for control-bearing mapping
     keys.
     """
-    manifest = load_rejection_manifest(
-        manifest_path=REJECTIONS_DIR / "struct_field_names" / "rejection.toml"
-    )
-    expectations = load_expected_messages(golden_path=manifest.golden_path)
-    rejected = (
-        expectations["InvalidDictKeyError"].keys()
-        | expectations["UnrepresentableStringError"].keys()
-    )
     return frozenset(
         case.lang_cls
-        for case in rejection_cases(manifest=manifest)
-        if case.source == r'{"a\u0001b": "value"}' and case.case_id in rejected
+        for error in (InvalidDictKeyError, UnrepresentableStringError)
+        for case in rejected_examples(
+            contract="struct_field_names", error=error
+        )
+        if case.source == r'{"a\u0001b": "value"}'
     )
 
 

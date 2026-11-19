@@ -20,9 +20,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 import literalizer
 from literalizer.exceptions import (
     CallArgNotSupportedError,
-    CallsNotSupportedByLanguageError,
-    CallsNotSupportedByToolError,
-    ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
     InvalidDictKeyError,
@@ -67,14 +64,6 @@ CASES_DIR = Path(__file__).parent / "cases"
 _REF_SKIPS: SkipPolicy = SkipPolicy(
     reasons=(
         SkipReason(
-            error=CallsNotSupportedByLanguageError,
-            reason="has no generated consumer call syntax",
-        ),
-        SkipReason(
-            error=CallsNotSupportedByToolError,
-            reason="cannot generate consumer calls",
-        ),
-        SkipReason(
             error=IncompatibleFormatsError,
             reason="reference input is incompatible with the selected formats",
         ),
@@ -85,12 +74,6 @@ _REF_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=VariableNameNotSupportedError,
             reason="cannot declare the reference binding",
-        ),
-        SkipReason(
-            error=ExistingVariableNotSelfContainedError,
-            reason=(
-                "cannot wrap an assignment without its destination declaration"
-            ),
         ),
         SkipReason(
             error=NullInCollectionError,

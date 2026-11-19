@@ -74,7 +74,7 @@ class _HasUnionFormat(Protocol):
 
 
 @runtime_checkable
-class _HasJsonType(Protocol):
+class HasJsonType(Protocol):
     """A spec exposing a JSON value-type representation.
 
     Languages without one omit the ``json_type`` constructor field
@@ -211,7 +211,7 @@ def _union_formats(spec: literalizer.Language) -> type[enum.Enum]:
 @beartype
 def _json_type(spec: literalizer.Language) -> object:
     """Return the configured JSON value type, if any."""
-    if not isinstance(spec, _HasJsonType):
+    if not isinstance(spec, HasJsonType):
         raise NotImplementedError
     return spec.json_type
 
