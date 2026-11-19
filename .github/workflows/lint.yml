@@ -1278,9 +1278,7 @@ jobs:
 
       # TOML, JSON5 and JSONC parser checks also cover authored inputs.
       - name: Lint Toml
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .toml --include-authored > /tmp/files-toml && test -s /tmp/files-toml
-          xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli --only-group=toml python -m scripts.check_toml_syntax < /tmp/files-toml
+        run: uv run --no-dev --group=fixture-inventory --group=toml python -m scripts.run_toml_fixtures
 
       # Basic JSON -> TOML -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the ``tomli`` TOML parser already
