@@ -14,6 +14,7 @@ from typing import (
     TypeGuard,
     assert_never,
     overload,
+    override,
     runtime_checkable,
 )
 
@@ -288,11 +289,27 @@ class CallContext:
     supplied.
     """
 
-    # Preserve the original constructor for callers supplying test contexts.
-    arguments: tuple[str, ...] = dataclasses.field(  # noqa: NOD001
-        default_factory=tuple[str, ...], kw_only=True
-    )
-    """Rendered operands in source order, before call-style delimiters."""
+    @property
+    def arguments(self) -> tuple[str, ...]:
+        """Rendered operands in source order, before call-style delimiters.
+
+        Contexts constructed directly have no rendered operands.
+        """
+        return ()
+
+
+@beartype
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _RenderedCallContext(CallContext):
+    """A transform context populated by the call renderer."""
+
+    rendered_arguments: tuple[str, ...]
+
+    @property
+    @override
+    def arguments(self) -> tuple[str, ...]:
+        """Return the operands already rendered for this call."""
+        return self.rendered_arguments
 
 
 @runtime_checkable
@@ -7558,12 +7575,12 @@ def _assemble_call(
     )
     if call_transform is not None:
         transformed_call = call_transform(
-            CallContext(
+            _RenderedCallContext(
                 call=call_expr,
                 index=index,
                 row=row,
                 zipped=zipped,
-                arguments=arguments.operands,
+                rendered_arguments=arguments.operands,
             )
         )
         if (
