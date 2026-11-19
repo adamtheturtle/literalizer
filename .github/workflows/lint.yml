@@ -3380,46 +3380,14 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .zig "$ZIG_FIXTURE_TAG" > /tmp/files-to-lint && test -s /tmp/files-to-lint
       - name: Install Zig
         timeout-minutes: 10
         uses: mlugg/setup-zig@v2
         with:
           version: ${{ env.ZIG_VERSION }}
-      # Compile every fixture in a single `zig run` invocation to pay
-      # the Zig compiler + std parse cost once instead of per fixture.
-      # Fixtures all declare `pub fn main() void`, renamed to a unique
-      # `pub fn fixtureN()` and `@import`-ed from a generated driver
-      # that calls each one so every fixture body still executes. The
-      # mapping is printed so failures still point back to the original
-      # path.
-      - name: Run Zig files
-        run: |-
-          workspace=$(mktemp -d)
-          driver="$workspace/main.zig"
-          imports="$workspace/imports.zig.part"
-          calls="$workspace/calls.zig.part"
-          : > "$imports"
-          : > "$calls"
-          i=0
-          while IFS= read -r -d '' f; do
-            sed "s/^pub fn main(/pub fn fixture$i(/" "$f" \
-              > "$workspace/fixture_$i.zig"
-            printf 'const fix%d = @import("fixture_%d.zig");\n' "$i" "$i" >> "$imports"
-            printf '    fix%d.fixture%d();\n' "$i" "$i" >> "$calls"
-            printf 'fixture_%d.zig <- %s\n' "$i" "$f"
-            i=$((i+1))
-          done < /tmp/files-to-lint
-          {
-            cat "$imports"
-            printf 'pub fn main() void {\n'
-            cat "$calls"
-            printf '}\n'
-          } > "$driver"
-          zig run "$driver"
+      - name: Validate native fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_zig_fixtures
+          "$ZIG_FIXTURE_TAG"
       # Basic JSON -> Zig -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Zig toolchain; `uv run`
       # (project mode, not `--no-project`) is required so
