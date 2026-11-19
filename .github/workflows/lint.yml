@@ -1244,9 +1244,7 @@ jobs:
       # Because the fixture format itself is structurally incompatible with
       # KRoC, we fall back to this Python-based structural checker.
       - name: Lint Occam
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .occ --include-default-module-names > /tmp/files-occam && test -s /tmp/files-occam
-          xargs -0 -P "$(nproc)" -n1 uv run --only-group=cli python -m scripts.check_occam_syntax < /tmp/files-occam
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_occam_fixtures
 
       # There is deliberately no Occam JSON round-trip (issues 1867 and 2669),
       # unlike every other language.  A round-trip must compile and run the
