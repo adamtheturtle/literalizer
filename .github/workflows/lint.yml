@@ -1128,13 +1128,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Lint Elm
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .elm > /tmp/files-elm && test -s /tmp/files-elm
-          while IFS= read -r -d '' f; do
-            label="Elm formatting: $f"
-            scripts/run-bounded.sh "$label" --kill-after=5s 60s elm-format --stdin < "$f" > /dev/null || exit "$?"
-          done < /tmp/files-elm
-          xargs -0 uv run --no-dev --group=roundtrip python -m scripts.check_elm_syntax < /tmp/files-elm
+        run: uv run --no-dev --group=fixture-inventory --group=roundtrip python -m
+          scripts.run_elm_fixtures lint
 
   # Elm runtime check. Sibling to `lint-elm` so the compile + Node
   # execute pass runs in parallel with the format + compile-only pass.
@@ -1172,9 +1167,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Run Elm
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .elm > /tmp/files-elm && test -s /tmp/files-elm
-          xargs -0 uv run --no-dev --group=roundtrip python -m scripts.run_elm < /tmp/files-elm
+        run: uv run --no-dev --group=fixture-inventory --group=roundtrip python -m
+          scripts.run_elm_fixtures run
       # Basic JSON -> Elm -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the `elm` binary (from the
       # npm-linters install above) and Node 22 already on PATH; `uv run`
