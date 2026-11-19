@@ -2,6 +2,9 @@
 options.
 """
 
+import dataclasses
+from collections.abc import Sequence
+
 from beartype import beartype
 
 import literalizer
@@ -45,3 +48,30 @@ def literalize_rendering(
             collection_layout=render.collection_layout,
             record_null_substitutions=render.record_null_substitutions,
         )
+
+
+@beartype
+def compose_rendering(
+    *,
+    rendering: GoldenRendering,
+    spec: literalizer.Language,
+    declarations: Sequence[literalizer.LiteralizeResult],
+    result: literalizer.LiteralizeResult,
+) -> literalizer.LiteralizeResult:
+    """Wrap a rendering with its fixture declarations and dependencies."""
+    # Keep dependencies before any external type that uses them, even
+    # when the rendering requests the same dependencies itself.
+    preamble = rendering.extra_preamble
+    return literalizer.literalize_call_with_declarations(
+        language=spec,
+        declarations=declarations,
+        call=dataclasses.replace(
+            result,
+            preamble=preamble + result.preamble,
+            data_dependent_preamble=tuple(
+                entry
+                for entry in result.data_dependent_preamble
+                if entry not in preamble
+            ),
+        ),
+    )
