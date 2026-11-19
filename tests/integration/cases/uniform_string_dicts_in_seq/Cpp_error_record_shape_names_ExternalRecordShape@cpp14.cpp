@@ -1,6 +1,9 @@
-#include "../../cpp_support/include/named_type.hpp"
 #include <map>
 #include <string>
+using ExternalRecordShape = decltype(std::map<std::string, std::string>{
+    {"first", ""},
+    {"last", ""},
+});
 #include <vector>
 int main() {
 auto my_data = std::vector<ExternalRecordShape>{

@@ -14,6 +14,8 @@ Core functions
 
 .. autofunction:: literalize_call_with_declarations
 
+.. autofunction:: literalizer.languages.cpp.literalize_cpp_type_alias
+
 .. autofunction:: literalize_invocations
 
 .. autofunction:: describe_callable
