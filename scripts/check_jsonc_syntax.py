@@ -7,10 +7,10 @@ import click
 import jsonc_document
 
 
-@click.command()
-@click.argument("filenames", nargs=-1)
-def main(filenames: tuple[str, ...]) -> None:
-    """Report syntax errors in the given JSONC files."""
+def check_files(*, filenames: tuple[str, ...]) -> bool:
+    """Report syntax errors in the given JSONC files and return
+    success.
+    """
     failed = False
     for filename in filenames:
         source = Path(filename).read_text(encoding="utf-8")
@@ -21,7 +21,14 @@ def main(filenames: tuple[str, ...]) -> None:
                 f"{filename}:{exc.lineno}:{exc.colno}: {exc.msg}\n"
             )
             failed = True
-    if failed:
+    return not failed
+
+
+@click.command()
+@click.argument("filenames", nargs=-1)
+def main(filenames: tuple[str, ...]) -> None:
+    """Report syntax errors in the given JSONC files."""
+    if not check_files(filenames=filenames):
         sys.exit(1)
 
 
