@@ -1032,14 +1032,11 @@ jobs:
       # ``src/literalizer/languages/typescript.py`` and ``--target es2015
       # --lib es2015`` matches ``JavaScript.language_version`` (``ES2015``)
       # in ``src/literalizer/languages/javascript.py``. Keep all three in
-      # sync. ``uv run --no-project`` suffices because the helper only
-      # drives ``tsc``; every fixture is a module, so one ``tsc`` process
-      # checks them all.
+      # sync. The local runner preserves batched compiler invocations.
       - name: Lint TypeScript
         timeout-minutes: 5
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .ts > /tmp/files-ts && test -s /tmp/files-ts
-          xargs -0 uv run --only-group=cli python -m scripts.check_typescript_consumers < /tmp/files-ts
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_typescript_fixtures
+          typecheck
 
   # Execute TypeScript fixtures via tsx. Split from `lint-npm-installed`
   # so the per-fixture tsx startups run in parallel with the tsc syntax
@@ -1080,9 +1077,8 @@ jobs:
           cache-dependency-glob: '**/pyproject.toml'
 
       - name: Run TypeScript files
-        run: |-
-          uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures .ts > /tmp/files-ts && test -s /tmp/files-ts
-          xargs -0 -P "$(nproc)" -n1 tsx < /tmp/files-ts
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_typescript_fixtures
+          run
 
       # Basic JSON -> TypeScript -> JSON round-trip (issue 1867).  Runs
       # here because this is the job with the Node + `tsx` toolchain;
