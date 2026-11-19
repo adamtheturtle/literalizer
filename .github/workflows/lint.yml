@@ -3350,10 +3350,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: '**/pyproject.toml'
-      - name: Find files to lint
-        shell: bash
-        run: uv run --no-dev --group=fixture-inventory python -m tests.integration.list_fixtures
-          .sv --include-default-module-names > /tmp/files-to-lint && test -s /tmp/files-to-lint
       # Pinned to 5.046 rather than `latest`: Verilator 5.048 hits an
       # internal "Underflow of indentation" codegen error
       # (`V3File.h:160`) when building the `run_systemverilog_roundtrip.py`
@@ -3371,9 +3367,8 @@ jobs:
       # `src/literalizer/languages/systemverilog.py`
       # (`SystemVerilog.VersionFormats.IEEE_1800_2017` maps to the
       # IEEE 1800-2017 SystemVerilog standard); keep them in sync.
-      - name: Check SystemVerilog syntax
-        run: xargs -0 -P "$(nproc)" -n1 verilator --lint-only --language 1800-2017
-          -Wno-REALCVT < /tmp/files-to-lint
+      - name: Validate native fixtures
+        run: uv run --no-dev --group=fixture-inventory python -m scripts.run_systemverilog_fixtures
       # Basic JSON -> SystemVerilog -> JSON round-trip (issue 1867). Runs
       # here because this is the job with Verilator installed; `uv run`
       # (project mode, not `--no-project`) is required so
