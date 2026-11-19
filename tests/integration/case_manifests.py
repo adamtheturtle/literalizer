@@ -825,6 +825,8 @@ class _CaseManifestData(
     schema_version: Literal[1]
     input: str | None = None
     input_roundtrip: InputRoundtripSpec | None = None
+    # Opt in once the literal outcomes are known for every selected option.
+    strict_golden_outcomes: bool = False
     expected_reused_anchor_warning: ReusedAnchorWarningSpec | None = None
     suites: list[SuiteName] = Field(default_factory=list[SuiteName])
     owner: OwnerName | None = None
@@ -953,6 +955,7 @@ class CaseManifest:
     schema_version: Literal[1]
     input: CaseInput
     input_roundtrip: InputRoundtripSpec | None
+    strict_golden_outcomes: bool
     selection: CapabilitySelection
     suites: frozenset[SuiteName]
     owner: OwnerName | None
@@ -1030,6 +1033,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         schema_version=data.schema_version,
         input=input_info,
         input_roundtrip=data.input_roundtrip,
+        strict_golden_outcomes=data.strict_golden_outcomes,
         selection=CapabilitySelection(
             gates=data.gates,
             any_gates=data.any_gates,

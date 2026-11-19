@@ -10,8 +10,9 @@ from beartype import beartype
 import literalizer
 from literalizer import ValueInput
 
+from .case_manifests import load_case_manifest
 from .golden_artifacts import GoldenArtifact
-from .golden_outcomes import Rejection
+from .golden_outcomes import SUCCESS, Rejection, Success
 from .golden_skip_policy import SkipPolicy
 from .language_specs import make_golden_artifact, make_spec
 from .literal_expectations import literal_rejection
@@ -94,17 +95,34 @@ class GoldenRendering:
                 specs.append(spec)
         return tuple(specs)
 
-    def rejection(self, *, spec: literalizer.Language) -> Rejection | None:
-        """Report documented errors without invoking the renderer."""
-        return literal_rejection(
+    def outcome(
+        self, *, spec: literalizer.Language
+    ) -> Success | Rejection | None:
+        """Resolve strict outcomes before rendering the selected
+        options.
+        """
+        rejection = literal_rejection(
             spec=spec,
+            lang_cls=self.lang_cls,
             variable_form=(
                 self.render.variable_form
                 if spec.supports_variable_names
                 else None
             ),
             case_dir=self.golden_parent,
+            substitutes_nulls=self.render.record_null_substitutions
+            is not None,
         )
+        if rejection is not None:
+            return rejection
+        if (
+            len(self.skip.reasons) == 0
+            or load_case_manifest(
+                case_dir=self.golden_parent
+            ).strict_golden_outcomes
+        ):
+            return SUCCESS
+        return None
 
     def artifact(self, *, version: enum.Enum) -> GoldenArtifact:
         """Resolve this fixture for one effective version."""

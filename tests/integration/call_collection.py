@@ -8,17 +8,19 @@ from beartype import beartype
 
 import literalizer
 from literalizer._enums import enum_payload
+from literalizer.exceptions import ExistingVariableNotSelfContainedError
 
 from .call_expectations import (
     call_style_spec,
     expected_call_shape_exception,
     fixture_rejection,
+    wrapped_call_needs_prior_binding,
     wrapper_capability_exclusion,
 )
 from .call_receivers import uses_integer_receiver
-from .case_manifests import CallCaseSpec, call_case_specs
+from .case_manifests import CallCaseSpec, WrappedCallFixture, call_case_specs
 from .golden_artifacts import GoldenArtifact
-from .golden_outcomes import Exclusion, Rejection
+from .golden_outcomes import SUCCESS, Exclusion, GoldenOutcome, Rejection
 from .language_specs import make_golden_artifact, make_spec, sorted_languages
 
 CASES_DIR = Path(__file__).parent / "cases"
@@ -35,7 +37,7 @@ class CallRendering:
     expected_exception: type[Exception] | None
 
     @property
-    def outcome(self) -> Rejection | Exclusion | None:
+    def outcome(self) -> GoldenOutcome | None:
         """Report documented errors and exclusions before rendering.
 
         A missing outcome leaves the call in the legacy runner until its
@@ -56,6 +58,17 @@ class CallRendering:
                 ),
                 match=None,
             )
+        if wrapped_call_needs_prior_binding(
+            config=self.config, spec=self.spec
+        ):
+            return Rejection(
+                error=ExistingVariableNotSelfContainedError,
+                match="the assignment has no prior declaration",
+            )
+        if isinstance(self.config.fixture, WrappedCallFixture) and isinstance(
+            self.config.variable_form, literalizer.ExistingVariable
+        ):
+            return SUCCESS
         return None
 
     def artifact(self, *, cases_dir: Path) -> GoldenArtifact:

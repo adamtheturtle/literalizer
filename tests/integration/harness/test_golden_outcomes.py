@@ -7,10 +7,13 @@ import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import InputFormat, literalize_call
-from literalizer.exceptions import CallArgNotSupportedError
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    ExistingVariableNotSelfContainedError,
+)
 from literalizer.languages import Bash
 from tests.integration.golden_checks import check_outcome
-from tests.integration.golden_outcomes import SUCCESS
+from tests.integration.golden_outcomes import SUCCESS, Rejection
 
 pytest_plugins: tuple[str, ...] = ("pytester",)
 
@@ -37,6 +40,26 @@ def test_success_propagates_a_previous_skip_error(
     ):
         check_outcome(
             outcome=SUCCESS,
+            render=functools.partial(_bash_call, source="[]"),
+            golden_path=golden_path,
+            file_regression=file_regression,
+        )
+    assert not golden_path.exists()
+
+
+def test_rejection_propagates_the_wrong_error(
+    *, tmp_path: Path, file_regression: FileRegressionFixture
+) -> None:
+    """A collection argument error cannot satisfy a binding rejection."""
+    golden_path = tmp_path / "call.sh"
+    with pytest.raises(
+        expected_exception=CallArgNotSupportedError, match="list values"
+    ):
+        check_outcome(
+            outcome=Rejection(
+                error=ExistingVariableNotSelfContainedError,
+                match="the assignment has no prior declaration",
+            ),
             render=functools.partial(_bash_call, source="[]"),
             golden_path=golden_path,
             file_regression=file_regression,

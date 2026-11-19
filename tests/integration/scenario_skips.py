@@ -3,7 +3,6 @@
 from beartype import beartype
 
 from literalizer.exceptions import (
-    ExcessiveNestingError,
     ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
@@ -12,16 +11,11 @@ from literalizer.exceptions import (
     UnrepresentableEmptyDictError,
     UnrepresentableInputError,
     UnrepresentableIntegerError,
-    UnrepresentableSpecialFloatError,
 )
 
 from .golden_skip_policy import SkipPolicy, SkipReason, SkipReasons
 
 _COMMON_SKIP_REASONS: SkipReasons = (
-    SkipReason(
-        error=ExcessiveNestingError,
-        reason="exceeds the target's safe collection nesting limit",
-    ),
     SkipReason(
         error=ExistingVariableNotSelfContainedError,
         reason="complete file cannot contain an undeclared existing variable",
@@ -65,10 +59,6 @@ VARIANT_SKIP_REASONS: SkipReasons = (
     SkipReason(
         error=IncompatibleFormatsError,
         reason="combination cannot represent this input",
-    ),
-    SkipReason(
-        error=UnrepresentableSpecialFloatError,
-        reason="cannot represent special floats in this input",
     ),
     SkipReason(
         error=UnrepresentableInputError,

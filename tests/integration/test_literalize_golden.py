@@ -14,6 +14,7 @@ set of golden files.
 
 import dataclasses
 import functools
+from contextlib import nullcontext
 from pathlib import Path
 
 import pytest
@@ -31,6 +32,7 @@ from .golden_checks import (
     fixture_contents,
     format_consumer,
 )
+from .golden_outcomes import Rejection
 from .golden_renderings import GoldenRendering
 from .language_metadata import language_metadata
 from .language_specs import with_per_fixture_module_name
@@ -73,10 +75,10 @@ def _check_rendering(
         if spec.supports_variable_names
         else None
     )
-    rejection = rendering.rejection(spec=spec)
-    if rejection is not None:
+    outcome = rendering.outcome(spec=spec)
+    if isinstance(outcome, Rejection):
         assert_rejection(
-            outcome=rejection,
+            outcome=outcome,
             golden_path=golden_path,
             render=functools.partial(
                 literalize_rendering,
@@ -88,10 +90,14 @@ def _check_rendering(
             ),
         )
         return
-    with GoldenSkips(
-        policy=rendering.skip,
-        golden_path=golden_path,
-        prefix=rendering.lang_cls.__name__,
+    with (
+        GoldenSkips(
+            policy=rendering.skip,
+            golden_path=golden_path,
+            prefix=rendering.lang_cls.__name__,
+        )
+        if outcome is None
+        else nullcontext()
     ):
         result = literalize_rendering(
             rendering=rendering,

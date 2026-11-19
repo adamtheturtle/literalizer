@@ -24,7 +24,6 @@ from literalizer._parsing import parse_input
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     DottedCallTargetNotSupportedError,
-    ExistingVariableNotSelfContainedError,
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
     InvalidCallTargetError,
@@ -65,7 +64,6 @@ from .golden_checks import (
     check_outcome,
     fixture_contents,
 )
-from .golden_outcomes import Rejection
 from .golden_skip_policy import SkipPolicy, SkipReason
 from .language_metadata import language_metadata
 from .language_specs import (
@@ -102,13 +100,6 @@ _WRAP_IN_FILE_SKIPS: SkipPolicy = SkipPolicy(
         SkipReason(
             error=CallArgNotSupportedError,
             reason="rejected call arg",
-        ),
-        SkipReason(
-            error=ExistingVariableNotSelfContainedError,
-            reason=(
-                "binds a call result by assignment to a name a whole "
-                "file never declares"
-            ),
         ),
     ),
     suffix="",
@@ -730,7 +721,7 @@ def run_call_golden_case(
         _render_call_golden_case,
         rendering=rendering,
         cases_dir=cases_dir,
-        strict=isinstance(outcome, Rejection),
+        strict=outcome is not None,
     )
     if outcome is None:
         check_golden(
