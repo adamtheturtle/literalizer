@@ -29,10 +29,6 @@ _BACKENDS = {
         r" \(RuntimeError\)$",
     ),
 }
-_RUBY_OPT_IN = pytest.mark.skipif(
-    condition=os.environ.get(key="LITERALIZER_TEST_RUBY") != "1",
-    reason="Set LITERALIZER_TEST_RUBY=1 with Ruby 3+ on PATH",
-)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -116,14 +112,16 @@ _CORRUPTIONS = (
     ),
 )
 
+# The Ruby CI job opts in after provisioning its interpreter. A missing
+# interpreter then fails at execution just like any other broken toolchain.
+_RUN_RUBY = os.environ.get(key="LITERALIZER_TEST_RUBY") == "1"
+_RUBY_CORRUPTIONS = [("ruby", corruption) for corruption in _CORRUPTIONS]
+
 
 @pytest.mark.parametrize(
     argnames=("backend_name", "corruption"),
     argvalues=[("python", corruption) for corruption in _CORRUPTIONS]
-    + [
-        pytest.param("ruby", corruption, marks=_RUBY_OPT_IN)
-        for corruption in _CORRUPTIONS
-    ]
+    + (_RUBY_CORRUPTIONS if _RUN_RUBY else [])
     + [
         (
             "python",
