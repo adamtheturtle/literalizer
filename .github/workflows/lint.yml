@@ -2406,7 +2406,7 @@ jobs:
           extraFiles: '[".github/workflows/lint.yml", ".github/coursier-mirror.properties"]'
       - name: Install scala-cli
         timeout-minutes: 10
-        uses: VirtusLab/scala-cli-setup@v1.18.0
+        uses: VirtusLab/scala-cli-setup@v1.19.0
       # Compile every fixture in a single scala-cli invocation to pay
       # the Scala compile + Bloop daemon startup cost once instead of
       # per fixture. Each fixture already carries a unique object name
