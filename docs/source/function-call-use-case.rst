@@ -545,8 +545,8 @@ Preamble and executable-placement metadata support composition with :func:`~lite
 Declarative invocation recipes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:func:`~literalizer.literalize_native_calls` applies a recipe to source rows parsed by the same input parsers as the existing rendering APIs.
-The recipe is a mapping, independent of the data being rendered.
+:func:`~literalizer.literalize_invocations` applies a bare native recipe to source rows parsed by the same input parsers as the existing rendering APIs.
+Pass the recipe mapping directly as ``invocation``.
 For example:
 
 .. code-block:: json
@@ -629,8 +629,6 @@ It requires a companion source and an expression-style call backend; prefix, pos
 The called functions/classes and checker must be supplied by the consumer.
 The checker always receives positional arguments, independently of the configured style for the inner call.
 
-Existing bare native recipes are also accepted and retain their behavior.
 Generic calls retain the existing :func:`~literalizer.literalize_call` input semantics, literal conversions, bindings, preambles, and errors.
-Native calls retain :func:`~literalizer.literalize_native_calls` behavior.
 Use ``per_element=True`` and list rows for shared examples.
 ``pre_indent_level`` places generic fragments in the caller's scope; nonzero ``initial_column`` remains supported only for native invocations.

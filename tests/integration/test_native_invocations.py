@@ -55,7 +55,7 @@ _CASES = Path(__file__).parent / "cases"
                     s=case.manifest.input.path.read_text(encoding="utf-8")
                 )
             )
-            else ("native", "shared", "bare")
+            else ("shared", "bare")
         )
     ],
 )
@@ -103,22 +103,19 @@ def test_native_invocation_golden(
             )
         else:
             invocation = step["invocation"]
-            render = literalizer.literalize_native_calls
-            if api != "native":
-                render = literalizer.literalize_invocations
-                if api == "shared":
-                    invocation = {
-                        "default": {
-                            "target-function": "counter.accept",
-                            "parameter-names": ["user", "timestamp"],
-                            "result-function": "checkResult",
-                        },
-                        "languages": {
-                            "python": {"result-function": "check_result"},
-                            step_spec.pygments_name: {"native": invocation},
-                        },
-                    }
-            result = render(
+            if api == "shared":
+                invocation = {
+                    "default": {
+                        "target-function": "counter.accept",
+                        "parameter-names": ["user", "timestamp"],
+                        "result-function": "checkResult",
+                    },
+                    "languages": {
+                        "python": {"result-function": "check_result"},
+                        step_spec.pygments_name: {"native": invocation},
+                    },
+                }
+            result = literalizer.literalize_invocations(
                 source=json.dumps(obj=step["rows"]),
                 input_format=literalizer.InputFormat.JSON,
                 language=step_spec,

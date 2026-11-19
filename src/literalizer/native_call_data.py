@@ -290,7 +290,7 @@ def _source_rows(
 
 
 @beartype
-def literalize_native_calls(
+def render_native_recipe(
     *,
     source: str,
     input_format: InputFormat,
