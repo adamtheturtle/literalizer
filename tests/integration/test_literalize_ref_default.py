@@ -6,22 +6,30 @@ import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from .case_manifests import REF_DEFAULT_OWNER
+from .golden_checks import golden_test_parameters
 from .literalize_ref_cases import (
     run_literalize_ref_golden_case,
 )
 from .reference_cases import (
-    LiteralizeRefCase,
+    RefRendering,
     discover_literalize_ref_cases,
 )
 
 
 @pytest.mark.parametrize(
-    argnames="ref_case",
-    argvalues=discover_literalize_ref_cases(owner=REF_DEFAULT_OWNER),
-    ids=lambda case: f"{case.config.coverage_id}/{case.lang_cls.__name__}",
+    argnames="renderings",
+    argvalues=golden_test_parameters(
+        cases=(
+            (
+                f"{case.config.coverage_id}/{case.lang_cls.__name__}",
+                case.renderings,
+            )
+            for case in discover_literalize_ref_cases(owner=REF_DEFAULT_OWNER)
+        ),
+    ),
 )
 def test_literalize_ref_default_golden_file(
-    ref_case: LiteralizeRefCase,
+    renderings: tuple[RefRendering, ...],
     cases_dir: Path,
     file_regression: FileRegressionFixture,
     subtests: pytest.Subtests,
@@ -29,7 +37,7 @@ def test_literalize_ref_default_golden_file(
     """``literalize`` renders ref markers without requiring
     ``ref_case``.
     """
-    for rendering in ref_case.renderings:
+    for rendering in renderings:
         with subtests.test(version=rendering.spec.language_version.name):
             run_literalize_ref_golden_case(
                 rendering=rendering,

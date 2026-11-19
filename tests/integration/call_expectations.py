@@ -92,9 +92,8 @@ def wrapper_capability_exclusion(
     ``$zipped`` companion) needs
     ``supports_multi_param_call_wrapper_stub``; a case that splices a
     map literal as a free expression needs
-    ``supports_dict_literal_as_free_expression``.  Languages that fail a
-    check are skipped (no golden) rather than emitting a non-compiling
-    fixture.
+    ``supports_dict_literal_as_free_expression``. Languages that fail a
+    check are excluded during discovery because the fixture cannot compile.
     """
     if (
         isinstance(config.variable_form, literalizer.ExistingVariable)
