@@ -1,4 +1,6 @@
-"""Validate HCL and Jsonnet fixtures with their native command-line tools."""
+"""Validate HCL and Jsonnet fixtures with their native command-line
+tools.
+"""
 
 import concurrent.futures
 import os
