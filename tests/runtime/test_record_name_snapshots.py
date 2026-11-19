@@ -7,13 +7,16 @@ from typing import Protocol, runtime_checkable
 
 import pytest
 
-from literalizer import Language, literalize_call_with_declarations
+from literalizer import Language
 from literalizer.languages import ALL_LANGUAGES
 from tests.integration.case_manifests import case_input
 from tests.integration.golden_renderings import GoldenRendering
 from tests.integration.golden_scenarios import GOLDEN_SCENARIOS
 from tests.integration.language_specs import with_per_fixture_module_name
-from tests.integration.literalize_rendering import literalize_rendering
+from tests.integration.literalize_rendering import (
+    compose_rendering,
+    literalize_rendering,
+)
 
 _CASES_DIR = Path(__file__).parents[1] / "integration" / "cases"
 
@@ -61,11 +64,8 @@ def _render_program(*, rendering: GoldenRendering, language: Language) -> str:
         variable_form=rendering.render.variable_form,
     )
     if len(rendering.extra_preamble) > 0:
-        result = dataclasses.replace(
-            result, preamble=rendering.extra_preamble + result.preamble
-        )
-        result = literalize_call_with_declarations(
-            language=language, declarations=(), call=result
+        result = compose_rendering(
+            rendering=rendering, spec=language, declarations=(), result=result
         )
     return result.code + "\n"
 

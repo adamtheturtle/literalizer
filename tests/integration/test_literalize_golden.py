@@ -34,7 +34,7 @@ from .golden_checks import (
 from .golden_renderings import GoldenRendering
 from .language_metadata import language_metadata
 from .language_specs import with_per_fixture_module_name
-from .literalize_rendering import literalize_rendering
+from .literalize_rendering import compose_rendering, literalize_rendering
 from .yaml_warnings import expected_yaml_warnings
 
 
@@ -118,21 +118,11 @@ def _check_rendering(
                     ),
                 )
             )
-        # Keep fixture-provided dependencies ahead of the external types,
-        # even when the consumer also requests those dependencies.
-        result = dataclasses.replace(
-            result,
-            preamble=rendering.extra_preamble + result.preamble,
-            data_dependent_preamble=tuple(
-                entry
-                for entry in result.data_dependent_preamble
-                if entry not in rendering.extra_preamble
-            ),
-        )
-        result = literalizer.literalize_call_with_declarations(
-            language=spec,
+        result = compose_rendering(
+            rendering=rendering,
+            spec=spec,
             declarations=declarations,
-            call=result,
+            result=result,
         )
     metadata = language_metadata(language_id=spec.language_id)
     contents = fixture_contents(
