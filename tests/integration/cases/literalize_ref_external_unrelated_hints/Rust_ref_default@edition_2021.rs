@@ -1,19 +1,9 @@
-fn assert_equal<Actual, Expected>(actual: Actual, expected: Expected)
-where
-    Actual: std::fmt::Debug + PartialEq<Expected>,
-    Expected: std::fmt::Debug,
-{
-    assert_eq!(actual, expected);
-}
+use serde_json::to_value;
 fn main() {
     let missing = vec![
         1,
         2,
     ];
     let my_data = missing;
-    let expected_data = vec![
-        1,
-        2,
-    ];
-    assert_equal(my_data.clone(), expected_data.clone());
+    if to_value(my_data.clone()).unwrap() != serde_json::from_str::<serde_json::Value>("[1, 2]").unwrap() { std::process::exit(1); };
 }

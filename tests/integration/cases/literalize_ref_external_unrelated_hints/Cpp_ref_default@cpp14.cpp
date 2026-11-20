@@ -1,21 +1,20 @@
 #include <vector>
 #include <utility>
 #include <cstdlib>
-
-template <typename Actual, typename Expected>
-void assert_equal(const Actual& actual, const Expected& expected) {
-    if (actual != expected) { std::abort(); }
-}
+#include <nlohmann/json.hpp>
+using nlohmann::json;
 int main() {
 auto missing = std::vector<int>{
     1,
     2,
 };
 auto&& my_data = std::move_if_noexcept(missing);
-auto expected_data = std::vector<int>{
-    1,
-    2,
-};
-assert_equal(my_data, expected_data);
+([&]() noexcept {
+    try {
+        return json(my_data) == json::parse("[1, 2]");
+    } catch (...) {
+        return false;
+    }
+}() ? static_cast<void>(0) : std::abort());
     return 0;
 }

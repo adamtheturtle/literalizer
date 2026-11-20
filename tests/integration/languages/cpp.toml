@@ -1,5 +1,21 @@
 schema_version = 1
 
+[golden.reference_check]
+target_function = "json"
+transform = '''
+([&]() noexcept {{
+    try {{
+        return {call} == json::parse({zipped});
+    }} catch (...) {{
+        return false;
+    }}
+}}() ? static_cast<void>(0) : std::abort())'''
+preamble = '''
+#include <cstdlib>
+#include <nlohmann/json.hpp>
+using nlohmann::json;
+'''
+
 [variants]
 pre_indent_comment_scalar = true
 record = ["field_type_split"]

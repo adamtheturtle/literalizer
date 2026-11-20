@@ -2,7 +2,6 @@
 
 import dataclasses
 import json
-from pathlib import Path
 
 from beartype import beartype
 from pydantic import TypeAdapter
@@ -30,6 +29,7 @@ from .case_manifests import (
     RefValueCheckSpec,
 )
 from .golden_checks import fixture_contents
+from .language_metadata import ReferenceCheckSpec, language_metadata
 from .language_specs import (
     find_redefinition_styles,
     reference_case_for_declaration_style,
@@ -38,54 +38,52 @@ from .reference_inputs import RefData
 
 
 @beartype
+def _render_reference_check(
+    *,
+    expected_source: str,
+    check: ReferenceCheckSpec,
+    spec: literalizer.Language,
+) -> literalizer.LiteralizeResult:
+    """Compare one live binding with the independent JSON expectation."""
+    return literalizer.literalize_call(
+        source='{"$ref": "my_data"}',
+        target_function=check.target_function,
+        call_transform=check.transform,
+        parameter_names=("value",),
+        input_format=literalizer.InputFormat.JSON,
+        language=spec,
+        per_element=False,
+        ref_key="$ref",
+        zip_source=json.dumps(obj=expected_source),
+        zip_input_format=literalizer.InputFormat.JSON,
+    )
+
+
+@beartype
 def _compose_ref_value_check(
     *,
     context: ExternalRefContext,
     consumer: RefValueCheckSpec,
+    check: ReferenceCheckSpec,
     spec: literalizer.Language,
     declarations: list[literalizer.LiteralizeResult],
     result: literalizer.LiteralizeResult,
 ) -> literalizer.LiteralizeResult:
-    """Assert a reference result against an independently rendered value.
-
-    Expected data is rendered separately, after the operation under test,
-    and never participates in its reference inference.
-    """
-    if "my_data" in context.declarations:
-        initial_source = context.declarations["my_data"]
-        initial_check = literalizer.literalize_call(
-            source=f'[[{{"$ref": "my_data"}}, {initial_source}]]',
-            target_function="assert_equal",
-            parameter_names=("actual", "expected"),
-            input_format=literalizer.InputFormat.JSON,
-            language=spec,
-            ref_key="$ref",
+    """Check initial and final values independently of reference inference."""
+    initial_source = context.declarations.get("my_data")
+    if initial_source is not None:
+        declarations.append(
+            _render_reference_check(
+                expected_source=initial_source, check=check, spec=spec
+            )
         )
-        declarations.append(initial_check)
-    expected = literalizer.literalize(
-        source=consumer.expected_source,
-        input_format=literalizer.InputFormat.JSON,
-        language=spec,
-        variable_form=literalizer.NewVariable(
-            name="expected_data", modifiers=frozenset()
-        ),
-    )
-    assertion = literalizer.literalize_call(
-        source='[[{"$ref": "my_data"}, {"$ref": "expected_data"}]]',
-        target_function="assert_equal",
-        parameter_names=("actual", "expected"),
-        input_format=literalizer.InputFormat.JSON,
-        language=spec,
-        ref_key="$ref",
-    )
-    helper = (
-        Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
-    )
     return literalizer.literalize_call_with_declarations(
         language=spec,
-        declarations=[*declarations, result, expected],
-        call=assertion,
-        extra_preamble=(helper.read_text(encoding="utf-8").rstrip(),),
+        declarations=[*declarations, result],
+        call=_render_reference_check(
+            expected_source=consumer.expected_source, check=check, spec=spec
+        ),
+        extra_preamble=(check.preamble.rstrip(),),
     )
 
 
@@ -318,19 +316,19 @@ def compose_external_ref_fixture(
             ),
         )
         declarations.append(declaration)
-    assertion_helper = (
-        Path(__file__).parent / "support" / f"assert_equal{spec.extension}"
-    )
     consumer = context.consumer
-    if isinstance(consumer, RefValueCheckSpec) and assertion_helper.is_file():
-        return _compose_ref_value_check(
-            context=context,
-            consumer=consumer,
-            spec=spec,
-            declarations=declarations,
-            result=result,
-        )
     if isinstance(consumer, RefValueCheckSpec):
+        metadata = language_metadata(language_id=spec.language_id)
+        check = metadata.golden.reference_check
+        if check is not None:
+            return _compose_ref_value_check(
+                context=context,
+                consumer=consumer,
+                check=check,
+                spec=spec,
+                declarations=declarations,
+                result=result,
+            )
         if (
             config.variable_form == "existing"
             and "my_data" in context.declarations

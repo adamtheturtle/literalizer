@@ -1,15 +1,8 @@
-fn assert_equal<Actual, Expected>(actual: Actual, expected: Expected)
-where
-    Actual: std::fmt::Debug + PartialEq<Expected>,
-    Expected: std::fmt::Debug,
-{
-    assert_eq!(actual, expected);
-}
+use serde_json::to_value;
 fn main() {
     let mut my_data = 0;
     let shared = 1;
-    assert_equal(my_data.clone(), 0);
+    if to_value(my_data.clone()).unwrap() != serde_json::from_str::<serde_json::Value>("0").unwrap() { std::process::exit(1); };
     my_data = shared;
-    let expected_data = 1;
-    assert_equal(my_data.clone(), expected_data.clone());
+    if to_value(my_data.clone()).unwrap() != serde_json::from_str::<serde_json::Value>("1").unwrap() { std::process::exit(1); };
 }

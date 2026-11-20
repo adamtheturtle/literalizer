@@ -1,15 +1,23 @@
 #include <cstdlib>
-
-template <typename Actual, typename Expected>
-void assert_equal(const Actual& actual, const Expected& expected) {
-    if (actual != expected) { std::abort(); }
-}
+#include <nlohmann/json.hpp>
+using nlohmann::json;
 int main() {
 auto my_data = 0;
 auto shared = 1;
-assert_equal(my_data, 0);
+([&]() noexcept {
+    try {
+        return json(my_data) == json::parse("0");
+    } catch (...) {
+        return false;
+    }
+}() ? static_cast<void>(0) : std::abort());
 my_data = shared;
-auto expected_data = 1;
-assert_equal(my_data, expected_data);
+([&]() noexcept {
+    try {
+        return json(my_data) == json::parse("1");
+    } catch (...) {
+        return false;
+    }
+}() ? static_cast<void>(0) : std::abort());
     return 0;
 }

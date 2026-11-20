@@ -36,6 +36,8 @@ from typing import Annotated, Literal
 from beartype import beartype
 from pydantic import BaseModel, Field, model_validator
 
+from .manifest_values import CallTransformTemplate
+
 LANGUAGES_DIR = Path(__file__).parent / "languages"
 
 type RecordVariantName = Literal[
@@ -53,6 +55,16 @@ type NestedListWideningName = Literal["none", "integer_width"]
 
 class LanguageMetadataError(ValueError):
     """A language metadata file is missing or invalid."""
+
+
+class ReferenceCheckSpec(
+    BaseModel, arbitrary_types_allowed=True, extra="forbid", frozen=True
+):
+    """Native call recipe that signals a mismatched reference value."""
+
+    target_function: str
+    transform: CallTransformTemplate
+    preamble: str
 
 
 # A field default here is what a language file means by leaving the
@@ -87,6 +99,9 @@ class GoldenPolicy(  # noqa: NOD001
         None
     )
     """Mutable declaration style for a caller-owned call-result seed."""
+
+    reference_check: ReferenceCheckSpec | None = None
+    """Test consumer for an independently authored reference value."""
 
     fixture_module_name_lowercase: bool = False
     """Whether a formatted per-fixture module name is lower-cased."""
