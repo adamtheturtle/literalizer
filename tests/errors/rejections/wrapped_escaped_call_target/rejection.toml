@@ -1,0 +1,13 @@
+schema_version = 1
+summary = "SystemVerilog wrapped dotted calls require components that can form helper class names."
+exceptions = ["InvalidCallTargetError"]
+gates = [{ kind = "capability_flag", flag = "declares_call_styles" }]
+
+[call]
+api = "literalize_call"
+sources = ["1"]
+input_format = "json"
+target_function = '\bad-name .method'
+parameter_names = ["value"]
+per_element = false
+wrap_in_file = true
