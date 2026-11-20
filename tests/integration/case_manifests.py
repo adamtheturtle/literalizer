@@ -600,9 +600,6 @@ class ComposedCallFixture(  # noqa: NOD001
         default_factory=frozenset[str]
     )
     include_target_stub: bool = True
-    caller_imports: manifest_values.StringTuple = Field(
-        default_factory=tuple[str, ...]
-    )
 
 
 type CallFixture = Annotated[

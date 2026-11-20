@@ -97,18 +97,6 @@ PARTIAL_UNSAFE_JS = (
 )
 
 
-# A caller-owned module for qualified function targets in golden files.
-CALL_TARGET_PURS: str = textwrap.dedent(
-    text="""\
-    module LiteralizerSupport.CallTarget where
-    import Prelude (Unit)
-    foreign import func :: forall a. a -> Unit
-    """,
-)
-
-CALL_TARGET_JS = "export const func = _value => ({});\n"
-
-
 def write_lint_environment(tmpdir: Path) -> list[Path]:
     """Write the native support modules to *tmpdir*.
 
@@ -120,7 +108,6 @@ def write_lint_environment(tmpdir: Path) -> list[Path]:
     modules: list[tuple[str, str, str]] = [
         ("Prelude.purs", PRELUDE_PURS, PRELUDE_JS),
         ("PartialUnsafe.purs", PARTIAL_UNSAFE_PURS, PARTIAL_UNSAFE_JS),
-        ("CallTarget.purs", CALL_TARGET_PURS, CALL_TARGET_JS),
         ("Either.purs", EITHER_PURS, EITHER_JS),
         ("ArgonautCore.purs", ARGONAUT_CORE_PURS, ARGONAUT_CORE_JS),
         ("ArgonautParser.purs", ARGONAUT_PARSER_PURS, ARGONAUT_PARSER_JS),

@@ -15,7 +15,6 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer._formatters.preamble_roles import import_preamble
 from literalizer._literalize import (
     _resolve_refs_for_inference,
     call_result_discard_formatter,
@@ -672,7 +671,6 @@ def _render_call_golden_case(
     )
     body_stubs = (
         *target_stubs.body,
-        *(import_preamble(code=entry) for entry in fixture.caller_imports),
         *wrapper_stubs.body,
     )
     class_stubs = (*target_stubs.class_scope, *wrapper_stubs.class_scope)
