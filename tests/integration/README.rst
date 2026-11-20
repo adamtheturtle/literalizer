@@ -143,7 +143,7 @@ The ordinary native jobs execute these self-contained files without another runn
 The Python corruption checks run with the regular pytest suite.
 Run the Ruby checks with Ruby 3 or later on ``PATH``::
 
-    LITERALIZER_TEST_RUBY=1 uv run --no-dev --group=test python -m pytest -n 0 tests/integration/test_native_value_consumers.py -k ruby
+    uv run --no-dev --group=test python -m pytest -n 0 tests/integration/test_native_value_consumers.py -m ruby_native
 
 Successful execution of the original programs remains with the existing native jobs.
 Fixtures without native assertions retain their existing snapshot, compiler and native checks.

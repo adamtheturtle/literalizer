@@ -1,7 +1,6 @@
 """Corruption controls for native assertions in compiling golden files."""
 
 import dataclasses
-import os
 import re
 import subprocess
 import sys
@@ -112,16 +111,10 @@ _CORRUPTIONS = (
     ),
 )
 
-# The Ruby CI job opts in after provisioning its interpreter. A missing
-# interpreter then fails at execution just like any other broken toolchain.
-_RUN_RUBY = os.environ.get(key="LITERALIZER_TEST_RUBY") == "1"
-_RUBY_CORRUPTIONS = [("ruby", corruption) for corruption in _CORRUPTIONS]
-
 
 @pytest.mark.parametrize(
     argnames=("backend_name", "corruption"),
     argvalues=[("python", corruption) for corruption in _CORRUPTIONS]
-    + (_RUBY_CORRUPTIONS if _RUN_RUBY else [])
     + [
         (
             "python",
@@ -153,6 +146,10 @@ _RUBY_CORRUPTIONS = [("ruby", corruption) for corruption in _CORRUPTIONS]
                 ruby=("", ""),
             ),
         ),
+    ]
+    + [
+        pytest.param("ruby", corruption, marks=pytest.mark.ruby_native)
+        for corruption in _CORRUPTIONS
     ],
 )
 def test_native_value_corruptions(

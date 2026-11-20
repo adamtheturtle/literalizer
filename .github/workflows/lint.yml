@@ -373,11 +373,9 @@ jobs:
 
       - name: Test Ruby native corruption controls
         timeout-minutes: 5
-        env:
-          LITERALIZER_TEST_RUBY: '1'
         run: >-
           uv run --no-dev --group=test python -m pytest -n 0
-          tests/integration/test_native_value_consumers.py -k ruby
+          tests/integration/test_native_value_consumers.py -m ruby_native
 
       # Basic JSON -> Ruby -> JSON round-trip (issue 1867). Runs here
       # because this is the job with the Ruby toolchain; `uv run`
