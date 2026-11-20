@@ -33,6 +33,7 @@ from .rejection_manifests import (
     RejectionKwarg,
     RejectionManifest,
     TextKwarg,
+    TextPairsKwarg,
     substituted,
 )
 
@@ -136,6 +137,16 @@ def _kwarg_values(
         case TextKwarg():
             resolved = {
                 kwarg.kwarg: substituted(template=kwarg.value, value=value)
+            }
+        case TextPairsKwarg():
+            resolved = {
+                kwarg.kwarg: tuple(
+                    (
+                        substituted(template=first, value=value),
+                        substituted(template=second, value=value),
+                    )
+                    for first, second in kwarg.pairs
+                )
             }
         case RecordShapeNamesKwarg():
             resolved = {

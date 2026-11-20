@@ -254,6 +254,17 @@ class TextKwarg(
     value: str
 
 
+class TextPairsKwarg(BaseModel, extra="forbid", frozen=True, strict=True):
+    """Pass an ordered tuple of string pairs."""
+
+    kind: Literal["text_pairs"]
+    kwarg: Annotated[str, Field(min_length=1)]
+    pairs: Annotated[
+        tuple[Annotated[tuple[str, str], Field(strict=False)], ...],
+        Field(strict=False),
+    ]
+
+
 class RecordShapeNamesKwarg(
     BaseModel,
     extra="forbid",
@@ -306,6 +317,7 @@ type RejectionKwarg = Annotated[
     | OptionUnsetKwarg
     | BooleanKwarg
     | TextKwarg
+    | TextPairsKwarg
     | EmptyContainerTypeHintsKwarg
     | RecordShapeNamesKwarg,
     Field(discriminator="kind"),
@@ -738,6 +750,8 @@ def _kwarg_templates(*, kwarg: RejectionKwarg) -> tuple[str, ...]:
     match kwarg:
         case TextKwarg():
             templates = (kwarg.value,)
+        case TextPairsKwarg():
+            templates = tuple(text for pair in kwarg.pairs for text in pair)
         case EmptyContainerTypeHintsKwarg():
             templates = ()
         case RecordShapeNamesKwarg():

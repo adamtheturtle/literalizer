@@ -1,0 +1,8 @@
+schema_version = 1
+summary = "Qualified imports require a valid alias."
+exceptions = [ "ValueError" ]
+gates = [ { kind = "spec_field_present", field = "qualified_imports" } ]
+
+[call]
+api = "constructor"
+kwargs = [ { kind = "text_pairs", kwarg = "qualified_imports", pairs = [ [ "Prelude", "badAlias" ] ] } ]
