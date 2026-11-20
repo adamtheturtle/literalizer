@@ -10,24 +10,29 @@ from .call_cases import (
 )
 from .call_collection import (
     CASES_DIR,
-    CallCase,
+    CallRendering,
 )
-from .call_variant_cases import CallVariantCase, call_golden_cases
+from .call_variant_cases import call_golden_cases
+from .golden_checks import golden_test_parameters
 
 
 @pytest.mark.parametrize(
-    argnames="call_case",
-    argvalues=call_golden_cases(cases_dir=CASES_DIR),
-    ids=lambda case: case.test_id,
+    argnames="renderings",
+    argvalues=golden_test_parameters(
+        cases=(
+            (case.test_id, case.renderings)
+            for case in call_golden_cases(cases_dir=CASES_DIR)
+        ),
+    ),
 )
 def test_call_golden_file(
-    call_case: CallCase | CallVariantCase,
+    renderings: tuple[CallRendering, ...],
     cases_dir: Path,
     file_regression: FileRegressionFixture,
     subtests: pytest.Subtests,
 ) -> None:
     """Every call rendering matches its fixture or declared rejection."""
-    for rendering in call_case.renderings:
+    for rendering in renderings:
         with subtests.test(version=rendering.spec.language_version.name):
             run_call_golden_case(
                 rendering=rendering,

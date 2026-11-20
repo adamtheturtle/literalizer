@@ -6,7 +6,7 @@ skip policies cover constraints still evaluated during rendering.
 
 import dataclasses
 import enum
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from types import TracebackType
 from typing import Protocol, runtime_checkable
@@ -18,7 +18,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from literalizer import Language, LiteralizeResult
 
 from .fixture_names import fixture_module_name
-from .golden_outcomes import GoldenOutcome, Rejection, Success
+from .golden_outcomes import Exclusion, GoldenOutcome, Rejection, Success
 from .golden_skip_policy import SkipPolicy
 from .language_metadata import language_metadata
 
@@ -28,6 +28,30 @@ class _ReasonedError(Protocol):
     """An error that carries its own account of what it rejected."""
 
     reason: str
+
+
+class _OutcomeRendering(Protocol):
+    """A rendering with a resolved outcome or a legacy fallback."""
+
+    @property
+    def outcome(self) -> GoldenOutcome | None:
+        """Return the discovered outcome for this rendering."""
+
+
+def golden_test_parameters(
+    *, cases: Iterable[tuple[str, Iterable[_OutcomeRendering]]]
+) -> list[pytest.ParameterSet]:
+    """Schedule executable renderings under their case IDs."""
+    parameters: list[pytest.ParameterSet] = []
+    for case_id, renderings in cases:
+        executable = tuple(
+            rendering
+            for rendering in renderings
+            if not isinstance(rendering.outcome, Exclusion)
+        )
+        if len(executable) > 0:
+            parameters.append(pytest.param(executable, id=case_id))
+    return parameters
 
 
 @beartype
@@ -170,5 +194,7 @@ def check_outcome(
                 outcome=outcome, render=render, golden_path=golden_path
             )
         case _:
-            assert_no_golden(golden_path=golden_path)
-            pytest.skip(reason=outcome.reason)
+            reason = outcome.reason
+            pytest.fail(
+                reason=f"Discovery exclusion reached execution: {reason}"
+            )

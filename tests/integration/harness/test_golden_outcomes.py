@@ -13,7 +13,7 @@ from literalizer.exceptions import (
 )
 from literalizer.languages import Bash
 from tests.integration.golden_checks import check_outcome
-from tests.integration.golden_outcomes import SUCCESS, Rejection
+from tests.integration.golden_outcomes import SUCCESS, Exclusion, Rejection
 
 pytest_plugins: tuple[str, ...] = ("pytester",)
 
@@ -65,6 +65,22 @@ def test_rejection_propagates_the_wrong_error(
             file_regression=file_regression,
         )
     assert not golden_path.exists()
+
+
+def test_exclusion_reaching_execution_fails(
+    *, tmp_path: Path, file_regression: FileRegressionFixture
+) -> None:
+    """A fixture prerequisite belongs in discovery."""
+    with pytest.raises(
+        expected_exception=pytest.fail.Exception,
+        match="Discovery exclusion reached execution: missing call syntax",
+    ):
+        check_outcome(
+            outcome=Exclusion(reason="missing call syntax"),
+            render=functools.partial(_bash_call, source="[]"),
+            golden_path=tmp_path / "call.sh",
+            file_regression=file_regression,
+        )
 
 
 @pytest.mark.parametrize(argnames="regenerate", argvalues=[False, True])
