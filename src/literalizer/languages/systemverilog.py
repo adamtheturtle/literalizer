@@ -62,6 +62,7 @@ from literalizer._language import (
     FormatValueMixin,
     HeterogeneousBehavior,
     IdentifierCase,
+    IdentifierSyntax,
     JsonType,
     LanguageCls,
     ModifierCombination,
@@ -106,6 +107,26 @@ from literalizer.exceptions import (
 _INT32_MIN = -(2**31)
 _INT32_MAX = 2**31 - 1
 _MAX_STRINGIFIED_COLLECTION_DEPTH = 12
+
+
+class _SystemVerilogIdentifierSyntax:
+    """Simple names and escaped names that need the escaped spelling."""
+
+    @staticmethod
+    def accepts(*, name: str) -> bool:
+        """Match a simple name or an escaped name with its trailing
+        space.
+        """
+        return (
+            re.fullmatch(
+                pattern=(
+                    r"[A-Za-z_][A-Za-z0-9_]*"
+                    r"|\\(?![A-Za-z_][A-Za-z0-9_$]* )[!-~]+ "
+                ),
+                string=name,
+            )
+            is not None
+        )
 
 
 @beartype
@@ -415,7 +436,12 @@ else:
 @beartype
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class SystemVerilog(metaclass=LanguageCls):
-    """SystemVerilog language specification."""
+    """SystemVerilog language specification.
+
+    An escaped variable name includes its leading backslash and
+    terminating space. Use the simple spelling for names that already
+    match the simple identifier grammar.
+    """
 
     reserved_module_identifiers: ClassVar[frozenset[str]] = frozenset()
     immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]] = frozenset()
@@ -442,13 +468,18 @@ class SystemVerilog(metaclass=LanguageCls):
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
     module_name_must_start_uppercase = False
-    new_variable_name_syntax = NewVariableNameSyntax.ASCII
+    new_variable_name_syntax: ClassVar[IdentifierSyntax] = (
+        _SystemVerilogIdentifierSyntax()
+    )
     max_variable_identifier_length: ClassVar[int | None] = None
     call_stub_result: ClassVar[CallStubResult | None] = None
     call_literal_syntax: ClassVar[CallLiteralSyntax | None] = (
         _CALL_LITERAL_SYNTAX
     )
-    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = None
+    # Wrapped dotted calls derive helper class names from target components.
+    call_target_name_syntax: ClassVar[NewVariableNameSyntax | None] = (
+        NewVariableNameSyntax.ASCII
+    )
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
 
