@@ -7,7 +7,6 @@ from literalizer.exceptions import (
     HeterogeneousCollectionError,
     IncompatibleFormatsError,
     InvalidDictKeyError,
-    NullInCollectionError,
     UnrepresentableEmptyDictError,
     UnrepresentableInputError,
     UnrepresentableIntegerError,
@@ -37,10 +36,6 @@ LANGUAGE_SKIP_REASONS: SkipReasons = (
         reason="cannot represent this heterogeneous input",
     ),
     SkipReason(
-        error=NullInCollectionError,
-        reason="cannot represent null in a collection",
-    ),
-    SkipReason(
         error=UnrepresentableInputError,
         reason="cannot represent this input",
     ),
@@ -48,10 +43,6 @@ LANGUAGE_SKIP_REASONS: SkipReasons = (
 
 VARIANT_SKIP_REASONS: SkipReasons = (
     *_COMMON_SKIP_REASONS,
-    SkipReason(
-        error=NullInCollectionError,
-        reason="rejects null elements in this input",
-    ),
     SkipReason(
         error=HeterogeneousCollectionError,
         reason="cannot represent this heterogeneous input",

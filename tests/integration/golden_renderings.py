@@ -110,8 +110,7 @@ class GoldenRendering:
                 else None
             ),
             case_dir=self.golden_parent,
-            substitutes_nulls=self.render.record_null_substitutions
-            is not None,
+            substitutions=self.render.record_null_substitutions,
         )
         if rejection is not None:
             return rejection

@@ -12,7 +12,6 @@ second member to a language's enum automatically produces a parallel
 set of golden files.
 """
 
-import dataclasses
 import functools
 from contextlib import nullcontext
 from pathlib import Path
@@ -23,7 +22,6 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
 
-from .case_manifests import load_case_manifest
 from .golden_batches import GoldenGroup, golden_groups
 from .golden_checks import (
     GoldenSkips,
@@ -36,8 +34,8 @@ from .golden_outcomes import Rejection
 from .golden_renderings import GoldenRendering
 from .language_metadata import language_metadata
 from .language_specs import with_per_fixture_module_name
+from .literal_expectations import literal_source
 from .literalize_rendering import compose_rendering, literalize_rendering
-from .yaml_warnings import expected_yaml_warnings
 
 
 @beartype
@@ -49,24 +47,9 @@ def _check_rendering(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Render one golden file and compare it against its fixture."""
-    manifest = load_case_manifest(case_dir=cases_dir / rendering.case_dir_name)
-    input_info = manifest.input
-    source_text = input_info.path.read_text(encoding="utf-8")
-    roundtrip = manifest.input_roundtrip
-    if roundtrip is not None:
-        with expected_yaml_warnings(
-            expectation=input_info.expected_reused_anchor_warning,
-        ):
-            source_text = literalizer.literalize(
-                source=source_text,
-                input_format=input_info.input_format,
-                language=roundtrip.language(),
-            ).code
-        input_info = dataclasses.replace(
-            input_info,
-            input_format=roundtrip.input_format,
-            expected_reused_anchor_warning=None,
-        )
+    input_info, source_text = literal_source(
+        case_dir=cases_dir / rendering.case_dir_name
+    )
     golden_path = rendering.artifact(version=spec.language_version).path
     if rendering.apply_fixture_module_name:
         spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
