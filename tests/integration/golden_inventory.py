@@ -12,7 +12,7 @@ from .case_manifests import load_case_manifests
 from .constructor_cases import constructor_binding_cases
 from .deep_input_cases import deep_input_cases
 from .golden_artifacts import GoldenArtifact
-from .golden_outcomes import Success
+from .golden_outcomes import Exclusion, Rejection, Success
 from .golden_scenarios import scenario_renderings
 from .native_invocation_cases import native_invocation_cases
 from .record_snapshot_cases import record_snapshot_artifacts
@@ -22,12 +22,12 @@ from .unwrapped_result_cases import result_view_artifacts
 
 
 def call_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
-    """Only successful call renderings can own golden fixtures."""
+    """Omit calls with declared rejections or exclusions."""
     return (
         rendering.artifact(cases_dir=cases_dir)
         for case in call_golden_cases(cases_dir=cases_dir)
         for rendering in case.renderings
-        if rendering.outcome is None
+        if not isinstance(rendering.outcome, (Rejection, Exclusion))
     )
 
 
@@ -37,7 +37,7 @@ def literal_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
     for renderings in scenario_renderings().values():
         for rendering in renderings:
             for spec in rendering.specs:
-                if rendering.rejection(spec=spec) is not None:
+                if isinstance(rendering.outcome(spec=spec), Rejection):
                     continue
                 artifact = rendering.artifact(version=spec.language_version)
                 yield dataclasses.replace(
@@ -64,7 +64,7 @@ def golden_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
         rendering.artifact(cases_dir=cases_dir)
         for case in reference_golden_cases()
         for rendering in case.renderings
-        if rendering.outcome is None or isinstance(rendering.outcome, Success)
+        if not isinstance(rendering.outcome, (Rejection, Exclusion))
     )
     yield from (
         rendering.artifact

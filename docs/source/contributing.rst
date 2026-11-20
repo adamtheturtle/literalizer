@@ -254,7 +254,6 @@ Keep the original regression provenance with the example when consolidating case
 
 A ``[ref]`` case with ``variable_form = "none"`` and a ``consumer`` splices the unwrapped ``LiteralizeResult.bare_code`` into a native function argument.
 Its compiling golden checks that record declarations remain outside the expression.
-Optional ``caller_preamble`` entries supply caller-owned headers after rendering, without teaching the renderer about the caller's class ownership.
 
 A case renders under every language unless it narrows.
 ``gates`` names the property the narrowing follows from, in the same vocabulary the variant axes and the rejection manifests use, so a language that later gains that property is covered without editing the manifest:
@@ -354,6 +353,8 @@ Continuous integration
 
 Tests are run on GitHub Actions.
 The configuration for this is in :file:`.github/workflows/`.
+
+The Lint workflow selects native jobs on pull requests based on changes to fixtures, language modules, manifests, and runners, with full native validation for shared inputs, pushes to ``main``, and nightly or manual runs.
 
 Code generation benchmarks
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -14,6 +14,7 @@ set of golden files.
 
 import dataclasses
 import functools
+from contextlib import nullcontext
 from pathlib import Path
 
 import pytest
@@ -31,10 +32,11 @@ from .golden_checks import (
     fixture_contents,
     format_consumer,
 )
+from .golden_outcomes import Rejection
 from .golden_renderings import GoldenRendering
 from .language_metadata import language_metadata
 from .language_specs import with_per_fixture_module_name
-from .literalize_rendering import literalize_rendering
+from .literalize_rendering import compose_rendering, literalize_rendering
 from .yaml_warnings import expected_yaml_warnings
 
 
@@ -73,10 +75,10 @@ def _check_rendering(
         if spec.supports_variable_names
         else None
     )
-    rejection = rendering.rejection(spec=spec)
-    if rejection is not None:
+    outcome = rendering.outcome(spec=spec)
+    if isinstance(outcome, Rejection):
         assert_rejection(
-            outcome=rejection,
+            outcome=outcome,
             golden_path=golden_path,
             render=functools.partial(
                 literalize_rendering,
@@ -88,10 +90,14 @@ def _check_rendering(
             ),
         )
         return
-    with GoldenSkips(
-        policy=rendering.skip,
-        golden_path=golden_path,
-        prefix=rendering.lang_cls.__name__,
+    with (
+        GoldenSkips(
+            policy=rendering.skip,
+            golden_path=golden_path,
+            prefix=rendering.lang_cls.__name__,
+        )
+        if outcome is None
+        else nullcontext()
     ):
         result = literalize_rendering(
             rendering=rendering,
@@ -118,14 +124,11 @@ def _check_rendering(
                     ),
                 )
             )
-        # External types must be available before generated record definitions.
-        result = dataclasses.replace(
-            result, preamble=rendering.extra_preamble + result.preamble
-        )
-        result = literalizer.literalize_call_with_declarations(
-            language=spec,
+        result = compose_rendering(
+            rendering=rendering,
+            spec=spec,
             declarations=declarations,
-            call=result,
+            result=result,
         )
     metadata = language_metadata(language_id=spec.language_id)
     contents = fixture_contents(

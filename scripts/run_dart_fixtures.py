@@ -18,6 +18,7 @@ from tests.integration.constructor_cases import (
     constructor_binding_cases,
 )
 from tests.integration.golden_scenarios import scenario_renderings
+from tests.integration.list_fixtures import fixture_paths
 from tests.integration.reference_cases import reference_golden_cases
 
 _CASES_DIR = Path(__file__).parent.parent / "tests" / "integration" / "cases"
@@ -179,14 +180,20 @@ def write_dart_driver(*, fixtures: Sequence[Path], target: Path) -> None:
 
 
 @click.command()
+@click.option("--all-fixtures", is_flag=True)
 @beartype
-def main() -> None:
-    """Consume null-separated fixture paths from standard input."""
-    fixtures = [
-        Path(filename.decode(encoding="utf-8"))
-        for filename in sys.stdin.buffer.read().split(sep=b"\0")
-        if len(filename) > 0
-    ]
+def main(*, all_fixtures: bool) -> None:
+    """Analyze and execute all Dart fixtures or the supplied stdin
+    list.
+    """
+    if all_fixtures:
+        fixtures = list(fixture_paths(extension=".dart"))
+    else:
+        fixtures = [
+            Path(filename.decode(encoding="utf-8"))
+            for filename in sys.stdin.buffer.read().split(sep=b"\0")
+            if len(filename) > 0
+        ]
     if len(fixtures) == 0:
         msg = "No Dart fixture paths were provided."
         raise ValueError(msg)

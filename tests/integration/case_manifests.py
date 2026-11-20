@@ -320,16 +320,11 @@ class _RefBindings(  # noqa: NOD001
     )
 
 
-class ExternalRefContext(  # noqa: NOD001
-    BaseModel, extra="forbid", frozen=True, strict=True
-):
+class ExternalRefContext(BaseModel, extra="forbid", frozen=True, strict=True):
     """Caller-owned declarations composed after API rendering."""
 
     kind: Literal["external"]
     declarations: Annotated[dict[str, str], Field(min_length=1)]
-    caller_preamble: manifest_values.StringTuple = Field(
-        default_factory=tuple[str, ...]
-    )
     consumer: RefConsumer
 
 
@@ -795,10 +790,14 @@ class ConstructorCaseSpec(  # noqa: NOD001
 
 
 # Defaults stand in for omitted keys, as above.
-class NativeInvocationCaseSpec(BaseModel, extra="forbid", frozen=True):
-    """A real caller program for a native invocation recipe sequence."""
+class NativeInvocationCaseSpec(  # noqa: NOD001
+    BaseModel, extra="forbid", frozen=True
+):
+    """Caller declarations and checks for a native invocation sequence."""
 
-    consumer_template: str
+    file_declarations: str
+    before_calls: str | None = None
+    after_calls: str
 
 
 class _CaseManifestData(
@@ -810,6 +809,8 @@ class _CaseManifestData(
     schema_version: Literal[1]
     input: str | None = None
     input_roundtrip: InputRoundtripSpec | None = None
+    # Opt in once the literal outcomes are known for every selected option.
+    strict_golden_outcomes: bool = False
     expected_reused_anchor_warning: ReusedAnchorWarningSpec | None = None
     suites: list[SuiteName] = Field(default_factory=list[SuiteName])
     owner: OwnerName | None = None
@@ -938,6 +939,7 @@ class CaseManifest:
     schema_version: Literal[1]
     input: CaseInput
     input_roundtrip: InputRoundtripSpec | None
+    strict_golden_outcomes: bool
     selection: CapabilitySelection
     suites: frozenset[SuiteName]
     owner: OwnerName | None
@@ -1015,6 +1017,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
         schema_version=data.schema_version,
         input=input_info,
         input_roundtrip=data.input_roundtrip,
+        strict_golden_outcomes=data.strict_golden_outcomes,
         selection=CapabilitySelection(
             gates=data.gates,
             any_gates=data.any_gates,

@@ -1,5 +1,6 @@
 schema_version = 1
 suites = ["base"]
+strict_golden_outcomes = true
 
 # Sixteen alternating mapping/list levels complement the canonical
 # 30-level sequence-only case and the separate 400-level unwrapped guard.

@@ -141,9 +141,6 @@ Existing JSON roundtrips and specialized native assertions retain their distinct
 The ordinary native jobs execute these self-contained files without another runner or transport format.
 ``test_native_value_consumers.py`` verifies failures after corrupting generated declarations while leaving their assertions unchanged, using bounded native execution.
 The Python corruption checks run with the regular pytest suite.
-Run the Ruby checks with Ruby 3 or later on ``PATH``::
-
-    LITERALIZER_TEST_RUBY=1 uv run --no-dev --group=test python -m pytest -n 0 tests/integration/test_native_value_consumers.py -k ruby
 
 Successful execution of the original programs remains with the existing native jobs.
 Fixtures without native assertions retain their existing snapshot, compiler and native checks.

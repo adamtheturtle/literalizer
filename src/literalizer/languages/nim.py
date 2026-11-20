@@ -2294,7 +2294,7 @@ class Nim(metaclass=LanguageCls):
             ),
             render_literal=_nim_record_literal,
             field_type_names_nested_records=False,
-            suppress_custom_name_declarations=False,
+            suppressed_custom_names=frozenset(),
         )
 
     @cached_property

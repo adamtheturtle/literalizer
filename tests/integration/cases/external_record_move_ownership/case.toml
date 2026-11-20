@@ -5,15 +5,14 @@ owner = "literalize-ref-default"
 [ref]
 variable_form = "none"
 variant_only = true
-explicit_ref_value_sources = {first = '{"child":{"value":1}}'}
+explicit_ref_value_sources = {first = '{"child":{"move_guard":1}}'}
 
 [[ref.variants]]
 axis = "cpp_external_record_move"
 
 [ref.context]
 kind = "external"
-declarations = {first = '{"child":{"value":1}}'}
-caller_preamble = ['#include "../../cpp_support/include/move_only_record.hpp"']
+declarations = {first = '{"child":{"move_guard":1}}'}
 
 [ref.context.consumer]
 kind = "call"

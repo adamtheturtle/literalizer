@@ -1,11 +1,13 @@
 """Typed definitions for the golden suite's variant axes."""
 
 import enum
+import functools
 from collections.abc import Mapping
 from typing import Protocol, runtime_checkable
 
 import literalizer
 from literalizer._enums import enum_payload
+from tests.enum_members import enum_member_by_name
 from tests.language_options import CAPABILITY_FLAGS, OPTIONS
 
 from .axis_builders import (
@@ -38,6 +40,7 @@ from .axis_builders import (
     values,
 )
 from .language_metadata import LanguageMetadata
+from .language_specs import make_spec
 
 _ANNOTATION_EVALUATION = OPTIONS["annotation_evaluation"]
 _ARRAY_INFERENCE_POLICY = OPTIONS["array_inference_policy"]
@@ -135,18 +138,41 @@ def _empty_container_strategy(metadata: LanguageMetadata) -> str | None:
     return None if settings is None else settings.heterogeneous_strategy
 
 
-def _external_record_preamble(target: AxisTarget) -> tuple[str, ...]:
-    """Supply declarations for languages that expect an external
-    record.
+def _external_cpp_type_preamble(
+    target: AxisTarget,
+    *,
+    name: str,
+    source: str,
+    strategy: str,
+) -> tuple[str, ...]:
+    """Generate a separate declaration for an externally named C++
+    type.
     """
-    declared = target.metadata.variants.external_record_shape_preamble
     if target.lang_cls.record_shape_names_emit_declarations:
-        if declared is not None:
-            raise NotImplementedError
         return ()
-    if declared is None:
+    if target.default_spec.language_id != "cpp":
         raise NotImplementedError
-    return tuple(declared)
+    cpp = make_spec(
+        lang_cls=target.lang_cls,
+        heterogeneous_strategy=enum_member_by_name(
+            enum_cls=target.default_spec.heterogeneous_strategies,
+            name=strategy,
+        ),
+        language_version=enum_member_by_name(
+            enum_cls=target.lang_cls.VersionFormats, name="CPP14"
+        ),
+        record_struct_name_prefix="FixtureRecord",
+    )
+    example = literalizer.literalize(
+        language=cpp,
+        source=source,
+        input_format=literalizer.InputFormat.JSON,
+    )
+    return (
+        *example.preamble,
+        *example.body_preamble,
+        f"using {name} = decltype({example.declaration_code});",
+    )
 
 
 def _named_sample(*, suffix: str, option: str) -> Name:
@@ -533,7 +559,12 @@ AXES: Mapping[str, Axis] = _registry(
         requires=(lambda target: target.lang_cls.supports_record_shape_names,),
         overrides=_ERROR_RECORD_SHAPE_NAMES_OPTIONS,
         fixture_options=_record_version,
-        preamble=_external_record_preamble,
+        preamble=functools.partial(
+            _external_cpp_type_preamble,
+            name=_EXTERNAL_RECORD,
+            source='{"first": "", "last": ""}',
+            strategy="ERROR",
+        ),
     ),
     float_format=expand(
         name=named_choice(suffix="float_format"),
@@ -1133,7 +1164,14 @@ AXES: Mapping[str, Axis] = _registry(
             ),
         ),
         fixture_options=_record_version,
-        preamble=_external_record_preamble,
+        preamble=functools.partial(
+            _external_cpp_type_preamble,
+            name=_NAMED_RECORD,
+            source=(
+                '{"id": 1, "label": "x", "enabled": true, "related_ids": [0]}'
+            ),
+            strategy="RECORD",
+        ),
     ),
     record_unify_optional_fields=expand(
         name=named(suffix="record_unify_optional_fields"),
@@ -1535,7 +1573,7 @@ AXES: Mapping[str, Axis] = _registry(
         requires=(has_option(option="list_rendering_policy"),),
         overrides=(member(option=_DICT_FORMAT, name="RECORD"),),
     ),
-    # This caller fixture uses C++ aggregates with move-only record fields.
+    # Render an external C++ binding with a move-only record field.
     cpp_external_record_move=expand(
         name=lambda target, _label: (
             f"{target.name}_external_record_move_{_MOVE_ONLY_RECORD}"
@@ -1546,7 +1584,10 @@ AXES: Mapping[str, Axis] = _registry(
         overrides=(
             member(option=_HETEROGENEOUS_STRATEGY, name="RECORD"),
             fixed_options(
-                record_shape_names={frozenset(("value",)): _MOVE_ONLY_RECORD}
+                record_shape_names={
+                    frozenset(("move_guard",)): _MOVE_ONLY_RECORD
+                },
+                move_only_record_names=frozenset({_MOVE_ONLY_RECORD}),
             ),
         ),
     ),

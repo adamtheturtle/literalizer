@@ -34,6 +34,7 @@ from .rejection_manifests import (
     RejectionManifest,
     TextKwarg,
     TextPairsKwarg,
+    TextSetKwarg,
     substituted,
 )
 
@@ -146,6 +147,13 @@ def _kwarg_values(
                         substituted(template=second, value=value),
                     )
                     for first, second in kwarg.pairs
+                )
+            }
+        case TextSetKwarg():
+            resolved = {
+                kwarg.kwarg: frozenset(
+                    substituted(template=template, value=value)
+                    for template in kwarg.values
                 )
             }
         case RecordShapeNamesKwarg():

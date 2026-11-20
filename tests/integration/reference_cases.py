@@ -8,18 +8,27 @@ from typing import TYPE_CHECKING
 from beartype import beartype
 
 import literalizer
+from literalizer._language import CallSupport
+from literalizer.exceptions import (
+    CallArgNotSupportedError,
+    ExistingVariableNotSelfContainedError,
+    UnrepresentableInputError,
+    UnrepresentableNullError,
+)
 from literalizer.languages import Rust
 from tests.enum_members import enum_member_by_name
 
 from .case_manifests import (
     REF_DEFAULT_OWNER,
     REF_OWNER,
+    ExternalRefContext,
     OwnerName,
     RefCaseSpec,
+    RefExpressionContext,
     ref_case_specs,
 )
 from .golden_artifacts import GoldenArtifact
-from .golden_outcomes import SUCCESS, GoldenOutcome, Success
+from .golden_outcomes import SUCCESS, Exclusion, GoldenOutcome, Rejection
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
@@ -28,6 +37,7 @@ from .language_specs import (
     reference_case_for_declaration_style,
     sorted_languages,
 )
+from .rejection_contracts import rejected_examples
 from .variant_cases import Variant, variants_for_axis
 from .variant_context import config_with_variant_layout
 
@@ -35,6 +45,64 @@ if TYPE_CHECKING:
     import enum
 
 CASES_DIR = Path(__file__).parent / "cases"
+
+
+@functools.cache
+def _rejects_reference_before_assignment() -> frozenset[
+    literalizer.LanguageCls
+]:
+    """Read the root-reference and null constraints that take
+    precedence.
+    """
+    return frozenset(
+        case.lang_cls
+        for contract, error in (
+            (
+                "existing_variable_ref_in_typed_wrapper",
+                CallArgNotSupportedError,
+            ),
+            (
+                "null_indistinguishable_from_empty_text",
+                UnrepresentableNullError,
+            ),
+            (
+                "null_indistinguishable_from_empty_text",
+                UnrepresentableInputError,
+            ),
+        )
+        for case in rejected_examples(contract=contract, error=error)
+    )
+
+
+def _reference_outcome(
+    *,
+    config: RefCaseSpec,
+    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
+) -> GoldenOutcome | None:
+    """Resolve fixture prerequisites and documented reference errors."""
+    if isinstance(
+        config.context, (ExternalRefContext, RefExpressionContext)
+    ) and isinstance(spec.call_style_config, CallSupport):
+        return Exclusion(
+            reason="the native reference consumer requires call syntax",
+        )
+    if (
+        config.case_dir_name == "literalize_ref_known_null_assignment"
+        and lang_cls not in _rejects_reference_before_assignment()
+        and not spec.reference_assignment_declares_binding(None)
+    ):
+        return Rejection(
+            error=ExistingVariableNotSelfContainedError,
+            match="the assignment has no prior declaration",
+        )
+    if (
+        config.case_dir_name == "literalize_ref_scalar"
+        and isinstance(spec, Rust)
+        and spec.declaration_style.name in {"CONST", "STATIC"}
+    ):
+        return SUCCESS
+    return None
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -80,9 +148,11 @@ class LiteralizeRefCase:
         return tuple(
             RefRendering(
                 config=self.config,
-                outcome=None,
                 lang_cls=self.lang_cls,
                 spec=spec,
+                outcome=_reference_outcome(
+                    config=self.config, lang_cls=self.lang_cls, spec=spec
+                ),
                 golden_name=f"{self.lang_cls.__name__}_{suffix}",
                 ref_case=(
                     None
@@ -147,28 +217,18 @@ class LiteralizeRefVariantCase:
         return f"{self.variant.name}_{suffix}"
 
     @property
-    def outcome(self) -> Success | None:
-        """Pin the scalar reference for Rust's constant and static
-        bindings.
-        """
-        spec = self.variant.spec
-        if (
-            self.config.case_dir_name == "literalize_ref_scalar"
-            and isinstance(spec, Rust)
-            and spec.declaration_style.name in {"CONST", "STATIC"}
-        ):
-            return SUCCESS
-        return None
-
-    @property
     def renderings(self) -> tuple[RefRendering, ...]:
         """Retain the exact spec and ref spelling selected by the axis."""
         return (
             RefRendering(
                 config=self.config,
-                outcome=self.outcome,
                 lang_cls=self.lang_cls,
                 spec=self.variant.spec,
+                outcome=_reference_outcome(
+                    config=self.config,
+                    lang_cls=self.lang_cls,
+                    spec=self.variant.spec,
+                ),
                 golden_name=self.golden_name,
                 ref_case=self.ref_case,
             ),

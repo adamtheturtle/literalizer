@@ -151,6 +151,15 @@ class FileWrapperContext:
     """Caller indentation retained for preambles beside bindings."""
 
 
+@runtime_checkable
+class IdentifierSyntax(typing.Protocol):
+    """Lexical grammar for a source identifier."""
+
+    def accepts(self, *, name: str) -> bool:
+        """Return whether the source name matches this grammar."""
+        ...
+
+
 @beartype
 class NewVariableNameSyntax(enum.Enum):
     """Conservative lexical grammars for ``NewVariable`` declarations.
@@ -219,14 +228,6 @@ class NewVariableNameSyntax(enum.Enum):
     can be a module (``http.Server``) or the C interop module
     (``C.atoi``), and V spells a type with an initial capital
     (issue #3989).
-    """
-
-    SYSTEMVERILOG = (
-        r"[A-Za-z_][A-Za-z0-9_]*|\\(?![A-Za-z_][A-Za-z0-9_$]* )[!-~]+ "
-    )
-    """A simple name or a printable escaped name with a trailing space.
-
-    Require the simple spelling when both forms name the same identifier.
     """
 
     def accepts(self, *, name: str) -> bool:
@@ -1800,11 +1801,11 @@ class _LanguageMetadata(_LanguageMetadataBase):
     ``True`` (issue #3905).
     """
     module_name_must_start_uppercase: bool
-    new_variable_name_syntax: NewVariableNameSyntax
+    new_variable_name_syntax: IdentifierSyntax
     max_variable_identifier_length: int | None
     call_stub_result: CallStubResult | None
     call_literal_syntax: CallLiteralSyntax | None
-    call_target_name_syntax: NewVariableNameSyntax | None
+    call_target_name_syntax: IdentifierSyntax | None
     """The grammar each component of a ``target_function`` follows.
 
     ``None`` means the declaration grammar, which is what a call target
@@ -2115,7 +2116,7 @@ class Language(typing.Protocol):
         ...
 
     @property
-    def new_variable_name_syntax(self) -> NewVariableNameSyntax:
+    def new_variable_name_syntax(self) -> IdentifierSyntax:
         """Return the grammar for new variable names."""
         ...
 
@@ -2173,7 +2174,7 @@ class Language(typing.Protocol):
             ...
 
         @property
-        def call_target_name_syntax(self) -> NewVariableNameSyntax | None:
+        def call_target_name_syntax(self) -> IdentifierSyntax | None:
             """Return the specialized call-target grammar, when
             present.
             """

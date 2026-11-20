@@ -1804,7 +1804,7 @@ class Zig(metaclass=LanguageCls):
             render_declaration=_zig_render_record_declaration,
             render_literal=_zig_record_literal,
             field_type_names_nested_records=True,
-            suppress_custom_name_declarations=False,
+            suppressed_custom_names=frozenset(),
         )
 
     @cached_property

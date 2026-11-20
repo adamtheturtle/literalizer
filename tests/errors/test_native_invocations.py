@@ -2,7 +2,6 @@
 
 import json
 import tomllib
-from collections.abc import Callable, Mapping
 from pathlib import Path
 
 import pytest
@@ -36,7 +35,7 @@ def test_native_invocation_rejections(case: dict[str, object]) -> None:
         expected_exception=literalizer.LiteralizerError,
         match=str(object=case["match"]),
     ):
-        _ = literalizer.literalize_native_calls(
+        _ = literalizer.literalize_invocations(
             source=str(object=case["source"]),
             input_format=literalizer.InputFormat.JSON,
             language=ObjectiveC(
@@ -132,20 +131,11 @@ def test_native_call_requires_capability(
     argvalues=_UNSUPPORTED,
     ids=lambda cls: cls.language_id,
 )
-@pytest.mark.parametrize(
-    argnames="render",
-    argvalues=[
-        literalizer.literalize_native_calls,
-        literalizer.literalize_invocations,
-    ],
-    ids=["native", "shared"],
-)
 def test_native_rows_require_capability(
     language_cls: literalizer.LanguageCls,
-    render: Callable[..., literalizer.LiteralizeResult],
 ) -> None:
-    """Both recipe APIs reject every backend lacking native support."""
-    recipe: Mapping[str, object] = {
+    """Bare native recipes require a backend with native support."""
+    recipe: dict[str, object] = {
         "function": "consume",
         "parameter-types": [],
         "return-type": "void",
@@ -155,7 +145,7 @@ def test_native_rows_require_capability(
         expected_exception=literalizer.NativeCallError,
         match="does not support native invocations",
     ):
-        _ = render(
+        _ = literalizer.literalize_invocations(
             source="[[]]",
             input_format=literalizer.InputFormat.JSON,
             language=language_cls(),
