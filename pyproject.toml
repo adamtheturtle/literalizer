@@ -699,7 +699,7 @@ analysis.strict-generic-narrowing = true
 [tool.pytest]
 # Golden subtests use in-memory output capture to avoid two temporary
 # files per subtest. Subprocess tests capture their own output explicitly.
-addopts = [ "--capture=sys", "-n", "auto", "-m", "not ruby_native" ]
+addopts = [ "--capture=sys", "-n", "auto" ]
 beartype_packages = [ "literalizer" ]
 # Exclude literalizer._json_native_document:
 # per-level wrappers exhaust the stack below the shared parse-depth guard.
@@ -709,7 +709,6 @@ beartype_skip_packages = [ "literalizer._json_native_document" ]
 beartype_test_fixtures = true
 beartype_tests = true
 log_cli = true
-markers = [ "ruby_native: requires the Ruby interpreter provisioned by the Ruby CI job" ]
 xfail_strict = true
 
 [tool.coverage]
