@@ -10,6 +10,12 @@ auto my_data = std::vector<std::common_type_t<decltype(item), decltype(item)>>{
     item,
     item,
 };
-(json(my_data) == json::parse("[[], []]") ? static_cast<void>(0) : std::abort());
+([&]() noexcept {
+    try {
+        return json(my_data) == json::parse("[[], []]");
+    } catch (...) {
+        return false;
+    }
+}() ? static_cast<void>(0) : std::abort());
     return 0;
 }

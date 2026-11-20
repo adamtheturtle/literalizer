@@ -9,6 +9,12 @@ auto my_data = std::vector<int>{
     std::move_if_noexcept(a),
     1,
 };
-(json(my_data) == json::parse("[0, 1]") ? static_cast<void>(0) : std::abort());
+([&]() noexcept {
+    try {
+        return json(my_data) == json::parse("[0, 1]");
+    } catch (...) {
+        return false;
+    }
+}() ? static_cast<void>(0) : std::abort());
     return 0;
 }

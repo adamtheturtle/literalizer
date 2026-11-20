@@ -2,7 +2,14 @@ schema_version = 1
 
 [golden.reference_check]
 target_function = "json"
-transform = '({call} == json::parse({zipped}) ? static_cast<void>(0) : std::abort())'
+transform = '''
+([&]() noexcept {{
+    try {{
+        return {call} == json::parse({zipped});
+    }} catch (...) {{
+        return false;
+    }}
+}}() ? static_cast<void>(0) : std::abort())'''
 preamble = '''
 #include <cstdlib>
 #include <nlohmann/json.hpp>
