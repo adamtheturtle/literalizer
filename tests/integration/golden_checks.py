@@ -193,7 +193,8 @@ def check_outcome(
             assert_rejection(
                 outcome=outcome, render=render, golden_path=golden_path
             )
-        case Exclusion(reason=reason):
+        case _:
+            reason = outcome.reason
             pytest.fail(
                 reason=f"Discovery exclusion reached execution: {reason}"
             )

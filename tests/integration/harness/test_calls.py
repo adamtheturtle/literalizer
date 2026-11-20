@@ -22,6 +22,8 @@ from tests.integration.call_variant_cases import (
     build_call_variant_cases,
 )
 from tests.integration.case_manifests import CaseManifestError
+from tests.integration.golden_checks import golden_test_parameters
+from tests.integration.golden_outcomes import Exclusion
 from tests.integration.language_specs import (
     find_redefinition_styles,
     make_spec,
@@ -82,11 +84,8 @@ def _declares_immutable_call_binding(lang_cls: LanguageCls, /) -> bool:
     ],
     ids=lambda cls: cls.language_id,
 )
-def test_seeded_scaffold_rejects_immutable_binding(
-    *,
-    lang_cls: LanguageCls,
-    cases_dir: Path,
-    file_regression: FileRegressionFixture,
+def test_seeded_scaffold_excludes_immutable_binding(
+    *, lang_cls: LanguageCls
 ) -> None:
     """A synthetic seed cannot precede a second immutable binding."""
     config = next(
@@ -94,22 +93,20 @@ def test_seeded_scaffold_rejects_immutable_binding(
         for config in default_call_case_specs()
         if config.case_dir_name == "call_binding_existing_seeded"
     )
-    spec = make_spec(lang_cls=lang_cls)
-    with pytest.raises(
-        expected_exception=pytest.skip.Exception,
-        match="cannot redefine the seeded binding",
-    ):
-        run_call_golden_case(
-            rendering=CallRendering(
-                config=config,
-                spec=spec,
-                lang_cls=lang_cls,
-                golden_name=f"{lang_cls.__name__}_call",
-                expected_exception=None,
-            ),
-            cases_dir=cases_dir,
-            file_regression=file_regression,
-        )
+    rendering = CallRendering(
+        config=config,
+        spec=make_spec(lang_cls=lang_cls),
+        lang_cls=lang_cls,
+        golden_name=f"{lang_cls.__name__}_call",
+        expected_exception=None,
+    )
+    outcome = rendering.outcome
+    assert isinstance(outcome, Exclusion)
+    assert "cannot redefine the seeded binding" in outcome.reason
+    parameters = golden_test_parameters(
+        cases=[(rendering.golden_name, (rendering,))]
+    )
+    assert len(parameters) == 0
 
 
 def _copy_call_inputs(*, source_dir: Path, target_dir: Path) -> None:
