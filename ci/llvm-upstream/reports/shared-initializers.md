@@ -1,6 +1,6 @@
 Tested with official LLVM 23.1.4 (`7a941dfb2877a0b8cf30323fefa85ad019e0b0f5`) on Ubuntu 24.04.5, Linux AArch64.
 
-This valid C99 input should produce the single sizeof warning without repeatedly expanding the shared initializer graph.
+This valid C99 input should produce the only sizeof warning without repeatedly expanding the shared initializer graph.
 
 ```c
 typedef struct V { const struct V *child; } V;
@@ -25,7 +25,7 @@ Raw commands and outputs are in [measurements.json](https://github.com/adamthetu
 C compound literals and designated initializers expose shared expression nodes through syntactic and semantic forms.
 Re-expanding the same children along every incoming path amplifies traversal.
 
-Candidate fix: Preserve every parent edge while expanding each statement once; cache only missing descendant searches, respect direct-child search depth, and avoid duplicate visits in outer compound-literal matching and padding analysis.
+Candidate fix: Preserve every parent edge while expanding each statement once; cache only missing descendant searches, preserve the depth of searches for direct children, and avoid duplicate visits in outer compound-literal matching and padding analysis.
 The candidate intentionally removes duplicate callbacks for the same expression/context.
 Parent-edge and positive binding-multiplicity controls are retained in the downstream builder.
 

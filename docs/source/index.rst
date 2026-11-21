@@ -41,12 +41,13 @@ Pass your data, its format, and a target language:
    #     "x": 1,
    # }
 
-The call returns a single :class:`~literalizer.LiteralizeResult`.
-Here ``result.code`` is the whole story, but for some languages and options the literal in ``code`` relies on a separate ``preamble`` to compile.
+The call returns one :class:`~literalizer.LiteralizeResult`.
+Here ``result.code`` compiles by itself.
+Some languages and options require the separate ``preamble``.
 See :doc:`understanding-the-result` for what each field means and how to assemble output that compiles.
 
 Configure the language to control how individual data types are rendered.
-Comments in the source are preserved using the target language's comment syntax:
+Comments in the source are preserved using the comment syntax for the target language:
 
 .. code-block:: python
 
@@ -144,12 +145,12 @@ Source comment delimiters and surrounding whitespace are removed; each line of a
   Further lines of a multiline block attach before the next entry, or trail the collection when there is no next entry.
 * Comments before a closing delimiter trail that collection.
   Comments after the root collection trail its entries.
-  Nested collections keep their own comment associations.
+  Nested collections retain their associated comments.
 * Scalar documents retain headings, inline comments, and following standalone comments.
   Targets that cannot place a comment there move it before the declaration, following their existing scalar comment policy.
 * Targets that cannot place comments inside collections move them before the declaration.
   For per-element calls, comments inside an argument row move before that row's call; row comments remain before or inline with the call.
-  Whole-document calls move input comments before the call.
+  Calls over the whole document move its comments before the call.
   The existing wrapped-call capability checks also apply to these comments.
 
 JSONC retains strict JSON syntax, including rejecting trailing commas.
@@ -165,7 +166,8 @@ There are three forms, and the difference is visible in languages that distingui
 
 * :class:`~literalizer.NewVariable` declares a fresh variable (Go's ``config :=``, JavaScript's ``const config =``, Rust's ``let config =``).
   This is the form nearly every example uses.
-* :class:`~literalizer.ExistingVariable` assigns to a variable declared elsewhere (``config =``), emitting no declaration keyword.
+* :class:`~literalizer.ExistingVariable` assigns to a variable declared elsewhere (``config =``).
+  The assignment omits the declaration keyword.
 * :class:`~literalizer.BothVariableForms` emits a declaration *and* a subsequent assignment together, for showing both styles from one source.
   It requires ``wrap_in_file=True`` and a language whose declaration style permits reassigning the same name.
 
@@ -241,7 +243,7 @@ Use cases
 
 * Generate test fixtures from JSON, JSONC, JSON5, YAML, or TOML samples.
 * Convert API responses to language-native data structures for documentation.
-* Generate multi-language function call examples from data (see :doc:`function-call-use-case`).
+* Generate examples of calls in multiple languages from data (see :doc:`function-call-use-case`).
 * Create type-safe literal data from JSON, JSONC, JSON5, YAML, or TOML config files.
 
 CLI

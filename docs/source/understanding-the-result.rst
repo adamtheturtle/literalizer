@@ -1,8 +1,8 @@
 Understanding the result
 ========================
 
-Every call to :func:`~literalizer.literalize` and :func:`~literalizer.literalize_call` returns a single :class:`~literalizer.LiteralizeResult`.
-The examples elsewhere reach for whichever field they need, but the object is worth understanding as a whole: for several languages the headline :attr:`~literalizer.LiteralizeResult.code` does **not** compile on its own, and assembling output correctly means knowing which other fields to place around it.
+Every call to :func:`~literalizer.literalize` and :func:`~literalizer.literalize_call` returns one :class:`~literalizer.LiteralizeResult`.
+Use the result fields according to what the output requires. for several languages the headline :attr:`~literalizer.LiteralizeResult.code` does **not** compile on its own, and assembling output correctly means knowing which other fields to place around it.
 
 The fields
 ----------
@@ -111,7 +111,7 @@ Ada additionally imports the companion ``A_Stub`` package; copy ``scripts/a_stub
    )
 
 Prefer ``wrap_in_file=True`` whenever you need assembled output, adding any companion support files documented by the selected language.
-Read :attr:`~literalizer.LiteralizeResult.code` and :attr:`~literalizer.LiteralizeResult.preamble` separately only when you are embedding the literal into a larger template of your own and want to control where the preamble lands.
+Read :attr:`~literalizer.LiteralizeResult.code` and :attr:`~literalizer.LiteralizeResult.preamble` separately only when you are embedding the literal into a larger template of your own and want to control where the preamble appears.
 
 ``body_preamble`` and ``bare_code``
 -----------------------------------

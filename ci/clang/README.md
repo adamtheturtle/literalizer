@@ -16,7 +16,7 @@ Do not reuse results with an external caught-exception context.
 This keeps repeated calls above recursive standard-library helpers linear instead of invalidating the whole cache after every back edge.
 The analyzer's object layout is unchanged; only its implementation and private call signatures change.
 
-C designated initializers share expression subtrees between their syntactic and semantic forms.
+Designated initializers in C share expression subtrees between their syntactic and semantic forms.
 Thirty nested C containers cause the parent-map builder, descendant matchers, outer matcher traversal, and padding checker to revisit those same subtrees exponentially.
 Record every incoming parent edge while expanding each statement's children once.
 Cache only descendant searches with no matches, preserving successful binding multiplicity, and stop direct-child searches below their requested depth.

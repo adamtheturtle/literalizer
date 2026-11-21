@@ -1,13 +1,13 @@
 # Golden selection migration audit
 
 This is the November 15, 2026 completion audit for [#5813](https://github.com/adamtheturtle/literalizer/issues/5813).
-It records historical regression destinations, rather than defining another discovery or selection system.
+It records historical regression destinations.
 Future coverage belongs in the existing manifests and harness.
 
 The audited merged tree is `5e443e29412db78b5645c6f4a81161e235327bfc`.
 Historical manifests and golden filenames come from `93aaeb5f2763feed249447f565a473fe308c8658`; the eighteen additional Rust lexical cases come from `312d7f85ab`, which introduced them.
 The fix accompanying this audit removes `language_id` from the shared gate registry.
-It changes no generated fixture, native runner or coverage threshold.
+Generated fixtures, native runners, and coverage thresholds are unchanged.
 
 The ten remaining slices contain 465 historical entries, representing 443 distinct original manifests.
 Their 1084 original golden filenames have retained language/version and option witnesses.
@@ -23,7 +23,7 @@ Seven additional regressions reject the previously accepted metadata selection r
 ## Verification method
 
 The audit compared every historical input's format and bytes, explicit call/reference context, option-labelled golden filenames and supported version tags with its destination.
-Explicit settings were compared with both the destination base context and its named examples.
+Explicit settings were compared with both the destination base context and its examples.
 A similar name or identical scalar input alone is not a coverage witness.
 The destination tables include the exact regression owner, rather than unrelated manifests with coincidentally identical inputs.
 
@@ -55,7 +55,7 @@ The following changes preserve their effective configurations:
   Their `TAGGED_ENUM`, `ARRAY`, `TUPLE_NESTED_VEC` and `INTERFACE` settings remain explicit.
 - The four C++ `Cpp_tuple` families use `Cpp_heterogeneous_strategy_tuple_nested` at all three original C++ versions.
   Crystal `record_keyword_field` is now `record_keyword_fields`, retaining the keyword-field record recipe.
-- The allocator collision keeps its named base fixture.
+- The allocator collision uses the existing base fixture.
   Its historical Zig combined fixture used `my_data`, not `allocator`, and is byte-identical to the existing `default_helper_name_arena/Zig_combined@v0_12.zig` and `caller_name_std/Zig_combined@v0_12.zig`; that shared combined behavior remains owned and executed.
 - Python pre-indented multiline `.txt` fragments are now complete `.py` consumers for both original Python versions.
   The unwrapped generated assignment remains inside a native caller scope, which asserts the complete original multiline string at runtime.
@@ -70,7 +70,7 @@ The ordinary suite checks the complete current golden matrix, rejection expectat
 Hosted status must be read from the pull request head; this inventory is not itself a claim that a pending native job passed.
 
 The retired request-alias and CI-cost proposals are outside this completion gate.
-This audit introduces no aliases, duplicate-request accounting or timing framework.
+The audit covers fixture selection.
 
 Local validation on the resulting code passed 38,475 tests and 123,285 subtests, with 12,450 expected skips and 100% source/test line and branch coverage, including rejection and orphan checks. All seven new validation cases pass; restoring the removed registry entry makes all seven fail. Six additional native controls passed: complete multiline-string runtime comparisons under C++14/17/20, and Rust 2021 compilation/execution for typed empty-array reuse, an escaped-character binding and a raw-prefix existing binding.
 

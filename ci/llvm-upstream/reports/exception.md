@@ -49,6 +49,6 @@ The existing cached caller-location assertion is preserved.
 The isolated patch applies to LLVM main `fac4500420cdeed42f35537a26eea1e4e17badf0` and contains a regression test.
 The new test and the downstream semantic controls were run with the patched 23.1.4 tools; a complete build of current LLVM main has not been performed.
 
-This is intended as a follow-up to https://github.com/llvm/llvm-project/issues/224308, rather than a new duplicate issue.
+This follows up on https://github.com/llvm/llvm-project/issues/224308.
 
 Prepared with AI assistance.

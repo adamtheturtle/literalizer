@@ -51,7 +51,7 @@ Find a golden test
 
 The manifest declares coverage; the following test modules collect the matching cases.
 
-.. list-table:: Golden test entry points
+.. list-table:: Entry points for golden tests
    :header-rows: 1
 
    * - Coverage
@@ -143,7 +143,7 @@ Its ``input.yaml`` is inferred because it is the directory's sole input:
    schema_version = 1
    suites = ["base", "combined"]
 
-The default module-name suite checks each constructor's public default across its language versions:
+The suite for module names checks the default for each constructor across its language versions:
 
 .. code-block:: toml
 
@@ -182,8 +182,9 @@ This base case replaces null record fields before inference:
    [base_context.record_null_substitutions]
    replacement = -1
 
-Some runners render one chosen input rather than the whole inventory: the non-default indent, the bare value at file scope, the pre-indent shapes.
-The input declares the part it plays in a ``roles`` list, and the runner looks it up by role, so the directory name stays a single source of truth on disk:
+Some runners render one chosen input rather than the whole inventory: the non-default indent, the bare value at file scope, the forms before indentation.
+The input declares the part it plays in a ``roles`` list, and the runner looks it up by role, .
+Use the directory name to identify the case on disk:
 
 .. code-block:: toml
 
@@ -191,7 +192,8 @@ The input declares the part it plays in a ``roles`` list, and the runner looks i
    suites = ["base", "combined"]
    roles = ["indent-input"]
 
-A ``literalize_call`` case declares that owner and describes its call in a ``[call]`` table, so the whole case lives in one directory:
+A ``literalize_call`` case declares that owner and describes its call in a ``[call]`` table, .
+Keep the case in one directory:
 
 .. code-block:: toml
 
@@ -209,7 +211,7 @@ A ``literalize_call`` case declares that owner and describes its call in a ``[ca
 ``owner = "literalize-call"`` and a ``[call]`` table require each other.
 ``call_transform`` is a template, not code: it may substitute only ``{call}`` and ``{zipped}``, and any other placeholder fails at load time.
 Enum- and type-valued fields are named by string and resolved by the loader: ``call_style`` (``keyword``, ``positional``, ``object``, or ``command``), ``zip_input_format``, and the ``variable_form`` pair (``new`` or ``existing``).
-``variant_only = true`` keeps a case out of the default per-language call matrix, leaving it to the call-variant suite.
+``variant_only = true`` selects the call-variant suite instead of the default matrix for each language.
 
 A ``$ref`` case declares one of the two ref owners and describes itself in a ``[ref]`` table:
 
@@ -247,7 +249,7 @@ A shared ``[call]`` or ``[ref]`` table can own named ``[[call_examples]]`` or ``
    value_sources = { shared = '[1,"x"]' }
 
 The primary table exercises the shared scenario across languages; each example selects the capabilities its additional contract needs.
-Examples share the owning input and use the same renderer, version expansion, compiler checks and orphan checks as the primary table.
+Examples share their associated input and use the same renderer, version expansion, compiler checks and orphan checks as the primary table.
 Each example declares its complete API configuration rather than inheriting options from the primary table.
 Its unique ``example`` name uses lowercase letters, digits and underscores and is appended to its golden filenames and test identifiers.
 Keep the original regression provenance with the example when consolidating cases.
@@ -312,13 +314,13 @@ Optional ``gates`` narrow the scenario by capability using the same vocabulary a
 A new language joining those gates is covered automatically.
 ``option`` runs each applicable language once per member of that option, and ``values`` runs a case per declared value, which any ``{value}`` in a constructor argument substitutes.
 Languages lacking an enum member or declaration modifier needed to express the call do not contribute that combination.
-This selection reads option declarations, without executing the call to decide whether it belongs.
+This selection reads option declarations, without executing the call.
 
 Declaration modifiers normally resolve against the target's enum.
 ``modifier_source = "all"`` repeats the call using every enum that declares the requested modifier names, covering both local and foreign modifier ownership without naming an implementation in the manifest.
 Those cases add a ``['modifiers=Owner']`` part to the golden identifier, so distinct enum sources cannot overwrite each other's results.
 
-``api`` is ``constructor``, ``literalize``, ``literalize_call``, or ``literalize_call_with_declarations``, and the loader rejects an argument the named API does not take.
+``api`` is ``constructor``, ``literalize``, ``literalize_call``, or ``literalize_call_with_declarations``, and the loader rejects an argument the selected API does not accept.
 Composition scenarios supply ordered ``call.declarations`` entries with ``source``, ``variable_form`` (``new`` or ``existing``), and ``variable_name``.
 The fragments and call use the same target and reference inference hints.
 Direct option operations use ``sequence_type_annotation`` with ``option = "sequence_format"`` or ``declaration_formatter`` with ``option = "declaration_style"``.
@@ -330,7 +332,8 @@ For ``literalize`` scenarios, ``call.source_codepoints`` maps named ``{placehold
 An optional top-level ``integer_digit_limit`` scopes the interpreter's conversion limit to the scenario and restores it even if the call fails.
 Use zero to disable the limit, or at least ``sys.int_info.str_digits_check_threshold`` to enable it.
 With ``record_output = true``, successful rendering or formatter calls record their exact code in ``[Accepted]``; other scenarios record acceptance as an empty string.
-Each type in ``exceptions`` must occur in at least one case, keeping a scenario from silently losing the rejection it covers.
+Each type in ``exceptions`` must occur in at least one case.
+
 Other public Literalizer errors are recorded with their exact types and messages too; unexpected exceptions escape the runner.
 For parser diagnostics, an optional top-level ``position = [line, column]`` asserts the public error's one-based ``line`` and ``column`` attributes when the declared exception occurs.
 The same rule applies to optional ``attributes`` assertions; ``language_name = "{language}"`` checks the current language name.

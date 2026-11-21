@@ -9,7 +9,7 @@ You import the class, optionally configure it, and pass an instance to :func:`~l
 Selecting a language
 --------------------
 
-Each language class lives in :mod:`literalizer.languages` and is listed in :data:`~literalizer.languages.ALL_LANGUAGES`.
+Each language class is defined in :mod:`literalizer.languages` and is listed in :data:`~literalizer.languages.ALL_LANGUAGES`.
 Create an instance with its defaults, or override individual format options:
 
 .. code-block:: python
@@ -96,7 +96,7 @@ The available enums vary by language, but the most common ones are:
    * - ``StatementTerminatorStyles``
      - Statement terminator (``SEMICOLON``, ``NEWLINE``, ``NONE``).
 
-Access a language's enum members through the class itself, e.g. ``Go.sequence_formats.SLICE`` for Go slices or ``Go.date_formats.GO`` for the ``time.Date(...)`` constructor.
+Access enum members through the language class, e.g. ``Go.sequence_formats.SLICE`` for Go slices or ``Go.date_formats.GO`` for the ``time.Date(...)`` constructor.
 
 Each ``__init__`` parameter has a sensible default, so you only need to specify the options you want to change.
 
@@ -268,7 +268,7 @@ Generated scripts compile with fatal warnings before execution.
 Python annotation evaluation
 ----------------------------
 
-Python output postpones annotation evaluation by default, adding ``from __future__ import annotations`` whenever generated code contains an annotation.
+By default, the generated Python postpones evaluating annotations, adding ``from __future__ import annotations`` whenever generated code contains an annotation.
 Select eager runtime evaluation independently of the target Python syntax:
 
 .. code-block:: python
@@ -282,7 +282,8 @@ Select eager runtime evaluation independently of the target Python syntax:
        language_version=Python.version_formats.PY38,
    )
 
-The Python 3.8 variant uses ``typing.List``, ``typing.Dict``, and related aliases in both modes, so its annotations remain resolvable with ``typing.get_type_hints()`` on Python 3.8.
+The Python 3.8 variant uses ``typing.List``, ``typing.Dict``, and related aliases in both modes.
+Python 3.8 can resolve the annotations with ``typing.get_type_hints()``.
 Omitting ``annotation_evaluation`` preserves the default postponed behavior.
 
 Float emission scope
@@ -298,7 +299,7 @@ Special floats (``inf`` / ``nan``) follow each language's ``supports_special_flo
 Heterogeneous values
 --------------------
 
-When the input data mixes value types that the target language's natural collection type cannot hold, a ``heterogeneous_strategy`` constructor argument controls the outcome.
+When the values in the input cannot fit in the native collection type for the target language, a ``heterogeneous_strategy`` constructor argument controls the outcome.
 Every language defaults to ``ERROR``; some expose richer strategies such as ``TAGGED_ENUM`` or ``RECORD``.
 See :ref:`heterogeneous-strategies` for the strategies, worked examples, and the per-language support matrix.
 
@@ -307,7 +308,7 @@ See :ref:`heterogeneous-strategies` for the strategies, worked examples, and the
 JSON value types
 ----------------
 
-Some languages also have a single runtime JSON value type that is a better fit than native narrow collection types.
+Some languages also have one runtime JSON value type that is a better fit than native narrow collection types.
 These languages support this through the ``json_type`` constructor argument, accessed as ``<Language>.json_types.<VALUE>``.
 
 .. seealso::
@@ -445,7 +446,8 @@ The structural factories above are the default because the compiler validates th
        {"id": "beta", "size": 2}
    ])json");
 
-The option requires ``json_type`` and trades away the structural form's compile-time validation: ``parse`` throws ``json::parse_error`` at runtime instead.
+The option requires ``json_type`` and checks validity when parsing at runtime.
+``parse`` throws ``json::parse_error`` at runtime instead.
 The rendered document must be valid JSON, so non-finite floats, integers outside ``[-2^63, 2^64 - 1]`` (which ``parse`` would store as doubles that lose precision), and strings whose JSON encoding contains the raw-string terminator sequence ``)json"`` are rejected.
 
 Two cases are unusual enough to keep as prose.
@@ -480,7 +482,7 @@ D's polarity is reversed from the others: its default already renders every valu
 
 This emits raw D scalars, ``T[]`` array literals, and ``V[K]`` associative-array literals (``auto counts = ["a": 1, "b": 2];``) without the ``JSONValue`` wrapper.
 Inputs that have no narrow form, a heterogeneous list, a heterogeneous-valued dict, an empty list or dict (D's ``auto`` cannot infer an element type for an empty literal), a set, an ordered map, or a non-record dict, are rejected with :class:`~literalizer.exceptions.UnrepresentableInputError`.
-The ``RECORD`` ``heterogeneous_strategy`` is also rejected because it already renders record-shaped dicts as generated ``struct`` literals, which conflicts with narrow mode's associative-array form.
+The ``RECORD`` ``heterogeneous_strategy`` is also rejected because it already renders dictionaries with record fields as generated ``struct`` literals, which conflicts with narrow mode's associative-array form.
 
 Empty mappings in seven languages
 ---------------------------------
@@ -689,4 +691,4 @@ Objective-C wrappers and helpers
 It also applies to wrappers containing a declaration and reassignment.
 ``expand_call_stubs=True`` emits generated helper function bodies with one statement per line, again using ``indent``.
 Both options default to ``False`` and can be selected independently.
-These options affect their owning emitters directly; they do not parse or reformat generated code.
+These options affect the emitters for the relevant syntax directly; they do not parse or reformat generated code.

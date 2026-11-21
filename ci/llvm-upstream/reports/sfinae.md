@@ -32,6 +32,6 @@ The candidate patch includes a compiler-driven regression test.
 The isolated patch applies to LLVM main `fac4500420cdeed42f35537a26eea1e4e17badf0` and contains a regression test.
 The new test and the downstream semantic controls were run with the patched 23.1.4 tools; a complete build of current LLVM main has not been performed.
 
-The older https://github.com/llvm/llvm-project/issues/38701 is related compile-time-performance context, rather than a demonstrated duplicate of this reduced case.
+The older https://github.com/llvm/llvm-project/issues/38701 provides related context on compile-time performance.
 
 Prepared with AI assistance.

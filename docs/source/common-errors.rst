@@ -3,8 +3,8 @@
 Common errors and how to resolve them
 =====================================
 
-|project| raises a specific, typed exception whenever it cannot turn your data into valid code for the target language, rather than emitting source the compiler would reject.
-Every exception lives in :mod:`literalizer.exceptions`; this page groups them by the stage at which they are raised and renders each one's meaning and the recommended fix directly from :mod:`literalizer.exceptions`, so the guidance here cannot drift from the API reference.
+|project| raises a specific, typed exception whenever it cannot turn your data into valid code for the target language.
+This page groups exceptions by stage and draws their descriptions and fixes from :mod:`literalizer.exceptions`.
 
 All exceptions are importable from :mod:`literalizer.exceptions`, so a name such as ``HeterogeneousScalarCollectionError`` below refers to :class:`literalizer.exceptions.HeterogeneousScalarCollectionError`.
 
