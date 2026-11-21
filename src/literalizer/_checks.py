@@ -808,7 +808,7 @@ def _describe_mixed_type_families(
 
 
 @beartype
-def _has_heterogeneous(
+def has_heterogeneous(
     *,
     data: Value,
     record_dict_ids: frozenset[int],
@@ -844,7 +844,7 @@ def _has_heterogeneous(
             return False
 
     return own_mixed or any(
-        _has_heterogeneous(
+        has_heterogeneous(
             data=v,
             record_dict_ids=record_dict_ids,
             tuple_list_ids=tuple_list_ids,
@@ -854,7 +854,7 @@ def _has_heterogeneous(
 
 
 @beartype
-def _has_heterogeneous_sibling_lists(
+def has_heterogeneous_sibling_lists(
     *,
     data: Value,
     record_dict_ids: frozenset[int],
@@ -881,7 +881,7 @@ def _has_heterogeneous_sibling_lists(
         case dict():
             values = list(data.values())
             if any(
-                _has_heterogeneous_sibling_lists(
+                has_heterogeneous_sibling_lists(
                     data=v,
                     record_dict_ids=record_dict_ids,
                     tuple_list_ids=tuple_list_ids,
@@ -902,7 +902,7 @@ def _has_heterogeneous_sibling_lists(
                     _all_scalars_heterogeneous(
                         values=[e for sub in seq_lists for e in sub],
                     )
-                    or _has_heterogeneous_sibling_lists(
+                    or has_heterogeneous_sibling_lists(
                         data=[e for sub in seq_lists for e in sub],
                         record_dict_ids=record_dict_ids,
                         tuple_list_ids=tuple_list_ids,
@@ -911,7 +911,7 @@ def _has_heterogeneous_sibling_lists(
             )
         case list():
             if any(
-                _has_heterogeneous_sibling_lists(
+                has_heterogeneous_sibling_lists(
                     data=v,
                     record_dict_ids=record_dict_ids,
                     tuple_list_ids=tuple_list_ids,
@@ -932,7 +932,7 @@ def _has_heterogeneous_sibling_lists(
                     _all_scalars_heterogeneous(
                         values=[e for sub in seq_list_children for e in sub],
                     )
-                    or _has_heterogeneous_sibling_lists(
+                    or has_heterogeneous_sibling_lists(
                         data=[e for sub in seq_list_children for e in sub],
                         record_dict_ids=record_dict_ids,
                         tuple_list_ids=tuple_list_ids,
@@ -1113,7 +1113,7 @@ def _has_mixed_dict_values(
 
 
 @beartype
-def _has_unwrappable_value_mix(
+def has_unwrappable_value_mix(
     *,
     data: Value,
     container_type: type[object],
@@ -1136,7 +1136,7 @@ def _has_unwrappable_value_mix(
         and _values_mixed_types(values=values)
     )
     return own_mixed or any(
-        _has_unwrappable_value_mix(
+        has_unwrappable_value_mix(
             data=value,
             container_type=container_type,
             excluded_container_ids=excluded_container_ids,
@@ -1202,7 +1202,7 @@ def _check_heterogeneous(
     tuple_list_ids: frozenset[int],
 ) -> None:
     """Raise if data contains heterogeneous all-scalar collections."""
-    if _has_heterogeneous(
+    if has_heterogeneous(
         data=data,
         record_dict_ids=record_dict_ids,
         tuple_list_ids=tuple_list_ids,
@@ -1224,7 +1224,7 @@ def _check_heterogeneous_sibling_lists(
     tuple_list_ids: frozenset[int],
 ) -> None:
     """Raise if sibling lists have heterogeneous scalar types."""
-    if _has_heterogeneous_sibling_lists(
+    if has_heterogeneous_sibling_lists(
         data=data,
         record_dict_ids=record_dict_ids,
         tuple_list_ids=tuple_list_ids,
@@ -1291,7 +1291,7 @@ def _check_mixed_dict_values(
 
 
 @beartype
-def _has_mixed_dict_list_depths(
+def has_mixed_dict_list_depths(
     *,
     data: Value,
     record_dict_ids: frozenset[int],
@@ -1305,7 +1305,7 @@ def _has_mixed_dict_list_depths(
             ):
                 return True
             return any(
-                _has_mixed_dict_list_depths(
+                has_mixed_dict_list_depths(
                     data=value,
                     record_dict_ids=record_dict_ids,
                 )
@@ -1313,7 +1313,7 @@ def _has_mixed_dict_list_depths(
             )
         case list():
             return any(
-                _has_mixed_dict_list_depths(
+                has_mixed_dict_list_depths(
                     data=item,
                     record_dict_ids=record_dict_ids,
                 )
@@ -1330,7 +1330,7 @@ def _check_mixed_dict_list_depths(
     record_dict_ids: frozenset[int],
 ) -> None:
     """Raise if one dict has list values of differing depth."""
-    if _has_mixed_dict_list_depths(
+    if has_mixed_dict_list_depths(
         data=data,
         record_dict_ids=record_dict_ids,
     ):
@@ -1791,7 +1791,7 @@ def _check_scalar_wrapping_shapes(
     """
     if (
         not spec.dict_supports_heterogeneous_values
-        and _has_unwrappable_value_mix(
+        and has_unwrappable_value_mix(
             data=data,
             container_type=dict,
             excluded_container_ids=record_dict_ids,
@@ -1808,7 +1808,7 @@ def _check_scalar_wrapping_shapes(
     if (
         not spec.sequence_format_config.supports_heterogeneity
         and spec.heterogeneous_behavior.wrap_empty_container is None
-        and _has_unwrappable_value_mix(
+        and has_unwrappable_value_mix(
             data=data,
             container_type=list,
             excluded_container_ids=tuple_list_ids,

@@ -5248,7 +5248,7 @@ def _literalize_pre_form_impl(
     """
     line_prefix = language.indent * pre_indent_level
     parsed = parse_input(source=source, input_format=input_format)
-    data = _substitute_record_nulls(
+    data = substitute_record_nulls(
         data=parsed.data,
         substitutions=record_null_substitutions,
     )
@@ -5442,7 +5442,7 @@ def literalize_pre_form(
 
 
 @beartype
-def _substitute_record_nulls(
+def substitute_record_nulls(
     *,
     data: Value,
     substitutions: Mapping[str, Value] | None,
@@ -5457,7 +5457,7 @@ def _substitute_record_nulls(
         return data
     if isinstance(data, list):
         return [
-            _substitute_record_nulls(data=item, substitutions=substitutions)
+            substitute_record_nulls(data=item, substitutions=substitutions)
             for item in data
         ]
     collected_entries_2: dict[Scalar, Value]
@@ -5465,7 +5465,7 @@ def _substitute_record_nulls(
         if isinstance(data, OrderedMap):
             return OrderedMap(
                 {
-                    key: _substitute_record_nulls(
+                    key: substitute_record_nulls(
                         data=item, substitutions=substitutions
                     )
                     for key, item in data.items()
@@ -5485,7 +5485,7 @@ def _substitute_record_nulls(
                     argument_name="record_null_substitutions",
                 )
             else:
-                collected_entries_2[entry_key] = _substitute_record_nulls(
+                collected_entries_2[entry_key] = substitute_record_nulls(
                     data=entry_item, substitutions=substitutions
                 )
         return collected_entries_2

@@ -1,19 +1,30 @@
 """Documented literal rejections resolved before rendering."""
 
+import dataclasses
 import datetime as dt
 import enum
 import functools
 import math
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
 
 from beartype import beartype
 
 import literalizer
+from literalizer._checks import (
+    has_heterogeneous,
+    has_heterogeneous_sibling_lists,
+    has_mixed_dict_list_depths,
+    has_unwrappable_value_mix,
+)
 from literalizer._formatters.format_integers import I64_MAX, I64_MIN
 from literalizer._language import is_reserved_identifier, redefinition_config
+from literalizer._literalize import (
+    materialize_value_mapping,
+    substitute_record_nulls,
+)
 from literalizer._parsing import parse_input
-from literalizer._types import Value
+from literalizer._types import OrderedMap, Value
 from literalizer.exceptions import (
     ExcessiveNestingError,
     ExistingVariableNotSelfContainedError,
@@ -24,10 +35,11 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableSpecialFloatError,
 )
-from literalizer.languages import Scala
+from literalizer.languages import Java, Mojo, Scala, V
 from tests.language_options import HasJsonType
 
-from .case_manifests import case_input, load_case_manifest
+from .case_inputs import CaseInput
+from .case_manifests import load_case_manifest
 from .golden_outcomes import Rejection
 from .rejection_contracts import rejected_examples
 from .yaml_warnings import expected_yaml_warnings
@@ -107,17 +119,200 @@ def _values(*, data: Value) -> Iterator[Value]:
             return
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _LiteralSource:
+    """The effective source text and input metadata for a literal case."""
+
+    input_info: CaseInput
+    source_text: str
+
+
+@functools.cache
+def literal_source(*, case_dir: Path) -> _LiteralSource:
+    """Resolve the source and input format used by the literal runner."""
+    manifest = load_case_manifest(case_dir=case_dir)
+    input_info = manifest.input
+    source_text = input_info.path.read_text(encoding="utf-8")
+    roundtrip = manifest.input_roundtrip
+    if roundtrip is not None:
+        with expected_yaml_warnings(
+            expectation=input_info.expected_reused_anchor_warning,
+        ):
+            source_text = literalizer.literalize(
+                source=source_text,
+                input_format=input_info.input_format,
+                language=roundtrip.language(),
+            ).code
+        input_info = dataclasses.replace(
+            input_info,
+            input_format=roundtrip.input_format,
+            expected_reused_anchor_warning=None,
+        )
+    return _LiteralSource(input_info=input_info, source_text=source_text)
+
+
 @functools.cache
 def _parsed_case(*, case_dir: Path) -> Value:
-    """Parse authored values without running any output formatter."""
-    input_info = case_input(case_dir=case_dir)
+    """Parse the source passed to the target API."""
+    source = literal_source(case_dir=case_dir)
     with expected_yaml_warnings(
-        expectation=input_info.expected_reused_anchor_warning,
+        expectation=source.input_info.expected_reused_anchor_warning,
     ):
         return parse_input(
-            source=input_info.path.read_text(encoding="utf-8"),
-            input_format=input_info.input_format,
+            source=source.source_text,
+            input_format=source.input_info.input_format,
         ).data
+
+
+def _has_only_nulls(*, items: Iterable[Value]) -> bool:
+    """Check whether a nonempty container has no type-bearing value."""
+    values = tuple(items)
+    return len(values) > 0 and all(value is None for value in values)
+
+
+def _has_record_element(*, items: list[Value]) -> bool:
+    """Find ordinary mappings that select Scala's record array opener."""
+    return any(
+        (isinstance(item, dict) and not isinstance(item, OrderedMap))
+        or (isinstance(item, list) and _has_record_element(items=item))
+        for item in items
+    )
+
+
+def _null_rejection(
+    *,
+    spec: literalizer.Language,
+    case_dir: Path,
+    substitutions: Mapping[str, literalizer.ValueInput] | None,
+) -> Rejection | None:
+    """Resolve null collection limits for the selected native carrier."""
+    if not isinstance(spec, Java | Mojo | Scala | V):
+        return None
+    data = _parsed_case(case_dir=case_dir)
+    if substitutions is not None:
+        data = substitute_record_nulls(
+            data=data,
+            substitutions=materialize_value_mapping(
+                values=substitutions,
+                argument_name="record_null_substitutions",
+            ),
+        )
+    message = _null_rejection_message(spec=spec, data=data)
+    if message is None:
+        return None
+    return Rejection(error=NullInCollectionError, match=message)
+
+
+def _mojo_rejects_null_list(
+    *, spec: Mojo, data: Value, null_lists: list[list[Value]]
+) -> bool:
+    """Account for checks before Mojo constructs a list."""
+    # Scalar wrapping cannot reconcile a container with a scalar in
+    # the same slot, even under the VARIANT strategy.
+    if any(
+        has_unwrappable_value_mix(
+            data=data,
+            container_type=container,
+            excluded_container_ids=frozenset(),
+        )
+        for container in (dict, list)
+    ):
+        return False
+    if spec.heterogeneous_strategy is Mojo.HeterogeneousStrategies["VARIANT"]:
+        return True
+    # Default inference checks the collection's shape and its sibling
+    # element types before it asks the list factory for delimiters.
+    return any(_has_only_nulls(items=items) for items in null_lists) and not (
+        has_heterogeneous(
+            data=data, record_dict_ids=frozenset(), tuple_list_ids=frozenset()
+        )
+        or has_heterogeneous_sibling_lists(
+            data=data, record_dict_ids=frozenset(), tuple_list_ids=frozenset()
+        )
+        or has_mixed_dict_list_depths(data=data, record_dict_ids=frozenset())
+    )
+
+
+def _scala_rejects_null_list(
+    *, spec: Scala, data: Value, null_lists: list[list[Value]]
+) -> bool:
+    """Check which lists reach Scala's native typed array opener."""
+    if spec.sequence_format is not Scala.SequenceFormats["ARRAY"]:
+        return False
+    behavior = spec.heterogeneous_behavior
+    tuple_ids = behavior.compute_tuple_list_ids
+    excluded_ids = frozenset[int]() if tuple_ids is None else tuple_ids(data)
+    return any(
+        id(items) not in excluded_ids
+        and (
+            behavior.render_record_literal is None
+            or not _has_record_element(items=items)
+        )
+        for items in null_lists
+    )
+
+
+def _null_rejection_message(
+    *, spec: Java | Mojo | Scala | V, data: Value
+) -> str | None:
+    """Distinguish native list factories and V's all-null inference."""
+    if isinstance(spec, V):
+        rejects_nulls = (
+            spec.heterogeneous_strategy is V.HeterogeneousStrategies["ERROR"]
+            and any(
+                _has_only_nulls(
+                    items=item.values() if isinstance(item, dict) else item
+                )
+                for item in _values(data=data)
+                if isinstance(item, (dict, list, set))
+            )
+        )
+        return "V cannot infer an element type" if rejects_nulls else None
+
+    null_lists = [
+        item
+        for item in _values(data=data)
+        if isinstance(item, list) and any(child is None for child in item)
+    ]
+    if len(null_lists) == 0:
+        return None
+    if isinstance(spec, Mojo):
+        rejects_nulls = _mojo_rejects_null_list(
+            spec=spec, data=data, null_lists=null_lists
+        )
+        return (
+            "Mojo's list literal cannot contain null elements"
+            if rejects_nulls
+            else None
+        )
+
+    if spec.json_type is not None:
+        return None
+    if isinstance(spec, Java):
+        # The native map factory and option compatibility are validated
+        # before the list factory runs.
+        rejects_nulls = (
+            spec.sequence_format is Java.SequenceFormats["LIST"]
+            and spec.heterogeneous_strategy
+            is Java.HeterogeneousStrategies["ERROR"]
+            and all(
+                all(child is not None for child in item.values())
+                for item in _values(data=data)
+                if isinstance(item, dict)
+            )
+        )
+        return (
+            r"Java's List\.of\(\) does not accept null elements"
+            if rejects_nulls
+            else None
+        )
+
+    rejects_nulls = _scala_rejects_null_list(
+        spec=spec, data=data, null_lists=null_lists
+    )
+    return (
+        "Scala's Array cannot contain null elements" if rejects_nulls else None
+    )
 
 
 def _representation_rejection(
@@ -216,7 +411,7 @@ def literal_rejection(
     lang_cls: literalizer.LanguageCls,
     variable_form: literalizer.VariableForm | None,
     case_dir: Path,
-    substitutes_nulls: bool,
+    substitutions: Mapping[str, literalizer.ValueInput] | None,
 ) -> Rejection | None:
     """Resolve documented identifier and fixture compatibility errors."""
     expected_error: type[Exception] | None = None
@@ -248,13 +443,6 @@ def literal_rejection(
         expected_error = InvalidNewVariableNameError
         expected_message = "it is not a valid identifier"
     elif (
-        isinstance(spec, Scala)
-        and spec.sequence_format is Scala.SequenceFormats["ARRAY"]
-        and case_dir.name == "simple_sequence"
-    ):
-        expected_error = NullInCollectionError
-        expected_message = "Array cannot contain null elements"
-    elif (
         isinstance(variable_form, literalizer.ExistingVariable)
         and case_dir.name == "existing_variable_self_declaring"
         and _assignment_requires_prior_declaration(
@@ -263,11 +451,16 @@ def literal_rejection(
     ):
         expected_error = ExistingVariableNotSelfContainedError
         expected_message = "the assignment has no prior declaration"
-    if expected_error is None:
-        return _representation_rejection(
-            spec=spec,
-            lang_cls=lang_cls,
-            case_dir=case_dir,
-            substitutes_nulls=substitutes_nulls,
-        )
-    return Rejection(error=expected_error, match=expected_message)
+    if expected_error is not None:
+        return Rejection(error=expected_error, match=expected_message)
+    rejection = _representation_rejection(
+        spec=spec,
+        lang_cls=lang_cls,
+        case_dir=case_dir,
+        substitutes_nulls=substitutions is not None,
+    )
+    if rejection is not None:
+        return rejection
+    return _null_rejection(
+        spec=spec, case_dir=case_dir, substitutions=substitutions
+    )
