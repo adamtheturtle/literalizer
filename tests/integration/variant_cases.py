@@ -90,7 +90,6 @@ def build_json_type_variable_form_cases(
                     VariantCase(
                         consumer_template=None,
                         apply_fixture_module_name=True,
-                        expected_errors=(),
                         golden_name=name,
                         variant=dataclasses.replace(json_variant, name=name),
                         case_dir_name=case_dir_name,
@@ -108,7 +107,6 @@ def build_json_type_variable_form_cases(
                 VariantCase(
                     consumer_template=None,
                     apply_fixture_module_name=True,
-                    expected_errors=(),
                     golden_name=name,
                     variant=compact_variant(
                         name=name,
@@ -152,7 +150,6 @@ def build_json_type_variable_form_cases(
                 VariantCase(
                     consumer_template=None,
                     apply_fixture_module_name=True,
-                    expected_errors=(),
                     golden_name=name,
                     variant=variant,
                     case_dir_name=case_dir_name,
@@ -198,7 +195,6 @@ def build_multiline_string_context_cases(
                 VariantCase(
                     consumer_template=None,
                     apply_fixture_module_name=True,
-                    expected_errors=(),
                     golden_name=name,
                     variant=dataclasses.replace(
                         base_variant,
@@ -225,7 +221,6 @@ def build_multiline_string_context_cases(
                 VariantCase(
                     consumer_template=None,
                     apply_fixture_module_name=True,
-                    expected_errors=(),
                     golden_name=name,
                     variant=dataclasses.replace(base_variant, name=name),
                     case_dir_name=pre_indent_case_dir_name,
@@ -305,7 +300,6 @@ def case_for_manifest_variant(
         consumer_template=manifest_variant.consumer_templates.get(
             variant.lang_cls, context.consumer_templates.get(variant.lang_cls)
         ),
-        expected_errors=tuple(manifest_variant.expected_errors),
     )
 
 

@@ -70,8 +70,12 @@ Review the generated diff, then rerun the test for the cases without ``--regen-a
 A declared success compares rendered text, a declared rejection asserts its exception, and a capability exclusion reports its reason.
 A rejected or excluded rendering that still has a native fixture fails even with ``--regen-all``.
 Review the expectation and fixture diff when support changes.
-Unmigrated representation constraints still use the legacy skip policies.
-Those skips also fail if a native fixture exists.
+Literal and format-variant cases resolve their expected outcomes before rendering.
+Shared capability checks live in ``literal_expectations.py``.
+When a specific authored input and option combination exercises a backend limit, declare the exception and a stable message pattern in ``literal_rejections.toml``.
+Select the effective constructor options or render arguments that trigger the limit.
+The harness checks that every declared selector still has a corresponding rendering.
+Call and reference cases still use legacy skip policies for some constraints.
 Keep the effective configuration matrix when renaming a case, including role references, axis suffixes and path-derived module names.
 
 The Python golden checks verify rendered text and harness contracts.
@@ -86,7 +90,7 @@ Follow the ordinary literal path in this order:
 1. ``case_manifests.py`` validates ``case.toml`` and resolves its input.
 2. ``case_discovery.py`` selects representable inputs; ``variant_cases.py`` pairs inputs with options expanded by the builders in ``variant_axes.py``.
 3. ``golden_scenarios.py`` assembles ``GoldenRendering`` records from ``golden_renderings.py``; ``golden_batches.py`` bounds pytest work items.
-4. ``test_literalize_golden.py`` renders each effective spec and ``golden_checks.py`` compares the result or handles declared skips.
+4. ``test_literalize_golden.py`` renders each effective spec and ``golden_checks.py`` compares the result or asserts the declared rejection.
 5. ``harness/test_orphan_golden_files.py`` checks fixture ownership across all runners.
 
 The specialized entry points are ``test_calls.py``, ``test_literalize_ref_golden.py``, ``test_literalize_ref_default.py`` and ``test_constructor_targets.py``.

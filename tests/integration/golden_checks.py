@@ -166,11 +166,21 @@ def assert_rejection(
     outcome: Rejection,
     render: Callable[[], object],
     golden_path: Path,
+    exact_type: bool,
 ) -> None:
     """Exercise a rejection and prohibit a success fixture at its path."""
     assert_no_golden(golden_path=golden_path)
-    with pytest.raises(expected_exception=outcome.error, match=outcome.match):
+    with pytest.raises(
+        expected_exception=outcome.error, match=outcome.match
+    ) as raised:
         _ = render()
+    if exact_type and type(raised.value) is not outcome.error:
+        pytest.fail(
+            reason=(
+                f"Expected {outcome.error.__name__}, "
+                f"got {type(raised.value).__name__}: {raised.value}"
+            ),
+        )
 
 
 @beartype
@@ -191,7 +201,10 @@ def check_outcome(
             )
         case Rejection():
             assert_rejection(
-                outcome=outcome, render=render, golden_path=golden_path
+                outcome=outcome,
+                render=render,
+                golden_path=golden_path,
+                exact_type=False,
             )
         case _:
             reason = outcome.reason

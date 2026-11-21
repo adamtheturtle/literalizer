@@ -9,4 +9,3 @@ axis = "json_type"
 
 [[variants]]
 axis = "string_format"
-expected_errors = ["InvalidDictKeyError"]

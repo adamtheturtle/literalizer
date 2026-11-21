@@ -17,14 +17,14 @@ gates = [{kind = "metadata_field", field = "language_id", value = "python"}]
 message = "Input tag 'metadata_field'.*does not match any of the expected tags"
 
 [[cases]]
-name = "expected_error_must_be_public_literalizer_error"
+name = "variant_expected_errors_is_retired"
 manifest = '''schema_version = 1
 suites = ["base"]
 [[variants]]
 axis = "string_format"
-expected_errors = ["RuntimeError"]
+expected_errors = ["InvalidDictKeyError"]
 '''
-message = "InvalidDictKeyError"
+message = 'expected_errors\n\s+Extra inputs are not permitted'
 
 [[cases]]
 name = "schema_version"

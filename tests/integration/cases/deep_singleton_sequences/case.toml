@@ -2,7 +2,6 @@
 # Preserve all 30 nested singleton sequences and their native container types.
 schema_version = 1
 suites = ["base"]
-strict_golden_outcomes = true
 
 # Explicit Swift annotations must preserve the exact depth-30 array type
 # without the compiler cost of recursively nested shorthand (issue 5264).
