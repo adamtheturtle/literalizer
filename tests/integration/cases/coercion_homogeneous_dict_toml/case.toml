@@ -6,4 +6,3 @@ axis = "string_format"
 
 [[variants]]
 axis = "type_hints"
-expected_errors = ["InvalidDictKeyError"]

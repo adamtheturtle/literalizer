@@ -40,11 +40,7 @@ def literalize_rendering(
             pre_indent_level=render.pre_indent_level,
             include_delimiters=True,
             variable_form=variable_form,
-            wrap_in_file=(
-                render.wrap_in_file
-                and len(rendering.extra_preamble) == 0
-                and not rendering.initialize_variable
-            ),
+            wrap_in_file=rendering.wrap_in_file,
             collection_layout=render.collection_layout,
             record_null_substitutions=render.record_null_substitutions,
         )

@@ -1,12 +1,10 @@
 """Declare the golden-file scenarios that drive :func:`literalize`.
 
 Every golden-file scenario renders the same way: resolve a case input,
-build the golden path, build the spec, call ``literalize``, skip the
-inputs the language cannot represent, and check the golden.  What
-differs between them is data -- which languages take part, which case
-directory each renders, what the golden is called, which spec keywords
-are overridden, which variable form is bound, and which errors skip
-rather than fail.
+build the golden path and spec, and check the rendering against its
+expected outcome. The scenario decides which languages and fixtures
+participate, which golden and spec options to use, and which variable
+form to bind.
 
 This module holds that data.  A scenario names a builder that expands
 one language into its renderings; :mod:`test_literalize_golden` owns
@@ -25,7 +23,7 @@ from beartype import beartype
 
 import literalizer
 
-from . import case_manifests, manifest_queries, scenario_skips
+from . import case_manifests, manifest_queries
 from .case_discovery import (
     discover_cases,
     kebab_new_variable_languages,
@@ -42,10 +40,6 @@ from .golden_renderings import (
     RenderArguments,
     compact_render,
     unprefixed_rendering,
-)
-from .golden_skip_policy import (
-    NO_SKIPS,
-    SkipPolicy,
 )
 from .language_metadata import language_metadata
 from .language_specs import (
@@ -132,7 +126,6 @@ def _base_renderings(
                         ),
                         wrap_in_file=True,
                     ),
-                    skip=scenario_skips.LANGUAGE_SKIPS,
                 ),
                 consumer_template=context.consumer_templates.get(lang_cls),
             )
@@ -168,7 +161,6 @@ def _default_module_name_renderings(
             extra_preamble=(),
             initialize_variable=False,
             apply_fixture_module_name=False,
-            skip=NO_SKIPS,
         )
         for case_name, manifest in manifests.items()
         if "default-module-name" in manifest.suites
@@ -205,7 +197,6 @@ def _new_variable_renderings(
                     modifiers=frozenset(),
                 ),
             ),
-            skip=NO_SKIPS,
         ),
     )
 
@@ -230,7 +221,6 @@ def _combined_renderings(
             ),
             spec_source={"declaration_style": style},
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
-            skip=scenario_skips.LANGUAGE_SKIPS,
         )
         for case_name in discover_cases(
             cases_dir=_CASES_DIR, suite="combined", lang_cls=lang_cls
@@ -271,11 +261,6 @@ def _variant_renderings(
             extra_preamble=variant_case.variant.extra_preamble,
             initialize_variable=variant_case.variant.initialize_variable,
             apply_fixture_module_name=variant_case.apply_fixture_module_name,
-            skip=(
-                scenario_skips.VARIANT_MAPPING_KEY_SKIPS
-                if "InvalidDictKeyError" in variant_case.expected_errors
-                else scenario_skips.VARIANT_SKIPS
-            ),
         )
         for variant_case in grouped.get(lang_cls, [])
     )
@@ -306,7 +291,6 @@ def _statement_terminator_renderings(
                 "declaration_style": styles[0],
             },
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
-            skip=NO_SKIPS,
         )
         for terminator in spec.statement_terminator_styles
         if terminator is not spec.statement_terminator_style
@@ -318,10 +302,7 @@ def _statement_terminator_renderings(
 def _heterogeneous_strategy_renderings(
     *, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
-    """Combine both variable forms under each non-default strategy.
-
-    Name the strategy in skips when it cannot represent its paired input.
-    """
+    """Combine both variable forms under each non-default strategy."""
     spec = make_spec(lang_cls=lang_cls)
     styles = find_redefinition_styles(spec=spec)
     if len(styles) == 0:
@@ -344,10 +325,6 @@ def _heterogeneous_strategy_renderings(
                 "declaration_style": styles[0],
             },
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
-            skip=SkipPolicy(
-                reasons=scenario_skips.STRATEGY_SKIP_REASONS,
-                suffix=f" under {strategy.name}",
-            ),
         )
         for strategy in spec.heterogeneous_strategies
         if strategy is not spec.heterogeneous_strategy
@@ -390,10 +367,6 @@ def _pre_indent_renderings(
                 record_null_substitutions=None,
                 wrap_in_file=True,
             ),
-            skip=SkipPolicy(
-                reasons=scenario_skips.LANGUAGE_SKIP_REASONS,
-                suffix=" at non-zero pre-indent",
-            ),
         )
         for case_dir_name, suffix in contexts
         for combo in lang_cls.modifier_combinations
@@ -422,7 +395,6 @@ def _no_variable_form_renderings(
             ),
             spec_source={},
             render=compact_render(variable_form=None),
-            skip=NO_SKIPS,
         )
         for case_name in manifest_queries.case_dir_names_for_role(
             cases_dir=_CASES_DIR, role=case_manifests.NO_VARIABLE_FORM_ROLE
@@ -451,7 +423,6 @@ def _indent_renderings(
                     name="my_data", modifiers=frozenset()
                 )
             ),
-            skip=NO_SKIPS,
         ),
     )
 
