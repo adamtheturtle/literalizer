@@ -3,9 +3,8 @@ boundary.
 """
 
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
-import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
@@ -32,7 +31,6 @@ def test_external_integer_receiver_keeps_absent_inference_hints(
     *,
     cases_dir: Path,
     file_regression: FileRegressionFixture,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """An observable external call needs neither stub inference nor
     hints.
@@ -43,31 +41,32 @@ def test_external_integer_receiver_keeps_absent_inference_hints(
         if config.example == "external_integer"
     )
     recorder = Mock(wraps=literalizer.literalize_call)
-    monkeypatch.setattr(
-        target=literalizer, name="literalize_call", value=recorder
+    unexpected_stub = Mock(
+        side_effect=AssertionError("synthetic consumer used")
     )
-    for name in (
-        "_resolve_refs_for_inference",
-        "argument_values_for_stub",
-        "target_call_declarations",
-        "wrapper_call_declarations",
-    ):
-        monkeypatch.setattr(
-            target=call_cases,
-            name=name,
-            value=Mock(side_effect=AssertionError("synthetic consumer used")),
-        )
-    call_cases.run_call_golden_case(
-        rendering=CallRendering(
-            config=config,
-            lang_cls=Cpp,
-            spec=make_spec(lang_cls=Cpp),
-            golden_name="Cpp_call",
-            expected_exception=None,
+    with (
+        patch.object(
+            target=literalizer, attribute="literalize_call", new=recorder
         ),
-        cases_dir=cases_dir,
-        file_regression=file_regression,
-    )
+        patch.multiple(
+            target=call_cases,
+            _resolve_refs_for_inference=unexpected_stub,
+            argument_values_for_stub=unexpected_stub,
+            target_call_declarations=unexpected_stub,
+            wrapper_call_declarations=unexpected_stub,
+        ),
+    ):
+        call_cases.run_call_golden_case(
+            rendering=CallRendering(
+                config=config,
+                lang_cls=Cpp,
+                spec=make_spec(lang_cls=Cpp),
+                golden_name="Cpp_call",
+                expected_exception=None,
+            ),
+            cases_dir=cases_dir,
+            file_regression=file_regression,
+        )
     calls = [
         call.kwargs
         for call in recorder.call_args_list
