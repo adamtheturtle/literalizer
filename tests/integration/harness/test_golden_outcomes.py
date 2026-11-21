@@ -305,8 +305,8 @@ def test_null_expectations_use_effective_input(
         encoding="utf-8",
     )
     _ = (tmp_path / "input.yaml").write_text(data=yaml, encoding="utf-8")
-    input_info, source = literal_source(case_dir=tmp_path)
-    assert input_info.input_format is InputFormat.JSONC
+    source = literal_source(case_dir=tmp_path)
+    assert source.input_info.input_format is InputFormat.JSONC
     outcome = literal_rejection(
         spec=spec,
         lang_cls=lang_cls,
@@ -317,8 +317,8 @@ def test_null_expectations_use_effective_input(
     render = functools.partial(
         literalize,
         language=spec,
-        source=source,
-        input_format=input_info.input_format,
+        source=source.source_text,
+        input_format=source.input_info.input_format,
         record_null_substitutions=substitutions,
     )
     if rejects:

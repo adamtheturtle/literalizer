@@ -47,9 +47,7 @@ def _check_rendering(
     file_regression: FileRegressionFixture,
 ) -> None:
     """Render one golden file and compare it against its fixture."""
-    input_info, source_text = literal_source(
-        case_dir=cases_dir / rendering.case_dir_name
-    )
+    source = literal_source(case_dir=cases_dir / rendering.case_dir_name)
     golden_path = rendering.artifact(version=spec.language_version).path
     if rendering.apply_fixture_module_name:
         spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
@@ -67,8 +65,8 @@ def _check_rendering(
                 literalize_rendering,
                 rendering=rendering,
                 spec=spec,
-                input_info=input_info,
-                source_text=source_text,
+                input_info=source.input_info,
+                source_text=source.source_text,
                 variable_form=variable_form,
             ),
         )
@@ -85,8 +83,8 @@ def _check_rendering(
         result = literalize_rendering(
             rendering=rendering,
             spec=spec,
-            input_info=input_info,
-            source_text=source_text,
+            input_info=source.input_info,
+            source_text=source.source_text,
             variable_form=variable_form,
         )
     if rendering.initialize_variable or len(rendering.extra_preamble) > 0:
@@ -99,8 +97,8 @@ def _check_rendering(
                 literalize_rendering(
                     rendering=rendering,
                     spec=spec,
-                    input_info=input_info,
-                    source_text=source_text,
+                    input_info=source.input_info,
+                    source_text=source.source_text,
                     variable_form=literalizer.NewVariable(
                         name=rendering.render.variable_form.name,
                         modifiers=frozenset(),

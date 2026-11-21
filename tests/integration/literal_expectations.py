@@ -119,42 +119,48 @@ def _values(*, data: Value) -> Iterator[Value]:
             return
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _LiteralSource:
+    """The effective source text and input metadata for a literal case."""
+
+    input_info: CaseInput
+    source_text: str
+
+
 @functools.cache
-def literal_source(*, case_dir: Path) -> tuple[CaseInput, str]:
+def literal_source(*, case_dir: Path) -> _LiteralSource:
     """Resolve the source and input format used by the literal runner."""
     manifest = load_case_manifest(case_dir=case_dir)
     input_info = manifest.input
-    source = input_info.path.read_text(encoding="utf-8")
+    source_text = input_info.path.read_text(encoding="utf-8")
     roundtrip = manifest.input_roundtrip
-    if roundtrip is None:
-        return input_info, source
-    with expected_yaml_warnings(
-        expectation=input_info.expected_reused_anchor_warning,
-    ):
-        source = literalizer.literalize(
-            source=source,
-            input_format=input_info.input_format,
-            language=roundtrip.language(),
-        ).code
-    return (
-        dataclasses.replace(
+    if roundtrip is not None:
+        with expected_yaml_warnings(
+            expectation=input_info.expected_reused_anchor_warning,
+        ):
+            source_text = literalizer.literalize(
+                source=source_text,
+                input_format=input_info.input_format,
+                language=roundtrip.language(),
+            ).code
+        input_info = dataclasses.replace(
             input_info,
             input_format=roundtrip.input_format,
             expected_reused_anchor_warning=None,
-        ),
-        source,
-    )
+        )
+    return _LiteralSource(input_info=input_info, source_text=source_text)
 
 
 @functools.cache
 def _parsed_case(*, case_dir: Path) -> Value:
     """Parse the source passed to the target API."""
-    input_info, source = literal_source(case_dir=case_dir)
+    source = literal_source(case_dir=case_dir)
     with expected_yaml_warnings(
-        expectation=input_info.expected_reused_anchor_warning,
+        expectation=source.input_info.expected_reused_anchor_warning,
     ):
         return parse_input(
-            source=source, input_format=input_info.input_format
+            source=source.source_text,
+            input_format=source.input_info.input_format,
         ).data
 
 
