@@ -93,4 +93,4 @@ def test_unsupported_constructor_binding_is_excluded(cases_dir: Path) -> None:
         reason="constructor_binding/Elm_constructor_call@V0_19: "
         "the configuration cannot bind a nullary constructor result",
     )
-    assert case.participating_renderings == ()
+    assert len(case.participating_renderings) == 0
