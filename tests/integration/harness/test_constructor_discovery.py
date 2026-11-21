@@ -4,8 +4,14 @@ from pathlib import Path
 
 import pytest
 
+from literalizer import NewVariable
+from literalizer.languages import Elm
 from tests.integration import constructor_cases
-from tests.integration.case_manifests import CaseManifestError
+from tests.integration.case_manifests import (
+    CaseManifestError,
+    load_case_manifest,
+)
+from tests.integration.golden_outcomes import Exclusion
 
 
 def test_selected_backend_requires_native_consumer(tmp_path: Path) -> None:
@@ -67,3 +73,24 @@ def test_every_matching_owner(
     for name in expected:
         matching = [case for case in actual if case.name == name]
         assert len(matching) == owner_count
+
+
+def test_unsupported_constructor_binding_is_excluded(cases_dir: Path) -> None:
+    """A backend that cannot bind the call result supplies no golden
+    work.
+    """
+    manifest = load_case_manifest(case_dir=cases_dir / "constructor_binding")
+    case = constructor_cases.ConstructorBindingCase(
+        name="Elm_constructor_call",
+        lang_cls=Elm,
+        spec_overrides={},
+        variable_form=NewVariable(name="p", modifiers=frozenset()),
+        manifest=manifest,
+    )
+
+    (rendering,) = case.renderings
+    assert rendering.outcome == Exclusion(
+        reason="constructor_binding/Elm_constructor_call@V0_19: "
+        "the configuration cannot bind a nullary constructor result",
+    )
+    assert case.participating_renderings == ()

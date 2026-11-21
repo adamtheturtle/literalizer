@@ -70,6 +70,15 @@ class ConstructorBindingCase(ConstructorBindingSpec):
             for spec in self.specs
         )
 
+    @functools.cached_property
+    def participating_renderings(self) -> tuple["ConstructorRendering", ...]:
+        """Share eligible renderings between execution and ownership."""
+        return tuple(
+            rendering
+            for rendering in self.renderings
+            if not isinstance(rendering.outcome, Exclusion)
+        )
+
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
 class ConstructorRendering:
@@ -160,10 +169,7 @@ def constructor_binding_cases(
                 variable_form=case.variable_form,
                 manifest=manifest,
             )
-            if any(
-                not isinstance(rendering.outcome, Exclusion)
-                for rendering in owned_case.renderings
-            ):
+            if len(owned_case.participating_renderings) > 0:
                 _ = owned_case.consumer_template
                 cases.append(owned_case)
     for manifest in manifests:
