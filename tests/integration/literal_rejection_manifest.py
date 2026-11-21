@@ -78,12 +78,13 @@ class LiteralRejectionSelector(  # noqa: NOD001
         ):
             return False
         return all(
-            expected == _option_name(spec=spec, name=name)
+            expected == option_name(spec=spec, name=name)
             for name, expected in self.options.items()
         )
 
 
-def _option_name(*, spec: literalizer.Language, name: str) -> str:
+def option_name(*, spec: literalizer.Language, name: str) -> str:
+    """Return the name of a selected enum option."""
     """Normalize selected enum options and unset optional formats."""
     value = (
         None

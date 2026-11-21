@@ -1,15 +1,9 @@
-"""Golden comparison and the remaining legacy skip policies.
+"""Comparison and outcome assertions for golden fixtures."""
 
-Expected outcomes are resolved by the individual runners. The legacy
-skip policies cover constraints still evaluated during rendering.
-"""
-
-import dataclasses
 import enum
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from types import TracebackType
-from typing import Protocol, runtime_checkable
+from typing import Protocol
 
 import pytest
 from beartype import beartype
@@ -19,23 +13,16 @@ from literalizer import Language, LiteralizeResult
 
 from .fixture_names import fixture_module_name
 from .golden_outcomes import Exclusion, GoldenOutcome, Rejection, Success
-from .golden_skip_policy import SkipPolicy
 from .language_metadata import language_metadata
 
 
-@runtime_checkable
-class _ReasonedError(Protocol):
-    """An error that carries its own account of what it rejected."""
-
-    reason: str
-
-
 class _OutcomeRendering(Protocol):
-    """A rendering with a resolved outcome or a legacy fallback."""
+    """A rendering with a resolved outcome."""
 
     @property
-    def outcome(self) -> GoldenOutcome | None:
+    def outcome(self) -> GoldenOutcome:
         """Return the discovered outcome for this rendering."""
+        ...
 
 
 def golden_test_parameters(
@@ -61,43 +48,6 @@ def assert_no_golden(*, golden_path: Path) -> None:
         pytest.fail(
             reason=f"Unexpected success fixture: {golden_path}",
         )
-
-
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class GoldenSkips:
-    """A block whose declared errors skip the golden rather than fail it.
-
-    Errors outside the policy propagate. Every skip checks ownership.
-    """
-
-    policy: SkipPolicy
-    golden_path: Path
-    prefix: str
-
-    def __enter__(self) -> None:
-        """Enter the guarded rendering."""
-
-    def __exit__(
-        self,
-        _exc_type: type[BaseException] | None,
-        exc: BaseException | None,
-        _traceback: TracebackType | None,
-    ) -> None:
-        """Skip the case when the rendering raised a declared error."""
-        for entry in self.policy.reasons:
-            if isinstance(exc, entry.error):
-                detail = (
-                    f": {exc.reason}"
-                    if isinstance(exc, _ReasonedError)
-                    else ""
-                )
-                assert_no_golden(golden_path=self.golden_path)
-                pytest.skip(
-                    reason=(
-                        f"{self.prefix} {entry.reason}"
-                        f"{detail}{self.policy.suffix}"
-                    )
-                )
 
 
 @beartype
@@ -204,7 +154,7 @@ def check_outcome(
                 outcome=outcome,
                 render=render,
                 golden_path=golden_path,
-                exact_type=False,
+                exact_type=outcome.exact_type,
             )
         case _:
             reason = outcome.reason

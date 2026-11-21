@@ -18,16 +18,6 @@ from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
-from literalizer.exceptions import (
-    CallArgNotSupportedError,
-    HeterogeneousCollectionError,
-    IncompatibleFormatsError,
-    InvalidDictKeyError,
-    NullInCollectionError,
-    ReservedVariableNameError,
-    UnrepresentableInputError,
-    VariableNameNotSupportedError,
-)
 from tests.enum_members import enum_member_by_name
 
 from .case_manifests import (
@@ -36,12 +26,7 @@ from .case_manifests import (
     RefExpressionContext,
     case_input,
 )
-from .golden_checks import (
-    GoldenSkips,
-    check_golden,
-    check_outcome,
-)
-from .golden_skip_policy import SkipPolicy, SkipReason
+from .golden_checks import check_outcome
 from .language_specs import (
     find_redefinition_styles,
     with_per_fixture_module_name,
@@ -56,48 +41,6 @@ from .reference_cases import RefRendering
 from .reference_inputs import bound_ref_inputs, parse_ref_input
 
 CASES_DIR = Path(__file__).parent / "cases"
-
-
-# A ``$ref`` case is written once for every language, so an input a
-# language cannot represent, or a ref identifier it will not spell,
-# skips rather than fails.
-_REF_SKIPS: SkipPolicy = SkipPolicy(
-    reasons=(
-        SkipReason(
-            error=IncompatibleFormatsError,
-            reason="reference input is incompatible with the selected formats",
-        ),
-        SkipReason(
-            error=ReservedVariableNameError,
-            reason="rejects a declared reference identifier",
-        ),
-        SkipReason(
-            error=VariableNameNotSupportedError,
-            reason="cannot declare the reference binding",
-        ),
-        SkipReason(
-            error=NullInCollectionError,
-            reason="cannot represent null in this collection",
-        ),
-        SkipReason(
-            error=HeterogeneousCollectionError,
-            reason="cannot represent this heterogeneous input",
-        ),
-        SkipReason(
-            error=UnrepresentableInputError,
-            reason="cannot represent this heterogeneous input",
-        ),
-        SkipReason(
-            error=CallArgNotSupportedError,
-            reason="rejected ref identifier",
-        ),
-        SkipReason(
-            error=InvalidDictKeyError,
-            reason="cannot represent a dictionary key",
-        ),
-    ),
-    suffix="",
-)
 
 
 @beartype
@@ -226,19 +169,6 @@ def run_literalize_ref_golden_case(
     render = functools.partial(
         _render_reference_golden, rendering=rendering, cases_dir=cases_dir
     )
-    if rendering.outcome is None:
-        with GoldenSkips(
-            policy=_REF_SKIPS,
-            golden_path=golden_path,
-            prefix=rendering.lang_cls.__name__,
-        ):
-            contents = render()
-        check_golden(
-            contents=contents,
-            golden_path=golden_path,
-            file_regression=file_regression,
-        )
-        return
     check_outcome(
         outcome=rendering.outcome,
         render=render,

@@ -18,12 +18,21 @@ from literalizer import (
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     ExistingVariableNotSelfContainedError,
+    HeterogeneousCollectionError,
+    HeterogeneousScalarCollectionError,
     MixedListValuesError,
     NullInCollectionError,
     UnrepresentableInputError,
 )
 from literalizer.languages import Bash, Mojo, Scala, V
-from tests.integration.golden_checks import assert_rejection, check_outcome
+from tests.integration.call_collection import discover_call_cases
+from tests.integration.call_ref_contracts import authored_call_ref_outcome
+from tests.integration.case_manifests import case_input
+from tests.integration.golden_checks import (
+    assert_rejection,
+    check_outcome,
+    golden_test_parameters,
+)
 from tests.integration.golden_outcomes import SUCCESS, Exclusion, Rejection
 from tests.integration.golden_renderings import compact_render
 from tests.integration.golden_scenarios import scenario_renderings
@@ -176,6 +185,120 @@ def test_rejection_propagates_the_wrong_error(
             file_regression=file_regression,
         )
     assert not golden_path.exists()
+
+
+def test_mojo_stub_requires_common_argument_slot_types(
+    cases_dir: Path,
+) -> None:
+    """A generated Mojo target needs a common type for each slot."""
+    case = next(
+        case
+        for case in discover_call_cases()
+        if case.config.case_dir_name == "call_scalar_args"
+        and case.lang_cls is Mojo
+    )
+    assert all(
+        rendering.outcome
+        == Exclusion(
+            reason="the synthetic target stub needs a common type "
+            "for each argument slot"
+        )
+        for rendering in case.renderings
+    )
+    assert (
+        golden_test_parameters(cases=[(case.test_id, case.renderings)]) == []
+    )
+
+    case_source = case_input(case_dir=cases_dir / case.config.case_dir_name)
+    render = functools.partial(
+        literalize_call,
+        source=case_source.path.read_text(encoding="utf-8"),
+        input_format=case_source.input_format,
+        language=Mojo(),
+        target_function=case.config.target_function,
+        parameter_names=case.config.parameter_names,
+        per_element=case.config.per_element,
+    )
+    assert render().code.splitlines() == [
+        'process("hello")',
+        "process(42)",
+        "process(True)",
+    ]
+    with pytest.raises(
+        expected_exception=HeterogeneousScalarCollectionError,
+        match="call argument types diverge across calls",
+    ):
+        _ = render(wrap_in_file=True)
+
+
+@pytest.mark.parametrize(
+    argnames=("options", "message"),
+    argvalues=[
+        ('{ bogus = "NONE" }', "Unknown contract options"),
+        ("{}", "Conflicting contracts"),
+    ],
+)
+def test_invalid_call_ref_contract_fails_during_resolution(
+    *, tmp_path: Path, options: str, message: str
+) -> None:
+    """Reject misspelled option selectors and contradictory outcomes."""
+    case = next(
+        case
+        for case in discover_call_cases()
+        if case.config.case_dir_name == "call_scalar_args"
+        and case.lang_cls is Mojo
+    )
+    manifest = tmp_path / "contracts.toml"
+    _ = manifest.write_text(
+        data=f"""\
+[[exclusion]]
+reason = "synthetic fixture prerequisite"
+
+[[exclusion.applies]]
+cases = ["call_scalar_args"]
+languages = ["Mojo"]
+options = {options}
+
+[[rejection]]
+error = "HeterogeneousScalarCollectionError"
+
+[[rejection.applies]]
+cases = ["call_scalar_args"]
+languages = ["Mojo"]
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(expected_exception=ValueError, match=message):
+        _ = authored_call_ref_outcome(
+            config=case.config,
+            spec=Mojo(),
+            lang_cls=Mojo,
+            manifest_path=manifest,
+        )
+
+
+def test_strict_rejection_rejects_a_different_subclass(
+    *, tmp_path: Path, file_regression: FileRegressionFixture
+) -> None:
+    """A related collection exception cannot satisfy an exact contract."""
+    with pytest.raises(
+        expected_exception=pytest.fail.Exception,
+        match="got HeterogeneousScalarCollectionError",
+    ):
+        check_outcome(
+            outcome=Rejection(
+                error=HeterogeneousCollectionError, match=None, exact_type=True
+            ),
+            render=lambda: (
+                literalize(
+                    source='[1, "hello"]',
+                    input_format=InputFormat.JSON,
+                    language=Mojo(),
+                ).code
+            ),
+            golden_path=tmp_path / "mixed.mojo",
+            file_regression=file_regression,
+        )
 
 
 def test_exclusion_reaching_execution_fails(
