@@ -25,6 +25,8 @@ target_function = "process"
 parameter_names = ["value"]
 per_element = false
 explicit_ref_value_sources = {}
+# The reference remains in the emitted call but contributes no inference data.
+expected_source_data = "[]"
 
 [call_examples.fixture]
 kind = "composed"
