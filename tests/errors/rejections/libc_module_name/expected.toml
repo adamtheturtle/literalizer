@@ -48,6 +48,9 @@
 "ObjectiveC['memcpy']" = "ObjectiveC cannot use module_name 'memcpy': it is not a valid identifier"
 "ObjectiveC['printf']" = "ObjectiveC cannot use module_name 'printf': it is not a valid identifier"
 "ObjectiveC['strlen']" = "ObjectiveC cannot use module_name 'strlen': it is not a valid identifier"
+"PureScript['memcpy']" = "PureScript cannot use module_name 'memcpy': it is not a valid identifier"
+"PureScript['printf']" = "PureScript cannot use module_name 'printf': it is not a valid identifier"
+"PureScript['strlen']" = "PureScript cannot use module_name 'strlen': it is not a valid identifier"
 
 [UnsupportedOptionError]
 "Bash['memcpy']" = "Bash does not support option 'module_name'"
@@ -143,9 +146,6 @@
 "PowerShell['memcpy']" = "PowerShell does not support option 'module_name'"
 "PowerShell['printf']" = "PowerShell does not support option 'module_name'"
 "PowerShell['strlen']" = "PowerShell does not support option 'module_name'"
-"PureScript['memcpy']" = "PureScript does not support option 'module_name'"
-"PureScript['printf']" = "PureScript does not support option 'module_name'"
-"PureScript['strlen']" = "PureScript does not support option 'module_name'"
 "Python['memcpy']" = "Python does not support option 'module_name'"
 "Python['printf']" = "Python does not support option 'module_name'"
 "Python['strlen']" = "Python does not support option 'module_name'"

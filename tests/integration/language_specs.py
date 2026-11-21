@@ -136,13 +136,18 @@ def make_spec(
     """Build a language spec, reusing cached constructor arguments.
 
     Languages whose ``wrap_in_file`` introduces a named scope take a
-    ``module_name`` constructor argument; default it to the native spelling
-    of ``"main"`` so fixture output matches the historic golden files.
-    Mapping-valued overrides bypass the cache because they cannot be
-    part of its key.
+    ``module_name`` constructor argument. Use the fixed name expected by the
+    native runner when configured. Otherwise use the native spelling of
+    ``"main"``. Mapping-valued overrides bypass the cache because they cannot
+    be part of its key.
     """
     if lang_cls.supports_module_name and "module_name" not in kwargs:
-        kwargs["module_name"] = lang_cls.module_name_case.convert(name="main")
+        golden = language_metadata(language_id=lang_cls.language_id).golden
+        kwargs["module_name"] = (
+            golden.fixture_module_name
+            if golden.fixture_module_name is not None
+            else lang_cls.module_name_case.convert(name="main")
+        )
     if any(isinstance(value, Mapping) for value in kwargs.values()):
         return lang_cls(**kwargs)
     return cached_spec(

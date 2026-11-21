@@ -1,4 +1,4 @@
-# languages rejecting: 7; languages accepting: 8
+# languages rejecting: 8; languages accepting: 8
 
 [Accepted]
 Ada = ""
@@ -16,5 +16,6 @@ Fortran = "Fortran cannot use NewVariable name 'import': it is a reserved identi
 Haskell = "Haskell cannot use NewVariable name 'import': it is a reserved identifier"
 Haxe = "Haxe cannot use NewVariable name 'import': it is a reserved identifier"
 Java = "Java cannot use NewVariable name 'import': it is a reserved identifier"
+PureScript = "PureScript cannot use NewVariable name 'import': it is a reserved identifier"
 Scala = "Scala cannot use NewVariable name 'import': it is a reserved identifier"
 SystemVerilog = "SystemVerilog cannot use NewVariable name 'import': it is a reserved identifier"

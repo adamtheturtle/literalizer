@@ -17,6 +17,7 @@ SystemVerilog = "SystemVerilog cannot accept this value as a call argument: Syst
 Crystal = "Crystal cannot use module_name 'shared_name': it is not a valid identifier"
 Haskell = "Haskell cannot use module_name 'shared_name': it is not a valid identifier"
 Haxe = "Haxe cannot use module_name 'shared_name': it is not a valid identifier"
+PureScript = "PureScript cannot use module_name 'shared_name': it is not a valid identifier"
 
 [ModuleNameVariableCollisionError]
 Fortran = "Fortran cannot use module_name 'shared_name': the wrapper and the variable it binds share one scope"
@@ -57,7 +58,6 @@ Odin = "Odin does not support option 'module_name'"
 Perl = "Perl does not support option 'module_name'"
 Php = "Php does not support option 'module_name'"
 PowerShell = "PowerShell does not support option 'module_name'"
-PureScript = "PureScript does not support option 'module_name'"
 Python = "Python does not support option 'module_name'"
 R = "R does not support option 'module_name'"
 Racket = "Racket does not support option 'module_name'"

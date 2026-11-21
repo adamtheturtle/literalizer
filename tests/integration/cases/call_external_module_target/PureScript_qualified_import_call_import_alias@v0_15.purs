@@ -2,12 +2,12 @@ module Check where
 
 
 import Prelude
-import Prelude as Numbers
+import CallTarget as Target
 
 
 main :: Unit
 main =
     let
-        _ = Numbers.negate (1)
+        _ = Target.consume (1)
     in
     unit

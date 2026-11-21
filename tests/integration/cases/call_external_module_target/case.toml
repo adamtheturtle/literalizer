@@ -1,8 +1,8 @@
 schema_version = 1
 owner = "literalize-call"
 
-# Exercise qualified calls against the standard library in OCaml and a
-# generated module alias in PureScript.
+# Exercise the standard library in OCaml and an aliased, generated
+# target module in PureScript.
 [call]
 gates = [{kind = "enum_member_present", option = "date_format", member = "OCAML"}]
 target_function = "stdlib.ignore"
@@ -15,7 +15,7 @@ include_target_stub = false
 
 [[call_examples]]
 example = "import_alias"
-target_function = "Numbers.negate"
+target_function = "Target.consume"
 parameter_names = ["a"]
 per_element = true
 

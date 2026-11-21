@@ -1,4 +1,4 @@
-# languages rejecting: 65; languages accepting: 14
+# languages rejecting: 65; languages accepting: 15
 
 [Accepted]
 "Ada['Class']" = ""
@@ -64,6 +64,9 @@
 "Occam['record']" = ""
 "Occam['var']" = ""
 "Occam['yield']" = ""
+"PureScript['Class']" = ""
+"PureScript['Public']" = ""
+"PureScript['Return']" = ""
 "Scala['Class']" = ""
 "Scala['Public']" = ""
 "Scala['Return']" = ""
@@ -119,6 +122,11 @@
 "ObjectiveC['Class']" = "ObjectiveC cannot use module_name 'Class': it is not a valid identifier"
 "ObjectiveC['int']" = "ObjectiveC cannot use module_name 'int': it is not a valid identifier"
 "Occam['int']" = "Occam cannot use module_name 'int': it is not a valid identifier"
+"PureScript['_']" = "PureScript cannot use module_name '_': it is not a valid identifier"
+"PureScript['int']" = "PureScript cannot use module_name 'int': it is not a valid identifier"
+"PureScript['record']" = "PureScript cannot use module_name 'record': it is not a valid identifier"
+"PureScript['var']" = "PureScript cannot use module_name 'var': it is not a valid identifier"
+"PureScript['yield']" = "PureScript cannot use module_name 'yield': it is not a valid identifier"
 "Scala['var']" = "Scala cannot use module_name 'var': it is not a valid identifier"
 "Scala['yield']" = "Scala cannot use module_name 'yield': it is not a valid identifier"
 "SystemVerilog['int']" = "SystemVerilog cannot use module_name 'int': it is not a valid identifier"
@@ -373,14 +381,6 @@
 "PowerShell['record']" = "PowerShell does not support option 'module_name'"
 "PowerShell['var']" = "PowerShell does not support option 'module_name'"
 "PowerShell['yield']" = "PowerShell does not support option 'module_name'"
-"PureScript['Class']" = "PureScript does not support option 'module_name'"
-"PureScript['Public']" = "PureScript does not support option 'module_name'"
-"PureScript['Return']" = "PureScript does not support option 'module_name'"
-"PureScript['_']" = "PureScript does not support option 'module_name'"
-"PureScript['int']" = "PureScript does not support option 'module_name'"
-"PureScript['record']" = "PureScript does not support option 'module_name'"
-"PureScript['var']" = "PureScript does not support option 'module_name'"
-"PureScript['yield']" = "PureScript does not support option 'module_name'"
 "Python['Class']" = "Python does not support option 'module_name'"
 "Python['Public']" = "Python does not support option 'module_name'"
 "Python['Return']" = "Python does not support option 'module_name'"

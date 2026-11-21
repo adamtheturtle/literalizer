@@ -911,6 +911,7 @@ def _build_purescript_call_output(
     decl_part: str,
     calls: str,
     indent: str,
+    module_name: str,
 ) -> str:
     """Build a complete PureScript module string for call mode.
 
@@ -932,7 +933,7 @@ def _build_purescript_call_output(
         )
     preamble = _hoist_purescript_imports(preamble=preamble)
     return (
-        "module Check where\n\n\n"
+        f"module {module_name} where\n\n\n"
         + preamble
         + decl_part
         + "\n\n\nmain :: Unit\nmain =\n"
@@ -1153,6 +1154,9 @@ class PureScript(metaclass=LanguageCls):
             * ``datetime_formats.ISO`` — ISO 8601 string,
               e.g. ``PStr "2024-01-15T12:30:00"``.
 
+        module_name: Uppercase-prefixed identifier for wrapped modules.
+            Defaults to ``"Check"``.
+
         type_name: Name of the generated custom type.  Defaults to
             ``"Val"``.
 
@@ -1189,7 +1193,7 @@ class PureScript(metaclass=LanguageCls):
     contextual_call_target_identifiers: ClassVar[frozenset[str]] = frozenset()
     call_parameter_shadowing = CallParameterShadowing.ALLOWED
     reserved_call_target_keywords_case_sensitive = True
-    module_name_must_start_uppercase = False
+    module_name_must_start_uppercase = True
     max_variable_identifier_length: ClassVar[int | None] = None
     supports_multiline_dict_layout = True
     pools_map_integer_width = True
@@ -1282,7 +1286,8 @@ class PureScript(metaclass=LanguageCls):
     supports_multi_param_call_wrapper_stub = True
     supports_variadic_calls = False
     supports_dict_literal_as_free_expression = True
-    supports_module_name = False
+    supports_module_name = True
+    module_name_case: ClassVar[IdentifierCase] = IdentifierCase.PASCAL
     supports_empty_dict_key = False
     supports_call_style = True
     supports_bare_mapping_documents = False
@@ -1670,6 +1675,7 @@ class PureScript(metaclass=LanguageCls):
             decl_part=decl_part,
             calls=calls,
             indent=self.indent,
+            module_name=self.module_name,
         )
 
     @property
@@ -1692,6 +1698,7 @@ class PureScript(metaclass=LanguageCls):
                 decl_part="",
                 calls=content,
                 indent=self.indent,
+                module_name=self.module_name,
             )
         # An inference-bound call result contributes its own
         # ``import Prelude`` (for the stub's ``Unit``) on top of any
@@ -1700,7 +1707,9 @@ class PureScript(metaclass=LanguageCls):
         # stub declarations; hoist every import to the top of the
         # preamble.
         preamble = _hoist_purescript_imports(preamble=preamble)
-        return f"module Check where\n\n\n{preamble}\n\n\n{content}"
+        return (
+            f"module {self.module_name} where\n\n\n{preamble}\n\n\n{content}"
+        )
 
     wrap_combined_in_file: ClassVar[
         "staticmethod[[str, str, FileWrapperContext], str]"
@@ -1741,6 +1750,9 @@ class PureScript(metaclass=LanguageCls):
     # ``.github/workflows/lint.yml``; keep them in sync.
     language_version: VersionFormats = VersionFormats.V0_15
     indent: str = "    "
+    module_name: str = "Check"
+    """Name of the module emitted for wrapped literals and calls."""
+
     type_name: str = "Val"
     constructor_prefix: str = "P"
     qualified_imports: tuple[tuple[str, str], ...] = ()

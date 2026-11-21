@@ -1,4 +1,4 @@
-# languages rejecting: 52; languages accepting: 13
+# languages rejecting: 51; languages accepting: 14
 
 [Accepted]
 Ada = ""
@@ -12,6 +12,7 @@ Haxe = ""
 Java = ""
 ObjectiveC = ""
 Occam = ""
+PureScript = ""
 Scala = ""
 SystemVerilog = ""
 
@@ -51,7 +52,6 @@ Odin = "Odin does not support option 'module_name'"
 Perl = "Perl does not support option 'module_name'"
 Php = "Php does not support option 'module_name'"
 PowerShell = "PowerShell does not support option 'module_name'"
-PureScript = "PureScript does not support option 'module_name'"
 Python = "Python does not support option 'module_name'"
 R = "R does not support option 'module_name'"
 Racket = "Racket does not support option 'module_name'"
