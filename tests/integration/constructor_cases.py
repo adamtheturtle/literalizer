@@ -2,6 +2,7 @@
 
 import dataclasses
 import enum
+import functools
 from pathlib import Path
 
 from beartype import beartype
@@ -20,8 +21,9 @@ from .constructor_variants import (
     constructor_binding_specs,
 )
 from .golden_artifacts import GoldenArtifact
-from .golden_outcomes import SUCCESS, Rejection, Success
-from .language_specs import make_golden_artifact, make_spec, sorted_languages
+from .golden_outcomes import SUCCESS, Exclusion, GoldenOutcome, Rejection
+from .language_specs import make_golden_artifact, sorted_languages
+from .scenario_participation import Requirement, scenario_exclusion
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -32,20 +34,40 @@ class ConstructorBindingCase(ConstructorBindingSpec):
 
     manifest: CaseManifest
 
-    @property
+    @functools.cached_property
+    def consumer_template(self) -> str | None:
+        """Resolve the native consumer for a participating backend."""
+        config = self.manifest.constructor
+        assert config is not None  # noqa: S101
+        return config.consumer_for_language(
+            language_name=self.lang_cls.__name__
+        )
+
+    @functools.cached_property
     def renderings(self) -> tuple["ConstructorRendering", ...]:
         """Expand the versions used by execution and fixture inventory."""
+        config = self.manifest.constructor
+        assert config is not None  # noqa: S101
         return tuple(
             ConstructorRendering(
                 case=self,
-                version=version,
-                spec=make_spec(
-                    lang_cls=self.lang_cls,
-                    language_version=version,
-                    **self.spec_overrides,
+                spec=(
+                    dataclasses.replace(
+                        spec,
+                        **{
+                            key: value.format(
+                                target=spec.format_constructor_target(
+                                    config.class_name
+                                )
+                            )
+                            for key, value in config.target_options.items()
+                        },
+                    )
+                    if len(config.target_options) > 0
+                    else spec
                 ),
             )
-            for version in self.lang_cls.VersionFormats
+            for spec in self.specs
         )
 
 
@@ -54,12 +76,29 @@ class ConstructorRendering:
     """One collected constructor case, version and effective spec."""
 
     case: ConstructorBindingCase
-    version: enum.Enum
     spec: Language
 
     @property
-    def outcome(self) -> Success | Rejection:
-        """Classify binding modifiers before calling the renderer."""
+    def version(self) -> enum.Enum:
+        """Report the version that owns the fixture."""
+        return self.spec.language_version
+
+    @functools.cached_property
+    def outcome(self) -> GoldenOutcome:
+        """Check constructor applicability before predicting API
+        errors.
+        """
+        config = self.case.manifest.constructor
+        assert config is not None  # noqa: S101
+        if not config.renders_target:
+            exclusion = scenario_exclusion(
+                case_id=f"{self.case.manifest.case_dir.name}/{self.case.name}",
+                spec=self.spec,
+                requirements=(Requirement.CONSTRUCTOR_BINDING,),
+                fixture_reason=None,
+            )
+            if exclusion is not None:
+                return exclusion
         form = self.case.variable_form
         if (
             isinstance(self.spec, CSharp)
@@ -104,27 +143,29 @@ def constructor_binding_cases(
             and manifest.constructor is not None
             and not manifest.constructor.renders_target
         )
-        if len(owners) == 0:
+        if len(owners) == 0 and any(
+            Requirement.CONSTRUCTOR_BINDING.satisfied_by(spec=spec)
+            for spec in case.specs
+        ):
             msg = (
                 f"constructor binding {case.name!r} "
                 "has no native fixture owner"
             )
             raise CaseManifestError(msg)
         for manifest in owners:
-            config = manifest.constructor
-            assert config is not None  # noqa: S101
-            _ = config.consumer_for_language(
-                language_name=case.lang_cls.__name__
+            owned_case = ConstructorBindingCase(
+                name=case.name,
+                lang_cls=case.lang_cls,
+                spec_overrides=case.spec_overrides,
+                variable_form=case.variable_form,
+                manifest=manifest,
             )
-            cases.append(
-                ConstructorBindingCase(
-                    name=case.name,
-                    lang_cls=case.lang_cls,
-                    spec_overrides=case.spec_overrides,
-                    variable_form=case.variable_form,
-                    manifest=manifest,
-                )
-            )
+            if any(
+                not isinstance(rendering.outcome, Exclusion)
+                for rendering in owned_case.renderings
+            ):
+                _ = owned_case.consumer_template
+                cases.append(owned_case)
     for manifest in manifests:
         config = manifest.constructor
         if config is not None and config.renders_target:

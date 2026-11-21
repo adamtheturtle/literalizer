@@ -9,6 +9,7 @@ from .constructor_cases import (
     constructor_binding_cases,
 )
 from .constructor_goldens import run_constructor_binding_golden_case
+from .golden_outcomes import Exclusion
 
 
 @pytest.mark.parametrize(
@@ -24,6 +25,8 @@ def test_constructor_binding_golden_file(
 ) -> None:
     """Every declared constructor binding matches its native golden."""
     for rendering in case.renderings:
+        if isinstance(rendering.outcome, Exclusion):
+            continue
         with subtests.test(version=rendering.version.name):
             run_constructor_binding_golden_case(
                 rendering=rendering,

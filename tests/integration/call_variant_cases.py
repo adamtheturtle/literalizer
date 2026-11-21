@@ -22,8 +22,9 @@ from .call_collection import (
     CallCase,
     CallRendering,
     discover_call_cases,
+    resolve_call_rendering,
 )
-from .call_expectations import call_style_spec, expected_call_shape_exception
+from .call_expectations import call_style_spec
 from .case_manifests import CallCaseSpec, call_case_specs
 from .variant_cases import Variant, variants_for_axis
 from .variant_context import config_with_variant_layout
@@ -48,11 +49,11 @@ class CallVariantCase:
         """Return the manifest and variant identity of this case."""
         return f"{self.config.coverage_id}/{self.variant.name}"
 
-    @property
+    @functools.cached_property
     def renderings(self) -> tuple[CallRendering, ...]:
         """Exercise the plan's effective version and rejection policy once."""
         return (
-            CallRendering(
+            resolve_call_rendering(
                 config=self.config,
                 lang_cls=self.lang_cls,
                 spec=call_style_spec(
@@ -61,11 +62,6 @@ class CallVariantCase:
                     spec=self.variant.spec,
                 ),
                 golden_name=f"{self.variant.name}_call",
-                expected_exception=expected_call_shape_exception(
-                    lang_cls=self.lang_cls,
-                    config=self.config,
-                    spec=self.variant.spec,
-                ),
             ),
         )
 

@@ -8,12 +8,16 @@ from typing import override
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import LanguageCls, SequenceFormatConfig
+from literalizer import IdentifierCase, LanguageCls, SequenceFormatConfig
 from literalizer.exceptions import UnrepresentableInputError
-from literalizer.languages import CSharp, Elm
+from literalizer.languages import CSharp, Elm, Rust, Yaml
 from tests.integration import literalize_ref_cases
-from tests.integration.case_manifests import load_case_manifest
-from tests.integration.golden_outcomes import Rejection
+from tests.integration.case_manifests import (
+    REF_DEFAULT_OWNER,
+    REF_OWNER,
+    load_case_manifest,
+)
+from tests.integration.golden_outcomes import Exclusion, Rejection
 from tests.integration.reference_cases import LiteralizeRefCase
 
 
@@ -114,3 +118,71 @@ def test_scaffold_refusal_through_golden_runner(
                 file_regression=file_regression,
             )
             assert not golden_path.exists()
+
+
+def test_redefinition_checks_the_selected_declaration(cases_dir: Path) -> None:
+    """An explicit immutable Rust style bypasses the mutable fallback."""
+    manifest = load_case_manifest(
+        case_dir=cases_dir / "literalize_ref_both_forms"
+    )
+    assert manifest.ref is not None
+    assert manifest.owner is not None
+    default = LiteralizeRefCase(
+        config=manifest.ref, lang_cls=Rust, owner=manifest.owner
+    )
+    (mutable,) = default.renderings
+    explicit = dataclasses.replace(
+        default,
+        config=manifest.ref.model_copy(update={"declaration_style": "LET"}),
+    )
+    (immutable,) = explicit.renderings
+    assert not isinstance(mutable.outcome, Exclusion)
+    assert (
+        mutable.spec.declaration_style is not immutable.spec.declaration_style
+    )
+    assert isinstance(immutable.outcome, Exclusion)
+    assert "does not permit redefinition" in immutable.outcome.reason
+
+
+def test_external_consumer_requires_effective_call_syntax(
+    cases_dir: Path,
+) -> None:
+    """A reference-only format cannot host a native consumer call."""
+    manifest = load_case_manifest(
+        case_dir=cases_dir / "external_scalar_reference"
+    )
+    assert manifest.ref is not None
+    assert manifest.owner is not None
+    case = LiteralizeRefCase(
+        config=manifest.ref, lang_cls=Yaml, owner=manifest.owner
+    )
+    (rendering,) = case.renderings
+    assert isinstance(rendering.outcome, Exclusion)
+    assert "native reference consumer requires call syntax" in (
+        rendering.outcome.reason
+    )
+
+
+def test_only_explicit_reference_spelling_is_a_prerequisite(
+    cases_dir: Path,
+) -> None:
+    """An unsupported override excludes the explicit reference
+    scenario.
+    """
+    manifest = load_case_manifest(
+        case_dir=cases_dir / "literalize_ref_both_forms"
+    )
+    assert manifest.ref is not None
+    case = LiteralizeRefCase(
+        config=manifest.ref.model_copy(
+            update={"ref_case_override": IdentifierCase.KEBAB}
+        ),
+        lang_cls=Rust,
+        owner=REF_OWNER,
+    )
+    (explicit,) = case.renderings
+    (default,) = dataclasses.replace(case, owner=REF_DEFAULT_OWNER).renderings
+    assert isinstance(explicit.outcome, Exclusion)
+    assert "unsupported reference spelling KEBAB" in explicit.outcome.reason
+    assert default.ref_case is None
+    assert not isinstance(default.outcome, Exclusion)

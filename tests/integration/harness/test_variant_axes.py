@@ -11,6 +11,7 @@ from literalizer.languages import ALL_LANGUAGES, Java
 from tests.enum_members import enum_member_by_name, find_enum_member
 from tests.integration.axis_builders import (
     AxisError,
+    Choice,
     Override,
     expand,
     metadata_member,
@@ -71,6 +72,29 @@ def test_format_options_cover_versions_without_overriding_pins() -> None:
         for variant in records
         if variant.lang_cls is Java
     ] == [enum_member_by_name(enum_cls=Java.VersionFormats, name="JDK_16")]
+
+
+def test_configured_requirement_sees_choice_and_effective_version() -> None:
+    """The Java record choice raises the version floor before
+    admission.
+    """
+    version = enum_member_by_name(enum_cls=Java.VersionFormats, name="JDK_16")
+    style = enum_member_by_name(
+        enum_cls=Java.HeterogeneousStrategies, name="RECORD"
+    )
+    build = expand(
+        name=named(suffix="record"),
+        requires=(lambda target: target.lang_cls is Java,),
+        choices=lambda _target: (
+            Choice(label="record", kwargs={"heterogeneous_strategy": style}),
+        ),
+        requires_configured=lambda spec: (
+            spec.heterogeneous_strategy is style
+            and spec.language_version is version
+        ),
+    )
+    assert make_spec(lang_cls=Java).heterogeneous_strategy is not style
+    assert [variant.spec.language_version for variant in build()] == [version]
 
 
 def test_axis_can_cover_only_default_version() -> None:

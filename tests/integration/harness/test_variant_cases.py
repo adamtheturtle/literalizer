@@ -22,15 +22,18 @@ from tests.integration.language_specs import make_spec, sorted_languages
 from tests.integration.manifest_queries import (
     case_dir_names_for_variant_axis,
 )
+from tests.integration.scenario_participation import (
+    Requirement,
+    scenario_exclusion,
+)
 from tests.integration.variant_cases import (
     build_multiline_string_context_cases,
     build_variant_cases,
     group_variant_cases_by_language,
     one_special_input,
-    variant_supports_capability,
     variants_for_axis,
 )
-from tests.integration.variant_types import VariantCase, compact_variant
+from tests.integration.variant_types import VariantCase
 
 _SampleEnum = enum.Enum(value="_SampleEnum", names=["FIRST"])
 
@@ -320,12 +323,36 @@ def test_collection_comments_require_the_effective_configuration(
     """JSON variants cannot borrow collection comment support from
     defaults.
     """
-    variant = compact_variant(name="effective", lang_cls=lang_cls, spec=spec)
-    assert variant_supports_capability(
-        variant=dataclasses.replace(variant, spec=lang_cls()),
-        capability="collection_comments",
+    assert Requirement.COLLECTION_COMMENTS.satisfied_by(spec=lang_cls())
+    exclusion = scenario_exclusion(
+        case_id="collection_comments/effective",
+        spec=spec,
+        requirements=(Requirement.COLLECTION_COMMENTS,),
+        fixture_reason=None,
     )
-    assert not variant_supports_capability(
-        variant=variant,
-        capability="collection_comments",
+    assert exclusion is not None
+    assert exclusion.reason.startswith("collection_comments/effective@")
+
+
+def test_structural_json_variant_can_keep_collection_comments() -> None:
+    """Switching away from inline JSON restores comments in the collection."""
+    language = literalizer.languages.Cpp
+    json_type = enum_member_by_name(
+        enum_cls=language.JsonTypes, name="NLOHMANN_JSON"
+    )
+    inline = make_spec(
+        lang_cls=language,
+        json_type=json_type,
+        json_rendering=language.JsonRenderings.INLINE_DOCUMENT,
+    )
+    structural = make_spec(lang_cls=language, json_type=json_type)
+    assert not Requirement.COLLECTION_COMMENTS.satisfied_by(spec=inline)
+    assert (
+        scenario_exclusion(
+            case_id="collection_comments/structural_json",
+            spec=structural,
+            requirements=(Requirement.COLLECTION_COMMENTS,),
+            fixture_reason=None,
+        )
+        is None
     )
