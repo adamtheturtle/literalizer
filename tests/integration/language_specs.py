@@ -9,7 +9,7 @@ test execution.
 import dataclasses
 import enum
 import functools
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from pathlib import Path
 
 from beartype import beartype
@@ -37,6 +37,16 @@ def with_per_fixture_module_name(
     if golden.fixture_module_name_lowercase:
         module_name = module_name.lower()
     return dataclasses.replace(spec, module_name=module_name)
+
+
+def unique_effective_specs(
+    *, specs: Iterable[literalizer.Language]
+) -> tuple[literalizer.Language, ...]:
+    """Retain the first resolved spec per effective language version."""
+    by_version: dict[enum.Enum, literalizer.Language] = {}
+    for spec in specs:
+        _ = by_version.setdefault(spec.language_version, spec)
+    return tuple(by_version.values())
 
 
 @beartype
