@@ -186,7 +186,7 @@ from tests.integration.golden_renderings import (
 from tests.integration.scenario_skips import VARIANT_SKIPS
 
 
-def test_null_sequence(file_regression, monkeypatch):
+def test_null_sequence(file_regression):
     cases_dir = Path(__file__).parent
     case_dir = cases_dir / "simple_sequence"
     rendering = replace(
@@ -223,12 +223,16 @@ def test_null_sequence(file_regression, monkeypatch):
     check(rendering, Scala())
     assert (case_dir / "Scala@v3.scala").read_bytes() == original
 
-    def unexpected_null_error(**kwargs):
-        raise NullInCollectionError("unexpected failure in a supported list")
+    # Keep the list option so the harness still expects success.
+    class ScalaListWithArrayOpener(Scala):
+        @property
+        def sequence_open(self):
+            return array_spec.sequence_open
 
-    monkeypatch.setattr(runner, "literalize_rendering", unexpected_null_error)
-    with pytest.raises(NullInCollectionError, match="unexpected failure"):
-        check(rendering, Scala())
+    with pytest.raises(
+        NullInCollectionError, match="Array cannot contain null"
+    ):
+        check(rendering, ScalaListWithArrayOpener())
     assert (case_dir / "Scala@v3.scala").read_bytes() == original
 """,
     )

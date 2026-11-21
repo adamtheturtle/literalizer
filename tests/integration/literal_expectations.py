@@ -200,7 +200,7 @@ def _null_rejection(
 def _mojo_rejects_null_list(
     *, spec: Mojo, data: Value, null_lists: list[list[Value]]
 ) -> bool:
-    """Account for Mojo's strategy checks before list construction."""
+    """Account for checks before Mojo constructs a list."""
     # Scalar wrapping cannot reconcile a container with a scalar in
     # the same slot, even under the VARIANT strategy.
     if any(
