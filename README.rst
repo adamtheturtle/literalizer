@@ -46,7 +46,7 @@ Pass your data, its format, and a target language:
    # }
 
 Configure the language to control how individual data types are rendered.
-Comments in the source are preserved using the target language's comment syntax:
+Comments in the source are preserved using the comment syntax for the target language:
 
 .. code-block:: python
 
@@ -79,7 +79,7 @@ Use cases
 
 * Generate test fixtures from JSON, JSONC, JSON5, YAML, or TOML samples.
 * Generate multi-language request/response examples for API docs (see `guide <https://adamtheturtle.github.io/literalizer/json-api-use-case.html>`__).
-* Generate multi-language function call examples from data (see `guide <https://adamtheturtle.github.io/literalizer/function-call-use-case.html>`__).
+* Generate examples of calls in multiple languages from data (see `guide <https://adamtheturtle.github.io/literalizer/function-call-use-case.html>`__).
 * Create type-safe literal data from JSON, JSONC, JSON5, YAML, or TOML config files.
 
 CLI

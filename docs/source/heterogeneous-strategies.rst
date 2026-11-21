@@ -6,18 +6,18 @@ Heterogeneous strategies
 Some target languages can hold a collection whose elements have different types; others require every element of a list, or every value of a map, to share one static type.
 A *heterogeneous strategy* controls what :func:`~literalizer.literalize` does when the input data has mixed-type values but the target language's natural collection type cannot hold them.
 
-Every built-in language exposes the strategy as a ``heterogeneous_strategy`` constructor argument whose value comes from the language's ``heterogeneous_strategies`` enum.
+Each built-in language exposes the strategy as a ``heterogeneous_strategy`` constructor argument whose value comes from the language's ``heterogeneous_strategies`` enum.
 The default for every language is ``ERROR``.
 
 What "heterogeneous" means here
 -------------------------------
 
-A value is heterogeneous when a single collection mixes more than one scalar type, or a map mixes value types that a strict-map language cannot unify.
-Two shapes come up most often:
+A value is heterogeneous when one collection mixes more than one scalar type, or a map mixes value types that a strict-map language cannot unify.
+Two forms come up most often:
 
 * A **list** whose elements are not all the same scalar type, e.g. ``[1, "two", 3.0]``.
   In a dynamically typed language this is an ordinary list; in Rust it is not a valid ``Vec<T>``.
-* A non-empty, string-keyed dict whose values mix scalars with at least one container is **record-shaped**, e.g. ``{"id": 100, "related_ids": [102, 103]}``.
+* A non-empty, string-keyed dict whose values mix scalars with at least one container is eligible for a **record**, e.g. ``{"id": 100, "related_ids": [102, 103]}``.
   Conceptually this is a record (a struct), not a map, so a strict-map language has no ``HashMap`` that fits it.
 
 Languages whose native collections are already heterogeneous (most dynamically typed languages, plus formats such as JSON5, YAML, and TOML) never reach a strategy: the data is representable as-is, so they expose only ``ERROR`` and never raise for these inputs.
@@ -100,16 +100,16 @@ Rust empty-container type hints
 Rust's ``TAGGED_ENUM`` strategy normally represents an empty map beside a scalar as ``Value::Map(HashMap::new())``.
 When the caller has schema knowledge, pass ``empty_container_type_hints`` to ``Rust`` to supply the concrete type at an input path.
 Paths consist of mapping keys and list indexes; ``()`` is the document root.
-For example, ``{(1,): "HashMap<String, String>"}`` renders the empty map in ``[1, {}]`` as ``Value::Map(<HashMap<String, String>>::new())`` and makes the matching enum variant carry ``HashMap<String, String>``.
+For example, ``{(1,): "HashMap<String, String>"}`` renders the empty map in ``[1, {}]`` as ``Value::Map(<HashMap<String, String>>::new())`` and uses the enum variant for ``HashMap<String, String>``.
 Omitting the hint preserves the default ``HashMap<&'static str, Value>`` variant.
 
-A tagged enum cannot wrap container values, so it does not help a record-shaped dict whose fields mix scalars with a list or another dict.
+A tagged enum cannot wrap container values, so it does not help a dictionary with record fields whose fields mix scalars with a list or another dict.
 Use ``RECORD`` for that.
 
 ``RECORD``
 ~~~~~~~~~~
 
-Treat each record-shaped dict (non-empty, string-keyed) as a generated struct/record declared in the preamble plus a matching struct literal, so its fields may legitimately mix scalars and containers.
+Treat each dictionary with record fields (non-empty, string-keyed) as a generated struct/record declared in the preamble plus a matching struct literal, so its fields may legitimately mix scalars and containers.
 Each distinct ordered key set becomes one declaration; the declaration name prefix is configurable via ``record_struct_name_prefix`` (default ``"Record"``).
 
 This is the right strategy for data that is conceptually a record, not a map.
@@ -117,7 +117,7 @@ On :class:`~literalizer.Python` (whose ``dict`` is already heterogeneous) it is 
 
 .. code-block:: python
 
-   """RECORD renders a record-shaped dict as a frozen dataclass."""
+   """RECORD renders a dictionary with record fields as a frozen dataclass."""
 
    import textwrap
 
@@ -174,11 +174,11 @@ On :class:`~literalizer.Python` (whose ``dict`` is already heterogeneous) it is 
 Widened map fields
 ^^^^^^^^^^^^^^^^^^
 
-A record field whose dict has no record shape of its own -- sibling dicts under one key with differing key sets, which no single generated type can describe -- is widened to a plain map instead.
-By default that map's value type follows the data: when every scalar inside the widened maps shares one type, the field narrows to that type; otherwise it takes the strategy's value carrier (Rust's generated enum, Go's ``any``, C++'s ``LiteralizerRecordValue`` alias).
+A record field whose dict has no record fields of its own -- sibling dicts under one key with differing key sets, which no individual generated type can describe -- is widened to a plain map instead.
+By default the value type of that map follows the data: when every scalar inside the widened maps shares one type, the field narrows to that type; otherwise it takes the strategy's value carrier (Rust's generated enum, Go's ``any``, C++'s ``LiteralizerRecordValue`` alias).
 
-That choice is made per input, so two data files sharing one record shape may declare the same field two different ways, and the second file's literals then fail to compile against the first file's declaration.
-:class:`~literalizer.Rust`, :class:`~literalizer.Go` and :class:`~literalizer.Cpp` accept ``record_map_value_typing=WIDE`` to pin the value carrier instead, whatever the data holds:
+That choice is made per input, so two data files sharing the same record fields may declare the same field two different ways, and the second file's literals then fail to compile against the first file's declaration.
+:class:`~literalizer.Rust`, :class:`~literalizer.Go` and :class:`~literalizer.Cpp` accept ``record_map_value_typing=WIDE`` to pin the value carrier instead, regardless of the input types:
 
 .. code-block:: python
 
@@ -204,7 +204,7 @@ That choice is made per input, so two data files sharing one record shape may de
    assert "attributes: HashMap<&'static str, Value>," in result.preamble[2]
    assert 'Value::Str("green")' in result.code
 
-The carrier's own members stay data-derived, so the generated enum here holds only the variants this input needs.
+The generated enum still contains only variants required by the input.
 The default is ``record_map_value_typings.NARROW``.
 
 ``TUPLE``
@@ -212,7 +212,7 @@ The default is ``record_map_value_typings.NARROW``.
 
 Render a fixed-length heterogeneous **scalar** array (all elements scalar, spanning at least two scalar types) as the language's native fixed-length tuple instead of rejecting it or widening it to a homogeneous list.
 Where the language also has ``RECORD``, ``TUPLE`` composes with it, so a record field whose value is such an array becomes a tuple-typed field.
-Some languages cap the tuple length (:class:`~literalizer.Kotlin` has only ``Pair`` and ``Triple`` and raises :class:`~literalizer.exceptions.TupleArityNotRepresentableError` otherwise); :class:`~literalizer.Rust` and :class:`~literalizer.Scala` impose no length limit.
+Some languages cap the tuple length (:class:`~literalizer.Kotlin` has only ``Pair`` and ``Triple`` and raises :class:`~literalizer.exceptions.TupleArityNotRepresentableError` otherwise); :class:`~literalizer.Rust` and :class:`~literalizer.Scala` support arbitrary lengths.
 For C++14, heterogeneous standard-library collections use a generated ``Value`` carrier by default (configurable with ``heterogeneous_value_variant_name``). Its ``is<T>()`` and ``get<T>()`` methods inspect and retrieve the active value without requiring C++17's ``std::variant``.
 ``TUPLE`` remains available for fixed-length scalar lists.
 
@@ -220,16 +220,16 @@ Which should I use? Heterogeneous strategies vs. JSON value types
 -----------------------------------------------------------------
 
 A heterogeneous strategy is not the only way to render mixed-type data.
-Several languages also expose a ``json_type`` constructor argument that renders the whole value through a single runtime JSON value type (for example ``Rust.json_types.SERDE_JSON_VALUE`` yielding ``serde_json::Value``).
+Several languages also expose a ``json_type`` constructor argument that renders the whole value through one runtime JSON value type (for example ``Rust.json_types.SERDE_JSON_VALUE`` yielding ``serde_json::Value``).
 Both features accept input such as ``[1, "two", 3.0]`` that the language's narrow collection type cannot hold, so the same data often qualifies for either one.
 They differ in the type of the rendered value:
 
 * A heterogeneous strategy keeps the result **statically typed**.
   The generated enum, struct, or tuple preserves each value's original type, and the rendered collection stays a normal typed collection of that wrapper.
-  Reach for this when the surrounding code is statically typed and you want the compiler to keep tracking the element types, or when the data is conceptually a record (use ``RECORD``).
+  Use this when the surrounding code is statically typed and you want the compiler to keep tracking the element types, or when the data is conceptually a record (use ``RECORD``).
 * ``json_type`` renders the value as **one runtime JSON value type** (``serde_json::Value``, ``JsonNode``, ``JSON::Any``, and so on).
   The static type is uniform and the element types are recovered at runtime.
-  Reach for this when the value is genuinely arbitrary JSON, when you already pass it to a JSON library, or when synthesizing a typed wrapper per shape would be more structure than the data deserves.
+  Use this when the value is genuinely arbitrary JSON, when you already pass it to a JSON library, or when synthesizing a typed wrapper per shape would be more structure than the data deserves.
 
 The two are mutually exclusive for a given render, and some languages reject specific combinations (for instance Java, Kotlin, Zig, and Odin reject ``RECORD`` while in their ``json_type`` mode).
 See :ref:`json-value-types` for every ``json_type`` value, its emitted form, and the per-language constraints.
@@ -275,7 +275,7 @@ The strategies that synthesize a declaration accept a constructor argument that 
      - ``VARIANT`` on Mojo, ``OBJECT_VARIANT`` on Nim
 
 Rust, Go, Java, Kotlin, Scala, and CSharp additionally accept ``record_shape_names`` to map a specific key set to a custom declaration name.
-Cpp accepts it to map a shape to a caller-declared type: literalizer uses that type for the aggregate literal but does not emit its ``struct`` declaration.
+Cpp accepts it to map a set of keys to a type declared by the caller: literalizer uses that type for the aggregate literal but does not emit its ``struct`` declaration.
 This is useful when documentation starter code already defines the domain type.
 
 C and CSharp do not accept ``record_struct_name_prefix``, despite supporting the ``RECORD`` strategy.

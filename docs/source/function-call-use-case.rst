@@ -1,7 +1,7 @@
 Rendering function calls
 ========================
 
-If your documentation or test suite needs to show function calls with literal arguments across multiple languages, :func:`literalizer.literalize_call` generates those calls from a single YAML, JSON, JSONC, JSON5, or TOML source.
+If your documentation or test suite needs to show function calls with literal arguments across multiple languages, :func:`literalizer.literalize_call` generates those calls from one YAML, JSON, JSONC, JSON5, or TOML source.
 
 Each row of a top-level list becomes a separate function call, with arguments formatted according to the target language's calling convention.
 
@@ -145,7 +145,7 @@ To bind the result of a zero-argument constructor call, ask the language for its
 The default constructor target is ``ClassName``.
 Languages with different common constructor syntax override it; for example Java and JavaScript return ``new ClassName``, Go returns ``NewClassName``, Ruby returns ``ClassName.new``, and Rust returns ``ClassName::new``.
 
-For languages whose default call style wraps arguments in an object, use the positional call-style option when rendering a no-argument constructor so the call is emitted as ``new Playlist()`` rather than ``new Playlist({})``.
+For languages that wrap arguments in an object by default, use the positional call-style option when rendering a no-argument constructor so the call is emitted as ``new Playlist()`` rather than ``new Playlist({})``.
 
 Caller-owned callee requirements
 --------------------------------
@@ -159,7 +159,7 @@ When ``variable_form`` binds a call result, the callee must return a value compa
 For example, a C++ ``auto`` declaration or Rust ``let`` binding lets the compiler infer the actual return type, while an assignment must fit the existing variable's type and mutability.
 A ``call_transform`` can impose further requirements: a wrapper that formats, compares, or consumes a value must accept the callee's actual result.
 
-A declaration that requires a compile-time constant also requires the call expression to satisfy the target language's constant-expression rules.
+A declaration that requires a compile-time constant also requires the call expression to satisfy the rules for constant expressions in the target language.
 Immutability alone does not necessarily impose that requirement: JavaScript ``const`` and Rust's ordinary ``let`` can bind runtime call results.
 In Dart, ``Dart.declaration_styles.CONST`` requires a constant expression.
 This constant-constructor call is valid:
@@ -316,7 +316,7 @@ Composing declarations and calls
 Pairing a :func:`~literalizer.literalize` call (which declares a variable) with a :func:`~literalizer.literalize_call` call (which references that variable via ``{"$ref": "name"}``) is the natural way to render a complete, self-contained source file: declaration first, call second.
 
 Each call independently computes its own :attr:`~literalizer.LiteralizeResult.preamble` and :attr:`~literalizer.LiteralizeResult.body_preamble` from the data it sees.
-When the two halves see overlapping data (for example, both contain integers in a language where integers require a wrapper type declaration), concatenating their outputs as-is produces duplicates.
+When the two halves see overlapping data (for example, both contain integers in a language where integers require a wrapper type declaration), merge declarations to avoid duplicates.
 Strict compilers reject the result (Haskell rejects duplicate ``data`` declarations; D rejects duplicate ``import`` lines) and a linter flags it (``ruff`` and ``pylint`` warn about repeated ``from typing import Any`` lines).
 
 Pass the ref values through the ``bound_refs`` argument of :func:`~literalizer.literalize_call` (with ``wrap_in_file=True``) and it renders the whole file for you: each ref is declared ahead of the calls, a no-op stub for the target function is injected, and one reconciled preamble is placed in front.
@@ -342,7 +342,8 @@ This is the call-side counterpart of :func:`~literalizer.literalize`'s own ``bou
 
    assert composed.code.count("data Val = HInt Integer | HList [Val]") == 1
 
-``bound_refs`` entries double as ``ref_values``, so a name need not be repeated in both mappings, and they are emitted in iteration order ahead of their first use.
+``bound_refs`` entries also define ``ref_values`` for the same names.
+The generator emits them in iteration order before their first use.
 
 When you already have separate :class:`~literalizer.LiteralizeResult` objects, or need to add custom target or transform scaffolding, pass the declaration results and call result to :func:`~literalizer.literalize_call_with_declarations`.
 It exposes the same preamble reconciliation and file assembly used by ``bound_refs``.
@@ -391,7 +392,7 @@ Pairing each call with a value
 ------------------------------
 
 ``call_transform`` receives a :class:`~literalizer.CallContext`, not just the call string.
-Alongside ``ctx.call`` (the rendered call expression) it carries the call's zero-based ``ctx.index``, its input ``ctx.row``, and -- when ``zip_source`` is supplied -- ``ctx.zipped``: the matching top-level element of a second, equal-length companion source, parsed with the same parser as ``source`` and rendered as a language-native literal.
+Alongside ``ctx.call`` (the rendered call expression) it contains the call's zero-based ``ctx.index``, its input ``ctx.row``, and -- when ``zip_source`` is supplied -- ``ctx.zipped``: the matching top-level element of a second, equal-length companion source, parsed with the same parser as ``source`` and rendered as a language-native literal.
 This lets you print an expected value beside each call's actual return value:
 
 .. code-block:: python
@@ -441,7 +442,7 @@ Annotating each call with a trailing comment
 --------------------------------------------
 
 A ``call_transform`` only sees the *call expression*, before the language's statement terminator is applied, so it cannot append a trailing line comment: in C-family languages the terminator would land *inside* the comment (``catalog.lookup("Dune", 1965)  // first edition;``) and the statement would no longer compile.
-``comment_source`` solves this by handing the core a sequence of comments -- one per generated call, paired positionally -- which it emits **after** the statement terminator using the target language's comment syntax:
+``comment_source`` solves this by handing the core a sequence of comments -- one per generated call, paired positionally -- which it emits **after** the statement terminator using the comment syntax for the target language:
 
 .. code-block:: python
 
@@ -470,12 +471,13 @@ A ``call_transform`` only sees the *call expression*, before the language's stat
        'catalog.lookup("Solaris", 1961);  // translated from Polish'
    )
 
-``comment_source`` is a plain sequence, not a parsed source, so it needs neither a ``call_transform`` nor an input format.
-Its length must equal the number of generated calls (one per top-level element when ``per_element`` is ``True``, otherwise one) or :class:`~literalizer.exceptions.CommentSourceLengthMismatchError` is raised; an empty entry emits no comment, and an entry containing a newline raises :class:`~literalizer.exceptions.CommentSourceMultilineError`.
-Languages with no line comment fall back to that language's block-comment form (``catalog.lookup("Dune", 1965)  (* first edition *)`` in OCaml), which is valid on a single line.
+Pass a plain sequence to ``comment_source``.
+It works independently of ``call_transform`` and the input format.
+Its length must equal the number of generated calls (one per top-level element when ``per_element`` is ``True``, otherwise one) or :class:`~literalizer.exceptions.CommentSourceLengthMismatchError` is raised; an empty entry omits the comment, and an entry containing a newline raises :class:`~literalizer.exceptions.CommentSourceMultilineError`.
+Languages with no line comment fall back to the block comment syntax for that language (``catalog.lookup("Dune", 1965)  (* first edition *)`` in OCaml), which is valid on one line.
 
 A trailing comment is only safe where each generated call is a self-contained line.
-Languages that assemble the call sequence into a single clause, list or expression -- so a separator, terminator or closer would follow the call on the same line and the line comment would swallow it (Erlang's clause-terminating ``.``, a Jsonnet list ``,``, a Roc ``dbg ( ... )`` wrapper) -- reject a non-empty ``comment_source`` with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
+Languages that assemble the call sequence into one clause, list or expression -- so a separator, terminator or closer would follow the call on the same line and the line comment would swallow it (Erlang's clause-terminating ``.``, a Jsonnet list ``,``, a Roc ``dbg ( ... )`` wrapper) -- reject a non-empty ``comment_source`` with :class:`~literalizer.exceptions.UnsupportedCallShapeError`.
 The supported set is exactly the languages whose :attr:`~literalizer.Language.supports_standalone_comments_in_wrapped_calls` is ``True``.
 
 Typed native invocations
@@ -540,7 +542,7 @@ Binding a void result or supplying unrelated declaration modifiers is rejected.
 A ``NativeInvocation`` can be an argument of another invocation, allowing typed result checks without source-string interpolation.
 
 The caller supplies the actual class/function declarations and places the returned executable fragment in the appropriate function scope.
-Preamble and executable-placement metadata support composition with :func:`~literalizer.literalize_call_with_declarations`; external declarations remain caller-owned.
+Preamble and metadata about executable placement support composition with :func:`~literalizer.literalize_call_with_declarations`; external declarations remain caller-owned.
 
 Declarative invocation recipes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -581,7 +583,7 @@ Keep explanatory prose in the surrounding document or in explicit expected-resul
 Shared invocation recipes
 -------------------------
 
-Use :func:`~literalizer.literalize_invocations` when one data file drives both ordinary calls and calls requiring an explicit native signature.
+Use :func:`~literalizer.literalize_invocations` when a data file specifies ordinary calls and calls requiring an explicit native signature.
 Keep call metadata in one recipe instead of branching in each consumer::
 
     recipe = {

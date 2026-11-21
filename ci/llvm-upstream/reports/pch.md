@@ -27,7 +27,7 @@ Raw commands and outputs are in [measurements.json](https://github.com/adamthetu
 The results are single sequential wall-clock samples, not statistical benchmarks.
 
 Earlier profiling of our larger source showed repeated `TemplateArgumentHasher::AddTemplateArgument` / `AddDecl` frames while reading a serialized AST.
-That is a candidate hotspot for this reduced case, rather than a confirmed diagnosis from a new profile.
+A new profile would establish whether this is a hotspot in the reduced case.
 
 Our temporary workaround parses the standard headers directly.
 No LLVM implementation patch is proposed for this path yet.

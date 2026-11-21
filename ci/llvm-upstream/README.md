@@ -23,7 +23,7 @@ The original patches independently applied to LLVM main `fac4500420cdeed42f35537
 Their new compiler-driven tests passed with the patched LLVM 23.1.4 tools.
 The builder also preserves registered checks, existing SFINAE diagnostics, stack-exhaustion controls, caught/rethrown exception diagnostics, parent edges, positive matcher bindings and the checked C diagnostics.
 
-The captured `/repo/upstream/llvm` paths name the measurement mount before this CI-only bundle was placed here.
+The captured `/repo/upstream/llvm` paths identify the mount used during measurement before this CI-only bundle was placed here.
 The source hashes match the files in `reproducers`.
 
 The SFINAE reproducer uses a qualified call to exclude ADL.

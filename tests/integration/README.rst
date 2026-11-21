@@ -8,7 +8,7 @@ The adjacent ``*@<version>.<extension>`` files are generated expectations that n
 Adding coverage
 ---------------
 
-First look for an existing input with the same shape and behavior.
+First look for an existing input with the same structure and behavior.
 Extend its manifest when it can express the regression; create a new directory when the input itself is significant.
 Use a name describing the behavior, and keep issue or backend provenance in the rationale.
 
@@ -28,10 +28,10 @@ Select languages by the relevant capability or option, and use the axis name in 
 Omit suites and axes that the input cannot exercise.
 For example, ``cases/scalar_int`` exercises integer formats, while ``cases/binary`` exercises byte formats.
 
-Input format is inferred from a sole ``input.json``, ``input.jsonc``, ``input.json5``, ``input.toml`` or ``input.yaml``.
+Input format is inferred from one ``input.json``, ``input.jsonc``, ``input.json5``, ``input.toml`` or ``input.yaml``.
 Set ``input`` explicitly when needed, as ``cases/multiline_string`` does.
 Use ``gates`` to select declared capabilities or syntax support for specialized cases.
-An ordinary shared case needs no language selection.
+An ordinary shared case runs across languages by default.
 
 ``owner`` selects a specialized runner, such as ``literalize-call``, ``literalize-ref`` or ``constructor-binding``.
 Its corresponding manifest table supplies the API arguments.
@@ -59,14 +59,14 @@ To inspect the literal runner's test IDs, then regenerate its Python fixtures::
     UV_PYTHON=3.14 uvx uv@0.13.0 run --group=dev pytest tests/integration/test_literalize_golden.py --collect-only -q
     UV_PYTHON=3.14 uvx uv@0.13.0 run --group=dev pytest tests/integration/test_literalize_golden.py -k Python --regen-all
 
-Literal test IDs name a scenario, language and optional batch.
-Input names appear in subtest details, so ``-k scalar_int`` does not select a single literal input.
+Literal test IDs identify the scenario, language, and optional batch.
+Input names appear in subtest details, so ``-k scalar_int`` does not select one literal input.
 Call, reference and constructor runners include their case identities in the collected IDs.
-Run the owning test module to regenerate all languages for a changed case; for the ordinary literal suites::
+Run the test for the case module to regenerate all languages for a changed case; for the ordinary literal suites::
 
     UV_PYTHON=3.14 uvx uv@0.13.0 run --group=dev pytest tests/integration/test_literalize_golden.py --regen-all
 
-Review the generated diff, then rerun the owning tests without ``--regen-all`` and run ``harness/test_orphan_golden_files.py``.
+Review the generated diff, then rerun the test for the cases without ``--regen-all`` and run ``harness/test_orphan_golden_files.py``.
 A declared success compares rendered text, a declared rejection asserts its exception, and a capability exclusion reports its reason.
 A rejected or excluded rendering that still has a native fixture fails even with ``--regen-all``.
 Review the expectation and fixture diff when support changes.
