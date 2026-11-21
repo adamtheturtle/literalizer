@@ -1,4 +1,4 @@
-# languages rejecting: 15; languages accepting: 0
+# languages rejecting: 16; languages accepting: 0
 
 [InvalidModuleNameError]
 Ada = "Ada cannot use module_name 'X {} class Y': it is not a valid identifier"
@@ -14,5 +14,6 @@ Haxe = "Haxe cannot use module_name 'X {} class Y': it is not a valid identifier
 Java = "Java cannot use module_name 'X {} class Y': it is not a valid identifier"
 ObjectiveC = "ObjectiveC cannot use module_name 'X {} class Y': it is not a valid identifier"
 Occam = "Occam cannot use module_name 'X {} class Y': it is not a valid identifier"
+PureScript = "PureScript cannot use module_name 'X {} class Y': it is not a valid identifier"
 Scala = "Scala cannot use module_name 'X {} class Y': it is not a valid identifier"
 SystemVerilog = "SystemVerilog cannot use module_name 'X {} class Y': it is not a valid identifier"

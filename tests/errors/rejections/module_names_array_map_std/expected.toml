@@ -1,4 +1,4 @@
-# languages rejecting: 56; languages accepting: 13
+# languages rejecting: 55; languages accepting: 14
 
 [Accepted]
 "Ada['Map']" = ""
@@ -30,6 +30,9 @@
 "Occam['Array']" = ""
 "Occam['Map']" = ""
 "Occam['Std']" = ""
+"PureScript['Array']" = ""
+"PureScript['Map']" = ""
+"PureScript['Std']" = ""
 "Scala['Std']" = ""
 "SystemVerilog['Array']" = ""
 "SystemVerilog['Map']" = ""
@@ -143,9 +146,6 @@
 "PowerShell['Array']" = "PowerShell does not support option 'module_name'"
 "PowerShell['Map']" = "PowerShell does not support option 'module_name'"
 "PowerShell['Std']" = "PowerShell does not support option 'module_name'"
-"PureScript['Array']" = "PureScript does not support option 'module_name'"
-"PureScript['Map']" = "PureScript does not support option 'module_name'"
-"PureScript['Std']" = "PureScript does not support option 'module_name'"
 "Python['Array']" = "Python does not support option 'module_name'"
 "Python['Map']" = "Python does not support option 'module_name'"
 "Python['Std']" = "Python does not support option 'module_name'"

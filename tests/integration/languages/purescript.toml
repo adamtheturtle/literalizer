@@ -1,5 +1,8 @@
 schema_version = 1
 
+[golden]
+fixture_module_name = "Check"
+
 [variants.non_default_kwargs]
 type_name = "JsonVal"
 constructor_prefix = "J"

@@ -92,6 +92,9 @@ class GoldenPolicy(  # noqa: NOD001
     )
     """Name segment the collection-layout goldens use."""
 
+    fixture_module_name: Annotated[str, Field(min_length=1)] | None = None
+    """Fixed module name expected by the native fixture runner."""
+
     per_fixture_module_name: bool = False
     """Whether fixture paths supply unique module names."""
 

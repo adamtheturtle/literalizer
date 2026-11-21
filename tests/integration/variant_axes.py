@@ -1145,7 +1145,7 @@ AXES: Mapping[str, Axis] = _registry(
         requires=(has_option(option="qualified_imports"),),
         overrides=(
             member(option=_DICT_FORMAT, name="RECORD"),
-            fixed_options(qualified_imports=(("Prelude", "Numbers"),)),
+            fixed_options(qualified_imports=(("CallTarget", "Target"),)),
         ),
     ),
     record_shape_names=expand(

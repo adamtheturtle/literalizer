@@ -1,7 +1,11 @@
 """Shared helpers for the PureScript lint scripts."""
 
+import functools
 import textwrap
 from pathlib import Path
+
+from literalizer import InputFormat, literalize_call
+from literalizer.languages import PureScript
 
 PRELUDE_PURS: str = textwrap.dedent(
     text="""\
@@ -97,13 +101,31 @@ PARTIAL_UNSAFE_JS = (
 )
 
 
+@functools.cache
+def _call_target_module() -> str:
+    """Generate the exported function used by the qualified-call
+    fixture.
+    """
+    result = literalize_call(
+        source="[[1]]",
+        input_format=InputFormat.JSON,
+        language=PureScript(
+            module_name="CallTarget",
+            dict_format=PureScript.DictFormats["RECORD"],
+        ),
+        target_function="consume",
+        parameter_names=("value",),
+        wrap_in_file=True,
+    )
+    return result.code + "\n"
+
+
 def write_lint_environment(tmpdir: Path) -> list[Path]:
     """Write the native support modules to *tmpdir*.
 
     Returns the list of ``.purs`` paths to pass to ``purs compile``
-    alongside the fixture under check.  The matching ``.js`` files are
-    written next to each module so PureScript's FFI resolution picks
-    them up automatically.
+    alongside the fixture under check.  Each FFI shim gets a matching
+    ``.js`` file so PureScript resolves its foreign imports.
     """
     modules: list[tuple[str, str, str]] = [
         ("Prelude.purs", PRELUDE_PURS, PRELUDE_JS),
@@ -119,4 +141,8 @@ def write_lint_environment(tmpdir: Path) -> list[Path]:
         js_path = purs_path.with_suffix(suffix=".js")
         _ = js_path.write_text(data=js_text, encoding="utf-8")
         purs_paths.append(purs_path)
-    return purs_paths
+    call_target_path = tmpdir / "CallTarget.purs"
+    _ = call_target_path.write_text(
+        data=_call_target_module(), encoding="utf-8"
+    )
+    return [*purs_paths, call_target_path]

@@ -1,4 +1,4 @@
-# languages rejecting: 55; languages accepting: 13
+# languages rejecting: 54; languages accepting: 14
 
 [Accepted]
 "Ada['Enumerable']" = ""
@@ -43,6 +43,10 @@
 "Occam['Enumerable']" = ""
 "Occam['IO']" = ""
 "Occam['Int32']" = ""
+"PureScript['Enumerable']" = ""
+"PureScript['IO']" = ""
+"PureScript['Int32']" = ""
+"PureScript['String']" = ""
 "Scala['Enumerable']" = ""
 "Scala['IO']" = ""
 "Scala['Int32']" = ""
@@ -189,10 +193,6 @@
 "PowerShell['IO']" = "PowerShell does not support option 'module_name'"
 "PowerShell['Int32']" = "PowerShell does not support option 'module_name'"
 "PowerShell['String']" = "PowerShell does not support option 'module_name'"
-"PureScript['Enumerable']" = "PureScript does not support option 'module_name'"
-"PureScript['IO']" = "PureScript does not support option 'module_name'"
-"PureScript['Int32']" = "PureScript does not support option 'module_name'"
-"PureScript['String']" = "PureScript does not support option 'module_name'"
 "Python['Enumerable']" = "Python does not support option 'module_name'"
 "Python['IO']" = "Python does not support option 'module_name'"
 "Python['Int32']" = "Python does not support option 'module_name'"
