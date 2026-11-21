@@ -27,7 +27,6 @@ from .call_collection import CallRendering
 from .call_expectations import invalid_target_grammar
 from .call_receivers import (
     compose_integer_calls,
-    uses_integer_receiver,
 )
 from .call_stubs import (
     argument_values_for_stub,
@@ -454,7 +453,7 @@ def _render_call_golden_case(
     input_info = case_input(case_dir=cases_dir / config.case_dir_name)
     source = input_info.path.read_text(encoding="utf-8")
     golden_path = rendering.artifact(cases_dir=cases_dir).path
-    observable = uses_integer_receiver(config=config, spec=spec)
+    observable = rendering.observable
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
     effective_ref_case: literalizer.IdentifierCase | None
     if config.ref_case_per_language:

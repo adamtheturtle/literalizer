@@ -21,7 +21,7 @@ example = "existing_equation"
 gates = [
   {kind = "capability_flag", flag = "supports_variable_names"},
   {kind = "enum_member_present", option = "declaration_style", member = "ASSIGN"},
-  {kind = "behavior_flag", flag = "declaration_disallows_redefinition"},
+  {kind = "default_behavior_flag", flag = "declaration_disallows_redefinition"},
 ]
 variable_form = "existing"
 

@@ -3,12 +3,10 @@
 import dataclasses
 import functools
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from beartype import beartype
 
 import literalizer
-from literalizer._language import CallSupport
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     ExistingVariableNotSelfContainedError,
@@ -39,13 +37,12 @@ from .language_specs import (
     make_spec,
     reference_case_for_declaration_style,
     sorted_languages,
+    unique_effective_specs,
 )
 from .rejection_contracts import rejected_examples
+from .scenario_participation import Requirement, scenario_exclusion
 from .variant_cases import Variant, variants_for_axis
 from .variant_context import config_with_variant_layout
-
-if TYPE_CHECKING:
-    import enum
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -82,14 +79,15 @@ def _reference_outcome(
     config: RefCaseSpec,
     lang_cls: literalizer.LanguageCls,
     spec: literalizer.Language,
+    golden_name: str,
+    ref_case: literalizer.IdentifierCase | None,
 ) -> GoldenOutcome:
     """Resolve fixture prerequisites and documented reference errors."""
-    if isinstance(
-        config.context, (ExternalRefContext, RefExpressionContext)
-    ) and isinstance(spec.call_style_config, CallSupport):
-        return Exclusion(
-            reason="the native reference consumer requires call syntax",
-        )
+    exclusion = _reference_exclusion(
+        config=config, spec=spec, ref_case=ref_case, golden_name=golden_name
+    )
+    if exclusion is not None:
+        return exclusion
     if (
         config.case_dir_name == "literalize_ref_known_null_assignment"
         and lang_cls not in _rejects_reference_before_assignment()
@@ -118,6 +116,32 @@ def _reference_outcome(
             reason="the external destination needs a reassignable declaration"
         )
     return SUCCESS
+
+
+def _reference_exclusion(
+    *,
+    config: RefCaseSpec,
+    spec: literalizer.Language,
+    ref_case: literalizer.IdentifierCase | None,
+    golden_name: str,
+) -> Exclusion | None:
+    """Check the requested spelling, binding and native consumer."""
+    requirements: list[Requirement] = []
+    if config.variable_form == "both":
+        requirements.append(Requirement.REDEFINITION)
+    if isinstance(config.context, (ExternalRefContext, RefExpressionContext)):
+        requirements.append(Requirement.CALL_SYNTAX)
+    return scenario_exclusion(
+        case_id=f"{config.coverage_id}/{golden_name}",
+        spec=spec,
+        requirements=requirements,
+        fixture_reason=(
+            f"unsupported reference spelling {ref_case.name}"
+            if ref_case is not None
+            and ref_case not in spec.supported_ref_cases
+            else None
+        ),
+    )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -150,7 +174,7 @@ class LiteralizeRefCase:
     lang_cls: literalizer.LanguageCls
     owner: OwnerName
 
-    @property
+    @functools.cached_property
     def renderings(self) -> tuple[RefRendering, ...]:
         """Exercise each selected version under the owner's ref policy."""
         default = self.owner == REF_DEFAULT_OWNER
@@ -166,7 +190,11 @@ class LiteralizeRefCase:
                 lang_cls=self.lang_cls,
                 spec=spec,
                 outcome=_reference_outcome(
-                    config=self.config, lang_cls=self.lang_cls, spec=spec
+                    config=self.config,
+                    lang_cls=self.lang_cls,
+                    spec=spec,
+                    ref_case=ref_case,
+                    golden_name=f"{self.lang_cls.__name__}_{suffix}",
                 ),
                 golden_name=f"{self.lang_cls.__name__}_{suffix}",
                 ref_case=(
@@ -190,9 +218,8 @@ def discover_literalize_ref_cases(
 ) -> list[LiteralizeRefCase]:
     """Return reference cases for the selected API owner.
 
-    Explicit reference cases require a supported reference spelling and,
-    for combined forms, a redefinition style. Default cases exercise the
-    public defaults without imposing those explicit options.
+    Backend gates run here. Each rendering checks its own spelling,
+    declaration style and native consumer once it has an effective spec.
     """
     return [
         LiteralizeRefCase(config=config, lang_cls=lang_cls, owner=owner)
@@ -200,13 +227,6 @@ def discover_literalize_ref_cases(
         if not config.variant_only
         for lang_cls in sorted_languages()
         if config.admits_language(lang_cls=lang_cls)
-        if owner == REF_DEFAULT_OWNER
-        or config.variable_form != "both"
-        or bool(find_redefinition_styles(spec=make_spec(lang_cls=lang_cls)))
-        if owner == REF_DEFAULT_OWNER
-        or config.ref_case_for(lang_cls=lang_cls) is None
-        or config.ref_case_for(lang_cls=lang_cls)
-        in lang_cls.supported_ref_cases
     ]
 
 
@@ -231,7 +251,7 @@ class LiteralizeRefVariantCase:
         suffix = "ref_default" if self.ref_case is None else "ref"
         return f"{self.variant.name}_{suffix}"
 
-    @property
+    @functools.cached_property
     def renderings(self) -> tuple[RefRendering, ...]:
         """Retain the exact spec and ref spelling selected by the axis."""
         return (
@@ -243,6 +263,8 @@ class LiteralizeRefVariantCase:
                     config=self.config,
                     lang_cls=self.lang_cls,
                     spec=self.variant.spec,
+                    ref_case=self.ref_case,
+                    golden_name=self.golden_name,
                 ),
                 golden_name=self.golden_name,
                 ref_case=self.ref_case,
@@ -259,16 +281,9 @@ def _reference_variant_case(
     if not config.admits_language(lang_cls=lang_cls):
         return None
     ref_case = config.ref_case_for(lang_cls=lang_cls)
-    if ref_case is not None and ref_case not in lang_cls.supported_ref_cases:
-        return None
     spec = ref_language_options(
         config=config, lang_cls=lang_cls, spec=variant.spec
     )
-    if (
-        config.variable_form == "both"
-        and spec.declaration_style not in find_redefinition_styles(spec=spec)
-    ):
-        return None
     # A selected declaration variant is an explicit choice. The base
     # suite's automatic mutable-style fallback must not relabel it.
     names = language_metadata(
@@ -363,15 +378,37 @@ def ref_language_specs(
     *, config: RefCaseSpec, lang_cls: literalizer.LanguageCls
 ) -> tuple[literalizer.Language, ...]:
     """Resolve options once and retain one spec per effective version."""
-    specs: dict[enum.Enum, literalizer.Language] = {}
-    for version in lang_cls.VersionFormats:
-        spec = ref_language_options(
+    specs = (
+        ref_language_options(
             config=config,
             lang_cls=lang_cls,
             spec=make_spec(lang_cls=lang_cls, language_version=version),
         )
-        _ = specs.setdefault(spec.language_version, spec)
-    return tuple(specs.values())
+        for version in lang_cls.VersionFormats
+    )
+    return unique_effective_specs(
+        specs=(
+            _with_redefinition_style(config=config, spec=spec)
+            for spec in specs
+        ),
+    )
+
+
+def _with_redefinition_style(
+    *, config: RefCaseSpec, spec: literalizer.Language
+) -> literalizer.Language:
+    """Resolve the mutable-style fallback before checking
+    applicability.
+    """
+    if (
+        config.variable_form == "both"
+        and config.declaration_style is None
+        and not Requirement.REDEFINITION.satisfied_by(spec=spec)
+    ):
+        styles = find_redefinition_styles(spec=spec)
+        if len(styles) > 0:
+            return dataclasses.replace(spec, declaration_style=styles[0])
+    return spec
 
 
 @beartype

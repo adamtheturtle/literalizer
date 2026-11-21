@@ -12,7 +12,7 @@ import dataclasses
 import enum
 import functools
 from pathlib import Path
-from typing import Protocol, assert_never, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
@@ -28,12 +28,14 @@ from .case_manifests import (
     variable_form_for_context,
 )
 from .custom_languages import variants_for_custom_language_axis
+from .golden_outcomes import Exclusion
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
     make_spec,
     sorted_languages,
 )
+from .scenario_participation import Requirement, scenario_exclusion
 from .variant_axes import AXES
 from .variant_axis_names import SPECIAL_VARIANT_AXES
 from .variant_metadata_builders import build_modifier_variant_cases
@@ -314,22 +316,37 @@ def one_special_input(
     return matches[0]
 
 
-@beartype
-def variant_supports_capability(
+def variant_exclusion(
     *,
-    variant: Variant,
-    capability: VariantCapabilityName,
+    case: VariantCase,
+    capabilities: frozenset[VariantCapabilityName],
+) -> Exclusion | None:
+    """Check requirements after applying the variant's render context."""
+    return scenario_exclusion(
+        case_id=f"{case.case_dir_name}/{case.golden_name}",
+        spec=case.variant.spec,
+        requirements=(
+            (Requirement.COLLECTION_COMMENTS,)
+            if "collection_comments" in capabilities
+            else ()
+        ),
+        fixture_reason=None,
+    )
+
+
+def _backend_supports_variant(
+    *,
+    lang_cls: literalizer.LanguageCls,
+    capabilities: frozenset[VariantCapabilityName],
 ) -> bool:
-    """Evaluate a case requirement against its resolved configuration."""
-    match capability:
-        case "collection_comments":
-            return variant.spec.supports_collection_comments
-        case "empty_sibling_sequence_type_hints":
-            return variant.lang_cls.supports_empty_sibling_sequence_type_hints
-        case "special_floats":
-            return variant.lang_cls.supports_special_floats
-        case _ as unreachable:
-            assert_never(unreachable)
+    """Narrow the candidate backends by static capabilities."""
+    return (
+        "empty_sibling_sequence_type_hints" not in capabilities
+        or lang_cls.supports_empty_sibling_sequence_type_hints
+    ) and (
+        "special_floats" not in capabilities
+        or lang_cls.supports_special_floats
+    )
 
 
 @beartype
@@ -404,22 +421,20 @@ def build_variant_cases() -> list[VariantCase]:
             manifest_variant=manifest_variant,
             special_float_cases=special_float_cases,
         )
-        cases.extend(
-            case_for_manifest_variant(
+        for variant in variants:
+            if not selection.admits_language(
+                lang_cls=variant.lang_cls
+            ) or not _backend_supports_variant(
+                lang_cls=variant.lang_cls, capabilities=required
+            ):
+                continue
+            case = case_for_manifest_variant(
                 case_dir_name=case_dir_name,
                 manifest_variant=manifest_variant,
                 variant=variant,
             )
-            for variant in variants
-            if selection.admits_language(lang_cls=variant.lang_cls)
-            if all(
-                variant_supports_capability(
-                    variant=variant,
-                    capability=capability,
-                )
-                for capability in required
-            )
-        )
+            if variant_exclusion(case=case, capabilities=required) is None:
+                cases.append(case)
 
     for case_dir_name, entry in entries:
         cases.extend(

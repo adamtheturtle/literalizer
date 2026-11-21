@@ -23,7 +23,7 @@ def test_constructor_binding_golden_file(
     subtests: pytest.Subtests,
 ) -> None:
     """Every declared constructor binding matches its native golden."""
-    for rendering in case.renderings:
+    for rendering in case.participating_renderings:
         with subtests.test(version=rendering.version.name):
             run_constructor_binding_golden_case(
                 rendering=rendering,

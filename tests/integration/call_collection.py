@@ -24,8 +24,14 @@ from .call_ref_contracts import (
 )
 from .case_manifests import CallCaseSpec, call_case_specs
 from .golden_artifacts import GoldenArtifact
-from .golden_outcomes import SUCCESS, Exclusion, GoldenOutcome, Rejection
-from .language_specs import make_golden_artifact, make_spec, sorted_languages
+from .golden_outcomes import SUCCESS, GoldenOutcome, Rejection
+from .language_specs import (
+    make_golden_artifact,
+    make_spec,
+    sorted_languages,
+    unique_effective_specs,
+)
+from .scenario_participation import scenario_exclusion
 
 CASES_DIR = Path(__file__).parent / "cases"
 
@@ -40,15 +46,30 @@ class CallRendering:
     golden_name: str
     expected_exception: type[Exception] | None
 
+    @functools.cached_property
+    def observable(self) -> bool:
+        """Select the fixture's native consumer once for this spec."""
+        return uses_integer_receiver(config=self.config, spec=self.spec)
+
     @property
     def outcome(self) -> GoldenOutcome:
+        """Share the resolved result with discovery and execution."""
+        return self._resolved_outcome
+
+    @functools.cached_property
+    def _resolved_outcome(self) -> GoldenOutcome:
         """Report the effective call expectation before rendering."""
-        if not uses_integer_receiver(config=self.config, spec=self.spec):
-            reason = wrapper_capability_exclusion(
-                config=self.config, lang_cls=self.lang_cls, spec=self.spec
+        if not self.observable:
+            exclusion = scenario_exclusion(
+                case_id=f"{self.config.coverage_id}/{self.golden_name}",
+                spec=self.spec,
+                requirements=(),
+                fixture_reason=wrapper_capability_exclusion(
+                    config=self.config, lang_cls=self.lang_cls, spec=self.spec
+                ),
             )
-            if reason is not None:
-                return Exclusion(reason=reason)
+            if exclusion is not None:
+                return exclusion
         if self.expected_exception is not None:
             return Rejection(
                 error=fixture_rejection(
@@ -86,39 +107,62 @@ class CallRendering:
         )
 
 
+def resolve_call_rendering(
+    *,
+    config: CallCaseSpec,
+    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
+    golden_name: str,
+) -> CallRendering:
+    """Predict the API outcome from the same spec execution receives."""
+    return CallRendering(
+        config=config,
+        lang_cls=lang_cls,
+        spec=spec,
+        golden_name=golden_name,
+        expected_exception=expected_call_shape_exception(
+            lang_cls=lang_cls, config=config, spec=spec
+        ),
+    )
+
+
 @dataclasses.dataclass(frozen=True)
 class CallCase:
     """A parameterized call-style golden-file test case."""
 
     config: CallCaseSpec
     lang_cls: literalizer.LanguageCls
-    expected_exception: type[Exception] | None
 
     @property
     def test_id(self) -> str:
         """Return the manifest and language identity of this case."""
         return f"{self.config.coverage_id}/{self.lang_cls.__name__}"
 
-    @property
+    @functools.cached_property
     def renderings(self) -> tuple[CallRendering, ...]:
         """Exercise the default call once per supported language
         version.
         """
-        return tuple(
-            CallRendering(
-                config=self.config,
-                lang_cls=self.lang_cls,
-                spec=call_style_spec(
+        specs = unique_effective_specs(
+            specs=(
+                call_style_spec(
                     config=self.config,
                     lang_cls=self.lang_cls,
                     spec=make_spec(
                         lang_cls=self.lang_cls, language_version=version
                     ),
-                ),
+                )
+                for version in self.lang_cls.VersionFormats
+            ),
+        )
+        return tuple(
+            resolve_call_rendering(
+                config=self.config,
+                lang_cls=self.lang_cls,
+                spec=spec,
                 golden_name=f"{self.lang_cls.__name__}_call",
-                expected_exception=self.expected_exception,
             )
-            for version in self.lang_cls.VersionFormats
+            for spec in specs
         )
 
 
@@ -166,16 +210,5 @@ def discover_call_cases() -> list[CallCase]:
                     for style in styles
                 ):
                     continue
-            expected_exception = expected_call_shape_exception(
-                lang_cls=lang_cls,
-                config=config,
-                spec=make_spec(lang_cls=lang_cls),
-            )
-            cases.append(
-                CallCase(
-                    config=config,
-                    lang_cls=lang_cls,
-                    expected_exception=expected_exception,
-                )
-            )
+            cases.append(CallCase(config=config, lang_cls=lang_cls))
     return cases

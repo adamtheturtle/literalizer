@@ -367,12 +367,7 @@ def expand(  # noqa: NOD001
             if not all(admits(target) for admits in requires):
                 continue
             kwargs = _options_for(target=target, overrides=overrides)
-            if kwargs is None or (
-                requires_configured is not None
-                and not requires_configured(
-                    make_spec(lang_cls=lang_cls, **kwargs)
-                )
-            ):
+            if kwargs is None:
                 continue
             pinned: Options = (
                 {} if fixture_options is None else fixture_options(target)
@@ -392,6 +387,11 @@ def expand(  # noqa: NOD001
                     per_version=per_version,
                     skip_incompatible=skip_incompatible,
                 ):
+                    if (
+                        requires_configured is not None
+                        and not requires_configured(spec)
+                    ):
+                        continue
                     variant = compact_variant(
                         name=label, spec=spec, lang_cls=lang_cls
                     )
