@@ -18,7 +18,11 @@ from .call_expectations import (
     wrapper_capability_exclusion,
 )
 from .call_receivers import uses_integer_receiver
-from .case_manifests import CallCaseSpec, WrappedCallFixture, call_case_specs
+from .call_ref_contracts import (
+    authored_call_ref_outcome,
+    unsupported_reference_marker,
+)
+from .case_manifests import CallCaseSpec, call_case_specs
 from .golden_artifacts import GoldenArtifact
 from .golden_outcomes import SUCCESS, GoldenOutcome, Rejection
 from .language_specs import (
@@ -48,17 +52,13 @@ class CallRendering:
         return uses_integer_receiver(config=self.config, spec=self.spec)
 
     @property
-    def outcome(self) -> GoldenOutcome | None:
+    def outcome(self) -> GoldenOutcome:
         """Share the resolved result with discovery and execution."""
         return self._resolved_outcome
 
     @functools.cached_property
-    def _resolved_outcome(self) -> GoldenOutcome | None:
-        """Report documented errors and exclusions before rendering.
-
-        A missing outcome leaves the call in the legacy runner until its
-        representation constraints have been migrated.
-        """
+    def _resolved_outcome(self) -> GoldenOutcome:
+        """Report the effective call expectation before rendering."""
         if not self.observable:
             exclusion = scenario_exclusion(
                 case_id=f"{self.config.coverage_id}/{self.golden_name}",
@@ -86,11 +86,14 @@ class CallRendering:
                 error=ExistingVariableNotSelfContainedError,
                 match="the assignment has no prior declaration",
             )
-        if isinstance(self.config.fixture, WrappedCallFixture) and isinstance(
-            self.config.variable_form, literalizer.ExistingVariable
-        ):
-            return SUCCESS
-        return None
+        outcome = authored_call_ref_outcome(
+            config=self.config, spec=self.spec, lang_cls=self.lang_cls
+        )
+        if outcome is None:
+            outcome = unsupported_reference_marker(
+                config=self.config, lang_cls=self.lang_cls, cases_dir=CASES_DIR
+            )
+        return SUCCESS if outcome is None else outcome
 
     def artifact(self, *, cases_dir: Path) -> GoldenArtifact:
         """Return the fixture used for comparison and stale-file

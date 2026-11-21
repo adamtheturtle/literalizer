@@ -13,9 +13,12 @@ from literalizer.exceptions import (
     UnrepresentableInputError,
     UnrepresentableNullError,
 )
-from literalizer.languages import Rust
 from tests.enum_members import enum_member_by_name
 
+from .call_ref_contracts import (
+    authored_call_ref_outcome,
+    unsupported_reference_marker,
+)
 from .case_manifests import (
     REF_DEFAULT_OWNER,
     REF_OWNER,
@@ -78,7 +81,7 @@ def _reference_outcome(
     spec: literalizer.Language,
     golden_name: str,
     ref_case: literalizer.IdentifierCase | None,
-) -> GoldenOutcome | None:
+) -> GoldenOutcome:
     """Resolve fixture prerequisites and documented reference errors."""
     exclusion = _reference_exclusion(
         config=config, spec=spec, ref_case=ref_case, golden_name=golden_name
@@ -94,13 +97,25 @@ def _reference_outcome(
             error=ExistingVariableNotSelfContainedError,
             match="the assignment has no prior declaration",
         )
+    outcome = authored_call_ref_outcome(
+        config=config, spec=spec, lang_cls=lang_cls
+    )
+    if outcome is None:
+        outcome = unsupported_reference_marker(
+            config=config, lang_cls=lang_cls, cases_dir=CASES_DIR
+        )
+    if outcome is not None:
+        return outcome
     if (
-        config.case_dir_name == "literalize_ref_scalar"
-        and isinstance(spec, Rust)
-        and spec.declaration_style.name in {"CONST", "STATIC"}
+        isinstance(config.context, ExternalRefContext)
+        and config.variable_form == "existing"
+        and "my_data" in config.context.declarations
+        and len(find_redefinition_styles(spec=spec)) == 0
     ):
-        return SUCCESS
-    return None
+        return Exclusion(
+            reason="the external destination needs a reassignable declaration"
+        )
+    return SUCCESS
 
 
 def _reference_exclusion(
@@ -139,7 +154,7 @@ class RefRendering:
     golden_name: str
     ref_case: literalizer.IdentifierCase | None
 
-    outcome: GoldenOutcome | None
+    outcome: GoldenOutcome
 
     def artifact(self, *, cases_dir: Path) -> GoldenArtifact:
         """Locate the fixture used by execution and inventory checks."""
