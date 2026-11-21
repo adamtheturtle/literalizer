@@ -1,4 +1,6 @@
-"""Authored representation limits for call and reference goldens."""
+"""Authored representation limits for call and reference golden
+fixtures.
+"""
 
 import functools
 import re
@@ -189,9 +191,7 @@ def unsupported_reference_marker(
     lang_cls: literalizer.LanguageCls,
     cases_dir: Path,
 ) -> Rejection | None:
-    """Assert the API's reference restriction only when the input uses
-    it.
-    """
+    """Assert the reference restriction when the input uses a marker."""
     contract = (
         "default_helper_call_reference_zkv"
         if isinstance(config, CallCaseSpec)

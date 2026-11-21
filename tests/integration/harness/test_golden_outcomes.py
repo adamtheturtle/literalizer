@@ -205,9 +205,10 @@ def test_mojo_stub_requires_common_argument_slot_types(
         )
         for rendering in case.renderings
     )
-    assert (
-        golden_test_parameters(cases=[(case.test_id, case.renderings)]) == []
+    parameters = golden_test_parameters(
+        cases=[(case.test_id, case.renderings)]
     )
+    assert len(parameters) == 0
 
     case_source = case_input(case_dir=cases_dir / case.config.case_dir_name)
     render = functools.partial(
