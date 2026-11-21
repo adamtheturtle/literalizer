@@ -22,7 +22,9 @@ from .manifest_values import ManifestLanguages, StringFrozenSet, StringTuple
 if TYPE_CHECKING:
     from .golden_renderings import RenderArguments
 
-_MANIFEST = Path(__file__).with_name(name="literal_rejections.toml")
+LITERAL_REJECTION_MANIFEST: Path = Path(__file__).with_name(
+    name="literal_rejections.toml"
+)
 
 
 # Omitted selector fields leave the corresponding dimension unrestricted.
@@ -42,7 +44,6 @@ class LiteralRejectionSelector(  # noqa: NOD001
         Literal["NewVariable", "ExistingVariable", "BothVariableForms"] | None
     ) = None
     variable_modifiers: StringFrozenSet | None = None
-    collection_layout: Literal["COMPACT", "MULTILINE"] | None = None
     record_null_substitutions: bool | None = None
 
     def matches(
@@ -70,11 +71,6 @@ class LiteralRejectionSelector(  # noqa: NOD001
             )
             if modifiers != self.variable_modifiers:
                 return False
-        if (
-            self.collection_layout is not None
-            and render.collection_layout.name != self.collection_layout
-        ):
-            return False
         if (
             self.record_null_substitutions is not None
             and (render.record_null_substitutions is not None)
@@ -120,11 +116,11 @@ type LiteralRejectionRule = tuple[LiteralRejectionSelector, Rejection]
 
 
 @functools.cache
-def literal_rejection_rules() -> dict[
-    LiteralRejectionKey, list[LiteralRejectionRule]
-]:
+def literal_rejection_rules(
+    *, manifest_path: Path
+) -> dict[LiteralRejectionKey, list[LiteralRejectionRule]]:
     """Index each contract by fixture and language."""
-    with _MANIFEST.open(mode="rb") as source:
+    with manifest_path.open(mode="rb") as source:
         manifest = _Manifest.model_validate(obj=tomllib.load(source))
     rules: dict[LiteralRejectionKey, list[LiteralRejectionRule]] = defaultdict(
         list
@@ -149,13 +145,14 @@ def authored_literal_rejection(
     lang_cls: literalizer.LanguageCls,
     spec: literalizer.Language,
     render: RenderArguments,
+    manifest_path: Path,
 ) -> Rejection | None:
     """Return the contract declared for this rendering, if any."""
     matches = {
         rejection
-        for selector, rejection in literal_rejection_rules().get(
-            (case_name, lang_cls), ()
-        )
+        for selector, rejection in literal_rejection_rules(
+            manifest_path=manifest_path
+        ).get((case_name, lang_cls), ())
         if selector.matches(spec=spec, render=render)
     }
     if len(matches) > 1:

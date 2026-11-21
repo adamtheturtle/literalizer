@@ -18,17 +18,22 @@ from literalizer import (
 from literalizer.exceptions import (
     CallArgNotSupportedError,
     ExistingVariableNotSelfContainedError,
+    MixedListValuesError,
     NullInCollectionError,
+    UnrepresentableInputError,
 )
 from literalizer.languages import Bash, Mojo, Scala, V
-from tests.integration.golden_checks import check_outcome
+from tests.integration.golden_checks import assert_rejection, check_outcome
 from tests.integration.golden_outcomes import SUCCESS, Exclusion, Rejection
+from tests.integration.golden_renderings import compact_render
 from tests.integration.golden_scenarios import scenario_renderings
 from tests.integration.literal_expectations import (
     literal_rejection,
     literal_source,
 )
 from tests.integration.literal_rejection_manifest import (
+    LITERAL_REJECTION_MANIFEST,
+    authored_literal_rejection,
     literal_rejection_rules,
 )
 
@@ -37,7 +42,7 @@ pytest_plugins: tuple[str, ...] = ("pytester",)
 
 def test_literal_rejection_rules_are_exercised() -> None:
     """Every fixture and language named by a rule has a matching spec."""
-    rules = literal_rejection_rules()
+    rules = literal_rejection_rules(manifest_path=LITERAL_REJECTION_MANIFEST)
     remaining = {
         (case_name, lang_cls, index)
         for (case_name, lang_cls), entries in rules.items()
@@ -57,6 +62,71 @@ def test_literal_rejection_rules_are_exercised() -> None:
         (case_name, lang_cls.__name__, rules[case_name, lang_cls][index])
         for case_name, lang_cls, index in remaining
     ]
+
+
+_LITERAL_REJECTION_RULE = """\
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent null"
+applies = [{cases = ["null"], languages = ["Bash"]}]
+"""
+
+
+@pytest.mark.parametrize(
+    argnames=("manifest", "match"),
+    argvalues=[
+        (
+            _LITERAL_REJECTION_RULE.replace(
+                'languages = ["Bash"]',
+                'languages = ["Bash"], options = {unknown = "NONE"}',
+            ),
+            "Unknown literal rejection options.*unknown",
+        ),
+        (
+            _LITERAL_REJECTION_RULE
+            + _LITERAL_REJECTION_RULE.replace(
+                "UnrepresentableInputError", "UnrepresentableNullError"
+            ),
+            "Conflicting rejections for fixture null",
+        ),
+    ],
+)
+def test_literal_rejection_manifest_rejects_ambiguous_configuration(
+    *, tmp_path: Path, manifest: str, match: str
+) -> None:
+    """Invalid rules fail before the target renderer runs."""
+    manifest_path = tmp_path / "literal_rejections.toml"
+    _ = manifest_path.write_text(data=manifest, encoding="utf-8")
+    with pytest.raises(expected_exception=ValueError, match=match):
+        _ = authored_literal_rejection(
+            case_name="null",
+            lang_cls=Bash,
+            spec=Bash(),
+            render=compact_render(variable_form=None),
+            manifest_path=manifest_path,
+        )
+
+
+def test_exact_rejection_rejects_a_subclass(*, tmp_path: Path) -> None:
+    """Matching diagnostic text cannot mask a different exception type."""
+    with pytest.raises(
+        expected_exception=pytest.fail.Exception,
+        match="got UnrepresentableNullError",
+    ):
+        assert_rejection(
+            outcome=Rejection(
+                error=UnrepresentableInputError,
+                match="cannot represent null",
+            ),
+            render=functools.partial(
+                literalize,
+                source="null",
+                input_format=InputFormat.JSON,
+                language=Bash(),
+            ),
+            golden_path=tmp_path / "null.sh",
+            exact_type=True,
+        )
 
 
 def _bash_call(*, source: str) -> str:
@@ -374,3 +444,33 @@ def test_null_expectations_use_effective_input(
     else:
         assert outcome is None
         _ = render()
+
+
+def test_mojo_mixed_list_takes_precedence_over_null(*, tmp_path: Path) -> None:
+    """A scalar wrapper cannot reconcile a scalar and a list."""
+    _ = (tmp_path / "case.toml").write_text(
+        data='schema_version = 1\nsuites = ["base"]\n',
+        encoding="utf-8",
+    )
+    source = "[null, [1], 2]"
+    _ = (tmp_path / "input.yaml").write_text(data=source, encoding="utf-8")
+    spec = Mojo(heterogeneous_strategy=Mojo.HeterogeneousStrategies["VARIANT"])
+    assert (
+        literal_rejection(
+            spec=spec,
+            lang_cls=Mojo,
+            variable_form=None,
+            case_dir=tmp_path,
+            substitutions=None,
+            wrap_in_file=False,
+        )
+        is None
+    )
+    with pytest.raises(
+        expected_exception=MixedListValuesError, match="mixed type families"
+    ):
+        _ = literalize(
+            source=source,
+            input_format=InputFormat.YAML,
+            language=spec,
+        )

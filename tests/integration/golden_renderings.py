@@ -14,7 +14,10 @@ from .golden_artifacts import GoldenArtifact
 from .golden_outcomes import SUCCESS, Rejection, Success
 from .language_specs import make_golden_artifact, make_spec
 from .literal_expectations import literal_rejection
-from .literal_rejection_manifest import authored_literal_rejection
+from .literal_rejection_manifest import (
+    LITERAL_REJECTION_MANIFEST,
+    authored_literal_rejection,
+)
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -111,6 +114,7 @@ class GoldenRendering:
             lang_cls=self.lang_cls,
             spec=spec,
             render=self.render,
+            manifest_path=LITERAL_REJECTION_MANIFEST,
         )
         if authored is not None:
             return authored
