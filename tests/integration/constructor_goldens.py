@@ -27,21 +27,7 @@ def _render_constructor_binding(
     )
     config = manifest.constructor
     assert config is not None  # noqa: S101
-    if len(config.target_options) > 0:
-        language = dataclasses.replace(
-            language,
-            **{
-                key: value.format(
-                    target=language.format_constructor_target(
-                        config.class_name
-                    )
-                )
-                for key, value in config.target_options.items()
-            },
-        )
-    consumer_template = config.consumer_for_language(
-        language_name=case.lang_cls.__name__
-    )
+    consumer_template = case.consumer_template
     source = manifest.input.path.read_text(encoding="utf-8")
     input_format = manifest.input.input_format
     if config.target_source_template is not None or config.target_variable:

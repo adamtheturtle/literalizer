@@ -43,7 +43,6 @@ from .golden_checks import (
 )
 from .golden_skip_policy import SkipPolicy, SkipReason
 from .language_specs import (
-    find_redefinition_styles,
     with_per_fixture_module_name,
 )
 from .ref_consumers import (
@@ -123,14 +122,6 @@ def _render_reference_golden(
     input_source = input_path.read_text(encoding="utf-8")
     golden_path = rendering.artifact(cases_dir=cases_dir).path
     spec = with_per_fixture_module_name(spec=spec, golden_path=golden_path)
-    if (
-        config.variable_form == "both"
-        and config.declaration_style is None
-        and spec.declaration_style not in find_redefinition_styles(spec=spec)
-    ):
-        spec = dataclasses.replace(
-            spec, declaration_style=find_redefinition_styles(spec=spec)[0]
-        )
     wrap_in_file = isinstance(context, BoundRefContext)
     variable_form_obj: literalizer.VariableForm | None = (
         config.resolved_variable_form()

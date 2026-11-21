@@ -1,7 +1,6 @@
 """Language-level constructor bindings before fixture ownership."""
 
 import dataclasses
-import enum
 from collections.abc import Mapping
 
 from beartype import beartype
@@ -10,7 +9,12 @@ import literalizer
 from literalizer import NewVariable
 from literalizer._enums import enum_payload
 
-from .language_specs import make_spec, modifier_entries, sorted_languages
+from .language_specs import (
+    make_spec,
+    modifier_entries,
+    sorted_languages,
+    unique_effective_specs,
+)
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -22,18 +26,21 @@ class ConstructorBindingSpec:
     spec_overrides: Mapping[str, object]
     variable_form: literalizer.VariableForm
 
-
-@beartype
-def _supports_default_constructor_binding(
-    spec: literalizer.Language,
-) -> bool:
-    """Return whether *spec* supports constructor call bindings here."""
-    return (
-        not isinstance(spec.call_style_config, enum.Enum)
-        and spec.supports_variable_names
-        and spec.supports_zero_parameter_calls
-        and spec.call_returns_expression
-    )
+    @property
+    def specs(self) -> tuple[literalizer.Language, ...]:
+        """Resolve all effective versions of this binding
+        configuration.
+        """
+        return unique_effective_specs(
+            specs=(
+                make_spec(
+                    lang_cls=self.lang_cls,
+                    language_version=version,
+                    **self.spec_overrides,
+                )
+                for version in self.lang_cls.VersionFormats
+            ),
+        )
 
 
 @beartype
@@ -42,9 +49,7 @@ def constructor_binding_specs() -> list[ConstructorBindingSpec]:
     languages = [
         lang_cls
         for lang_cls in sorted_languages()
-        if _supports_default_constructor_binding(
-            spec=make_spec(lang_cls=lang_cls),
-        )
+        if len(lang_cls.CallStyles) > 0
     ]
     cases = [
         ConstructorBindingSpec(

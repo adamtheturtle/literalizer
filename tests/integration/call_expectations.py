@@ -59,18 +59,12 @@ def _call_transform_style_unsupported(
     ``call_transform`` for non-substitution call styles.
 
     ``call_transform`` is only supported when the effective call style
-    is positional, keyword, or object.  When ``call_style_type`` is set
-    the test pins that style; otherwise the language's default
-    (first-listed) style applies.
+    is positional, keyword, or object. The supplied spec includes any
+    style override from the case.
     """
     if config.transform is None:
         return False
-    if config.call_style_type is not None:
-        return not issubclass(
-            config.call_style_type, _SUBSTITUTION_CALL_STYLES
-        )
-    default_style = spec.call_style_config
-    return not isinstance(default_style, _SUBSTITUTION_CALL_STYLES)
+    return not isinstance(spec.call_style_config, _SUBSTITUTION_CALL_STYLES)
 
 
 @beartype
@@ -364,11 +358,10 @@ def expected_call_shape_exception(
     prerequisite_error = _call_support_exception(spec=spec)
     if prerequisite_error is None:
         prerequisite_error = _variable_form_expected_exception(
-            lang_cls=lang_cls, variable_form=config.variable_form
+            spec=spec, variable_form=config.variable_form
         )
     if prerequisite_error is not None:
         return prerequisite_error
-    spec = call_style_spec(config=config, lang_cls=lang_cls, spec=spec)
     effective_style = spec.call_style_config
     bound_refs_wrap = isinstance(config.fixture, BoundCallFixture)
     rejects_reserved_parameters = (
@@ -428,12 +421,12 @@ def expected_call_shape_exception(
     ):
         return InvalidCallTargetError
     unsupported_signals = (
-        parameter_count == 0 and not lang_cls.supports_zero_parameter_calls,
+        parameter_count == 0 and not spec.supports_zero_parameter_calls,
         parameter_count > max_params,
         config.requires_inline_multiline_dict_args
         and not lang_cls.supports_inline_multiline_dict_args,
         config.requires_call_returns_expression
-        and not lang_cls.call_returns_expression,
+        and not spec.call_returns_expression,
         config.requires_standalone_wrapped_comments
         and not lang_cls.supports_standalone_comments_in_wrapped_calls,
         _call_transform_style_unsupported(spec=spec, config=config),
@@ -460,14 +453,14 @@ def expected_call_shape_exception(
 @beartype
 def _variable_form_expected_exception(
     *,
-    lang_cls: literalizer.LanguageCls,
+    spec: literalizer.Language,
     variable_form: literalizer.VariableForm | None,
 ) -> type[Exception] | None:
     """Mirror ``_validate_call_variable_form`` rejection paths."""
     if variable_form is None:
         return None
-    if not lang_cls.supports_variable_names:
+    if not spec.supports_variable_names:
         return VariableNameNotSupportedError
-    if not lang_cls.call_returns_expression:
+    if not spec.call_returns_expression:
         return UnsupportedCallShapeError
     return None

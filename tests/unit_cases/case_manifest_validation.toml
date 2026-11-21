@@ -527,7 +527,7 @@ message = "gates: unknown spec field 'vibe'"
 name = "unknown_gate_behavior_flag"
 manifest = '''schema_version = 1
 suites = ["base"]
-gates = [{ kind = "behavior_flag", flag = "vibes" }]
+gates = [{ kind = "default_behavior_flag", flag = "vibes" }]
 '''
 message = "gates: unknown behavior flag 'vibes'"
 

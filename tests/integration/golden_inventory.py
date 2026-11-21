@@ -69,7 +69,7 @@ def golden_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
     yield from (
         rendering.artifact
         for case in constructor_binding_cases(cases_dir=cases_dir)
-        for rendering in case.renderings
+        for rendering in case.participating_renderings
         if isinstance(rendering.outcome, Success)
     )
     yield from (

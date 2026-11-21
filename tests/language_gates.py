@@ -107,7 +107,7 @@ def language_gate_admits(
     | EnumMemberPresentGate
     | ModifierPresentGate,
     lang_cls: literalizer.LanguageCls,
-    spec: literalizer.Language,
+    spec: literalizer.Language | None,
 ) -> bool:
     """Return whether *gate* admits a language."""
     match gate:
@@ -121,15 +121,15 @@ def language_gate_admits(
             )
         case CapabilityFlagGate():
             admits = CAPABILITY_FLAGS[gate.flag](lang_cls) == gate.value
-        case SpecFieldPresentGate():
-            fields = dataclasses.fields(class_or_instance=spec)
-            admits = gate.field in {spec_field.name for spec_field in fields}
-        case SpecFieldAbsentGate():
-            fields = dataclasses.fields(class_or_instance=spec)
-            admits = gate.field not in {
-                spec_field.name for spec_field in fields
-            }
+        case SpecFieldPresentGate() | SpecFieldAbsentGate():
+            assert spec is not None  # noqa: S101
+            present = any(
+                spec_field.name == gate.field
+                for spec_field in dataclasses.fields(class_or_instance=spec)
+            )
+            admits = present == isinstance(gate, SpecFieldPresentGate)
         case EnumMemberPresentGate():
+            assert spec is not None  # noqa: S101
             option = OPTIONS[gate.option]
             admits = (
                 find_enum_member(

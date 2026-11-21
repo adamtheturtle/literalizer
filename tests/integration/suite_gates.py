@@ -32,7 +32,8 @@ from tests.language_gates import (
 )
 from tests.language_options import CAPABILITY_FLAGS, OPTIONS
 
-from .language_metadata import LanguageMetadata
+from .language_metadata import language_metadata
+from .language_specs import make_spec
 
 
 class SuiteGateError(ValueError):
@@ -88,18 +89,15 @@ class NonDefaultKwargGate(
     kwarg: Annotated[str, Field(min_length=1)]
 
 
-class BehaviorFlagGate(
+class DefaultBehaviorFlagGate(
     BaseModel,
     extra="forbid",
     frozen=True,
     strict=True,
 ):
-    """Admit languages whose selected strategy sets a behavior flag.
+    """Select backends by the behavior of their unmodified defaults."""
 
-    Case selection supplies the language's default spec.
-    """
-
-    kind: Literal["behavior_flag"]
+    kind: Literal["default_behavior_flag"]
     flag: Annotated[str, Field(min_length=1)]
 
 
@@ -241,7 +239,7 @@ type SuiteGate = Annotated[
     | SpecFieldPresentGate
     | EnumMemberPresentGate
     | ModifierPresentGate
-    | BehaviorFlagGate
+    | DefaultBehaviorFlagGate
     | CallLiteralFlagGate
     | CallRawStringPrefixGate
     | CallInterpolationGate
@@ -279,7 +277,7 @@ def validate_gate_names(
             case EnumMemberPresentGate() if gate.option not in OPTIONS:
                 msg = f"{subject}: unknown option {gate.option!r}"
                 raise SuiteGateError(msg)
-            case BehaviorFlagGate() if gate.flag not in BEHAVIOR_FLAGS:
+            case DefaultBehaviorFlagGate() if gate.flag not in BEHAVIOR_FLAGS:
                 msg = f"{subject}: unknown behavior flag {gate.flag!r}"
                 raise SuiteGateError(msg)
             case _:
@@ -307,10 +305,8 @@ def gate_admits(
     *,
     gate: SuiteGate,
     lang_cls: literalizer.LanguageCls,
-    metadata: LanguageMetadata,
-    spec: literalizer.Language,
 ) -> bool:
-    """Return whether *gate* admits a language using its default spec."""
+    """Evaluate a backend gate, including explicitly default behavior."""
     match gate:
         case (
             CapabilityFlagGate()
@@ -322,14 +318,30 @@ def gate_admits(
             admits = language_gate_admits(
                 gate=gate,
                 lang_cls=lang_cls,
-                spec=spec,
+                spec=(
+                    make_spec(lang_cls=lang_cls)
+                    if isinstance(
+                        gate,
+                        (
+                            EnumMemberPresentGate,
+                            SpecFieldPresentGate,
+                            SpecFieldAbsentGate,
+                        ),
+                    )
+                    else None
+                ),
             )
         case IntegerCallStubGate() | NullableObjectCallStubGate():
             admits = _call_stub_gate_admits(gate=gate, lang_cls=lang_cls)
         case NonDefaultKwargGate():
-            admits = gate.kwarg in metadata.non_default_kwargs
-        case BehaviorFlagGate():
-            admits = BEHAVIOR_FLAGS[gate.flag](spec)
+            admits = (
+                gate.kwarg
+                in language_metadata(
+                    language_id=lang_cls.language_id
+                ).non_default_kwargs
+            )
+        case DefaultBehaviorFlagGate():
+            admits = BEHAVIOR_FLAGS[gate.flag](make_spec(lang_cls=lang_cls))
         case (
             CallLiteralFlagGate()
             | CallRawStringPrefixGate()
@@ -344,23 +356,3 @@ def gate_admits(
         case _ as unreachable:
             assert_never(unreachable)
     return admits
-
-
-@beartype
-def gates_admit(
-    *,
-    gates: Sequence[SuiteGate],
-    lang_cls: literalizer.LanguageCls,
-    metadata: LanguageMetadata,
-    spec: literalizer.Language,
-) -> bool:
-    """Return whether every gate in *gates* admits a language."""
-    return all(
-        gate_admits(
-            gate=gate,
-            lang_cls=lang_cls,
-            metadata=metadata,
-            spec=spec,
-        )
-        for gate in gates
-    )
