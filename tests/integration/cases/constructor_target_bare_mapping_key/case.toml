@@ -8,4 +8,4 @@ any_gates = [{kind = "capability_flag", flag = "supports_local_binding_documents
 # Named block maps are owned by constructor_target_named_without_calls.
 [constructor]
 # Literalizer owns native record/object syntax for Dhall, JSON5, Jsonnet and Nix.
-target_source_template = '{{"{target}": true}}'
+target_mapping = true
