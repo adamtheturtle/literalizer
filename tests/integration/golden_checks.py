@@ -174,11 +174,11 @@ def assert_rejection(
         expected_exception=outcome.error, match=outcome.match
     ) as raised:
         _ = render()
-    if exact_type and type(raised.value) is not outcome.error:
+    if exact_type and raised.type is not outcome.error:
         pytest.fail(
             reason=(
                 f"Expected {outcome.error.__name__}, "
-                f"got {type(raised.value).__name__}: {raised.value}"
+                f"got {raised.type.__name__}: {raised.value}"
             ),
         )
 
