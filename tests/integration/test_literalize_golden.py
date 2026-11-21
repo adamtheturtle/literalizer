@@ -13,7 +13,6 @@ set of golden files.
 """
 
 import functools
-from contextlib import nullcontext
 from pathlib import Path
 
 import pytest
@@ -24,7 +23,6 @@ import literalizer
 
 from .golden_batches import GoldenGroup, golden_groups
 from .golden_checks import (
-    GoldenSkips,
     assert_rejection,
     check_golden,
     fixture_contents,
@@ -61,6 +59,7 @@ def _check_rendering(
         assert_rejection(
             outcome=outcome,
             golden_path=golden_path,
+            exact_type=True,
             render=functools.partial(
                 literalize_rendering,
                 rendering=rendering,
@@ -71,22 +70,13 @@ def _check_rendering(
             ),
         )
         return
-    with (
-        GoldenSkips(
-            policy=rendering.skip,
-            golden_path=golden_path,
-            prefix=rendering.lang_cls.__name__,
-        )
-        if outcome is None
-        else nullcontext()
-    ):
-        result = literalize_rendering(
-            rendering=rendering,
-            spec=spec,
-            input_info=source.input_info,
-            source_text=source.source_text,
-            variable_form=variable_form,
-        )
+    result = literalize_rendering(
+        rendering=rendering,
+        spec=spec,
+        input_info=source.input_info,
+        source_text=source.source_text,
+        variable_form=variable_form,
+    )
     if rendering.initialize_variable or len(rendering.extra_preamble) > 0:
         declarations: list[literalizer.LiteralizeResult] = []
         if rendering.initialize_variable:

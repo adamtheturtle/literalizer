@@ -2,14 +2,11 @@
 
 import dataclasses
 from collections.abc import Mapping
-from typing import Literal
 
 from beartype import beartype
 
 import literalizer
 from literalizer import ValueInput
-
-type VariantExpectedError = Literal["InvalidDictKeyError"]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -61,6 +58,5 @@ class VariantCase:
     case_dir_name: str
     variable_form: literalizer.VariableForm
     pre_indent_level: int
-    expected_errors: tuple[VariantExpectedError, ...]
     apply_fixture_module_name: bool
     consumer_template: str | None

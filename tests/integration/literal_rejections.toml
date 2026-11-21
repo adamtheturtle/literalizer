@@ -1,0 +1,3755 @@
+# Literal and format-variant rejection expectations.
+#
+# Each entry names authored inputs and their effective target configuration.
+# Option values are enum member names. NONE means an unset optional format.
+# The message pins the contract separately from the exception class.
+
+[[rejection]]
+error = "HeterogeneousScalarCollectionError"
+match = "Collection contains heterogeneous scalar types that cannot be represented in the target language"
+applies = [
+  { cases = ["record_tuple_integer_widths"], languages = ["Cpp"] },
+  { cases = [
+    "coercion_heterogeneous_array_json",
+    "coercion_heterogeneous_array_json5",
+    "coercion_heterogeneous_array_jsonc",
+    "coercion_heterogeneous_array_toml",
+    "coercion_heterogeneous_array_yaml",
+    "comments",
+    "comments_before_declaration",
+    "comments_escaped_single_quote_multiple",
+    "dates",
+    "datetime_and_integer_sequence",
+    "delete_character_in_key_and_value",
+    "dict_null_leading_comment",
+    "dict_null_middle_inline_comment",
+    "dict_null_trailing_inline_comment",
+    "dict_with_nulls",
+    "early_year_dates",
+    "gregorian_reform_dates",
+    "json5_surrogate_pair_escape",
+    "jsonc_comments",
+    "long_string_before_list_comma",
+    "mixed_number_dict",
+    "mixed_number_list",
+    "mixed_number_set",
+    "mixed_numeric_set_integer_identity",
+    "mixed_scalar_carriers",
+    "mixed_set",
+    "narrowed_empty_list_mixed_sibling",
+    "native_records_in_heterogeneous_sequences",
+    "nested_collection_multi_space_string",
+    "nested_mixed_set",
+    "nested_numeric_and_mixed_sequences",
+    "nested_sequence_declaration_modifiers",
+    "null_field_policy",
+    "pair_sequence",
+    "positional_empty_map_rows",
+    "positional_empty_rows",
+    "positional_mixed_rows",
+    "record_constructor_text",
+    "roundtrip_verifier_excluded_key_added",
+    "roundtrip_verifier_identical_scalar_types",
+    "scalars",
+    "sequence_of_dicts",
+    "sibling_mixed_scalar_sequences",
+    "signed_constructor_arguments",
+    "simple_dict",
+    "simple_sequence",
+    "times_heterogeneous_with_dates",
+    "toml_comments",
+    "triple_sequence",
+    "tuple_empty_first_sequence",
+    "tuple_empty_map_values",
+    "tuple_empty_mixed_sequence",
+    "tuple_map_value",
+    "tuple_nested_empty_sequences",
+    "type_hints",
+    "uniform_mixed_num_dicts_in_seq",
+    "yaml_nested_inline_between_comments",
+  ], languages = ["Dhall", "Mojo"] },
+  { cases = [
+    "coercion_heterogeneous_array_json5",
+    "coercion_heterogeneous_array_jsonc",
+    "comments",
+    "comments_before_declaration",
+    "comments_escaped_single_quote_multiple",
+    "dict_null_leading_comment",
+    "dict_null_middle_inline_comment",
+    "dict_null_trailing_inline_comment",
+    "json5_surrogate_pair_escape",
+    "jsonc_comments",
+    "mixed_number_dict",
+    "mixed_number_list",
+    "nested_collection_multi_space_string",
+    "nested_numeric_and_mixed_sequences",
+    "nested_sequence_declaration_modifiers",
+    "null_field_policy",
+    "positional_empty_map_rows",
+    "positional_empty_rows",
+    "positional_mixed_rows",
+    "record_constructor_text",
+    "roundtrip_verifier_excluded_key_added",
+    "roundtrip_verifier_identical_scalar_types",
+    "scalars",
+    "sequence_of_dicts",
+    "times_heterogeneous_with_dates",
+    "toml_comments",
+    "tuple_empty_first_sequence",
+    "tuple_empty_map_values",
+    "tuple_empty_mixed_sequence",
+    "tuple_nested_empty_sequences",
+    "type_hints",
+    "uniform_mixed_num_dicts_in_seq",
+    "yaml_nested_inline_between_comments",
+  ], languages = ["Nim"] },
+  { cases = [
+    "coercion_heterogeneous_array_json5",
+    "coercion_heterogeneous_array_jsonc",
+    "comments",
+    "comments_before_declaration",
+    "comments_escaped_single_quote_multiple",
+    "datetime_and_integer_sequence",
+    "dict_null_leading_comment",
+    "dict_null_middle_inline_comment",
+    "dict_null_trailing_inline_comment",
+    "json5_surrogate_pair_escape",
+    "jsonc_comments",
+    "mixed_number_dict",
+    "mixed_number_list",
+    "mixed_set",
+    "nested_collection_multi_space_string",
+    "nested_mixed_set",
+    "nested_numeric_and_mixed_sequences",
+    "nested_sequence_declaration_modifiers",
+    "nested_tuple_strategy_mixed",
+    "null_field_policy",
+    "positional_empty_map_rows",
+    "positional_empty_rows",
+    "positional_mixed_rows",
+    "record_constructor_text",
+    "roundtrip_verifier_excluded_key_added",
+    "roundtrip_verifier_identical_scalar_types",
+    "scalars",
+    "sequence_of_dicts",
+    "sibling_mixed_scalar_sequences",
+    "times_heterogeneous_with_dates",
+    "toml_comments",
+    "tuple_empty_first_sequence",
+    "tuple_empty_mixed_sequence",
+    "tuple_nested_empty_sequences",
+    "uniform_mixed_num_dicts_in_seq",
+    "yaml_nested_inline_between_comments",
+  ], languages = ["Rust"] },
+  { cases = [
+    "coercion_heterogeneous_array_json",
+    "coercion_heterogeneous_array_json5",
+    "coercion_heterogeneous_array_jsonc",
+    "coercion_heterogeneous_array_toml",
+    "coercion_heterogeneous_array_yaml",
+    "comments",
+    "comments_before_declaration",
+    "comments_escaped_single_quote_multiple",
+    "dates",
+    "datetime_and_integer_sequence",
+    "delete_character_in_key_and_value",
+    "dict_null_leading_comment",
+    "dict_null_middle_inline_comment",
+    "dict_null_trailing_inline_comment",
+    "dict_with_nulls",
+    "early_year_dates",
+    "gregorian_reform_dates",
+    "json5_surrogate_pair_escape",
+    "jsonc_comments",
+    "long_string_before_list_comma",
+    "mixed_number_dict",
+    "mixed_number_list",
+    "mixed_number_set",
+    "mixed_numeric_set_integer_identity",
+    "mixed_scalar_carriers",
+    "mixed_set",
+    "narrowed_empty_list_mixed_sibling",
+    "native_records_in_heterogeneous_sequences",
+    "nested_collection_multi_space_string",
+    "nested_mixed_set",
+    "nested_numeric_and_mixed_sequences",
+    "nested_sequence_declaration_modifiers",
+    "null_field_policy",
+    "pair_sequence",
+    "positional_empty_map_rows",
+    "positional_empty_rows",
+    "positional_mixed_rows",
+    "record_constructor_text",
+    "record_fallback_empty_and_mixed_set_values",
+    "roundtrip_verifier_excluded_key_added",
+    "roundtrip_verifier_identical_scalar_types",
+    "scalars",
+    "sequence_of_dicts",
+    "sibling_mixed_scalar_sequences",
+    "signed_constructor_arguments",
+    "simple_dict",
+    "simple_sequence",
+    "times_heterogeneous_with_dates",
+    "toml_comments",
+    "triple_sequence",
+    "tuple_empty_first_sequence",
+    "tuple_empty_map_values",
+    "tuple_empty_mixed_sequence",
+    "tuple_map_value",
+    "tuple_nested_empty_sequences",
+    "type_hints",
+    "uniform_mixed_num_dicts_in_seq",
+    "yaml_nested_inline_between_comments",
+  ], languages = ["V"] },
+  { cases = ["gregorian_reform_dates"], languages = ["Rust"], options = { datetime_format = "EPOCH" } },
+  { cases = ["gregorian_reform_dates"], languages = ["Rust"], options = { datetime_format = "ISO" } },
+  { cases = ["pair_sequence"], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+  { cases = ["pair_sequence"], languages = ["Elm", "Gleam", "Haskell", "OCaml", "PureScript", "Roc"], options = { dict_format = "RECORD" } },
+  { cases = [
+    "dict_all_scalar_types",
+    "dict_mixed_int_widths",
+    "dict_mixed_scalars",
+    "heterogeneous_list_with_string",
+    "nested_mixed_dict",
+    "nested_mixed_inner",
+    "ordered_map",
+    "record_nested_record",
+    "record_pure_scalars",
+    "scalar_variant_list_empty_sibling",
+    "tuple_int_key_dict_value",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_top_level",
+  ], languages = ["Dhall"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = [
+    "dict_all_scalar_types",
+    "dict_mixed_int_widths",
+    "dict_mixed_scalars",
+    "empty_map_scalar_variant_sibling",
+    "heterogeneous_list_with_string",
+    "mixed_type_dicts_in_sequence",
+    "nested_mixed_dict",
+    "nested_mixed_inner",
+    "nested_variant_map_empty_sibling",
+    "ordered_map",
+    "record_nested_record",
+    "record_pure_scalars",
+    "scalar_variant_list_empty_sibling",
+    "tuple_int_key_dict_value",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_top_level",
+  ], languages = ["Mojo", "V"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = [
+    "datetime_and_integer_sequence",
+    "dict_all_scalar_types",
+    "dict_mixed_int_widths",
+    "dict_mixed_scalars",
+    "heterogeneous_list_with_string",
+    "mixed_type_dicts_in_sequence",
+    "nested_mixed_dict",
+    "nested_variant_map_empty_sibling",
+    "record_nested_record",
+    "record_pure_scalars",
+    "scalar_variant_list_empty_sibling",
+    "sibling_mixed_scalar_sequences",
+    "tuple_int_key_dict_value",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_top_level",
+  ], languages = ["Nim"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = [
+    "dict_all_scalar_types",
+    "dict_mixed_int_widths",
+    "dict_mixed_scalars",
+    "heterogeneous_list_with_string",
+    "mixed_type_dicts_in_sequence",
+    "native_record_nested_fields",
+    "nested_mixed_dict",
+    "nested_variant_map_empty_sibling",
+    "record_nested_record",
+    "record_pure_scalars",
+    "scalar_variant_list_empty_sibling",
+    "tuple_empty_map_values",
+    "tuple_int_key_dict_value",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_top_level",
+  ], languages = ["Rust"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = ["nested_mixed_inner", "ordered_map"], languages = ["Nim"], options = { heterogeneous_strategy = "ERROR", json_type = "NONE" } },
+  { cases = ["nested_mixed_inner"], languages = ["Rust"], options = { heterogeneous_strategy = "ERROR", json_type = "NONE" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "mixed_scalar_carriers",
+    "native_records_in_heterogeneous_sequences",
+  ], languages = ["Nim"], options = { heterogeneous_strategy = "ERROR", sequence_format = "SEQ" } },
+  { cases = ["empty_map_scalar_variant_sibling"], languages = ["Rust"], options = { heterogeneous_strategy = "ERROR", sequence_format = "VEC" } },
+  { cases = ["ordered_map"], languages = ["Nim"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = [
+    "heterogeneous_list_with_string",
+    "heterogeneous_time_string",
+    "nested_mixed_inner",
+    "scalar_variant_list_empty_sibling",
+    "tuple_int_key_dict_value",
+    "tuple_top_level",
+  ], languages = ["Rust"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = [
+    "heterogeneous_list_with_string",
+    "heterogeneous_time_string",
+    "nested_mixed_inner",
+    "ordered_map",
+    "scalar_variant_list_empty_sibling",
+    "tuple_int_key_dict_value",
+    "tuple_pair_record_field",
+    "tuple_pair_top_level",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_top_level",
+    "tuple_triple_record_field",
+    "tuple_triple_top_level",
+  ], languages = ["V"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = ["tuple_nested_conflicting_record_fields"], languages = ["Cpp"], options = { heterogeneous_strategy = "RECORD", language_version = "CPP14" } },
+  { cases = [
+    "tuple_pair_record_field",
+    "tuple_pair_top_level",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_triple_record_field",
+    "tuple_triple_top_level",
+  ], languages = ["Rust"], options = { heterogeneous_strategy = "RECORD", sequence_format = "VEC" } },
+  { cases = ["scalar_variant_list_empty_sibling"], languages = ["Rust"], options = { heterogeneous_strategy = "TUPLE" } },
+  { cases = [
+    "dates",
+    "delete_character_in_key_and_value",
+    "dict_with_nulls",
+    "early_year_dates",
+    "gregorian_reform_dates",
+    "long_string_before_list_comma",
+    "signed_constructor_arguments",
+  ], languages = ["Nim"], options = { json_type = "NONE" } },
+  { cases = [
+    "delete_character_in_key_and_value",
+    "dict_with_nulls",
+    "early_year_dates",
+    "long_string_before_list_comma",
+    "signed_constructor_arguments",
+  ], languages = ["Rust"], options = { json_type = "NONE" } },
+  { cases = [
+    "coercion_heterogeneous_array_json",
+    "coercion_heterogeneous_array_toml",
+    "coercion_heterogeneous_array_yaml",
+    "mixed_scalar_carriers",
+    "native_records_in_heterogeneous_sequences",
+    "pair_sequence",
+    "simple_sequence",
+    "triple_sequence",
+    "tuple_pair_record_field",
+    "tuple_pair_top_level",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_triple_record_field",
+    "tuple_triple_top_level",
+  ], languages = ["Cpp"], options = { sequence_format = "ARRAY" } },
+  { cases = [
+    "coercion_heterogeneous_array_json",
+    "coercion_heterogeneous_array_toml",
+    "coercion_heterogeneous_array_yaml",
+    "empty_map_scalar_variant_sibling",
+    "mixed_scalar_carriers",
+    "native_records_in_heterogeneous_sequences",
+    "pair_sequence",
+    "record_tuple_integer_widths",
+    "simple_dict",
+    "simple_sequence",
+    "triple_sequence",
+    "tuple_map_value",
+    "tuple_pair_record_field",
+    "tuple_pair_top_level",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_triple_record_field",
+    "tuple_triple_top_level",
+  ], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "simple_dict",
+    "tuple_map_value",
+  ], languages = ["Cpp"], options = { sequence_format = "ARRAY", language_version = "CPP17" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "simple_dict",
+    "tuple_map_value",
+  ], languages = ["Cpp"], options = { sequence_format = "ARRAY", language_version = "CPP20" } },
+  { cases = [
+    "coercion_heterogeneous_array_json",
+    "coercion_heterogeneous_array_toml",
+    "coercion_heterogeneous_array_yaml",
+    "narrowed_empty_list_mixed_sibling",
+    "pair_sequence",
+    "simple_dict",
+    "simple_sequence",
+    "triple_sequence",
+    "tuple_map_value",
+  ], languages = ["Nim"], options = { sequence_format = "SEQ" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "narrowed_empty_list_mixed_sibling",
+    "native_records_in_heterogeneous_sequences",
+    "simple_dict",
+    "tuple_map_value",
+  ], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+  { cases = [
+    "coercion_heterogeneous_array_json",
+    "coercion_heterogeneous_array_toml",
+    "coercion_heterogeneous_array_yaml",
+    "mixed_scalar_carriers",
+    "narrowed_empty_list_mixed_sibling",
+    "native_records_in_heterogeneous_sequences",
+    "pair_sequence",
+    "simple_dict",
+    "simple_sequence",
+    "triple_sequence",
+    "tuple_map_value",
+  ], languages = ["Rust"], options = { sequence_format = "VEC" } },
+  { cases = ["record_null_substitutions"], languages = ["Mojo", "V"], variable_form = "BothVariableForms" },
+  { cases = ["nested_mixed_inner", "ordered_map", "record_null_substitutions"], languages = ["Nim"], variable_form = "BothVariableForms" },
+  { cases = ["nested_mixed_inner", "record_null_substitutions"], languages = ["Rust"], variable_form = "BothVariableForms" },
+]
+
+[[rejection]]
+error = "HeterogeneousSetError"
+match = "Set contains heterogeneous scalar elements that cannot be represented in the target language"
+applies = [
+  { cases = [
+    "mixed_number_set",
+    "mixed_numeric_set_integer_identity",
+    "mixed_set",
+    "nested_mixed_set",
+    "record_fallback_empty_and_mixed_set_values",
+  ], languages = ["Odin"] },
+  { cases = ["mixed_set"], languages = ["CSharp", "Kotlin"], options = { set_format = "SORTED_SET" } },
+  { cases = ["mixed_set"], languages = ["Java", "Scala"], options = { set_format = "TREE_SET" } },
+]
+
+[[rejection]]
+error = "HeterogeneousSiblingListsError"
+match = "Sibling list contains dicts with different record shapes; the RECORD heterogeneous strategy cannot represent a heterogeneous sequence of record shapes"
+applies = [
+  { cases = ["tuple_conflicting_record_fields"], languages = ["CSharp", "Swift"] },
+  { cases = ["native_record_list", "tuple_conflicting_record_fields", "tuple_nested_conflicting_record_fields"], languages = ["Crystal"] },
+  { cases = [
+    "record_fallback_empty_and_mixed_set_values",
+    "record_fallback_empty_array",
+    "record_fallback_helper_name_zkv",
+    "record_fallback_helper_name_zval",
+    "record_fallback_map_non_scalar",
+    "record_fallback_set_values",
+    "record_nested_map_fallback",
+    "record_nested_map_fallback_homogeneous",
+    "tuple_conflicting_record_fields",
+    "tuple_nested_conflicting_record_fields",
+    "widened_record_map_integer_and_null",
+    "widened_record_map_integer_values",
+    "widened_record_map_mixed_values",
+    "widened_record_map_null_values",
+  ], languages = ["Python"] },
+  { cases = ["tuple_conflicting_record_fields", "tuple_nested_conflicting_record_fields"], languages = ["Rust"] },
+  { cases = ["mixed_type_dicts_in_sequence"], languages = ["C"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "mixed_type_dicts_in_sequence",
+    "nested_variant_map_empty_sibling",
+    "record_optional_unify",
+  ], languages = ["CSharp", "Crystal", "Kotlin", "Python", "Scala", "Swift"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "mixed_type_dicts_in_sequence",
+    "native_record_list",
+    "nested_variant_map_empty_sibling",
+    "record_optional_unify",
+    "tuple_conflicting_record_fields",
+  ], languages = ["Cpp"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "mixed_type_dicts_in_sequence",
+    "nested_variant_map_empty_sibling",
+  ], languages = ["D", "Go", "Java", "Odin", "Rust", "V", "Zig"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "nested_variant_map_empty_sibling",
+    "record_optional_unify",
+  ], languages = ["Nim"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = ["tuple_nested_conflicting_record_fields"], languages = ["Cpp"], options = { heterogeneous_strategy = "RECORD", language_version = "CPP17" } },
+  { cases = ["tuple_nested_conflicting_record_fields"], languages = ["Cpp"], options = { heterogeneous_strategy = "RECORD", language_version = "CPP20" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "mixed_type_dicts_in_sequence",
+    "nested_variant_map_empty_sibling",
+    "tuple_nested_conflicting_record_fields",
+  ], languages = ["Kotlin"], options = { heterogeneous_strategy = "TUPLE" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "mixed_type_dicts_in_sequence",
+    "nested_variant_map_empty_sibling",
+  ], languages = ["Rust"], options = { heterogeneous_strategy = "TUPLE" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "mixed_type_dicts_in_sequence",
+    "nested_variant_map_empty_sibling",
+    "tuple_conflicting_record_fields",
+    "tuple_nested_conflicting_record_fields",
+  ], languages = ["Scala"], options = { heterogeneous_strategy = "TUPLE" } },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "mixed_type_dicts_in_sequence",
+    "nested_variant_map_empty_sibling",
+    "tuple_nested_conflicting_record_fields",
+  ], languages = ["Cpp"], options = { heterogeneous_strategy = "TUPLE", language_version = "CPP14" } },
+  { cases = ["tuple_conflicting_record_fields"], languages = ["Cpp"], options = { language_version = "CPP14" } },
+  { cases = ["tuple_conflicting_record_fields"], languages = ["Java", "Scala"], options = { sequence_format = "ARRAY" } },
+  { cases = ["native_record_list", "record_optional_unify"], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+  { cases = ["tuple_conflicting_record_fields"], languages = ["Kotlin"], options = { sequence_format = "LIST" } },
+  { cases = [
+    "native_record_list",
+    "tuple_conflicting_record_fields",
+    "tuple_nested_conflicting_record_fields",
+  ], languages = ["Kotlin"], options = { sequence_format = "TUPLE" } },
+  { cases = ["native_record_list", "record_optional_unify"], languages = ["Rust"], options = { sequence_format = "TUPLE" } },
+  { cases = ["native_record_list", "tuple_nested_conflicting_record_fields"], languages = ["Swift"], options = { sequence_format = "TUPLE" } },
+  { cases = ["record_optional_unify"], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+]
+
+[[rejection]]
+error = "HeterogeneousSiblingListsError"
+match = "Sibling lists contain heterogeneous scalar types that cannot be represented in the target language"
+applies = [
+  { cases = [
+    "nested_deep_mixed",
+    "nested_list_mixed_numeric",
+    "nested_list_mixed_sibling_types",
+    "nested_sibling_sequence_overrides",
+  ], languages = ["Dhall", "Mojo", "V"] },
+  { cases = ["nested_deep_mixed", "nested_list_mixed_sibling_types", "nested_sibling_sequence_overrides"], languages = ["Nim", "Rust"] },
+  { cases = ["multiline_sibling_list_widening", "nested_mixed_types"], languages = ["Dhall", "Mojo", "Nim", "Rust", "V"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = ["nested_mixed_types"], languages = ["Rust", "V"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = ["nested_mixed_types"], languages = ["Rust"], options = { heterogeneous_strategy = "TUPLE" } },
+  { cases = ["nested_list_mixed_numeric"], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+  { cases = ["nested_list_mixed_numeric"], languages = ["Nim"], options = { sequence_format = "SEQ" } },
+  { cases = ["nested_list_mixed_numeric"], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+  { cases = ["nested_list_mixed_numeric"], languages = ["Rust"], options = { sequence_format = "VEC" } },
+]
+
+[[rejection]]
+error = "HeterogeneousSiblingMapsError"
+match = "Container holds sibling maps whose value types force a widened dict slot that the target language cannot represent"
+applies = [
+  { cases = [
+    "deep_cousin_empty_map",
+    "deep_list_cousin_empty_map",
+    "mixed_nested_collection_types",
+    "mixed_sibling_maps",
+    "roundtrip_verifier_mismatches",
+    "widened_sibling_maps",
+  ], languages = ["Dhall"] },
+  { cases = [
+    "mixed_nested_collection_types",
+    "mixed_sibling_maps",
+    "nested_maps_with_opposed_value_types",
+    "roundtrip_verifier_mismatches",
+    "widened_sibling_maps",
+    "yaml_pairs_tag",
+  ], languages = ["Mojo"] },
+  { cases = [
+    "deep_cousin_empty_map",
+    "deep_list_cousin_empty_map",
+    "mixed_nested_collection_types",
+    "mixed_sibling_maps",
+    "nested_maps_with_opposed_value_types",
+    "roundtrip_verifier_mismatches",
+    "sibling_map_rendered_date",
+    "sibling_map_rendered_datetime",
+    "widened_sibling_maps",
+    "yaml_pairs_tag",
+  ], languages = ["Nim"] },
+  { cases = [
+    "mixed_nested_collection_types",
+    "nested_maps_with_opposed_value_types",
+    "roundtrip_verifier_mismatches",
+    "sibling_map_rendered_date",
+    "widened_sibling_maps",
+    "yaml_pairs_tag",
+  ], languages = ["Rust"] },
+  { cases = [
+    "mixed_nested_collection_types",
+    "nested_maps_with_opposed_value_types",
+    "roundtrip_verifier_mismatches",
+    "widened_sibling_maps",
+    "yaml_pairs_tag",
+  ], languages = ["V"] },
+  { cases = [
+    "sibling_map_rendered_epoch",
+    "sibling_map_rendered_epoch_reversed",
+    "sibling_maps_in_sequence_rendered_epoch",
+  ], languages = ["Nim", "Rust"], options = { datetime_format = "ISO" } },
+  { cases = ["nested_maps_with_opposed_value_types"], languages = ["Dhall"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = ["native_record_mixed_field_type_refinement"], languages = ["Cpp"], options = { heterogeneous_strategy = "ERROR", language_version = "CPP17" } },
+  { cases = ["native_record_mixed_field_type_refinement"], languages = ["Cpp"], options = { heterogeneous_strategy = "ERROR", language_version = "CPP20" } },
+  { cases = ["tuple_nested_conflicting_record_fields"], languages = ["Cpp"], options = { heterogeneous_strategy = "TUPLE", language_version = "CPP17" } },
+  { cases = ["tuple_nested_conflicting_record_fields"], languages = ["Cpp"], options = { heterogeneous_strategy = "TUPLE", language_version = "CPP20" } },
+  { cases = [
+    "deep_cousin_empty_map",
+    "deep_list_cousin_empty_map",
+    "nested_maps_with_opposed_value_types",
+    "roundtrip_verifier_mismatches",
+    "sibling_map_rendered_epoch",
+    "sibling_map_rendered_epoch_reversed",
+    "widened_sibling_maps",
+  ], languages = ["Cpp"], options = { language_version = "CPP17" } },
+  { cases = [
+    "deep_cousin_empty_map",
+    "deep_list_cousin_empty_map",
+    "nested_maps_with_opposed_value_types",
+    "roundtrip_verifier_mismatches",
+    "sibling_map_rendered_date",
+    "sibling_map_rendered_datetime",
+    "sibling_map_rendered_epoch",
+    "sibling_map_rendered_epoch_reversed",
+    "widened_sibling_maps",
+  ], languages = ["Cpp"], options = { language_version = "CPP20" } },
+  { cases = ["native_record_mixed_field_type_refinement", "sibling_maps_in_sequence_rendered_epoch"], languages = ["Nim"], options = { sequence_format = "ARRAY" } },
+  { cases = ["mixed_sibling_maps", "native_record_mixed_field_type_refinement"], languages = ["Rust"], options = { sequence_format = "TUPLE" } },
+  { cases = ["mixed_sibling_maps", "native_record_mixed_field_type_refinement"], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+  { cases = ["mixed_sibling_maps"], languages = ["Rust"], options = { sequence_format = "VEC" } },
+  { cases = ["sibling_map_rendered_epoch_reversed", "sibling_maps_in_sequence_rendered_epoch"], languages = ["Dhall", "Mojo", "Nim", "V"], options = { variable_type_hints = "SAFE" } },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "C\\# 'const' requires a compile\\-time constant initializer, but JsonNode expressions are not constant\\. Use 'readonly' or remove the 'const' modifier\\."
+applies = [
+  { cases = ["scalar_int"], languages = ["CSharp"], options = { json_type = "SYSTEM_TEXT_JSON_NODE" }, variable_modifiers = ["CONST"] },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "C\\# 'const' requires a compile\\-time constant initializer, but collection and date/datetime literals are not constant expressions\\. Use 'readonly' or remove the 'const' modifier\\."
+applies = [
+  { cases = [
+    "datetime_list_modifiers",
+    "empty_set",
+    "immutable_sequence_declaration",
+    "mixed_numeric_set_integer_identity",
+    "nested_sequence_declaration_modifiers",
+    "record_field_modifiers",
+    "scalar_date",
+    "scalar_time",
+    "sequence_declaration_modifiers",
+    "set",
+    "simple_dict",
+  ], languages = ["CSharp"], variable_modifiers = ["CONST"] },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Dart CONST requires a constant\\-expression initializer, but the DART date format produces a DateTime\\.parse\\(…\\) call which is not a constant expression\\. Use ISO instead\\."
+applies = [
+  { cases = ["scalar_date"], languages = ["Dart"], options = { declaration_style = "CONST" } },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Dart CONST requires a constant\\-expression initializer, but the DART datetime format produces a DateTime\\.parse\\(…\\) call which is not a constant expression\\. Use ISO instead\\."
+applies = [
+  { cases = ["scalar_datetime"], languages = ["Dart"], options = { declaration_style = "CONST" } },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Haskell sequence_format=TUPLE cannot represent a tuple nested inside the generated Val ADT\\. Use LIST or select the Aeson JSON type\\."
+applies = [
+  { cases = ["nested_tuple_openers"], languages = ["Haskell"] },
+  { cases = [
+    "array_map_element_type",
+    "binary_with_empty_sibling",
+    "coercion_heterogeneous_array_toml",
+    "coercion_homogeneous_array_toml",
+    "coercion_uniform_dict_shapes_toml",
+    "dict_with_list_value",
+    "empty_list_map_values",
+    "empty_map_nested_epoch_value",
+    "empty_map_nested_list_value",
+    "empty_map_nested_value",
+    "empty_nested_sequence_map_values",
+    "four_dimensional_empty_lists",
+    "list_of_maps_with_lists",
+    "map_of_dict_lists",
+    "map_of_int_arrays",
+    "map_of_string_arrays",
+    "map_of_wide_int_lists",
+    "mixed_scalar_and_collection_map",
+    "mixed_sibling_maps",
+    "narrowed_empty_list_map_values",
+    "narrowed_empty_list_mixed_sibling",
+    "narrowed_empty_list_null_sibling",
+    "native_record_mixed_field_type_refinement",
+    "native_records_in_heterogeneous_sequences",
+    "nested_array_maps",
+    "nested_array_type",
+    "nested_bool_list",
+    "nested_collection_type_hint",
+    "nested_empty_inner",
+    "nested_empty_list_map_sibling",
+    "nested_float_list",
+    "nested_list_mixed_numeric",
+    "nested_map_sequence_type",
+    "nested_positional_empty_list_cousins",
+    "nested_positional_empty_lists",
+    "nested_positional_empty_lists_reversed",
+    "nested_record_sequences",
+    "nested_sequence",
+    "nested_sequence_with_empty_sibling",
+    "nested_sibling_map_matching_values",
+    "ordered_map_type_hint",
+    "partially_populated_positional_empty_lists",
+    "positional_empty_lists_without_exemplar",
+    "ragged_map_sequence_values",
+    "rectangular_map_sequence_shapes",
+    "sequence_ragged_siblings",
+    "sibling_list_values_same_shape",
+    "time_list",
+    "tuple_fields_with_nested_vectors",
+    "tuple_map_value",
+  ], languages = ["Haskell"], options = { sequence_format = "TUPLE" } },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Java heterogeneous_strategy=RECORD requires sequence_format=ARRAY: a list\\-valued record component is typed from the array opener the value formatter emits, and other sequence formats \\(e\\.g\\. LIST \\-> List\\.of\\(\\.\\.\\.\\)\\) carry no element type\\. Use sequence_format=ARRAY\\."
+applies = [
+  { cases = ["record_tuple_integer_widths"], languages = ["Java"] },
+  { cases = ["record_optional_unify", "record_uniform_list_fields"], languages = ["Java"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = ["nested_record_sequences"], languages = ["Java"], options = { heterogeneous_strategy = "RECORD", sequence_format = "LIST" } },
+  { cases = [
+    "empty_sequence_record_mixture",
+    "empty_sequence_record_mixture_reversed",
+    "native_record_binary",
+    "native_record_boolean_fields",
+    "native_record_compact_separators",
+    "native_record_iso_temporal",
+    "native_record_large_integer",
+    "native_record_list",
+    "native_record_nested_fields",
+    "native_record_special_float_fields",
+    "native_record_temporal",
+    "opt_in_record_binary",
+    "opt_in_record_temporal",
+    "ordered_record_list_scalar",
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "record_empty_nested_list",
+    "record_empty_sibling_arrays",
+    "record_fallback_empty_and_mixed_set_values",
+    "record_fallback_map_non_scalar",
+    "record_fallback_set_values",
+    "record_field_type_split",
+    "record_list_field",
+    "record_list_field_type_split",
+    "record_list_of_records",
+    "record_list_ordered_map_nominal_values",
+    "record_nested_empty_lists",
+    "record_null_substitutions",
+    "record_null_substitutions_records",
+    "record_ordered_map_nested_nominal_lists",
+    "record_ordered_map_nested_nominal_parent_types",
+    "record_ordered_map_nominal_parent_types",
+    "record_primitive_sequence_fields",
+    "record_root_list_map_annotations",
+    "record_root_nested_map_annotations",
+    "record_root_ordered_map_annotations",
+    "record_scalar_array_value_initialization",
+    "record_sequence",
+    "record_sequence_empty_sibling",
+    "record_sequence_mixture_controls",
+    "tuple_conflicting_record_fields",
+    "tuple_nested_conflicting_record_fields",
+    "tuple_pair_record_field",
+    "tuple_pair_top_level",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_triple_record_field",
+    "tuple_triple_top_level",
+    "widened_record_map_integer_values",
+    "widened_record_map_mixed_values",
+  ], languages = ["Java"], options = { sequence_format = "LIST" } },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Java json_type renders data through ObjectMapper\\.readTree\\(\\.\\.\\.\\) and does not support class\\-field modifiers \\(public, private, protected, static\\), which require handling the checked parsing exception in a field initializer\\. Remove these modifiers to use a local declaration\\."
+applies = [
+  { cases = ["scalar_int"], languages = ["Java"], options = { json_type = "JACKSON_JSON_NODE" }, variable_modifiers = ["FINAL", "PUBLIC", "STATIC"] },
+  { cases = ["scalar_int"], languages = ["Java"], options = { json_type = "JACKSON_JSON_NODE" }, variable_modifiers = ["PRIVATE"] },
+  { cases = ["scalar_int"], languages = ["Java"], options = { json_type = "JACKSON_JSON_NODE" }, variable_modifiers = ["PROTECTED"] },
+  { cases = ["scalar_int"], languages = ["Java"], options = { json_type = "JACKSON_JSON_NODE" }, variable_modifiers = ["PUBLIC"] },
+  { cases = ["scalar_int"], languages = ["Java"], options = { json_type = "JACKSON_JSON_NODE" }, variable_modifiers = ["STATIC"] },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Rust CONST requires a constant\\-expression initializer, but the dict format produces a runtime ::from\\(\\[…\\]\\) call which is not a constant expression\\."
+applies = [
+  { cases = [
+    "empty_dict",
+    "empty_map_sibling_sequence",
+    "int_key_dict",
+    "map_mixed_int_widths",
+    "populated_and_empty_maps",
+    "time_dict",
+  ], languages = ["Rust"], options = { declaration_style = "CONST" } },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Rust CONST requires a constant\\-expression initializer, but the set format produces a runtime ::from\\(\\[…\\]\\) call which is not a constant expression\\."
+applies = [
+  { cases = ["set_mixed_int_widths"], languages = ["Rust"], options = { declaration_style = "CONST" } },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Rust STATIC requires a constant\\-expression initializer, but the dict format produces a runtime ::from\\(\\[…\\]\\) call which is not a constant expression\\."
+applies = [
+  { cases = [
+    "empty_dict",
+    "empty_map_sibling_sequence",
+    "int_key_dict",
+    "map_mixed_int_widths",
+    "populated_and_empty_maps",
+    "time_dict",
+  ], languages = ["Rust"], options = { declaration_style = "STATIC" } },
+]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Rust STATIC requires a constant\\-expression initializer, but the set format produces a runtime ::from\\(\\[…\\]\\) call which is not a constant expression\\."
+applies = [
+  { cases = ["set_mixed_int_widths"], languages = ["Rust"], options = { declaration_style = "STATIC" } },
+]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+match = "Bash does not support the dict key ''\\. Associative\\-array keys must be non\\-empty printable ASCII\\."
+applies = [
+  { cases = ["control_character_map_keys"], languages = ["Bash"] },
+]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+match = "Bash does not support the dict key 'line\\\\nbreak'\\. Associative\\-array keys must be non\\-empty printable ASCII\\."
+applies = [
+  { cases = ["escaped_mapping_keys"], languages = ["Bash"] },
+]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+match = "Dhall does not support the dict key \"line\\\\nbreak\"\\. Backtick\\-quoted labels must be non\\-empty and contain only printable ASCII \\(no backticks or control characters\\)\\."
+applies = [
+  { cases = ["escaped_mapping_keys"], languages = ["Dhall"] },
+]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+match = "MATLAB does not support the struct field name '08'\\. Field names must start with a letter and contain only letters, digits, and underscores\\."
+applies = [
+  { cases = ["leading_zero_string_mapping_key"], languages = ["Matlab"], options = { dict_format = "STRUCT" } },
+]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+match = "MATLAB does not support the struct field name '_'\\. Field names must start with a letter and contain only letters, digits, and underscores\\."
+applies = [
+  { cases = ["coercion_homogeneous_dict_toml"], languages = ["Matlab"] },
+]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+match = "MATLAB does not support the struct field name '__proto__'\\. Field names must start with a letter and contain only letters, digits, and underscores\\."
+applies = [
+  { cases = ["ordered_map_proto_key"], languages = ["Matlab"] },
+  { cases = ["dict_proto_key"], languages = ["Matlab"], options = { dict_format = "STRUCT" } },
+]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+match = "MATLAB does not support the struct field name 'a\"b'\\. Field names must start with a letter and contain only letters, digits, and underscores\\."
+applies = [
+  { cases = ["dict_escaped_quote_key"], languages = ["Matlab"], options = { dict_format = "STRUCT" } },
+]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+match = "MATLAB does not support the struct field name 'a\\\\x7fb'\\. Field names must start with a letter and contain only letters, digits, and underscores\\."
+applies = [
+  { cases = ["delete_character_in_key_and_value"], languages = ["Matlab"] },
+]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+match = "MATLAB does not support the struct field name 'quote\"backslash\\\\\\\\'\\. Field names must start with a letter and contain only letters, digits, and underscores\\."
+applies = [
+  { cases = ["escaped_mapping_keys"], languages = ["Matlab"] },
+]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+match = "Nix does not support the dict key \"line\\\\nbreak\"\\. Attribute names must be non\\-empty and must not contain control characters\\."
+applies = [
+  { cases = ["escaped_mapping_keys"], languages = ["Nix"] },
+]
+
+[[rejection]]
+error = "MixedDictKeysError"
+match = "Dict contains keys of mixed types that cannot be represented in the target language"
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys", "null_mapping_key"], languages = ["Dhall", "Mojo", "Nim", "V"] },
+  { cases = ["noncolliding_stringified_mapping_keys", "null_mapping_key"], languages = ["Rust"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "MixedDictKeysError"
+match = "Hcl stringifies distinct dict keys None and 'None' as 'None'"
+applies = [
+  { cases = ["null_mapping_key"], languages = ["Hcl"] },
+]
+
+[[rejection]]
+error = "MixedDictKeysError"
+match = "Perl stringifies distinct dict keys None and 'None' as 'None'"
+applies = [
+  { cases = ["null_mapping_key"], languages = ["Perl"] },
+]
+
+[[rejection]]
+error = "MixedDictKeysError"
+match = "Raku stringifies distinct dict keys None and 'None' as 'None'"
+applies = [
+  { cases = ["null_mapping_key"], languages = ["Raku"] },
+]
+
+[[rejection]]
+error = "MixedDictShapesError"
+match = "List contains dicts with different key sets that cannot be represented in the target language"
+applies = [
+  { cases = [
+    "empty_and_populated_mapping_sequence",
+    "empty_map_epoch_sibling",
+    "empty_map_epoch_value",
+    "empty_map_nested_epoch_value",
+    "empty_map_nested_list_value",
+    "empty_map_nested_value",
+    "empty_map_offset_epoch_value",
+    "empty_map_scalar_variant_sibling",
+    "empty_map_sibling_sequence",
+    "inconsistent_string_dict_shapes_in_seq",
+    "mixed_type_dicts_in_sequence",
+    "nested_empty_list_map_sibling",
+    "nested_empty_map_sibling",
+    "nested_variant_map_empty_sibling",
+    "populated_and_empty_maps",
+    "record_optional_unify",
+    "scalar_empty_and_populated_maps",
+    "typed_sibling_maps_same_value_type",
+    "widened_dict_elements",
+    "yaml_pairs_tag",
+  ], languages = ["Dhall"] },
+]
+
+[[rejection]]
+error = "MixedDictValuesError"
+match = "Dict contains list values nesting to different depths, which cannot share one map value type in the target language"
+applies = [
+  { cases = ["single_element_containers", "singleton_array_inference_context", "singleton_array_inference_policy"], languages = ["Dhall"] },
+  { cases = [
+    "single_element_containers",
+    "singleton_array_inference_context",
+    "singleton_array_inference_policy",
+    "widened_dict_elements",
+  ], languages = ["Mojo", "Nim", "Rust"] },
+  { cases = ["single_element_containers", "singleton_array_inference_policy", "widened_dict_elements"], languages = ["V"] },
+]
+
+[[rejection]]
+error = "MixedDictValuesError"
+match = "Dict contains values of mixed types that cannot be represented in the target language"
+applies = [
+  { cases = [
+    "comments_nested_mapping",
+    "deep_nesting",
+    "dict_keys_and_string_escapes",
+    "dict_proto_key",
+    "empty_orderedmap_value_in_dict",
+    "empty_sequence_and_integer_set_fields",
+    "int32_minimum_with_nested_list",
+    "mixed_scalar_and_collection_map",
+    "multiline_collection_comments",
+    "nested",
+    "opt_in_record_example",
+    "ordered_map_nested_values",
+    "ordered_map_proto_key",
+    "orderedmap_with_annotated_value",
+    "record_empty_dict_field",
+    "record_named_nested_record",
+    "record_named_shape",
+    "record_nonrecord_dict_field",
+    "record_time_key_with_scalar_substitution",
+    "roundtrip_verifier_object_order_and_numeric_equivalence",
+    "toml_multiline_element_comments",
+    "toml_nested_comments",
+    "variant_int32_boundaries_map",
+    "yaml_nested_comments",
+    "yaml_partially_outdented_comment",
+    "yaml_unread_comment_slots",
+  ], languages = ["Dhall", "Mojo"] },
+  { cases = [
+    "comments_nested_mapping",
+    "deep_nesting",
+    "dict_keys_and_string_escapes",
+    "int32_minimum_with_nested_list",
+    "mixed_scalar_and_collection_map",
+    "multiline_collection_comments",
+    "nested",
+    "opt_in_record_example",
+    "ordered_map_multiline_whitespace",
+    "ordered_map_nested_values",
+    "ordered_record_list_scalar",
+    "orderedmap_with_annotated_value",
+    "record_empty_dict_field",
+    "record_named_nested_record",
+    "record_named_shape",
+    "record_time_key_with_scalar_substitution",
+    "roundtrip_verifier_object_order_and_numeric_equivalence",
+    "toml_multiline_element_comments",
+    "toml_nested_comments",
+    "variant_int32_boundaries_map",
+    "yaml_nested_comments",
+    "yaml_partially_outdented_comment",
+    "yaml_unread_comment_slots",
+  ], languages = ["Nim"] },
+  { cases = [
+    "comments_nested_mapping",
+    "deep_nesting",
+    "dict_keys_and_string_escapes",
+    "empty_sequence_and_integer_set_fields",
+    "int32_minimum_with_nested_list",
+    "mixed_scalar_and_collection_map",
+    "multiline_collection_comments",
+    "nested",
+    "opt_in_record_example",
+    "record_empty_dict_field",
+    "record_nonrecord_dict_field",
+    "roundtrip_verifier_object_order_and_numeric_equivalence",
+    "toml_multiline_element_comments",
+    "toml_nested_comments",
+    "variant_int32_boundaries_map",
+    "yaml_nested_comments",
+    "yaml_partially_outdented_comment",
+    "yaml_unread_comment_slots",
+  ], languages = ["Rust"] },
+  { cases = [
+    "comments_nested_mapping",
+    "deep_nesting",
+    "dict_keys_and_string_escapes",
+    "dict_proto_key",
+    "empty_orderedmap_value_in_dict",
+    "empty_sequence_and_integer_set_fields",
+    "int32_minimum_with_nested_list",
+    "mixed_scalar_and_collection_map",
+    "multiline_collection_comments",
+    "nested",
+    "opt_in_record_example",
+    "ordered_map_nested_values",
+    "ordered_map_proto_key",
+    "ordered_record_list_scalar",
+    "orderedmap_with_annotated_value",
+    "record_empty_dict_field",
+    "record_named_nested_record",
+    "record_named_shape",
+    "record_nonrecord_dict_field",
+    "record_time_key_with_scalar_substitution",
+    "roundtrip_verifier_object_order_and_numeric_equivalence",
+    "toml_multiline_element_comments",
+    "toml_nested_comments",
+    "variant_int32_boundaries_map",
+    "yaml_nested_comments",
+    "yaml_partially_outdented_comment",
+    "yaml_unread_comment_slots",
+  ], languages = ["V"] },
+  { cases = ["dict_with_list_value"], languages = ["Rust"], options = { dict_format = "BTREE_MAP" } },
+  { cases = [
+    "dict_with_list_value",
+    "record_basic",
+    "record_nested_container",
+    "record_sequence",
+  ], languages = ["Dhall", "Mojo", "V"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = [
+    "record_basic",
+    "record_nested_container",
+    "record_nonrecord_dict_field",
+    "record_sequence",
+  ], languages = ["Nim"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = [
+    "native_record_list",
+    "record_basic",
+    "record_named_nested_record",
+    "record_named_shape",
+    "record_nested_container",
+    "record_sequence",
+  ], languages = ["Rust"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = ["dict_with_list_value"], languages = ["Nim", "Rust"], options = { heterogeneous_strategy = "ERROR", json_type = "NONE" } },
+  { cases = [
+    "dict_proto_key",
+    "empty_orderedmap_value_in_dict",
+    "ordered_map_proto_key",
+  ], languages = ["Nim"], options = { json_type = "NONE" } },
+  { cases = ["dict_proto_key", "empty_orderedmap_value_in_dict"], languages = ["Rust"], options = { json_type = "NONE" } },
+  { cases = ["record_time_key_with_scalar_substitution"], languages = ["Rust"], record_null_substitutions = true },
+  { cases = [
+    "dict_with_list_value",
+    "empty_map_scalar_variant_sibling",
+    "simple_dict",
+    "tuple_map_value",
+  ], languages = ["Nim"], options = { sequence_format = "ARRAY" } },
+  { cases = ["dict_with_list_value"], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+  { cases = [
+    "dict_with_list_value",
+    "empty_map_scalar_variant_sibling",
+    "simple_dict",
+    "tuple_map_value",
+  ], languages = ["Rust"], options = { sequence_format = "TUPLE" } },
+  { cases = ["dict_with_list_value"], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+  { cases = ["record_ordered_map_epoch_arrays"], languages = ["V"], variable_form = "NewVariable" },
+  { cases = ["dict_with_list_value"], languages = ["Nim", "Rust"], options = { variable_type_hints = "SAFE" } },
+]
+
+[[rejection]]
+error = "MixedDictValuesError"
+match = "Dict has values of mixed type families including a container, which this heterogeneous strategy cannot represent"
+applies = [
+  { cases = ["record_list_of_records", "tuple_pair_record_field", "tuple_triple_record_field"], languages = ["Dhall", "Mojo"] },
+  { cases = [
+    "dict_with_list_value",
+    "multiline_sibling_list_widening",
+    "record_basic",
+    "record_list_of_records",
+    "record_nested_container",
+    "record_nested_record",
+    "record_sequence",
+    "tuple_pair_record_field",
+    "tuple_record_field",
+    "tuple_record_sequence",
+    "tuple_triple_record_field",
+  ], languages = ["Rust"], options = { heterogeneous_strategy = "TAGGED_ENUM" } },
+  { cases = [
+    "dict_with_list_value",
+    "multiline_sibling_list_widening",
+    "record_basic",
+    "record_nested_container",
+    "record_nested_record",
+    "record_sequence",
+    "tuple_record_field",
+    "tuple_record_sequence",
+  ], languages = ["Dhall"], options = { heterogeneous_strategy = "UNION_TYPE" } },
+  { cases = [
+    "dict_with_list_value",
+    "multiline_sibling_list_widening",
+    "record_basic",
+    "record_nested_container",
+    "record_nested_record",
+    "record_sequence",
+    "tuple_record_field",
+    "tuple_record_sequence",
+  ], languages = ["Mojo"], options = { heterogeneous_strategy = "VARIANT" } },
+]
+
+[[rejection]]
+error = "MixedListValuesError"
+match = "List contains elements of mixed types that cannot be represented in the target language"
+applies = [
+  { cases = [
+    "array_map_element_type",
+    "binary_with_empty_sibling",
+    "dict_in_sequence_with_empty_sibling",
+    "empty_nested_sequence_map_values",
+    "empty_orderedmap_with_sibling",
+    "empty_sequence",
+    "heterogeneous_scalars_in_annotated_sequence",
+    "json_scalar_and_empty_map_sequence",
+    "json_scalar_and_empty_sequence",
+    "native_record_mixed_field_type_refinement",
+    "nested_sequence",
+    "nested_sibling_map_matching_values",
+    "ordered_map_in_sequence",
+    "orderedmap_with_empty_sibling",
+    "record_and_scalar_list",
+    "scalar_and_populated_map_sequence",
+    "scalar_and_populated_sequence",
+    "set_in_annotated_sequence",
+    "sibling_list_values_nested",
+    "sibling_list_values_same_shape",
+    "sibling_list_values_uniform_inner",
+    "tuple_fields_with_nested_vectors",
+    "tuple_nested_scope",
+    "tuple_populated_siblings",
+    "tuple_populated_then_empty",
+    "variant_int32_boundaries_sequence",
+    "widened_map_value_hint",
+    "yaml_nested_sequence_between_comments",
+    "yaml_rebound_anchor_collection",
+    "yaml_rebound_anchor_multiple",
+    "yaml_rebound_anchor_nested",
+    "yaml_scalar_and_empty_map_sequence",
+    "yaml_scalar_and_empty_sequence",
+  ], languages = ["Dhall"] },
+  { cases = [
+    "array_map_element_type",
+    "binary_with_empty_sibling",
+    "dict_in_sequence_with_empty_sibling",
+    "empty_nested_sequence_map_values",
+    "empty_orderedmap_with_sibling",
+    "empty_sequence",
+    "heterogeneous_scalars_in_annotated_sequence",
+    "json_scalar_and_empty_map_sequence",
+    "json_scalar_and_empty_sequence",
+    "native_record_mixed_field_type_refinement",
+    "nested_sequence",
+    "nested_sibling_map_matching_values",
+    "ordered_map_in_sequence",
+    "orderedmap_with_empty_sibling",
+    "record_and_scalar_list",
+    "scalar_and_populated_map_sequence",
+    "scalar_and_populated_sequence",
+    "scalar_empty_and_populated_maps",
+    "set_in_annotated_sequence",
+    "sibling_list_values_nested",
+    "sibling_list_values_same_shape",
+    "sibling_list_values_uniform_inner",
+    "tuple_fields_with_nested_vectors",
+    "tuple_nested_scope",
+    "tuple_populated_siblings",
+    "tuple_populated_then_empty",
+    "variant_int32_boundaries_sequence",
+    "widened_map_value_hint",
+    "yaml_nested_sequence_between_comments",
+    "yaml_rebound_anchor_collection",
+    "yaml_rebound_anchor_multiple",
+    "yaml_rebound_anchor_nested",
+    "yaml_scalar_and_empty_map_sequence",
+    "yaml_scalar_and_empty_sequence",
+  ], languages = ["Mojo"] },
+  { cases = [
+    "dict_in_sequence_with_empty_sibling",
+    "empty_orderedmap_with_sibling",
+    "empty_sequence",
+    "heterogeneous_scalars_in_annotated_sequence",
+    "json_scalar_and_empty_map_sequence",
+    "json_scalar_and_empty_sequence",
+    "ordered_map_in_sequence",
+    "orderedmap_with_empty_sibling",
+    "scalar_and_populated_map_sequence",
+    "scalar_and_populated_sequence",
+    "scalar_empty_and_populated_maps",
+    "sibling_list_values_nested",
+    "sibling_list_values_uniform_inner",
+    "tuple_nested_scope",
+    "tuple_populated_siblings",
+    "tuple_populated_then_empty",
+    "variant_int32_boundaries_sequence",
+    "yaml_nested_sequence_between_comments",
+    "yaml_rebound_anchor_collection",
+    "yaml_rebound_anchor_multiple",
+    "yaml_rebound_anchor_nested",
+  ], languages = ["Nim"] },
+  { cases = [
+    "dict_in_sequence_with_empty_sibling",
+    "empty_orderedmap_with_sibling",
+    "empty_sequence",
+    "ordered_map_in_sequence",
+    "orderedmap_with_empty_sibling",
+    "record_and_scalar_list",
+    "set_in_annotated_sequence",
+    "sibling_list_values_nested",
+    "sibling_list_values_uniform_inner",
+    "variant_int32_boundaries_sequence",
+    "yaml_nested_sequence_between_comments",
+    "yaml_rebound_anchor_collection",
+    "yaml_rebound_anchor_multiple",
+    "yaml_rebound_anchor_nested",
+    "yaml_scalar_and_empty_map_sequence",
+    "yaml_scalar_and_empty_sequence",
+  ], languages = ["Rust"] },
+  { cases = [
+    "array_map_element_type",
+    "binary_with_empty_sibling",
+    "dict_in_sequence_with_empty_sibling",
+    "empty_nested_sequence_map_values",
+    "empty_orderedmap_with_sibling",
+    "empty_sequence",
+    "empty_sequence_record_mixture",
+    "empty_sequence_record_mixture_reversed",
+    "heterogeneous_scalars_in_annotated_sequence",
+    "json_scalar_and_empty_map_sequence",
+    "json_scalar_and_empty_sequence",
+    "native_record_mixed_field_type_refinement",
+    "nested_sequence",
+    "nested_sibling_map_matching_values",
+    "ordered_map_in_sequence",
+    "orderedmap_with_empty_sibling",
+    "record_and_scalar_list",
+    "record_sequence_mixture_controls",
+    "scalar_and_populated_map_sequence",
+    "scalar_and_populated_sequence",
+    "scalar_empty_and_populated_maps",
+    "set_in_annotated_sequence",
+    "sibling_list_values_nested",
+    "sibling_list_values_same_shape",
+    "sibling_list_values_uniform_inner",
+    "tuple_fields_with_nested_vectors",
+    "tuple_nested_scope",
+    "tuple_populated_siblings",
+    "tuple_populated_then_empty",
+    "variant_int32_boundaries_sequence",
+    "widened_map_value_hint",
+    "yaml_nested_sequence_between_comments",
+    "yaml_rebound_anchor_collection",
+    "yaml_rebound_anchor_multiple",
+    "yaml_rebound_anchor_nested",
+    "yaml_scalar_and_empty_map_sequence",
+    "yaml_scalar_and_empty_sequence",
+  ], languages = ["V"] },
+  { cases = ["sibling_list_values_same_shape"], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+  { cases = ["sibling_list_values_same_shape"], languages = ["Rust"], options = { dict_format = "BTREE_MAP" } },
+  { cases = ["sibling_list_values_same_shape"], languages = ["Elm", "Haskell", "OCaml", "PureScript"], options = { dict_format = "RECORD" } },
+  { cases = ["widened_map_value_hint"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+  { cases = [
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "tuple_empty_then_populated",
+  ], languages = ["Dhall", "Mojo", "V"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = [
+    "record_and_scalar_list",
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "tuple_empty_then_populated",
+    "yaml_scalar_and_empty_map_sequence",
+    "yaml_scalar_and_empty_sequence",
+  ], languages = ["Nim"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = [
+    "json_scalar_and_empty_map_sequence",
+    "json_scalar_and_empty_sequence",
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "scalar_and_populated_map_sequence",
+    "scalar_and_populated_sequence",
+    "scalar_empty_and_populated_maps",
+  ], languages = ["Rust"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = ["native_record_mixed_field_type_refinement"], languages = ["Nim"], options = { heterogeneous_strategy = "ERROR", sequence_format = "SEQ" } },
+  { cases = ["tuple_empty_then_populated"], languages = ["Rust"], options = { heterogeneous_strategy = "ERROR", sequence_format = "VEC" } },
+  { cases = ["tuple_empty_then_populated"], languages = ["Rust"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = [
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "tuple_empty_then_populated",
+  ], languages = ["V"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = ["record_beside_scalar", "record_empty_list_among_scalars"], languages = ["Rust"], options = { heterogeneous_strategy = "RECORD", sequence_format = "VEC" } },
+  { cases = ["sibling_list_values_same_shape"], languages = ["Nim"], options = { json_type = "NONE" } },
+  { cases = [
+    "array_map_element_type",
+    "binary_with_empty_sibling",
+    "empty_nested_sequence_map_values",
+    "empty_sequence_record_mixture",
+    "empty_sequence_record_mixture_reversed",
+    "nested_sequence",
+    "nested_sibling_map_matching_values",
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "tuple_fields_with_nested_vectors",
+    "widened_map_value_hint",
+  ], languages = ["Cpp"], options = { sequence_format = "ARRAY" } },
+  { cases = [
+    "array_map_element_type",
+    "binary_with_empty_sibling",
+    "empty_sequence_record_mixture",
+    "empty_sequence_record_mixture_reversed",
+    "native_record_mixed_field_type_refinement",
+    "nested_sequence",
+    "nested_sibling_map_matching_values",
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "widened_map_value_hint",
+  ], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+  { cases = ["native_record_mixed_field_type_refinement"], languages = ["Cpp"], options = { sequence_format = "ARRAY", language_version = "CPP14" } },
+  { cases = [
+    "array_map_element_type",
+    "empty_nested_sequence_map_values",
+    "nested_sequence",
+    "nested_sibling_map_matching_values",
+    "tuple_fields_with_nested_vectors",
+    "widened_map_value_hint",
+  ], languages = ["Nim"], options = { sequence_format = "SEQ" } },
+  { cases = ["binary_with_empty_sibling"], languages = ["Nim"], options = { sequence_format = "SEQ", json_type = "NONE" } },
+  { cases = ["record_sequence_mixture_controls"], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+  { cases = [
+    "array_map_element_type",
+    "empty_nested_sequence_map_values",
+    "empty_sequence_record_mixture",
+    "empty_sequence_record_mixture_reversed",
+    "native_record_mixed_field_type_refinement",
+    "nested_sequence",
+    "nested_sibling_map_matching_values",
+    "record_sequence_mixture_controls",
+    "tuple_fields_with_nested_vectors",
+    "tuple_nested_scope",
+    "tuple_populated_siblings",
+    "tuple_populated_then_empty",
+    "widened_map_value_hint",
+  ], languages = ["Rust"], options = { sequence_format = "VEC" } },
+  { cases = ["binary_with_empty_sibling"], languages = ["Rust"], options = { sequence_format = "VEC", json_type = "NONE" } },
+  { cases = ["binary_with_empty_sibling"], languages = ["Nim", "Rust"], variable_form = "BothVariableForms" },
+  { cases = ["binary_with_empty_sibling"], languages = ["Nim"], options = { variable_type_hints = "SAFE" } },
+  { cases = [
+    "binary_with_empty_sibling",
+    "sibling_list_values_same_shape",
+    "tuple_empty_then_populated",
+  ], languages = ["Rust"], options = { variable_type_hints = "SAFE" } },
+]
+
+[[rejection]]
+error = "MixedListValuesError"
+match = "List has values of mixed type families including a container, which this heterogeneous strategy cannot represent"
+applies = [
+  { cases = [
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "tuple_empty_then_populated",
+  ], languages = ["Mojo"], options = { heterogeneous_strategy = "VARIANT" } },
+]
+
+[[rejection]]
+error = "TupleArityNotRepresentableError"
+match = "a heterogeneous scalar array of 4 elements has no native fixed\\-size tuple in the target language"
+applies = [
+  { cases = [
+    "tuple_int_key_dict_value",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_top_level",
+  ], languages = ["Kotlin"], options = { heterogeneous_strategy = "TUPLE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableEmptyDictError"
+match = "^$"
+applies = [
+  { cases = [
+    "deep_cousin_empty_map",
+    "deep_list_cousin_empty_map",
+    "empty_and_populated_mapping_sequence",
+    "empty_dicts_in_sequence",
+    "empty_map_epoch_sibling",
+    "empty_map_epoch_value",
+    "empty_map_nested_epoch_value",
+    "empty_map_nested_value",
+    "empty_map_offset_epoch_value",
+    "empty_map_scalar_variant_sibling",
+    "empty_map_sibling_sequence",
+    "empty_ordered_map",
+    "empty_orderedmap_with_sibling",
+    "json5_comment_empty_dict",
+    "json5_comment_nested_empty_dicts",
+    "json_scalar_and_empty_map_sequence",
+    "jsonc_comment_empty_dict",
+    "jsonc_comment_nested_empty_dicts",
+    "nested_variant_map_empty_sibling",
+    "populated_and_empty_maps",
+    "record_empty_dict_field",
+    "record_nonrecord_dict_field",
+    "scalar_empty_and_populated_maps",
+    "single_element_containers",
+    "typed_sibling_maps_empty_values",
+    "widened_dict_elements",
+    "yaml_scalar_and_empty_map_sequence",
+  ], languages = ["Cobol"] },
+  { cases = [
+    "empty_dict",
+    "empty_orderedmap_value_in_dict",
+    "nested_empty_map_sibling",
+  ], languages = ["Cobol"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "C cannot represent a record\\-shaped dict \\(or a list whose every element is one\\) nested under a non\\-record container \\-\\- a non\\-all\\-record list, a non\\-record dict, an ordered map, or a set \\-\\- under the RECORD heterogeneous strategy: it renders as a generated struct, which is not a CVal union member, so it is representable only as a record\\-field value, an element of such a field's struct array, or the document root \\(cf\\. the set / non\\-record\\-dict field boundary tracked in \\#2317\\)"
+applies = [
+  { cases = [
+    "empty_sequence_record_mixture",
+    "empty_sequence_record_mixture_reversed",
+    "ordered_record_list_scalar",
+    "record_empty_sibling_arrays",
+    "record_list_ordered_map_nominal_values",
+    "record_nested_in_ordered_map",
+    "record_ordered_map_nested_nominal_lists",
+    "record_ordered_map_nested_nominal_parent_types",
+    "record_ordered_map_nested_nominal_values",
+    "record_ordered_map_nominal_parent_types",
+    "record_ordered_map_nominal_values",
+    "record_ordered_map_parent_shapes",
+    "record_sequence_empty_sibling",
+    "record_sequence_mixture_controls",
+  ], languages = ["C"] },
+  { cases = [
+    "empty_map_scalar_variant_sibling",
+    "native_record_mixed_field_type_refinement",
+    "native_records_in_heterogeneous_sequences",
+    "nested_record_sequences",
+    "nested_variant_map_empty_sibling",
+    "record_and_scalar_list",
+    "record_beside_scalar",
+  ], languages = ["C"], options = { heterogeneous_strategy = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "C\\+\\+ ARRAY cannot construct nested heterogeneous values with incompatible element types"
+applies = [
+  { cases = [
+    "empty_map_nested_list_value",
+    "empty_map_nested_value",
+    "mixed_sibling_maps",
+    "narrowed_empty_list_mixed_sibling",
+    "narrowed_empty_list_null_sibling",
+    "nested_list_mixed_numeric",
+    "nested_positional_empty_list_cousins",
+    "nested_positional_empty_lists",
+    "nested_positional_empty_lists_reversed",
+    "nested_sequence_with_empty_sibling",
+    "partially_populated_positional_empty_lists",
+    "record_empty_nested_list",
+    "record_empty_sibling_arrays",
+    "record_nested_empty_lists",
+    "record_sequence_empty_sibling",
+    "record_sequence_mixture_controls",
+    "sequence_ragged_siblings",
+  ], languages = ["Cpp"], options = { sequence_format = "ARRAY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "C\\+\\+ record field name 'short' is reserved"
+applies = [
+  { cases = ["native_record_sequence_fields"], languages = ["Cpp"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Cpp cannot represent a record as the value of a mapping that is not itself a record under the RECORD heterogeneous strategy: the mapping's value type is inferred from the dict the record was written from, so it would name a map where the literal writes a struct"
+applies = [
+  { cases = [
+    "record_list_field_type_split",
+    "record_list_ordered_map_nominal_values",
+    "record_ordered_map_nested_nominal_lists",
+    "record_ordered_map_nested_nominal_parent_types",
+    "record_ordered_map_nested_nominal_values",
+    "record_ordered_map_nominal_parent_types",
+    "record_ordered_map_nominal_values",
+    "record_ordered_map_parent_shapes",
+    "record_root_list_map_annotations",
+    "record_root_nested_map_annotations",
+    "record_root_ordered_map_annotations",
+  ], languages = ["Cpp"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Crystal json_type cannot embed '\\#\\{' in a string value: Crystal's %\\(\\.\\.\\.\\) percent literal would interpret it as string interpolation\\."
+applies = [
+  { cases = ["string_with_hash"], languages = ["Crystal"], options = { json_type = "JSON_ANY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Crystal json_type cannot embed a backslash in a string value: it would break the JSON\\.parse\\(%\\(\\.\\.\\.\\)\\) wrapper\\."
+applies = [
+  { cases = [
+    "escaped_mapping_keys",
+    "multiline_string",
+    "string_with_backslash",
+  ], languages = ["Crystal"], options = { json_type = "JSON_ANY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Crystal json_type cannot embed a close parenthesis in a string value: it would break the JSON\\.parse\\(%\\(\\.\\.\\.\\)\\) wrapper\\."
+applies = [
+  { cases = ["string_raw_json_terminator"], languages = ["Crystal"], options = { json_type = "JSON_ANY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Crystal json_type cannot embed a double quote in a string value: it would break the JSON\\.parse\\(%\\(\\.\\.\\.\\)\\) wrapper\\."
+applies = [
+  { cases = ["json_string_escaping"], languages = ["Crystal"] },
+  { cases = [
+    "dict_escaped_quote_key",
+    "long_string_literal",
+    "string_escaped_quotes_and_dashes",
+  ], languages = ["Crystal"], options = { json_type = "JSON_ANY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Crystal json_type cannot embed a open parenthesis in a string value: it would break the JSON\\.parse\\(%\\(\\.\\.\\.\\)\\) wrapper\\."
+applies = [
+  { cases = ["string_with_percent"], languages = ["Crystal"], options = { json_type = "JSON_ANY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "D cannot represent a heterogeneous scalar list, a set, an ordered map or a non\\-record dict under the RECORD heterogeneous strategy"
+applies = [
+  { cases = [
+    "empty_sequence_record_mixture",
+    "empty_sequence_record_mixture_reversed",
+    "heterogeneous_time_string",
+    "ordered_record_list_scalar",
+    "record_empty_dict_in_any_sequence",
+    "record_fallback_empty_and_mixed_set_values",
+    "record_fallback_helper_name_zkv",
+    "record_fallback_helper_name_zval",
+    "record_fallback_set_values",
+    "record_list_ordered_map_nominal_values",
+    "record_nested_in_ordered_map",
+    "record_ordered_map_epoch_arrays",
+    "record_ordered_map_epoch_values",
+    "record_ordered_map_fields",
+    "record_ordered_map_nested_nominal_lists",
+    "record_ordered_map_nested_nominal_parent_types",
+    "record_ordered_map_nested_nominal_values",
+    "record_ordered_map_nominal_parent_types",
+    "record_ordered_map_nominal_values",
+    "record_ordered_map_parent_shapes",
+    "record_sequence_mixture_controls",
+    "tuple_pair_record_field",
+    "tuple_pair_top_level",
+    "tuple_triple_record_field",
+    "tuple_triple_top_level",
+  ], languages = ["D"] },
+  { cases = [
+    "empty_dict",
+    "heterogeneous_list_with_string",
+    "mixed_scalar_carriers",
+    "multiline_sibling_list_widening",
+    "native_record_mixed_field_type_refinement",
+    "native_records_in_heterogeneous_sequences",
+    "nested_mixed_inner",
+    "nested_mixed_types",
+    "ordered_map",
+    "record_and_scalar_list",
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "scalar_variant_list_empty_sibling",
+    "tuple_empty_then_populated",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_top_level",
+  ], languages = ["D"], options = { heterogeneous_strategy = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "D narrow\\-typed mode \\(json_type=None\\) cannot represent a heterogeneous list, a heterogeneous\\-valued dict, a non\\-record dict, a set, or an ordered map; use the default json_type=STD_JSON_VALUE instead"
+applies = [
+  { cases = [
+    "binary_with_empty_sibling",
+    "date_set",
+    "dates",
+    "delete_character_in_key_and_value",
+    "dict_proto_key",
+    "dict_with_list_value",
+    "dict_with_nulls",
+    "early_year_dates",
+    "empty_dict",
+    "empty_orderedmap_value_in_dict",
+    "epoch_boundary_set",
+    "four_dimensional_empty_lists",
+    "gregorian_reform_dates",
+    "long_string_before_list_comma",
+    "nested_empty_inner",
+    "nested_empty_list_map_sibling",
+    "nested_empty_map_sibling",
+    "nested_mixed_inner",
+    "nested_positional_empty_list_cousins",
+    "ordered_map",
+    "ordered_map_proto_key",
+    "sibling_list_values_same_shape",
+  ], languages = ["D"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Dhall UNION_TYPE can wrap scalar alternatives only; a scalar and a container cannot share one List type"
+applies = [
+  { cases = [
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "tuple_empty_then_populated",
+  ], languages = ["Dhall"], options = { heterogeneous_strategy = "UNION_TYPE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode cannot represent NoneType"
+applies = [
+  { cases = ["native_record_list"], languages = ["Elm"] },
+  { cases = ["nested_mixed_dict", "simple_dict", "widened_map_value_hint"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode cannot represent empty records"
+applies = [
+  { cases = ["empty_dict"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode cannot represent field ''"
+applies = [
+  { cases = ["control_character_map_keys", "empty_key_is_data"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode cannot represent field '08'"
+applies = [
+  { cases = ["leading_zero_string_mapping_key"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode cannot represent field '__proto__'"
+applies = [
+  { cases = ["dict_proto_key"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode cannot represent field 'a\"b'"
+applies = [
+  { cases = ["dict_escaped_quote_key"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode cannot represent field 1"
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode cannot represent field True"
+applies = [
+  { cases = ["bool_key_dict"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode cannot represent ordered maps"
+applies = [
+  { cases = ["ordered_map_date_key", "ordered_map_proto_key"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode cannot represent set"
+applies = [
+  { cases = ["int_set"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm record mode requires uniform record list types"
+applies = [
+  { cases = ["nested_empty_list_map_sibling", "nested_empty_map_sibling"], languages = ["Elm"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm\\(json_type=JSON_ENCODE_VALUE\\) cannot represent dict key 1: Json\\.Encode\\.object keys must be strings\\."
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Elm"], options = { json_type = "JSON_ENCODE_VALUE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm\\(json_type=JSON_ENCODE_VALUE\\) cannot represent dict key None: Json\\.Encode\\.object keys must be strings\\."
+applies = [
+  { cases = ["null_mapping_key"], languages = ["Elm"], options = { json_type = "JSON_ENCODE_VALUE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm\\(json_type=JSON_ENCODE_VALUE\\) cannot represent dict key True: Json\\.Encode\\.object keys must be strings\\."
+applies = [
+  { cases = ["bool_key_dict"], languages = ["Elm"], options = { json_type = "JSON_ENCODE_VALUE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Elm\\(json_type=JSON_ENCODE_VALUE\\) cannot represent dict key datetime\\.date\\(2024, 1, 15\\): Json\\.Encode\\.object keys must be strings\\."
+applies = [
+  { cases = ["ordered_map_date_key"], languages = ["Elm"], options = { json_type = "JSON_ENCODE_VALUE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Erlang\\(json_type=OTP_JSON\\) cannot represent dict key 1: json:encode/1 requires string keys\\."
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Erlang"], options = { json_type = "OTP_JSON" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Erlang\\(json_type=OTP_JSON\\) cannot represent dict key None: json:encode/1 requires string keys\\."
+applies = [
+  { cases = ["null_mapping_key"], languages = ["Erlang"], options = { json_type = "OTP_JSON" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Erlang\\(json_type=OTP_JSON\\) cannot represent dict key True: json:encode/1 requires string keys\\."
+applies = [
+  { cases = ["bool_key_dict"], languages = ["Erlang"], options = { json_type = "OTP_JSON" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Erlang\\(json_type=OTP_JSON\\) cannot represent dict key datetime\\.date\\(2024, 1, 15\\): json:encode/1 requires string keys\\."
+applies = [
+  { cases = ["ordered_map_date_key"], languages = ["Erlang"], options = { json_type = "OTP_JSON" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "F\\# anonymous record mode cannot represent NoneType"
+applies = [
+  { cases = ["native_record_list"], languages = ["FSharp"] },
+  { cases = [
+    "nested_mixed_dict",
+    "simple_dict",
+    "widened_map_value_hint",
+  ], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "F\\# anonymous record mode cannot represent field ''"
+applies = [
+  { cases = ["control_character_map_keys", "empty_key_is_data"], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "F\\# anonymous record mode cannot represent field '08'"
+applies = [
+  { cases = ["leading_zero_string_mapping_key"], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "F\\# anonymous record mode cannot represent field 'a\"b'"
+applies = [
+  { cases = ["dict_escaped_quote_key"], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "F\\# anonymous record mode cannot represent field 1"
+applies = [
+  { cases = ["int_key_dict", "noncolliding_stringified_mapping_keys"], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "F\\# anonymous record mode cannot represent field True"
+applies = [
+  { cases = ["bool_key_dict"], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "F\\# anonymous record mode cannot represent ordered maps"
+applies = [
+  { cases = ["ordered_map_date_key", "ordered_map_proto_key"], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "F\\# anonymous record mode cannot represent set"
+applies = [
+  { cases = ["int_set"], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "F\\# anonymous record mode requires uniform record list types"
+applies = [
+  { cases = ["nested_empty_list_map_sibling", "nested_empty_map_sibling"], languages = ["FSharp"], options = { dict_format = "ANONYMOUS_RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam nested sequences require sequence_format=LIST"
+applies = [
+  { cases = ["nested_tuple_openers"], languages = ["Gleam"] },
+  { cases = [
+    "array_map_element_type",
+    "binary_with_empty_sibling",
+    "coercion_heterogeneous_array_toml",
+    "coercion_homogeneous_array_toml",
+    "coercion_uniform_dict_shapes_toml",
+    "dict_with_list_value",
+    "empty_list_map_values",
+    "empty_map_nested_epoch_value",
+    "empty_map_nested_list_value",
+    "empty_map_nested_value",
+    "empty_nested_sequence_map_values",
+    "four_dimensional_empty_lists",
+    "list_of_maps_with_lists",
+    "map_of_dict_lists",
+    "map_of_int_arrays",
+    "map_of_string_arrays",
+    "map_of_wide_int_lists",
+    "mixed_scalar_and_collection_map",
+    "mixed_sibling_maps",
+    "narrowed_empty_list_map_values",
+    "narrowed_empty_list_mixed_sibling",
+    "narrowed_empty_list_null_sibling",
+    "native_record_mixed_field_type_refinement",
+    "native_records_in_heterogeneous_sequences",
+    "nested_array_maps",
+    "nested_array_type",
+    "nested_bool_list",
+    "nested_collection_type_hint",
+    "nested_empty_inner",
+    "nested_empty_list_map_sibling",
+    "nested_float_list",
+    "nested_list_mixed_numeric",
+    "nested_map_sequence_type",
+    "nested_positional_empty_list_cousins",
+    "nested_positional_empty_lists",
+    "nested_positional_empty_lists_reversed",
+    "nested_record_sequences",
+    "nested_sequence",
+    "nested_sequence_with_empty_sibling",
+    "nested_sibling_map_matching_values",
+    "ordered_map_type_hint",
+    "partially_populated_positional_empty_lists",
+    "positional_empty_lists_without_exemplar",
+    "ragged_map_sequence_values",
+    "rectangular_map_sequence_shapes",
+    "sequence_ragged_siblings",
+    "sibling_list_values_same_shape",
+    "time_list",
+    "tuple_fields_with_nested_vectors",
+    "tuple_map_value",
+  ], languages = ["Gleam"], options = { sequence_format = "TUPLE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot infer empty list element types"
+applies = [
+  { cases = ["narrowed_empty_list_map_values"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent NoneType"
+applies = [
+  { cases = ["native_record_list"], languages = ["Gleam"] },
+  { cases = ["nested_mixed_dict", "simple_dict", "widened_map_value_hint"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent empty records"
+applies = [
+  { cases = [
+    "empty_dict",
+    "nested_empty_list_map_sibling",
+    "nested_empty_map_sibling",
+  ], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent field ''"
+applies = [
+  { cases = ["control_character_map_keys", "empty_key_is_data"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent field '08'"
+applies = [
+  { cases = ["leading_zero_string_mapping_key"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent field '__proto__'"
+applies = [
+  { cases = ["dict_proto_key"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent field 'a\"b'"
+applies = [
+  { cases = ["dict_escaped_quote_key"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent field 'test'"
+applies = [
+  { cases = ["sibling_list_values_same_shape"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent field 1"
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent field True"
+applies = [
+  { cases = ["bool_key_dict"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent ordered maps"
+applies = [
+  { cases = ["ordered_map_date_key", "ordered_map_proto_key"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam record mode cannot represent set"
+applies = [
+  { cases = ["int_set"], languages = ["Gleam"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Go RECORD cannot give a nested record list and its empty sibling one compatible declared type"
+applies = [
+  { cases = ["record_empty_sibling_arrays", "record_sequence_empty_sibling", "record_sequence_mixture_controls"], languages = ["Go"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot infer empty list element types"
+applies = [
+  { cases = ["empty_list", "narrowed_empty_list_map_values"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent NoneType"
+applies = [
+  { cases = ["native_record_list"], languages = ["Haskell"] },
+  { cases = ["nested_mixed_dict", "simple_dict", "widened_map_value_hint"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent empty records"
+applies = [
+  { cases = [
+    "empty_dict",
+    "nested_empty_list_map_sibling",
+    "nested_empty_map_sibling",
+  ], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent field ''"
+applies = [
+  { cases = ["control_character_map_keys", "empty_key_is_data"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent field '08'"
+applies = [
+  { cases = ["leading_zero_string_mapping_key"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent field '__proto__'"
+applies = [
+  { cases = ["dict_proto_key"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent field 'a\"b'"
+applies = [
+  { cases = ["dict_escaped_quote_key"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent field 'minimum'"
+applies = [
+  { cases = ["int32_minimum_with_nested_list"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent field 1"
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent field True"
+applies = [
+  { cases = ["bool_key_dict"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent ordered maps"
+applies = [
+  { cases = ["ordered_map_date_key", "ordered_map_proto_key"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Haskell record mode cannot represent set"
+applies = [
+  { cases = ["int_set"], languages = ["Haskell"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Java record field name 'long' is reserved"
+applies = [
+  { cases = ["record_tuple_fields"], languages = ["Java"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Java record field name 'short' is reserved"
+applies = [
+  { cases = ["native_record_sequence_fields"], languages = ["Java"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Java record field name 'switch' is reserved"
+applies = [
+  { cases = ["record_keyword_field"], languages = ["Java"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Java's Map\\.entry\\(\\) does not accept null keys"
+applies = [
+  { cases = ["null_mapping_key"], languages = ["Java"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Java's Map\\.entry\\(\\) does not accept null values; remove the null\\-valued entry"
+applies = [
+  { cases = [
+    "dict_all_null_trailing_comment",
+    "dict_null_leading_comment",
+    "dict_null_middle_inline_comment",
+    "dict_null_trailing_inline_comment",
+    "jsonc_comment_nulls",
+    "mixed_sibling_maps",
+    "null_field_policy",
+    "null_only_mapping",
+    "null_only_ordered_map",
+    "record_nested_map_fallback",
+    "roundtrip_verifier_object_order_and_numeric_equivalence",
+    "simple_dict",
+    "type_hints",
+    "widened_record_map_integer_and_null",
+    "widened_record_map_null_values",
+  ], languages = ["Java"] },
+  { cases = [
+    "dict_all_scalar_types",
+    "native_record_list",
+    "nested_mixed_dict",
+  ], languages = ["Java"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = ["dict_with_nulls"], languages = ["Java"], options = { json_type = "NONE" } },
+  { cases = ["record_null_substitutions"], languages = ["Java"], record_null_substitutions = false },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "JavaScript Date cannot preserve sub\\-millisecond datetime precision"
+applies = [
+  { cases = ["far_future_datetime_field"], languages = ["JavaScript", "TypeScript"] },
+  { cases = [
+    "datetime_list",
+    "fractional_epoch_boundaries",
+    "gregorian_reform_dates",
+    "scalar_datetime_microsecond",
+    "scalar_datetime_seconds_microsecond",
+  ], languages = ["JavaScript", "TypeScript"], options = { datetime_format = "JS" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Kotlin cannot represent explicit type hints for sibling sequences that mix empty and non\\-empty values"
+applies = [
+  { cases = ["record_tuple_fields"], languages = ["Kotlin"], options = { sequence_format = "LIST" } },
+  { cases = [
+    "narrowed_empty_list_map_values",
+    "narrowed_empty_list_mixed_sibling",
+    "narrowed_empty_list_null_sibling",
+    "nested_sequence_declaration_modifiers",
+    "partially_populated_positional_empty_lists",
+    "positional_empty_map_rows",
+    "positional_empty_rows",
+    "positional_mixed_rows",
+    "record_empty_nested_list",
+    "record_empty_sibling_arrays",
+    "record_nested_empty_lists",
+    "record_sequence_empty_sibling",
+    "record_sequence_mixture_controls",
+    "scalar_variant_list_empty_sibling",
+    "tuple_empty_first_sequence",
+    "tuple_empty_map_values",
+    "tuple_empty_mixed_sequence",
+  ], languages = ["Kotlin"], options = { variable_type_hints = "ALWAYS" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Lua cannot use null as a mapping key"
+applies = [
+  { cases = ["null_mapping_key"], languages = ["Lua"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Nim OBJECT_VARIANT cannot represent a set or ordered map alongside another value type"
+applies = [
+  { cases = ["multiline_sibling_list_widening"], languages = ["Nim"], options = { heterogeneous_strategy = "OBJECT_VARIANT" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Nim cannot infer an element type for a native sequence containing only null values"
+applies = [
+  { cases = ["yaml_null_only_sequence"], languages = ["Nim"], options = { heterogeneous_strategy = "OBJECT_VARIANT" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Nim cannot represent a NIM\\-table\\-literal date/datetime field under the RECORD heterogeneous strategy; use the ISO or EPOCH format"
+applies = [
+  { cases = ["native_record_iso_temporal", "native_record_temporal", "opt_in_record_temporal"], languages = ["Nim"] },
+  { cases = ["dict_all_scalar_types"], languages = ["Nim"], options = { heterogeneous_strategy = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Nim cannot represent a set or non\\-record\\-dict field under the RECORD heterogeneous strategy"
+applies = [
+  { cases = [
+    "record_empty_sibling_arrays",
+    "record_list_ordered_map_nominal_values",
+    "record_ordered_map_epoch_arrays",
+    "record_ordered_map_epoch_values",
+    "record_ordered_map_fields",
+    "record_ordered_map_nested_nominal_lists",
+    "record_ordered_map_nested_nominal_parent_types",
+    "record_ordered_map_nested_nominal_values",
+    "record_ordered_map_nominal_parent_types",
+    "record_ordered_map_nominal_values",
+    "record_ordered_map_parent_shapes",
+  ], languages = ["Nim"] },
+  { cases = ["multiline_sibling_list_widening", "record_nonrecord_dict_field"], languages = ["Nim"], options = { heterogeneous_strategy = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Nim native sequences require one inferable element type; this sequence contains incompatible elements"
+applies = [
+  { cases = [
+    "empty_sequence_record_mixture",
+    "empty_sequence_record_mixture_reversed",
+    "record_sequence_mixture_controls",
+    "record_tuple_integer_widths",
+    "tuple_conflicting_record_fields",
+    "tuple_nested_conflicting_record_fields",
+  ], languages = ["Nim"] },
+  { cases = [
+    "heterogeneous_list_with_string",
+    "heterogeneous_time_string",
+    "mixed_scalar_carriers",
+    "native_record_mixed_field_type_refinement",
+    "native_records_in_heterogeneous_sequences",
+    "nested_mixed_inner",
+    "nested_mixed_types",
+    "record_and_scalar_list",
+    "record_beside_scalar",
+    "record_empty_list_among_scalars",
+    "scalar_variant_list_empty_sibling",
+    "tuple_empty_then_populated",
+    "tuple_int_key_dict_value",
+    "tuple_pair_record_field",
+    "tuple_pair_top_level",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+    "tuple_top_level",
+    "tuple_triple_record_field",
+    "tuple_triple_top_level",
+  ], languages = ["Nim"], options = { heterogeneous_strategy = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Nim ordered tables require one value type; record values with distinct generated types have no common type"
+applies = [
+  { cases = ["record_list_field_type_split"], languages = ["Nim"], options = { heterogeneous_strategy = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Nim record field name 'type' is reserved"
+applies = [
+  { cases = ["mixed_type_dicts_in_sequence"], languages = ["Nim"], options = { heterogeneous_strategy = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Nim renders a sequence as a fixed\\-size array, whose length is part of its type at every level it nests, so sibling sequences of the same outer length whose nested sequences differ in length have no common type"
+applies = [
+  { cases = ["record_empty_nested_list"], languages = ["Nim"], options = { declaration_style = "CONST" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot infer empty list element types"
+applies = [
+  { cases = ["narrowed_empty_list_map_values"], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot represent NoneType"
+applies = [
+  { cases = ["native_record_list"], languages = ["OCaml"] },
+  { cases = ["nested_mixed_dict", "simple_dict", "widened_map_value_hint"], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot represent empty records"
+applies = [
+  { cases = [
+    "empty_dict",
+    "nested_empty_list_map_sibling",
+    "nested_empty_map_sibling",
+  ], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot represent field ''"
+applies = [
+  { cases = ["control_character_map_keys", "empty_key_is_data"], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot represent field '08'"
+applies = [
+  { cases = ["leading_zero_string_mapping_key"], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot represent field '__proto__'"
+applies = [
+  { cases = ["dict_proto_key"], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot represent field 'a\"b'"
+applies = [
+  { cases = ["dict_escaped_quote_key"], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot represent field 1"
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot represent field True"
+applies = [
+  { cases = ["bool_key_dict"], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot represent ordered maps"
+applies = [
+  { cases = ["ordered_map_date_key", "ordered_map_proto_key"], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "OCaml record mode cannot represent set"
+applies = [
+  { cases = ["int_set"], languages = ["OCaml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Odin json_type embeds the rendered JSON text inside a backtick\\-delimited raw string; a literal backtick in a string value or dict key would terminate the literal and yield non\\-compiling output\\."
+applies = [
+  { cases = ["multiline_string"], languages = ["Odin"], options = { json_type = "JSON_VALUE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Odin json_type parses the embedded JSON text at runtime, and its parser drops an object member whose name is empty, so the entry would be missing from the value\\."
+applies = [
+  { cases = ["control_character_map_keys"], languages = ["Odin"] },
+  { cases = ["empty_key_is_data"], languages = ["Odin"], options = { json_type = "JSON_VALUE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PHP arrays coerce numeric string mapping key '2' to an integer key"
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Php"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Plain COBOL cannot distinguish an empty container from spaces\\."
+applies = [
+  { cases = [
+    "deep_positional_empty_lists",
+    "dict_in_sequence_with_empty_sibling",
+    "dict_with_homogeneous_annotated_values",
+    "doubly_nested_list_with_empty_sibling",
+    "empty_and_populated_sequence_fields",
+    "empty_list",
+    "empty_list_map_values",
+    "empty_map_nested_list_value",
+    "empty_nested_sequence_map_values",
+    "empty_sequence",
+    "empty_sequence_and_integer_set_fields",
+    "empty_set",
+    "json5_comment_empty_list",
+    "json5_comment_nested_empty_lists",
+    "json_scalar_and_empty_sequence",
+    "jsonc_comment_empty_list",
+    "jsonc_comment_nested_empty_lists",
+    "mixed_nested_collection_types",
+    "narrowed_empty_list_map_values",
+    "narrowed_empty_list_mixed_sibling",
+    "nested_deep_empty",
+    "nested_list_mixed_sibling_types",
+    "nested_list_with_empty_sibling",
+    "nested_positional_empty_lists",
+    "nested_positional_empty_lists_reversed",
+    "nested_sequence_declaration_modifiers",
+    "nested_sequence_with_empty_sibling",
+    "orderedmap_with_annotated_value",
+    "orderedmap_with_empty_sibling",
+    "partially_populated_positional_empty_lists",
+    "positional_empty_list_siblings",
+    "positional_empty_lists_without_exemplar",
+    "positional_empty_map_rows",
+    "positional_empty_rows",
+    "positional_mixed_rows",
+    "record_empty_list_among_scalars",
+    "record_empty_nested_list",
+    "record_sequence",
+    "scalar_variant_list_empty_sibling",
+    "set_in_annotated_sequence",
+    "sibling_list_values_nested",
+    "time_union_type_hint",
+    "tuple_empty_first_sequence",
+    "tuple_empty_map_values",
+    "tuple_empty_mixed_sequence",
+    "tuple_empty_then_populated",
+    "tuple_fields_with_nested_vectors",
+    "tuple_nested_empty_sequences",
+    "tuple_populated_then_empty",
+    "yaml_scalar_and_empty_sequence",
+  ], languages = ["Cobol"] },
+  { cases = [
+    "binary_with_empty_sibling",
+    "four_dimensional_empty_lists",
+    "nested_empty_inner",
+    "nested_empty_list_map_sibling",
+    "nested_positional_empty_list_cousins",
+  ], languages = ["Cobol"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Plain COBOL cannot distinguish null from spaces\\."
+applies = [
+  { cases = [
+    "dict_all_null_trailing_comment",
+    "dict_all_scalar_types",
+    "dict_null_leading_comment",
+    "dict_null_middle_inline_comment",
+    "dict_null_trailing_inline_comment",
+    "heterogeneous_scalars_in_annotated_sequence",
+    "jsonc_comment_nulls",
+    "mixed_sibling_maps",
+    "narrowed_empty_list_null_sibling",
+    "nested_mixed_dict",
+    "nested_sequence",
+    "null_field_policy",
+    "null_list",
+    "null_only_mapping",
+    "null_only_ordered_map",
+    "roundtrip_verifier_object_order_and_numeric_equivalence",
+    "scalar_null_with_comment",
+    "simple_dict",
+    "simple_sequence",
+    "singleton_array_inference_context",
+    "type_hints",
+    "widened_map_value_hint",
+    "yaml_anchor_marks_in_comment",
+    "yaml_null_only_sequence",
+  ], languages = ["Cobol"] },
+  { cases = ["dict_with_nulls", "scalar_null"], languages = ["Cobol"], options = { json_type = "NONE" } },
+  { cases = ["record_null_substitutions"], languages = ["Cobol"], record_null_substitutions = false },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PowerShell hash\\-table keys cannot be null\\."
+applies = [
+  { cases = ["null_mapping_key"], languages = ["PowerShell"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript json_type=ARGONAUT_JSON can only represent dict keys as JSON object strings, not \\w+\\."
+applies = [
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["PureScript"], options = { json_type = "ARGONAUT_JSON" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode cannot represent NoneType"
+applies = [
+  { cases = ["native_record_list"], languages = ["PureScript"] },
+  { cases = ["nested_mixed_dict", "simple_dict", "widened_map_value_hint"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode cannot represent empty records"
+applies = [
+  { cases = ["empty_dict"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode cannot represent field ''"
+applies = [
+  { cases = ["control_character_map_keys", "empty_key_is_data"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode cannot represent field '08'"
+applies = [
+  { cases = ["leading_zero_string_mapping_key"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode cannot represent field '__proto__'"
+applies = [
+  { cases = ["dict_proto_key"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode cannot represent field 'a\"b'"
+applies = [
+  { cases = ["dict_escaped_quote_key"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode cannot represent field 1"
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode cannot represent field True"
+applies = [
+  { cases = ["bool_key_dict"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode cannot represent ordered maps"
+applies = [
+  { cases = ["ordered_map_date_key", "ordered_map_proto_key"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode cannot represent set"
+applies = [
+  { cases = ["int_set"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "PureScript record mode requires uniform record array types"
+applies = [
+  { cases = ["nested_empty_list_map_sibling", "nested_empty_map_sibling"], languages = ["PureScript"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Python record field name 'match' is reserved"
+applies = [
+  { cases = ["record_keyword_field"], languages = ["Python"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Roc native record mode cannot represent field ''"
+applies = [
+  { cases = ["control_character_map_keys", "empty_key_is_data"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Roc native record mode cannot represent field '08'"
+applies = [
+  { cases = ["leading_zero_string_mapping_key"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Roc native record mode cannot represent field '__proto__'"
+applies = [
+  { cases = ["dict_proto_key"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Roc native record mode cannot represent field 'a\"b'"
+applies = [
+  { cases = ["dict_escaped_quote_key"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Roc native record mode cannot represent field 'package'"
+applies = [
+  { cases = ["sibling_list_values_same_shape"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Roc native record mode cannot represent field 1"
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Roc native record mode cannot represent field True"
+applies = [
+  { cases = ["bool_key_dict"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Roc native record mode cannot represent ordered maps"
+applies = [
+  { cases = ["ordered_map_date_key", "ordered_map_proto_key"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Roc native record mode cannot represent sets"
+applies = [
+  { cases = ["int_set"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Roc native record mode requires uniform record list types"
+applies = [
+  { cases = ["nested_empty_list_map_sibling", "nested_empty_map_sibling"], languages = ["Roc"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust cannot annotate a collection whose element types differ: Vec<Record1>, Vec<String>\\."
+applies = [
+  { cases = ["record_empty_sibling_arrays"], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+  { cases = ["record_empty_sibling_arrays"], languages = ["Rust"], options = { sequence_format = "VEC" }, variable_form = "NewVariable" },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust cannot annotate a collection whose element types differ: Vec<String>, Vec<i32>\\."
+applies = [
+  { cases = ["record_empty_nested_list"], languages = ["Rust"], options = { heterogeneous_strategy = "RECORD", sequence_format = "VEC" } },
+  { cases = ["record_empty_nested_list"], languages = ["Rust"], options = { heterogeneous_strategy = "TUPLE" } },
+  { cases = ["record_empty_nested_list", "record_nested_empty_lists"], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+  { cases = ["record_nested_empty_lists"], languages = ["Rust"], options = { sequence_format = "VEC" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust cannot annotate a collection whose element types differ: Vec<String>, i32\\."
+applies = [
+  { cases = ["record_empty_list_among_scalars"], languages = ["Rust"], options = { heterogeneous_strategy = "TUPLE" } },
+  { cases = ["record_empty_list_among_scalars"], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust cannot annotate a collection whose element types differ: \\&'static str, bool, i32\\."
+applies = [
+  { cases = ["record_tuple_integer_widths", "tuple_triple_record_field"], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust cannot annotate a collection whose element types differ: \\&'static str, i32\\."
+applies = [
+  { cases = [
+    "tuple_pair_record_field",
+    "tuple_record_field",
+    "tuple_record_seq_sibling",
+    "tuple_record_sequence",
+  ], languages = ["Rust"], options = { sequence_format = "TUPLE_NESTED_VEC" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust cannot annotate a collection whose element types differ: \\&str, i32\\."
+applies = [
+  { cases = ["empty_map_scalar_variant_sibling", "nested_variant_map_empty_sibling"], languages = ["Rust"], options = { heterogeneous_strategy = "TAGGED_ENUM" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust cannot represent a non\\-record dict \\(empty, non\\-string\\-keyed, or an ordered map\\) as a field under the RECORD heterogeneous strategy"
+applies = [
+  { cases = [
+    "record_list_ordered_map_nominal_values",
+    "record_ordered_map_fields",
+    "record_ordered_map_nested_nominal_lists",
+    "record_ordered_map_nested_nominal_parent_types",
+    "record_ordered_map_nested_nominal_values",
+    "record_ordered_map_nominal_parent_types",
+    "record_ordered_map_nominal_values",
+    "record_ordered_map_parent_shapes",
+  ], languages = ["Rust"] },
+  { cases = ["multiline_sibling_list_widening"], languages = ["Rust"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = ["multiline_sibling_list_widening"], languages = ["Rust"], options = { heterogeneous_strategy = "TUPLE" } },
+  { cases = ["record_ordered_map_epoch_values"], languages = ["Rust"], variable_form = "NewVariable" },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust cannot widen divergent record maps whose values contain containers"
+applies = [
+  { cases = [
+    "record_fallback_empty_and_mixed_set_values",
+    "record_fallback_empty_array",
+    "record_fallback_helper_name_zkv",
+    "record_fallback_helper_name_zval",
+    "record_fallback_map_non_scalar",
+    "record_fallback_set_values",
+  ], languages = ["Rust"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust nested sibling lists require one concrete element type; these siblings are incompatible"
+applies = [
+  { cases = ["empty_map_nested_list_value", "empty_map_nested_value"], languages = ["Rust"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust ordered maps require one concrete value type; these values have incompatible collection types"
+applies = [
+  { cases = [
+    "ordered_map_nested_values",
+    "ordered_record_list_scalar",
+    "orderedmap_with_annotated_value",
+    "record_list_field_type_split",
+  ], languages = ["Rust"] },
+  { cases = ["ordered_map", "ordered_map_proto_key"], languages = ["Rust"], options = { json_type = "NONE" } },
+  { cases = ["ordered_map_multiline_whitespace", "record_ordered_map_epoch_arrays"], languages = ["Rust"], variable_form = "NewVariable" },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust renders a sequence as a fixed\\-size array, whose length is part of its type at every level it nests, so sibling sequences of the same outer length whose nested sequences differ in length have no common type"
+applies = [
+  { cases = ["epoch_nested_array_width"], languages = ["Rust"] },
+  { cases = ["record_empty_nested_list"], languages = ["Rust"], options = { declaration_style = "CONST" } },
+  { cases = ["record_empty_nested_list"], languages = ["Rust"], options = { declaration_style = "STATIC" } },
+  { cases = [
+    "empty_nested_sequence_map_values",
+    "map_of_int_arrays",
+    "nested_positional_empty_list_cousins",
+    "nested_positional_empty_lists",
+    "nested_positional_empty_lists_reversed",
+    "nested_sequence_with_empty_sibling",
+    "partially_populated_positional_empty_lists",
+    "ragged_map_sequence_values",
+    "record_sequence_mixture_controls",
+    "tuple_fields_with_nested_vectors",
+  ], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+  { cases = [
+    "empty_nested_sequence_map_values",
+    "map_of_int_arrays",
+    "ragged_map_sequence_values",
+    "tuple_fields_with_nested_vectors",
+  ], languages = ["Rust"], options = { sequence_format = "TUPLE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust renders a sequence as a fixed\\-size array, whose length is part of its type, so sibling sequences of lengths 0, 1 have no common type"
+applies = [
+  { cases = [
+    "empty_list_map_values",
+    "narrowed_empty_list_map_values",
+    "narrowed_empty_list_null_sibling",
+    "record_empty_sibling_arrays",
+    "record_sequence_empty_sibling",
+  ], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+  { cases = ["empty_list_map_values", "narrowed_empty_list_map_values"], languages = ["Rust"], options = { sequence_format = "TUPLE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust renders a sequence as a fixed\\-size array, whose length is part of its type, so sibling sequences of lengths 0, 2 have no common type"
+applies = [
+  { cases = ["narrowed_empty_list_mixed_sibling"], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust renders a sequence as a fixed\\-size array, whose length is part of its type, so sibling sequences of lengths 1, 2 have no common type"
+applies = [
+  { cases = ["record_empty_nested_list"], languages = ["Rust"], options = { declaration_style = "LET", sequence_format = "ARRAY" } },
+  { cases = ["record_nested_empty_lists"], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust renders a sequence as a fixed\\-size array, whose length is part of its type, so sibling sequences of lengths 1, 3 have no common type"
+applies = [
+  { cases = ["sequence_ragged_siblings"], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust renders a sequence as a fixed\\-size array, whose length is part of its type, so sibling sequences of lengths 2, 3 have no common type"
+applies = [
+  { cases = ["mixed_sibling_maps"], languages = ["Rust"], options = { sequence_format = "ARRAY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust set formats cannot use float members"
+applies = [
+  { cases = ["mixed_number_set", "mixed_numeric_set_integer_identity"], languages = ["Rust"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode cannot represent NoneType"
+applies = [
+  { cases = ["native_record_list"], languages = ["Sml"] },
+  { cases = ["nested_mixed_dict", "simple_dict"], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode cannot represent empty records"
+applies = [
+  { cases = ["empty_dict"], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode cannot represent field ''"
+applies = [
+  { cases = ["control_character_map_keys", "empty_key_is_data"], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode cannot represent field '08'"
+applies = [
+  { cases = ["leading_zero_string_mapping_key"], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode cannot represent field '__proto__'"
+applies = [
+  { cases = ["dict_proto_key"], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode cannot represent field 'a\"b'"
+applies = [
+  { cases = ["dict_escaped_quote_key"], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode cannot represent field 1"
+applies = [
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode cannot represent field True"
+applies = [
+  { cases = ["bool_key_dict"], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode cannot represent ordered maps"
+applies = [
+  { cases = ["ordered_map_date_key", "ordered_map_proto_key"], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode cannot represent set"
+applies = [
+  { cases = ["int_set"], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode requires 32\\-bit native integers"
+applies = [
+  { cases = ["native_record_large_integer"], languages = ["Sml"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "SML record mode requires uniform list element types"
+applies = [
+  { cases = [
+    "nested_empty_list_map_sibling",
+    "nested_empty_map_sibling",
+    "pair_sequence",
+    "sibling_list_values_same_shape",
+    "widened_map_value_hint",
+  ], languages = ["Sml"], options = { dict_format = "RECORD" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Scheme json_type=GUILE_JSON can only represent dict keys as JSON object strings, not \\w+"
+applies = [
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["Scheme"], options = { json_type = "GUILE_JSON" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Swift RECORD tuple fields cannot declare generated record types nested below multiple tuple levels"
+applies = [
+  { cases = ["nested_record_sequences"], languages = ["Swift"], options = { heterogeneous_strategy = "RECORD", sequence_format = "TUPLE" } },
+  { cases = [
+    "record_empty_sibling_arrays",
+    "record_sequence_empty_sibling",
+    "record_sequence_mixture_controls",
+  ], languages = ["Swift"], options = { sequence_format = "TUPLE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent dict key of type \\w+"
+applies = [
+  { cases = [
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_nested_values",
+    "record_time_key_substitution",
+    "record_time_key_with_scalar_substitution",
+    "tuple_int_key_dict_value",
+  ], languages = ["Ada", "Cobol", "Forth", "Fortran", "Go", "Haxe", "Jsonnet", "Matlab", "Nix", "ObjectiveC", "R", "SystemVerilog", "Toml", "VisualBasic"] },
+  { cases = [
+    "ordered_map_nested_values",
+    "record_time_key_substitution",
+    "record_time_key_with_scalar_substitution",
+    "tuple_int_key_dict_value",
+  ], languages = ["C", "Cpp", "Elm", "Odin", "PureScript", "Zig"] },
+  { cases = ["ordered_map_nested_values", "tuple_int_key_dict_value"], languages = ["CSharp"] },
+  { cases = [
+    "date_key_dict",
+    "int_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_int_keys",
+    "ordered_map_nested_values",
+    "record_time_key_substitution",
+    "record_time_key_with_scalar_substitution",
+    "tuple_int_key_dict_value",
+  ], languages = ["D"] },
+  { cases = [
+    "dict_wide_int_key",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_nested_values",
+    "tuple_int_key_dict_value",
+  ], languages = ["Dart"] },
+  { cases = ["dict_wide_int_key", "record_time_key_substitution"], languages = ["Dhall"] },
+  { cases = [
+    "dict_wide_int_key",
+    "ordered_map_nested_values",
+    "record_time_key_substitution",
+    "record_time_key_with_scalar_substitution",
+    "tuple_int_key_dict_value",
+  ], languages = ["FSharp", "Scala"] },
+  { cases = [
+    "dict_wide_int_key",
+    "null_mapping_key",
+    "ordered_map_nested_values",
+    "record_time_key_substitution",
+    "record_time_key_with_scalar_substitution",
+    "tuple_int_key_dict_value",
+  ], languages = ["Gleam", "Roc"] },
+  { cases = ["dict_wide_int_key", "null_mapping_key", "ordered_map_nested_values", "tuple_int_key_dict_value"], languages = ["Haskell"] },
+  { cases = [
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_nested_values",
+    "tuple_int_key_dict_value",
+  ], languages = ["JavaScript", "TypeScript"] },
+  { cases = [
+    "dict_wide_int_key",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_nested_values",
+    "record_time_key_substitution",
+    "record_time_key_with_scalar_substitution",
+    "tuple_int_key_dict_value",
+  ], languages = ["Json5", "Jsonc", "Occam"] },
+  { cases = [
+    "dict_wide_int_key",
+    "ordered_map_nested_values",
+    "record_time_key_substitution",
+    "record_time_key_with_scalar_substitution",
+  ], languages = ["Kotlin"] },
+  { cases = ["record_time_key_substitution"], languages = ["Nim", "V"] },
+  { cases = [
+    "null_mapping_key",
+    "ordered_map_nested_values",
+    "record_time_key_substitution",
+    "record_time_key_with_scalar_substitution",
+    "tuple_int_key_dict_value",
+  ], languages = ["OCaml", "Sml"] },
+  { cases = ["null_mapping_key", "ordered_map_nested_values", "tuple_int_key_dict_value"], languages = ["Php"] },
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Gleam", "Haskell", "OCaml", "Roc", "Sml"], options = { dict_format = "DEFAULT" } },
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Elm", "FSharp", "PureScript"], options = { dict_format = "DEFAULT", json_type = "NONE" } },
+  { cases = ["tuple_int_key_dict_value"], languages = ["Kotlin"], options = { heterogeneous_strategy = "ERROR" } },
+  { cases = ["tuple_int_key_dict_value"], languages = ["V"], options = { heterogeneous_strategy = "INTERFACE" } },
+  { cases = ["tuple_int_key_dict_value"], languages = ["Nim"], options = { heterogeneous_strategy = "OBJECT_VARIANT" } },
+  { cases = ["tuple_int_key_dict_value"], languages = ["Kotlin"], options = { heterogeneous_strategy = "RECORD" } },
+  { cases = ["tuple_int_key_dict_value"], languages = ["Dhall"], options = { heterogeneous_strategy = "UNION_TYPE" } },
+  { cases = ["bool_key_dict", "ordered_map_date_key"], languages = ["Haskell"], options = { json_type = "AESON_VALUE" } },
+  { cases = ["bool_key_dict", "ordered_map_date_key"], languages = ["Cobol"], options = { json_type = "CJSON" } },
+  { cases = ["bool_key_dict", "ordered_map_date_key"], languages = ["Gleam"], options = { json_type = "GLEAM_JSON_JSON" } },
+  { cases = ["bool_key_dict", "ordered_map_date_key"], languages = ["Nim"], options = { json_type = "JSON_NODE" } },
+  { cases = ["noncolliding_stringified_mapping_keys", "null_mapping_key"], languages = ["C", "CSharp", "Cpp", "Kotlin", "Odin", "Scala", "Zig"], options = { json_type = "NONE" } },
+  { cases = ["null_mapping_key"], languages = ["Elm", "FSharp", "PureScript"], options = { json_type = "NONE" } },
+  { cases = ["bool_key_dict", "ordered_map_date_key"], languages = ["D"], options = { json_type = "STD_JSON_VALUE" } },
+  { cases = ["bool_key_dict", "ordered_map_date_key"], languages = ["OCaml"], options = { json_type = "YOJSON_SAFE_T" } },
+  { cases = ["record_time_key_substitution", "record_time_key_with_scalar_substitution"], languages = ["CSharp", "Dart", "JavaScript", "Php", "TypeScript"], options = { string_format = "DOUBLE" } },
+  { cases = ["record_time_key_substitution", "record_time_key_with_scalar_substitution"], languages = ["Haskell"], options = { string_format = "EXPLICIT" } },
+  { cases = ["noncolliding_stringified_mapping_keys"], languages = ["Elm", "FSharp", "PureScript"], options = { variable_type_hints = "SAFE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent integer -?\\d+: value is outside the signed 64\\-bit range that JSON::Any exposes\\."
+applies = [
+  { cases = ["list_beyond_i64", "map_beyond_i64", "scalar_int_very_large"], languages = ["Crystal"], options = { json_type = "JSON_ANY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent negative zero: its JSON value type has no signed zero"
+applies = [
+  { cases = [
+    "float_negative_zero",
+    "negative_zero_constructor_arguments",
+    "toml_negative_integer_zero",
+  ], languages = ["Haskell"], options = { json_type = "AESON_VALUE" } },
+  { cases = [
+    "float_negative_zero",
+    "negative_zero_constructor_arguments",
+    "toml_negative_integer_zero",
+  ], languages = ["PureScript"], options = { json_type = "ARGONAUT_JSON" } },
+  { cases = [
+    "float_negative_zero",
+    "negative_zero_constructor_arguments",
+    "toml_negative_integer_zero",
+  ], languages = ["Elm"], options = { json_type = "JSON_ENCODE_VALUE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent the subnormal float 5e\\-324: its lexer rejects the literal as out of range and it has no hexadecimal float form\\."
+applies = [
+  { cases = ["float_extreme_magnitudes", "subnormal_and_minimum_normal_floats", "subnormal_floats"], languages = ["Wren"] },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "json_type can only represent dict keys as JSON object strings, not \\w+"
+applies = [
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["Scala"], options = { json_type = "CIRCE" } },
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["C"], options = { json_type = "CJSON" } },
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["Java"], options = { json_type = "JACKSON_JSON_NODE" } },
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["Crystal"], options = { json_type = "JSON_ANY" } },
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["Odin"], options = { json_type = "JSON_VALUE" } },
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["Kotlin"], options = { json_type = "KOTLINX_JSON_ELEMENT" } },
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["Cpp"], options = { json_type = "NLOHMANN_JSON" } },
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["Rust"], options = { json_type = "SERDE_JSON_VALUE" } },
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["Zig"], options = { json_type = "STD_JSON_VALUE" } },
+  { cases = [
+    "bool_key_dict",
+    "noncolliding_stringified_mapping_keys",
+    "null_mapping_key",
+    "ordered_map_date_key",
+  ], languages = ["CSharp", "FSharp"], options = { json_type = "SYSTEM_TEXT_JSON_NODE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "json_type=CJSON cannot represent a string with an embedded null, which cJSON truncates at"
+applies = [
+  { cases = ["string_embedded_nul"], languages = ["Cobol"] },
+  { cases = [
+    "bidi_formatting_string_with_nul",
+    "multiline_string",
+    "string_nul_before_hex",
+  ], languages = ["C", "Cobol"], options = { json_type = "CJSON" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "json_type=CJSON cannot represent integer -?\\d+, which a cJSON number stores as a double and cannot hold exactly"
+applies = [
+  { cases = [
+    "list_beyond_i64",
+    "map_beyond_i64",
+    "scalar_int_i64_min",
+    "scalar_int_very_large",
+    "widened_i64_minimum",
+  ], languages = ["C", "Cobol"], options = { json_type = "CJSON" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "millisecond\\-precision native datetime format cannot preserve sub\\-millisecond precision"
+applies = [
+  { cases = ["far_future_datetime_field"], languages = ["Julia"] },
+  { cases = [
+    "datetime_list",
+    "fractional_epoch_boundaries",
+    "gregorian_reform_dates",
+    "scalar_datetime_microsecond",
+    "scalar_datetime_seconds_microsecond",
+  ], languages = ["Julia"], options = { datetime_format = "JULIA" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "native datetime format cannot preserve UTC offset"
+applies = [
+  { cases = [
+    "datetime_extreme_offset_boundaries",
+    "far_future_datetime_field",
+    "heterogeneous_scalars_in_annotated_sequence",
+    "native_record_iso_temporal",
+    "native_record_temporal",
+    "opt_in_record_temporal",
+    "sibling_map_rendered_datetime",
+    "type_hints",
+  ], languages = ["CSharp", "Kotlin", "Rust"] },
+  { cases = [
+    "datetime_epoch_negative_scalar",
+    "datetime_epoch_negative_set",
+    "datetime_extreme_positive_offset",
+    "datetime_list",
+    "datetime_negative_fractional_offset",
+    "empty_map_epoch_sibling",
+    "empty_map_epoch_value",
+    "empty_map_nested_epoch_value",
+    "empty_map_offset_epoch_value",
+    "fractional_epoch_boundaries",
+    "scalar_datetime",
+    "scalar_datetime_non_utc",
+    "sibling_map_rendered_epoch_reversed",
+    "sibling_maps_in_sequence_rendered_epoch",
+  ], languages = ["CSharp"], options = { datetime_format = "CSHARP" } },
+  { cases = [
+    "gregorian_reform_dates",
+    "negative_epoch_datetime_list",
+    "scalar_datetime_microsecond",
+    "scalar_datetime_whole_hour_offset",
+  ], languages = ["CSharp"], options = { datetime_format = "CSHARP", json_type = "NONE" } },
+  { cases = [
+    "datetime_epoch_negative_scalar",
+    "datetime_epoch_negative_set",
+    "datetime_extreme_positive_offset",
+    "datetime_list",
+    "datetime_negative_fractional_offset",
+    "empty_map_epoch_sibling",
+    "empty_map_epoch_value",
+    "empty_map_nested_epoch_value",
+    "empty_map_offset_epoch_value",
+    "fractional_epoch_boundaries",
+    "scalar_datetime",
+    "scalar_datetime_non_utc",
+    "sibling_map_rendered_epoch_reversed",
+    "sibling_maps_in_sequence_rendered_epoch",
+  ], languages = ["Kotlin"], options = { datetime_format = "KOTLIN" } },
+  { cases = [
+    "gregorian_reform_dates",
+    "negative_epoch_datetime_list",
+    "scalar_datetime_microsecond",
+    "scalar_datetime_whole_hour_offset",
+  ], languages = ["Kotlin"], options = { datetime_format = "KOTLIN", json_type = "NONE" } },
+  { cases = [
+    "datetime_epoch_negative_scalar",
+    "datetime_epoch_negative_set",
+    "datetime_extreme_positive_offset",
+    "datetime_list",
+    "datetime_negative_fractional_offset",
+    "empty_map_epoch_sibling",
+    "empty_map_epoch_value",
+    "empty_map_nested_epoch_value",
+    "empty_map_offset_epoch_value",
+    "fractional_epoch_boundaries",
+    "scalar_datetime",
+    "scalar_datetime_non_utc",
+    "sibling_map_rendered_epoch_reversed",
+    "sibling_maps_in_sequence_rendered_epoch",
+  ], languages = ["Rust"], options = { datetime_format = "RUST" } },
+  { cases = [
+    "gregorian_reform_dates",
+    "negative_epoch_datetime_list",
+    "scalar_datetime_microsecond",
+    "scalar_datetime_whole_hour_offset",
+  ], languages = ["Rust"], options = { datetime_format = "RUST", json_type = "NONE" } },
+  { cases = ["dates"], languages = ["CSharp", "Kotlin", "Rust"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "timezone\\-naive native datetime format cannot preserve timezone awareness"
+applies = [
+  { cases = [
+    "datetime_extreme_offset_boundaries",
+    "heterogeneous_scalars_in_annotated_sequence",
+    "native_record_temporal",
+    "opt_in_record_temporal",
+    "sibling_map_rendered_datetime",
+    "type_hints",
+  ], languages = ["FSharp", "OCaml"] },
+  { cases = [
+    "dates",
+    "datetime_extreme_offset_boundaries",
+    "heterogeneous_scalars_in_annotated_sequence",
+    "native_record_temporal",
+    "opt_in_record_temporal",
+    "sibling_map_rendered_datetime",
+    "type_hints",
+  ], languages = ["Julia", "Sml"] },
+  { cases = ["datetime_extreme_offset_boundaries"], languages = ["Nim"] },
+  { cases = [
+    "datetime_epoch_negative_scalar",
+    "datetime_epoch_negative_set",
+    "datetime_extreme_positive_offset",
+    "datetime_negative_fractional_offset",
+    "empty_map_epoch_sibling",
+    "empty_map_epoch_value",
+    "empty_map_nested_epoch_value",
+    "empty_map_offset_epoch_value",
+    "scalar_datetime",
+    "scalar_datetime_non_utc",
+    "sibling_map_rendered_epoch_reversed",
+    "sibling_maps_in_sequence_rendered_epoch",
+  ], languages = ["FSharp"], options = { datetime_format = "FSHARP" } },
+  { cases = ["negative_epoch_datetime_list", "scalar_datetime_whole_hour_offset"], languages = ["FSharp"], options = { datetime_format = "FSHARP", json_type = "NONE" } },
+  { cases = [
+    "datetime_epoch_negative_scalar",
+    "datetime_epoch_negative_set",
+    "datetime_extreme_positive_offset",
+    "datetime_negative_fractional_offset",
+    "empty_map_epoch_sibling",
+    "empty_map_epoch_value",
+    "empty_map_nested_epoch_value",
+    "empty_map_offset_epoch_value",
+    "negative_epoch_datetime_list",
+    "scalar_datetime",
+    "scalar_datetime_non_utc",
+    "scalar_datetime_whole_hour_offset",
+    "sibling_map_rendered_epoch_reversed",
+    "sibling_maps_in_sequence_rendered_epoch",
+  ], languages = ["Julia"], options = { datetime_format = "JULIA" } },
+  { cases = ["scalar_datetime_whole_hour_offset"], languages = ["Kotlin"], options = { datetime_format = "KOTLIN", json_type = "KOTLINX_JSON_ELEMENT" } },
+  { cases = [
+    "datetime_epoch_negative_scalar",
+    "datetime_epoch_negative_set",
+    "datetime_extreme_positive_offset",
+    "datetime_negative_fractional_offset",
+    "empty_map_epoch_sibling",
+    "empty_map_epoch_value",
+    "empty_map_nested_epoch_value",
+    "empty_map_offset_epoch_value",
+    "scalar_datetime",
+    "scalar_datetime_non_utc",
+  ], languages = ["Nim"], options = { datetime_format = "NIM" } },
+  { cases = ["negative_epoch_datetime_list", "scalar_datetime_whole_hour_offset"], languages = ["Nim"], options = { datetime_format = "NIM", json_type = "NONE" } },
+  { cases = [
+    "datetime_epoch_negative_scalar",
+    "datetime_epoch_negative_set",
+    "datetime_extreme_positive_offset",
+    "datetime_negative_fractional_offset",
+    "empty_map_epoch_sibling",
+    "empty_map_epoch_value",
+    "empty_map_nested_epoch_value",
+    "empty_map_offset_epoch_value",
+    "scalar_datetime",
+    "scalar_datetime_non_utc",
+    "sibling_map_rendered_epoch_reversed",
+    "sibling_maps_in_sequence_rendered_epoch",
+  ], languages = ["OCaml"], options = { datetime_format = "OCAML" } },
+  { cases = ["negative_epoch_datetime_list", "scalar_datetime_whole_hour_offset"], languages = ["OCaml"], options = { datetime_format = "OCAML", json_type = "NONE" } },
+  { cases = [
+    "datetime_epoch_negative_scalar",
+    "datetime_epoch_negative_set",
+    "datetime_extreme_positive_offset",
+    "datetime_negative_fractional_offset",
+    "empty_map_epoch_sibling",
+    "empty_map_epoch_value",
+    "empty_map_nested_epoch_value",
+    "empty_map_offset_epoch_value",
+    "negative_epoch_datetime_list",
+    "scalar_datetime",
+    "scalar_datetime_non_utc",
+    "scalar_datetime_whole_hour_offset",
+    "sibling_map_rendered_epoch_reversed",
+    "sibling_maps_in_sequence_rendered_epoch",
+  ], languages = ["Sml"], options = { datetime_format = "SML" } },
+  { cases = ["dates", "negative_epoch_datetime_list"], languages = ["Kotlin"], options = { json_type = "KOTLINX_JSON_ELEMENT" } },
+  { cases = ["dates"], languages = ["FSharp", "OCaml"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "whole\\-second native datetime format cannot preserve microseconds"
+applies = [
+  { cases = ["far_future_datetime_field"], languages = ["FSharp", "Nim", "OCaml", "Sml"] },
+  { cases = ["millisecond_datetime", "naive_datetime_milliseconds"], languages = ["CSharp"], options = { datetime_format = "CSHARP" } },
+  { cases = ["scalar_datetime_seconds_microsecond"], languages = ["CSharp"], options = { datetime_format = "CSHARP", json_type = "NONE" } },
+  { cases = [
+    "datetime_list",
+    "fractional_epoch_boundaries",
+    "millisecond_datetime",
+    "naive_datetime_milliseconds",
+  ], languages = ["FSharp"], options = { datetime_format = "FSHARP" } },
+  { cases = [
+    "gregorian_reform_dates",
+    "scalar_datetime_microsecond",
+    "scalar_datetime_seconds_microsecond",
+  ], languages = ["FSharp"], options = { datetime_format = "FSHARP", json_type = "NONE" } },
+  { cases = [
+    "millisecond_datetime",
+    "naive_datetime_milliseconds",
+    "scalar_datetime_seconds_microsecond",
+  ], languages = ["Kotlin"], options = { datetime_format = "KOTLIN" } },
+  { cases = ["scalar_datetime_microsecond"], languages = ["Kotlin"], options = { datetime_format = "KOTLIN", json_type = "KOTLINX_JSON_ELEMENT" } },
+  { cases = [
+    "datetime_list",
+    "fractional_epoch_boundaries",
+    "millisecond_datetime",
+    "naive_datetime_milliseconds",
+  ], languages = ["Nim"], options = { datetime_format = "NIM" } },
+  { cases = ["scalar_datetime_microsecond", "scalar_datetime_seconds_microsecond"], languages = ["Nim"], options = { datetime_format = "NIM", json_type = "NONE" } },
+  { cases = [
+    "datetime_list",
+    "fractional_epoch_boundaries",
+    "millisecond_datetime",
+    "naive_datetime_milliseconds",
+  ], languages = ["OCaml"], options = { datetime_format = "OCAML" } },
+  { cases = [
+    "gregorian_reform_dates",
+    "scalar_datetime_microsecond",
+    "scalar_datetime_seconds_microsecond",
+  ], languages = ["OCaml"], options = { datetime_format = "OCAML", json_type = "NONE" } },
+  { cases = [
+    "datetime_list",
+    "fractional_epoch_boundaries",
+    "gregorian_reform_dates",
+    "millisecond_datetime",
+    "naive_datetime_milliseconds",
+    "scalar_datetime_microsecond",
+    "scalar_datetime_seconds_microsecond",
+  ], languages = ["Sml"], options = { datetime_format = "SML" } },
+  { cases = ["gregorian_reform_dates"], languages = ["Kotlin"], options = { json_type = "KOTLINX_JSON_ELEMENT" } },
+]
+
+[[rejection]]
+error = "UnrepresentableIntegerError"
+match = "Odin json_type parses the embedded JSON text with parse_integers=true, which stores every integer as an i64; 9223372036854775808 is outside that range and wraps around silently\\."
+applies = [
+  { cases = ["list_beyond_i64", "map_beyond_i64", "scalar_int_very_large"], languages = ["Odin"], options = { json_type = "JSON_VALUE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableIntegerError"
+match = "cannot represent integer -?\\d+ above the unsigned 64\\-bit range\\."
+applies = [
+  { cases = ["dict_wide_int_key", "nested_list_beyond_i64"], languages = ["C", "Cpp", "D", "Go", "ObjectiveC", "Odin", "V", "VisualBasic", "Zig"] },
+  { cases = ["nested_list_beyond_i64", "record_tuple_integer_widths"], languages = ["CSharp"] },
+]
+
+[[rejection]]
+error = "UnrepresentableIntegerError"
+match = "cannot represent integer -?\\d+ in binary format\\."
+applies = [
+  { cases = [
+    "integer_boundaries",
+    "map_beyond_i64",
+    "nested_list_beyond_i64",
+  ], languages = ["FSharp"], options = { integer_format = "BINARY" } },
+]
+
+[[rejection]]
+error = "UnrepresentableIntegerError"
+match = "cannot represent integer -?\\d+ in hex format\\."
+applies = [
+  { cases = ["integer_boundaries", "map_beyond_i64", "nested_list_beyond_i64"], languages = ["FSharp"], options = { integer_format = "HEX" } },
+]
+
+[[rejection]]
+error = "UnrepresentableIntegerError"
+match = "cannot represent integer -?\\d+ in octal format\\."
+applies = [
+  { cases = [
+    "integer_boundaries",
+    "map_beyond_i64",
+    "nested_list_beyond_i64",
+  ], languages = ["FSharp"], options = { integer_format = "OCTAL" } },
+]
+
+[[rejection]]
+error = "UnrepresentableIntegerError"
+match = "cannot represent integer -?\\d+ without external arbitrary\\-precision integer support\\."
+applies = [
+  { cases = [
+    "dict_wide_int_key",
+    "integer_boundaries",
+    "list_beyond_i64",
+    "map_beyond_i64",
+    "nested_list_beyond_i64",
+    "scalar_int_very_large",
+    "scalar_int_very_negative_large",
+  ], languages = ["Ada", "Forth", "Fortran", "Lua", "Nix", "Php", "Sml", "SystemVerilog", "Toml"] },
+  { cases = ["dict_wide_int_key", "scalar_int_very_negative_large"], languages = ["CSharp"] },
+  { cases = [
+    "dict_wide_int_key",
+    "integer_boundaries",
+    "nested_list_beyond_i64",
+    "non_decimal_i64_limits",
+    "scalar_int_very_negative_large",
+    "sequence_i64_min_and_small_integer",
+    "signed_integer_carrier_boundaries",
+  ], languages = ["Cobol", "OCaml"] },
+  { cases = [
+    "dict_wide_int_key",
+    "int_list_signed_18_digit_boundaries",
+    "integer_boundaries",
+    "list_beyond_i64",
+    "map_beyond_i64",
+    "mixed_numeric_set_integer_identity",
+    "nested_list_beyond_i64",
+    "non_decimal_i64_limits",
+    "scalar_int_i64_min",
+    "scalar_int_very_large",
+    "scalar_int_very_negative_large",
+    "sequence_i64_min_and_small_integer",
+    "signed_integer_carrier_boundaries",
+    "widened_i64_minimum",
+  ], languages = ["Elm", "Haxe", "JavaScript", "Jsonnet", "Matlab", "PureScript", "R", "TypeScript", "Wren"] },
+  { cases = [
+    "dict_wide_int_key",
+    "integer_boundaries",
+    "list_beyond_i64",
+    "map_beyond_i64",
+    "nested_list_beyond_i64",
+    "record_wide_int",
+    "scalar_int_very_large",
+    "scalar_int_very_negative_large",
+  ], languages = ["Nim"] },
+  { cases = [
+    "dict_wide_int_key",
+    "integer_boundaries",
+    "list_beyond_i64",
+    "map_beyond_i64",
+    "nested_list_beyond_i64",
+    "record_tuple_integer_widths",
+    "record_wide_int",
+    "scalar_int_very_large",
+    "scalar_int_very_negative_large",
+  ], languages = ["Swift"] },
+  { cases = [
+    "list_beyond_i64",
+    "map_beyond_i64",
+    "scalar_int_i64_min",
+    "scalar_int_very_large",
+    "widened_i64_minimum",
+  ], languages = ["Cobol", "OCaml"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableIntegerError"
+match = "cannot represent negative integer -?\\d+ alongside 9223372036854775808, which is above the signed 64\\-bit range: no single C\\+\\+ integer type holds both\\."
+applies = [
+  { cases = ["integer_boundaries"], languages = ["Cpp"] },
+]
+
+[[rejection]]
+error = "UnrepresentableIntegerError"
+match = "cannot represent negative integer -?\\d+ below the signed 64\\-bit range using an unsigned fallback\\."
+applies = [
+  { cases = ["scalar_int_very_negative_large"], languages = ["C", "Cpp", "D", "ObjectiveC", "Odin"] },
+  { cases = ["integer_boundaries"], languages = ["CSharp"] },
+  { cases = ["integer_boundaries", "scalar_int_very_negative_large"], languages = ["Go", "V", "VisualBasic"] },
+]
+
+[[rejection]]
+error = "UnrepresentableIntegerError"
+match = "cannot represent negative integer -?\\d+ below the signed 64\\-bit range using the ZVal union's unsigned variant\\."
+applies = [
+  { cases = ["scalar_int_very_negative_large"], languages = ["Zig"] },
+]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "string literals cannot represent CR"
+applies = [
+  { cases = ["string_carriage_return_line_feed"], languages = ["Cobol"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "string literals cannot represent DELETE"
+applies = [
+  { cases = [
+    "del_nel_and_c1_control_strings",
+    "del_string",
+    "delete_character_in_key_and_value",
+    "dict_string_with_del_before_hex_letter",
+  ], languages = ["Bash"] },
+]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "string literals cannot represent LF"
+applies = [
+  { cases = [
+    "comment_block_scalar_not_comment",
+    "custom_root_multiline_text",
+    "dict_keys_and_string_escapes",
+    "multiline_raw_string_delimiter",
+    "string_all_raw_delimiters",
+    "yaml_unread_comment_slots",
+  ], languages = ["Cobol"] },
+  { cases = [
+    "multiline_string",
+    "multiline_string_nested",
+    "multiline_string_nested_list",
+    "multiline_string_scalar",
+    "string_control_chars",
+    "string_with_backslash",
+  ], languages = ["Cobol"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "string literals cannot represent NUL"
+applies = [
+  { cases = [
+    "bidi_formatting_string_with_nul",
+    "multiline_string",
+    "string_nul_before_hex",
+  ], languages = ["Bash", "Nix", "Norg", "Occam", "R"] },
+  { cases = ["bidi_formatting_string_with_nul", "string_nul_before_hex"], languages = ["Cobol"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "string literals cannot represent TAB"
+applies = [
+  { cases = ["comment_tabs_and_string"], languages = ["Cobol"] },
+]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "string literals cannot represent U\\+0001 control character"
+applies = [
+  { cases = ["string_control_chars"], languages = ["Bash", "Clojure", "CommonLisp", "Elixir", "FSharp", "Forth", "Gleam", "Go", "Groovy", "Haxe", "Hcl", "Mojo", "Nix", "Norg", "OCaml", "ObjectiveC", "Occam", "Odin", "PowerShell", "R", "Racket", "SystemVerilog", "Tcl", "V", "Wren"] },
+  { cases = ["control_character_map_keys", "string_control_chars"], languages = ["C", "CSharp", "Cpp", "Crystal", "D", "Dart", "Erlang", "Java", "JavaScript", "Julia", "Kotlin", "Lua", "Nim", "Perl", "Php", "Python", "Raku", "Ruby", "Rust", "Scala", "Scheme", "TypeScript"] },
+  { cases = ["string_control_chars"], languages = ["Cobol"], options = { json_type = "CJSON" } },
+  { cases = ["control_character_map_keys"], languages = ["Gleam"], options = { json_type = "GLEAM_JSON_JSON" } },
+  { cases = ["control_character_map_keys"], languages = ["FSharp"], options = { json_type = "SYSTEM_TEXT_JSON_NODE" } },
+  { cases = ["control_character_map_keys"], languages = ["OCaml"], options = { json_type = "YOJSON_SAFE_T" } },
+]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "string literals cannot represent U\\+0007 control character"
+applies = [
+  { cases = ["string_control_escape_before_hex"], languages = ["Bash", "C", "CSharp", "Clojure", "Cobol", "CommonLisp", "Cpp", "Crystal", "D", "Dart", "Elixir", "Erlang", "FSharp", "Forth", "Gleam", "Go", "Groovy", "Haxe", "Hcl", "Java", "JavaScript", "Julia", "Kotlin", "Lua", "Mojo", "Nim", "Nix", "Norg", "OCaml", "ObjectiveC", "Occam", "Odin", "Perl", "Php", "PowerShell", "Python", "R", "Racket", "Raku", "Ruby", "Rust", "Scala", "Scheme", "SystemVerilog", "Tcl", "TypeScript", "V", "Wren"] },
+]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "string literals cannot represent an empty string"
+applies = [
+  { cases = ["binary_octets", "scalar_empty_string"], languages = ["Cobol"], options = { json_type = "NONE" } },
+]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "string literals cannot represent the YAML\\-forbidden Unicode noncharacters U\\+FFFE and U\\+FFFF"
+applies = [
+  { cases = ["noncharacter_string"], languages = ["Yaml"] },
+]

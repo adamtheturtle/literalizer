@@ -33,9 +33,21 @@ from literalizer.exceptions import (
     ReservedVariableNameError,
     UnrepresentableEmptyDictError,
     UnrepresentableInputError,
+    UnrepresentableNullError,
     UnrepresentableSpecialFloatError,
 )
-from literalizer.languages import Java, Mojo, Scala, V
+from literalizer.languages import (
+    Bash,
+    Erlang,
+    Java,
+    Mojo,
+    OCaml,
+    Scala,
+    SystemVerilog,
+    Tcl,
+    Toml,
+    V,
+)
 from tests.language_options import HasJsonType
 
 from .case_inputs import CaseInput
@@ -164,6 +176,26 @@ def _parsed_case(*, case_dir: Path) -> Value:
         ).data
 
 
+def _effective_case(
+    *,
+    case_dir: Path,
+    substitutions: Mapping[str, literalizer.ValueInput] | None,
+) -> Value:
+    """Read the authored value after the rendering's null
+    substitutions.
+    """
+    data = _parsed_case(case_dir=case_dir)
+    if substitutions is None:
+        return data
+    return substitute_record_nulls(
+        data=data,
+        substitutions=materialize_value_mapping(
+            values=substitutions,
+            argument_name="record_null_substitutions",
+        ),
+    )
+
+
 def _has_only_nulls(*, items: Iterable[Value]) -> bool:
     """Check whether a nonempty container has no type-bearing value."""
     values = tuple(items)
@@ -188,15 +220,7 @@ def _null_rejection(
     """Resolve null collection limits for the selected native carrier."""
     if not isinstance(spec, Java | Mojo | Scala | V):
         return None
-    data = _parsed_case(case_dir=case_dir)
-    if substitutions is not None:
-        data = substitute_record_nulls(
-            data=data,
-            substitutions=materialize_value_mapping(
-                values=substitutions,
-                argument_name="record_null_substitutions",
-            ),
-        )
+    data = _effective_case(case_dir=case_dir, substitutions=substitutions)
     message = _null_rejection_message(spec=spec, data=data)
     if message is None:
         return None
@@ -315,6 +339,80 @@ def _null_rejection_message(
     )
 
 
+def _additional_representation_rejection(
+    *,
+    spec: literalizer.Language,
+    case_dir: Path,
+    substitutions: Mapping[str, literalizer.ValueInput] | None,
+) -> Rejection | None:
+    """Resolve constraints shared by multiple authored fixtures."""
+    data = _effective_case(case_dir=case_dir, substitutions=substitutions)
+    if isinstance(spec, Bash | Tcl | SystemVerilog | Toml):
+        rejection = _null_value_rejection(spec=spec, data=data)
+        if rejection is not None:
+            return rejection
+    if _uses_integer_epoch_seconds(spec=spec) and any(
+        isinstance(value, dt.datetime) and _has_fractional_epoch(value=value)
+        for value in _values(data=data)
+    ):
+        return Rejection(
+            error=UnrepresentableInputError,
+            match=(
+                "integer Unix epoch seconds cannot preserve fractional "
+                "datetime precision"
+            ),
+        )
+    if any(isinstance(value, set) for value in _values(data=data)) and (
+        not spec.set_format_config.preserves_set_semantics
+    ):
+        return Rejection(
+            error=UnrepresentableInputError,
+            match="cannot preserve native set semantics",
+        )
+    return None
+
+
+def _uses_integer_epoch_seconds(*, spec: literalizer.Language) -> bool:
+    """Account for JSON carriers that always encode datetimes as text."""
+    return spec.datetime_format.name == "EPOCH" and not (
+        isinstance(spec, Erlang | OCaml | Scala) and spec.json_type is not None
+    )
+
+
+def _has_fractional_epoch(*, value: dt.datetime) -> bool:
+    """Check the fraction after converting the authored wall time to
+    UTC.
+    """
+    offset = value.utcoffset()
+    return value.microsecond != (0 if offset is None else offset.microseconds)
+
+
+def _null_value_rejection(
+    *, spec: Bash | Tcl | SystemVerilog | Toml, data: Value
+) -> Rejection | None:
+    """Apply the target's null contract to values and mapping keys."""
+    values = tuple(_values(data=data))
+    has_null_value = None in values
+    if isinstance(spec, Bash | Tcl):
+        if has_null_value or any(
+            isinstance(value, dict) and None in value for value in values
+        ):
+            return Rejection(
+                error=UnrepresentableNullError,
+                match="cannot represent null distinctly from the empty string",
+            )
+    elif has_null_value:
+        return Rejection(
+            error=UnrepresentableInputError,
+            match=(
+                "cannot represent null distinctly from an empty string"
+                if isinstance(spec, SystemVerilog)
+                else "TOML cannot represent null values"
+            ),
+        )
+    return None
+
+
 def _representation_rejection(
     *,
     spec: literalizer.Language,
@@ -395,16 +493,6 @@ def _scalar_collection_rejection(
 
 
 @beartype
-def _assignment_requires_prior_declaration(
-    *, spec: literalizer.Language, case_dir: Path
-) -> bool:
-    """Use the target's assignment semantics for the existing binding case."""
-    return not spec.assignment_declares_binding(
-        _parsed_case(case_dir=case_dir)
-    )
-
-
-@beartype
 def literal_rejection(
     *,
     spec: literalizer.Language,
@@ -412,6 +500,7 @@ def literal_rejection(
     variable_form: literalizer.VariableForm | None,
     case_dir: Path,
     substitutions: Mapping[str, literalizer.ValueInput] | None,
+    wrap_in_file: bool,
 ) -> Rejection | None:
     """Resolve documented identifier and fixture compatibility errors."""
     expected_error: type[Exception] | None = None
@@ -444,9 +533,9 @@ def literal_rejection(
         expected_message = "it is not a valid identifier"
     elif (
         isinstance(variable_form, literalizer.ExistingVariable)
-        and case_dir.name == "existing_variable_self_declaring"
-        and _assignment_requires_prior_declaration(
-            spec=spec, case_dir=case_dir
+        and wrap_in_file
+        and not spec.assignment_declares_binding(
+            _effective_case(case_dir=case_dir, substitutions=substitutions)
         )
     ):
         expected_error = ExistingVariableNotSelfContainedError
@@ -461,6 +550,11 @@ def literal_rejection(
     )
     if rejection is not None:
         return rejection
-    return _null_rejection(
+    null_rejection = _null_rejection(
+        spec=spec, case_dir=case_dir, substitutions=substitutions
+    )
+    if null_rejection is not None:
+        return null_rejection
+    return _additional_representation_rejection(
         spec=spec, case_dir=case_dir, substitutions=substitutions
     )

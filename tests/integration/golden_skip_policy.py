@@ -25,7 +25,3 @@ class SkipPolicy:
 
     reasons: SkipReasons
     suffix: str
-
-
-NO_SKIPS: SkipPolicy = SkipPolicy(reasons=(), suffix="")
-"""Every error is a real failure."""

@@ -15,4 +15,3 @@ axis = "json_type"
 
 [[variants]]
 axis = "type_hints"
-expected_errors = ["InvalidDictKeyError"]

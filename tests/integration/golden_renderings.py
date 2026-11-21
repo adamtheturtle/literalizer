@@ -10,12 +10,14 @@ from beartype import beartype
 import literalizer
 from literalizer import ValueInput
 
-from .case_manifests import load_case_manifest
 from .golden_artifacts import GoldenArtifact
 from .golden_outcomes import SUCCESS, Rejection, Success
-from .golden_skip_policy import SkipPolicy
 from .language_specs import make_golden_artifact, make_spec
 from .literal_expectations import literal_rejection
+from .literal_rejection_manifest import (
+    LITERAL_REJECTION_MANIFEST,
+    authored_literal_rejection,
+)
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -69,8 +71,16 @@ class GoldenRendering:
     extra_preamble: tuple[str, ...]
     initialize_variable: bool
     apply_fixture_module_name: bool
-    skip: SkipPolicy
     consumer_template: str | None
+
+    @property
+    def wrap_in_file(self) -> bool:
+        """Wrap directly when the rendering has no declarations to compose."""
+        return (
+            self.render.wrap_in_file
+            and len(self.extra_preamble) == 0
+            and not self.initialize_variable
+        )
 
     @property
     def specs(self) -> tuple[literalizer.Language, ...]:
@@ -95,12 +105,19 @@ class GoldenRendering:
                 specs.append(spec)
         return tuple(specs)
 
-    def outcome(
-        self, *, spec: literalizer.Language
-    ) -> Success | Rejection | None:
+    def outcome(self, *, spec: literalizer.Language) -> Success | Rejection:
         """Resolve strict outcomes before rendering the selected
         options.
         """
+        authored = authored_literal_rejection(
+            case_name=self.case_dir_name,
+            lang_cls=self.lang_cls,
+            spec=spec,
+            render=self.render,
+            manifest_path=LITERAL_REJECTION_MANIFEST,
+        )
+        if authored is not None:
+            return authored
         rejection = literal_rejection(
             spec=spec,
             lang_cls=self.lang_cls,
@@ -111,17 +128,9 @@ class GoldenRendering:
             ),
             case_dir=self.golden_parent,
             substitutions=self.render.record_null_substitutions,
+            wrap_in_file=self.wrap_in_file,
         )
-        if rejection is not None:
-            return rejection
-        if (
-            len(self.skip.reasons) == 0
-            or load_case_manifest(
-                case_dir=self.golden_parent
-            ).strict_golden_outcomes
-        ):
-            return SUCCESS
-        return None
+        return SUCCESS if rejection is None else rejection
 
     def artifact(self, *, version: enum.Enum) -> GoldenArtifact:
         """Resolve this fixture for one effective version."""
@@ -141,7 +150,6 @@ def unprefixed_rendering(
     golden_name: str,
     spec_source: SpecSource,
     render: RenderArguments,
-    skip: SkipPolicy,
 ) -> GoldenRendering:
     """Return a rendering needing no supporting preamble or initialization."""
     return GoldenRendering(
@@ -155,5 +163,4 @@ def unprefixed_rendering(
         extra_preamble=(),
         initialize_variable=False,
         apply_fixture_module_name=True,
-        skip=skip,
     )
