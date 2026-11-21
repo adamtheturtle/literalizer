@@ -8,6 +8,7 @@ root.
 import dataclasses
 import enum
 from collections.abc import Callable, Collection, Mapping, Sequence
+from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
@@ -55,6 +56,7 @@ from literalizer.exceptions import (
     InputRootKeyNotFoundError,
     InputRootNotMappingError,
     InvalidPreIndentLevelError,
+    InvalidRenderArgumentError,
     InvalidSequenceArgumentError,
     InvalidVariableModifierError,
     ModuleNameVariableCollisionError,
@@ -342,6 +344,36 @@ def _validate_render_arguments(
     )
 
 
+@runtime_checkable
+class _WrappedBindingStatementsLanguage(Protocol):
+    """A backend that can place caller statements after a binding."""
+
+    @staticmethod
+    def validate_after_binding(modifiers: frozenset[enum.Enum], /) -> None:
+        """Reject binding forms with no supported executable placement."""
+        ...
+
+
+@beartype
+def _validate_after_binding(
+    *,
+    language: Language,
+    variable_form: VariableForm | None,
+    wrap_in_file: bool,
+    after_binding: tuple[str, ...],
+) -> None:
+    """Ensure the selected wrapper can host any caller statements."""
+    if len(after_binding) == 0:
+        return
+    if not wrap_in_file or not isinstance(variable_form, NewVariable):
+        msg = "after_binding requires wrap_in_file=True and NewVariable"
+        raise InvalidRenderArgumentError(msg)
+    if not isinstance(language, _WrappedBindingStatementsLanguage):
+        msg = f"{type(language).__name__} does not support after_binding"
+        raise InvalidRenderArgumentError(msg)
+    language.validate_after_binding(variable_form.modifiers)
+
+
 @beartype
 def literalize(
     *,
@@ -358,6 +390,7 @@ def literalize(
     ref_key: str | None = None,
     record_null_substitutions: Mapping[str, ValueInput] | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
+    after_binding: tuple[str, ...] = (),
 ) -> LiteralizeResult:
     r"""Convert a JSON, JSONC, JSON5, YAML, or TOML string to a native
     language literal.
@@ -458,8 +491,16 @@ def literalize(
             preserves the existing one-line nested rendering, while
             ``CollectionLayout.MULTILINE`` expands non-empty nested
             collections with one element per line.
+        after_binding: Caller-owned native statement lines to run immediately
+            after the main binding. The wrapper supplies scope indentation.
+            Include any relative indentation in the lines. Currently supported
+            for C# top-level and method-local declarations with
+            *wrap_in_file=True* and a :class:`NewVariable`. The default empty
+            tuple adds no statements.
 
     Raises:
+        InvalidRenderArgumentError: If *after_binding* is nonempty in an
+            unsupported wrapping or binding context.
         JSONParseError: If *input_format* is ``JSON`` and *source* is
             not valid JSON.
         JSONCParseError: If *input_format* is ``JSONC`` and *source* is
@@ -492,6 +533,12 @@ def literalize(
             file-statement scope).
     """
     language = _fresh_language(language=language)
+    _validate_after_binding(
+        language=language,
+        variable_form=variable_form,
+        wrap_in_file=wrap_in_file,
+        after_binding=after_binding,
+    )
     effective_ref_key = ref_key
     if effective_ref_key is None:
         effective_ref_key = disabled_ref_key()
@@ -602,6 +649,7 @@ def literalize(
             ref_key=effective_ref_key,
             record_null_substitutions=materialized_record_null_substitutions,
             collection_layout=collection_layout,
+            after_binding=after_binding,
         )
 
     pre_form = literalize_pre_form(
@@ -627,6 +675,7 @@ def literalize(
         language=language,
         variable_form=variable_form,
         wrap_in_file=wrap_in_file,
+        after_binding=after_binding,
     )
 
 

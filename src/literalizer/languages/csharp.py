@@ -4,6 +4,7 @@ import dataclasses
 import datetime as dt
 import enum
 import re
+import textwrap
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -150,6 +151,7 @@ from literalizer.exceptions import (
     ConflictingVariableModifiersError,
     IncompatibleFormatsError,
     InvalidRecordNameError,
+    InvalidRenderArgumentError,
     UnrepresentableInputError,
 )
 
@@ -1566,6 +1568,13 @@ class CSharp(metaclass=LanguageCls):
 
     call_styles = CallStyles
 
+    @staticmethod
+    def validate_after_binding(modifiers: frozenset[enum.Enum], /) -> None:
+        """Require a binding in executable scope for caller statements."""
+        if _is_csharp_class_field(modifiers):
+            msg = "CSharp after_binding does not support class-field bindings"
+            raise InvalidRenderArgumentError(msg)
+
     def wrap_in_file(
         self,
         content: str,
@@ -1631,6 +1640,15 @@ class CSharp(metaclass=LanguageCls):
                     )
                 )
                 + "}"
+            )
+        if len(context.after_binding) > 0:
+            statement_indent = (
+                self.indent * 2
+                if self._record_strategy_active
+                else context.line_prefix
+            )
+            content += "\n" + textwrap.indent(
+                text="\n".join(context.after_binding), prefix=statement_indent
             )
         if len(stub_lines) > 0:
             body = prepend_body_preamble(

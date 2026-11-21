@@ -35,6 +35,7 @@ class RenderArguments:
     collection_layout: literalizer.CollectionLayout
     record_null_substitutions: Mapping[str, ValueInput] | None
     wrap_in_file: bool
+    after_binding: tuple[str, ...]
 
 
 @beartype
@@ -55,6 +56,7 @@ def compact_render(
         collection_layout=literalizer.CollectionLayout.COMPACT,
         record_null_substitutions=None,
         wrap_in_file=True,
+        after_binding=(),
     )
 
 

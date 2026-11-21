@@ -196,6 +196,7 @@ class ManifestVariant(  # noqa: NOD001
     # Keep explicit module-name options instead of the compiler fixture name.
     apply_fixture_module_name: bool = True
     wrap_in_file: bool = True
+    after_binding: list[str] = Field(default_factory=list[str])
     # Native caller syntax around an unwrapped result, by language.
     consumer_templates: dict[manifest_values.ManifestLanguage, str] = Field(
         default_factory=dict[literalizer.LanguageCls, str]

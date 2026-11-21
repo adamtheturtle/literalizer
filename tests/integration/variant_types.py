@@ -60,3 +60,4 @@ class VariantCase:
     pre_indent_level: int
     apply_fixture_module_name: bool
     consumer_template: str | None
+    after_binding: tuple[str, ...]

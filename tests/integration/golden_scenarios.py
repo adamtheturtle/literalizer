@@ -125,6 +125,7 @@ def _base_renderings(
                             context.resolved_record_null_substitutions()
                         ),
                         wrap_in_file=True,
+                        after_binding=(),
                     ),
                 ),
                 consumer_template=context.consumer_templates.get(lang_cls),
@@ -256,6 +257,7 @@ def _variant_renderings(
                     variant_case.variant.record_null_substitutions
                 ),
                 wrap_in_file=variant_case.variant.wrap_in_file,
+                after_binding=variant_case.after_binding,
             ),
             consumer_template=variant_case.consumer_template,
             extra_preamble=variant_case.variant.extra_preamble,
@@ -366,6 +368,7 @@ def _pre_indent_renderings(
                 collection_layout=literalizer.CollectionLayout.COMPACT,
                 record_null_substitutions=None,
                 wrap_in_file=True,
+                after_binding=(),
             ),
         )
         for case_dir_name, suffix in contexts

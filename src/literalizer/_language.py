@@ -150,6 +150,9 @@ class FileWrapperContext:
     line_prefix: str
     """Caller indentation retained for preambles beside bindings."""
 
+    after_binding: tuple[str, ...] = ()  # noqa: NOD001 - public constructor
+    """Caller statements placed immediately after the main binding."""
+
 
 @runtime_checkable
 class IdentifierSyntax(typing.Protocol):
