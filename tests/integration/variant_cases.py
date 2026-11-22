@@ -91,7 +91,6 @@ def build_json_type_variable_form_cases(
                 cases.append(
                     VariantCase(
                         consumer_template=None,
-                        after_binding=(),
                         apply_fixture_module_name=True,
                         golden_name=name,
                         variant=dataclasses.replace(json_variant, name=name),
@@ -109,7 +108,6 @@ def build_json_type_variable_form_cases(
             cases.append(
                 VariantCase(
                     consumer_template=None,
-                    after_binding=(),
                     apply_fixture_module_name=True,
                     golden_name=name,
                     variant=compact_variant(
@@ -153,7 +151,6 @@ def build_json_type_variable_form_cases(
             cases.append(
                 VariantCase(
                     consumer_template=None,
-                    after_binding=(),
                     apply_fixture_module_name=True,
                     golden_name=name,
                     variant=variant,
@@ -199,7 +196,6 @@ def build_multiline_string_context_cases(
             cases.append(
                 VariantCase(
                     consumer_template=None,
-                    after_binding=(),
                     apply_fixture_module_name=True,
                     golden_name=name,
                     variant=dataclasses.replace(
@@ -226,7 +222,6 @@ def build_multiline_string_context_cases(
             cases.append(
                 VariantCase(
                     consumer_template=None,
-                    after_binding=(),
                     apply_fixture_module_name=True,
                     golden_name=name,
                     variant=dataclasses.replace(base_variant, name=name),
@@ -307,7 +302,6 @@ def case_for_manifest_variant(
         consumer_template=manifest_variant.consumer_templates.get(
             variant.lang_cls, context.consumer_templates.get(variant.lang_cls)
         ),
-        after_binding=tuple(manifest_variant.after_binding),
     )
 
 

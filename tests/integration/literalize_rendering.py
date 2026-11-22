@@ -43,7 +43,6 @@ def literalize_rendering(
             wrap_in_file=rendering.wrap_in_file,
             collection_layout=render.collection_layout,
             record_null_substitutions=render.record_null_substitutions,
-            after_binding=render.after_binding,
         )
 
 

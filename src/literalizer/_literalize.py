@@ -516,7 +516,6 @@ def _file_wrapper_context(
     generated_body_preamble: tuple[str, ...],
     root_is_object_literal: bool,
     root_mapping_entries: tuple[str, ...] | None,
-    after_binding: tuple[str, ...],
 ) -> FileWrapperContext:
     """Keep declaration metadata available after rendering the binding."""
     modifiers = frozenset[enum.Enum]()
@@ -543,7 +542,6 @@ def _file_wrapper_context(
         root_is_object_literal=root_is_object_literal,
         root_mapping_entries=root_mapping_entries,
         has_existing_bindings=False,
-        after_binding=after_binding,
     )
 
 
@@ -5643,7 +5641,6 @@ def literalize_apply_form(
     language: Language,
     variable_form: NewVariable | ExistingVariable | None,
     wrap_in_file: bool,
-    after_binding: tuple[str, ...],
 ) -> LiteralizeResult:
     """Apply variable-form-specific wrapping on top of a pre-form pass.
 
@@ -5759,7 +5756,6 @@ def literalize_apply_form(
                 generated_body_preamble=computed.body,
                 root_is_object_literal=pre_form.root_is_object_literal,
                 root_mapping_entries=pre_form.root_mapping_entries,
-                after_binding=after_binding,
             ),
         )
         if len(scoped.file_scope) > 0:
@@ -5825,7 +5821,6 @@ def literalize_both_forms(
             ref_key=ref_key,
             record_null_substitutions=record_null_substitutions,
             collection_layout=collection_layout,
-            after_binding=(),
         )
     pre_form = literalize_pre_form(
         preserve_ref_values=True,
@@ -5850,14 +5845,12 @@ def literalize_both_forms(
             modifiers=variable_form.modifiers,
         ),
         wrap_in_file=False,
-        after_binding=(),
     )
     assignment = literalize_apply_form(
         pre_form=pre_form,
         language=language,
         variable_form=ExistingVariable(name=variable_form.name),
         wrap_in_file=False,
-        after_binding=(),
     )
     scoped = _scope_preamble_for_wrap(
         language=language,
@@ -5881,7 +5874,6 @@ def literalize_both_forms(
             generated_body_preamble=declaration.body_preamble,
             root_is_object_literal=False,
             root_mapping_entries=None,
-            after_binding=(),
         ),
     )
     if len(scoped.file_scope) > 0:
@@ -6043,7 +6035,6 @@ def literalize_bound_refs(
     ref_key: str,
     record_null_substitutions: Mapping[str, Value] | None,
     collection_layout: CollectionLayout,
-    after_binding: tuple[str, ...],
 ) -> LiteralizeResult:
     """Emit a binding for each supplied ref before its first use.
 
@@ -6106,7 +6097,6 @@ def literalize_bound_refs(
         language=language,
         variable_form=declaration_form,
         wrap_in_file=False,
-        after_binding=(),
     )
     assignment_result = None
     if isinstance(variable_form, BothVariableForms):
@@ -6115,7 +6105,6 @@ def literalize_bound_refs(
             language=language,
             variable_form=ExistingVariable(name=variable_form.name),
             wrap_in_file=False,
-            after_binding=(),
         )
     contextual_bound_refs = _contextual_bound_ref_values(
         source=pre_form.data,
@@ -6175,7 +6164,6 @@ def literalize_bound_refs(
         language=language,
         composition=composition,
         line_prefix=pre_form.line_prefix,
-        after_binding=after_binding,
     )
 
 
@@ -6334,7 +6322,6 @@ def _compose_bound_refs(
     language: Language,
     composition: _BoundRefComposition,
     line_prefix: str,
-    after_binding: tuple[str, ...],
 ) -> LiteralizeResult:
     """Compose per-ref declarations and the main binding into a file.
 
@@ -6489,7 +6476,6 @@ def _compose_bound_refs(
         generated_body_preamble=unified_body_preamble,
         root_is_object_literal=False,
         root_mapping_entries=None,
-        after_binding=after_binding,
     )
     context = dataclasses.replace(
         context, bound_variable_names=composition.bound_variable_names
@@ -8717,7 +8703,6 @@ def _wrap_call_in_file(
             generated_body_preamble=computed_body,
             root_is_object_literal=False,
             root_mapping_entries=None,
-            after_binding=(),
         ),
     )
     call_binding_pragmas: tuple[str, ...] = ()
@@ -9992,7 +9977,6 @@ def literalize_call_with_declarations(
                 generated_body_preamble=unified_body_preamble,
                 root_is_object_literal=False,
                 root_mapping_entries=None,
-                after_binding=(),
             ),
             has_existing_bindings=len(declarations) > 0
             and any(

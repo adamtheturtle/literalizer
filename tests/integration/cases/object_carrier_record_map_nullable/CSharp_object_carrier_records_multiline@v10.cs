@@ -17,6 +17,5 @@ var my_data = new[] {
         System.Collections.Generic.Dictionary<string, object?> first = my_data[0].Payload;
         System.Collections.Generic.Dictionary<string, object?> second = my_data[1].Payload;
         if (first["flag"] is not true || second["nothing"] is not null) { throw new System.InvalidOperationException("changed record maps"); }
-    _ = my_data;
     }
 }

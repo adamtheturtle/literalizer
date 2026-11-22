@@ -18,6 +18,7 @@ from .literal_rejection_manifest import (
     LITERAL_REJECTION_MANIFEST,
     authored_literal_rejection,
 )
+from .manifest_values import ComposedConsumer
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -35,7 +36,6 @@ class RenderArguments:
     collection_layout: literalizer.CollectionLayout
     record_null_substitutions: Mapping[str, ValueInput] | None
     wrap_in_file: bool
-    after_binding: tuple[str, ...]
 
 
 @beartype
@@ -56,7 +56,6 @@ def compact_render(
         collection_layout=literalizer.CollectionLayout.COMPACT,
         record_null_substitutions=None,
         wrap_in_file=True,
-        after_binding=(),
     )
 
 
@@ -73,7 +72,7 @@ class GoldenRendering:
     extra_preamble: tuple[str, ...]
     initialize_variable: bool
     apply_fixture_module_name: bool
-    consumer_template: str | None
+    consumer_template: str | ComposedConsumer | None
 
     @property
     def wrap_in_file(self) -> bool:
@@ -82,6 +81,7 @@ class GoldenRendering:
             self.render.wrap_in_file
             and len(self.extra_preamble) == 0
             and not self.initialize_variable
+            and not isinstance(self.consumer_template, ComposedConsumer)
         )
 
     @property

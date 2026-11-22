@@ -3,7 +3,9 @@ owner = "variant"
 
 [[variants]]
 axis = "csharp_object_carrier"
-after_binding = [
-    '''System.Collections.Generic.Dictionary<string, object?> values = my_data;''',
-    '''if (values.Count != 0) { throw new System.InvalidOperationException("changed collection values"); }''',
-]
+
+[variants.consumer_templates.CSharp]
+statements = '''
+System.Collections.Generic.Dictionary<string, object?> values = my_data;
+if (values.Count != 0) { throw new System.InvalidOperationException("changed collection values"); }
+'''

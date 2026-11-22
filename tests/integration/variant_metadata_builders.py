@@ -58,7 +58,6 @@ def build_modifier_variant_cases(
             cases.extend(
                 VariantCase(
                     consumer_template=None,
-                    after_binding=(),
                     apply_fixture_module_name=True,
                     golden_name=variant.name,
                     variant=variant,
@@ -120,7 +119,6 @@ def build_modifier_variant_cases(
                 cases.append(
                     VariantCase(
                         consumer_template=None,
-                        after_binding=(),
                         apply_fixture_module_name=True,
                         golden_name=variant.name,
                         variant=variant,

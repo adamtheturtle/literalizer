@@ -4,12 +4,21 @@ from collections.abc import Callable, Mapping
 from typing import Annotated, Literal
 
 from beartype import beartype
-from pydantic import BeforeValidator, Field, InstanceOf
+from pydantic import BaseModel, BeforeValidator, Field, InstanceOf
 
 import literalizer
 from literalizer.languages import ALL_LANGUAGES
 
 from .call_templates import CallTransform, call_transform_from_template
+
+
+class ComposedConsumer(BaseModel, extra="forbid", frozen=True, strict=True):
+    """Native statements placed with the generated binding by the
+    wrapper.
+    """
+
+    statements: Annotated[str, Field(min_length=1)]
+
 
 type VariableFormName = Literal["new", "existing", "both"]
 

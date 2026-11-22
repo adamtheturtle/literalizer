@@ -12,6 +12,7 @@ second member to a language's enum automatically produces a parallel
 set of golden files.
 """
 
+import dataclasses
 import functools
 from pathlib import Path
 
@@ -34,6 +35,7 @@ from .language_metadata import language_metadata
 from .language_specs import with_per_fixture_module_name
 from .literal_expectations import literal_source
 from .literalize_rendering import compose_rendering, literalize_rendering
+from .manifest_values import ComposedConsumer
 
 
 @beartype
@@ -77,7 +79,18 @@ def _check_rendering(
         source_text=source.source_text,
         variable_form=variable_form,
     )
-    if rendering.initialize_variable or len(rendering.extra_preamble) > 0:
+    consumer = rendering.consumer_template
+    if isinstance(consumer, ComposedConsumer):
+        statements = consumer.statements.rstrip("\n")
+        result = dataclasses.replace(
+            result,
+            declaration_code=f"{result.declaration_code}\n{statements}",
+        )
+    if (
+        rendering.initialize_variable
+        or len(rendering.extra_preamble) > 0
+        or isinstance(consumer, ComposedConsumer)
+    ):
         declarations: list[literalizer.LiteralizeResult] = []
         if rendering.initialize_variable:
             assert isinstance(
@@ -114,9 +127,9 @@ def _check_rendering(
             )
         ),
     )
-    if rendering.consumer_template is not None:
+    if isinstance(consumer, str):
         contents = format_consumer(
-            template=rendering.consumer_template,
+            template=consumer,
             result=result,
             golden_path=golden_path,
             spec=spec,

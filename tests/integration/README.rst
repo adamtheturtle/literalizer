@@ -130,12 +130,11 @@ Native interpreter checks
 
 Native value assertions belong in the same case manifests and compiling golden files as their inputs.
 Use ``base_context.consumer_templates`` for the base rendering or ``variants.consumer_templates`` for an option variant.
+An option variant can supply a language-specific ``statements`` table.
+The runner appends those native statements to the binding and uses the existing language wrapper to assemble the file.
 Templates receive the generated ``code`` and the selected enum option names, such as ``bytes_format`` and ``datetime_format``.
 These names let an assertion check the intended representation's type as well as its value.
 Other languages and variants retain their existing coverage when no consumer is declared.
-
-For a wrapped C# variable, ``variants.after_binding`` supplies native statement lines to ``literalize``.
-The generated wrapper places these assertions in the variable's scope.
 
 Expected values must be independent of the renderer.
 The typed scalar, byte and datetime consumers use native type checks and standard-library inspection: binary64 bit patterns, independently constructed byte ranges, Gregorian dates, and exact datetime instants and offsets.
