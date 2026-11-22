@@ -36,7 +36,7 @@ def _literalize_bindings() -> dict[Path, str | None]:
     return {
         rendering.artifact(version=spec.language_version).path.resolve(): (
             None
-            if rendering.consumer_template is not None
+            if rendering.consumer is not None
             else _binding_name(variable_form=rendering.render.variable_form)
         )
         for (_, lang_cls), renderings in scenario_renderings().items()
