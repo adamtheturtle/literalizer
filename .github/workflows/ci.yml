@@ -88,7 +88,7 @@ jobs:
           uv run --no-sync python -m pytest -p timing -p scripts.pytest_worker_timing \
             --timing-capture=workers \
             --timing-json-file="$RUNNER_TEMP/pytest-worker-timing.json" \
-            --junitxml="$RUNNER_TEMP/pytest-results.xml" \
+            --report-log="$RUNNER_TEMP/pytest-results.jsonl" \
             -v -o verbosity_test_cases=0 \
             --dist=worksteal --durations=20 \
             --ignore=tests/benchmarks . "${coverage_args[@]}"
@@ -101,26 +101,27 @@ jobs:
           # separately above before this source-path override is applied.
           PYTHONPATH: src
 
-      - name: Require zero skipped golden tests
+      - name: Reject skips and expected failures in golden tests
         shell: bash
         run: |
-          uv run --no-sync python - "$RUNNER_TEMP/pytest-results.xml" <<'PY'
+          uv run --no-sync python - "$RUNNER_TEMP/pytest-results.jsonl" <<'PY'
+          import json
           import sys
-          from xml.etree import ElementTree
 
-          skips = []
-          for case in ElementTree.parse(sys.argv[1]).iter("testcase"):
-              # Pytest puts the module name in "name" for collection skips.
-              classname, name = case.get("classname"), case.attrib["name"]
-              module = classname or name
-              if module != "tests.integration" and not module.startswith("tests.integration."):
-                  continue
-              for skip in case.findall("skipped"):
-                  if skip.get("type") != "pytest.xfail":
-                      test = f"{classname}::{name}" if classname else name
-                      skips.append(f"{test} ({skip.get('message', 'skipped')})")
-          if skips:
-              sys.exit("Skipped golden tests:\n" + "\n".join(sorted(set(skips))))
+          unexpected = set()
+          with open(sys.argv[1], encoding="utf-8") as log:
+              for line in log:
+                  report = json.loads(line)
+                  nodeid = report.get("nodeid", "")
+                  if nodeid != "tests/integration" and not nodeid.startswith("tests/integration/"):
+                      continue
+                  outcome = report.get("outcome")
+                  if "wasxfail" in report:
+                      unexpected.add(f"{nodeid} (xfail marker: {report['wasxfail']})")
+                  elif outcome == "skipped":
+                      unexpected.add(f"{nodeid} (skipped)")
+          if unexpected:
+              sys.exit("Golden tests with skips or expected failures:\n" + "\n".join(sorted(unexpected)))
           PY
 
   # Build once for both the test matrix and benchmark shards. Installing
