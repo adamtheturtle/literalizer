@@ -250,7 +250,7 @@ This option has no effect unless ``string_format=Cpp.string_formats.MULTILINE`` 
 Roc compatibility
 -----------------
 
-Roc output targets compiler nightly ``2026-11-15-f25da45`` and ``basic-cli 0.28.1``.
+Roc output targets compiler nightly ``2026-11-21-09f4dc3`` and ``basic-cli 0.28.1``.
 The default and only supported target is ``Roc.version_formats.V1``.
 The former ``V0`` target and ``Roc.call_styles.COMMAND`` are removed; calls use ``Roc.call_styles.POSITIONAL``.
 ``Roc()`` now generates the new compiler's syntax, which the legacy compiler cannot consume.

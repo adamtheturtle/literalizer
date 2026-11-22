@@ -719,8 +719,8 @@ jobs:
     # V1 is the only supported Roc target. Keep this immutable compiler
     # release paired with basic-cli in scripts/run_roc_roundtrip.py.
     env:
-      ROC_NIGHTLY_BUILD: roc_nightly-linux_x86_64-2026-11-15-f25da45
-      ROC_SHA256: 986360348a6bbf4f27696f6b3d73f0260293813346712a3f72e736452671e994
+      ROC_NIGHTLY_BUILD: roc_nightly-linux_x86_64-2026-11-21-09f4dc3
+      ROC_SHA256: dbafdee9a17e10c78a1039796d8035cccce8cfcbdad4b119e49778cdf9eef185
     steps:
       - uses: actions/checkout@v7
         with:
@@ -736,7 +736,7 @@ jobs:
         uses: nick-fields/retry@v4.0.0
         env:
           ARTIFACT_DESTINATION: /tmp/roc.tar.gz
-          ARTIFACT_URL: https://github.com/roc-lang/nightlies/releases/download/nightly-2026-11-15-f25da45/roc_nightly-linux_x86_64-2026-11-15-f25da45.tar.gz
+          ARTIFACT_URL: https://github.com/roc-lang/nightlies/releases/download/nightly-2026-11-21-09f4dc3/roc_nightly-linux_x86_64-2026-11-21-09f4dc3.tar.gz
         with: *download
 
       - name: Install Roc

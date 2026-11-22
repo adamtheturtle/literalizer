@@ -438,7 +438,7 @@ class Roc(metaclass=LanguageCls):
     Null has no native Roc literal and remains an inferred ``RNull`` tag.
 
     The default and only target, ``Roc.version_formats.V1``, uses compiler
-    nightly ``2026-11-15-f25da45``. It uses nominal value unions,
+    nightly ``2026-11-21-09f4dc3``. It uses nominal value unions,
     parenthesized constructors and calls, and typed numeric literals.
     Wrapped files are complete default-platform apps with a ``main!``
     entry point. The former ``V0`` target is retired.
@@ -962,7 +962,7 @@ class Roc(metaclass=LanguageCls):
     # the ``Install Roc`` step of ``.github/workflows/lint.yml``. Roc
     # has no stable release and no ``--langversion``-style flag, so the
     # pinned nightly build is the only mechanism for pinning the
-    # version; ``V1`` maps to ``2026-11-15-f25da45``. Keep the platform
+    # version; ``V1`` maps to ``2026-11-21-09f4dc3``. Keep the platform
     # in scripts/run_roc_roundtrip.py paired with this compiler.
     language_version: VersionFormats = VersionFormats.V1
     indent: str = "    "
