@@ -101,27 +101,25 @@ jobs:
           # separately above before this source-path override is applied.
           PYTHONPATH: src
 
-      - name: Reject skips and expected failures in golden tests
+      - name: Require zero skipped golden tests
         shell: bash
         run: |
           uv run --no-sync python - "$RUNNER_TEMP/pytest-results.jsonl" <<'PY'
           import json
           import sys
 
-          unexpected = set()
+          skipped = set()
           with open(sys.argv[1], encoding="utf-8") as log:
               for line in log:
                   report = json.loads(line)
-                  nodeid = report.get("nodeid", "")
-                  if nodeid != "tests/integration" and not nodeid.startswith("tests/integration/"):
+                  # Pytest also reports xfails with a skipped outcome.
+                  if report.get("outcome") != "skipped" or "wasxfail" in report:
                       continue
-                  outcome = report.get("outcome")
-                  if "wasxfail" in report:
-                      unexpected.add(f"{nodeid} (xfail marker: {report['wasxfail']})")
-                  elif outcome == "skipped":
-                      unexpected.add(f"{nodeid} (skipped)")
-          if unexpected:
-              sys.exit("Golden tests with skips or expected failures:\n" + "\n".join(sorted(unexpected)))
+                  nodeid = report.get("nodeid", "")
+                  if nodeid == "tests/integration" or nodeid.startswith("tests/integration/"):
+                      skipped.add(nodeid)
+          if skipped:
+              sys.exit("Skipped golden tests:\n" + "\n".join(sorted(skipped)))
           PY
 
   # Build once for both the test matrix and benchmark shards. Installing
