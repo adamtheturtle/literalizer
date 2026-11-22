@@ -72,7 +72,7 @@ class GoldenRendering:
     extra_preamble: tuple[str, ...]
     initialize_variable: bool
     apply_fixture_module_name: bool
-    consumer_template: str | ComposedConsumer | None
+    consumer: str | ComposedConsumer | None
 
     @property
     def wrap_in_file(self) -> bool:
@@ -81,7 +81,7 @@ class GoldenRendering:
             self.render.wrap_in_file
             and len(self.extra_preamble) == 0
             and not self.initialize_variable
-            and not isinstance(self.consumer_template, ComposedConsumer)
+            and not isinstance(self.consumer, ComposedConsumer)
         )
 
     @property
@@ -155,7 +155,7 @@ def unprefixed_rendering(
 ) -> GoldenRendering:
     """Return a rendering needing no supporting preamble or initialization."""
     return GoldenRendering(
-        consumer_template=None,
+        consumer=None,
         lang_cls=lang_cls,
         case_dir_name=case_dir_name,
         golden_name=golden_name,

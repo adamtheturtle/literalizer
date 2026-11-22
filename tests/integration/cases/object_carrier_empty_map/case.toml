@@ -4,8 +4,8 @@ owner = "variant"
 [[variants]]
 axis = "csharp_object_carrier"
 
-[variants.consumer_templates.CSharp]
-statements = '''
+[variants.consumer_statements]
+CSharp = '''
 System.Collections.Generic.Dictionary<string, object?> values = my_data;
 if (values.Count != 0) { throw new System.InvalidOperationException("changed collection values"); }
 '''

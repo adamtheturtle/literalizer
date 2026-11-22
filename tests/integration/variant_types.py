@@ -61,4 +61,4 @@ class VariantCase:
     variable_form: literalizer.VariableForm
     pre_indent_level: int
     apply_fixture_module_name: bool
-    consumer_template: str | ComposedConsumer | None
+    consumer: str | ComposedConsumer | None

@@ -79,7 +79,7 @@ def _check_rendering(
         source_text=source.source_text,
         variable_form=variable_form,
     )
-    consumer = rendering.consumer_template
+    consumer = rendering.consumer
     if isinstance(consumer, ComposedConsumer):
         statements = consumer.statements.rstrip("\n")
         result = dataclasses.replace(

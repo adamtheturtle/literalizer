@@ -196,15 +196,13 @@ class ManifestVariant(  # noqa: NOD001
     # Keep explicit module-name options instead of the compiler fixture name.
     apply_fixture_module_name: bool = True
     wrap_in_file: bool = True
-    # Native templates or statements for the language wrapper.
-    consumer_templates: dict[
-        manifest_values.ManifestLanguage,
-        str | manifest_values.ComposedConsumer,
-    ] = Field(
-        default_factory=dict[
-            literalizer.LanguageCls, str | manifest_values.ComposedConsumer
-        ]
+    # Native caller syntax around an unwrapped result, by language.
+    consumer_templates: dict[manifest_values.ManifestLanguage, str] = Field(
+        default_factory=dict[literalizer.LanguageCls, str]
     )
+    consumer_statements: dict[
+        manifest_values.ManifestLanguage, Annotated[str, Field(min_length=1)]
+    ] = Field(default_factory=dict[literalizer.LanguageCls, str])
     use_base_consumer_templates: bool = False
     # Some shape-mapping cases deliberately never use the external type.
     include_extra_preamble: bool = True

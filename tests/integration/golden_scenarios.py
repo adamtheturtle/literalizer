@@ -127,7 +127,7 @@ def _base_renderings(
                         wrap_in_file=True,
                     ),
                 ),
-                consumer_template=context.consumer_templates.get(lang_cls),
+                consumer=context.consumer_templates.get(lang_cls),
             )
         )
     return tuple(renderings)
@@ -146,7 +146,7 @@ def _default_module_name_renderings(
     manifests = case_manifests_by_name(cases_dir=_CASES_DIR)
     return tuple(
         GoldenRendering(
-            consumer_template=None,
+            consumer=None,
             lang_cls=lang_cls,
             case_dir_name=case_name,
             golden_name=f"{lang_cls.__name__}_default_module_name",
@@ -257,7 +257,7 @@ def _variant_renderings(
                 ),
                 wrap_in_file=variant_case.variant.wrap_in_file,
             ),
-            consumer_template=variant_case.consumer_template,
+            consumer=variant_case.consumer,
             extra_preamble=variant_case.variant.extra_preamble,
             initialize_variable=variant_case.variant.initialize_variable,
             apply_fixture_module_name=variant_case.apply_fixture_module_name,
