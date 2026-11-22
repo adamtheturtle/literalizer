@@ -14,6 +14,7 @@ class Rejection:
 
     error: type[Exception]
     match: str | None
+    exact_type: bool = False  # noqa: NOD001 - existing subclass contracts
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

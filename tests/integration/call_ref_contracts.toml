@@ -1,0 +1,1188 @@
+# Contracts for authored call and reference fixtures. Selectors match effective options.
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "COBOL DATA DIVISION VALUE clauses only accept literals, not identifier references"
+
+[[rejection.applies]]
+cases = ["literalize_ref_external_json_existing_binding"]
+languages = ["Cobol"]
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "COBOL json_type=CJSON builds each value as a multi\\-statement cJSON node tree, and COBOL has no inline call\\-expression form to pass one as a CALL argument"
+
+[[rejection.applies]]
+cases = ["call_json_helper_member_std"]
+languages = ["Cobol"]
+
+[[rejection.applies]]
+cases = [
+  "call_empty_statement",
+  "call_generated_helper_member_zval",
+  "call_scalar_args",
+  "call_wrapped_empty_list",
+  "call_wrapped_scalar",
+]
+languages = ["Cobol"]
+options = { json_type = "CJSON" }
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "Dhall call stubs only support scalar arguments"
+
+[[rejection.applies]]
+cases = [
+  "call_carrier_bare_homogeneous",
+  "call_carrier_bare_separate",
+  "call_carrier_member_homogeneous",
+  "call_carrier_member_separate",
+  "call_carrier_nested_homogeneous",
+  "call_carrier_nested_separate",
+  "call_case_distinct_dotted_parts",
+  "call_collection_result_annotations",
+  "call_comments_dict_args",
+  "call_dotted_empty_result_binding",
+  "call_dotted_mixed_empty_arguments",
+  "call_dotted_nonempty_result_binding",
+  "call_dotted_receiver_parameter_collisions",
+  "call_empty_mapping_receiver_parameter",
+  "call_empty_statement",
+  "call_homogeneous_value_dict_arg",
+  "call_identity_result_binding",
+  "call_multiline_list_argument",
+  "call_nested_inline_middle",
+  "call_nested_list_whole_argument",
+  "call_null_and_array_arguments",
+  "call_plain_empty_result_binding",
+  "call_plain_mixed_empty_arguments",
+  "call_plain_nonempty_result_binding",
+  "call_process_member",
+  "call_process_root",
+  "call_sibling_maps",
+  "call_temporal_scalar_slot",
+  "call_unused_bound_reference",
+  "call_whole_empty_list_argument",
+  "call_whole_input_comment",
+  "call_whole_list_argument",
+  "call_whole_tuple_argument",
+  "call_whole_variant_list_argument",
+  "call_wrapped_empty_list",
+]
+languages = ["Dhall"]
+
+[[rejection.applies]]
+cases = ["literalize_ref_unused_values_set"]
+languages = ["Dhall"]
+options = { variable_form = "none" }
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "Nim renders a sequence as a fixed\\-size array, whose length is part of its type, so sibling sequences of lengths 1, 2 have no common type"
+
+[[rejection.applies]]
+cases = [
+  "call_collection_result_annotations",
+  "call_nested_list_whole_argument",
+]
+languages = ["Nim"]
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "Scheme output is not wrapped in a function body; variable references require a surrounding define"
+
+[[rejection.applies]]
+cases = ["literalize_ref_external_json_existing_binding"]
+languages = ["Scheme"]
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "SystemVerilog cannot reference a scalar value"
+
+[[rejection.applies]]
+cases = [
+  "external_scalar_reference",
+  "literalize_ref_array_mixed_bound_values",
+  "literalize_ref_aware_time",
+  "literalize_ref_bidi_string",
+  "literalize_ref_bound_boolean",
+  "literalize_ref_empty_nested_sequences_and_scalar",
+  "literalize_ref_escaped_nested_dict",
+  "literalize_ref_escaped_nested_lists",
+  "literalize_ref_external_scalar_assignment",
+  "literalize_ref_heterogeneous_list",
+  "literalize_ref_in_dict",
+  "literalize_ref_in_mixed_list",
+  "literalize_ref_integer_float_sibling",
+  "literalize_ref_noncharacter_string",
+  "literalize_ref_nul_string_value",
+  "literalize_ref_numeric_widening",
+  "literalize_ref_ordered_map_parent",
+  "literalize_ref_pre_indented_injected_text",
+  "literalize_ref_scalar",
+  "literalize_ref_scalar_list_hint",
+  "literalize_ref_string_value",
+  "literalize_ref_time",
+  "native_datetime_epoch_cancellation",
+]
+languages = ["SystemVerilog"]
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "call_transform produces a function application without the whitespace Dhall requires"
+
+[[rejection.applies]]
+cases = [
+  "call_deep_dotted_transformed",
+  "call_dotted_transform_stub",
+  "call_keyword_args",
+  "call_zip_dict_values",
+]
+languages = ["Dhall"]
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "compound values are DATA DIVISION entries, not inline CALL arguments"
+
+[[rejection.applies]]
+cases = [
+  "call_carrier_bare_homogeneous",
+  "call_carrier_bare_separate",
+  "call_carrier_member_homogeneous",
+  "call_carrier_member_separate",
+  "call_carrier_nested_homogeneous",
+  "call_carrier_nested_separate",
+  "call_case_distinct_dotted_parts",
+  "call_dotted_nested_empty_mapping_arguments",
+  "call_empty_container_type_hint",
+  "call_empty_mapping_receiver_parameter",
+  "call_multiline_list_argument",
+  "call_nested_inline_middle",
+  "call_nested_list_whole_argument",
+  "call_null_and_array_arguments",
+  "call_per_element_false_mixed_list",
+  "call_process_member",
+  "call_process_root",
+  "call_sibling_maps",
+  "call_unused_bound_reference",
+  "call_whole_empty_list_argument",
+  "call_whole_input_comment",
+  "call_whole_list_argument",
+]
+languages = ["Cobol"]
+
+[[rejection.applies]]
+cases = ["call_empty_statement", "call_wrapped_empty_list"]
+languages = ["Cobol"]
+options = { json_type = "NONE" }
+
+[[rejection.applies]]
+cases = ["literalize_ref_unused_values_set"]
+languages = ["Cobol"]
+options = { variable_form = "none" }
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "dict values have no inline literal form in a Bash command invocation; declare the collection as a variable and pass it via a \\$ref marker instead"
+
+[[rejection.applies]]
+cases = [
+  "call_comments_dict_args",
+  "call_dotted_receiver_parameter_collisions",
+  "call_empty_mapping_receiver_parameter",
+  "call_homogeneous_value_dict_arg",
+  "call_mixed_type_dicts",
+  "call_per_element_false_dict_arg",
+  "call_process_member",
+  "call_process_root",
+  "call_ref_in_ordered_map",
+  "call_ref_nested_in_collection",
+  "call_ref_nested_in_dict",
+  "call_ref_only_mapping_values",
+  "call_ref_ordered_map",
+  "call_sibling_maps",
+]
+languages = ["Bash"]
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "list values have no inline literal form in a Bash command invocation; declare the collection as a variable and pass it via a \\$ref marker instead"
+
+[[rejection.applies]]
+cases = [
+  "call_bound_multiline_multiple",
+  "call_bound_ref_multiline_layout",
+  "call_carrier_bare_homogeneous",
+  "call_carrier_bare_separate",
+  "call_carrier_member_homogeneous",
+  "call_carrier_member_separate",
+  "call_carrier_nested_homogeneous",
+  "call_carrier_nested_separate",
+  "call_case_distinct_dotted_parts",
+  "call_collection_result_annotations",
+  "call_dotted_nested_empty_mapping_arguments",
+  "call_empty_container_type_hint",
+  "call_empty_statement",
+  "call_multiline_list_argument",
+  "call_nested_inline_middle",
+  "call_nested_list_whole_argument",
+  "call_null_and_array_arguments",
+  "call_per_element_false_mixed_list",
+  "call_plain_empty_result_binding",
+  "call_plain_nonempty_result_binding",
+  "call_ref_nested_converted",
+  "call_ref_nested_in_list",
+  "call_ref_nested_reusable",
+  "call_unknown_ref_nested_dict",
+  "call_unknown_ref_values_nested_list",
+  "call_unknown_reference_sequence_custom_key",
+  "call_unused_bound_reference",
+  "call_whole_empty_list_argument",
+  "call_whole_input_comment",
+  "call_whole_list_argument",
+  "call_wrapped_empty_list",
+]
+languages = ["Bash"]
+
+[[rejection]]
+error = "CallArgNotSupportedError"
+match = "set values have no inline literal form in a Bash command invocation; declare the collection as a variable and pass it via a \\$ref marker instead"
+
+[[rejection.applies]]
+cases = ["literalize_ref_unused_values_set"]
+languages = ["Bash"]
+options = { variable_form = "none" }
+
+[[rejection]]
+error = "HeterogeneousScalarCollectionError"
+
+[[rejection.applies]]
+cases = [
+  "call_mixed_type_dicts",
+  "call_per_element_false_dict_arg",
+  "call_per_element_false_mixed_list",
+  "call_ref_nested_converted",
+  "call_ref_nested_in_dict",
+  "call_ref_nested_in_list",
+  "literalize_ref_heterogeneous",
+  "literalize_ref_heterogeneous_list",
+  "literalize_ref_integer_float_sibling",
+  "literalize_ref_numeric_widening",
+  "literalize_ref_repeated_mixed_sequence",
+  "literalize_ref_unreferenced_record_value",
+]
+languages = ["Dhall", "V"]
+
+[[rejection.applies]]
+cases = [
+  "call_per_element_false_dict_arg",
+  "call_per_element_false_mixed_list",
+  "call_process_member",
+  "call_process_root",
+  "call_ref_nested_converted",
+  "call_ref_nested_in_dict",
+  "call_ref_nested_in_list",
+  "literalize_ref_heterogeneous",
+  "literalize_ref_heterogeneous_list",
+  "literalize_ref_integer_float_sibling",
+  "literalize_ref_numeric_widening",
+  "literalize_ref_repeated_mixed_sequence",
+  "literalize_ref_unreferenced_record_value",
+]
+languages = ["Mojo"]
+
+[[rejection.applies]]
+cases = [
+  "call_per_element_false_dict_arg",
+  "call_per_element_false_mixed_list",
+  "call_ref_nested_converted",
+  "call_ref_nested_in_dict",
+  "call_ref_nested_in_list",
+  "literalize_ref_heterogeneous",
+  "literalize_ref_heterogeneous_list",
+  "literalize_ref_integer_float_sibling",
+  "literalize_ref_numeric_widening",
+  "literalize_ref_repeated_mixed_sequence",
+  "literalize_ref_unreferenced_record_value",
+]
+languages = ["Nim"]
+
+[[rejection.applies]]
+cases = [
+  "call_per_element_false_dict_arg",
+  "call_per_element_false_mixed_list",
+  "call_ref_nested_converted",
+  "call_ref_nested_in_dict",
+  "call_ref_nested_in_list",
+  "literalize_ref_heterogeneous",
+  "literalize_ref_heterogeneous_list",
+  "literalize_ref_integer_float_sibling",
+  "literalize_ref_numeric_widening",
+  "literalize_ref_unreferenced_record_value",
+]
+languages = ["Rust"]
+
+[[rejection.applies]]
+cases = ["call_mixed_type_dicts"]
+languages = ["Nim"]
+options = { heterogeneous_strategy = "ERROR" }
+
+[[rejection.applies]]
+cases = [
+  "call_mixed_type_dicts",
+  "call_multislot_carrier",
+  "call_ref_args_reused",
+  "call_ref_args_trivial_register",
+]
+languages = ["Mojo"]
+options = { heterogeneous_strategy = "ERROR" }
+
+[[rejection.applies]]
+cases = ["call_mixed_type_dicts", "literalize_ref_repeated_mixed_sequence"]
+languages = ["Rust"]
+options = { heterogeneous_strategy = "ERROR" }
+
+[[rejection.applies]]
+cases = ["call_whole_tuple_argument", "call_whole_variant_list_argument"]
+languages = ["Nim", "Rust", "V"]
+options = { heterogeneous_strategy = "RECORD" }
+
+[[rejection]]
+error = "HeterogeneousSiblingListsError"
+
+[[rejection.applies]]
+cases = ["literalize_ref_empty_list_mixed_numeric_widening"]
+languages = ["Dhall", "Mojo", "Rust", "V"]
+
+[[rejection.applies]]
+cases = [
+  "literalize_ref_empty_list_mixed_numeric_widening",
+  "literalize_ref_mutable_record_distinct_array_types",
+]
+languages = ["Nim"]
+
+[[rejection]]
+error = "HeterogeneousSiblingMapsError"
+
+[[rejection.applies]]
+cases = ["literalize_ref_map_widening"]
+languages = ["Dhall", "V"]
+
+[[rejection.applies]]
+cases = ["literalize_ref_map_widening", "literalize_ref_nonstring_names"]
+languages = ["Mojo", "Nim", "Rust"]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "C\\# 'const' cannot bind a runtime call result\\."
+
+[[rejection.applies]]
+cases = ["call_string_result_binding"]
+languages = ["CSharp"]
+options = { variable_modifiers = "CONST" }
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "C\\# 'const' requires a compile\\-time constant initializer, but collection and date/datetime literals are not constant expressions\\. Use 'readonly' or remove the 'const' modifier\\."
+
+[[rejection.applies]]
+cases = ["literalize_ref_bound_sequence"]
+languages = ["CSharp"]
+options = { variable_modifiers = "CONST" }
+
+[[rejection.applies]]
+cases = ["literalize_ref_bound_sequence"]
+languages = ["CSharp"]
+options = { variable_modifiers = "CONST,STATIC" }
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Gleam record mode cannot infer concrete call stub types"
+
+[[rejection.applies]]
+cases = [
+  "call_native_record_argument",
+  "call_native_record_direct_mapping_argument",
+  "call_native_record_dotted",
+  "call_native_record_mixed_args",
+]
+languages = ["Gleam"]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Haskell record mode cannot infer concrete call stub types"
+
+[[rejection.applies]]
+cases = [
+  "call_native_record_argument",
+  "call_native_record_curried",
+  "call_native_record_curried_unwrapped",
+  "call_native_record_direct_mapping_argument",
+  "call_native_record_dotted",
+  "call_native_record_mixed_args",
+]
+languages = ["Haskell"]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Haskell sequence_format=TUPLE cannot represent tuple\\-valued call arguments as Val"
+
+[[rejection.applies]]
+cases = [
+  "call_nested_list_whole_argument",
+  "call_null_and_array_arguments",
+  "call_unknown_ref_values_nested_list",
+  "call_unknown_reference_sequence_custom_key",
+  "call_unused_bound_reference",
+  "call_whole_empty_list_argument",
+  "call_whole_list_argument",
+]
+languages = ["Haskell"]
+options = { sequence_format = "TUPLE" }
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "Java json_type renders data through ObjectMapper\\.readTree\\(\\.\\.\\.\\) and does not support class\\-field modifiers \\(public, private, protected, static\\), which require handling the checked parsing exception in a field initializer\\. Remove these modifiers to use a local declaration\\."
+
+[[rejection.applies]]
+cases = ["literalize_ref_value_type_hint"]
+languages = ["Java"]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "OCaml record mode cannot infer concrete call stub types"
+
+[[rejection.applies]]
+cases = [
+  "call_native_record_argument",
+  "call_native_record_curried",
+  "call_native_record_curried_unwrapped",
+  "call_native_record_direct_mapping_argument",
+  "call_native_record_dotted",
+  "call_native_record_mixed_args",
+]
+languages = ["OCaml"]
+
+[[rejection]]
+error = "IncompatibleFormatsError"
+match = "cannot represent a tuple nested inside the generated Val ADT\\. Use LIST or select the Aeson JSON type\\."
+
+[[rejection.applies]]
+cases = ["literalize_ref_repeated_tuple_mixed"]
+languages = ["Haskell"]
+
+[[rejection]]
+error = "InvalidDictKeyError"
+
+[[rejection.applies]]
+cases = ["empty_ref_key"]
+languages = ["Bash"]
+
+[[rejection.applies]]
+cases = ["literalize_ref_mixed_sibling_maps", "literalize_ref_nonstring_names"]
+languages = ["Matlab"]
+
+[[rejection]]
+error = "MixedDictShapesError"
+
+[[rejection.applies]]
+cases = ["literalize_ref_default_nested", "literalize_ref_nonstring_names"]
+languages = ["Dhall"]
+
+[[rejection]]
+error = "MixedDictValuesError"
+
+[[rejection.applies]]
+cases = ["literalize_ref_pre_indented_injected_text"]
+languages = ["Dhall", "Rust", "V"]
+
+[[rejection]]
+error = "MixedListValuesError"
+
+[[rejection.applies]]
+cases = [
+  "call_dotted_nested_empty_mapping_arguments",
+  "call_empty_container_type_hint",
+  "literalize_ref_array_mixed_bound_values",
+  "literalize_ref_escaped_nested_lists",
+  "literalize_ref_escaped_plain_string",
+  "literalize_ref_indented_comment_bindings",
+  "literalize_ref_repeated_nested_collection",
+]
+languages = ["V"]
+
+[[rejection.applies]]
+cases = [
+  "call_dotted_nested_empty_mapping_arguments",
+  "call_empty_container_type_hint",
+  "literalize_ref_empty_nested_sequences_and_scalar",
+  "literalize_ref_escaped_nested_lists",
+  "literalize_ref_escaped_plain_string",
+  "literalize_ref_indented_comment_bindings",
+  "literalize_ref_mixed_sibling_maps",
+  "literalize_ref_repeated_nested_collection",
+]
+languages = ["Dhall"]
+
+[[rejection.applies]]
+cases = [
+  "call_dotted_nested_empty_mapping_arguments",
+  "call_empty_container_type_hint",
+  "literalize_ref_empty_nested_sequences_and_scalar",
+  "literalize_ref_escaped_nested_lists",
+  "literalize_ref_escaped_plain_string",
+  "literalize_ref_mixed_sibling_maps",
+  "literalize_ref_mutable_record_heterogeneous_both_forms",
+  "literalize_ref_repeated_nested_collection",
+]
+languages = ["Nim"]
+
+[[rejection.applies]]
+cases = [
+  "call_dotted_nested_empty_mapping_arguments",
+  "call_empty_container_type_hint",
+  "literalize_ref_empty_nested_sequences_and_scalar",
+  "literalize_ref_escaped_nested_lists",
+  "literalize_ref_escaped_plain_string",
+  "literalize_ref_mixed_sibling_maps",
+  "literalize_ref_repeated_nested_collection",
+]
+languages = ["Mojo"]
+
+[[rejection.applies]]
+cases = [
+  "call_dotted_nested_empty_mapping_arguments",
+  "literalize_ref_array_mixed_bound_values",
+  "literalize_ref_empty_nested_sequences_and_scalar",
+  "literalize_ref_escaped_nested_lists",
+  "literalize_ref_escaped_plain_string",
+  "literalize_ref_indented_comment_bindings",
+  "literalize_ref_mixed_sibling_maps",
+]
+languages = ["Rust"]
+
+[[rejection.applies]]
+cases = ["literalize_ref_array_mixed_bound_values"]
+languages = ["Cpp"]
+
+[[rejection.applies]]
+cases = ["call_empty_container_type_hint"]
+languages = ["Rust"]
+options = { heterogeneous_strategy = "ERROR" }
+
+[[rejection.applies]]
+cases = ["literalize_ref_empty_nested_sequences_and_scalar"]
+languages = ["V"]
+options = { heterogeneous_strategy = "ERROR" }
+
+[[rejection.applies]]
+cases = ["literalize_ref_repeated_nested_collection"]
+languages = ["Rust"]
+options = { sequence_format = "VEC" }
+
+[[rejection]]
+error = "NullInCollectionError"
+match = "null"
+
+[[rejection.applies]]
+cases = [
+  "literalize_ref_mixed_sibling_maps",
+  "literalize_ref_nested_null",
+  "literalize_ref_nonstring_names",
+]
+languages = ["V"]
+
+[[rejection.applies]]
+cases = [
+  "literalize_ref_nested_null",
+  "literalize_ref_repeated_null_and_literal",
+]
+languages = ["Mojo"]
+
+[[rejection.applies]]
+cases = ["literalize_ref_repeated_null_and_literal"]
+languages = ["V"]
+options = { heterogeneous_strategy = "ERROR" }
+
+[[rejection]]
+error = "ReservedVariableNameError"
+match = "reserved"
+
+[[rejection.applies]]
+cases = [
+  "call_bound_scalar_declaration_variants",
+  "call_json_nested_ref_array",
+  "call_json_nested_ref_object",
+  "call_json_nested_ref_per_element",
+  "call_json_repeated_array",
+  "call_json_repeated_null",
+  "call_json_repeated_object",
+  "call_json_repeated_scalar",
+  "external_scalar_reference",
+  "literalize_ref_default_json_nested",
+  "literalize_ref_external_array_assignment",
+  "literalize_ref_external_declaration",
+  "literalize_ref_external_json_array_assignment",
+  "literalize_ref_external_json_array_declaration",
+  "literalize_ref_external_scalar_assignment",
+  "literalize_ref_indented_comment_bindings",
+  "literalize_ref_nul_string_value",
+  "literalize_ref_owned_root_both",
+  "literalize_ref_pre_indented",
+  "literalize_ref_pre_indented_both",
+  "literalize_ref_pre_indented_injected_text",
+  "literalize_ref_repeated_array_objects",
+  "literalize_ref_repeated_array_scalars",
+  "literalize_ref_repeated_empty_array",
+  "literalize_ref_repeated_mixed_sequence",
+  "literalize_ref_repeated_nested",
+  "literalize_ref_repeated_nested_collection",
+  "literalize_ref_repeated_owned",
+  "literalize_ref_repeated_record",
+  "literalize_ref_repeated_value_type",
+  "literalize_ref_string_value",
+  "literalize_ref_value_type_nested_array",
+  "literalize_ref_value_type_nested_object_both",
+  "literalize_ref_value_type_nested_object_indented",
+  "literalize_ref_value_type_root_array",
+  "literalize_ref_value_type_root_both",
+  "literalize_ref_value_type_root_null",
+  "literalize_ref_value_type_root_object",
+  "literalize_ref_value_type_root_string",
+]
+languages = ["D"]
+
+[[rejection.applies]]
+cases = [
+  "call_bound_scalar_declaration_variants",
+  "external_scalar_reference",
+  "literalize_ref_external_array_assignment",
+  "literalize_ref_external_declaration",
+  "literalize_ref_external_scalar_assignment",
+  "literalize_ref_indented_comment_bindings",
+  "literalize_ref_nul_string_value",
+  "literalize_ref_owned_root_both",
+  "literalize_ref_pre_indented",
+  "literalize_ref_pre_indented_both",
+  "literalize_ref_pre_indented_injected_text",
+  "literalize_ref_repeated_array_objects",
+  "literalize_ref_repeated_array_scalars",
+  "literalize_ref_repeated_empty_array",
+  "literalize_ref_repeated_mixed_sequence",
+  "literalize_ref_repeated_nested",
+  "literalize_ref_repeated_nested_collection",
+  "literalize_ref_repeated_owned",
+  "literalize_ref_string_value",
+  "literalize_ref_typed_array_populated_reuse",
+  "literalize_ref_typed_empty_array_nested_reuse",
+  "literalize_ref_typed_empty_array_reuse",
+]
+languages = ["VisualBasic"]
+
+[[rejection.applies]]
+cases = [
+  "call_bound_scalar_declaration_variants",
+  "external_scalar_reference",
+  "literalize_ref_external_array_assignment",
+  "literalize_ref_external_declaration",
+  "literalize_ref_external_scalar_assignment",
+  "literalize_ref_nul_string_value",
+  "literalize_ref_owned_root_both",
+  "literalize_ref_pre_indented",
+  "literalize_ref_pre_indented_both",
+  "literalize_ref_repeated_array_objects",
+  "literalize_ref_repeated_array_scalars",
+  "literalize_ref_repeated_empty_array",
+  "literalize_ref_repeated_nested",
+  "literalize_ref_repeated_owned",
+  "literalize_ref_repeated_record",
+  "literalize_ref_string_value",
+]
+languages = ["V"]
+
+[[rejection.applies]]
+cases = [
+  "call_ref_null_argument",
+  "call_type_alias_reference",
+  "call_wrapped_bound_ref",
+  "literalize_ref_null",
+]
+languages = ["Cobol"]
+
+[[rejection.applies]]
+cases = ["literalize_ref_external_unrelated_hints"]
+languages = ["Dhall"]
+
+[[rejection.applies]]
+cases = ["literalize_ref_null", "literalize_ref_repeated_null_and_literal"]
+languages = ["Fortran"]
+
+[[rejection]]
+error = "UnrepresentableEmptyDictError"
+match = "cannot represent an empty dict distinctly from an empty list; both serialize to the same runtime collection so the mapping/sequence distinction is lost on round\\-trip\\."
+
+[[rejection.applies]]
+cases = [
+  "call_dotted_nested_empty_mapping_arguments",
+  "call_dotted_receiver_parameter_collisions",
+  "call_empty_container_type_hint",
+  "call_empty_mapping_receiver_parameter",
+]
+languages = ["Lua"]
+
+[[rejection.applies]]
+cases = [
+  "call_dotted_nested_empty_mapping_arguments",
+  "call_empty_container_type_hint",
+]
+languages = ["Php"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "C json_type can only render a scalar \\(or temporal / bytes\\) call argument inline as a single cJSON_Create\\*\\(\\.\\.\\.\\) expression; a container call argument is not supported in this slice"
+
+[[rejection.applies]]
+cases = [
+  "call_json_nested_ref_array",
+  "call_json_nested_ref_object",
+  "call_json_nested_ref_per_element",
+  "call_json_repeated_array",
+  "call_json_repeated_null",
+  "call_json_repeated_object",
+  "call_json_repeated_scalar",
+]
+languages = ["C"]
+
+[[rejection.applies]]
+cases = [
+  "call_dotted_mixed_empty_arguments",
+  "call_empty_statement",
+  "call_plain_mixed_empty_arguments",
+  "call_unknown_ref_values_nested_list",
+  "call_unknown_reference_sequence_custom_key",
+  "call_wrapped_empty_list",
+]
+languages = ["C"]
+options = { json_type = "CJSON" }
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "C\\# reference hints must have the same declaration type as their bound values"
+
+[[rejection.applies]]
+cases = [
+  "literalize_ref_explicit_precedence",
+  "literalize_ref_null_bound_list_hint",
+  "literalize_ref_null_hint_container",
+  "literalize_ref_scalar_list_hint",
+  "literalize_ref_static_numeric_widening",
+  "literalize_ref_value_type_hint",
+]
+languages = ["CSharp"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Crystal json_type cannot embed '\\#\\{' in a string value: Crystal's %\\(\\.\\.\\.\\) percent literal would interpret it as string interpolation\\."
+
+[[rejection.applies]]
+cases = ["literalize_ref_default_json_nested"]
+languages = ["Crystal"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Crystal json_type cannot embed a double quote in a string value: it would break the JSON\\.parse\\(%\\(\\.\\.\\.\\)\\) wrapper\\."
+
+[[rejection.applies]]
+cases = ["literalize_ref_value_type_nested_object_indented"]
+languages = ["Crystal"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "D record field name 'null' is reserved"
+
+[[rejection.applies]]
+cases = ["literalize_ref_record_value_ownership"]
+languages = ["D"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Gleam nested sequences require sequence_format=LIST"
+
+[[rejection.applies]]
+cases = ["literalize_ref_repeated_tuple_mixed"]
+languages = ["Gleam"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Go RECORD cannot give a nested record list and its empty sibling one compatible declared type"
+
+[[rejection.applies]]
+cases = ["literalize_ref_empty_record_sequence"]
+languages = ["Go"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Java reference hints must have the same declaration type as their bound values"
+
+[[rejection.applies]]
+cases = [
+  "literalize_ref_explicit_precedence",
+  "literalize_ref_null_bound_list_hint",
+  "literalize_ref_null_hint_container",
+  "literalize_ref_scalar_list_hint",
+]
+languages = ["Java"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Java's Map\\.entry\\(\\) does not accept null values; remove the null\\-valued entry"
+
+[[rejection.applies]]
+cases = ["literalize_ref_mixed_sibling_maps", "literalize_ref_nonstring_names"]
+languages = ["Java"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Plain COBOL cannot distinguish an empty container from spaces\\."
+
+[[rejection.applies]]
+cases = [
+  "call_unknown_ref_per_element",
+  "call_unknown_ref_values_top_level",
+  "literalize_ref_empty_nested_sequences_and_scalar",
+]
+languages = ["Cobol"]
+
+[[rejection.applies]]
+cases = [
+  "call_unknown_ref_values_nested_list",
+  "call_unknown_reference_sequence_custom_key",
+]
+languages = ["Cobol"]
+options = { json_type = "NONE" }
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Plain COBOL cannot distinguish null from spaces\\."
+
+[[rejection.applies]]
+cases = [
+  "call_ref_external_known_null",
+  "literalize_ref_mixed_sibling_maps",
+  "literalize_ref_nested_null",
+  "literalize_ref_nonstring_names",
+  "literalize_ref_repeated_null_and_literal",
+]
+languages = ["Cobol"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "Rust renders a sequence as a fixed\\-size array, whose length is part of its type, so sibling sequences of lengths 1, 2 have no common type"
+
+[[rejection.applies]]
+cases = ["call_nested_list_whole_argument"]
+languages = ["Rust"]
+options = { sequence_format = "ARRAY" }
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot preserve native set semantics with the selected set format"
+
+[[rejection.applies]]
+cases = ["literalize_ref_unused_values_set"]
+languages = ["Cpp", "D", "Haxe", "Nim", "Raku"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent a NIM\\-table\\-literal date/datetime field under the RECORD heterogeneous strategy; use the ISO or EPOCH format"
+
+[[rejection.applies]]
+cases = [
+  "literalize_ref_later_record_imports",
+  "literalize_ref_record_value_ownership",
+]
+languages = ["Nim"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent a heterogeneous list, a heterogeneous\\-valued dict, a non\\-record dict, a set, or an ordered map; use the default json_type=STD_JSON_VALUE instead"
+
+[[rejection.applies]]
+cases = ["literalize_ref_value_type_nested_object"]
+languages = ["D"]
+
+[[rejection.applies]]
+cases = [
+  "call_unknown_ref_values_nested_list",
+  "call_unknown_reference_sequence_custom_key",
+]
+languages = ["D"]
+options = { json_type = "NONE" }
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent a heterogeneous scalar list, a set, an ordered map or a non\\-record dict under the RECORD heterogeneous strategy"
+
+[[rejection.applies]]
+cases = [
+  "call_whole_tuple_argument",
+  "call_whole_variant_list_argument",
+  "literalize_ref_record_empty_map",
+]
+languages = ["D"]
+
+[[rejection.applies]]
+cases = ["call_dotted_receiver_parameter_collisions"]
+languages = ["D"]
+options = { heterogeneous_strategy = "RECORD" }
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent a non\\-record dict"
+
+[[rejection.applies]]
+cases = ["literalize_ref_record_empty_map"]
+languages = ["Rust"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent a record\\-shaped dict"
+
+[[rejection.applies]]
+cases = ["literalize_ref_empty_record_sequence"]
+languages = ["C"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent a set or non\\-record\\-dict field under the RECORD heterogeneous strategy"
+
+[[rejection.applies]]
+cases = ["literalize_ref_record_empty_map"]
+languages = ["Nim"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent dict key of type int"
+
+[[rejection.applies]]
+cases = ["call_json_native_integer_key_argument"]
+languages = [
+  "C",
+  "CSharp",
+  "Cobol",
+  "Cpp",
+  "D",
+  "Elm",
+  "FSharp",
+  "Gleam",
+  "Haskell",
+  "Kotlin",
+  "Nim",
+  "OCaml",
+  "PureScript",
+  "Scala",
+  "Zig",
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent null distinctly from an empty string\\."
+
+[[rejection.applies]]
+cases = [
+  "call_ref_external_known_null",
+  "literalize_ref_external_known_null",
+  "literalize_ref_known_null_assignment",
+  "literalize_ref_mixed_sibling_maps",
+  "literalize_ref_nested_null",
+  "literalize_ref_nonstring_names",
+  "literalize_ref_null",
+  "literalize_ref_null_bound_list_hint",
+  "literalize_ref_null_hint_container",
+  "literalize_ref_null_value",
+  "literalize_ref_repeated_null_and_literal",
+]
+languages = ["SystemVerilog"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent null values; remove the null or choose a language with a null literal"
+
+[[rejection.applies]]
+cases = [
+  "literalize_ref_mixed_sibling_maps",
+  "literalize_ref_nested_null",
+  "literalize_ref_nonstring_names",
+  "literalize_ref_repeated_null_and_literal",
+]
+languages = ["Toml"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "cannot represent the dict key '\\$ref' as a lexical field identifier under the RECORD heterogeneous strategy"
+
+[[rejection.applies]]
+cases = [
+  "bound_empty_array_string_siblings_bound_both",
+  "bound_empty_array_string_siblings_bound_new",
+  "literalize_ref_array_owned_record",
+  "literalize_ref_array_record_ownership",
+  "literalize_ref_compatible_record_hint",
+  "literalize_ref_empty_compatible_hint",
+  "literalize_ref_empty_record_sequence",
+  "literalize_ref_later_record_imports",
+  "literalize_ref_mutable_record_arrays_both_forms",
+  "literalize_ref_mutable_record_distinct_array_types",
+  "literalize_ref_mutable_record_heterogeneous_both_forms",
+  "literalize_ref_mutable_record_root",
+  "literalize_ref_native_empty_array_both",
+  "literalize_ref_native_empty_string_array_both",
+  "literalize_ref_native_nested_arrays_both",
+  "literalize_ref_nested_compatible_record_hint",
+  "literalize_ref_nested_record_root",
+  "literalize_ref_nullable_records",
+  "literalize_ref_nullable_records_always",
+  "literalize_ref_nullable_records_safe",
+  "literalize_ref_record_alias_never",
+  "literalize_ref_record_alias_safe",
+  "literalize_ref_record_always_type_hint_root_alias",
+  "literalize_ref_record_array",
+  "literalize_ref_record_array_compatible_hint",
+  "literalize_ref_record_boolean_both",
+  "literalize_ref_record_empty_map",
+  "literalize_ref_record_float_both",
+  "literalize_ref_record_scalar",
+  "literalize_ref_record_scalar_both",
+  "literalize_ref_record_type_context",
+  "literalize_ref_record_value_ownership",
+  "literalize_ref_repeated_record",
+  "literalize_ref_static_nested_record",
+  "literalize_ref_static_record",
+]
+languages = ["Java"]
+
+[[rejection.applies]]
+cases = ["call_ref_nested_in_list"]
+languages = ["Cpp"]
+options = { heterogeneous_strategy = "TUPLE", language_version = "CPP14" }
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "json_type can only represent dict keys as JSON object strings"
+
+[[rejection.applies]]
+cases = ["call_json_native_integer_key_argument"]
+languages = ["Crystal", "Java", "Odin", "Rust"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "native datetime format cannot preserve UTC offset"
+
+[[rejection.applies]]
+cases = [
+  "call_shared_temporal_arguments",
+  "call_temporal_scalar_slot",
+  "call_wrapped_temporal_arguments",
+  "literalize_ref_later_record_imports",
+  "literalize_ref_record_value_ownership",
+]
+languages = ["Rust"]
+
+[[rejection.applies]]
+cases = [
+  "literalize_ref_later_record_imports",
+  "literalize_ref_record_value_ownership",
+]
+languages = ["CSharp", "Kotlin"]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "native time format cannot preserve UTC offset"
+
+[[rejection.applies]]
+cases = ["literalize_ref_aware_time"]
+languages = [
+  "CSharp",
+  "FSharp",
+  "Go",
+  "Groovy",
+  "Java",
+  "Kotlin",
+  "Python",
+  "Scala",
+  "VisualBasic",
+]
+
+[[rejection]]
+error = "UnrepresentableInputError"
+match = "timezone\\-naive native datetime format cannot preserve timezone awareness"
+
+[[rejection.applies]]
+cases = [
+  "call_shared_temporal_arguments",
+  "call_temporal_scalar_slot",
+  "call_wrapped_temporal_arguments",
+]
+languages = ["CSharp", "FSharp", "Julia", "Kotlin", "Nim", "OCaml", "Sml"]
+
+[[rejection]]
+error = "UnrepresentableNullError"
+match = "cannot represent null distinctly from the empty string"
+
+[[rejection.applies]]
+cases = [
+  "call_ref_external_known_null",
+  "literalize_ref_external_known_null",
+  "literalize_ref_known_null_assignment",
+  "literalize_ref_mixed_sibling_maps",
+  "literalize_ref_nested_null",
+  "literalize_ref_nonstring_names",
+  "literalize_ref_null",
+  "literalize_ref_null_bound_list_hint",
+  "literalize_ref_null_hint_container",
+  "literalize_ref_null_value",
+  "literalize_ref_repeated_null_and_literal",
+]
+languages = ["Bash", "Tcl"]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "cannot represent LF"
+
+[[rejection.applies]]
+cases = ["literalize_ref_indented_comment_bindings"]
+languages = ["Cobol"]
+
+[[rejection]]
+error = "UnrepresentableStringError"
+match = "cannot represent NUL"
+
+[[rejection.applies]]
+cases = ["literalize_ref_nul_string_value"]
+languages = ["Bash", "Nix", "Norg", "Occam", "R"]
+
+[[exclusion]]
+reason = "the synthetic target stub needs a common type for each argument slot"
+
+[[exclusion.applies]]
+cases = [
+  "call_sibling_maps",
+  "call_temporal_scalar_slot",
+  "call_zip_dict_values",
+  "call_zip_values",
+]
+languages = ["Mojo"]
+
+[[exclusion.applies]]
+cases = [
+  "call_deep_dotted_method",
+  "call_deep_dotted_transformed",
+  "call_dotted_method",
+  "call_dotted_transform_stub",
+  "call_scalar_args",
+  "call_scalar_args_uniform_second_slot",
+  "call_snake_dotted_method",
+  "call_transform_no_wrapper",
+]
+languages = ["Mojo"]
+options = { heterogeneous_strategy = "ERROR" }

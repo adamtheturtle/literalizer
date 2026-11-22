@@ -20,17 +20,7 @@ from literalizer._literalize import (
     call_result_discard_formatter,
 )
 from literalizer._parsing import parse_input
-from literalizer.exceptions import (
-    CallArgNotSupportedError,
-    DottedCallTargetNotSupportedError,
-    HeterogeneousCollectionError,
-    IncompatibleFormatsError,
-    InvalidCallTargetError,
-    ReservedVariableNameError,
-    UnrepresentableEmptyDictError,
-    UnrepresentableInputError,
-    VariableNameNotSupportedError,
-)
+from literalizer.exceptions import InvalidCallTargetError
 from tests.enum_members import enum_member_by_name
 
 from .call_collection import CallRendering
@@ -40,7 +30,6 @@ from .call_receivers import (
 )
 from .call_stubs import (
     argument_values_for_stub,
-    call_render_scope,
     target_call_declarations,
 )
 from .call_transforms import (
@@ -58,11 +47,9 @@ from .case_manifests import (
     case_input,
 )
 from .golden_checks import (
-    check_golden,
     check_outcome,
     fixture_contents,
 )
-from .golden_skip_policy import SkipPolicy, SkipReason
 from .language_metadata import language_metadata
 from .language_specs import (
     find_redefinition_styles,
@@ -70,81 +57,6 @@ from .language_specs import (
     with_per_fixture_module_name,
 )
 from .parsed_values import ParsedValue
-
-# A wrapped call is rendered straight to its golden, so the only thing
-# that can stop it is the language refusing one of the call's arguments.
-_WRAP_IN_FILE_SKIPS: SkipPolicy = SkipPolicy(
-    reasons=(
-        SkipReason(
-            error=HeterogeneousCollectionError,
-            reason="cannot represent this heterogeneous input",
-        ),
-        SkipReason(
-            error=UnrepresentableInputError,
-            reason="cannot represent these call arguments",
-        ),
-        SkipReason(
-            error=UnrepresentableEmptyDictError,
-            reason="cannot preserve an empty mapping call argument",
-        ),
-        SkipReason(
-            error=IncompatibleFormatsError,
-            reason="cannot combine these call and representation options",
-        ),
-        SkipReason(
-            error=ReservedVariableNameError,
-            reason="rejects a declared reference identifier",
-        ),
-        SkipReason(
-            error=CallArgNotSupportedError,
-            reason="rejected call arg",
-        ),
-    ),
-    suffix="",
-)
-
-# A case that binds its refs to declarations asks more of a language
-# than the call alone: it must name the declared variables, represent
-# their values, and spell whatever target the case calls.
-_DECLARATION_SKIPS: SkipPolicy = SkipPolicy(
-    reasons=(
-        SkipReason(
-            error=IncompatibleFormatsError,
-            reason="cannot combine these call and representation options",
-        ),
-        SkipReason(
-            error=ReservedVariableNameError,
-            reason="rejects a declared reference identifier",
-        ),
-        SkipReason(
-            error=VariableNameNotSupportedError,
-            reason=(
-                "does not support variable-name wrapping for ref declarations"
-            ),
-        ),
-        SkipReason(
-            error=HeterogeneousCollectionError,
-            reason="cannot represent this heterogeneous input",
-        ),
-        SkipReason(
-            error=UnrepresentableInputError,
-            reason="cannot represent this heterogeneous input",
-        ),
-        SkipReason(
-            error=UnrepresentableEmptyDictError,
-            reason="cannot preserve an empty mapping call argument",
-        ),
-        SkipReason(
-            error=DottedCallTargetNotSupportedError,
-            reason="does not support dotted call targets",
-        ),
-        SkipReason(
-            error=CallArgNotSupportedError,
-            reason="rejected call arg",
-        ),
-    ),
-    suffix="",
-)
 
 
 @beartype
@@ -265,34 +177,29 @@ def _render_wrapped_call(
     source: str,
     input_info: CaseInput,
     effective_ref_case: literalizer.IdentifierCase | None,
-    golden_path: Path,
-    strict: bool,
 ) -> str:
     """Render a call with its own file wrapper."""
-    with call_render_scope(
-        policy=_WRAP_IN_FILE_SKIPS, golden_path=golden_path, strict=strict
-    ):
-        result = _literalize_call_case(
-            config=config,
-            spec=spec,
-            source=source,
-            input_info=input_info,
-            effective_ref_case=effective_ref_case,
-            variable_form=config.variable_form,
-            wrap_in_file=True,
-            ref_values=(
-                None
-                if config.explicit_ref_value_sources is None
-                else _parse_ref_sources(
-                    sources=config.explicit_ref_value_sources,
-                    input_format=config.ref_input_format,
-                )
-            ),
-            bound_refs=_parse_ref_sources(
-                sources=config.fixture.ref_declarations,
+    result = _literalize_call_case(
+        config=config,
+        spec=spec,
+        source=source,
+        input_info=input_info,
+        effective_ref_case=effective_ref_case,
+        variable_form=config.variable_form,
+        wrap_in_file=True,
+        ref_values=(
+            None
+            if config.explicit_ref_value_sources is None
+            else _parse_ref_sources(
+                sources=config.explicit_ref_value_sources,
                 input_format=config.ref_input_format,
-            ),
-        )
+            )
+        ),
+        bound_refs=_parse_ref_sources(
+            sources=config.fixture.ref_declarations,
+            input_format=config.ref_input_format,
+        ),
+    )
     return _call_fixture_contents(code=result.code, spec=spec, config=config)
 
 
@@ -389,148 +296,142 @@ def _run_call_with_declarations(
     declaration_names: dict[str, str],
     effective_ref_case: literalizer.IdentifierCase | None,
     observable: bool,
-    golden_path: Path,
-    strict: bool,
 ) -> _CallWithDeclarations:
     """Run the declarations and the call for a composed fixture."""
-    with call_render_scope(
-        policy=_DECLARATION_SKIPS, golden_path=golden_path, strict=strict
-    ):
-        rendered_by_ref_name: dict[str, _RefDeclaration] = {
-            ref_name: _render_ref_declaration(
-                config=config,
-                spec=spec,
-                declaration_name=declaration_names[ref_name],
-                ref_source=ref_source,
-                observable=observable,
-            )
-            for ref_name, ref_source in config.fixture.ref_declarations.items()
-        }
-        decl_results = [
-            declaration.result for declaration in rendered_by_ref_name.values()
-        ]
-        ref_values = {
-            ref_name: declaration.result.source_data
-            for ref_name, declaration in rendered_by_ref_name.items()
-            if ref_name not in fixture.unknown_ref_names
-        }
-        ref_values.update(
-            _parse_ref_sources(
-                sources=config.extra_ref_value_sources,
-                input_format=config.ref_input_format,
-            )
-        )
-        effective_ref_values = None
-        if len(ref_values) > 0:
-            effective_ref_values = ref_values
-        if config.explicit_ref_value_sources is not None:
-            effective_ref_values = _parse_ref_sources(
-                sources=config.explicit_ref_value_sources,
-                input_format=config.ref_input_format,
-            )
-        followup_result = None
-        followup_target = config.target_function
-        if fixture.followup is not None:
-            followup_target = (
-                fixture.followup.target_function
-                if fixture.followup.target_function is not None
-                else config.target_function
-            )
-            followup_result = literalizer.literalize_call(
-                source=fixture.followup.source,
-                input_format=input_info.input_format,
-                language=spec,
-                target_function=followup_target,
-                parameter_names=config.parameter_names,
-                per_element=config.per_element,
-                ref_case=effective_ref_case,
-                ref_key=config.ref_key,
-                ref_values=effective_ref_values,
-                call_transform=(
-                    CallTransform(template="{call}")
-                    if followup_target == config.target_function
-                    and isinstance(
-                        config.variable_form, literalizer.ExistingVariable
-                    )
-                    and call_result_discard_formatter(language=spec)
-                    is not None
-                    else None
-                ),
-            )
-        result = _literalize_call_case(
+    rendered_by_ref_name: dict[str, _RefDeclaration] = {
+        ref_name: _render_ref_declaration(
             config=config,
             spec=spec,
-            source=source,
-            input_info=input_info,
-            effective_ref_case=effective_ref_case,
-            variable_form=config.variable_form,
-            wrap_in_file=False,
-            ref_values=(effective_ref_values),
-            bound_refs=None,
+            declaration_name=declaration_names[ref_name],
+            ref_source=ref_source,
+            observable=observable,
         )
-        if (
-            observable
-            and followup_result is not None
-            and isinstance(config.variable_form, literalizer.ExistingVariable)
-        ):
-            # Observe the caller's initial binding through the same public
-            # consumer before the assignment, without modifying any fragment.
-            decl_results.append(followup_result)
-        if observable:
-            if followup_result is not None:
-                decl_results.append(result)
-                result = followup_result
-            return _CallWithDeclarations(
-                decl_results=decl_results,
-                result=result,
-                stub_argument_values=(),
-            )
-        if (
-            followup_result is not None
-            and isinstance(config.variable_form, literalizer.ExistingVariable)
-            and config.variable_form.name in declaration_names.values()
-        ):
-            # Keep the seed use in the executable assignment fragment,
-            # retaining its binding role for declarative-section wrappers.
-            result = dataclasses.replace(
-                result,
-                declaration_code=(
-                    f"{followup_result.bare_code}\n{result.bare_code}"
-                ),
-                pre_declaration_comments=(),
-            )
-        seeded_feedback = (
-            isinstance(config.variable_form, literalizer.ExistingVariable)
-            and followup_result is not None
-            and followup_target == config.target_function
+        for ref_name, ref_source in config.fixture.ref_declarations.items()
+    }
+    decl_results = [
+        declaration.result for declaration in rendered_by_ref_name.values()
+    ]
+    ref_values = {
+        ref_name: declaration.result.source_data
+        for ref_name, declaration in rendered_by_ref_name.items()
+        if ref_name not in fixture.unknown_ref_names
+    }
+    ref_values.update(
+        _parse_ref_sources(
+            sources=config.extra_ref_value_sources,
+            input_format=config.ref_input_format,
         )
-        # A deliberately absent inference hint must not erase the actual
-        # declaration's type from the compiler fixture's consumer signature.
-        stub_source_data = result.source_data
-        if len(fixture.unknown_ref_names) > 0:
-            stub_source_data = _resolve_refs_for_inference(
-                value=parse_input(
-                    source=source, input_format=input_info.input_format
-                ).data,
-                ref_values={
-                    name: declaration.result.source_data
-                    for name, declaration in rendered_by_ref_name.items()
-                },
-                ref_key=config.ref_key,
-            )
-        stub_argument_values = argument_values_for_stub(
-            source_data=stub_source_data,
+    )
+    effective_ref_values = None
+    if len(ref_values) > 0:
+        effective_ref_values = ref_values
+    if config.explicit_ref_value_sources is not None:
+        effective_ref_values = _parse_ref_sources(
+            sources=config.explicit_ref_value_sources,
+            input_format=config.ref_input_format,
+        )
+    followup_result = None
+    followup_target = config.target_function
+    if fixture.followup is not None:
+        followup_target = (
+            fixture.followup.target_function
+            if fixture.followup.target_function is not None
+            else config.target_function
+        )
+        followup_result = literalizer.literalize_call(
+            source=fixture.followup.source,
+            input_format=input_info.input_format,
+            language=spec,
+            target_function=followup_target,
+            parameter_names=config.parameter_names,
             per_element=config.per_element,
-            seeded_feedback=seeded_feedback,
-            seed_argument_values=tuple(
-                value
-                for declaration in rendered_by_ref_name.values()
-                for value in declaration.seed_argument_values
+            ref_case=effective_ref_case,
+            ref_key=config.ref_key,
+            ref_values=effective_ref_values,
+            call_transform=(
+                CallTransform(template="{call}")
+                if followup_target == config.target_function
+                and isinstance(
+                    config.variable_form, literalizer.ExistingVariable
+                )
+                and call_result_discard_formatter(language=spec) is not None
+                else None
             ),
         )
+    result = _literalize_call_case(
+        config=config,
+        spec=spec,
+        source=source,
+        input_info=input_info,
+        effective_ref_case=effective_ref_case,
+        variable_form=config.variable_form,
+        wrap_in_file=False,
+        ref_values=(effective_ref_values),
+        bound_refs=None,
+    )
+    if (
+        observable
+        and followup_result is not None
+        and isinstance(config.variable_form, literalizer.ExistingVariable)
+    ):
+        # Observe the caller's initial binding through the same public
+        # consumer before the assignment, without modifying any fragment.
+        decl_results.append(followup_result)
+    if observable:
         if followup_result is not None:
             decl_results.append(result)
             result = followup_result
+        return _CallWithDeclarations(
+            decl_results=decl_results,
+            result=result,
+            stub_argument_values=(),
+        )
+    if (
+        followup_result is not None
+        and isinstance(config.variable_form, literalizer.ExistingVariable)
+        and config.variable_form.name in declaration_names.values()
+    ):
+        # Keep the seed use in the executable assignment fragment,
+        # retaining its binding role for declarative-section wrappers.
+        result = dataclasses.replace(
+            result,
+            declaration_code=(
+                f"{followup_result.bare_code}\n{result.bare_code}"
+            ),
+            pre_declaration_comments=(),
+        )
+    seeded_feedback = (
+        isinstance(config.variable_form, literalizer.ExistingVariable)
+        and followup_result is not None
+        and followup_target == config.target_function
+    )
+    # A deliberately absent inference hint must not erase the actual
+    # declaration's type from the compiler fixture's consumer signature.
+    stub_source_data = result.source_data
+    if len(fixture.unknown_ref_names) > 0:
+        stub_source_data = _resolve_refs_for_inference(
+            value=parse_input(
+                source=source, input_format=input_info.input_format
+            ).data,
+            ref_values={
+                name: declaration.result.source_data
+                for name, declaration in rendered_by_ref_name.items()
+            },
+            ref_key=config.ref_key,
+        )
+    stub_argument_values = argument_values_for_stub(
+        source_data=stub_source_data,
+        per_element=config.per_element,
+        seeded_feedback=seeded_feedback,
+        seed_argument_values=tuple(
+            value
+            for declaration in rendered_by_ref_name.values()
+            for value in declaration.seed_argument_values
+        ),
+    )
+    if followup_result is not None:
+        decl_results.append(result)
+        result = followup_result
     return _CallWithDeclarations(
         decl_results=decl_results,
         result=result,
@@ -543,7 +444,6 @@ def _render_call_golden_case(
     *,
     rendering: CallRendering,
     cases_dir: Path,
-    strict: bool,
 ) -> str:
     """Assemble one call rendering as native source."""
     config = rendering.config
@@ -580,27 +480,22 @@ def _render_call_golden_case(
             source=source,
             input_info=input_info,
             effective_ref_case=effective_ref_case,
-            golden_path=golden_path,
-            strict=strict,
         )
     if isinstance(fixture, BoundCallFixture) and not observable:
-        with call_render_scope(
-            policy=_DECLARATION_SKIPS, golden_path=golden_path, strict=strict
-        ):
-            bound = _literalize_call_case(
-                config=config,
-                spec=spec,
-                source=source,
-                input_info=input_info,
-                effective_ref_case=effective_ref_case,
-                variable_form=config.variable_form,
-                wrap_in_file=True,
-                ref_values=None,
-                bound_refs=_parse_ref_sources(
-                    sources=fixture.ref_declarations,
-                    input_format=config.ref_input_format,
-                ),
-            )
+        bound = _literalize_call_case(
+            config=config,
+            spec=spec,
+            source=source,
+            input_info=input_info,
+            effective_ref_case=effective_ref_case,
+            variable_form=config.variable_form,
+            wrap_in_file=True,
+            ref_values=None,
+            bound_refs=_parse_ref_sources(
+                sources=fixture.ref_declarations,
+                input_format=config.ref_input_format,
+            ),
+        )
         return _call_fixture_contents(
             code=bound.code, spec=spec, config=config
         )
@@ -634,8 +529,6 @@ def _render_call_golden_case(
         declaration_names=declaration_names,
         effective_ref_case=effective_ref_case,
         observable=observable,
-        golden_path=golden_path,
-        strict=strict,
     )
     decl_results = call_outcome.decl_results
     result = call_outcome.result
@@ -652,8 +545,6 @@ def _render_call_golden_case(
         config=config,
         spec=spec,
         argument_values=call_outcome.stub_argument_values,
-        golden_path=golden_path,
-        strict=strict,
     )
     # Statement stubs cover transform wrappers and a separate follow-up
     # consumer. Keep each target's parameter names so their argument
@@ -717,15 +608,7 @@ def run_call_golden_case(
         _render_call_golden_case,
         rendering=rendering,
         cases_dir=cases_dir,
-        strict=outcome is not None,
     )
-    if outcome is None:
-        check_golden(
-            contents=render(),
-            golden_path=golden_path,
-            file_regression=file_regression,
-        )
-        return
     check_outcome(
         outcome=outcome,
         render=render,

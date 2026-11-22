@@ -130,6 +130,7 @@ Native interpreter checks
 
 Native value assertions belong in the same case manifests and compiling golden files as their inputs.
 Use ``base_context.consumer_templates`` for the base rendering or ``variants.consumer_templates`` for an option variant.
+Set ``use_base_consumer_templates = true`` on a variant to reuse the base templates when the variant supplies no template for the language.
 An option variant can supply a language-specific ``statements`` table.
 The runner appends those native statements to the binding and uses the existing language wrapper to assemble the file.
 Templates receive the generated ``code`` and the selected enum option names, such as ``bytes_format`` and ``datetime_format``.

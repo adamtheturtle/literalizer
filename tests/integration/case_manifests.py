@@ -205,6 +205,7 @@ class ManifestVariant(  # noqa: NOD001
             literalizer.LanguageCls, str | manifest_values.ComposedConsumer
         ]
     )
+    use_base_consumer_templates: bool = False
     # Some shape-mapping cases deliberately never use the external type.
     include_extra_preamble: bool = True
     context: RenderContext = Field(default_factory=RenderContext)
