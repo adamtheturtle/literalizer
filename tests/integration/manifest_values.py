@@ -1,5 +1,6 @@
 """Typed names and containers shared by test manifest definitions."""
 
+import dataclasses
 from collections.abc import Callable, Mapping
 from typing import Annotated, Literal
 
@@ -10,6 +11,14 @@ import literalizer
 from literalizer.languages import ALL_LANGUAGES
 
 from .call_templates import CallTransform, call_transform_from_template
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class ComposedConsumer:
+    """Native statements to compose with a rendered binding."""
+
+    statements: str
+
 
 type VariableFormName = Literal["new", "existing", "both"]
 

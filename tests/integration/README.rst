@@ -135,6 +135,9 @@ Templates receive the generated ``code`` and the selected enum option names, suc
 These names let an assertion check the intended representation's type as well as its value.
 Other languages and variants retain their existing coverage when no consumer is declared.
 
+Use ``variants.consumer_statements`` to supply native statements for a language when the existing wrapper can assemble the file.
+The runner appends the statements to the binding before wrapping the file.
+
 Expected values must be independent of the renderer.
 The typed scalar, byte and datetime consumers use native type checks and standard-library inspection: binary64 bit patterns, independently constructed byte ranges, Gregorian dates, and exact datetime instants and offsets.
 Python lists and tuples share ordered sequence semantics; record consumers check authored fields and their native types.

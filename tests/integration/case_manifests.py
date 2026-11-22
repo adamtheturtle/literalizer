@@ -200,6 +200,9 @@ class ManifestVariant(  # noqa: NOD001
     consumer_templates: dict[manifest_values.ManifestLanguage, str] = Field(
         default_factory=dict[literalizer.LanguageCls, str]
     )
+    consumer_statements: dict[
+        manifest_values.ManifestLanguage, Annotated[str, Field(min_length=1)]
+    ] = Field(default_factory=dict[literalizer.LanguageCls, str])
     use_base_consumer_templates: bool = False
     # Some shape-mapping cases deliberately never use the external type.
     include_extra_preamble: bool = True

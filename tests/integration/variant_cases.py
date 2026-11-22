@@ -36,6 +36,7 @@ from .language_specs import (
     make_spec,
     sorted_languages,
 )
+from .manifest_values import ComposedConsumer
 from .scenario_participation import Requirement, scenario_exclusion
 from .variant_axes import AXES
 from .variant_axis_names import SPECIAL_VARIANT_AXES
@@ -91,7 +92,7 @@ def build_json_type_variable_form_cases(
                 name = f"{json_variant.name}_final"
                 cases.append(
                     VariantCase(
-                        consumer_template=None,
+                        consumer=None,
                         apply_fixture_module_name=True,
                         golden_name=name,
                         variant=dataclasses.replace(json_variant, name=name),
@@ -108,7 +109,7 @@ def build_json_type_variable_form_cases(
             name = f"{json_variant.name}_existing"
             cases.append(
                 VariantCase(
-                    consumer_template=None,
+                    consumer=None,
                     apply_fixture_module_name=True,
                     golden_name=name,
                     variant=compact_variant(
@@ -151,7 +152,7 @@ def build_json_type_variable_form_cases(
             )
             cases.append(
                 VariantCase(
-                    consumer_template=None,
+                    consumer=None,
                     apply_fixture_module_name=True,
                     golden_name=name,
                     variant=variant,
@@ -196,7 +197,7 @@ def build_multiline_string_context_cases(
             name = f"{base_variant.name}{combined_suffix}"
             cases.append(
                 VariantCase(
-                    consumer_template=None,
+                    consumer=None,
                     apply_fixture_module_name=True,
                     golden_name=name,
                     variant=dataclasses.replace(
@@ -222,7 +223,7 @@ def build_multiline_string_context_cases(
             )
             cases.append(
                 VariantCase(
-                    consumer_template=None,
+                    consumer=None,
                     apply_fixture_module_name=True,
                     golden_name=name,
                     variant=dataclasses.replace(base_variant, name=name),
@@ -269,6 +270,7 @@ def case_for_manifest_variant(
         language_id=variant.lang_cls.language_id
     ).variants.declaration_style_variable_names
     substitutions = context.resolved_record_null_substitutions()
+    statements = manifest_variant.consumer_statements.get(variant.lang_cls)
     variant = dataclasses.replace(
         variant,
         collection_layout=(
@@ -305,11 +307,15 @@ def case_for_manifest_variant(
             )
         ),
         pre_indent_level=context.pre_indent_level,
-        consumer_template=manifest_variant.consumer_templates.get(
-            variant.lang_cls,
-            context.consumer_templates.get(
-                variant.lang_cls, base_consumers.get(variant.lang_cls)
-            ),
+        consumer=(
+            ComposedConsumer(statements=statements)
+            if statements is not None
+            else manifest_variant.consumer_templates.get(
+                variant.lang_cls,
+                context.consumer_templates.get(
+                    variant.lang_cls, base_consumers.get(variant.lang_cls)
+                ),
+            )
         ),
     )
 

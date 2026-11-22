@@ -3,16 +3,10 @@ owner = "variant"
 
 [[variants]]
 axis = "csharp_object_carrier_records"
-wrap_in_file = false
 
-[variants.consumer_templates]
-CSharp = '''{preamble}
-class Example {{
-    static void Main() {{
-{code}
+[variants.consumer_statements]
+CSharp = '''
         System.Collections.Generic.Dictionary<string, object?> first = my_data[0].Payload;
         System.Collections.Generic.Dictionary<string, object?> second = my_data[1].Payload;
-        if (first["flag"] is not true || second["nothing"] is not null) {{ throw new System.InvalidOperationException("changed record maps"); }}
-    }}
-}}
+        if (first["flag"] is not true || second["nothing"] is not null) { throw new System.InvalidOperationException("changed record maps"); }
 '''

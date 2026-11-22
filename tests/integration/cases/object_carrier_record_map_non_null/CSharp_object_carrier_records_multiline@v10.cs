@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 record Record0(Dictionary<string, object> Payload);
-class Example {
-    static void Main() {
+class Check {
+    public static void Main() {
 var my_data = new[] {
     new Record0(
         new Dictionary<string, object> {
