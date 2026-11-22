@@ -2,11 +2,12 @@
 
 import dataclasses
 import functools
+import json
 
 from beartype import beartype
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import NewVariable, literalize, literalize_call
+from literalizer import InputFormat, NewVariable, literalize, literalize_call
 
 from .constructor_cases import ConstructorRendering
 from .golden_checks import check_outcome, format_consumer
@@ -30,14 +31,13 @@ def _render_constructor_binding(
     consumer_template = case.consumer_template
     source = manifest.input.path.read_text(encoding="utf-8")
     input_format = manifest.input.input_format
-    if config.target_source_template is not None or config.target_variable:
-        target_source = source
-        if config.target_source_template is not None:
-            target_source = config.target_source_template.format(
-                target=language.format_constructor_target(config.class_name)
-            )
+    if config.renders_target:
+        if config.target_mapping:
+            target = language.format_constructor_target(config.class_name)
+            source = json.dumps(obj={target: json.loads(s=source)})
+            input_format = InputFormat.JSON
         result = literalize(
-            source=target_source,
+            source=source,
             input_format=input_format,
             language=(
                 language
