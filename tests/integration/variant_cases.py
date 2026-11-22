@@ -21,6 +21,7 @@ import literalizer
 from .axis_builders import AxisError, sequence_format_override
 from .case_discovery import cases_with_special_floats
 from .case_manifests import (
+    CaseManifest,
     CaseManifestError,
     ManifestVariant,
     VariantCapabilityName,
@@ -253,12 +254,17 @@ def variants_for_axis(*, axis_key: str) -> list[Variant]:
 @beartype
 def case_for_manifest_variant(
     *,
-    case_dir_name: str,
+    manifest: CaseManifest,
     manifest_variant: ManifestVariant,
     variant: Variant,
 ) -> VariantCase:
     """Combine typed language expansion with case-local render context."""
     context = manifest_variant.context
+    base_consumers = (
+        manifest.base_context.consumer_templates
+        if manifest_variant.use_base_consumer_templates
+        else {}
+    )
     variable_names = language_metadata(
         language_id=variant.lang_cls.language_id
     ).variants.declaration_style_variable_names
@@ -287,7 +293,7 @@ def case_for_manifest_variant(
         apply_fixture_module_name=manifest_variant.apply_fixture_module_name,
         golden_name=f"{variant.name}{manifest_variant.suffix}",
         variant=variant,
-        case_dir_name=case_dir_name,
+        case_dir_name=manifest.case_dir.name,
         variable_form=variable_form_for_context(
             context=context.model_copy(
                 update={
@@ -300,7 +306,10 @@ def case_for_manifest_variant(
         ),
         pre_indent_level=context.pre_indent_level,
         consumer_template=manifest_variant.consumer_templates.get(
-            variant.lang_cls, context.consumer_templates.get(variant.lang_cls)
+            variant.lang_cls,
+            context.consumer_templates.get(
+                variant.lang_cls, base_consumers.get(variant.lang_cls)
+            ),
         ),
     )
 
@@ -402,8 +411,8 @@ def build_variant_cases() -> list[VariantCase]:
     """
     special_float_cases = cases_with_special_floats(cases_dir=_CASES_DIR)
     manifests = load_case_manifests(cases_dir=_CASES_DIR)
-    selection_by_case = {
-        manifest.case_dir.name: manifest.selection for manifest in manifests
+    manifest_by_case = {
+        manifest.case_dir.name: manifest for manifest in manifests
     }
     entries = [
         (manifest.case_dir.name, manifest_variant)
@@ -412,7 +421,7 @@ def build_variant_cases() -> list[VariantCase]:
     ]
     cases: list[VariantCase] = []
     for case_dir_name, manifest_variant in entries:
-        selection = selection_by_case[case_dir_name]
+        manifest = manifest_by_case[case_dir_name]
         if manifest_variant.axis in SPECIAL_VARIANT_AXES:
             continue
         variants = variants_for_axis(axis_key=manifest_variant.axis)
@@ -422,14 +431,14 @@ def build_variant_cases() -> list[VariantCase]:
             special_float_cases=special_float_cases,
         )
         for variant in variants:
-            if not selection.admits_language(
+            if not manifest.selection.admits_language(
                 lang_cls=variant.lang_cls
             ) or not _backend_supports_variant(
                 lang_cls=variant.lang_cls, capabilities=required
             ):
                 continue
             case = case_for_manifest_variant(
-                case_dir_name=case_dir_name,
+                manifest=manifest,
                 manifest_variant=manifest_variant,
                 variant=variant,
             )
@@ -439,7 +448,7 @@ def build_variant_cases() -> list[VariantCase]:
     for case_dir_name, entry in entries:
         cases.extend(
             case_for_manifest_variant(
-                case_dir_name=case_dir_name,
+                manifest=manifest_by_case[case_dir_name],
                 manifest_variant=entry,
                 variant=variant,
             )
@@ -494,7 +503,7 @@ def build_variant_cases() -> list[VariantCase]:
                 },
                 sequence_case_dirs=sequence_case_dirs,
             )
-            if selection_by_case[case.case_dir_name].admits_language(
+            if manifest_by_case[case.case_dir_name].selection.admits_language(
                 lang_cls=case.variant.lang_cls,
             )
         )
