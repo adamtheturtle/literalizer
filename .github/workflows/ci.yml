@@ -104,23 +104,18 @@ jobs:
       - name: Require zero skipped golden tests
         shell: bash
         run: |
-          uv run --no-sync python - "$RUNNER_TEMP/pytest-results.jsonl" <<'PY'
-          import json
-          import sys
-
-          skipped = set()
-          with open(sys.argv[1], encoding="utf-8") as log:
-              for line in log:
-                  report = json.loads(line)
-                  # Pytest also reports xfails with a skipped outcome.
-                  if report.get("outcome") != "skipped" or "wasxfail" in report:
-                      continue
-                  nodeid = report.get("nodeid", "")
-                  if nodeid == "tests/integration" or nodeid.startswith("tests/integration/"):
-                      skipped.add(nodeid)
-          if skipped:
-              sys.exit("Skipped golden tests:\n" + "\n".join(sorted(skipped)))
-          PY
+          # Pytest also reports xfails with a skipped outcome.
+          skipped=$(jq -nr '
+              [inputs
+               | select(.outcome == "skipped" and (has("wasxfail") | not))
+               | (.nodeid // "")
+               | select(. == "tests/integration" or startswith("tests/integration/"))]
+              | unique[]
+          ' < "$RUNNER_TEMP/pytest-results.jsonl")
+          if [[ -n "$skipped" ]]; then
+            printf 'Skipped golden tests:\n%s\n' "$skipped"
+            exit 1
+          fi
 
   # Build once for both the test matrix and benchmark shards. Installing
   # this wheel avoids repeating the setuptools metadata and editable-build
