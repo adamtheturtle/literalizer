@@ -3,22 +3,18 @@ owner = "variant"
 
 [[variants]]
 axis = "csharp_object_carrier"
-wrap_in_file = false
 
-[variants.consumer_templates]
-CSharp = '''{preamble}
-{code}
+[variants.consumer_statements]
+CSharp = '''
 object[] values = my_data;
-if (values.Length != 2 || values[0] is not true || values[1] is not "") {{ throw new System.InvalidOperationException("changed collection values"); }}
+if (values.Length != 2 || values[0] is not true || values[1] is not "") { throw new System.InvalidOperationException("changed collection values"); }
 '''
 
 [[variants]]
 axis = "csharp_object_array_fallback"
-wrap_in_file = false
 
-[variants.consumer_templates]
-CSharp = '''{preamble}
-{code}
+[variants.consumer_statements]
+CSharp = '''
 object?[] values = my_data;
-if (values.Length != 2 || values[0] is not true || values[1] is not "") {{ throw new System.InvalidOperationException("changed collection values"); }}
+if (values.Length != 2 || values[0] is not true || values[1] is not "") { throw new System.InvalidOperationException("changed collection values"); }
 '''
