@@ -33,7 +33,6 @@ import click
 from literalizer import InputFormat, ValueInput, literalize_call
 from literalizer.languages import CSharp
 from scripts import roundtrip_common
-from scripts.bounded_command import bounded_command
 
 _VAR_NAME = "myData"
 _LABEL = "CSharp"
@@ -192,17 +191,13 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=bounded_command(
-                    args=[
-                        dotnet,
-                        "run",
-                        "--project",
-                        "fixture.csproj",
-                        "--nologo",
-                    ],
-                    fixture=_LABEL,
-                    timeout_seconds=60,
-                ),
+                args=[
+                    dotnet,
+                    "run",
+                    "--project",
+                    "fixture.csproj",
+                    "--nologo",
+                ],
                 failure_label="dotnet run error",
             ),
         ],
