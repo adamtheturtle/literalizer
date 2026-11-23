@@ -130,6 +130,14 @@ def _empty_container_hints(target: AxisTarget) -> Options | None:
     }
 
 
+def _mixed_map_default_value_type(target: AxisTarget) -> Options | None:
+    """Select a concrete fallback type for a mixed-value map fixture."""
+    default_type = target.metadata.variants.mixed_map_default_value_type
+    if default_type is None:
+        return None
+    return {"default_dict_value_type": default_type}
+
+
 def _empty_container_strategy(metadata: LanguageMetadata) -> str | None:
     """Return the heterogeneous strategy paired with the declared
     hints.
@@ -461,6 +469,13 @@ AXES: Mapping[str, Axis] = _registry(
         name=named(suffix="default_dict_value_type_string"),
         requires=(has_sample(kwarg="default_dict_value_type"),),
         overrides=(sample(kwarg="default_dict_value_type"),),
+    ),
+    mixed_map_default_value_type=expand(
+        name=named(suffix="mixed_map_default_value_type"),
+        requires=(
+            lambda target: target.lang_cls.supports_default_dict_value_type,
+        ),
+        overrides=(_mixed_map_default_value_type,),
     ),
     default_ordered_map_value_type=expand(
         name=named(suffix="default_ordered_map_value_type"),

@@ -1,0 +1,14 @@
+schema_version = 1
+summary = "Exercise a whole-value call with a nested record list beside an empty sibling."
+exceptions = ["UnrepresentableInputError"]
+
+[call]
+api = "literalize_call"
+sources = ['{"items":[[],[{"name":"one"}]]}']
+input_format = "json"
+target_function = "consume"
+parameter_names = ["value"]
+per_element = false
+kwargs = [
+  { kind = "option_member", option = "heterogeneous_strategy", member = "RECORD" },
+]

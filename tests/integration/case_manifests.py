@@ -974,6 +974,24 @@ def _fail(*, path: Path, message: str) -> CaseManifestError:
     return CaseManifestError(f"{path}: {message}")
 
 
+def _validate_consumer_sources(
+    *, path: Path, variants: list[ManifestVariant]
+) -> None:
+    """Require native checker definitions to live beside their
+    manifest.
+    """
+    for variant in variants:
+        for filename in variant.consumer_calls.values():
+            if (
+                filename != Path(filename).name
+                or not (path.parent / filename).is_file()
+            ):
+                raise _fail(
+                    path=path,
+                    message=f"missing case-local consumer source {filename!r}",
+                )
+
+
 @functools.cache
 @beartype
 def load_case_manifest(case_dir: Path) -> CaseManifest:
@@ -1011,16 +1029,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
             message="expected_reused_anchor_warning requires YAML input",
         )
 
-    for variant in data.variants:
-        for filename in variant.consumer_calls.values():
-            if (
-                filename != Path(filename).name
-                or not (case_dir / filename).is_file()
-            ):
-                raise _fail(
-                    path=path,
-                    message=f"missing case-local consumer source {filename!r}",
-                )
+    _validate_consumer_sources(path=path, variants=data.variants)
 
     return CaseManifest(
         path=path,

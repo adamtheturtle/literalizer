@@ -61,3 +61,15 @@ def test_nested_version_and_variant_fixture_selection() -> None:
         fixture_module_name(golden_path=multiline)
         == "Fixture_multiline_string_Haskell_string_format_double"
     )
+
+
+def test_nested_reference_fixture_selection() -> None:
+    """Select a fixture owned by the reference runner for native runs."""
+    reference = (
+        CASES_DIR / "literalize_ref_both_forms/goldens/gleam/v1/ref.gleam"
+    )
+    assert reference in fixture_paths(extension=".gleam", version="v1")
+    assert (
+        fixture_module_name(golden_path=reference)
+        == "Fixture_literalize_ref_both_forms_gleam_ref"
+    )

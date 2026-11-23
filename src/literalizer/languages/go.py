@@ -123,7 +123,6 @@ from literalizer._language import (
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
-    default_validate_call_arg,
     default_wrap_calls_with_declarations,
     empty_record_shape_names,
     identity_call_arg,
@@ -1037,7 +1036,11 @@ class Go(metaclass=LanguageCls):
         ):
             _reject_record_lists_with_empty_siblings(data)
 
-    validate_call_arg = default_validate_call_arg
+    @cached_property
+    @beartype
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Apply the Go literal shape constraints to direct arguments."""
+        return self.validate_spec_for_data
 
     format_call_statement = default_format_call_statement
 
@@ -1659,12 +1662,24 @@ class Go(metaclass=LanguageCls):
     @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        base = typed_dict_open(
-            type_to_opener=make_type_to_opener(
-                element_to_type=self._init_element_to_type,
-                opener_template=f"map[{self.default_dict_key_type}]{{type_name}}{{{{",
-            ),
-            fallback=f"map[{self.default_dict_key_type}]{self.default_dict_value_type}{{",
+        type_to_opener = make_type_to_opener(
+            element_to_type=self._init_element_to_type,
+            opener_template=f"map[{self.default_dict_key_type}]{{type_name}}{{{{",
+        )
+        # The configured default supplies the element type of an empty
+        # map. Populated maps with no inferable common type need a
+        # carrier that can hold all their values.
+        default_type = self.default_dict_value_type
+        populated_fallback = (
+            "interface{}" if default_type == "interface{}" else "any"
+        )
+        empty_open = typed_dict_open(
+            type_to_opener=type_to_opener,
+            fallback=f"map[{self.default_dict_key_type}]{default_type}{{",
+        )
+        populated_open = typed_dict_open(
+            type_to_opener=type_to_opener,
+            fallback=f"map[{self.default_dict_key_type}]{populated_fallback}{{",
         )
 
         @beartype
@@ -1680,12 +1695,14 @@ class Go(metaclass=LanguageCls):
         @beartype
         def _open(items: dict[Scalar, Value], /) -> str:
             """Open the map with the types its formatted values have."""
-            return base(_normalized(items))
+            opener = populated_open if len(items) > 0 else empty_open
+            return opener(_normalized(items))
 
         @beartype
         def _signature(items: dict[Scalar, Value], /) -> CollectionSignature:
             """Retain rendered-value inference for sibling widening."""
-            return collection_signature(base, _normalized(items))
+            opener = populated_open if len(items) > 0 else empty_open
+            return collection_signature(opener, _normalized(items))
 
         return DictFormatConfig(
             dict_open=signature_open(render=_open, infer=_signature),
