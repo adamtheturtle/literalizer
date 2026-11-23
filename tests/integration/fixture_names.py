@@ -6,6 +6,7 @@ from pathlib import Path
 _NESTED_CASES = frozenset(
     {
         "binary",
+        "call_json_nested_ref_array",
         "default_module_name",
         "empty_list",
         "literalize_ref_both_forms",
