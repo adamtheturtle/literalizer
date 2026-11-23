@@ -15,18 +15,25 @@ The shared input's ``biginteger`` field is excluded from the comparison:
 its 26-digit value exceeds every C# integer literal type the literalizer
 emits, so the program would not compile if the field were kept.
 
+The same executable checks that mutating either nested occurrence of a
+repeated bound JsonNode leaves the other occurrence and the original
+unchanged, including after renaming the binding (issue #7217).
+
 This lives here, driven by the ``CSharp roundtrip`` step of the
 ``lint-dotnet`` job in ``.github/workflows/lint.yml``, because that job
 is where the .NET toolchain is installed; it is deliberately not a
 pytest test under ``tests/``.
 """
 
+import json
 import shutil
 
 import click
 
+from literalizer import InputFormat, ValueInput, literalize_call
 from literalizer.languages import CSharp
 from scripts import roundtrip_common
+from scripts.bounded_command import bounded_command
 
 _VAR_NAME = "myData"
 _LABEL = "CSharp"
@@ -49,6 +56,74 @@ _CSPROJ = (
     "</Project>\n"
 )
 
+_OWNERSHIP_CONSUMER = r"""
+    static void CheckOwnership(
+        JsonNode argument, JsonNode original, int position
+    ) {
+        var copies = argument["copies"]!.AsArray();
+        var initial = JsonNode.Parse("{\"value\":[1,2]}");
+        var changed = JsonNode.Parse("{\"value\":[9,2]}");
+        RequireValue(copies[0], initial, "first copy before mutation");
+        RequireValue(copies[1], initial, "initial second copy");
+        RequireValue(original, initial, "original before mutation");
+
+        copies[position]!["value"]![0] = 9;
+        RequireValue(copies[position], changed, "mutated copy");
+        RequireValue(copies[1 - position], initial, "other copy");
+        RequireValue(original, initial, "original after mutation");
+
+        // A fresh parent must accept the original without a clone.
+        var reuse = new JsonArray(original);
+        RequireValue(reuse[0], initial, "reattached original");
+        reuse.RemoveAt(0);
+    }
+
+    static void RequireValue(
+        JsonNode? actual, JsonNode? expected, string location
+    ) {
+        if (!JsonNode.DeepEquals(actual, expected)) {
+            throw new InvalidOperationException("Wrong JsonNode: " + location);
+        }
+    }
+"""
+
+
+def _ownership_case(*, binding: str, wrong_value: bool) -> str:
+    """Render two uses of one binding or substitute one occurrence."""
+    language = CSharp(json_type=CSharp.json_types.SYSTEM_TEXT_JSON_NODE)
+    bound_value = {"value": [1, 2]}
+    declaration = roundtrip_common.literalize_new_variable(
+        language=language,
+        json_text=json.dumps(obj=bound_value),
+        var_name=binding,
+        pre_indent_level=2,
+    )
+    reference = {"$ref": binding}
+    copies: list[ValueInput] = [
+        reference,
+        {"value": [8, 2]} if wrong_value else reference,
+    ]
+    call = literalize_call(
+        source=json.dumps(obj={"copies": copies}),
+        input_format=InputFormat.JSON,
+        language=language,
+        target_function="Consume",
+        parameter_names=["argument"],
+        per_element=False,
+        ref_key="$ref",
+        ref_values={binding: bound_value},
+    )
+    return f"""
+        {{
+{declaration.code}
+            for (var position = 0; position < 2; position++) {{
+                {call.code}
+                void Consume(JsonNode argument) =>
+                    CheckOwnership(argument, {binding}!, position);
+            }}
+        }}
+"""
+
 
 def _build_program(json_text: str) -> str:
     """Return a runnable C# program literalized from *json_text*."""
@@ -66,10 +141,15 @@ def _build_program(json_text: str) -> str:
     )
     preamble = "\n".join(result.preamble)
     body_preamble = "\n".join(result.body_preamble)
+    ownership_cases = _ownership_case(
+        binding="shared", wrong_value=False
+    ) + _ownership_case(binding="renamed", wrong_value=False)
+    wrong_value = _ownership_case(binding="shared", wrong_value=True)
     return (
         f"{preamble}\n"
         "using System;\n"
         "using System.Text.Json;\n"
+        "using System.Text.Json.Nodes;\n"
         f"{body_preamble}\n"
         "static class Program {\n"
         "    public static void Main() {\n"
@@ -81,8 +161,17 @@ def _build_program(json_text: str) -> str:
         "            throw new InvalidOperationException(\n"
         '                "negative_zero lost its sign");\n'
         "        }\n"
+        f"{ownership_cases}"
+        "        try {\n"
+        f"{wrong_value}"
+        "            throw new InvalidOperationException(\n"
+        '                "Wrong value accepted");\n'
+        "        } catch (InvalidOperationException error) when (\n"
+        '            error.Message == "Wrong JsonNode: initial second copy"\n'
+        "        ) { }\n"
         f"        Console.Write(JsonSerializer.Serialize({_VAR_NAME}));\n"
         "    }\n"
+        f"{_OWNERSHIP_CONSUMER}"
         "}\n"
     )
 
@@ -103,13 +192,17 @@ def main() -> None:
         program=program,
         steps=[
             roundtrip_common.Step(
-                args=[
-                    dotnet,
-                    "run",
-                    "--project",
-                    "fixture.csproj",
-                    "--nologo",
-                ],
+                args=bounded_command(
+                    args=[
+                        dotnet,
+                        "run",
+                        "--project",
+                        "fixture.csproj",
+                        "--nologo",
+                    ],
+                    fixture=_LABEL,
+                    timeout_seconds=60,
+                ),
                 failure_label="dotnet run error",
             ),
         ],
