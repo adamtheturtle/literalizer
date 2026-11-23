@@ -1064,6 +1064,14 @@ AXES: Mapping[str, Axis] = _registry(
     # the very uniformity the default narrows on.  Every effective language
     # version and both layouts are covered for the same reasons as the
     # fallback axis itself.
+    wide_record_map_values=expand(
+        name=named(suffix="wide_record_map_values"),
+        requires=(has_option(option="record_map_value_typing"),),
+        overrides=(
+            pin(option=_RECORD_MAP_VALUE_TYPING, name="WIDE"),
+            member(option=_HETEROGENEOUS_STRATEGY, name="RECORD"),
+        ),
+    ),
     record_map_value_typing=expand(
         name=named_choice(suffix="record_map_value_typing"),
         choices=members(option=_RECORD_MAP_VALUE_TYPING),

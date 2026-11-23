@@ -2,6 +2,7 @@
 
 import dataclasses
 from collections.abc import Sequence
+from pathlib import Path
 
 from beartype import beartype
 
@@ -61,8 +62,14 @@ def target_call_declarations(
     fixture: ComposedCallFixture,
     spec: literalizer.Language,
     argument_values: Sequence[ParsedValue],
+    case_dir: Path,
 ) -> CallStubDeclarations:
-    """Declare synthetic targets unless the case uses a built-in."""
+    """Use the authored target or synthesize a stub for the call."""
+    if fixture.target_source is not None:
+        source = (case_dir / fixture.target_source).read_text(encoding="utf-8")
+        return CallStubDeclarations(
+            body=(), class_scope=(), file_scope=(source.rstrip("\n"),)
+        )
     if not fixture.include_target_stub:
         return CallStubDeclarations(body=(), class_scope=(), file_scope=())
     stub_return = (

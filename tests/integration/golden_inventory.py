@@ -8,7 +8,11 @@ from pathlib import Path
 from beartype import beartype
 
 from .call_variant_cases import call_golden_cases
-from .case_manifests import load_case_manifests
+from .case_manifests import (
+    ComposedCallFixture,
+    call_case_specs,
+    load_case_manifests,
+)
 from .constructor_cases import constructor_binding_cases
 from .deep_input_cases import deep_input_cases
 from .golden_artifacts import GoldenArtifact
@@ -57,6 +61,13 @@ def authored_paths(*, cases_dir: Path) -> Iterator[Path]:
         for variant in manifest.variants:
             for filename in variant.consumer_calls.values():
                 yield manifest.case_dir / filename
+    for config in call_case_specs(cases_dir=cases_dir):
+        fixture = config.fixture
+        if (
+            isinstance(fixture, ComposedCallFixture)
+            and fixture.target_source is not None
+        ):
+            yield cases_dir / config.case_dir_name / fixture.target_source
 
 
 def golden_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
