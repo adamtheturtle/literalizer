@@ -1659,12 +1659,24 @@ class Go(metaclass=LanguageCls):
     @beartype
     def dict_format_config(self) -> DictFormatConfig:
         """Configuration for dict formatting."""
-        base = typed_dict_open(
-            type_to_opener=make_type_to_opener(
-                element_to_type=self._init_element_to_type,
-                opener_template=f"map[{self.default_dict_key_type}]{{type_name}}{{{{",
-            ),
-            fallback=f"map[{self.default_dict_key_type}]{self.default_dict_value_type}{{",
+        type_to_opener = make_type_to_opener(
+            element_to_type=self._init_element_to_type,
+            opener_template=f"map[{self.default_dict_key_type}]{{type_name}}{{{{",
+        )
+        # The configured default supplies the element type of an empty
+        # map. Populated maps with no inferable common type need a
+        # carrier that can hold all their values.
+        default_type = self.default_dict_value_type
+        populated_fallback = (
+            "interface{}" if default_type == "interface{}" else "any"
+        )
+        empty_open = typed_dict_open(
+            type_to_opener=type_to_opener,
+            fallback=f"map[{self.default_dict_key_type}]{default_type}{{",
+        )
+        populated_open = typed_dict_open(
+            type_to_opener=type_to_opener,
+            fallback=f"map[{self.default_dict_key_type}]{populated_fallback}{{",
         )
 
         @beartype
@@ -1680,12 +1692,14 @@ class Go(metaclass=LanguageCls):
         @beartype
         def _open(items: dict[Scalar, Value], /) -> str:
             """Open the map with the types its formatted values have."""
-            return base(_normalized(items))
+            opener = populated_open if len(items) > 0 else empty_open
+            return opener(_normalized(items))
 
         @beartype
         def _signature(items: dict[Scalar, Value], /) -> CollectionSignature:
             """Retain rendered-value inference for sibling widening."""
-            return collection_signature(base, _normalized(items))
+            opener = populated_open if len(items) > 0 else empty_open
+            return collection_signature(opener, _normalized(items))
 
         return DictFormatConfig(
             dict_open=signature_open(render=_open, infer=_signature),

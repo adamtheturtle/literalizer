@@ -23,6 +23,7 @@ import shutil
 
 import click
 
+from literalizer import Language
 from literalizer.languages import Go
 from scripts import roundtrip_common
 
@@ -37,14 +38,14 @@ _EXCLUDED_KEYS = ("biginteger",)
 _GO_MOD = "module fixture\n\ngo 1.18\n"
 
 
-def _build_program(json_text: str) -> str:
+def _build_program(*, json_text: str, language: Language) -> str:
     """Return a runnable Go program literalized from *json_text*."""
     trimmed_json = roundtrip_common.trim_keys(
         json_text=json_text,
         excluded_keys=_EXCLUDED_KEYS,
     )
     result = roundtrip_common.literalize_new_variable(
-        language=Go(),
+        language=language,
         json_text=trimmed_json,
         var_name=_VAR_NAME,
         pre_indent_level=1,
@@ -86,24 +87,30 @@ def main() -> None:
     json_text = roundtrip_common.input_for_capabilities(
         capabilities=Go.variant_metadata.round_trip_capabilities,
     )
-    program = _build_program(json_text=json_text)
     go = shutil.which(cmd="go")
     if go is None or go == "":
         go = "go"
-    roundtrip_common.execute(
-        label=_LABEL,
-        source_filename="main.go",
-        program=program,
-        steps=[
-            roundtrip_common.Step(
-                args=[go, "run", "."],
-                failure_label="go run error",
-            ),
-        ],
-        excluded_keys=_EXCLUDED_KEYS,
-        expected_json=json_text,
-        extra_files={"go.mod": _GO_MOD},
-    )
+    for source, language in (
+        (json_text, Go()),
+        (
+            '{"label":"x","nested":{"label":"y"},"negative_zero":-0.0}',
+            Go(default_dict_value_type="string"),
+        ),
+    ):
+        roundtrip_common.execute(
+            label=_LABEL,
+            source_filename="main.go",
+            program=_build_program(json_text=source, language=language),
+            steps=[
+                roundtrip_common.Step(
+                    args=[go, "run", "."],
+                    failure_label="go run error",
+                ),
+            ],
+            excluded_keys=_EXCLUDED_KEYS,
+            expected_json=source,
+            extra_files={"go.mod": _GO_MOD},
+        )
 
 
 if __name__ == "__main__":
