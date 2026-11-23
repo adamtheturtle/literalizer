@@ -4,8 +4,5 @@ owner = "variant"
 [[variants]]
 axis = "csharp_object_carrier"
 
-[variants.consumer_statements]
-CSharp = '''
-object?[] values = my_data;
-if (values.Length != 0) { throw new System.InvalidOperationException("changed collection values"); }
-'''
+[variants.consumer_calls]
+CSharp = "check.cs"

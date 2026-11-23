@@ -50,10 +50,13 @@ def literal_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
 
 
 def authored_paths(*, cases_dir: Path) -> Iterator[Path]:
-    """Return manifests and source inputs owned by the corpus."""
+    """Return manifests, source inputs and native checker definitions."""
     for manifest in load_case_manifests(cases_dir=cases_dir):
         yield manifest.path
         yield manifest.input.path
+        for variant in manifest.variants:
+            for filename in variant.consumer_calls.values():
+                yield manifest.case_dir / filename
 
 
 def golden_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:

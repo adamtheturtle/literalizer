@@ -5,17 +5,11 @@ gates = [{kind = "capability_flag", flag = "supports_nullable_object_fallbacks"}
 [[variants]]
 axis = "csharp_object_carrier"
 
-[variants.consumer_statements]
-CSharp = '''
-System.Collections.Generic.Dictionary<string, object> values = my_data;
-if (values.Count != 2 || values["flag"] is not true || values["text"] is not "") { throw new System.InvalidOperationException("changed collection values"); }
-'''
+[variants.consumer_calls]
+CSharp = "check.cs"
 
 [[variants]]
 axis = "default_dict_value_type"
 
-[variants.consumer_statements]
-CSharp = '''
-System.Collections.Generic.Dictionary<string, object?> values = my_data;
-if (values.Count != 2 || values["flag"] is not true || values["text"] is not "") { throw new System.InvalidOperationException("changed collection values"); }
-'''
+[variants.consumer_calls]
+CSharp = "check_default.cs"

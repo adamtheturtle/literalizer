@@ -36,7 +36,7 @@ from .language_specs import (
     make_spec,
     sorted_languages,
 )
-from .manifest_values import ComposedConsumer
+from .manifest_values import ConsumerCall
 from .scenario_participation import Requirement, scenario_exclusion
 from .variant_axes import AXES
 from .variant_axis_names import SPECIAL_VARIANT_AXES
@@ -270,7 +270,7 @@ def case_for_manifest_variant(
         language_id=variant.lang_cls.language_id
     ).variants.declaration_style_variable_names
     substitutions = context.resolved_record_null_substitutions()
-    statements = manifest_variant.consumer_statements.get(variant.lang_cls)
+    consumer_source = manifest_variant.consumer_calls.get(variant.lang_cls)
     variant = dataclasses.replace(
         variant,
         collection_layout=(
@@ -308,8 +308,8 @@ def case_for_manifest_variant(
         ),
         pre_indent_level=context.pre_indent_level,
         consumer=(
-            ComposedConsumer(statements=statements)
-            if statements is not None
+            ConsumerCall(source_path=manifest.case_dir / consumer_source)
+            if consumer_source is not None
             else manifest_variant.consumer_templates.get(
                 variant.lang_cls,
                 context.consumer_templates.get(

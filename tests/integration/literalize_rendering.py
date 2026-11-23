@@ -3,6 +3,7 @@ options.
 """
 
 import dataclasses
+import json
 from collections.abc import Sequence
 
 from beartype import beartype
@@ -11,6 +12,7 @@ import literalizer
 
 from .case_inputs import CaseInput
 from .golden_renderings import GoldenRendering
+from .manifest_values import ConsumerCall
 from .yaml_warnings import expected_yaml_warnings
 
 
@@ -58,16 +60,38 @@ def compose_rendering(
     # Keep dependencies before any external type that uses them, even
     # when the rendering requests the same dependencies itself.
     preamble = rendering.extra_preamble
+    result = dataclasses.replace(
+        result,
+        preamble=preamble + result.preamble,
+        data_dependent_preamble=tuple(
+            entry
+            for entry in result.data_dependent_preamble
+            if entry not in preamble
+        ),
+    )
+    consumer = rendering.consumer
+    if isinstance(consumer, ConsumerCall):
+        variable = rendering.render.variable_form
+        assert isinstance(variable, literalizer.NewVariable)  # noqa: S101
+        call = literalizer.literalize_call(
+            source=json.dumps(obj={"$ref": variable.name}),
+            input_format=literalizer.InputFormat.JSON,
+            language=spec,
+            target_function="CheckValue",
+            parameter_names=("values",),
+            per_element=False,
+            ref_key="$ref",
+        )
+        return literalizer.literalize_call_with_declarations(
+            language=spec,
+            declarations=(*declarations, result),
+            call=call,
+            extra_body_preamble=(
+                consumer.source_path.read_text(encoding="utf-8").rstrip("\n"),
+            ),
+        )
     return literalizer.literalize_call_with_declarations(
         language=spec,
         declarations=declarations,
-        call=dataclasses.replace(
-            result,
-            preamble=preamble + result.preamble,
-            data_dependent_preamble=tuple(
-                entry
-                for entry in result.data_dependent_preamble
-                if entry not in preamble
-            ),
-        ),
+        call=result,
     )
