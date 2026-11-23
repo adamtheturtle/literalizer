@@ -123,7 +123,6 @@ from literalizer._language import (
     default_format_call_variable_declaration,
     default_sequence_binding_declarations,
     default_type_hint_collection_preamble_lines,
-    default_validate_call_arg,
     default_wrap_calls_with_declarations,
     empty_record_shape_names,
     identity_call_arg,
@@ -1037,7 +1036,11 @@ class Go(metaclass=LanguageCls):
         ):
             _reject_record_lists_with_empty_siblings(data)
 
-    validate_call_arg = default_validate_call_arg
+    @cached_property
+    @beartype
+    def validate_call_arg(self) -> Callable[[Value], None]:
+        """Apply the Go literal shape constraints to direct arguments."""
+        return self.validate_spec_for_data
 
     format_call_statement = default_format_call_statement
 

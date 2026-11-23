@@ -8,8 +8,11 @@ from literalizer import (
     NewVariable,
     literalize_call,
 )
-from literalizer.exceptions import VariableNameNotSupportedError
-from literalizer.languages import Jsonnet
+from literalizer.exceptions import (
+    UnrepresentableInputError,
+    VariableNameNotSupportedError,
+)
+from literalizer.languages import Go, Jsonnet
 from tests.integration.call_collection import default_call_case_specs
 from tests.integration.call_expectations import (
     expected_call_shape_exception,
@@ -57,4 +60,33 @@ def test_call_binding_requires_variable_name_support(
             parameter_names=("value",),
             variable_form=variable_form,
             per_element=False,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames=("source", "per_element"),
+    argvalues=[
+        ('{"items":[[],[{"name":"one"}]]}', False),
+        ('[[{"items":[[],[{"name":"one"}]]}]]', True),
+    ],
+)
+def test_go_record_call_rejects_empty_list_sibling(
+    *, source: str, per_element: bool
+) -> None:
+    """Direct arguments have the same record-list constraints as
+    literals.
+    """
+    with pytest.raises(
+        expected_exception=UnrepresentableInputError,
+        match="record list and its empty sibling",
+    ):
+        _ = literalize_call(
+            source=source,
+            input_format=InputFormat.JSON,
+            language=Go(
+                heterogeneous_strategy=Go.heterogeneous_strategies.RECORD,
+            ),
+            target_function="consume",
+            parameter_names=("value",),
+            per_element=per_element,
         )
