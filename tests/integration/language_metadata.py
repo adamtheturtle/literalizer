@@ -172,6 +172,13 @@ class VariantPolicy(  # noqa: NOD001
     empty_container_type_hint: EmptyContainerTypeHintVariant | None = None
     """Settings for the empty-container-hint golden, when it runs."""
 
+    mixed_map_default_value_type: (
+        Annotated[str, Field(min_length=1)] | None
+    ) = None
+    """A concrete default type to exercise with heterogeneous map
+    values.
+    """
+
     non_default_kwargs: dict[
         Annotated[str, Field(min_length=1)],
         Annotated[str, Field(min_length=1)],
