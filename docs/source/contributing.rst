@@ -151,7 +151,7 @@ The suite for module names checks the default for each constructor across its la
    suites = ["default-module-name"]
    gates = [{ kind = "capability_flag", flag = "supports_module_name" }]
 
-The ``binary``, ``default_module_name``, ``empty_list``, and ``multiline_string`` cases store generated files under ``goldens/<language-id>/<version>/<scenario>.<ext>`` inside the case directory.
+The ``binary``, ``default_module_name``, ``empty_list``, ``literalize_ref_both_forms``, and ``multiline_string`` cases store generated files under ``goldens/<language-id>/<version>/<scenario>.<ext>`` inside the case directory.
 For example, :file:`tests/integration/cases/binary/goldens/cpp/cpp17/bytes_format_base64.cpp` records the C++17 Base64 byte format.
 The base scenario is named ``base``, and the default module-name scenario is named ``default_module_name``.
 Other cases use flat filenames with an ``@<version>`` suffix during the layout pilot.

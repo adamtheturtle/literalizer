@@ -4,7 +4,13 @@ import functools
 from pathlib import Path
 
 _NESTED_CASES = frozenset(
-    {"binary", "default_module_name", "empty_list", "multiline_string"}
+    {
+        "binary",
+        "default_module_name",
+        "empty_list",
+        "literalize_ref_both_forms",
+        "multiline_string",
+    }
 )
 
 
