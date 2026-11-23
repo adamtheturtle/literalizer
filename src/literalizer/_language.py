@@ -1601,24 +1601,17 @@ new_constructor_target: Callable[[str], str] = _new_constructor_target
 """
 
 
-if TYPE_CHECKING:
-    from typing import Protocol as _LanguageMetadataBase
-else:
-    # Keep runtime instance checks on LanguageCls owned by type.
-    _LanguageMetadataBase = object
-
-
-class _LanguageMetadata(_LanguageMetadataBase):
+class _LanguageMetadata:
     """Contract supplied by language class bodies and dataclass decoration.
 
     These are attributes of the created language class, rather than state
     allocated when creating the type object.
     """
 
-    stringifies_nested_collections: bool
+    stringifies_nested_collections: ClassVar[bool]
     """Whether nested collection syntax becomes string payload data."""
 
-    wraps_data_dependent_preamble_in_body: bool
+    wraps_data_dependent_preamble_in_body: ClassVar[bool]
     """Whether file wrapping places the data-dependent preamble inside
     the wrapped body (ahead of the body preamble) instead of at file
     scope.
@@ -1632,8 +1625,8 @@ class _LanguageMetadata(_LanguageMetadataBase):
     so a file-scope ``case class Record0`` would collide across cases.
     """
 
-    language_id: str
-    __dataclass_fields__: dict[str, dataclasses.Field[object]]
+    language_id: ClassVar[str]
+    __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[object]]]
     """Stable, implementation-neutral identifier for this language.
 
     Consumers that need to name a language without depending on the
@@ -1641,64 +1634,64 @@ class _LanguageMetadata(_LanguageMetadataBase):
     metadata files) key off this identifier.
     """
 
-    DateFormats: type[enum.Enum]
-    DatetimeFormats: type[enum.Enum]
-    BytesFormats: type[enum.Enum]
-    SequenceFormats: type[enum.Enum]
-    SetFormats: type[enum.Enum]
-    CommentFormats: type[enum.Enum]
-    VariableTypeHints: type[enum.Enum]
-    DeclarationStyles: type[enum.Enum]
-    DictEntryStyles: type[enum.Enum]
-    DictFormats: type[enum.Enum]
-    EmptyDictKey: type[enum.Enum]
-    FloatFormats: type[enum.Enum]
-    IntegerFormats: type[enum.Enum]
-    IntegerWidthStrategies: type[enum.Enum]
-    NumericLiteralSuffixes: type[enum.Enum]
-    NumericSeparators: type[enum.Enum]
-    NumericStyles: type[enum.Enum]
-    StringFormats: type[enum.Enum]
-    TrailingCommas: type[enum.Enum]
-    StatementTerminatorStyles: type[enum.Enum]
-    CallStyles: type[enum.Enum]
-    Modifiers: type[enum.Enum]
-    HeterogeneousStrategies: type[enum.Enum]
-    JsonTypes: type[JsonType]
-    BoolFormats: type[enum.Enum]
-    identifier_cases: tuple[IdentifierCase, ...]
-    supported_ref_cases: frozenset[IdentifierCase]
-    modifier_combinations: tuple[ModifierCombination, ...]
-    variant_metadata: VariantMetadata
-    module_name_case: IdentifierCase
-    extension: str
-    pygments_name: str | None
-    VersionFormats: type[enum.Enum]
-    supports_special_floats: bool
-    supports_non_ascii_string_literals: bool
-    supports_multiline_string_literals: bool
-    supports_empty_sibling_sequence_type_hints: bool
-    supports_typed_dict_open: bool
-    supports_variable_names: bool
-    supports_no_variable_wrap_in_file: bool
-    supports_native_invocations: bool
-    supports_local_binding_documents: bool
+    DateFormats: ClassVar[type[enum.Enum]]
+    DatetimeFormats: ClassVar[type[enum.Enum]]
+    BytesFormats: ClassVar[type[enum.Enum]]
+    SequenceFormats: ClassVar[type[enum.Enum]]
+    SetFormats: ClassVar[type[enum.Enum]]
+    CommentFormats: ClassVar[type[enum.Enum]]
+    VariableTypeHints: ClassVar[type[enum.Enum]]
+    DeclarationStyles: ClassVar[type[enum.Enum]]
+    DictEntryStyles: ClassVar[type[enum.Enum]]
+    DictFormats: ClassVar[type[enum.Enum]]
+    EmptyDictKey: ClassVar[type[enum.Enum]]
+    FloatFormats: ClassVar[type[enum.Enum]]
+    IntegerFormats: ClassVar[type[enum.Enum]]
+    IntegerWidthStrategies: ClassVar[type[enum.Enum]]
+    NumericLiteralSuffixes: ClassVar[type[enum.Enum]]
+    NumericSeparators: ClassVar[type[enum.Enum]]
+    NumericStyles: ClassVar[type[enum.Enum]]
+    StringFormats: ClassVar[type[enum.Enum]]
+    TrailingCommas: ClassVar[type[enum.Enum]]
+    StatementTerminatorStyles: ClassVar[type[enum.Enum]]
+    CallStyles: ClassVar[type[enum.Enum]]
+    Modifiers: ClassVar[type[enum.Enum]]
+    HeterogeneousStrategies: ClassVar[type[enum.Enum]]
+    JsonTypes: ClassVar[type[JsonType]]
+    BoolFormats: ClassVar[type[enum.Enum]]
+    identifier_cases: ClassVar[tuple[IdentifierCase, ...]]
+    supported_ref_cases: ClassVar[frozenset[IdentifierCase]]
+    modifier_combinations: ClassVar[tuple[ModifierCombination, ...]]
+    variant_metadata: ClassVar[VariantMetadata]
+    module_name_case: ClassVar[IdentifierCase]
+    extension: ClassVar[str]
+    pygments_name: ClassVar[str | None]
+    VersionFormats: ClassVar[type[enum.Enum]]
+    supports_special_floats: ClassVar[bool]
+    supports_non_ascii_string_literals: ClassVar[bool]
+    supports_multiline_string_literals: ClassVar[bool]
+    supports_empty_sibling_sequence_type_hints: ClassVar[bool]
+    supports_typed_dict_open: ClassVar[bool]
+    supports_variable_names: ClassVar[bool]
+    supports_no_variable_wrap_in_file: ClassVar[bool]
+    supports_native_invocations: ClassVar[bool]
+    supports_local_binding_documents: ClassVar[bool]
     """Whether native documents can bind and return local values."""
-    supports_stateful_free_call_consumers: bool
+    supports_stateful_free_call_consumers: ClassVar[bool]
     """Whether composed files can host unary integer receivers as free
     functions, retaining state for final verification of observed events.
     """
-    supports_stateful_receiver_result_checks: bool
+    supports_stateful_receiver_result_checks: ClassVar[bool]
     """Whether invocation recipes can check a receiver's method or
     function field result while retaining changes to receiver state.
     """
-    supports_dotted_calls: bool
-    has_free_function_calls: bool
-    reserved_identifiers: frozenset[str]
-    reserved_variable_identifiers: frozenset[str]
-    reserved_variable_identifiers_case_sensitive: bool
-    reserved_module_identifiers: frozenset[str]
-    immutable_variable_modifiers: frozenset[enum.Enum]
+    supports_dotted_calls: ClassVar[bool]
+    has_free_function_calls: ClassVar[bool]
+    reserved_identifiers: ClassVar[frozenset[str]]
+    reserved_variable_identifiers: ClassVar[frozenset[str]]
+    reserved_variable_identifiers_case_sensitive: ClassVar[bool]
+    reserved_module_identifiers: ClassVar[frozenset[str]]
+    immutable_variable_modifiers: ClassVar[frozenset[enum.Enum]]
     """Modifiers whose declaration cannot be assigned to afterwards.
 
     ``BothVariableForms`` emits a declaration and then an assignment to
@@ -1707,7 +1700,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     (issue #4565).
     """
 
-    wrap_in_file_tolerates_pre_indent: bool
+    wrap_in_file_tolerates_pre_indent: ClassVar[bool]
     """Whether a wrapped file survives being written at an indentation.
 
     ``pre_indent_level`` indents the value declaration but not the
@@ -1716,7 +1709,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     parse that; one that reads braces does not care (issue #4535).
     """
 
-    module_name_shares_variable_scope: bool
+    module_name_shares_variable_scope: ClassVar[bool]
     """Whether the wrapper name and the bound variable share a scope.
 
     A Fortran ``program`` unit and the variables it declares sit in one
@@ -1724,20 +1717,22 @@ class _LanguageMetadata(_LanguageMetadataBase):
     twice.  Nearly every other wrapper introduces a scope of its own
     (issue #4530).
     """
-    reserved_variable_identifier_pattern: re.Pattern[str] | None
+    reserved_variable_identifier_pattern: ClassVar[re.Pattern[str] | None]
     """A shape a declaration name cannot take, beyond the names listed
     in :attr:`~literalizer.Language.reserved_variable_identifiers`.
     Zig's arbitrary-width integer primitives (``u7``, ``i33``, ...) are
     an open set, so they are spelled as a pattern rather than
     enumerated.
     """
-    reserved_call_parameter_identifiers: frozenset[str]
+    reserved_call_parameter_identifiers: ClassVar[frozenset[str]]
     """Names a call parameter cannot take even where a declaration can.
 
     Scala's ``using`` opens a parameter clause, and Crystal's ``_``
     cannot carry the default value a generated stub gives it.
     """
-    reserved_call_parameter_identifier_pattern: re.Pattern[str] | None
+    reserved_call_parameter_identifier_pattern: ClassVar[
+        re.Pattern[str] | None
+    ]
     """A shape a call parameter name cannot take.
 
     R identifiers cannot begin with an underscore and Dart named
@@ -1745,7 +1740,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     rather than enumerated (issue #3916, issue #3952).
     """
 
-    declares_call_parameter_names: bool
+    declares_call_parameter_names: ClassVar[bool]
     """Whether a wrapped stub writes its parameter names into the file.
 
     A COBOL stub takes its arguments positionally and names none of
@@ -1753,11 +1748,11 @@ class _LanguageMetadata(_LanguageMetadataBase):
     with anything: there is nothing in the output to collide with
     (issue #4771).
     """
-    uses_data_keyword_for_algebraic_constructors: bool
+    uses_data_keyword_for_algebraic_constructors: ClassVar[bool]
     """Whether algebraic constructors are declared with the data
     keyword.
     """
-    accepts_type_name_call_target: bool
+    accepts_type_name_call_target: ClassVar[bool]
     """Whether a bare type name may be a ``target_function``.
 
     A constructor call target is spelled by the language, so its shape
@@ -1767,7 +1762,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     wrong for Elixir, where a capitalized bare name parses as an alias
     rather than a function (issue #3914).
     """
-    declares_type_name_call_target: bool
+    declares_type_name_call_target: ClassVar[bool]
     """Whether a wrapped file can declare a bare type-name call target.
 
     A constructor target is exempt from the identifier grammar because
@@ -1777,7 +1772,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     a constructor the declaration syntax has no room for, so the
     exemption stops at the file scaffold (issue #4525).
     """
-    dotted_call_root_shares_entrypoint_namespace: bool
+    dotted_call_root_shares_entrypoint_namespace: ClassVar[bool]
     """Whether a dotted call root is declared as the entry point is.
 
     A generated stub usually declares the root the same way the wrapper
@@ -1786,7 +1781,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     ``static`` field beside the entry-point method, and a field and a
     method of one name coexist (issue #3914).
     """
-    reserved_bare_call_target_identifiers: frozenset[str]
+    reserved_bare_call_target_identifiers: ClassVar[frozenset[str]]
     """Names only a call target with no dot in it cannot take.
 
     A PHP stub declares a plain ``function`` only for such a target;
@@ -1796,7 +1791,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     leaving ``end.foo`` -- and a parameter or variable ``$end`` --
     alone (issue #4495).
     """
-    reserved_call_target_head_identifiers: frozenset[str]
+    reserved_call_target_head_identifiers: ClassVar[frozenset[str]]
     """Names only the leading component of a call target cannot take.
 
     A Common Lisp dotted stub declares each prefix of the target, so
@@ -1806,7 +1801,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     can name a package symbol, and a parameter or a variable never does
     (issue #4547).
     """
-    contextual_call_target_identifiers: frozenset[str]
+    contextual_call_target_identifiers: ClassVar[frozenset[str]]
     """Reserved declaration names a call target may still lead with.
 
     The leading component of a ``target_function`` names a function, or
@@ -1817,7 +1812,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     advanced-function body block) or Roc's ``app`` (a module header) --
     lists it here (issue #3905).
     """
-    call_parameter_shadowing: CallParameterShadowing
+    call_parameter_shadowing: ClassVar[CallParameterShadowing]
     """Which declarations a wrapped stub's parameter may not repeat.
 
     A wrapped file declares the target and its parameters in one
@@ -1828,7 +1823,7 @@ class _LanguageMetadata(_LanguageMetadataBase):
     of`` for any file-scope declaration, which for a dotted target
     includes the helper each component declares (issue #4528).
     """
-    reserved_call_target_keywords_case_sensitive: bool
+    reserved_call_target_keywords_case_sensitive: ClassVar[bool]
     """Whether a reserved word leading a call target matches by case.
 
     A language may spell identifiers case-sensitively while matching
@@ -1838,12 +1833,12 @@ class _LanguageMetadata(_LanguageMetadataBase):
     :attr:`~literalizer.Language.reserved_variable_identifiers_case_sensitive`
     ``True`` (issue #3905).
     """
-    module_name_must_start_uppercase: bool
-    new_variable_name_syntax: IdentifierSyntax
-    max_variable_identifier_length: int | None
-    call_stub_result: CallStubResult | None
-    call_literal_syntax: CallLiteralSyntax | None
-    call_target_name_syntax: IdentifierSyntax | None
+    module_name_must_start_uppercase: ClassVar[bool]
+    new_variable_name_syntax: ClassVar[IdentifierSyntax]
+    max_variable_identifier_length: ClassVar[int | None]
+    call_stub_result: ClassVar[CallStubResult | None]
+    call_literal_syntax: ClassVar[CallLiteralSyntax | None]
+    call_target_name_syntax: ClassVar[IdentifierSyntax | None]
     """The grammar each component of a ``target_function`` follows.
 
     ``None`` means the declaration grammar, which is what a call target
@@ -1852,43 +1847,43 @@ class _LanguageMetadata(_LanguageMetadataBase):
     dotted target's leading component can be a module rather than a
     value, so it declares its own (issue #3989).
     """
-    allows_empty_call_parens: bool
-    dotted_call_stub_indexes_colliding_helpers: bool
+    allows_empty_call_parens: ClassVar[bool]
+    dotted_call_stub_indexes_colliding_helpers: ClassVar[bool]
     """Whether generated helper names disambiguate normalized
     collisions.
     """
-    supports_dotted_call_stub: bool
-    call_returns_expression: bool
-    supports_json_call_result_binding: bool
+    supports_dotted_call_stub: ClassVar[bool]
+    call_returns_expression: ClassVar[bool]
+    supports_json_call_result_binding: ClassVar[bool]
     """Whether call-result bindings preserve an active JSON value type."""
-    supports_zero_parameter_calls: bool
-    max_call_parameters: int
-    supports_multiline_dict_layout: bool
+    supports_zero_parameter_calls: ClassVar[bool]
+    max_call_parameters: ClassVar[int]
+    supports_multiline_dict_layout: ClassVar[bool]
     """Whether a mapping may be spread over several lines.
 
     TOML forbids a multi-line inline table, so a mapping there stays on
     one line -- and so does everything under it -- even when the caller
     asks for the multiline layout (issue #4538).
     """
-    supports_inline_multiline_dict_args: bool
-    supports_standalone_comments_in_wrapped_calls: bool
-    supports_variadic_calls: bool
+    supports_inline_multiline_dict_args: ClassVar[bool]
+    supports_standalone_comments_in_wrapped_calls: ClassVar[bool]
+    supports_variadic_calls: ClassVar[bool]
     """Whether calls accept a different number of values than
     parameters.
     """
-    supports_multi_param_call_wrapper_stub: bool
-    supports_dict_literal_as_free_expression: bool
-    supports_module_name: bool
-    supports_empty_dict_key: bool
-    supports_call_style: bool
-    supports_bare_mapping_documents: bool
+    supports_multi_param_call_wrapper_stub: ClassVar[bool]
+    supports_dict_literal_as_free_expression: ClassVar[bool]
+    supports_module_name: ClassVar[bool]
+    supports_empty_dict_key: ClassVar[bool]
+    supports_call_style: ClassVar[bool]
+    supports_bare_mapping_documents: ClassVar[bool]
     """Whether native mapping documents accept keys without quotes."""
-    supports_json_object_documents: bool
+    supports_json_object_documents: ClassVar[bool]
     """Whether a JSON object is a complete native document."""
-    supports_default_dict_key_type: bool
-    supports_non_string_dict_keys: bool
-    checks_raw_control_dict_keys_separately: bool
-    pools_map_integer_width: bool
+    supports_default_dict_key_type: ClassVar[bool]
+    supports_non_string_dict_keys: ClassVar[bool]
+    checks_raw_control_dict_keys_separately: ClassVar[bool]
+    pools_map_integer_width: ClassVar[bool]
     """Whether one integer width is chosen for a whole map's values.
 
     A map whose value slot is a single declared type needs every
@@ -1898,32 +1893,51 @@ class _LanguageMetadata(_LanguageMetadataBase):
     ordinary negative one that VB.NET and C# each represent fine on
     their own (issue #4488).
     """
-    supports_default_dict_value_type: bool
-    supports_nullable_object_fallbacks: bool
+    supports_default_dict_value_type: ClassVar[bool]
+    supports_nullable_object_fallbacks: ClassVar[bool]
     """Whether collection fallbacks accept object type annotations
     that allow null values.
     """
-    supports_default_sequence_element_type: bool
-    supports_key_value_assignment_documents: bool
+    supports_default_sequence_element_type: ClassVar[bool]
+    supports_key_value_assignment_documents: ClassVar[bool]
     """Whether name = true is a native key/value document."""
-    supports_default_set_element_type: bool
-    supports_default_ordered_map_value_type: bool
-    json_type_variant_name_suffix: str | None
+    supports_default_set_element_type: ClassVar[bool]
+    supports_default_ordered_map_value_type: ClassVar[bool]
+    json_type_variant_name_suffix: ClassVar[str | None]
     """Stable filename suffix for a non-default JSON type variant."""
-    supports_record_struct_name_prefix: bool
-    supports_record_shape_names: bool
-    record_shape_names_emit_declarations: bool
+    supports_record_struct_name_prefix: ClassVar[bool]
+    supports_record_shape_names: ClassVar[bool]
+    record_shape_names_emit_declarations: ClassVar[bool]
     """Whether ``record_shape_names`` mappings emit declarations.
 
     When ``False``, the mapping supplies only the type used by record
     literals. Generic standalone-fixture builders exclude that mode because
     the mapped type is not declared by literalizer.
     """
-    dict_supports_heterogeneous_values: bool
+    dict_supports_heterogeneous_values: ClassVar[bool]
+
+
+_LANGUAGE_CLASSES: list["LanguageCls"] = []
+
+
+class _LanguageClassRegistry(type):
+    """Register classes when the language metaclass constructs them."""
+
+    @override
+    def __call__(cls, *args: object, **kwargs: object) -> "LanguageCls":
+        """Register a language class once the class constructor
+        returns.
+        """
+        created: object = super().__call__(*args, **kwargs)
+        if not isinstance(created, LanguageCls):
+            msg = "A language metaclass must create a language class"
+            raise TypeError(msg)
+        _LANGUAGE_CLASSES.append(created)
+        return created
 
 
 @beartype
-class LanguageCls(type, _LanguageMetadata):
+class LanguageCls(type, _LanguageMetadata, metaclass=_LanguageClassRegistry):
     """Meta-class that declares the nested format Enum class attributes.
 
     Language classes use ``metaclass=LanguageCls`` so that downstream
@@ -1979,20 +1993,6 @@ class LanguageCls(type, _LanguageMetadata):
     (issue #4655).
     """
 
-    _language_classes: ClassVar[list["LanguageCls"]] = []
-
-    def __new__(
-        mcs,
-        name: str,
-        bases: "tuple[type[object] | LanguageCls, ...]",
-        namespace: dict[str, object],
-        **kwargs: object,
-    ) -> "LanguageCls":
-        """Create and register a language class for option discovery."""
-        created = super().__new__(mcs, name, bases, namespace, **kwargs)
-        mcs._language_classes.append(created)
-        return created
-
     @override
     def __call__(cls, *args: object, **kwargs: object) -> "Language":
         """Construct a language instance, typed as :class:`Language`."""
@@ -2000,7 +2000,7 @@ class LanguageCls(type, _LanguageMetadata):
         if len(unsupported) > 0:
             known_options = {
                 field_name
-                for language_cls in LanguageCls._language_classes
+                for language_cls in _LANGUAGE_CLASSES
                 if "__dataclass_fields__" in vars(language_cls)
                 for field_name in language_cls.__dataclass_fields__
             }

@@ -76,11 +76,10 @@ def callback_language(
 
         return dataclasses.replace(native.dict_format_config, dict_open=_open)
 
-    return literalizer.LanguageCls.__new__(
-        mcs=type(lang_cls),
-        name=f"Callback{lang_cls.__name__}",
-        bases=(lang_cls,),
-        namespace={
+    return literalizer.LanguageCls(
+        f"Callback{lang_cls.__name__}",
+        (lang_cls,),
+        {
             "sequence_open": cached_property(func=sequence_open),
             "dict_format_config": cached_property(func=dict_format_config),
         },
@@ -111,11 +110,10 @@ def existing_suffix_cpp(*, base_suffix: str) -> literalizer.LanguageCls:
             base=base, suffix="LL", base_suffix=base_suffix
         )
 
-    return literalizer.LanguageCls.__new__(
-        mcs=type(Cpp),
-        name=f"ExistingSuffix{base_suffix}Cpp",
-        bases=(Cpp,),
-        namespace={"format_integer": cached_property(func=format_integer)},
+    return literalizer.LanguageCls(
+        f"ExistingSuffix{base_suffix}Cpp",
+        (Cpp,),
+        {"format_integer": cached_property(func=format_integer)},
     )
 
 
