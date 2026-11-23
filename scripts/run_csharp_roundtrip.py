@@ -15,21 +15,29 @@ The shared input's ``biginteger`` field is excluded from the comparison:
 its 26-digit value exceeds every C# integer literal type the literalizer
 emits, so the program would not compile if the field were kept.
 
+The same executable checks that mutating either nested occurrence of a
+repeated bound JsonNode leaves the other occurrence and the original
+unchanged, including after renaming the binding (issue #7217).
+
 This lives here, driven by the ``CSharp roundtrip`` step of the
 ``lint-dotnet`` job in ``.github/workflows/lint.yml``, because that job
 is where the .NET toolchain is installed; it is deliberately not a
 pytest test under ``tests/``.
 """
 
+import json
 import shutil
+from pathlib import Path
 
 import click
 
+from literalizer import InputFormat, ValueInput, literalize_call
 from literalizer.languages import CSharp
 from scripts import roundtrip_common
 
 _VAR_NAME = "myData"
 _LABEL = "CSharp"
+_OWNERSHIP_CONSUMER_PATH = Path(__file__).parent / "JsonNodeOwnership.cs"
 _EXCLUDED_KEYS = ("biginteger",)
 
 # ``LangVersion 10`` matches ``CSharp.language_version`` in
@@ -50,6 +58,43 @@ _CSPROJ = (
 )
 
 
+def _ownership_case(*, binding: str, wrong_value: bool) -> str:
+    """Render two uses of one binding or substitute one occurrence."""
+    language = CSharp(json_type=CSharp.json_types.SYSTEM_TEXT_JSON_NODE)
+    bound_value = {"value": [1, 2]}
+    declaration = roundtrip_common.literalize_new_variable(
+        language=language,
+        json_text=json.dumps(obj=bound_value),
+        var_name=binding,
+        pre_indent_level=2,
+    )
+    reference = {"$ref": binding}
+    copies: list[ValueInput] = [
+        reference,
+        {"value": [8, 2]} if wrong_value else reference,
+    ]
+    call = literalize_call(
+        source=json.dumps(obj={"copies": copies}),
+        input_format=InputFormat.JSON,
+        language=language,
+        target_function="Consume",
+        parameter_names=["argument"],
+        per_element=False,
+        ref_key="$ref",
+        ref_values={binding: bound_value},
+    )
+    return f"""
+        {{
+{declaration.code}
+            for (var position = 0; position < 2; position++) {{
+                {call.code}
+                void Consume(JsonNode argument) =>
+                    JsonNodeOwnership.Check(argument, {binding}!, position);
+            }}
+        }}
+"""
+
+
 def _build_program(json_text: str) -> str:
     """Return a runnable C# program literalized from *json_text*."""
     trimmed_json = roundtrip_common.trim_keys(
@@ -66,10 +111,15 @@ def _build_program(json_text: str) -> str:
     )
     preamble = "\n".join(result.preamble)
     body_preamble = "\n".join(result.body_preamble)
+    ownership_cases = _ownership_case(
+        binding="shared", wrong_value=False
+    ) + _ownership_case(binding="renamed", wrong_value=False)
+    wrong_value = _ownership_case(binding="shared", wrong_value=True)
     return (
         f"{preamble}\n"
         "using System;\n"
         "using System.Text.Json;\n"
+        "using System.Text.Json.Nodes;\n"
         f"{body_preamble}\n"
         "static class Program {\n"
         "    public static void Main() {\n"
@@ -81,6 +131,10 @@ def _build_program(json_text: str) -> str:
         "            throw new InvalidOperationException(\n"
         '                "negative_zero lost its sign");\n'
         "        }\n"
+        f"{ownership_cases}"
+        "        JsonNodeOwnership.ExpectWrongValue(() => {\n"
+        f"{wrong_value}"
+        "        });\n"
         f"        Console.Write(JsonSerializer.Serialize({_VAR_NAME}));\n"
         "    }\n"
         "}\n"
@@ -115,7 +169,12 @@ def main() -> None:
         ],
         excluded_keys=_EXCLUDED_KEYS,
         expected_json=json_text,
-        extra_files={"fixture.csproj": _CSPROJ},
+        extra_files={
+            "fixture.csproj": _CSPROJ,
+            _OWNERSHIP_CONSUMER_PATH.name: _OWNERSHIP_CONSUMER_PATH.read_text(
+                encoding="utf-8",
+            ),
+        },
     )
 
 
