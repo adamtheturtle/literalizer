@@ -157,7 +157,7 @@ The base scenario is named ``base``, and the default module-name scenario is nam
 Other cases use flat filenames with an ``@<version>`` suffix during the layout pilot.
 The resolver explicitly selects the pilot cases.
 Native selectors use the resolved inventory, and staging reconstructs the historical module identifier for nested fixtures.
-The test that checks for goldens in each base case accepts both layouts.
+The test that checks for golden files in each base case accepts both layouts.
 The C++ lint driver reads the version from the filename or the enclosing version directory.
 The workflow filters for MATLAB and Objective-C retain flat ``.m`` rules alongside their language-specific nested rules.
 
