@@ -765,7 +765,7 @@ def _build_type_hint_preamble(
     default_sequence_element_type: str,
     default_dict_value_type: str,
     default_dict_key_type: str,
-) -> Callable[[frozenset[type]], tuple[str, ...]]:
+) -> Callable[[frozenset[type[object]]], tuple[str, ...]]:
     """Build a callable that returns preamble lines for type hints.
 
     The returned callable checks which empty collection types are
@@ -773,7 +773,7 @@ def _build_type_hint_preamble(
     when at least one of them would produce an ``Any`` type hint.
     """
     # Pre-compute which collection types need "Any".
-    _any_types: frozenset[type] = frozenset(
+    _any_types: frozenset[type[object]] = frozenset(
         t
         for t, needs in (
             (
@@ -794,7 +794,7 @@ def _build_type_hint_preamble(
 
     @beartype
     def _preamble(
-        annotated_collection_types: frozenset[type],
+        annotated_collection_types: frozenset[type[object]],
         /,
     ) -> tuple[str, ...]:
         """Return the required ``typing`` imports."""
@@ -960,13 +960,13 @@ def _build_type_hint_preamble_py38(
     default_sequence_element_type: str,
     default_dict_value_type: str,
     default_dict_key_type: str,
-) -> Callable[[frozenset[type]], tuple[str, ...]]:
+) -> Callable[[frozenset[type[object]]], tuple[str, ...]]:
     """Build the ``type_hint_collection_preamble_lines`` callable for PY38.
 
     Postponed PY38 annotations can use built-in generic aliases. Eager
     annotations require collection aliases from ``typing``.
     """
-    _any_types: frozenset[type] = frozenset(
+    _any_types: frozenset[type[object]] = frozenset(
         t
         for t, needs in (
             (
@@ -987,7 +987,7 @@ def _build_type_hint_preamble_py38(
 
     @beartype
     def _preamble(
-        annotated_collection_types: frozenset[type],
+        annotated_collection_types: frozenset[type[object]],
         /,
     ) -> tuple[str, ...]:
         """Return ``from typing import ...`` for PY38."""
@@ -2240,7 +2240,7 @@ class Python(metaclass=LanguageCls):
         default_consumable_ref_value_inhibits_consuming_form
     )
 
-    scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
+    scalar_body_preamble: ClassVar[dict[type[object], tuple[str, ...]]] = {}
 
     @staticmethod
     @beartype
@@ -2530,7 +2530,7 @@ class Python(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
         return date_scalar_preamble(
             date_format=self.date_format,
@@ -2542,7 +2542,7 @@ class Python(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,
@@ -2569,7 +2569,7 @@ class Python(metaclass=LanguageCls):
     @beartype
     def type_hint_collection_preamble_lines(
         self,
-    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]]], tuple[str, ...]]:
         """Type-hint preamble computed from the configured default
         types.
         """

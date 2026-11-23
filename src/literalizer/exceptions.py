@@ -570,14 +570,16 @@ class InvalidRenderArgumentError(LiteralizerError, ValueError):
 class InputRootNotMappingError(InvalidRenderArgumentError):
     """Raised when ``input_root_key`` is used on a non-mapping input."""
 
-    def __init__(self, *, input_root_key: str, root_type: type) -> None:
+    def __init__(
+        self, *, input_root_key: str, root_type: type[object]
+    ) -> None:
         """Create an ``InputRootNotMappingError``."""
         super().__init__(
             f"input_root_key={input_root_key!r} requires the parsed input "
             f"root to be a mapping, got {root_type.__name__}"
         )
         self.input_root_key: str = input_root_key
-        self.root_type: type = root_type
+        self.root_type: type[object] = root_type
 
 
 @beartype

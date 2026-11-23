@@ -22,9 +22,11 @@ from typing import (
     runtime_checkable,
 )
 
-import humps
 from beartype import beartype
-from typing_extensions import TypeVar
+from beartype.door import die_if_unbearable
+from beartype.roar import BeartypeDoorHintViolation
+from humps import camelize, decamelize, dekebabize, kebabize
+from typing_extensions import TypeIs, TypeVar
 
 from literalizer._enums import enum_payload
 from literalizer._formatters.collection_openers import (
@@ -279,6 +281,38 @@ def is_reserved_identifier(
     )
 
 
+def language_string_option(*, language: "Language", name: str) -> str:
+    """Read a string field provided by an opted-in language."""
+    fields: Mapping[str, object] = vars(language)
+    value = fields[name]
+    if not isinstance(value, str):
+        msg = f"{type(language).__name__}.{name} must be a string"
+        raise TypeError(msg)
+    return value
+
+
+def _is_record_shape_names(
+    value: object,
+    /,
+) -> TypeIs[Mapping[frozenset[str], str]]:
+    """Check a language's optional record-shape naming table."""
+    try:
+        die_if_unbearable(obj=value, hint=Mapping[frozenset[str], str])
+    except BeartypeDoorHintViolation:
+        return False
+    return True
+
+
+def require_record_shape_names(
+    *, value: object
+) -> Mapping[frozenset[str], str]:
+    """Read a language's record names at the dynamic option boundary."""
+    if not _is_record_shape_names(value):
+        msg = "record_shape_names must map field-name sets to names"
+        raise TypeError(msg)
+    return value
+
+
 @beartype
 def validate_new_variable_name(
     *,
@@ -307,7 +341,9 @@ def validate_new_variable_name(
         )
     if language.supports_record_struct_name_prefix:
         strategy = vars(language).get("heterogeneous_strategy")
-        prefix = vars(language)["record_struct_name_prefix"]
+        prefix = language_string_option(
+            language=language, name="record_struct_name_prefix"
+        )
         if (
             isinstance(strategy, enum.Enum)
             and strategy.name == "RECORD"
@@ -471,7 +507,7 @@ class DateFormatConfig:
 
     formatter: Callable[[dt.date], str]
     preamble_lines: tuple[str, ...]
-    type_produced: type
+    type_produced: type[object]
 
 
 @beartype
@@ -481,7 +517,7 @@ class DatetimeFormatConfig:
 
     formatter: Callable[[dt.datetime], str]
     preamble_lines: tuple[str, ...]
-    type_produced: type
+    type_produced: type[object]
 
 
 @runtime_checkable
@@ -494,7 +530,7 @@ class ScalarFormatConfig(typing.Protocol):
         ...
 
     @property
-    def type_produced(self) -> type:
+    def type_produced(self) -> type[object]:
         """The scalar type represented by the emitted literal."""
         ...
 
@@ -550,8 +586,8 @@ def date_scalar_preamble(
     *,
     date_format: enum.Enum,
     datetime_format: enum.Enum,
-    extra: dict[type, tuple[str, ...]] | None,
-) -> dict[type, tuple[str, ...]]:
+    extra: dict[type[object], tuple[str, ...]] | None,
+) -> dict[type[object], tuple[str, ...]]:
     """Build the ``scalar_preamble`` dict for date/datetime formats.
 
     Args:
@@ -568,7 +604,7 @@ def date_scalar_preamble(
         A dict mapping Python types to their required preamble lines,
         omitting entries whose preamble is empty.
     """
-    effective_extra = dict[type, tuple[str, ...]]()
+    effective_extra = dict[type[object], tuple[str, ...]]()
     if extra is not None and len(extra) > 0:
         effective_extra = extra
     return {
@@ -611,7 +647,9 @@ class SetFormatConfig:
     def with_typed_opener(
         self,
         *,
-        type_to_opener: Callable[[type | ListType | DictType], str | None],
+        type_to_opener: Callable[
+            [type[object] | ListType | DictType], str | None
+        ],
         fallback: str,
     ) -> "SetFormatConfig":
         """Return a copy with ``set_open`` replaced by a typed opener.
@@ -1137,21 +1175,21 @@ def _convert_identifier_case(*, case: IdentifierCase, name: str) -> str:
     some type checkers (notably pyrefly) treat as the broader
     ``Self@IdentifierCase`` and reject as non-exhaustive.
     """
-    snake = humps.decamelize(
-        str_or_iter=humps.dekebabize(str_or_iter=name),
+    snake = decamelize(
+        str_or_iter=dekebabize(str_or_iter=name),
     ).lower()
     match case:
         case IdentifierCase.SNAKE:
             return snake
         case IdentifierCase.CAMEL:
-            return humps.camelize(str_or_iter=snake)
+            return camelize(str_or_iter=snake)
         case IdentifierCase.PASCAL:
-            camel = humps.camelize(str_or_iter=snake)
+            camel = camelize(str_or_iter=snake)
             return camel[:1].upper() + camel[1:]
         case IdentifierCase.UPPER_SNAKE:
             return snake.upper()
         case IdentifierCase.KEBAB:
-            return humps.kebabize(str_or_iter=snake)
+            return kebabize(str_or_iter=snake)
         case _ as unreachable:
             assert_never(unreachable)
 
@@ -1946,7 +1984,7 @@ class LanguageCls(type, _LanguageMetadata):
     def __new__(
         mcs,
         name: str,
-        bases: tuple[type, ...],
+        bases: "tuple[type[object] | LanguageCls, ...]",
         namespace: dict[str, object],
         **kwargs: object,
     ) -> "LanguageCls":
@@ -1963,10 +2001,8 @@ class LanguageCls(type, _LanguageMetadata):
             known_options = {
                 field_name
                 for language_cls in LanguageCls._language_classes
-                for field_name in vars(language_cls).get(
-                    "__dataclass_fields__",
-                    {},
-                )
+                if "__dataclass_fields__" in vars(language_cls)
+                for field_name in language_cls.__dataclass_fields__
             }
             known_unsupported = unsupported & known_options
             if len(known_unsupported) > 0:
@@ -1976,15 +2012,19 @@ class LanguageCls(type, _LanguageMetadata):
                 )
         instance: Language = super().__call__(*args, **kwargs)
         if cls.supports_record_shape_names:
+            fields: Mapping[str, object] = vars(instance)
+            shape_names = require_record_shape_names(
+                value=fields["record_shape_names"]
+            )
             object.__setattr__(
                 instance,
                 "record_shape_names",
-                MappingProxyType(
-                    mapping=dict(vars(instance)["record_shape_names"])
-                ),
+                MappingProxyType(mapping=dict(shape_names)),
             )
         if cls.supports_record_struct_name_prefix:
-            prefix = vars(instance)["record_struct_name_prefix"]
+            prefix = language_string_option(
+                language=instance, name="record_struct_name_prefix"
+            )
             if (
                 re.fullmatch(pattern=r"[A-Z][A-Za-z0-9_]*", string=prefix)
                 is None
@@ -1995,7 +2035,9 @@ class LanguageCls(type, _LanguageMetadata):
                 )
                 raise InvalidRecordNameError(msg)
         if cls.supports_module_name:
-            module_name = vars(instance)["module_name"]
+            module_name = language_string_option(
+                language=instance, name="module_name"
+            )
             if (
                 not NewVariableNameSyntax.ASCII.accepts(name=module_name)
                 or (
@@ -3061,7 +3103,7 @@ class Language(typing.Protocol):
         ...
 
     @property
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Maps Python scalar types to the preamble lines required when
         that type appears in the data.  For example, a language that
         needs ``import datetime`` when dates are present would include
@@ -3079,7 +3121,7 @@ class Language(typing.Protocol):
         ...
 
     @property
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Maps Python scalar types to body-preamble lines that are
         prepended to the generated code.
 
@@ -3091,7 +3133,7 @@ class Language(typing.Protocol):
     @property
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Computes body-preamble lines based on which types are present
         in the data.  Most languages build this from
         :attr:`scalar_body_preamble`; Haskell overrides it to compose
@@ -3146,7 +3188,7 @@ class Language(typing.Protocol):
     @property
     def type_hint_collection_preamble_lines(
         self,
-    ) -> Callable[[frozenset[type]], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]]], tuple[str, ...]]:
         """Callable that receives the set of collection types that have
         empty instances in the data and returns preamble lines needed
         for type-hint annotations.
@@ -3611,7 +3653,7 @@ predicate that returns ``True`` for those values.
 
 @beartype
 def _no_type_hint_preamble(
-    _empty_collection_types: frozenset[type],
+    _empty_collection_types: frozenset[type[object]],
     /,
 ) -> tuple[str, ...]:
     """Return no preamble lines — used by languages that do not emit
@@ -3620,7 +3662,7 @@ def _no_type_hint_preamble(
     return ()
 
 
-no_type_hint_preamble: Callable[[frozenset[type]], tuple[str, ...]] = (
+no_type_hint_preamble: Callable[[frozenset[type[object]]], tuple[str, ...]] = (
     _no_type_hint_preamble
 )
 """Shared callable for languages that need no type-hint preamble."""
@@ -3713,7 +3755,7 @@ default_format_call_ref_identifier: property = property(
 @beartype
 def _default_type_hint_collection_preamble_lines(
     self: "Language",
-) -> Callable[[frozenset[type]], tuple[str, ...]]:
+) -> Callable[[frozenset[type[object]]], tuple[str, ...]]:
     """Use the shared no-op collection type-hint preamble."""
     del self
     return no_type_hint_preamble
@@ -4283,9 +4325,9 @@ else:
 @beartype
 def body_preamble_from_scalars(
     *,
-    scalar_body_preamble: dict[type, tuple[str, ...]],
+    scalar_body_preamble: dict[type[object], tuple[str, ...]],
     format_lines: Callable[[list[str]], tuple[str, ...]],
-) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
     """Build a ``compute_body_preamble`` from a scalar-body-preamble
     dict.
 
@@ -4303,11 +4345,11 @@ def body_preamble_from_scalars(
 
 @beartype
 def _compute_scalar_body_preamble(
-    types: frozenset[type],
+    types: frozenset[type[object]],
     data: Value,
     /,
     *,
-    scalar_body_preamble: dict[type, tuple[str, ...]],
+    scalar_body_preamble: dict[type[object], tuple[str, ...]],
     format_lines: Callable[[list[str]], tuple[str, ...]],
 ) -> tuple[str, ...]:
     """Return unique preamble lines with a reusable checked callable."""
@@ -4440,7 +4482,7 @@ def empty_record_shape_names() -> MappingProxyType[frozenset[str], str]:
 @beartype
 def empty_scalar_preamble(
     language: Language, /
-) -> dict[type, tuple[str, ...]]:
+) -> dict[type[object], tuple[str, ...]]:
     """Return a fresh empty scalar preamble for a cached descriptor."""
     del language
     return {}

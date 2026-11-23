@@ -3,12 +3,16 @@
 import functools
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
 from .fixture_names import is_default_module_fixture
 from .golden_artifacts import GoldenArtifact
 from .golden_inventory import authored_paths, golden_artifacts
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 CASES_DIR: Path = Path("tests/integration/cases")
 
@@ -40,7 +44,7 @@ def fixture_paths(
     include paths that have no checked-in golden.
     """
     by_extension = _artifacts_by_extension()
-    artifacts = (
+    artifacts: Iterable[GoldenArtifact] = (
         (artifact for group in by_extension.values() for artifact in group)
         if extension is None
         else iter(by_extension.get(extension, ()))

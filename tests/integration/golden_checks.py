@@ -1,7 +1,7 @@
 """Comparison and outcome assertions for golden fixtures."""
 
 import enum
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from typing import Protocol
 
@@ -79,10 +79,11 @@ def format_consumer(
     spec: Language,
 ) -> str:
     """Format a native consumer from the result and fixture path."""
+    options: Mapping[str, object] = vars(spec)
     return template.format(
         **{
             name: value.name
-            for name, value in vars(spec).items()
+            for name, value in options.items()
             if isinstance(value, enum.Enum)
         },
         preamble="\n".join(result.preamble),

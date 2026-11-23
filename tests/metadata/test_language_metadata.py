@@ -10,6 +10,10 @@ from typing_extensions import get_protocol_members
 
 import literalizer.languages
 from literalizer import Language, LanguageCls
+from literalizer._language import (
+    language_string_option,
+    require_record_shape_names,
+)
 from literalizer.languages import Python
 
 
@@ -95,16 +99,11 @@ def test_language_ids_are_unique_lower_snake_identifiers() -> None:
 
 def test_variant_metadata_fields_have_no_defaults() -> None:
     """Every metadata choice must be supplied by the language class."""
-    parameters = inspect.signature(
-        obj=type(Python.variant_metadata)
-    ).parameters
-    assert len(parameters) > 0
-    defaulted = [
-        name
-        for name, parameter in parameters.items()
-        if parameter.default is not inspect.Parameter.empty
-    ]
-    assert defaulted == []
+    signature = inspect.signature(obj=type(Python.variant_metadata))
+    assert len(signature.parameters) > 0
+    defaulted = signature.bind_partial()
+    defaulted.apply_defaults()
+    assert len(defaulted.arguments) == 0
 
 
 @pytest.mark.parametrize(
@@ -226,3 +225,17 @@ def test_identifier_cases_are_supported_ref_cases(
     """Every preferred identifier case must be valid for refs."""
     preferred_cases = frozenset(language_cls.identifier_cases)
     assert preferred_cases <= language_cls.supported_ref_cases
+
+
+def test_string_option_rejects_non_string_fields() -> None:
+    """A language option declared as a string must hold a string."""
+    with pytest.raises(expected_exception=TypeError, match="must be a string"):
+        _ = language_string_option(
+            language=Python(), name="heterogeneous_strategy"
+        )
+
+
+def test_record_shape_names_reject_invalid_keys() -> None:
+    """A record name table must use sets of field names as keys."""
+    with pytest.raises(expected_exception=TypeError, match="field-name sets"):
+        _ = require_record_shape_names(value={"field": "RecordName"})

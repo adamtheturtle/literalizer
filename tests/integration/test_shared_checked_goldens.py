@@ -12,13 +12,18 @@ from literalizer import InputFormat, literalize_invocations
 from .golden_checks import check_golden, format_consumer
 from .shared_checked_cases import SharedCheckedCase, shared_checked_cases
 
+_CHECKED_CASES = shared_checked_cases(
+    cases_dir=Path(__file__).parent / "cases"
+)
+
 
 @pytest.mark.parametrize(
     argnames="case",
-    argvalues=shared_checked_cases(cases_dir=Path(__file__).parent / "cases"),
-    ids=lambda case: (
+    argvalues=_CHECKED_CASES,
+    ids=[
         f"{case.name}/{case.lang_cls.__name__}/{case.version.name}"
-    ),
+        for case in _CHECKED_CASES
+    ],
 )
 def test_shared_checked_golden(
     case: SharedCheckedCase, file_regression: FileRegressionFixture

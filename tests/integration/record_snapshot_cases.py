@@ -2,7 +2,7 @@
 
 import enum
 import tomllib
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from pathlib import Path
 
 from pydantic import BaseModel, TypeAdapter
@@ -39,13 +39,12 @@ class RecordSnapshotCase(BaseModel, extra="forbid", frozen=True):
         )
 
 
+_MANIFEST: Mapping[str, object] = tomllib.loads(
+    Path(__file__).with_suffix(suffix=".toml").read_text(encoding="utf-8")
+)
 RECORD_SNAPSHOT_CASES: tuple[RecordSnapshotCase, ...] = TypeAdapter(
     type=tuple[RecordSnapshotCase, ...]
-).validate_python(
-    tomllib.loads(
-        Path(__file__).with_suffix(suffix=".toml").read_text(encoding="utf-8")
-    )["cases"]
-)
+).validate_python(_MANIFEST["cases"])
 
 
 def snapshot_rendering(*, case: RecordSnapshotCase) -> GoldenRendering:

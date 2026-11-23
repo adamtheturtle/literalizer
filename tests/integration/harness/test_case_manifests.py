@@ -99,7 +99,9 @@ def _write_case(*, tmp_path: Path, manifest: str, input_name: str) -> Path:
 
 
 @pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
+    argnames="case",
+    argvalues=_CASES.cases,
+    ids=[case.name for case in _CASES.cases],
 )
 def test_invalid_manifest_is_actionable(
     tmp_path: Path, case: _ManifestErrorCase
@@ -398,7 +400,9 @@ def test_duplicate_golden_target_is_actionable() -> None:
 
 
 @pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES.references, ids=lambda case: case.name
+    argnames="case",
+    argvalues=_CASES.references,
+    ids=[case.name for case in _CASES.references],
 )
 def test_invalid_reference_value_source(
     tmp_path: Path, case: _ReferenceErrorCase

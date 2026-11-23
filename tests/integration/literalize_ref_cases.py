@@ -8,10 +8,10 @@ set to the language's default identifier case.  The runner
 ``test_literalize_ref_golden_file``.
 """
 
-import copy
 import dataclasses
 import functools
 import json
+from copy import deepcopy
 from pathlib import Path
 
 from beartype import beartype
@@ -106,7 +106,7 @@ def _render_reference_golden(
             name: json.loads(s=source)
             for name, source in (config.explicit_ref_value_sources.items())
         }
-    original_ref_values = copy.deepcopy(x=effective_ref_values)
+    original_ref_values = deepcopy(x=effective_ref_values)
     result = literalizer.literalize(
         source=input_source,
         input_format=input_info.input_format,

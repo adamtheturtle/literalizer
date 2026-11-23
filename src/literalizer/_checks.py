@@ -2,11 +2,11 @@
 collection-shape constraints.
 """
 
-import copy
 import datetime as dt
 import math
 import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import overload
 
@@ -593,15 +593,15 @@ def _contains_set(data: Value, /) -> bool:
 
 
 @overload
-def scalar_type_bucket(*, value: Scalar) -> type: ...
+def scalar_type_bucket(*, value: Scalar) -> type[object]: ...
 
 
 @overload
-def scalar_type_bucket(*, value: Value) -> type | None: ...
+def scalar_type_bucket(*, value: Value) -> type[object] | None: ...
 
 
 @beartype
-def scalar_type_bucket(*, value: Value) -> type | None:
+def scalar_type_bucket(*, value: Value) -> type[object] | None:
     """Return the type bucket for a scalar, or ``None`` for
     collections.
 
@@ -631,12 +631,12 @@ def scalar_type_bucket(*, value: Value) -> type | None:
 def _scalar_type_buckets(
     *,
     values: Sequence[Value],
-) -> set[type] | None:
+) -> set[type[object]] | None:
     """Return the set of scalar type buckets for *values*.
 
     Returns ``None`` if any value is not a scalar.
     """
-    buckets: set[type] = set()
+    buckets: set[type[object]] = set()
     for v in values:
         bucket = scalar_type_bucket(value=v)
         if bucket is None:
@@ -760,7 +760,7 @@ def _describe_heterogeneous_types(*, data: Value) -> str:
 def _find_first_mixed_values(
     *,
     data: Value,
-    container_type: type,
+    container_type: type[object],
 ) -> Sequence[Value]:
     """Return the first collection of children in *data* that spans
     multiple type families.
@@ -795,7 +795,7 @@ def _find_first_mixed_values(
 def _describe_mixed_type_families(
     *,
     data: Value,
-    container_type: type,
+    container_type: type[object],
 ) -> str:
     """Return a sorted, comma-separated string of type families for the
     first collection in *data* whose children span multiple families.
@@ -1442,7 +1442,7 @@ def _fill_nested_empty_map_siblings(
             if replacement is not None:
                 for owner in owners:
                     if owner[key] == {}:
-                        owner[key] = copy.deepcopy(x=replacement)
+                        owner[key] = deepcopy(x=replacement)
             nested_maps = _plain_maps(values=(owner[key] for owner in owners))
             _fill_nested_empty_map_siblings(
                 maps=nested_maps,
@@ -1457,7 +1457,7 @@ def _fill_nested_empty_map_siblings(
 
 @beartype
 def _sibling_map_type_family(
-    *, inferred: type | ListType | DictType | None, spec: Language
+    *, inferred: type[object] | ListType | DictType | None, spec: Language
 ) -> object:
     """Compare nested scalar families without introducing integer widths.
 
@@ -1540,7 +1540,7 @@ def _sibling_maps_diverge(
         for position in zip(*tuples, strict=False)
     ):
         return True
-    filtered = copy.deepcopy(
+    filtered = deepcopy(
         x=[
             {
                 k: v

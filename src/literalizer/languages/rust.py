@@ -4617,7 +4617,7 @@ class Rust(metaclass=LanguageCls):
         default_consumable_ref_value_inhibits_consuming_form
     )
 
-    scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
+    scalar_body_preamble: ClassVar[dict[type[object], tuple[str, ...]]] = {}
 
     def __post_init__(self) -> None:
         """Validate that incompatible formats are not combined."""
@@ -5147,7 +5147,7 @@ class Rust(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
         if self._json_type_active:
             return {}
@@ -5161,7 +5161,7 @@ class Rust(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

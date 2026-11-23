@@ -485,7 +485,7 @@ def _accepted_output(
 @pytest.mark.parametrize(
     argnames="manifest",
     argvalues=_MANIFESTS,
-    ids=lambda manifest: manifest.name,
+    ids=[manifest.name for manifest in _MANIFESTS],
 )
 def test_rejection_messages(
     manifest: RejectionManifest,

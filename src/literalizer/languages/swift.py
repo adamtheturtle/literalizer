@@ -1692,7 +1692,7 @@ class Swift(metaclass=LanguageCls):
         default_consumable_ref_value_inhibits_consuming_form
     )
 
-    scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
+    scalar_body_preamble: ClassVar[dict[type[object], tuple[str, ...]]] = {}
 
     @cached_property
     @beartype
@@ -1922,7 +1922,7 @@ class Swift(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
         return date_scalar_preamble(
             date_format=self.date_format,
@@ -1934,7 +1934,7 @@ class Swift(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

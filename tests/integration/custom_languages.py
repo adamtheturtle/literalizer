@@ -55,7 +55,9 @@ def callback_language(
         if plain_callbacks:
             return lambda items: str(object=native.sequence_open(items))
 
-        def _type_open(_element_type: type | ListType | DictType) -> str:
+        def _type_open(
+            _element_type: type[object] | ListType | DictType,
+        ) -> str:
             """Provide the extension's integer collection opener."""
             return str(object=native.sequence_open([1]))
 

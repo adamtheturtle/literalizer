@@ -329,7 +329,7 @@ _CRYSTAL_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = (
 # a string, so they all map to ``String``.  An ``EPOCH`` datetime is
 # converted to its epoch integer before the lookup, so the ``datetime``
 # entry only ever resolves an ISO datetime.
-_CRYSTAL_SCALAR_FIELD_TYPE: Mapping[type, str] = MappingProxyType(
+_CRYSTAL_SCALAR_FIELD_TYPE: Mapping[type[object], str] = MappingProxyType(
     mapping={
         type(None): "Nil",
         float: "Float64",
@@ -1446,17 +1446,20 @@ class Crystal(metaclass=LanguageCls):
             return f"Tuple({item_types})"
         if len(value) == 0:
             return "Array(Nil)"
-        narrowed_kinds: tuple[type, ...] = tuple(
-            kind
-            for kind in (list, dict, set)
-            if any(bool(item) and isinstance(item, kind) for item in value)
+        collection_checks: tuple[Callable[[Value], bool], ...] = (
+            lambda item, /: isinstance(item, list),
+            lambda item, /: isinstance(item, dict),
+            lambda item, /: isinstance(item, set),
         )
+        populated_kinds = [
+            check
+            for check in collection_checks
+            if any(bool(item) and check(item) for item in value)
+        ]
         informative = [
             item
             for item in value
-            if bool(item)
-            or not isinstance(item, (list, dict, set))
-            or (not isinstance(item, narrowed_kinds))
+            if bool(item) or not any(check(item) for check in populated_kinds)
         ]
         collected_parts: set[str] = set()
         effective_informative = nonempty_or_default(
@@ -1963,13 +1966,13 @@ class Crystal(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (Crystal needs none)."""
         return {}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (Crystal needs none)."""
         return {}
 
@@ -1977,7 +1980,7 @@ class Crystal(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map, prefixed
         with the ``RECORD`` strategy's generated ``record``
         declarations.
@@ -2000,7 +2003,7 @@ class Crystal(metaclass=LanguageCls):
 
         @beartype
         def _compute(
-            types: frozenset[type],
+            types: frozenset[type[object]],
             data: Value,
             /,
         ) -> tuple[str, ...]:

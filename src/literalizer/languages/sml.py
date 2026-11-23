@@ -233,8 +233,8 @@ def _sml_temporal_entry(
     *,
     formatted: str,
     prefix: str,
-    produced_type: type,
-    native_type: type,
+    produced_type: type[object],
+    native_type: type[object],
 ) -> str:
     """Wrap string-rendered temporal values in the SML string
     constructor.
@@ -249,8 +249,8 @@ def _apply_sml_entry_formatter(
     original: Value,
     formatted: str,
     prefix: str,
-    date_type: type,
-    datetime_type: type,
+    date_type: type[object],
+    datetime_type: type[object],
 ) -> str:
     """Wrap a formatted entry in the appropriate SML ``datatype``
     constructor.
@@ -295,7 +295,7 @@ def _apply_sml_entry_formatter(
 
 @beartype
 def _build_sml_entry_formatter(
-    prefix: str, date_type: type, datetime_type: type
+    prefix: str, date_type: type[object], datetime_type: type[object]
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter that wraps values in SML ``datatype``
     constructors using the given *prefix*.
@@ -1243,7 +1243,7 @@ class Sml(metaclass=LanguageCls):
         default_consumable_ref_value_inhibits_consuming_form
     )
 
-    scalar_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
+    scalar_preamble: ClassVar[dict[type[object], tuple[str, ...]]] = {}
 
     @cached_property
     @beartype
@@ -1528,7 +1528,7 @@ class Sml(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble for SML datatype declarations."""
         p = self.constructor_prefix
         _h = f"datatype {self.type_name} ="
@@ -1567,7 +1567,7 @@ class Sml(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         if self.dict_format is type(self.dict_format).RECORD:
             return body_preamble_from_scalars(

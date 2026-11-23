@@ -118,9 +118,10 @@ LANGUAGE_CLASSES: tuple[literalizer.LanguageCls, ...] = tuple(
     sorted(ALL_LANGUAGES, key=_language_class_name)
 )
 
+_EXCEPTION_MEMBERS: Mapping[str, object] = vars(literalizer_exceptions)
 _EXCEPTIONS_BY_NAME: Mapping[str, type[Exception]] = {
     name: value
-    for name, value in vars(literalizer_exceptions).items()
+    for name, value in _EXCEPTION_MEMBERS.items()
     if isinstance(value, type) and issubclass(value, Exception)
 } | {
     "TypeError": TypeError,

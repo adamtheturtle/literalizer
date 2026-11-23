@@ -18,7 +18,11 @@ from literalizer import (
     literalize,
 )
 from literalizer.languages import Json5, Python
-from scripts.roundtrip_common import input_for_capabilities, verify
+from scripts.roundtrip_common import (
+    input_for_capabilities,
+    json_object_from_text,
+    verify,
+)
 
 from .language_specs import make_spec
 
@@ -61,8 +65,10 @@ def _verify_corpus_roundtrip(
         exclude_keys=(),
         expected_json=source,
     )
-    base = json.loads(s=input_for_capabilities(capabilities=frozenset()))
-    reconstructed = json.loads(s=produced_json)
+    base = json_object_from_text(
+        text=input_for_capabilities(capabilities=frozenset())
+    )
+    reconstructed = json_object_from_text(text=produced_json)
     assert reconstructed.keys() - base.keys() == case.expected_keys
     assert {
         key: reconstructed[key] for key in case.expected_values
@@ -75,7 +81,7 @@ def _verify_corpus_roundtrip(
 @pytest.mark.parametrize(
     argnames="case",
     argvalues=_CASES.capability_cases,
-    ids=lambda case: case.capability.value,
+    ids=[case.capability.value for case in _CASES.capability_cases],
 )
 def test_capability_corpus_native_roundtrip(
     case: _CapabilityCase, version: enum.Enum

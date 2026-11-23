@@ -1516,7 +1516,7 @@ class Scala(metaclass=LanguageCls):
     @beartype
     def _scalar_field_type_resolver(
         self,
-    ) -> Callable[[type | ListType | DictType], str | None]:
+    ) -> Callable[[type[object] | ListType | DictType], str | None]:
         """Map a scalar element type to its Scala type name.
 
         Built from the same scalar mapping the collection openers use,
@@ -1550,7 +1550,7 @@ class Scala(metaclass=LanguageCls):
         always matches the rendered literal; it is therefore
         value-driven, not a pure ``cached_property``.
         """
-        element_type: type
+        element_type: type[object]
         element_type = WideInt
         if _SCALA_INT32_MIN <= value <= _SCALA_INT32_MAX:
             element_type = int
@@ -1866,7 +1866,7 @@ class Scala(metaclass=LanguageCls):
         default_consumable_ref_value_inhibits_consuming_form
     )
 
-    scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
+    scalar_body_preamble: ClassVar[dict[type[object], tuple[str, ...]]] = {}
 
     @cached_property
     @beartype
@@ -1971,7 +1971,7 @@ class Scala(metaclass=LanguageCls):
 
             @beartype
             def _heterogeneous_set_open(
-                element_type: type | ListType | DictType,
+                element_type: type[object] | ListType | DictType,
                 /,
             ) -> str | None:
                 """Keep integer values without coercing them to Double."""
@@ -2250,7 +2250,7 @@ class Scala(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
         if self._json_type_active:
             return {}
@@ -2277,7 +2277,7 @@ class Scala(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

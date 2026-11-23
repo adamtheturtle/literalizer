@@ -1210,12 +1210,12 @@ class Perl(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime/bool
         format.
         """
         bool_preamble = self.bool_format.value.preamble_lines
-        extra: dict[type, tuple[str, ...]] | None
+        extra: dict[type[object], tuple[str, ...]] | None
         extra = None
         if len(bool_preamble) > 0:
             extra = {bool: bool_preamble}
@@ -1227,7 +1227,7 @@ class Perl(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (Perl needs none)."""
         return {}
 
@@ -1235,7 +1235,7 @@ class Perl(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

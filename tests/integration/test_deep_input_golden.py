@@ -10,11 +10,13 @@ from literalizer import literalize
 from .deep_input_cases import DeepInputCase, deep_input_cases
 from .golden_checks import check_golden
 
+_CASES = deep_input_cases(cases_dir=Path(__file__).parent / "cases")
+
 
 @pytest.mark.parametrize(
     argnames="case",
-    argvalues=deep_input_cases(cases_dir=Path(__file__).parent / "cases"),
-    ids=lambda case: case.manifest.case_dir.name,
+    argvalues=_CASES,
+    ids=[case.manifest.case_dir.name for case in _CASES],
 )
 def test_deep_input_golden_program(
     case: DeepInputCase, file_regression: FileRegressionFixture

@@ -16,6 +16,8 @@ import json5_document
 import jsonc_document
 import tomlkit
 from beartype import beartype
+from beartype.door import die_if_unbearable
+from beartype.roar import BeartypeDoorHintViolation
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import (
     CommentedOrderedMap,
@@ -532,19 +534,21 @@ def _unwrap_yaml_data(*, data: YamlCoercible) -> Value:
     # ``CommentedMap`` and ``CommentedSeq`` are subclasses of ``dict`` and
     # ``list`` respectively, so ordinary collection checks unwrap them too.
     if isinstance(data, dict):
-        unwrapped: dict[Scalar, Value] = {
+        mapping: dict[Scalar | TaggedScalar, YamlCoercible] = data
+        return {
             unwrap_yaml_scalar(value=k): _unwrap_yaml_data(data=v)
-            for k, v in data.items()
+            for k, v in mapping.items()
         }
-        return unwrapped
     if isinstance(data, list):
-        return [_unwrap_yaml_data(data=item) for item in data]
+        items: list[YamlCoercible] = data
+        return [_unwrap_yaml_data(data=item) for item in items]
     if isinstance(data, tuple):
         # A ``!!pairs`` node resolves to a list of two-tuples.  The tag is
         # defined as a sequence of single-key mappings, and unlike ``!!omap``
         # it admits a repeated key, so each pair becomes its own mapping
         # rather than one merged map (issue #3922).
-        pair_key, pair_value = data
+        pair: tuple[Scalar | TaggedScalar, YamlCoercible] = data
+        pair_key, pair_value = pair
         return {
             unwrap_yaml_scalar(value=pair_key): _unwrap_yaml_data(
                 data=pair_value
@@ -660,11 +664,28 @@ def _reject_json_constant(value: str) -> Value:
     raise _InvalidJSONConstantError(msg)
 
 
+def _is_decoded_value(data: object, /) -> TypeIs[Value]:
+    """Check decoded data against the shared value model."""
+    try:
+        die_if_unbearable(obj=data, hint=Value)
+    except BeartypeDoorHintViolation:
+        return False
+    return True
+
+
+def require_decoded_value(*, data: object) -> Value:
+    """Check the standard JSON decoder's dynamically typed result."""
+    if not _is_decoded_value(data):
+        msg = "The JSON decoder returned an unsupported value"
+        raise TypeError(msg)
+    return data
+
+
 @beartype
 def _parse_json(*, source: str) -> ParsedInput:
     """Parse a JSON string into a ``ParsedInput``."""
     try:
-        data = json.loads(
+        data: object = json.loads(
             s=source,
             object_pairs_hook=_json_object_without_duplicate_keys,
             parse_constant=_reject_json_constant,
@@ -688,7 +709,7 @@ def _parse_json(*, source: str) -> ParsedInput:
             line=exc.lineno,
             column=exc.colno,
         ) from exc
-    return ParsedPlain(data=data, comments=None)
+    return ParsedPlain(data=require_decoded_value(data=data), comments=None)
 
 
 @beartype

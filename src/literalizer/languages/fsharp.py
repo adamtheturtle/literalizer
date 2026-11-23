@@ -227,8 +227,8 @@ def _format_fsharp_temporal_entry(
     original: dt.date | dt.datetime | dt.time,
     formatted: str,
     prefix: str,
-    date_type: type,
-    datetime_type: type,
+    date_type: type[object],
+    datetime_type: type[object],
 ) -> str:
     """Wrap a temporal value from its configured output type."""
     if isinstance(original, dt.datetime):
@@ -276,8 +276,8 @@ def _apply_fsharp_entry(
     original: Value,
     formatted: str,
     prefix: str,
-    date_type: type,
-    datetime_type: type,
+    date_type: type[object],
+    datetime_type: type[object],
 ) -> str:
     """Wrap a formatted entry in the appropriate F# ``Val``
     constructor.
@@ -307,7 +307,7 @@ def _apply_fsharp_entry(
 
 @beartype
 def _build_fsharp_entry_formatter(
-    prefix: str, date_type: type, datetime_type: type
+    prefix: str, date_type: type[object], datetime_type: type[object]
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter that wraps values in F# constructors."""
 
@@ -1903,13 +1903,13 @@ class FSharp(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble."""
         return {}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble with type declarations."""
         p = self.constructor_prefix
         header = f"type {self.type_name} ="
@@ -1961,7 +1961,7 @@ class FSharp(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map.
 
         Under ``json_type`` the file always ``open``s the
@@ -1978,7 +1978,7 @@ class FSharp(metaclass=LanguageCls):
 
             @beartype
             def _json_body_preamble(
-                _types: frozenset[type], _data: Value, /
+                _types: frozenset[type[object]], _data: Value, /
             ) -> tuple[str, ...]:
                 """Return the JsonNode ``open`` directive."""
                 return (_FSHARP_JSON_USING,)
@@ -2009,7 +2009,7 @@ class FSharp(metaclass=LanguageCls):
 
         @beartype
         def _compute(
-            types: frozenset[type], data: Value, /
+            types: frozenset[type[object]], data: Value, /
         ) -> tuple[str, ...]:
             """Return body preamble, preferring ``bigint`` when needed."""
             if data_has_out_of_range_int(data=data):

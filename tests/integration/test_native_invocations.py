@@ -4,10 +4,10 @@ import dataclasses
 import enum
 import json
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal, NotRequired, TypedDict
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
@@ -17,6 +17,9 @@ from .native_invocation_cases import (
     NativeInvocationCase,
     native_invocation_cases,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 type _MetadataTypeName = Literal["str", "int", "bool"]
 
@@ -39,7 +42,30 @@ class _ExpectedMetadata(
     uses_existing_variable: bool
 
 
+class _Step(TypedDict):
+    """An authored call step and its rendering options."""
+
+    invocation: dict[str, object]
+    rows: NotRequired[object]
+    zipped: NotRequired[object]
+    options: NotRequired[dict[str, str | int | bool]]
+    variable: NotRequired[str]
+    existing: NotRequired[bool]
+    single: NotRequired[bool]
+    per_element: NotRequired[bool]
+    pre_indent_level: NotRequired[int]
+    initial_column: NotRequired[int]
+    prefix_initial_column: NotRequired[bool]
+    expected_metadata: NotRequired[dict[str, object]]
+
+
 _CASES = Path(__file__).parent / "cases"
+_STEPS = TypeAdapter(type=list[_Step])
+
+
+def _load_steps(*, path: Path) -> list[_Step]:
+    """Read the authored steps for a native invocation case."""
+    return _STEPS.validate_json(path.read_text(encoding="utf-8"), strict=True)
 
 
 @pytest.mark.parametrize(
@@ -51,9 +77,7 @@ _CASES = Path(__file__).parent / "cases"
             ("native",)
             if all(
                 step.get("single", False)
-                for step in json.loads(
-                    s=case.manifest.input.path.read_text(encoding="utf-8")
-                )
+                for step in _load_steps(path=case.manifest.input.path)
             )
             else ("shared", "bare")
         )
@@ -67,16 +91,17 @@ def test_native_invocation_golden(
 ) -> None:
     """Generate a real class consumer, not function-pointer stand-ins."""
     manifest = case.manifest
-    steps = json.loads(s=manifest.input.path.read_text(encoding="utf-8"))
+    steps = _load_steps(path=manifest.input.path)
     spec = case.spec
     fragments: list[literalizer.LiteralizeResult] = []
+    options: Mapping[str, object] = vars(spec)
     for step in steps:
         kwargs: dict[str, object] = {}
         for name, value in step.get("options", {}).items():
-            current = vars(spec)[name]
+            current = options[name]
             kwargs[name] = (
                 type(current)[value]
-                if isinstance(current, enum.Enum)
+                if isinstance(current, enum.Enum) and isinstance(value, str)
                 else value
             )
         step_spec = dataclasses.replace(spec, **kwargs)
@@ -91,6 +116,7 @@ def test_native_invocation_golden(
                 )
             )
         zipped = step.get("zipped")
+        initial_column = step.get("initial_column", 0)
         if step.get("single", False):
             result = literalizer.literalize_native_call(
                 language=step_spec,
@@ -98,11 +124,12 @@ def test_native_invocation_golden(
                     spec=step["invocation"], values=()
                 ),
                 variable_form=form,
-                initial_column=step.get("initial_column", 0),
+                initial_column=initial_column,
                 pre_indent_level=step.get("pre_indent_level", 2),
             )
         else:
-            invocation = step["invocation"]
+            assert "rows" in step
+            invocation: dict[str, object] = step["invocation"]
             if api == "shared":
                 invocation = {
                     "default": {
@@ -127,11 +154,11 @@ def test_native_invocation_golden(
                 if zipped is None
                 else literalizer.InputFormat.JSON,
                 pre_indent_level=step.get("pre_indent_level", 2),
-                initial_column=step.get("initial_column", 0),
+                initial_column=initial_column,
             )
-        metadata = step.get("expected_metadata")
-        if metadata is not None:
-            expected = _ExpectedMetadata.model_validate(obj=metadata)
+        expected_metadata = step.get("expected_metadata")
+        if expected_metadata is not None:
+            expected = _ExpectedMetadata.model_validate(obj=expected_metadata)
             assert result.source_data == expected.source_data
             required = {
                 _METADATA_TYPES[name] for name in expected.required_types
@@ -146,11 +173,8 @@ def test_native_invocation_golden(
                 result.uses_existing_variable
                 == expected.uses_existing_variable
             )
-        prefix = (
-            " " * step.get("initial_column", 0)
-            if step.get("prefix_initial_column", False)
-            else ""
-        )
+        prefix_initial_column = step.get("prefix_initial_column", False)
+        prefix = " " * initial_column if prefix_initial_column else ""
         fragments.append(
             dataclasses.replace(
                 result, declaration_code=prefix + result.declaration_code

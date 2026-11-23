@@ -178,7 +178,8 @@ def invalid_target_grammar(
         syntax = lang_cls.new_variable_name_syntax
     constructor = any(
         spec.format_constructor_target(candidate) == target
-        for candidate in re.findall(pattern=r"[^\W\d]\w*", string=target)
+        for match in re.finditer(pattern=r"[^\W\d]\w*", string=target)
+        for candidate in (match[0],)
         if re.fullmatch(pattern=r"[A-Z][A-Za-z0-9_]*", string=candidate)
         is not None
     )

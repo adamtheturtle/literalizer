@@ -150,14 +150,16 @@ def test_native_value_corruptions(
         flags=re.MULTILINE,
     )
     assert error is not None, result.stderr
-    frames = re.findall(
-        pattern=r'^\s*File ".*", line (\d+), in ',
-        string=result.stderr,
-        flags=re.MULTILINE,
+    frames = list(
+        re.finditer(
+            pattern=r'^\s*File ".*", line (\d+), in ',
+            string=result.stderr,
+            flags=re.MULTILINE,
+        )
     )
     assert len(frames) > 0, result.stderr
     marker_line = mutated_declaration.count("\n") + 1
-    failure_line = int(frames[-1])
+    failure_line = int(frames[-1][1])
     assert failure_line > marker_line, result.stderr
     assert (
         program.splitlines()[failure_line - 1]
