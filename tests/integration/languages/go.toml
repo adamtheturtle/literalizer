@@ -3,6 +3,7 @@ schema_version = 1
 [variants]
 record = ["field_type_split", "list_field_type_split"]
 nested_map_widening = "default"
+mixed_map_default_value_type = "string"
 
 [variants.non_default_kwargs]
 default_set_element_type = "string"

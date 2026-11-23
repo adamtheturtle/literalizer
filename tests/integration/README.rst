@@ -3,7 +3,8 @@ Golden cases
 
 Start with the input directory under ``cases/``.
 Its ``case.toml`` declares which public API, rendering contexts and option axes exercise that input.
-The adjacent ``*@<version>.<extension>`` files are generated expectations that native CI jobs also consume.
+Generated expectations are either adjacent ``*@<version>.<extension>`` files or nested under ``goldens/<language-id>/<version>/<scenario>.<extension>``.
+Native CI jobs consume both layouts through the golden inventory.
 
 Adding coverage
 ---------------

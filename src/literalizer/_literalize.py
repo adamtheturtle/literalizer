@@ -7684,9 +7684,9 @@ class _CallRecordContext:
         behavior = language.heterogeneous_behavior
         compute_shapes = behavior.compute_record_shapes
         alias_ids = behavior.alias_record_ids
-        if compute_shapes is None or alias_ids is None:
-            msg = "The call record context requires record shape inference"
-            raise TypeError(msg)
+        # Only a language with active record inference opts into this context.
+        assert compute_shapes is not None  # noqa: S101
+        assert alias_ids is not None  # noqa: S101
         _ = compute_shapes(self.data)
         alias_ids(self.source_ids)
         return _source_container_ids(

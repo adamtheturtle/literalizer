@@ -151,10 +151,15 @@ The suite for module names checks the default for each constructor across its la
    suites = ["default-module-name"]
    gates = [{ kind = "capability_flag", flag = "supports_module_name" }]
 
-The ``binary`` and ``default_module_name`` cases store generated files under ``goldens/<language-id>/<version>/<scenario>.<ext>`` inside the case directory.
+The ``binary``, ``default_module_name``, ``empty_list``, ``literalize_ref_both_forms``, and ``multiline_string`` cases store generated files under ``goldens/<language-id>/<version>/<scenario>.<ext>`` inside the case directory.
 For example, :file:`tests/integration/cases/binary/goldens/cpp/cpp17/bytes_format_base64.cpp` records the C++17 Base64 byte format.
 The base scenario is named ``base``, and the default module-name scenario is named ``default_module_name``.
 Other cases use flat filenames with an ``@<version>`` suffix during the layout pilot.
+The resolver explicitly selects the pilot cases.
+Native selectors use the resolved inventory, and staging reconstructs the historical module identifier for nested fixtures.
+The test that checks for golden files in each base case accepts both layouts.
+The C++ lint driver reads the version from the filename or the enclosing version directory.
+The workflow filters for MATLAB and Objective-C retain flat ``.m`` rules alongside their language-specific nested rules.
 
 A variant-only case declares its specialized owner and the axes that consume it.
 A suffix distinguishes multiple logical uses of one input:

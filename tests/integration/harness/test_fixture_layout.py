@@ -41,3 +41,35 @@ def test_nested_default_fixture_selection() -> None:
         CASES_DIR
         / "default_module_name/goldens/java/jdk_16/default_module_name.java"
     }
+
+
+def test_nested_version_and_variant_fixture_selection() -> None:
+    """Select a pinned version and a variant-only case for native runs."""
+    pinned = CASES_DIR / "empty_list/goldens/cpp/cpp14/version_cpp14.cpp"
+    assert pinned in fixture_paths(extension=".cpp", version="cpp14")
+    assert pinned not in fixture_paths(extension=".cpp", version="cpp17")
+
+    multiline = (
+        CASES_DIR
+        / "multiline_string/goldens/haskell/ghc2021"
+        / "string_format_double.hs"
+    )
+    assert multiline in fixture_paths(
+        extension=".hs", version="ghc2021", language="Haskell"
+    )
+    assert (
+        fixture_module_name(golden_path=multiline)
+        == "Fixture_multiline_string_Haskell_string_format_double"
+    )
+
+
+def test_nested_reference_fixture_selection() -> None:
+    """Select a fixture owned by the reference runner for native runs."""
+    reference = (
+        CASES_DIR / "literalize_ref_both_forms/goldens/gleam/v1/ref.gleam"
+    )
+    assert reference in fixture_paths(extension=".gleam", version="v1")
+    assert (
+        fixture_module_name(golden_path=reference)
+        == "Fixture_literalize_ref_both_forms_gleam_ref"
+    )

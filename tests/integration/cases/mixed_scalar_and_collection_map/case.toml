@@ -3,3 +3,7 @@ suites = ["base"]
 
 [[variants]]
 axis = "sequence"
+
+# The Go regression in #7227 needs a concrete default map value type.
+[[variants]]
+axis = "mixed_map_default_value_type"
