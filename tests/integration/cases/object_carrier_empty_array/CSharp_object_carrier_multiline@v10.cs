@@ -1,3 +1,7 @@
+static void CheckValue(object?[] values) {
+    if (values.Length != 0) {
+        throw new System.InvalidOperationException("changed collection values");
+    }
+}
 var my_data = new object?[] {};
-object?[] values = my_data;
-if (values.Length != 0) { throw new System.InvalidOperationException("changed collection values"); }
+CheckValue(my_data);

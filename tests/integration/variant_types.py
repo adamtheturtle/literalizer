@@ -8,7 +8,7 @@ from beartype import beartype
 import literalizer
 from literalizer import ValueInput
 
-from .manifest_values import ComposedConsumer
+from .manifest_values import ConsumerCall
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -61,4 +61,4 @@ class VariantCase:
     variable_form: literalizer.VariableForm
     pre_indent_level: int
     apply_fixture_module_name: bool
-    consumer: str | ComposedConsumer | None
+    consumer: str | ConsumerCall | None

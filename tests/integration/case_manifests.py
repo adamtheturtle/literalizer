@@ -200,9 +200,10 @@ class ManifestVariant(  # noqa: NOD001
     consumer_templates: dict[manifest_values.ManifestLanguage, str] = Field(
         default_factory=dict[literalizer.LanguageCls, str]
     )
-    consumer_statements: dict[
-        manifest_values.ManifestLanguage, Annotated[str, Field(min_length=1)]
-    ] = Field(default_factory=dict[literalizer.LanguageCls, str])
+    # Case-local source defining the native CheckValue function, by language.
+    consumer_calls: dict[manifest_values.ManifestLanguage, str] = Field(
+        default_factory=dict[literalizer.LanguageCls, str]
+    )
     use_base_consumer_templates: bool = False
     # Some shape-mapping cases deliberately never use the external type.
     include_extra_preamble: bool = True
@@ -973,6 +974,24 @@ def _fail(*, path: Path, message: str) -> CaseManifestError:
     return CaseManifestError(f"{path}: {message}")
 
 
+def _validate_consumer_sources(
+    *, path: Path, variants: list[ManifestVariant]
+) -> None:
+    """Require native checker definitions to live beside their
+    manifest.
+    """
+    for variant in variants:
+        for filename in variant.consumer_calls.values():
+            if (
+                filename != Path(filename).name
+                or not (path.parent / filename).is_file()
+            ):
+                raise _fail(
+                    path=path,
+                    message=f"missing case-local consumer source {filename!r}",
+                )
+
+
 @functools.cache
 @beartype
 def load_case_manifest(case_dir: Path) -> CaseManifest:
@@ -1009,6 +1028,8 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
             path=path,
             message="expected_reused_anchor_warning requires YAML input",
         )
+
+    _validate_consumer_sources(path=path, variants=data.variants)
 
     return CaseManifest(
         path=path,

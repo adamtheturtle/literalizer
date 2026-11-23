@@ -136,8 +136,9 @@ Templates receive the generated ``code`` and the selected enum option names, suc
 These names let an assertion check the intended representation's type as well as its value.
 Other languages and variants retain their existing coverage when no consumer is declared.
 
-Use ``variants.consumer_statements`` to supply native statements for a language when the existing wrapper can assemble the file.
-The runner appends the statements to the binding before wrapping the file.
+For the C# object-carrier checks, ``variants.consumer_calls`` names a case-local C# file that defines a static local function named ``CheckValue``.
+The runner renders a call with the generated binding as its argument, then composes the binding, call and checker definition into one file.
+Give the checker a typed parameter so the compiler verifies the generated binding's type and nullability.
 
 Expected values must be independent of the renderer.
 The typed scalar, byte and datetime consumers use native type checks and standard-library inspection: binary64 bit patterns, independently constructed byte ranges, Gregorian dates, and exact datetime instants and offsets.

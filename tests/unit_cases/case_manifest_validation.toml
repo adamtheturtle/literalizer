@@ -948,6 +948,34 @@ owner = "literalize-ref"
 context = {kind = "expression", consumer = {kind = "call", target_function = "consume"}}
 '''
 message = "expression context requires"
+[[cases]]
+name = "missing_consumer_source"
+message = "missing case-local consumer source"
+manifest = '''
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "csharp_object_carrier"
+
+[variants.consumer_calls]
+CSharp = "missing.cs"
+'''
+
+[[cases]]
+name = "consumer_source_outside_case"
+message = "missing case-local consumer source"
+manifest = '''
+schema_version = 1
+owner = "variant"
+
+[[variants]]
+axis = "csharp_object_carrier"
+
+[variants.consumer_calls]
+CSharp = "../check.cs"
+'''
+
 [[references]]
 name = "time_binding_invalid_string"
 field = "bound_ref_times"
