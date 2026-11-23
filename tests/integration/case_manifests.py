@@ -200,9 +200,10 @@ class ManifestVariant(  # noqa: NOD001
     consumer_templates: dict[manifest_values.ManifestLanguage, str] = Field(
         default_factory=dict[literalizer.LanguageCls, str]
     )
-    consumer_statements: dict[
-        manifest_values.ManifestLanguage, Annotated[str, Field(min_length=1)]
-    ] = Field(default_factory=dict[literalizer.LanguageCls, str])
+    # Case-local source defining the native CheckValue function, by language.
+    consumer_calls: dict[manifest_values.ManifestLanguage, str] = Field(
+        default_factory=dict[literalizer.LanguageCls, str]
+    )
     use_base_consumer_templates: bool = False
     # Some shape-mapping cases deliberately never use the external type.
     include_extra_preamble: bool = True
@@ -600,6 +601,9 @@ class ComposedCallFixture(  # noqa: NOD001
         default_factory=frozenset[str]
     )
     include_target_stub: bool = True
+    target_source: Annotated[str, Field(pattern=r"^[\w-]+\.\w+$")] | None = (
+        None
+    )
 
 
 type CallFixture = Annotated[
@@ -641,6 +645,7 @@ class CallCaseSpec(
     # A receiver returns its argument plus 100; wrappers/follow-ups observe
     # that result and any zipped operand in execution order.
     integer_receiver_events: manifest_values.IntegerCallEvents | None = None
+    detect_references: bool = True
     ref_key: str = "$ref"
     collection_layout: CollectionLayoutName = "compact"
     transform: CallRecipe | None = None
@@ -718,6 +723,11 @@ class CallCaseSpec(
     # suite, so the default per-language call matrix needs no
     # case-specific opt-out.
     variant_only: bool = False
+
+    @property
+    def call_ref_key(self) -> str | None:
+        """Pass no reference key when the call uses the API default."""
+        return self.ref_key if self.detect_references else None
 
     @model_validator(mode="after")
     def _validate_call_variants(self) -> CallCaseSpec:
@@ -973,6 +983,24 @@ def _fail(*, path: Path, message: str) -> CaseManifestError:
     return CaseManifestError(f"{path}: {message}")
 
 
+def _validate_consumer_sources(
+    *, path: Path, variants: list[ManifestVariant]
+) -> None:
+    """Require native checker definitions to live beside their
+    manifest.
+    """
+    for variant in variants:
+        for filename in variant.consumer_calls.values():
+            if (
+                filename != Path(filename).name
+                or not (path.parent / filename).is_file()
+            ):
+                raise _fail(
+                    path=path,
+                    message=f"missing case-local consumer source {filename!r}",
+                )
+
+
 @functools.cache
 @beartype
 def load_case_manifest(case_dir: Path) -> CaseManifest:
@@ -1009,6 +1037,8 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
             path=path,
             message="expected_reused_anchor_warning requires YAML input",
         )
+
+    _validate_consumer_sources(path=path, variants=data.variants)
 
     return CaseManifest(
         path=path,

@@ -18,7 +18,7 @@ from .literal_rejection_manifest import (
     LITERAL_REJECTION_MANIFEST,
     authored_literal_rejection,
 )
-from .manifest_values import ComposedConsumer
+from .manifest_values import ConsumerCall
 
 _CASES_DIR = Path(__file__).parent / "cases"
 
@@ -72,7 +72,7 @@ class GoldenRendering:
     extra_preamble: tuple[str, ...]
     initialize_variable: bool
     apply_fixture_module_name: bool
-    consumer: str | ComposedConsumer | None
+    consumer: str | ConsumerCall | None
 
     @property
     def wrap_in_file(self) -> bool:
@@ -81,7 +81,7 @@ class GoldenRendering:
             self.render.wrap_in_file
             and len(self.extra_preamble) == 0
             and not self.initialize_variable
-            and not isinstance(self.consumer, ComposedConsumer)
+            and not isinstance(self.consumer, ConsumerCall)
         )
 
     @property

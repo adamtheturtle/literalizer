@@ -2,6 +2,13 @@ using System.Collections.Generic;
 record Record0(Dictionary<string, object> Payload);
 class Check {
     public static void Main() {
+static void CheckValue(Record0[] values) {
+    System.Collections.Generic.Dictionary<string, object> first = values[0].Payload;
+    System.Collections.Generic.Dictionary<string, object> second = values[1].Payload;
+    if (first["flag"] is not true || second["text"] is not "") {
+        throw new System.InvalidOperationException("changed record maps");
+    }
+}
 var my_data = new[] {
     new Record0(
         new Dictionary<string, object> {
@@ -14,8 +21,6 @@ var my_data = new[] {
         }
     )
 };
-        System.Collections.Generic.Dictionary<string, object> first = my_data[0].Payload;
-        System.Collections.Generic.Dictionary<string, object> second = my_data[1].Payload;
-        if (first["flag"] is not true || second["text"] is not "") { throw new System.InvalidOperationException("changed record maps"); }
+CheckValue(my_data);
     }
 }

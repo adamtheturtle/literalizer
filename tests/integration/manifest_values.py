@@ -2,6 +2,7 @@
 
 import dataclasses
 from collections.abc import Callable, Mapping
+from pathlib import Path
 from typing import Annotated, Literal
 
 from beartype import beartype
@@ -14,10 +15,10 @@ from .call_templates import CallTransform, call_transform_from_template
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class ComposedConsumer:
-    """Native statements to compose with a rendered binding."""
+class ConsumerCall:
+    """Native checker definition to call with a rendered binding."""
 
-    statements: str
+    source_path: Path
 
 
 type VariableFormName = Literal["new", "existing", "both"]

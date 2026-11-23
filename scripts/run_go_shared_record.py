@@ -18,7 +18,6 @@ import shutil
 
 import click
 
-from literalizer import InputFormat, literalize_call
 from literalizer.languages import Go
 from scripts import roundtrip_common, shared_record_common
 
@@ -77,46 +76,6 @@ def _build_program() -> str:
     )
 
 
-def _build_direct_call_program(*, per_element: bool) -> str:
-    """Type-check direct record arguments and verify their native
-    values.
-    """
-    source = shared_record_common.DEPENDENT_DOCUMENT
-    if per_element:
-        source = f"[[{source}]]"
-    result = literalize_call(
-        source=source,
-        input_format=InputFormat.JSON,
-        language=Go(
-            heterogeneous_strategy=Go.heterogeneous_strategies.RECORD,
-            record_map_value_typing=Go.record_map_value_typings.WIDE,
-        ),
-        target_function="consume",
-        parameter_names=("rows",),
-        per_element=per_element,
-    )
-    package_clause, *declarations = (*result.preamble, *result.body_preamble)
-    declared = "\n".join(declarations)
-    return (
-        f"{package_clause}\n"
-        'import "fmt"\n'
-        f"{declared}\n"
-        "func consume(rows []Record0) {\n"
-        '\tif len(rows) != 2 { panic("record count changed") }\n'
-        "\tvar first map[string]any = rows[0].Attributes\n"
-        "\tsecond := rows[1].Attributes\n"
-        "\tif len(first) != 2 || len(second) != 1 ||\n"
-        '\t\trows[0].Name != "row_3" || first["colour"] != "green" ||\n'
-        '\t\tfirst["size"] != "small" || rows[1].Name != "row_4" ||\n'
-        '\t\tsecond["colour"] != "white" {\n'
-        '\t\tpanic("record values changed")\n'
-        "\t}\n"
-        f"\tfmt.Print(`{shared_record_common.OK_DOCUMENT}`)\n"
-        "}\n"
-        f"func main() {{\n{result.code}\n}}\n"
-    )
-
-
 @click.command()
 def main() -> None:
     """Compile both documents against one set of declarations."""
@@ -142,22 +101,6 @@ def main() -> None:
         expected_json=shared_record_common.OK_DOCUMENT,
         extra_files={"go.mod": _GO_MOD},
     )
-
-    for per_element in (False, True):
-        roundtrip_common.execute(
-            label=f"Go direct record call (per_element={per_element})",
-            source_filename="main.go",
-            program=_build_direct_call_program(per_element=per_element),
-            steps=[
-                roundtrip_common.Step(
-                    args=[go, "run", "./..."],
-                    failure_label="go run error",
-                ),
-            ],
-            excluded_keys=(),
-            expected_json=shared_record_common.OK_DOCUMENT,
-            extra_files={"go.mod": _GO_MOD},
-        )
 
 
 if __name__ == "__main__":
