@@ -41,3 +41,23 @@ def test_nested_default_fixture_selection() -> None:
         CASES_DIR
         / "default_module_name/goldens/java/jdk_16/default_module_name.java"
     }
+
+
+def test_nested_version_and_variant_fixture_selection() -> None:
+    """Select a pinned version and a variant-only case for native runs."""
+    pinned = CASES_DIR / "empty_list/goldens/cpp/cpp14/version_cpp14.cpp"
+    assert pinned in fixture_paths(extension=".cpp", version="cpp14")
+    assert pinned not in fixture_paths(extension=".cpp", version="cpp17")
+
+    multiline = (
+        CASES_DIR
+        / "multiline_string/goldens/haskell/ghc2021"
+        / "string_format_double.hs"
+    )
+    assert multiline in fixture_paths(
+        extension=".hs", version="ghc2021", language="Haskell"
+    )
+    assert (
+        fixture_module_name(golden_path=multiline)
+        == "Fixture_multiline_string_Haskell_string_format_double"
+    )
