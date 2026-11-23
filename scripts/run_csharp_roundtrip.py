@@ -27,6 +27,7 @@ pytest test under ``tests/``.
 
 import json
 import shutil
+from pathlib import Path
 
 import click
 
@@ -36,6 +37,7 @@ from scripts import roundtrip_common
 
 _VAR_NAME = "myData"
 _LABEL = "CSharp"
+_OWNERSHIP_CONSUMER_PATH = Path(__file__).parent / "JsonNodeOwnership.cs"
 _EXCLUDED_KEYS = ("biginteger",)
 
 # ``LangVersion 10`` matches ``CSharp.language_version`` in
@@ -54,37 +56,6 @@ _CSPROJ = (
     "  </PropertyGroup>\n"
     "</Project>\n"
 )
-
-_OWNERSHIP_CONSUMER = r"""
-    static void CheckOwnership(
-        JsonNode argument, JsonNode original, int position
-    ) {
-        var copies = argument["copies"]!.AsArray();
-        var initial = JsonNode.Parse("{\"value\":[1,2]}");
-        var changed = JsonNode.Parse("{\"value\":[9,2]}");
-        RequireValue(copies[0], initial, "first copy before mutation");
-        RequireValue(copies[1], initial, "initial second copy");
-        RequireValue(original, initial, "original before mutation");
-
-        copies[position]!["value"]![0] = 9;
-        RequireValue(copies[position], changed, "mutated copy");
-        RequireValue(copies[1 - position], initial, "other copy");
-        RequireValue(original, initial, "original after mutation");
-
-        // A fresh parent must accept the original without a clone.
-        var reuse = new JsonArray(original);
-        RequireValue(reuse[0], initial, "reattached original");
-        reuse.RemoveAt(0);
-    }
-
-    static void RequireValue(
-        JsonNode? actual, JsonNode? expected, string location
-    ) {
-        if (!JsonNode.DeepEquals(actual, expected)) {
-            throw new InvalidOperationException("Wrong JsonNode: " + location);
-        }
-    }
-"""
 
 
 def _ownership_case(*, binding: str, wrong_value: bool) -> str:
@@ -118,7 +89,7 @@ def _ownership_case(*, binding: str, wrong_value: bool) -> str:
             for (var position = 0; position < 2; position++) {{
                 {call.code}
                 void Consume(JsonNode argument) =>
-                    CheckOwnership(argument, {binding}!, position);
+                    JsonNodeOwnership.Check(argument, {binding}!, position);
             }}
         }}
 """
@@ -161,16 +132,11 @@ def _build_program(json_text: str) -> str:
         '                "negative_zero lost its sign");\n'
         "        }\n"
         f"{ownership_cases}"
-        "        try {\n"
+        "        JsonNodeOwnership.ExpectWrongValue(() => {\n"
         f"{wrong_value}"
-        "            throw new InvalidOperationException(\n"
-        '                "Wrong value accepted");\n'
-        "        } catch (InvalidOperationException error) when (\n"
-        '            error.Message == "Wrong JsonNode: initial second copy"\n'
-        "        ) { }\n"
+        "        });\n"
         f"        Console.Write(JsonSerializer.Serialize({_VAR_NAME}));\n"
         "    }\n"
-        f"{_OWNERSHIP_CONSUMER}"
         "}\n"
     )
 
@@ -203,7 +169,12 @@ def main() -> None:
         ],
         excluded_keys=_EXCLUDED_KEYS,
         expected_json=json_text,
-        extra_files={"fixture.csproj": _CSPROJ},
+        extra_files={
+            "fixture.csproj": _CSPROJ,
+            _OWNERSHIP_CONSUMER_PATH.name: _OWNERSHIP_CONSUMER_PATH.read_text(
+                encoding="utf-8",
+            ),
+        },
     )
 
 
