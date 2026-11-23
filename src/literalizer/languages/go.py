@@ -1443,6 +1443,16 @@ class Go(metaclass=LanguageCls):
         """Return the behavior for the chosen heterogeneous strategy."""
         return self._record_strategy.behavior
 
+    @property
+    def shares_direct_call_record_context(self) -> bool:
+        """Render call arguments with the record names in their
+        preamble.
+        """
+        return (
+            self.heterogeneous_strategy
+            is type(self.heterogeneous_strategy).RECORD
+        )
+
     call_data_dependent_preamble = default_call_data_dependent_preamble
 
     type_hint_collection_preamble_lines = (
