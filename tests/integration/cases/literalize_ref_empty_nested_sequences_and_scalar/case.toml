@@ -1,5 +1,6 @@
 # Shared input and API context; named examples preserve specialized regression witnesses.
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-ref"
 
 
