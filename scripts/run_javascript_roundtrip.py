@@ -20,6 +20,8 @@ it rather than emitting a lossy numeric literal.
 import datetime as dt
 import json
 import shutil
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
@@ -27,9 +29,15 @@ from literalizer import InputFormat, NewVariable, literalize
 from literalizer.languages import JavaScript
 from scripts import roundtrip_common
 
+if TYPE_CHECKING:
+    from pydantic import JsonValue
+
 _VAR_NAME = "myData"
 _LABEL = "JavaScript"
 _EXCLUDED_KEYS = ("biginteger",)
+_SIBLING_CONSUMER = Path(__file__).with_name(
+    name="javascript_sibling_permutations.cjs"
+)
 
 
 def _build_program(json_text: str) -> str:
@@ -110,6 +118,58 @@ def _check_native_datetime_offsets(*, node: str) -> None:
     )
 
 
+def _check_sibling_permutations(*, node: str) -> None:
+    """Compare empty and populated siblings in both traversal orders."""
+    consumer = _SIBLING_CONSUMER.read_text(encoding="utf-8")
+    for dict_format, mapping_kind in (
+        (JavaScript.dict_formats.OBJECT, "object"),
+        (JavaScript.dict_formats.MAP, "map"),
+    ):
+        samples: list[tuple[str, JsonValue]] = [
+            ("array", []),
+            ("array", [True, 0]),
+            (mapping_kind, {}),
+            (mapping_kind, {"value": "populated"}),
+        ]
+        for rows in (samples, samples[::-1]):
+            first_kind = rows[0][0]
+            result = roundtrip_common.literalize_new_variable(
+                language=JavaScript(dict_format=dict_format),
+                json_text=json.dumps(obj=[value for _, value in rows]),
+                var_name=_VAR_NAME,
+                pre_indent_level=0,
+            )
+            data_source = "\n".join(
+                (
+                    *result.preamble,
+                    *result.body_preamble,
+                    result.code,
+                    f"module.exports = {_VAR_NAME};",
+                )
+            )
+            roundtrip_common.execute(
+                label=f"{_LABEL} {mapping_kind} siblings ({first_kind} first)",
+                source_filename="check.cjs",
+                program=consumer,
+                steps=[
+                    roundtrip_common.Step(
+                        args=[node, "check.cjs"],
+                        failure_label="node sibling permutation error",
+                    ),
+                ],
+                excluded_keys=(),
+                expected_json=json.dumps(
+                    obj={
+                        "rows": [
+                            {"kind": kind, "value": value}
+                            for kind, value in rows
+                        ]
+                    }
+                ),
+                extra_files={"sibling_data.cjs": data_source},
+            )
+
+
 @click.command()
 def main() -> None:
     """Round-trip the shared document through the JavaScript backend."""
@@ -139,6 +199,7 @@ def main() -> None:
         extra_files=None,
     )
     _check_native_datetime_offsets(node=node)
+    _check_sibling_permutations(node=node)
 
 
 if __name__ == "__main__":
