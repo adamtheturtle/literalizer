@@ -79,7 +79,7 @@ def _ref_bindings() -> dict[Path, str | None]:
         rendering.artifact(
             cases_dir=_CASES_DIR
         ).path.resolve(): _ref_binding_name(config=rendering.config)
-        for case in reference_golden_cases()
+        for case in reference_golden_cases(cases_dir=_CASES_DIR)
         if case.lang_cls is Dart
         for rendering in case.renderings
     }
