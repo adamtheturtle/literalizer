@@ -4,9 +4,10 @@ Literalize both documents in :mod:`scripts.shared_record_common` under
 ``Cpp(heterogeneous_strategy=RECORD, record_map_value_typing=WIDE)``,
 build one translation unit from the *declaring* document's
 ``LiteralizerRecordValue`` alias and ``struct`` declarations plus both
-documents' ``std::vector`` literals, and compile and run it with
-``clang++``.  The dependent document's widened maps are all strings, so
-under the default ``NARROW`` typing they would render
+documents' ``std::vector`` literals, then inspect both documents' native
+values after compilation with ``clang++``. The dependent document's
+widened maps are all strings, so under the default ``NARROW`` typing
+they would render
 ``std::map<std::string, std::string>`` and fail to convert to the
 declaring document's alias-typed field.
 
@@ -16,6 +17,7 @@ toolchain (``clang++``) is already installed.
 """
 
 import shutil
+import textwrap
 
 import click
 
@@ -58,14 +60,44 @@ def _build_program() -> str:
     # test.
     preamble = "\n".join((*declaring.preamble, *declaring.body_preamble))
     ok_document = shared_record_common.OK_DOCUMENT
+    checks = textwrap.indent(
+        text=textwrap.dedent(
+            text=r"""
+            if (mixed.size() != 2 || strings.size() != 2) {
+                std::cerr << "Unexpected shared-record row count\n";
+                return 1;
+            }
+            using Attributes = std::map<std::string, LiteralizerRecordValue>;
+            if (mixed[0].name != "row_1" || mixed[0].attributes != Attributes{
+                    {"colour", std::string("red")}, {"discounted", true}} ||
+                mixed[1].name != "row_2" || mixed[1].attributes != Attributes{
+                    {"colour", std::string("blue")},
+                    {"size", std::string("large")}} ||
+                strings[0].name != "row_3" ||
+                strings[0].attributes != Attributes{
+                    {"colour", std::string("green")},
+                    {"size", std::string("small")}} ||
+                strings[1].name != "row_4" ||
+                strings[1].attributes != Attributes{
+                    {"colour", std::string("white")}}) {
+                std::cerr << "Unexpected shared-record values\n";
+                return 1;
+            }
+            """,
+        ).strip(),
+        prefix="    ",
+    )
+    mixed_name = shared_record_common.DECLARING_VAR_NAME_SNAKE
+    strings_name = shared_record_common.DEPENDENT_VAR_NAME_SNAKE
     return (
         f"{preamble}\n"
         "#include <iostream>\n"
         "int main() {\n"
         f"{declaring.code}\n"
         f"{dependent.code}\n"
-        f"    (void){shared_record_common.DECLARING_VAR_NAME_SNAKE};\n"
-        f"    (void){shared_record_common.DEPENDENT_VAR_NAME_SNAKE};\n"
+        f"    const auto& mixed = {mixed_name};\n"
+        f"    const auto& strings = {strings_name};\n"
+        f"{checks}\n"
         f'    std::cout << R"json({ok_document})json";\n'
         "    return 0;\n"
         "}\n"
