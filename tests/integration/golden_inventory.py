@@ -37,7 +37,7 @@ def call_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
 
 def literal_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
     """Include ordinary and default-module renderings."""
-    integration_dir = Path(__file__).parent
+    source_cases_dir = Path(__file__).parent / "cases"
     for renderings in scenario_renderings().values():
         for rendering in renderings:
             for spec in rendering.specs:
@@ -46,9 +46,9 @@ def literal_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
                 artifact = rendering.artifact(version=spec.language_version)
                 yield dataclasses.replace(
                     artifact,
-                    path=cases_dir.parent
+                    path=cases_dir
                     / os.path.relpath(
-                        path=artifact.path, start=integration_dir
+                        path=artifact.path, start=source_cases_dir
                     ),
                 )
 
