@@ -109,8 +109,8 @@ def test_constructor_recipe_reuses_backend_syntax(
         expected_exception=rejection.error, match=rejection.match
     ) as recipe_error:
         _ = literalize_invocations(**kwargs, invocation=invocation)
-    assert type(direct_error.value) is rejection.error
-    assert type(recipe_error.value) is rejection.error
+    assert direct_error.type is rejection.error
+    assert recipe_error.type is rejection.error
 
 
 @pytest.mark.parametrize(
