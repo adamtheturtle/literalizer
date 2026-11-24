@@ -3,16 +3,18 @@
 import functools
 from pathlib import Path
 
-_NESTED_CASES = frozenset(
-    {
-        "binary",
-        "call_json_nested_ref_array",
-        "default_module_name",
-        "empty_list",
-        "literalize_ref_both_forms",
-        "multiline_string",
-    }
-)
+from .case_manifest_documents import MANIFEST_NAME, read_case_manifest_document
+
+
+@functools.cache
+def _uses_nested_goldens(*, case_dir: Path) -> bool:
+    """Read the case's declared layout before any golden exists."""
+    path = case_dir / MANIFEST_NAME
+    return (
+        path.is_file()
+        and read_case_manifest_document(path=path).get("golden_layout")
+        == "nested"
+    )
 
 
 def nested_golden_path(
@@ -25,7 +27,7 @@ def nested_golden_path(
     extension: str,
 ) -> Path | None:
     """Resolve the scenario path for a case using nested fixtures."""
-    if case_dir.name not in _NESTED_CASES:
+    if not _uses_nested_goldens(case_dir=case_dir):
         return None
     scenario = (
         "base"

@@ -1,3 +1,4 @@
 schema_version = 1
+golden_layout = "nested"
 suites = ["default-module-name"]
 gates = [{ kind = "capability_flag", flag = "supports_module_name" }]
