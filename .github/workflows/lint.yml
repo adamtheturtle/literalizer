@@ -52,18 +52,21 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
-      pull-requests: read
     outputs:
       jobs: ${{ steps.filter.outputs.changes || '[]' }}
     steps:
       - uses: actions/checkout@v7
         if: github.event_name == 'pull_request'
         with:
+          # Include the base parent of GitHub's PR merge commit.
+          fetch-depth: 2
           persist-credentials: false
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
         if: github.event_name == 'pull_request'
         id: filter
         with:
+          # The PR files API can truncate or time out on large diffs.
+          token: ''
           filters: .github/native-filters.yml
 
   pre-commit:
