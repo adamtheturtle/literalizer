@@ -17,7 +17,7 @@ toolchain (``clang++``) is already installed.
 """
 
 import shutil
-import textwrap
+from pathlib import Path
 
 import click
 
@@ -34,10 +34,14 @@ from literalizer.languages import Cpp
 from scripts import roundtrip_common, shared_record_common
 
 _LABEL = "C++ shared-record"
+_CONSUMER_PATH = Path(__file__).with_name(name="cpp_shared_record.cpp")
+_COMPOSED_CONSUMER_PATH = Path(__file__).with_name(
+    name="cpp_composed_record.hpp"
+)
 
 
-def _build_program() -> str:
-    """Return a runnable C++ program built from both documents."""
+def _build_data_sources() -> dict[str, str]:
+    """Render the shared declarations and both data bindings."""
     language = Cpp(
         heterogeneous_strategy=Cpp.heterogeneous_strategies.RECORD,
         record_map_value_typing=Cpp.record_map_value_typings.WIDE,
@@ -58,50 +62,12 @@ def _build_program() -> str:
     # literals bind to the ``LiteralizerRecordValue`` alias and
     # ``Record0`` declaration it brings, which is the property under
     # test.
-    preamble = "\n".join((*declaring.preamble, *declaring.body_preamble))
-    ok_document = shared_record_common.OK_DOCUMENT
-    checks = textwrap.indent(
-        text=textwrap.dedent(
-            text=r"""
-            if (mixed.size() != 2 || strings.size() != 2) {
-                std::cerr << "Unexpected shared-record row count\n";
-                return 1;
-            }
-            using Attributes = std::map<std::string, LiteralizerRecordValue>;
-            if (mixed[0].name != "row_1" || mixed[0].attributes != Attributes{
-                    {"colour", std::string("red")}, {"discounted", true}} ||
-                mixed[1].name != "row_2" || mixed[1].attributes != Attributes{
-                    {"colour", std::string("blue")},
-                    {"size", std::string("large")}} ||
-                strings[0].name != "row_3" ||
-                strings[0].attributes != Attributes{
-                    {"colour", std::string("green")},
-                    {"size", std::string("small")}} ||
-                strings[1].name != "row_4" ||
-                strings[1].attributes != Attributes{
-                    {"colour", std::string("white")}}) {
-                std::cerr << "Unexpected shared-record values\n";
-                return 1;
-            }
-            """,
-        ).strip(),
-        prefix="    ",
-    )
-    mixed_name = shared_record_common.DECLARING_VAR_NAME_SNAKE
-    strings_name = shared_record_common.DEPENDENT_VAR_NAME_SNAKE
-    return (
-        f"{preamble}\n"
-        "#include <iostream>\n"
-        "int main() {\n"
-        f"{declaring.code}\n"
-        f"{dependent.code}\n"
-        f"    const auto& mixed = {mixed_name};\n"
-        f"    const auto& strings = {strings_name};\n"
-        f"{checks}\n"
-        f'    std::cout << R"json({ok_document})json";\n'
-        "    return 0;\n"
-        "}\n"
-    )
+    return {
+        "record_data.hpp": "\n".join(
+            (*declaring.preamble, *declaring.body_preamble)
+        ),
+        "record_bindings.inc": f"{declaring.code}\n{dependent.code}\n",
+    }
 
 
 def _build_composed_program(*, language: Language, reverse: bool) -> str:
@@ -135,28 +101,18 @@ def _build_composed_program(*, language: Language, reverse: bool) -> str:
         call=call,
         extra_body_preamble=(),
         extra_class_preamble=(),
-        extra_preamble=(
-            "#include <iostream>",
-            "#include <cstdlib>",
-            (
-                "template<class A, class B>\n"
-                "void consume(const A& first, const B& second) {\n"
-                "    if (first.values.size() != 2 || "
-                "second.values.size() != 1) std::abort();\n"
-                '    std::cout << "{\\"names\\":[\\"" << first.name\n'
-                '        << "\\",\\"" << second.name\n'
-                '        << "\\"],\\"values\\":["\n'
-                '        << first.values[0] << "," << first.values[1]\n'
-                '        << "," << second.values[0] << "]}";\n'
-                "}"
-            ),
-        ),
+        extra_preamble=('#include "cpp_composed_record.hpp"',),
     )
     return result.code
 
 
 def _check_composed_records(*, clangxx: str) -> None:
     """Verify both declaration orders with every supported C++ dialect."""
+    consumer_files = {
+        _COMPOSED_CONSUMER_PATH.name: _COMPOSED_CONSUMER_PATH.read_text(
+            encoding="utf-8"
+        )
+    }
     language_cls: LanguageCls = Cpp
     for version, standard in (
         (Cpp.version_formats.CPP14, "c++14"),
@@ -196,21 +152,20 @@ def _check_composed_records(*, clangxx: str) -> None:
                 expected_json=(
                     '{"names": ["first", "second"], "values": [1, 2, 3]}'
                 ),
-                extra_files=None,
+                extra_files=consumer_files,
             )
 
 
 @click.command()
 def main() -> None:
     """Compile both documents against one set of declarations."""
-    program = _build_program()
     clangxx = shutil.which(cmd="clang++")
     if clangxx is None or clangxx == "":
         clangxx = "clang++"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.cpp",
-        program=program,
+        program=_CONSUMER_PATH.read_text(encoding="utf-8"),
         steps=[
             roundtrip_common.Step(
                 args=[
@@ -230,7 +185,7 @@ def main() -> None:
         ],
         excluded_keys=(),
         expected_json=shared_record_common.OK_DOCUMENT,
-        extra_files=None,
+        extra_files=_build_data_sources(),
     )
     _check_composed_records(clangxx=clangxx)
 
