@@ -28,12 +28,20 @@ from pathlib import Path
 
 import click
 
+from literalizer import (
+    InputFormat,
+    literalize_call,
+    literalize_call_with_declarations,
+)
 from literalizer.languages import Kotlin
 from scripts import roundtrip_common
 
 _VAR_NAME = "myData"
 _LABEL = "Kotlin"
 _EXCLUDED_KEYS = ("biginteger",)
+_RECORD_CONSUMER = Path(__file__).with_name(
+    name="kotlin_record_composition_consumer.kt",
+)
 
 
 def _build_program(json_text: str) -> str:
@@ -67,6 +75,59 @@ def _build_program(json_text: str) -> str:
     )
 
 
+def _check_record_composition(*, step: roundtrip_common.Step) -> None:
+    """Reuse independently rendered declarations in a typed native
+    call.
+    """
+    language = Kotlin(
+        heterogeneous_strategy=Kotlin.heterogeneous_strategies.RECORD,
+    )
+    declaring = roundtrip_common.literalize_new_variable(
+        language=language,
+        json_text='{"name":"first","values":[1,2]}',
+        var_name="declaring",
+        pre_indent_level=0,
+    )
+    dependent = roundtrip_common.literalize_new_variable(
+        language=language,
+        json_text='{"name":"second","values":[3,4]}',
+        var_name="dependent",
+        pre_indent_level=0,
+    )
+    call = literalize_call(
+        source=(
+            '[[{"$ref":"declaring"},{"$ref":"dependent"},'
+            '{"$ref":"dependent"}]]'
+        ),
+        input_format=InputFormat.JSON,
+        language=language,
+        target_function="consume",
+        parameter_names=("first", "second", "again"),
+        ref_key="$ref",
+        per_element=True,
+    )
+    consumer = tuple(_RECORD_CONSUMER.read_text(encoding="utf-8").splitlines())
+    for order, declarations in (
+        ("declaring first", (declaring, dependent)),
+        ("dependent first", (dependent, declaring)),
+    ):
+        result = literalize_call_with_declarations(
+            language=language,
+            declarations=declarations,
+            call=call,
+            extra_body_preamble=consumer,
+        )
+        roundtrip_common.execute(
+            label=f"{_LABEL} record composition ({order})",
+            source_filename="main.kts",
+            program=result.code,
+            steps=[step],
+            excluded_keys=(),
+            expected_json='{"matched":true}',
+            extra_files=None,
+        )
+
+
 @click.command()
 def main() -> None:
     """Round-trip the shared document through the Kotlin backend."""
@@ -80,26 +141,26 @@ def main() -> None:
     compiler = (
         Path(kotlin).resolve().parent.parent / "lib" / "kotlin-compiler.jar"
     )
+    step = roundtrip_common.Step(
+        args=[
+            kotlin,
+            "-classpath",
+            str(object=compiler),
+            str(object=Path(__file__).parent / "lint-kotlin.kts"),
+            "main.kts",
+        ],
+        failure_label="kotlin run error",
+    )
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.kts",
         program=program,
-        steps=[
-            roundtrip_common.Step(
-                args=[
-                    kotlin,
-                    "-classpath",
-                    str(object=compiler),
-                    str(object=Path(__file__).parent / "lint-kotlin.kts"),
-                    "main.kts",
-                ],
-                failure_label="kotlin run error",
-            ),
-        ],
+        steps=[step],
         excluded_keys=_EXCLUDED_KEYS,
         expected_json=json_text,
         extra_files=None,
     )
+    _check_record_composition(step=step)
 
 
 if __name__ == "__main__":

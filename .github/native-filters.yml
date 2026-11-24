@@ -204,6 +204,7 @@ lint-kotlin:
   - '{src/literalizer/languages,tests/integration/languages}/kotlin.{py,toml}'
   - scripts/run_kotlin{,_*}.py
   - scripts/lint-kotlin.kts
+  - scripts/kotlin_record_composition_consumer.kt
   - tests/integration/cases/**/*.kts
 
 lint-swift:
