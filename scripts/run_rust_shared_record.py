@@ -2,13 +2,14 @@
 
 Literalize both documents in :mod:`scripts.shared_record_common` under
 ``Rust(heterogeneous_strategy=RECORD, record_map_value_typing=WIDE)``,
-compile the *declaring* document's public ``enum`` and ``struct``
+compile the mixed document's public ``enum`` and ``struct``
 declarations as a library, then construct and inspect both documents'
 ``vec![...]`` literals in a separate consumer crate.  The dependent
 document's widened maps are all strings, so under the default ``NARROW``
 typing they would render ``HashMap<&'static str, &'static str>`` and fail
 to compile against the declaring document's ``HashMap<&'static str, Value>``
-field.
+field. The mixed document supplies the declarations because it also
+contains the boolean variant used by the mixed literals.
 
 This lives here, driven by a step of the ``lint-rust`` job in
 ``.github/workflows/lint.yml``, because that job is where the Rust
@@ -16,6 +17,7 @@ toolchain is already available.
 """
 
 import shutil
+import textwrap
 
 import click
 
@@ -23,6 +25,45 @@ from literalizer.languages import Rust
 from scripts import roundtrip_common, shared_record_common
 
 _LABEL = "Rust shared-record"
+
+
+_VALUE_CHECKS = textwrap.dedent(
+    text=r"""
+    fn assert_row(row: &Record0, name: &str, attributes: &[(&str, Value)]) {
+        assert_eq!(row.name, name);
+        assert_eq!(row.attributes.len(), attributes.len(), "{name}");
+        for (key, expected) in attributes {
+            let actual = row.attributes.get(key).expect("missing attribute");
+            match (actual, expected) {
+                (Value::Str(actual), Value::Str(expected)) =>
+                    assert_eq!(actual, expected, "{name}.{key}"),
+                (Value::Bool(actual), Value::Bool(expected)) =>
+                    assert_eq!(actual, expected, "{name}.{key}"),
+                _ => panic!("{name}.{key}: wrong value type"),
+            }
+        }
+    }
+    """,
+).strip()
+
+_DOCUMENT_CHECKS = textwrap.indent(
+    text=textwrap.dedent(
+        text=r"""
+        assert_eq!(declaring_data.len(), 2);
+        assert_eq!(dependent_data.len(), 2);
+        assert_row(&declaring_data[0], "row_1",
+            &[("colour", Value::Str("red")),
+              ("discounted", Value::Bool(true))]);
+        assert_row(&declaring_data[1], "row_2",
+            &[("colour", Value::Str("blue")), ("size", Value::Str("large"))]);
+        assert_row(&dependent_data[0], "row_3",
+            &[("colour", Value::Str("green")), ("size", Value::Str("small"))]);
+        assert_row(&dependent_data[1], "row_4",
+            &[("colour", Value::Str("white"))]);
+        """,
+    ).strip(),
+    prefix="    ",
+)
 
 
 def _build_sources() -> tuple[str, str]:
@@ -49,15 +90,11 @@ def _build_sources() -> tuple[str, str]:
     program = (
         "use std::collections::HashMap;\n"
         "use record_data::{Record0, Value};\n"
+        f"{_VALUE_CHECKS}\n"
         "fn main() {\n"
         f"{declaring.code}\n"
         f"{dependent.code}\n"
-        '    assert_eq!(declaring_data[0].name, "row_1");\n'
-        '    assert!(matches!(declaring_data[0].attributes.get("discounted"), '
-        "Some(Value::Bool(true))));\n"
-        '    assert_eq!(dependent_data[0].name, "row_3");\n'
-        '    assert!(matches!(dependent_data[0].attributes.get("colour"), '
-        'Some(Value::Str("green"))));\n'
+        f"{_DOCUMENT_CHECKS}\n"
         f'    print!("{{}}", r#"{ok_document}"#);\n'
         "}\n"
     )
