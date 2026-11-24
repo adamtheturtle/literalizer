@@ -81,7 +81,9 @@ def test_base_cases_own_effective_golden(cases_dir: Path) -> None:
 
 
 def _literal_paths_in_temp_case(*, case_dir: Path) -> set[Path]:
-    """Copy the repository's expected paths for a single case into a test."""
+    """Copy the repository's expected paths for a single case into a
+    test.
+    """
     corpus = Path(__file__).parents[1] / "cases"
     original = corpus / case_dir.name
     return {
