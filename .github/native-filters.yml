@@ -23,6 +23,7 @@ lint-fast:
   - '{src/literalizer/languages,tests/integration/languages}/{bash,c,dhall,forth,fortran,java,javascript,lua,nix,php,powershell,ruby,scheme,tcl,wren}.{py,toml}'
   - scripts/run_{bash,c,dhall,forth,fortran,java,javascript,lua,nix,php,powershell,ruby,scheme,tcl,wren}{,_*}.py
   - scripts/{bash_roundtrip_json.sh,javascript_*.cjs,lua_*_consumer.lua,ruby_*.rb}
+  - scripts/php_generated_call_consumer.php
   - src/literalizer/languages/forth_prelude.fs
   - scripts/run_interpreted_fixtures.py
   - scripts/{forth_visitor_lint.fs,fval_m.f90,lint-powershell.ps1,run-powershell.ps1}

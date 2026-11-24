@@ -26,6 +26,7 @@ cannot represent them losslessly:
 
 import json
 import shutil
+from pathlib import Path
 from random import Random
 
 import click
@@ -40,6 +41,9 @@ _LABEL = "PHP"
 _EXCLUDED_KEYS = ("biginteger", "empty_object")
 _GENERATED_SEEDS = (7, 19, 83)
 _SAMPLES_PER_SEED = 16
+_CALL_CONSUMER = Path(__file__).with_name(
+    name="php_generated_call_consumer.php"
+)
 
 
 def _build_program(json_text: str) -> str:
@@ -114,6 +118,7 @@ def _check_document(
 
 def _check_generated_calls(*, php: str) -> None:
     """Round-trip generated values through ordered, two-argument calls."""
+    consumer = _CALL_CONSUMER.read_text(encoding="utf-8")
     for seed in _GENERATED_SEEDS:
         generator = Random(x=seed)  # noqa: S311 - reproducible fixture data
         rows: list[list[JsonValue]] = [
@@ -132,10 +137,7 @@ def _check_generated_calls(*, php: str) -> None:
             (
                 *result.preamble,
                 *result.body_preamble,
-                "$rows = [];",
-                "function collect(string $tag, mixed $payload): void {",
-                '    $GLOBALS["rows"][] = [$tag, $payload];',
-                "}",
+                f'require __DIR__ . "/{_CALL_CONSUMER.name}";',
                 result.code,
                 'echo json_encode(["rows" => $rows], JSON_THROW_ON_ERROR);',
             )
@@ -151,7 +153,7 @@ def _check_generated_calls(*, php: str) -> None:
             ],
             excluded_keys=(),
             expected_json=json.dumps(obj={"rows": rows}),
-            extra_files=None,
+            extra_files={_CALL_CONSUMER.name: consumer},
         )
 
 
