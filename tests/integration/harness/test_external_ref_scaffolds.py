@@ -101,6 +101,7 @@ def test_scaffold_refusal_through_golden_runner(
         )
         golden_path = rendering.artifact(cases_dir=tmp_path).path
         if stale_fixture:
+            golden_path.parent.mkdir(parents=True, exist_ok=True)
             _ = golden_path.write_text(
                 data="stale fixture\n", encoding="utf-8"
             )
