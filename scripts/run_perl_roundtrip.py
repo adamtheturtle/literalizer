@@ -41,7 +41,13 @@ import shutil
 
 import click
 
-from literalizer import CollectionLayout, InputFormat, NewVariable, literalize
+from literalizer import (
+    CollectionLayout,
+    InputFormat,
+    Language,
+    NewVariable,
+    literalize,
+)
 from literalizer.languages import Perl
 from scripts import roundtrip_common
 
@@ -51,7 +57,7 @@ _EXCLUDED_KEYS = ("float_large_exponent",)
 
 
 def _build_program(
-    *, json_text: str, language: Perl, layout: CollectionLayout
+    *, json_text: str, language: Language, layout: CollectionLayout
 ) -> str:
     """Render a Perl program with the selected options."""
     result = literalize(
@@ -79,7 +85,7 @@ def _check_program(
     perl: str,
     label: str,
     json_text: str,
-    language: Perl,
+    language: Language,
     layout: CollectionLayout,
     excluded_keys: tuple[str, ...],
 ) -> None:
@@ -102,7 +108,7 @@ def _check_program(
     )
 
 
-def _check_option_pairs(*, perl: str, language: Perl) -> None:
+def _check_option_pairs(*, perl: str, language: Language) -> None:
     """Exercise every pair across string, integer and layout options."""
     json_text = json.dumps(
         obj={
