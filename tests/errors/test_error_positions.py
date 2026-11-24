@@ -17,7 +17,7 @@ def test_toml_error_without_position(language_cls: LanguageCls) -> None:
         match='Key "a" already exists',
     ) as caught:
         _ = literalize(
-            source="[a]\na = 1\na = 1\n",
+            source="table = {a = 1, a = 1}\n",
             input_format=InputFormat.TOML,
             language=language_cls(),
         )
