@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-call"
 # Shared coverage retains the original Sml regression.
 

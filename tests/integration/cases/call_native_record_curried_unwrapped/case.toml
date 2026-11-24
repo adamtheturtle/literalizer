@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-call"
 # Replaces the synthetic curried-record discovery check with native callers.
 # The call style itself selects compatible languages, without an earlier gate.
