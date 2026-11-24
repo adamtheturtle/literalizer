@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "native-invocation"
 gates = [{kind = "spec_field_present", field = "native_argument_layout"}]
 
