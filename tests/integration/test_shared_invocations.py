@@ -20,8 +20,15 @@ from literalizer._language import (
     ObjectCallStyle,
     PositionalCallStyle,
 )
-from literalizer.exceptions import LiteralizerError
+from literalizer.exceptions import (
+    CallsNotSupportedByLanguageError,
+    CallsNotSupportedByToolError,
+    LiteralizerError,
+    UnsupportedCallShapeError,
+)
 from literalizer.languages import ALL_LANGUAGES
+
+from .golden_outcomes import Rejection
 
 _LANGUAGES: list[LanguageCls] = sorted(
     ALL_LANGUAGES, key=lambda cls: cls.__name__
@@ -35,6 +42,25 @@ class _BindingOptions(TypedDict, closed=True):
     input_format: InputFormat
     language: Language
     variable_form: NewVariable | ExistingVariable
+
+
+def _constructor_rejection(*, language: Language) -> Rejection | None:
+    """Resolve rejection of a zero-parameter constructor from capabilities."""
+    if language.call_style_config is CallSupport.NOT_IN_LANGUAGE:
+        return Rejection(
+            error=CallsNotSupportedByLanguageError,
+            match="no function call syntax",
+        )
+    if language.call_style_config is CallSupport.NOT_IMPLEMENTED_BY_TOOL:
+        return Rejection(
+            error=CallsNotSupportedByToolError,
+            match="does not support function call rendering",
+        )
+    if not language.supports_zero_parameter_calls:
+        return Rejection(
+            error=UnsupportedCallShapeError, match="zero-parameter calls"
+        )
+    return None
 
 
 @pytest.mark.parametrize(
@@ -64,17 +90,27 @@ def test_constructor_recipe_reuses_backend_syntax(
     invocation: dict[str, object] = {
         "default": {"constructor-class": "Counter", "parameter-names": []},
     }
-    try:
-        expected = literalize_call(
+    rejection = _constructor_rejection(language=language)
+    if rejection is None:
+        assert literalize_invocations(
+            **kwargs, invocation=invocation
+        ) == literalize_call(
             **kwargs, target_function=target, parameter_names=[]
         )
-    except LiteralizerError as exc:
-        with pytest.raises(expected_exception=type(exc)):
-            _ = literalize_invocations(**kwargs, invocation=invocation)
-    else:
-        assert (
-            literalize_invocations(**kwargs, invocation=invocation) == expected
+        return
+
+    with pytest.raises(
+        expected_exception=rejection.error, match=rejection.match
+    ) as direct_error:
+        _ = literalize_call(
+            **kwargs, target_function=target, parameter_names=[]
         )
+    with pytest.raises(
+        expected_exception=rejection.error, match=rejection.match
+    ) as recipe_error:
+        _ = literalize_invocations(**kwargs, invocation=invocation)
+    assert type(direct_error.value) is rejection.error
+    assert type(recipe_error.value) is rejection.error
 
 
 @pytest.mark.parametrize(
