@@ -6,10 +6,10 @@ from pathlib import Path
 
 from beartype import beartype
 
+from .case_manifest_documents import MANIFEST_NAME
 from .case_manifests import (
     CASE_ROLE_NAMES,
     HETEROGENEOUS_STRATEGY_DEFAULT_ROLE,
-    MANIFEST_NAME,
     CaseManifest,
     CaseManifestError,
     CaseRoleName,

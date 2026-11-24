@@ -25,14 +25,13 @@ from tests.native_value_sources import RefDatetimeInput, RefValueSource
 
 from . import call_templates, manifest_values
 from .case_inputs import CaseInput, ReusedAnchorWarningSpec, infer_case_input
+from .case_manifest_documents import MANIFEST_NAME, read_case_manifest_document
 from .manifest_selection import CapabilitySelection
 from .owned_case_specs import OwnedCaseSpec
 from .variant_axis_names import KNOWN_VARIANT_AXES
 
 # Keep the template type available through the existing manifest API.
 CallTransform = call_templates.CallTransform
-
-MANIFEST_NAME = "case.toml"
 
 type CollectionLayoutName = Literal["compact", "multiline"]
 type SuiteName = Literal["base", "combined", "default-module-name"]
@@ -817,6 +816,7 @@ class _CaseManifestData(
     """Strict representation of the data read directly from TOML."""
 
     schema_version: Literal[1]
+    golden_layout: Literal["flat", "nested"] = "flat"
     input: str | None = None
     input_roundtrip: InputRoundtripSpec | None = None
     # Opt in once the literal outcomes are known for every selected option.
@@ -946,6 +946,7 @@ class CaseManifest:
 
     path: Path
     schema_version: Literal[1]
+    golden_layout: Literal["flat", "nested"]
     input: CaseInput
     input_roundtrip: InputRoundtripSpec | None
     selection: CapabilitySelection
@@ -1009,7 +1010,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
     if not path.is_file():
         raise _fail(path=path, message="manifest is missing")
     try:
-        raw = tomllib.loads(path.read_text(encoding="utf-8"))
+        raw = read_case_manifest_document(path=path)
     except tomllib.TOMLDecodeError as exc:
         raise _fail(path=path, message=f"invalid TOML: {exc}") from exc
 
@@ -1043,6 +1044,7 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
     return CaseManifest(
         path=path,
         schema_version=data.schema_version,
+        golden_layout=data.golden_layout,
         input=input_info,
         input_roundtrip=data.input_roundtrip,
         selection=CapabilitySelection(
