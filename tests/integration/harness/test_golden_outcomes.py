@@ -413,19 +413,17 @@ from tests.integration.golden_renderings import (
 def test_null_sequence(file_regression):
     cases_dir = Path(__file__).parent
     case_dir = cases_dir / "simple_sequence"
-    rendering = replace(
-        unprefixed_rendering(
-            lang_cls=Scala,
-            case_dir_name=case_dir.name,
-            golden_name="Scala",
-            spec_source={},
-            render=compact_render(
-                variable_form=NewVariable(
-                    name="my_data", modifiers=frozenset()
-                ),
+    rendering = unprefixed_rendering(
+        cases_dir=cases_dir,
+        lang_cls=Scala,
+        case_dir_name=case_dir.name,
+        golden_name="Scala",
+        spec_source={},
+        render=compact_render(
+            variable_form=NewVariable(
+                name="my_data", modifiers=frozenset()
             ),
         ),
-        golden_parent=case_dir,
     )
     original = (case_dir / "Scala@v3.scala").read_bytes()
 
