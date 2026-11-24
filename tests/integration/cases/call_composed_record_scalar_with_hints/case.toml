@@ -1,5 +1,4 @@
 schema_version = 1
-golden_layout = "nested"
 owner = "literalize-call"
 
 # Retain declaration helpers when composing calls with or without inference

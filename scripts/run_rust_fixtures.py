@@ -45,7 +45,6 @@ def main(*, deps: Path, chrono: Path, serde_json: Path) -> None:
             suffix="-literalizer-rust"
         ) as directory:
             binary = Path(directory) / "run"
-            crate = fixture.stem.replace("@", "_")
             run_bounded_command(
                 args=[
                     executable,
@@ -54,7 +53,7 @@ def main(*, deps: Path, chrono: Path, serde_json: Path) -> None:
                     "-D",
                     "warnings",
                     "--crate-name",
-                    crate,
+                    fixture.stem,
                     "-L",
                     f"dependency={deps}",
                     "--extern",

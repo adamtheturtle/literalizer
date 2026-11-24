@@ -1,6 +1,5 @@
 # Regression provenance: Rust. Rust raw and byte-raw string delimiters may contain quoted comment markers.
 schema_version = 1
-golden_layout = "nested"
 owner = "literalize-call"
 
 [call]

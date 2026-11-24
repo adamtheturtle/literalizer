@@ -1,5 +1,4 @@
 schema_version = 1
-golden_layout = "nested"
 owner = "constructor-binding"
 gates = [{kind = "capability_flag", flag = "declares_call_styles", value = false}, {kind = "capability_flag", flag = "supports_variable_names"}, {kind = "capability_flag", flag = "supports_key_value_assignment_documents", value = false}, {kind = "capability_flag", flag = "supports_local_binding_documents", value = false}]
 

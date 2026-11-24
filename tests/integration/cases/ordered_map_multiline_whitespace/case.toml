@@ -1,5 +1,4 @@
 schema_version = 1
-golden_layout = "nested"
 owner = "variant"
 # Original regression: Python multiline round-trip tests execute ordered-map constructor assignments with their imports.
 

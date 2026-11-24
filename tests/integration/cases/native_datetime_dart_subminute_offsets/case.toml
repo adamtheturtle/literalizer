@@ -1,6 +1,5 @@
 # Dart exact offset arithmetic, including UTC year overflow (#6603).
 schema_version = 1
-golden_layout = "nested"
 suites = ["base"]
 gates = [{kind = "enum_member_present", option = "datetime_format", member = "DART"}]
 
