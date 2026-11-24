@@ -31,12 +31,15 @@ from random import Random
 import click
 from pydantic import JsonValue
 
+from literalizer import InputFormat, literalize_call
 from literalizer.languages import Php
 from scripts import roundtrip_common
 
 _VAR_NAME = "myData"
 _LABEL = "PHP"
 _EXCLUDED_KEYS = ("biginteger", "empty_object")
+_GENERATED_SEEDS = (7, 19, 83)
+_SAMPLES_PER_SEED = 16
 
 
 def _build_program(json_text: str) -> str:
@@ -109,6 +112,49 @@ def _check_document(
     )
 
 
+def _check_generated_calls(*, php: str) -> None:
+    """Round-trip generated values through ordered, two-argument calls."""
+    for seed in _GENERATED_SEEDS:
+        generator = Random(x=seed)  # noqa: S311 - reproducible fixture data
+        rows: list[list[JsonValue]] = [
+            [f"{seed}:{index}", _generated_value(generator=generator, depth=3)]
+            for index in range(_SAMPLES_PER_SEED)
+        ]
+        result = literalize_call(
+            source=json.dumps(obj=rows),
+            input_format=InputFormat.JSON,
+            language=Php(),
+            target_function="collect",
+            parameter_names=("tag", "payload"),
+            per_element=True,
+        )
+        program = "\n".join(
+            (
+                *result.preamble,
+                *result.body_preamble,
+                "$rows = [];",
+                "function collect(string $tag, mixed $payload): void {",
+                '    $GLOBALS["rows"][] = [$tag, $payload];',
+                "}",
+                result.code,
+                'echo json_encode(["rows" => $rows], JSON_THROW_ON_ERROR);',
+            )
+        )
+        roundtrip_common.execute(
+            label=f"{_LABEL} generated call rows (seed {seed})",
+            source_filename="main.php",
+            program=program,
+            steps=[
+                roundtrip_common.Step(
+                    args=[php, "main.php"], failure_label="php runtime error"
+                ),
+            ],
+            excluded_keys=(),
+            expected_json=json.dumps(obj={"rows": rows}),
+            extra_files=None,
+        )
+
+
 @click.command()
 def main() -> None:
     """Round-trip the shared corpus and seeded nested documents."""
@@ -124,10 +170,11 @@ def main() -> None:
         json_text=json_text,
         excluded_keys=_EXCLUDED_KEYS,
     )
-    for seed in (7, 19, 83):
+    for seed in _GENERATED_SEEDS:
         generator = Random(x=seed)  # noqa: S311 - reproducible fixture data
         samples = [
-            _generated_value(generator=generator, depth=3) for _ in range(16)
+            _generated_value(generator=generator, depth=3)
+            for _ in range(_SAMPLES_PER_SEED)
         ]
         _check_document(
             label=f"{_LABEL} generated nested values (seed {seed})",
@@ -135,6 +182,7 @@ def main() -> None:
             json_text=json.dumps(obj={"samples": samples}),
             excluded_keys=(),
         )
+    _check_generated_calls(php=php)
 
 
 if __name__ == "__main__":
