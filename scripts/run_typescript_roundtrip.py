@@ -121,7 +121,9 @@ def _negative_zero_paths(
 
 
 def _check_generated_documents(*, tsc: str, tsx: str) -> None:
-    """Compile and execute fixed seeds under four TypeScript configurations."""
+    """Compile and execute fixed seeds under four TypeScript
+    configurations.
+    """
     samples: dict[str, JsonValue] = {}
     for seed in _SEEDS:
         generator = Random(x=seed)  # noqa: S311 - reproducible fixture data
