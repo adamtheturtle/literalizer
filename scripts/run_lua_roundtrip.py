@@ -37,16 +37,22 @@ Three top-level keys are excluded from the comparison:
   literalization (same shape as the PHP and R exclusions).
 """
 
+import json
 import shutil
+from pathlib import Path
 
 import click
 
+from literalizer import CollectionLayout, InputFormat, NewVariable, literalize
 from literalizer.languages import Lua
 from scripts import roundtrip_common
 
 _VAR_NAME = "my_data"
 _LABEL = "Lua"
 _EXCLUDED_KEYS = ("biginteger", "float_large_exponent", "empty_object")
+_OPTION_PAIR_CONSUMER = Path(__file__).with_name(
+    name="lua_option_pair_consumer.lua"
+)
 
 
 def _build_program(json_text: str) -> str:
@@ -68,6 +74,75 @@ def _build_program(json_text: str) -> str:
         f"{result.code}\n"
         f"io.write(json.encode({_VAR_NAME}))\n"
     )
+
+
+def _check_option_pairs(*, lua: str) -> None:
+    """Cover each string, integer and layout pair in four programs."""
+    source = json.dumps(
+        obj={
+            "text": "single ' and double \" quotes, backslash \\, café\n",
+            "count": -42,
+            "nested": [17, "leaf"],
+        }
+    )
+    consumer = _OPTION_PAIR_CONSUMER.read_text(encoding="utf-8")
+    for string_format, integer_format, layout in (
+        (
+            Lua.string_formats.DOUBLE,
+            Lua.integer_formats.DECIMAL,
+            CollectionLayout.COMPACT,
+        ),
+        (
+            Lua.string_formats.DOUBLE,
+            Lua.integer_formats.HEX,
+            CollectionLayout.MULTILINE,
+        ),
+        (
+            Lua.string_formats.SINGLE,
+            Lua.integer_formats.DECIMAL,
+            CollectionLayout.MULTILINE,
+        ),
+        (
+            Lua.string_formats.SINGLE,
+            Lua.integer_formats.HEX,
+            CollectionLayout.COMPACT,
+        ),
+    ):
+        result = literalize(
+            source=source,
+            input_format=InputFormat.JSON,
+            language=Lua(
+                string_format=string_format,
+                integer_format=integer_format,
+            ),
+            variable_form=NewVariable(name=_VAR_NAME, modifiers=frozenset()),
+            collection_layout=layout,
+        )
+        data_source = "\n".join(
+            (
+                *result.preamble,
+                *result.body_preamble,
+                result.code,
+                f"return {_VAR_NAME}",
+            )
+        )
+        roundtrip_common.execute(
+            label=(
+                f"{_LABEL} {string_format.name}/{integer_format.name}/"
+                f"{layout.name}"
+            ),
+            source_filename="check.lua",
+            program=consumer,
+            steps=[
+                roundtrip_common.Step(
+                    args=[lua, "check.lua"],
+                    failure_label="Lua option pair error",
+                ),
+            ],
+            excluded_keys=(),
+            expected_json=source,
+            extra_files={"option_data.lua": data_source},
+        )
 
 
 @click.command()
@@ -94,6 +169,7 @@ def main() -> None:
         expected_json=json_text,
         extra_files=None,
     )
+    _check_option_pairs(lua=lua)
 
 
 if __name__ == "__main__":
