@@ -199,7 +199,7 @@ jobs:
           command: uv pip install --refresh --group=benchmark dist/*.whl
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v5.6.3
+        uses: CodSpeedHQ/action@v5.8.0
         with:
           mode: simulation
           run: .venv/bin/python -m pytest tests/benchmarks --codspeed -o addopts=
