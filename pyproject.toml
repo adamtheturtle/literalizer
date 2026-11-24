@@ -254,6 +254,14 @@ lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     "Q",
     "RUF",
 ]
+lint.per-file-ignores."tests/integration/cases/*/goldens/python/py*/union_format_typing.py" = [
+    # These fixtures exercise the explicitly selected typing.Union format.
+    "UP007",
+]
+lint.per-file-ignores."tests/integration/cases/*/goldens/python/py*/union_format_typing_type_hints_always.py" = [
+    # These fixtures exercise the explicitly selected typing.Union format.
+    "UP007",
+]
 lint.per-file-ignores."tests/integration/cases/*/goldens/python/py38/annotation_evaluation_eager.py" = [
     # Eager Python 3.8 annotations require collection aliases from typing
     # and must not import postponed annotations.
@@ -264,14 +272,6 @@ lint.per-file-ignores."tests/integration/cases/*/goldens/python/py38/annotation_
 lint.per-file-ignores."tests/integration/cases/*/goldens/python/py39/annotation_evaluation_eager.py" = [
     # Eager Python 3.9 annotations require typing.Union because PEP 604
     # unions are not available until Python 3.10.
-    "UP007",
-]
-lint.per-file-ignores."tests/integration/cases/*/goldens/python/py*/union_format_typing.py" = [
-    # These fixtures exercise the explicitly selected typing.Union format.
-    "UP007",
-]
-lint.per-file-ignores."tests/integration/cases/*/goldens/python/py*/union_format_typing_type_hints_always.py" = [
-    # These fixtures exercise the explicitly selected typing.Union format.
     "UP007",
 ]
 lint.per-file-ignores."tests/integration/cases/call_zip_*/goldens/python/py*/call.py" = [
