@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-call"
 # Regression provenance: Mojo.
 # Whole lists remain one typed argument in a complete Mojo call wrapper.

@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 input = "input.toml"
 suites = ["base", "combined"]
 
