@@ -5,10 +5,13 @@ import (
 	"os"
 )
 
-func main() {
+func consume(declaring, dependent, repeated []Record0) {
+	if len(dependent) == 0 || len(dependent) != len(repeated) || &dependent[0] != &repeated[0] {
+		panic("repeated reference lost its backing array")
+	}
 	records := map[string][]Record0{
-		"declaring": declaringData,
-		"dependent": dependentData,
+		"declaring": declaring,
+		"dependent": dependent,
 	}
 	documents := make(map[string][]map[string]any, len(records))
 	for document, rows := range records {
