@@ -170,7 +170,7 @@ roundtrip = [
     "tenacity==9.2.1",
 ]
 toml = [ "tomli>=2.4.0" ]
-yaml = [ "pyyaml==6.0.3" ]
+yaml = [ "pyyaml==6.0.4" ]
 yaml-lint = [ "yamllint==1.38.0" ]
 
 [tool.setuptools]
