@@ -81,7 +81,7 @@ def test_effective_language_version_owns_golden(tmp_path: Path) -> None:
     """Pinned Java RECORD covers JDK16; C++ retains all actual
     versions.
     """
-    cases_dir = tmp_path / "cases"
+    cases_dir = tmp_path / "custom_corpus"
     case_dir = cases_dir / "dict_mixed_scalars"
     case_dir.mkdir(parents=True)
     expected = {
@@ -124,7 +124,7 @@ def test_variant_version_inventory_preserves_coverage_and_rejects_phantoms(
     """Multi-version options own real files; a version selection owns
     one.
     """
-    cases_dir = tmp_path / "cases"
+    cases_dir = tmp_path / "custom_corpus"
     case_dir = cases_dir / "binary"
     case_dir.mkdir(parents=True)
     expected = {
