@@ -76,6 +76,7 @@ lint-typescript-run:
   - '{src/literalizer/languages,tests/integration/languages}/typescript.{py,toml}'
   - scripts/run_typescript{,_*}.py
   - scripts/check_typescript_consumers.py
+  - scripts/typescript_roundtrip_consumer.ts
   - .github/npm-linters/**
   - tests/integration/cases/**/*.ts
 
