@@ -63,7 +63,7 @@ dev = [
     "doccmd==2026.9.16.1",
     "furo==2025.12.19",
     # Keep CI on one published property-test runner, like the other tools.
-    "hypothesis==6.170.15",
+    "hypothesis==6.170.17",
     "interrogate==1.7.0",
     "mypy==2.4.1",
     "mypy-pytest-parametrize==2026.10.5.1",
@@ -74,12 +74,12 @@ dev = [
     # ``j178/prek-action`` steps in ``.github/workflows/lint.yml`` and
     # ``.github/workflows/autofix.yml``.
     "prek==0.5.11",
-    "pydantic==2.14.3",
+    "pydantic==2.14.4",
     "pydocstringformatter==1.0.0",
     "pygments==2.21.0",
     "pylint[spelling]==4.1.4",
     "pylint-per-file-ignores==4.0.0",
-    "pyproject-fmt==2.31.0",
+    "pyproject-fmt==2.31.2",
     "pyrefly==1.5.0",
     "pyright==1.1.414",
     "pyroma==5.0.1",
@@ -92,7 +92,7 @@ dev = [
     # Combined upstream PRs #13/#14; replace with a release when available.
     "pytest-timing @ git+https://github.com/adamtheturtle/pytest-timing.git@f123dfccd871515e78ac56926603b7643934c838",
     "pytest-xdist==3.8.0",
-    "ruff==0.17.5",
+    "ruff==0.17.6",
     # We add shellcheck-py not only for shell scripts and shell code blocks,
     # but also because having it installed means that ``actionlint-py`` will
     # use it to lint shell commands in GitHub workflow files.
@@ -120,7 +120,7 @@ dev = [
     "strict-kwargs==2026.11.14",
     "tenacity==9.2.1",
     "towncrier==26.9.0",
-    "ty==0.0.105",
+    "ty==0.0.107",
     "types-pygments==2.21.0.20261115",
     "types-pyyaml==6.0.12.20261113",
     "vale==3.27.0.0",
@@ -131,8 +131,8 @@ dev = [
 test = [
     { include-group = "cli" },
     "beartype==0.23.1",
-    "hypothesis==6.170.15",
-    "pydantic==2.14.3",
+    "hypothesis==6.170.17",
+    "pydantic==2.14.4",
     "pygments==2.21.0",
     "pytest==9.2.0",
     "pytest-beartype==0.3.0",
@@ -154,7 +154,7 @@ benchmark = [
 cli = [ "click==8.5.1" ]
 fixture-inventory = [
     { include-group = "cli" },
-    "pydantic==2.14.3",
+    "pydantic==2.14.4",
 ]
 # Python parsers used by the corresponding native checks and round trips.
 norg = [ "tree-sitter==0.26.1" ]
@@ -166,7 +166,7 @@ release = [
 # without installing the Python test, lint and documentation toolchains.
 roundtrip = [
     { include-group = "cli" },
-    "pydantic==2.14.3",
+    "pydantic==2.14.4",
     "tenacity==9.2.1",
 ]
 toml = [ "tomli>=2.4.0" ]

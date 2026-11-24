@@ -1,0 +1,10 @@
+{
+  "whole": [
+    {"name": "row_3", "attributes": {"colour": "green", "size": "small"}},
+    {"name": "row_4", "attributes": {"colour": "white"}}
+  ],
+  "rows": [[[
+    {"name": "row_3", "attributes": {"colour": "green", "size": "small"}},
+    {"name": "row_4", "attributes": {"colour": "white"}}
+  ]]]
+}

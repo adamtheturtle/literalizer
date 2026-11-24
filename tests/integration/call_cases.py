@@ -122,7 +122,7 @@ def _literalize_call_case(
             consumable_refs=config.consumable_refs,
             ref_values=ref_values,
             bound_refs=bound_refs,
-            ref_key=config.ref_key,
+            ref_key=config.call_ref_key,
             collection_layout=literalizer.CollectionLayout(
                 value=config.collection_layout
             ),
@@ -346,7 +346,7 @@ def _run_call_with_declarations(
             parameter_names=config.parameter_names,
             per_element=config.per_element,
             ref_case=effective_ref_case,
-            ref_key=config.ref_key,
+            ref_key=config.call_ref_key,
             ref_values=effective_ref_values,
             call_transform=(
                 CallTransform(template="{call}")
@@ -545,6 +545,7 @@ def _render_call_golden_case(
         config=config,
         spec=spec,
         argument_values=call_outcome.stub_argument_values,
+        case_dir=cases_dir / config.case_dir_name,
     )
     # Statement stubs cover transform wrappers and a separate follow-up
     # consumer. Keep each target's parameter names so their argument

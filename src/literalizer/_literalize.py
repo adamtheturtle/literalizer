@@ -7060,6 +7060,7 @@ def _resolve_call_preamble_data(
     per_element_data: list[Value] | None,
     ref_key: str,
     ref_values: Mapping[str, Value],
+    preserve_ordered_maps: bool,
 ) -> _ResolvedCallPreambleData:
     """Return *data* with call-argument ref markers resolved or removed.
 
@@ -7082,7 +7083,7 @@ def _resolve_call_preamble_data(
     """
     if per_element_data is not None:
         rows: list[Value]
-        if len(ref_values) > 0:
+        if len(ref_values) > 0 or preserve_ordered_maps:
             rows = _resolve_ref_list_for_preamble(
                 values=per_element_data,
                 ref_values=ref_values,
@@ -7125,7 +7126,7 @@ def _resolve_call_preamble_data(
                         pass
         return _ResolvedCallPreambleData(value=rows, rows=rows)
 
-    if len(ref_values) > 0:
+    if len(ref_values) > 0 or preserve_ordered_maps:
         resolved = _resolve_ref_for_preamble(
             value=data,
             ref_values=ref_values,
@@ -7674,6 +7675,61 @@ def _render_variable_bound_call(
     )
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class _CallRecordContext:
+    """Record shapes inferred together for one generated call body."""
+
+    data: Value
+    source_ids: Mapping[int, int]
+
+    def restore(self, *, language: Language) -> frozenset[int]:
+        """Restore names and carrier types after local argument checks."""
+        behavior = language.heterogeneous_behavior
+        compute_shapes = behavior.compute_record_shapes
+        alias_ids = behavior.alias_record_ids
+        # Only a language with active record inference opts into this context.
+        assert compute_shapes is not None  # noqa: S101
+        assert alias_ids is not None  # noqa: S101
+        _ = compute_shapes(self.data)
+        alias_ids(self.source_ids)
+        return _source_container_ids(
+            inferred_ids=behavior.compute_wrap_ids(self.data),
+            id_map=self.source_ids,
+        )
+
+
+@beartype
+def _validate_call_arguments(
+    *,
+    values: list[Value],
+    language: Language,
+    ref_key: str,
+    preserve_ordered_maps: bool,
+) -> None:
+    """Validate direct arguments without treating references as data."""
+    for value in values:
+        if preserve_ordered_maps:
+            # RECORD inference distinguishes ordered maps from records.
+            stripped = _resolve_ref_for_preamble(
+                value=value, ref_values={}, ref_key=ref_key
+            ).value
+        else:
+            stripped = _strip_refs_from_value(value=value, ref_key=ref_key)
+        check_data(data=stripped, spec=language)
+        language.validate_call_arg(stripped)
+
+
+@beartype
+def _non_reference_call_arguments(*, row: Value, ref_key: str) -> list[Value]:
+    """Return the literal arguments from a row of call input."""
+    values = row if isinstance(row, list) else [row]
+    return [
+        value
+        for value in values
+        if _extract_call_arg_ref_name(value=value, ref_key=ref_key) is None
+    ]
+
+
 @beartype
 def _render_call_per_element(
     *,
@@ -7692,6 +7748,7 @@ def _render_call_per_element(
     variable_form: NewVariable | ExistingVariable | None,
     collection_comments: CollectionComments | None,
     collection_layout: CollectionLayout,
+    record_context: _CallRecordContext | None,
 ) -> str:
     """Render one call per top-level list element.
 
@@ -7738,25 +7795,37 @@ def _render_call_per_element(
             language=language,
         )
     )
+    record_wrap_ids = frozenset[int]()
+    if record_context is not None:
+        # Each argument check resets the shape cache. Finish the checks
+        # before assigning the names shared by every row.
+        for row in data:
+            _validate_call_arguments(
+                values=_non_reference_call_arguments(row=row, ref_key=ref_key),
+                language=language,
+                ref_key=ref_key,
+                preserve_ordered_maps=True,
+            )
+        record_wrap_ids = record_context.restore(language=language)
     rendered_elements: list[str] = []
     for index, element in enumerate(iterable=data):
-        arg_values = element
-        if not isinstance(arg_values, list):
-            arg_values = [element]
-        non_ref_args = [
-            v
-            for v in arg_values
-            if _extract_call_arg_ref_name(value=v, ref_key=ref_key) is None
-        ]
-        for value in non_ref_args:
-            stripped_value = _strip_refs_from_value(
-                value=value, ref_key=ref_key
-            )
-            check_data(data=stripped_value, spec=language)
-            language.validate_call_arg(stripped_value)
-        call_wrap_ids = (
-            _compute_wrap_ids(data=non_ref_args, spec=language) | slot_wrap_ids
+        arg_values = element if isinstance(element, list) else [element]
+        non_ref_args = _non_reference_call_arguments(
+            row=element, ref_key=ref_key
         )
+        if record_context is None:
+            _validate_call_arguments(
+                values=non_ref_args,
+                language=language,
+                ref_key=ref_key,
+                preserve_ordered_maps=False,
+            )
+            call_wrap_ids = (
+                _compute_wrap_ids(data=non_ref_args, spec=language)
+                | slot_wrap_ids
+            )
+        else:
+            call_wrap_ids = record_wrap_ids
         call_tuple_list_ids = _compute_tuple_list_ids(
             data=non_ref_args,
             spec=language,
@@ -7856,6 +7925,7 @@ def _render_call_whole(
     comment: str,
     collection_layout: CollectionLayout,
     variable_form: NewVariable | ExistingVariable | None,
+    record_context: _CallRecordContext | None,
 ) -> str:
     """Render a single call from the whole parsed value.
 
@@ -7869,9 +7939,12 @@ def _render_call_whole(
     producing an idiomatic binding such as ``let p2 = Playlist::new();``.
     """
     if _extract_call_arg_ref_name(value=data, ref_key=ref_key) is None:
-        stripped_data = _strip_refs_from_value(value=data, ref_key=ref_key)
-        check_data(data=stripped_data, spec=language)
-        language.validate_call_arg(stripped_data)
+        _validate_call_arguments(
+            values=[data],
+            language=language,
+            ref_key=ref_key,
+            preserve_ordered_maps=record_context is not None,
+        )
         call_wrap_ids = _compute_wrap_ids(data=[data], spec=language)
         call_tuple_list_ids = _compute_tuple_list_ids(
             data=[data],
@@ -7880,6 +7953,16 @@ def _render_call_whole(
     else:
         call_wrap_ids = frozenset[int]()
         call_tuple_list_ids = frozenset[int]()
+    consume_inhibited_ref_names = (
+        _compute_call_arg_ref_consume_inhibited_names(
+            elements=[[data]],
+            ref_values=ref_values,
+            ref_key=ref_key,
+            language=language,
+        )
+    )
+    if record_context is not None:
+        call_wrap_ids = record_context.restore(language=language)
     args_str = _format_call_args(
         values=[data],
         params=parameter_names,
@@ -7896,14 +7979,7 @@ def _render_call_whole(
             elements=[[data]],
             ref_key=ref_key,
         ),
-        consume_inhibited_ref_names=(
-            _compute_call_arg_ref_consume_inhibited_names(
-                elements=[[data]],
-                ref_values=ref_values,
-                ref_key=ref_key,
-                language=language,
-            )
-        ),
+        consume_inhibited_ref_names=consume_inhibited_ref_names,
         ref_key=ref_key,
         collection_layout=collection_layout,
     )
@@ -9396,6 +9472,54 @@ def _resolve_zip_literals(
     return _ZipResolution(literals=literals, values=values)
 
 
+@runtime_checkable
+class _DirectCallRecordLanguage(Protocol):
+    """A language that opts into call-wide record shape inference."""
+
+    @property
+    def shares_direct_call_record_context(self) -> bool:
+        """Return whether the active strategy shares record context."""
+        ...
+
+
+@beartype
+def _call_inference_contexts(
+    *,
+    data: Value,
+    per_element_data: list[Value] | None,
+    ref_values: Mapping[str, Value],
+    ref_key: str,
+    language: Language,
+    zip_resolution: _ZipResolution | None,
+) -> tuple[_ResolvedCallPreambleData, _CallRecordContext | None]:
+    """Keep direct arguments and their preamble on the same record
+    plan.
+    """
+    shares_record_context = (
+        zip_resolution is None
+        and isinstance(language, _DirectCallRecordLanguage)
+        and language.shares_direct_call_record_context
+    )
+    resolved = _resolve_call_preamble_data(
+        data=data,
+        per_element_data=per_element_data,
+        ref_key=ref_key,
+        ref_values=ref_values,
+        preserve_ordered_maps=shares_record_context,
+    )
+    if not shares_record_context:
+        return resolved, None
+    return resolved, _CallRecordContext(
+        data=resolved.value,
+        source_ids=_inference_to_source_container_ids(
+            source=data,
+            inferred=resolved.value,
+            ref_values=ref_values,
+            ref_key=ref_key,
+        ),
+    )
+
+
 @beartype
 def _render_parsed_call(
     *,
@@ -9415,6 +9539,7 @@ def _render_parsed_call(
     comment_literals: Sequence[str] | None,
     variable_form: NewVariable | ExistingVariable | None,
     collection_layout: CollectionLayout,
+    record_context: _CallRecordContext | None,
 ) -> str:
     """Render one whole-document call or a sequence of per-element
     calls.
@@ -9451,6 +9576,7 @@ def _render_parsed_call(
             variable_form=variable_form,
             collection_comments=collection_comments,
             collection_layout=collection_layout,
+            record_context=record_context,
         )
     else:
         effective_zip_literal = None
@@ -9473,6 +9599,7 @@ def _render_parsed_call(
             ref_key=ref_key,
             comment=(effective_comment),
             collection_layout=collection_layout,
+            record_context=record_context,
             variable_form=variable_form,
         )
         if isinstance(parsed, ParsedPlain) and parsed.comments is not None:
@@ -9638,11 +9765,13 @@ def literalize_call_parsed(
         explicit_ref_values=explicit_ref_values,
     )
 
-    resolved_preamble_data = _resolve_call_preamble_data(
+    resolved_preamble_data, record_context = _call_inference_contexts(
         data=data,
         per_element_data=per_element_data,
         ref_key=ref_key,
         ref_values=materialized_ref_values,
+        language=language,
+        zip_resolution=zip_resolution,
     )
 
     transform_usage = None
@@ -9670,6 +9799,7 @@ def literalize_call_parsed(
         comment_literals=comment_literals,
         variable_form=variable_form,
         collection_layout=collection_layout,
+        record_context=record_context,
     )
     reference_preamble = _call_reference_preamble(
         data=data,

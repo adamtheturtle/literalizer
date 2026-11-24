@@ -1,27 +1,28 @@
-"""Go cross-file record-declaration check (issue #3748).
+"""Go cross-file record-declaration check (issues #3748 and #7219).
 
 Literalize both documents in :mod:`scripts.shared_record_common` under
 ``Go(heterogeneous_strategy=RECORD, record_map_value_typing=WIDE)``,
-build one program from the *declaring* document's ``struct``
-declarations plus both documents' slice literals, and run it with ``go
-run``.  The dependent document's widened maps are all strings, so under
-the default ``NARROW`` typing they would render ``map[string]string``
-and fail to compile against the declaring document's ``map[string]any``
-field.
+then compile both sets of slice literals against each document's
+``struct`` declarations in turn. The documents contain mixed and
+string-only maps, which must both use ``map[string]any``. Each program
+emits both documents' native values for comparison with the original JSON.
 
-This lives here, driven by a step of the ``lint-go`` job in
-``.github/workflows/lint.yml``, because that job is where the Go
-toolchain is already available.
+The ``lint-go`` job in ``.github/workflows/lint.yml`` runs this check.
 """
 
 import shutil
 
 import click
 
+from literalizer import LiteralizeResult
 from literalizer.languages import Go
 from scripts import roundtrip_common, shared_record_common
 
 _LABEL = "Go shared-record"
+_EXPECTED_JSON = (
+    f'{{"declaring": {shared_record_common.DECLARING_DOCUMENT},'
+    f'"dependent": {shared_record_common.DEPENDENT_DOCUMENT}}}'
+)
 
 # ``go 1.18`` matches ``Go.language_version`` in
 # ``src/literalizer/languages/go.py`` and the ``go.mod`` written by the
@@ -30,8 +31,57 @@ _LABEL = "Go shared-record"
 _GO_MOD = "module fixture\n\ngo 1.18\n"
 
 
-def _build_program() -> str:
-    """Return a runnable Go program built from both documents."""
+def _build_program(
+    *,
+    declarations_from: LiteralizeResult,
+    declaring: LiteralizeResult,
+    dependent: LiteralizeResult,
+) -> str:
+    """Build a runnable Go program with just the selected preamble."""
+    package_clause, *declarations = (
+        *declarations_from.preamble,
+        *declarations_from.body_preamble,
+    )
+    declared = "\n".join(declarations)
+    return (
+        f"{package_clause}\n"
+        "\n"
+        "import (\n"
+        '\t"encoding/json"\n'
+        '\t"os"\n'
+        ")\n"
+        "\n"
+        f"{declared}\n"
+        "\n"
+        "func main() {\n"
+        f"{declaring.code}\n"
+        f"{dependent.code}\n"
+        "\trecords := map[string][]Record0{\n"
+        f'\t\t"declaring": {shared_record_common.DECLARING_VAR_NAME_CAMEL},\n'
+        f'\t\t"dependent": {shared_record_common.DEPENDENT_VAR_NAME_CAMEL},\n'
+        "\t}\n"
+        "\tdocuments := make(map[string][]map[string]any, len(records))\n"
+        "\tfor document, rows := range records {\n"
+        "\t\tvalues := make([]map[string]any, 0, len(rows))\n"
+        "\t\tfor _, row := range rows {\n"
+        "\t\t\tvalues = append(values, map[string]any{\n"
+        '\t\t\t\t"name": row.Name,\n'
+        '\t\t\t\t"attributes": row.Attributes,\n'
+        "\t\t\t})\n"
+        "\t\t}\n"
+        "\t\tdocuments[document] = values\n"
+        "\t}\n"
+        "\tencoder := json.NewEncoder(os.Stdout)\n"
+        "\tif err := encoder.Encode(documents); err != nil {\n"
+        "\t\tpanic(err)\n"
+        "\t}\n"
+        "}\n"
+    )
+
+
+@click.command()
+def main() -> None:
+    """Check both documents in each declaration order."""
     language = Go(
         heterogeneous_strategy=Go.heterogeneous_strategies.RECORD,
         record_map_value_typing=Go.record_map_value_typings.WIDE,
@@ -48,59 +98,36 @@ def _build_program() -> str:
         var_name=shared_record_common.DEPENDENT_VAR_NAME_CAMEL,
         pre_indent_level=1,
     )
-    # Only the declaring document's preamble is emitted; the dependent
-    # literals bind to the ``Record0`` declaration it brings, which is
-    # the property under test.  Go wants the import block between the
-    # package clause and any declaration, so that preamble is split
-    # rather than emitted in one piece.
-    package_clause, *declarations = (
-        *declaring.preamble,
-        *declaring.body_preamble,
-    )
-    declared = "\n".join(declarations)
-    ok_document = shared_record_common.OK_DOCUMENT
-    return (
-        f"{package_clause}\n"
-        "\n"
-        'import "fmt"\n'
-        "\n"
-        f"{declared}\n"
-        "\n"
-        "func main() {\n"
-        f"{declaring.code}\n"
-        f"{dependent.code}\n"
-        f"\t_ = {shared_record_common.DECLARING_VAR_NAME_CAMEL}\n"
-        f"\t_ = {shared_record_common.DEPENDENT_VAR_NAME_CAMEL}\n"
-        f"\tfmt.Print(`{ok_document}`)\n"
-        "}\n"
-    )
-
-
-@click.command()
-def main() -> None:
-    """Compile both documents against one set of declarations."""
-    program = _build_program()
     go = shutil.which(cmd="go")
     if go is None or go == "":
         go = "go"
-    roundtrip_common.execute(
-        label=_LABEL,
-        source_filename="main.go",
-        program=program,
-        steps=[
-            roundtrip_common.Step(
-                args=[go, "vet", "./..."],
-                failure_label="go vet error",
+    steps = [
+        roundtrip_common.Step(
+            args=[go, "vet", "./..."],
+            failure_label="go vet error",
+        ),
+        roundtrip_common.Step(
+            args=[go, "run", "./..."],
+            failure_label="go run error",
+        ),
+    ]
+    for declaration_label, declarations_from in (
+        ("mixed-map declaration", declaring),
+        ("string-only declaration", dependent),
+    ):
+        roundtrip_common.execute(
+            label=f"{_LABEL} ({declaration_label})",
+            source_filename="main.go",
+            program=_build_program(
+                declarations_from=declarations_from,
+                declaring=declaring,
+                dependent=dependent,
             ),
-            roundtrip_common.Step(
-                args=[go, "run", "./..."],
-                failure_label="go run error",
-            ),
-        ],
-        excluded_keys=(),
-        expected_json=shared_record_common.OK_DOCUMENT,
-        extra_files={"go.mod": _GO_MOD},
-    )
+            steps=steps,
+            excluded_keys=(),
+            expected_json=_EXPECTED_JSON,
+            extra_files={"go.mod": _GO_MOD},
+        )
 
 
 if __name__ == "__main__":
