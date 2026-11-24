@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "native-invocation"
 gates = [{kind = "capability_flag", flag = "supports_native_invocations"}]
 
