@@ -46,22 +46,25 @@ _CASES = TypeAdapter(type=_Cases).validate_python(
 )
 
 
+_THREAD_CASES = [
+    *_CASES.threads,
+    *(
+        _ThreadCase(
+            name=f"{cls.language_id}_default",
+            scenario_name="base",
+            language=cls,
+            golden_name=cls.__name__,
+            case_names=("scalar_int", "simple_sequence", "simple_dict"),
+        )
+        for cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+    ),
+]
+
+
 @pytest.mark.parametrize(
     argnames="scenario",
-    argvalues=[
-        *_CASES.threads,
-        *(
-            _ThreadCase(
-                name=f"{cls.language_id}_default",
-                scenario_name="base",
-                language=cls,
-                golden_name=cls.__name__,
-                case_names=("scalar_int", "simple_sequence", "simple_dict"),
-            )
-            for cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
-        ),
-    ],
-    ids=lambda scenario: scenario.name,
+    argvalues=_THREAD_CASES,
+    ids=[scenario.name for scenario in _THREAD_CASES],
 )
 def test_language_instance_is_thread_safe(scenario: _ThreadCase) -> None:
     """Compare 300 calls on sixteen threads with native golden programs.

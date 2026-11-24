@@ -46,7 +46,9 @@ def pytest_terminal_summary(
     terminalreporter: pytest.TerminalReporter, config: pytest.Config
 ) -> None:
     """Summarize the report produced by pytest-timing for this run."""
-    report_name = config.getoption(name="timing_json_file", default=None)
+    report_name: object = config.getoption(
+        name="timing_json_file", default=None
+    )
     if not isinstance(report_name, str):
         return
     data = _Report.model_validate_json(

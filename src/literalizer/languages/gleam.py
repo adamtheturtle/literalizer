@@ -576,7 +576,7 @@ def _gleam_format_call_target(parts: Sequence[str]) -> str:
 
 
 @beartype
-def _scalar_gleam_type(*, value: Value) -> type:
+def _scalar_gleam_type(*, value: Value) -> type[object]:
     """Return the preamble-relevant type bucket for a scalar *value*."""
     match value:
         case dt.datetime():
@@ -590,7 +590,7 @@ def _scalar_gleam_type(*, value: Value) -> type:
 
 
 @beartype
-def _collect_gleam_types(*, value: Value) -> frozenset[type]:
+def _collect_gleam_types(*, value: Value) -> frozenset[type[object]]:
     """Return the set of Python types present in *value*.
 
     Walks lists, dicts, and sets recursively, collecting the scalar
@@ -598,20 +598,20 @@ def _collect_gleam_types(*, value: Value) -> frozenset[type]:
     """
     match value:
         case dict():
-            child = frozenset[type]()
+            child = frozenset[type[object]]()
             for v in value.values():
                 child = child | _collect_gleam_types(value=v)
-            return frozenset[type]({dict}) | child
+            return frozenset[type[object]]({dict}) | child
         case set():
-            child = frozenset[type]()
+            child = frozenset[type[object]]()
             for v in value:
                 child = child | _collect_gleam_types(value=v)
-            return frozenset[type]({set}) | child
+            return frozenset[type[object]]({set}) | child
         case list():
-            child = frozenset[type]()
+            child = frozenset[type[object]]()
             for v in value:
                 child = child | _collect_gleam_types(value=v)
-            return frozenset[type]({list}) | child
+            return frozenset[type[object]]({list}) | child
         case _:
             return frozenset({_scalar_gleam_type(value=value)})
 
@@ -619,15 +619,15 @@ def _collect_gleam_types(*, value: Value) -> frozenset[type]:
 @beartype
 def _gleam_preamble_for_types(
     *,
-    types: frozenset[type],
+    types: frozenset[type[object]],
     type_name: str,
     constructor_prefix: str,
-    datetime_type_produced: type,
+    datetime_type_produced: type[object],
 ) -> tuple[str, ...]:
     """Render the shared carrier declaration for the collected types."""
     p = constructor_prefix
-    int_types: set[type] = {int}
-    str_types: set[type] = {str, bytes, dt.date, dt.time}
+    int_types: set[type[object]] = {int}
+    str_types: set[type[object]] = {str, bytes, dt.date, dt.time}
     if datetime_type_produced is int:
         int_types.add(dt.datetime)
     else:
@@ -658,7 +658,7 @@ def _build_gleam_data_dependent_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
-    datetime_type_produced: type,
+    datetime_type_produced: type[object],
 ) -> Callable[[Value], tuple[str, ...]]:
     """Build a ``data_dependent_preamble`` callable for Gleam.
 
@@ -1524,7 +1524,7 @@ class Gleam(metaclass=LanguageCls):
                 or self.dict_format is type(self.dict_format).RECORD
             ):
                 return None
-            types = frozenset[type]()
+            types = frozenset[type[object]]()
             for value in values:
                 types |= _collect_gleam_types(value=value)
             imports = (
@@ -1574,7 +1574,7 @@ class Gleam(metaclass=LanguageCls):
                 msg = "Gleam record mode cannot infer empty list element types"
                 raise UnrepresentableInputError(msg)
             return f"List({self._native_value_type(data=data[0])})"
-        scalar_types: dict[type, str] = {
+        scalar_types: dict[type[object], str] = {
             bool: "Bool",
             int: "Int",
             float: "Float",
@@ -1857,7 +1857,9 @@ class Gleam(metaclass=LanguageCls):
                 return _format_gleam_json_datetime_epoch
             return _format_gleam_json_datetime_iso
         if self.dict_format is type(self.dict_format).RECORD:
-            native_formatters: dict[type, Callable[[dt.datetime], str]] = {
+            native_formatters: dict[
+                type[object], Callable[[dt.datetime], str]
+            ] = {
                 int: format_datetime_epoch,
                 str: format_datetime_iso,
             }
@@ -2033,13 +2035,13 @@ class Gleam(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (Gleam needs none)."""
         return {}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (Gleam needs none)."""
         return {}
 
@@ -2047,7 +2049,7 @@ class Gleam(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

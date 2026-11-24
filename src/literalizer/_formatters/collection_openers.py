@@ -308,16 +308,18 @@ class _ElementToType:
     call.
     """
 
-    scalar_types: dict[type, str]
+    scalar_types: dict[type[object], str]
     list_template: str
     enable_list_type: bool
     dict_type_template: str | None
     dict_value_to_type: (
-        Callable[[type | ListType | DictType], str | None] | None
+        Callable[[type[object] | ListType | DictType], str | None] | None
     )
     fallback_value_type: str | None
 
-    def __call__(self, element_type: type | ListType | DictType) -> str | None:
+    def __call__(
+        self, element_type: type[object] | ListType | DictType
+    ) -> str | None:
         """Resolve one descriptor using this instance's configuration."""
         return _resolve_element_to_type(
             element_type=element_type,
@@ -345,12 +347,14 @@ def make_element_to_type(
     list_template: str,
     enable_list_type: bool,
     dict_type_template: str | None,
-    dict_value_to_type: Callable[[type | ListType | DictType], str | None]
+    dict_value_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ]
     | None,
     fallback_value_type: str | None,
     wide_int_type: str | None,
     beyond_i64_type: str | None,
-) -> Callable[[type | ListType | DictType], str | None]:
+) -> Callable[[type[object] | ListType | DictType], str | None]:
     """Create a recursive type resolver from scalar types and a list
     template.
 
@@ -378,7 +382,7 @@ def make_element_to_type(
             fallback_value_type="any",
         )
     """
-    collected_scalar_types: dict[type, str]
+    collected_scalar_types: dict[type[object], str]
     effective_wide_int_type: str | None
 
     if wide_int_type is not None:
@@ -391,7 +395,7 @@ def make_element_to_type(
         effective_beyond_i64_type = beyond_i64_type
     else:
         effective_beyond_i64_type = int_type
-    collected_collected_scalar_types: dict[type, str] = {
+    collected_collected_scalar_types: dict[type[object], str] = {
         entry_py_type: entry_name
         for entry_py_type, entry_name in (
             (str, str_type),
@@ -409,7 +413,7 @@ def make_element_to_type(
         if entry_name is not None
     }
     collected_scalar_types = collected_collected_scalar_types
-    scalar_types: dict[type, str] = collected_scalar_types
+    scalar_types: dict[type[object], str] = collected_scalar_types
 
     return _ElementToType(
         scalar_types=scalar_types,
@@ -424,7 +428,9 @@ def make_element_to_type(
 @beartype
 def make_narrowed_empty_form(
     *,
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ],
     template: str,
     fallback_type: str,
 ) -> Callable[[Sequence[list[Value]]], str]:
@@ -464,7 +470,9 @@ def make_narrowed_empty_form(
 def _narrowed_type_name(
     *,
     items: list[Value],
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ],
     fallback_type: str,
 ) -> str:
     """Resolve the type name a narrowed empty literal borrows from a
@@ -487,12 +495,14 @@ def _narrowed_type_name(
 @beartype
 def _resolve_element_to_type(
     *,
-    element_type: type | ListType | DictType,
-    scalar_types: dict[type, str],
+    element_type: type[object] | ListType | DictType,
+    scalar_types: dict[type[object], str],
     list_template: str,
     enable_list_type: bool,
     dict_type_template: str | None,
-    dict_value_to_type: Callable[[type | ListType | DictType], str | None]
+    dict_value_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ]
     | None,
     fallback_value_type: str | None,
 ) -> str | None:
@@ -540,12 +550,14 @@ def _resolve_element_to_type(
 @beartype
 def _resolve_dict_value_type(
     *,
-    value_type: type | ListType | DictType,
-    scalar_types: dict[type, str],
+    value_type: type[object] | ListType | DictType,
+    scalar_types: dict[type[object], str],
     list_template: str,
     enable_list_type: bool,
     dict_type_template: str | None,
-    dict_value_to_type: Callable[[type | ListType | DictType], str | None]
+    dict_value_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ]
     | None,
     fallback_value_type: str | None,
 ) -> str | None:
@@ -575,11 +587,11 @@ def _resolve_dict_value_type(
 class _TypeOpen:
     """Resolve a target type before spelling the collection delimiter."""
 
-    element_to_type: Callable[[type | ListType | DictType], str | None]
+    element_to_type: Callable[[type[object] | ListType | DictType], str | None]
     opener_template: str
 
     def __call__(
-        self, element_type: type | ListType | DictType, /
+        self, element_type: type[object] | ListType | DictType, /
     ) -> str | None:
         """Spell the opener for an inferred target type."""
         type_name = self.element_to_type(element_type)
@@ -591,9 +603,11 @@ class _TypeOpen:
 @beartype
 def make_type_to_opener(
     *,
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ],
     opener_template: str,
-) -> Callable[[type | ListType | DictType], str | None]:
+) -> Callable[[type[object] | ListType | DictType], str | None]:
     """Create a typed collection opener from an element-to-type resolver.
 
     The *opener_template* must contain ``{type_name}`` which will be
@@ -615,7 +629,7 @@ def make_type_to_opener(
 def _typed_signature(
     *,
     items: list[Value],
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
+    type_to_opener: Callable[[type[object] | ListType | DictType], str | None],
     fallback: str,
 ) -> CollectionSignature:
     """Retain the typed producer's target identity and stable fallback."""
@@ -640,7 +654,7 @@ def _typed_signature(
 @beartype
 def _typed_collection_open_impl(
     items: list[Value],
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
+    type_to_opener: Callable[[type[object] | ListType | DictType], str | None],
     fallback: str,
 ) -> str:
     """Infer element type and return the opener or fallback."""
@@ -656,7 +670,7 @@ def _typed_collection_open_impl(
 @beartype
 def typed_collection_open(
     *,
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
+    type_to_opener: Callable[[type[object] | ListType | DictType], str | None],
     fallback: str,
 ) -> Callable[[list[Value]], str]:
     """Return a callable that infers the common element type and
@@ -701,7 +715,7 @@ def typed_collection_open(
 @beartype
 def _typed_dict_open_impl(
     items: dict[Scalar, Value],
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
+    type_to_opener: Callable[[type[object] | ListType | DictType], str | None],
     fallback: str,
 ) -> str:
     """Infer value type and return the opener or fallback."""
@@ -717,7 +731,7 @@ def _typed_dict_open_impl(
 @beartype
 def typed_dict_open(
     *,
-    type_to_opener: Callable[[type | ListType | DictType], str | None],
+    type_to_opener: Callable[[type[object] | ListType | DictType], str | None],
     fallback: str,
 ) -> Callable[[dict[Scalar, Value]], str]:
     """Return a ``dict_open`` callable that infers a common value type
@@ -771,7 +785,9 @@ class CollectionType:
 def infer_collection_type(
     *,
     items: list[Value],
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ],
     opener_template: str,
     declared_type_template: str,
     fallback: CollectionType,
@@ -837,11 +853,15 @@ class TypeOpeners:
     sets.
     """
 
-    seq: Callable[[type | ListType | DictType], str | None]
-    dict: Callable[[type | ListType | DictType], str | None]
-    set: Callable[[type | ListType | DictType], str | None]
-    seq_element_type: Callable[[type | ListType | DictType], str | None]
-    dict_element_type: Callable[[type | ListType | DictType], str | None]
+    seq: Callable[[type[object] | ListType | DictType], str | None]
+    dict: Callable[[type[object] | ListType | DictType], str | None]
+    set: Callable[[type[object] | ListType | DictType], str | None]
+    seq_element_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ]
+    dict_element_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ]
 
 
 @beartype
@@ -892,19 +912,19 @@ class TypedOpenerConfig:
         self._wide_int_type = wide_int_type
         self._beyond_i64_type = beyond_i64_type
 
-    def type_name(self, py_type: type) -> str | None:
+    def type_name(self, py_type: type[object]) -> str | None:
         """Look up the language type name for a Python type."""
         return self._scalar_types().get(py_type)
 
-    def _scalar_types(self) -> dict[type, str]:
+    def _scalar_types(self) -> dict[type[object], str]:
         """Build a dict mapping Python types to language type names."""
-        collected_entries: dict[type, str]
+        collected_entries: dict[type[object], str]
         effective_self: str | None
         if self._wide_int_type is not None:
             effective_self = self._wide_int_type
         else:
             effective_self = self._int_type
-        collected_collected_entries: dict[type, str] = {
+        collected_collected_entries: dict[type[object], str] = {
             entry_py_type: entry_name
             for entry_py_type, entry_name in (
                 (str, self._str_type),
@@ -932,10 +952,12 @@ class TypedOpenerConfig:
         date_type: str | None,
         datetime_type: str | None,
         enable_dict_type: bool,
-        dict_value_to_type: Callable[[type | ListType | DictType], str | None]
+        dict_value_to_type: Callable[
+            [type[object] | ListType | DictType], str | None
+        ]
         | None,
         dict_key_type: str,
-    ) -> Callable[[type | ListType | DictType], str | None]:
+    ) -> Callable[[type[object] | ListType | DictType], str | None]:
         """Build an element-to-type resolver.
 
         If *list_template* is given it overrides the default.  When

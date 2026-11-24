@@ -850,7 +850,7 @@ class _HaskellPreambleConfig:
 @beartype
 def _haskell_base_constructors(
     *,
-    types: frozenset[type],
+    types: frozenset[type[object]],
     constructor_prefix: str,
     type_name: str,
 ) -> list[str]:
@@ -881,7 +881,7 @@ def _haskell_base_constructors(
 def _haskell_extend_for_dates(
     *,
     cfg: _HaskellPreambleConfig,
-    types: frozenset[type],
+    types: frozenset[type[object]],
     data: Value,
     data_val_parts: list[str],
 ) -> list[str]:
@@ -915,7 +915,7 @@ def _haskell_extend_for_dates(
 def _haskell_needs_str_constructor(
     *,
     cfg: _HaskellPreambleConfig,
-    types: frozenset[type],
+    types: frozenset[type[object]],
 ) -> bool:
     """Return True if an ``HStr String`` constructor must be present."""
     return (
@@ -932,7 +932,7 @@ def _haskell_needs_str_constructor(
 def _haskell_num_instances(
     *,
     cfg: _HaskellPreambleConfig,
-    types: frozenset[type],
+    types: frozenset[type[object]],
     data_val_parts: list[str],
 ) -> list[str]:
     """Return ``Num``/``Fractional`` instance lines for the data types."""
@@ -981,7 +981,7 @@ def _haskell_num_instances(
 def _haskell_compute_preamble(
     *,
     cfg: _HaskellPreambleConfig,
-    types: frozenset[type],
+    types: frozenset[type[object]],
     data: Value,
 ) -> tuple[str, ...]:
     """Return body-preamble lines for the given *types* and *data*."""
@@ -1050,7 +1050,7 @@ def _build_scalar_body_preamble(
     emit_is_string: bool,
     emit_num: bool,
     indent: str,
-) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Haskell.
 
     The callable receives the set of types present in the data and the
@@ -1094,7 +1094,9 @@ def _build_scalar_body_preamble(
     )
 
     @beartype
-    def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
+    def _compute(
+        types: frozenset[type[object]], data: Value, /
+    ) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
         return _haskell_compute_preamble(cfg=cfg, types=types, data=data)
 
@@ -1190,8 +1192,10 @@ def _build_declaration_formatters(
 class _PreambleSetup:
     """Preamble configuration for Haskell output."""
 
-    scalar_preamble: dict[type, tuple[str, ...]]
-    compute_body_preamble: Callable[[frozenset[type], Value], tuple[str, ...]]
+    scalar_preamble: dict[type[object], tuple[str, ...]]
+    compute_body_preamble: Callable[
+        [frozenset[type[object]], Value], tuple[str, ...]
+    ]
 
 
 @beartype
@@ -1212,9 +1216,9 @@ def _build_preamble_setup(
     if is_explicit:
         # EXPLICIT mode wraps dates/datetimes with HStr, so no
         # OverloadedStrings pragma is needed for ISO formats.
-        scalar_preamble: dict[type, tuple[str, ...]] = {}
+        scalar_preamble: dict[type[object], tuple[str, ...]] = {}
     else:
-        str_extra: dict[type, tuple[str, ...]] = {
+        str_extra: dict[type[object], tuple[str, ...]] = {
             str: _overloaded_strings,
             bytes: _overloaded_strings,
         }
@@ -1296,7 +1300,7 @@ _AESON_QQ_CLOSE = "|]"
 
 @beartype
 def _aeson_value_body_preamble(
-    _types: frozenset[type], _data: Value, /
+    _types: frozenset[type[object]], _data: Value, /
 ) -> tuple[str, ...]:
     """Return the ``Data.Aeson.Value`` import preamble lines."""
     return _AESON_VALUE_BODY_PREAMBLE
@@ -2564,7 +2568,7 @@ class Haskell(metaclass=LanguageCls):
                 )
                 raise UnrepresentableInputError(msg)
             return f"[{self._native_value_type(data=data[0])}]"
-        scalar_types: dict[type, str] = {
+        scalar_types: dict[type[object], str] = {
             bool: "Bool",
             int: "Integer",
             float: "Double",
@@ -2576,14 +2580,14 @@ class Haskell(metaclass=LanguageCls):
         if scalar_type is not None:
             return scalar_type
         if isinstance(data, dt.datetime):
-            datetime_types: dict[type, str] = {
+            datetime_types: dict[type[object], str] = {
                 int: "Integer",
                 str: "String",
                 dt.datetime: "UTCTime",
             }
             return datetime_types[self.datetime_format.value.type_produced]
         if isinstance(data, dt.date):
-            date_types: dict[type, str] = {
+            date_types: dict[type[object], str] = {
                 str: "String",
                 dt.date: "Day",
             }
@@ -3126,7 +3130,7 @@ class Haskell(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble for Haskell imports.
 
         Under :attr:`json_type` every temporal value is folded into the
@@ -3142,14 +3146,14 @@ class Haskell(metaclass=LanguageCls):
         return self._preamble.scalar_preamble
 
     scalar_body_preamble: ClassVar[
-        cached_property[dict[type, tuple[str, ...]]]
+        cached_property[dict[type[object], tuple[str, ...]]]
     ] = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines for Haskell data declarations.
 
         Under :attr:`json_type` the body preamble is reduced to the
@@ -3163,7 +3167,7 @@ class Haskell(metaclass=LanguageCls):
 
             @beartype
             def _native_body_preamble(
-                types: frozenset[type], data: Value, /
+                types: frozenset[type[object]], data: Value, /
             ) -> tuple[str, ...]:
                 """Import the time types needed by concrete fields."""
                 imports: tuple[str, ...] = ()

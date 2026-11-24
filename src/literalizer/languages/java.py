@@ -2260,7 +2260,7 @@ class Java(metaclass=LanguageCls):
     @beartype
     def _java_record_scalar_resolver(
         self,
-    ) -> Callable[[type | ListType | DictType], str | None]:
+    ) -> Callable[[type[object] | ListType | DictType], str | None]:
         """Type-only scalar resolver (the mapping the typed openers are
         built on); returns ``None`` for an unmapped type so callers can
         fall back to the top type.
@@ -2820,7 +2820,7 @@ class Java(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format.
 
         Under :attr:`json_type` every temporal value is folded into the
@@ -2838,7 +2838,7 @@ class Java(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (Java needs none)."""
         return {}
 
@@ -2846,7 +2846,7 @@ class Java(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

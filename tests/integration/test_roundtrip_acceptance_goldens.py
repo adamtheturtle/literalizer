@@ -6,6 +6,7 @@ import enum
 import subprocess
 import sys
 import tomllib
+from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
@@ -26,12 +27,13 @@ class _AcceptanceCase(BaseModel, extra="forbid", frozen=True):
     exclude_keys: tuple[str, ...]
 
 
+_MANIFEST: Mapping[str, object] = tomllib.loads(
+    Path(__file__)
+    .with_name(name="roundtrip_acceptance_cases.toml")
+    .read_text(encoding="utf-8")
+)
 _CASES = TypeAdapter(type=tuple[_AcceptanceCase, ...]).validate_python(
-    tomllib.loads(
-        Path(__file__)
-        .with_name(name="roundtrip_acceptance_cases.toml")
-        .read_text(encoding="utf-8")
-    )["cases"]
+    _MANIFEST["cases"]
 )
 _EMIT = (
     "import json,runpy,sys; "
@@ -43,7 +45,7 @@ _EMIT = (
     argnames="version", argvalues=list(Python.VersionFormats)
 )
 @pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES, ids=lambda case: case.name
+    argnames="case", argvalues=_CASES, ids=[case.name for case in _CASES]
 )
 def test_native_golden_roundtrip_acceptance(
     case: _AcceptanceCase, version: enum.Enum, cases_dir: Path

@@ -253,7 +253,7 @@ _v_element_to_type = make_element_to_type(
 
 @beartype
 def _v_empty_element_uses_fallback(
-    element_type: type | ListType | DictType | None,
+    element_type: type[object] | ListType | DictType | None,
     /,
 ) -> bool:
     """Retain whether inference needs the interface-valued leaf type."""
@@ -608,7 +608,7 @@ _V_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType[
 # all map to ``string``; an ``EPOCH`` datetime is converted to its
 # epoch integer before this lookup is reached, so the ``datetime`` entry
 # only ever resolves an ISO datetime.
-_V_SCALAR_FIELD_TYPE: Mapping[type, str] = MappingProxyType(
+_V_SCALAR_FIELD_TYPE: Mapping[type[object], str] = MappingProxyType(
     mapping={
         type(None): "voidptr",
         float: "f64",
@@ -2025,13 +2025,13 @@ class V(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (V needs none)."""
         return {}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (V needs none)."""
         return {}
 
@@ -2039,7 +2039,7 @@ class V(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

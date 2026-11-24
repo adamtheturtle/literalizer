@@ -420,8 +420,8 @@ def verify_parent_map_diagnostics(
         raise ValueError(message)
     diagnosed = {
         checker.strip()
-        for names in re.findall(pattern=r"\[([^\]\n]+)\]", string=outputs[1])
-        for checker in names.split(sep=",")
+        for match in re.finditer(pattern=r"\[([^\]\n]+)\]", string=outputs[1])
+        for checker in match[1].split(sep=",")
     }
     for checker in (
         "bugprone-sizeof-expression",

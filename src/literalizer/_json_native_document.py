@@ -393,7 +393,7 @@ def format_json_native_document_fast(
 
 
 @beartype
-def register_json_native_document_fast(*, language_cls: type) -> None:
+def register_json_native_document_fast(*, language_cls: type[object]) -> None:
     """Opt *language_cls* into the shared JSON-native fast path.
 
     Call this from a language module once the language's ``json_type``

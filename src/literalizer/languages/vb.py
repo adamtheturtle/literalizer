@@ -1168,7 +1168,7 @@ class VisualBasic(metaclass=LanguageCls):
     @beartype
     def _element_to_type(
         self,
-    ) -> Callable[[type | ListType | DictType], str | None]:
+    ) -> Callable[[type[object] | ListType | DictType], str | None]:
         """Shared element-to-type mapping used by collection openers."""
         datetime_type = "String"
         if self.datetime_format.value.type_produced is int:
@@ -1323,13 +1323,13 @@ class VisualBasic(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble."""
         return {dt.time: ("Imports System",)}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (VisualBasic needs none)."""
         return {}
 
@@ -1337,7 +1337,7 @@ class VisualBasic(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

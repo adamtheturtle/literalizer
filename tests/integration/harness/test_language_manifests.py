@@ -50,7 +50,9 @@ def _write_metadata(*, tmp_path: Path, contents: str) -> Path:
 
 
 @pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
+    argnames="case",
+    argvalues=_CASES.cases,
+    ids=[case.name for case in _CASES.cases],
 )
 def test_invalid_metadata_is_actionable(
     tmp_path: Path, case: _MetadataErrorCase

@@ -243,9 +243,9 @@ def _invocation_values(invocation: NativeInvocation, /) -> list[Value]:
 
 
 @beartype
-def _value_types(value: Value, /) -> frozenset[type]:
+def _value_types(value: Value, /) -> frozenset[type[object]]:
     """Retain nested literal types without inventing reference values."""
-    types = {type(value)}
+    types: set[type[object]] = {type(value)}
     if isinstance(value, (list, set)):
         for item in value:
             types.update(_value_types(item))
@@ -518,7 +518,7 @@ def _objc_literal(
         value=argument.value, argument_name="native literal"
     )
     if isinstance(expected, ObjectType):
-        object_names: dict[type, str] = {
+        object_names: dict[type[object], str] = {
             str: "NSString",
             bool: "NSNumber",
             int: "NSNumber",

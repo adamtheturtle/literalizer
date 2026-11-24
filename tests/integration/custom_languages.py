@@ -55,7 +55,9 @@ def callback_language(
         if plain_callbacks:
             return lambda items: str(object=native.sequence_open(items))
 
-        def _type_open(_element_type: type | ListType | DictType) -> str:
+        def _type_open(
+            _element_type: type[object] | ListType | DictType,
+        ) -> str:
             """Provide the extension's integer collection opener."""
             return str(object=native.sequence_open([1]))
 
@@ -74,11 +76,10 @@ def callback_language(
 
         return dataclasses.replace(native.dict_format_config, dict_open=_open)
 
-    return literalizer.LanguageCls.__new__(
-        mcs=type(lang_cls),
-        name=f"Callback{lang_cls.__name__}",
-        bases=(lang_cls,),
-        namespace={
+    return literalizer.LanguageCls(
+        f"Callback{lang_cls.__name__}",
+        (lang_cls,),
+        {
             "sequence_open": cached_property(func=sequence_open),
             "dict_format_config": cached_property(func=dict_format_config),
         },
@@ -109,11 +110,10 @@ def existing_suffix_cpp(*, base_suffix: str) -> literalizer.LanguageCls:
             base=base, suffix="LL", base_suffix=base_suffix
         )
 
-    return literalizer.LanguageCls.__new__(
-        mcs=type(Cpp),
-        name=f"ExistingSuffix{base_suffix}Cpp",
-        bases=(Cpp,),
-        namespace={"format_integer": cached_property(func=format_integer)},
+    return literalizer.LanguageCls(
+        f"ExistingSuffix{base_suffix}Cpp",
+        (Cpp,),
+        {"format_integer": cached_property(func=format_integer)},
     )
 
 

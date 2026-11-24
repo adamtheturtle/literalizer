@@ -67,8 +67,9 @@ def _load_norg_language(library_path: str) -> Language:
     new_capsule = ctypes.pythonapi.PyCapsule_New
     new_capsule.restype = ctypes.py_object
     new_capsule.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_void_p]
+    grammar_address: object = library.tree_sitter_norg()
     capsule: object = new_capsule(
-        library.tree_sitter_norg(),
+        grammar_address,
         b"tree_sitter.Language",
         None,
     )

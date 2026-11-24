@@ -253,10 +253,10 @@ def _kotlin_biginteger_preamble(data: Value, /) -> tuple[str, ...]:
 
 @beartype
 def _kotlin_sequence_constructor(
-    element_type: type | ListType | DictType,
+    element_type: type[object] | ListType | DictType,
 ) -> str | None:
     """Select the LIST constructor from the inferred element kind."""
-    scalar_constructors: dict[type, str] = {
+    scalar_constructors: dict[type[object], str] = {
         str: "arrayOf",
         bool: "booleanArrayOf",
         int: "intArrayOf",
@@ -280,14 +280,14 @@ def _kotlin_sequence_constructor(
 
 @beartype
 def _kotlin_type_to_opener(
-    element_type: type | ListType | DictType,
+    element_type: type[object] | ListType | DictType,
 ) -> str | None:
     """Spell the selected constructor for value-less type resolution."""
     constructor = _kotlin_sequence_constructor(element_type=element_type)
     return f"{constructor}(" if constructor is not None else None
 
 
-_KOTLIN_PRIMITIVE_ARRAY_TYPES: dict[type, str] = {
+_KOTLIN_PRIMITIVE_ARRAY_TYPES: dict[type[object], str] = {
     bool: "BooleanArray",
     int: "IntArray",
     float: "DoubleArray",
@@ -312,7 +312,9 @@ def _kotlin_array_type(*, element_name: str | None) -> str | None:
 def _kotlin_list_value_type_name(
     element_type: ListType,
     *,
-    scalar_resolver: Callable[[type | ListType | DictType], str | None],
+    scalar_resolver: Callable[
+        [type[object] | ListType | DictType], str | None
+    ],
 ) -> str | None:
     """Return the type the LIST format renders a list value as.
 
@@ -353,9 +355,9 @@ def _format_kotlin_datetime_epoch(value: dt.datetime, /) -> str:
 
 @beartype
 def _kotlin_dict_value_type_name(
-    element_type: type | ListType | DictType,
+    element_type: type[object] | ListType | DictType,
     *,
-    base_resolver: Callable[[type | ListType | DictType], str | None],
+    base_resolver: Callable[[type[object] | ListType | DictType], str | None],
     list_resolver: Callable[[ListType], str | None],
     key_type: str,
     fallback: str,
@@ -1637,7 +1639,7 @@ class Kotlin(metaclass=LanguageCls):
     @beartype
     def _kotlin_record_scalar_resolver(
         self,
-    ) -> Callable[[type | ListType | DictType], str | None]:
+    ) -> Callable[[type[object] | ListType | DictType], str | None]:
         """Type-only scalar resolver (the mapping the typed openers are
         built on); returns ``None`` for a type it does not cover so
         callers can fall back to the ``Any?`` top type.
@@ -1762,7 +1764,7 @@ class Kotlin(metaclass=LanguageCls):
         plain field value uses), so e.g. ``[1, "email"]`` types
         ``Pair<Int, String>``.
         """
-        integer_types: dict[type | None, str | None] = {
+        integer_types: dict[type[object] | None, str | None] = {
             None: None,
             WideInt: "Long",
             BeyondI64: "BigInteger",
@@ -2270,7 +2272,7 @@ class Kotlin(metaclass=LanguageCls):
     @beartype
     def _kotlin_dict_value_type(
         self,
-    ) -> Callable[[type | ListType | DictType], str | None]:
+    ) -> Callable[[type[object] | ListType | DictType], str | None]:
         """Resolve a dict value's Kotlin type name to match the renderer.
 
         Kotlin's dict opener previously disabled value narrowing entirely
@@ -2323,7 +2325,9 @@ class Kotlin(metaclass=LanguageCls):
             )
 
         @beartype
-        def resolve(element_type: type | ListType | DictType) -> str | None:
+        def resolve(
+            element_type: type[object] | ListType | DictType,
+        ) -> str | None:
             """Map an element type to its rendered Kotlin type name."""
             return _kotlin_dict_value_type_name(
                 element_type=element_type,
@@ -2636,7 +2640,7 @@ class Kotlin(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format.
 
         Under :attr:`json_type` every temporal value is folded into the
@@ -2654,7 +2658,7 @@ class Kotlin(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (Kotlin needs none)."""
         return {}
 
@@ -2662,7 +2666,7 @@ class Kotlin(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

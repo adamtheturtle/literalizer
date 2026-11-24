@@ -26,7 +26,7 @@ from .unwrapped_result_cases import (
 @pytest.mark.parametrize(
     argnames="lang_cls",
     argvalues=_CASES.prefix.languages,
-    ids=lambda lang_cls: lang_cls.__name__,
+    ids=[lang_cls.__name__ for lang_cls in _CASES.prefix.languages],
 )
 @pytest.mark.parametrize(argnames="attribute", argvalues=_CASES.attributes)
 def test_unwrapped_literalize_result_golden(
@@ -91,7 +91,7 @@ def test_unwrapped_literalize_result_golden(
 @pytest.mark.parametrize(
     argnames="consumer",
     argvalues=_CASES.record_consumers,
-    ids=lambda consumer: consumer.language.__name__,
+    ids=[consumer.language.__name__ for consumer in _CASES.record_consumers],
 )
 @pytest.mark.parametrize(argnames="attribute", argvalues=_CASES.attributes)
 def test_unwrapped_record_collection_golden(

@@ -9,7 +9,7 @@ Only native declaration syntax varies between backends; no source is patched.
 import dataclasses
 import functools
 import tomllib
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Literal
 
@@ -50,11 +50,12 @@ class IntegerReceiverSyntax(  # noqa: NOD001
 def integer_receiver_syntax() -> dict[str, IntegerReceiverSyntax]:
     """Load syntax after capabilities have selected participants."""
     path = Path(__file__).with_name(name="call_receivers.toml")
+    document: Mapping[str, object] = tomllib.loads(
+        path.read_text(encoding="utf-8")
+    )
     return {
         name: IntegerReceiverSyntax.model_validate(obj=syntax)
-        for name, syntax in tomllib.loads(
-            path.read_text(encoding="utf-8")
-        ).items()
+        for name, syntax in document.items()
     }
 
 

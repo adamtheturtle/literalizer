@@ -259,7 +259,7 @@ def _purescript_int_fits_in_int32(value: int) -> bool:
 
 @beartype
 def _purescript_datetime_has_large_int(
-    value: dt.datetime, datetime_type_produced: type
+    value: dt.datetime, datetime_type_produced: type[object]
 ) -> bool:
     """Return whether an epoch datetime requires the wide integer
     carrier.
@@ -271,7 +271,7 @@ def _purescript_datetime_has_large_int(
 
 @beartype
 def _purescript_has_large_int(
-    val: Value, datetime_type_produced: type
+    val: Value, datetime_type_produced: type[object]
 ) -> bool:
     """Return True if *val* contains an integer that overflows
     PureScript's 32-bit ``Int``.
@@ -511,7 +511,7 @@ def _purescript_children(val: Value) -> list[Value]:
 
 @beartype
 def _purescript_scalar_needs_prelude(
-    val: Value, datetime_type_produced: type
+    val: Value, datetime_type_produced: type[object]
 ) -> bool:
     """Return True if *val* is a scalar needing ``import Prelude``."""
     # Check bool before int (bool is a subclass of int).
@@ -533,7 +533,7 @@ def _purescript_scalar_needs_prelude(
 
 @beartype
 def _purescript_needs_prelude(
-    val: Value, datetime_type_produced: type
+    val: Value, datetime_type_produced: type[object]
 ) -> bool:
     """Return True if *val* needs ``import Prelude``.
 
@@ -560,8 +560,8 @@ def _build_purescript_body_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
-    datetime_type_produced: type,
-) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    datetime_type_produced: type[object],
+) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for PureScript.
 
     The callable receives the set of types present in the data and returns
@@ -570,12 +570,14 @@ def _build_purescript_body_preamble(
     """
 
     @beartype
-    def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
+    def _compute(
+        types: frozenset[type[object]], data: Value, /
+    ) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
         p = constructor_prefix
         needs_tuple = bool(types & {dict, OrderedMap})
-        int_types: set[type] = {int}
-        str_types: set[type] = {str, bytes, dt.date, dt.time}
+        int_types: set[type[object]] = {int}
+        str_types: set[type[object]] = {str, bytes, dt.date, dt.time}
         if datetime_type_produced is int:
             int_types.add(dt.datetime)
         else:
@@ -858,7 +860,7 @@ def _build_purescript_native_float(
 
 @beartype
 def _purescript_native_body_preamble(
-    _types: frozenset[type], _data: Value, /
+    _types: frozenset[type[object]], _data: Value, /
 ) -> tuple[str, ...]:
     """Import Prelude for native numeric expressions."""
     return (import_preamble(code="import Prelude"),)
@@ -1037,7 +1039,7 @@ _ARGONAUT_JSON_ORDERED_MAP_CONFIG = OrderedMapFormatConfig(
 
 @beartype
 def _argonaut_value_body_preamble(
-    _types: frozenset[type], _data: Value, /
+    _types: frozenset[type[object]], _data: Value, /
 ) -> tuple[str, ...]:
     """Return the ``Data.Argonaut.Core`` import preamble lines."""
     return _ARGONAUT_JSON_BODY_PREAMBLE
@@ -1905,8 +1907,8 @@ class PureScript(metaclass=LanguageCls):
         default_consumable_ref_value_inhibits_consuming_form
     )
 
-    scalar_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
-    scalar_body_preamble: ClassVar[dict[type, tuple[str, ...]]] = {}
+    scalar_preamble: ClassVar[dict[type[object], tuple[str, ...]]] = {}
+    scalar_body_preamble: ClassVar[dict[type[object], tuple[str, ...]]] = {}
 
     @cached_property
     @beartype
@@ -2228,7 +2230,7 @@ class PureScript(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map.
 
         Under :attr:`json_type` the body preamble is reduced to the
@@ -2256,7 +2258,7 @@ class PureScript(metaclass=LanguageCls):
 
         @beartype
         def _with_qualified_imports(
-            types: frozenset[type], data: Value, /
+            types: frozenset[type[object]], data: Value, /
         ) -> tuple[str, ...]:
             """Keep qualified imports inside the generated module."""
             return imports_first(

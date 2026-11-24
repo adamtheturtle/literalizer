@@ -763,19 +763,19 @@ class Json5(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (JSON5 needs none)."""
         return {}
 
     scalar_body_preamble: ClassVar[
-        cached_property[dict[type, tuple[str, ...]]]
+        cached_property[dict[type[object], tuple[str, ...]]]
     ] = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

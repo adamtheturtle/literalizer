@@ -13,7 +13,7 @@ import pytest
 from pydantic import BaseModel
 
 from literalizer.languages import Python
-from scripts.roundtrip_common import verify
+from scripts.roundtrip_common import json_object_from_text, verify
 
 from .language_specs import make_golden_path
 
@@ -49,7 +49,9 @@ _EMIT = (
     argnames="version", argvalues=list(Python.VersionFormats)
 )
 @pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES.mismatches, ids=lambda case: case.name
+    argnames="case",
+    argvalues=_CASES.mismatches,
+    ids=[case.name for case in _CASES.mismatches],
 )
 def test_native_golden_roundtrip_mismatch(
     case: _MismatchCase,
@@ -73,8 +75,8 @@ def test_native_golden_roundtrip_mismatch(
         check=False,
     )
     assert completed.returncode == 0, completed.stderr
-    source = json.loads(
-        s=(case_dir / "input.json").read_text(encoding="utf-8")
+    source = json_object_from_text(
+        text=(case_dir / "input.json").read_text(encoding="utf-8")
     )
     assert set(source) == {control.name for control in _CASES.mismatches}
     verify(

@@ -1855,7 +1855,7 @@ class CSharp(metaclass=LanguageCls):
     @beartype
     def _csharp_record_scalar_resolver(
         self,
-    ) -> Callable[[type], str | None]:
+    ) -> Callable[[type[object]], str | None]:
         """Map a scalar field's Python type to its C# type name.
 
         Built from the same scalar mapping the collection openers use,
@@ -2168,13 +2168,13 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def _date_tp(self) -> type:
+    def _date_tp(self) -> type[object]:
         """Python type produced by the chosen date format."""
         return self.date_format.value.type_produced
 
     @cached_property
     @beartype
-    def _dt_tp(self) -> type:
+    def _dt_tp(self) -> type[object]:
         """Python type produced by the chosen datetime format."""
         return self.datetime_format.value.type_produced
 
@@ -2207,7 +2207,7 @@ class CSharp(metaclass=LanguageCls):
 
         @beartype
         def _sequence_element_type(
-            element_type: type | ListType | DictType,
+            element_type: type[object] | ListType | DictType,
         ) -> str | None:
             """Give nested maps the same carrier as their literal
             opener.
@@ -2327,7 +2327,7 @@ class CSharp(metaclass=LanguageCls):
 
             @beartype
             def _heterogeneous_set_open(
-                element_type: type | ListType | DictType,
+                element_type: type[object] | ListType | DictType,
                 /,
             ) -> str | None:
                 """Keep integer values without coercing them to double."""
@@ -2765,7 +2765,7 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format.
 
         Under ``json_type`` the ``using System.Text.Json.Nodes;`` line
@@ -2785,7 +2785,7 @@ class CSharp(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (C# needs none)."""
         return {}
 
@@ -2793,7 +2793,7 @@ class CSharp(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

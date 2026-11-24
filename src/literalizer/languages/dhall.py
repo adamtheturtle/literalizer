@@ -452,7 +452,7 @@ class _VariantSignature:
     inner_type: str | None
 
 
-_DHALL_TYPE_FOR_PYTHON_TYPE: dict[type, str] = {
+_DHALL_TYPE_FOR_PYTHON_TYPE: dict[type[object], str] = {
     str: "Text",
     int: "Integer",
     float: "Double",
@@ -1461,13 +1461,13 @@ class Dhall(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (Dhall needs none)."""
         return {}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (Dhall needs none)."""
         return {}
 
@@ -1475,7 +1475,7 @@ class Dhall(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

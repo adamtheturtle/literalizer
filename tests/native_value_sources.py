@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal
 
 from beartype import beartype
 from pydantic import BaseModel, BeforeValidator, Field, NaiveDatetime
 
 from literalizer import ValueInput
 from literalizer._types import Scalar
+
+if TYPE_CHECKING:
+    from typing_extensions import TypeIs
 
 
 class OffsetDatetimeSource(
@@ -21,9 +24,14 @@ class OffsetDatetimeSource(
     offset_microseconds: int
 
 
+def _is_datetime_components(value: object, /) -> TypeIs[dict[object, object]]:
+    """Recognize a structured offset datetime before validating its fields."""
+    return isinstance(value, dict)
+
+
 def _parse_ref_datetime(value: object, /) -> object:
     """Construct exact offsets without relying on ISO parser precision."""
-    if isinstance(value, dict):
+    if _is_datetime_components(value):
         source = OffsetDatetimeSource.model_validate(obj=value)
         return source.wall_time.replace(
             tzinfo=dt.timezone(

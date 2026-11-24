@@ -354,7 +354,7 @@ class LiteralizeResult:
     :attr:`declaration_code`.
     """
 
-    types_present: frozenset[type]
+    types_present: frozenset[type[object]]
     """The set of Python types observed in the source data (e.g.
     ``int``, ``str``, ``list``, ``dict``).  Callers that combine
     multiple ``literalize`` results (for example, a test harness that
@@ -1060,7 +1060,8 @@ def _accumulate_positional_empty_list_overrides(
     lengths = {len(sibling) for sibling in sibling_lists}
     if len(lengths) != 1:
         return
-    for cousins in zip(*sibling_lists, strict=True):
+    for index in range(next(iter(lengths))):
+        cousins = [sibling[index] for sibling in sibling_lists]
         lists = [cousin for cousin in cousins if _is_value_list(cousin)]
         if len(lists) != len(cousins):
             continue
@@ -2398,9 +2399,11 @@ def _accumulate_sequence_open_overrides(
             for sibling in lists:
                 _ = out.setdefault(id(sibling), opener)
     populated = [sibling for sibling in lists if bool(sibling)]
-    if len({len(sibling) for sibling in populated}) != 1:
+    lengths = {len(sibling) for sibling in populated}
+    if len(lengths) != 1:
         return
-    for position in zip(*populated, strict=True):
+    for index in range(next(iter(lengths))):
+        position = [sibling[index] for sibling in populated]
         cousins = [item for item in position if _is_value_list(item)]
         if len(cousins) == len(position):
             _accumulate_sequence_open_overrides(
@@ -6343,7 +6346,7 @@ def _compose_bound_refs(
     """
     decl_results = composition.declarations
     main_result = composition.main_result
-    empty_types = frozenset[type]()
+    empty_types = frozenset[type[object]]()
     union_types = empty_types.union(
         *(d.types_present for d in decl_results),
         main_result.types_present,
@@ -8232,11 +8235,13 @@ def _is_constructor_target(
     constructor as the bare class name otherwise matches every target
     and exempts the lot (issue #3913).
     """
+    candidates = (
+        match[0]
+        for match in re.finditer(pattern=r"[^\W\d]\w*", string=target_function)
+    )
     return any(
         language.format_constructor_target(candidate) == target_function
-        for candidate in re.findall(
-            pattern=r"[^\W\d]\w*", string=target_function
-        )
+        for candidate in candidates
         if _CONSTRUCTOR_CLASS_NAME.fullmatch(string=candidate) is not None
     )
 
@@ -8804,7 +8809,7 @@ def _compose_call_with_bound_ref_declarations(
     preamble: tuple[str, ...],
     data_dependent_preamble: tuple[str, ...],
     body_preamble: tuple[str, ...],
-    types_present: frozenset[type],
+    types_present: frozenset[type[object]],
     contains_standalone_comments: bool,
     data_for_preamble: Value,
     data_for_stub: Value,
@@ -8905,7 +8910,7 @@ def _wrap_call_result_in_file(
     preamble: tuple[str, ...],
     data_dependent_preamble: tuple[str, ...],
     computed_body: tuple[str, ...],
-    types_present: frozenset[type],
+    types_present: frozenset[type[object]],
     contains_standalone_comments: bool,
     data_for_preamble: Value,
     per_element: bool,
@@ -9960,7 +9965,7 @@ def literalize_call_with_declarations(
                 "calls in this language"
             ),
         )
-    empty_types = frozenset[type]()
+    empty_types = frozenset[type[object]]()
     union_types = empty_types.union(
         *(d.types_present for d in declarations),
         call.types_present,

@@ -128,7 +128,7 @@ _format_string = make_backslash_string_formatter(
 
 @beartype
 def _mixed_numeric_set_opener(
-    element_type: type | ListType | DictType,
+    element_type: type[object] | ListType | DictType,
     /,
 ) -> str | None:
     """Keep Julia's array constructor from promoting integers to
@@ -989,7 +989,7 @@ class Julia(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble computed from date/datetime format."""
         return date_scalar_preamble(
             date_format=self.date_format,
@@ -999,7 +999,7 @@ class Julia(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (Julia needs none)."""
         return {}
 
@@ -1007,7 +1007,7 @@ class Julia(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

@@ -1,27 +1,34 @@
 """Data-driven rejections for structured native invocation contracts."""
 
-import json
 import tomllib
+from collections.abc import Mapping
 from pathlib import Path
 
 import pytest
+from pydantic import TypeAdapter
 
 import literalizer
 from literalizer.languages import ALL_LANGUAGES, Java, ObjectiveC
+from scripts.roundtrip_common import json_object_from_text
 
-_CASES = tomllib.loads(
+_MANIFEST: Mapping[str, object] = tomllib.loads(
     (Path(__file__).parent / "native_invocations.toml").read_text(
         encoding="utf-8"
     )
-)["case"]
+)
+_CASES = TypeAdapter(type=tuple[dict[str, object], ...]).validate_python(
+    _MANIFEST["case"]
+)
 
 
 @pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES, ids=[case["name"] for case in _CASES]
+    argnames="case",
+    argvalues=_CASES,
+    ids=[str(object=case["name"]) for case in _CASES],
 )
 def test_native_invocation_rejections(case: dict[str, object]) -> None:
     """Reject malformed recipes before emitting invalid native source."""
-    spec = json.loads(s=str(object=case["recipe"]))
+    spec = json_object_from_text(text=str(object=case["recipe"]))
     bind = case.get("bind")
     variable = (
         None
@@ -103,7 +110,7 @@ _UNSUPPORTED = sorted(
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_UNSUPPORTED,
-    ids=lambda cls: cls.language_id,
+    ids=[cls.language_id for cls in _UNSUPPORTED],
 )
 def test_native_call_requires_capability(
     language_cls: literalizer.LanguageCls,
@@ -129,7 +136,7 @@ def test_native_call_requires_capability(
 @pytest.mark.parametrize(
     argnames="language_cls",
     argvalues=_UNSUPPORTED,
-    ids=lambda cls: cls.language_id,
+    ids=[cls.language_id for cls in _UNSUPPORTED],
 )
 def test_native_rows_require_capability(
     language_cls: literalizer.LanguageCls,

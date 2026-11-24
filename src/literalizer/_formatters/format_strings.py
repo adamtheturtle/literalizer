@@ -324,12 +324,13 @@ def _apply_concat_control(
     c1_control_start = 128
     c1_control_end = 159
     parts: list[str] = []
-    pattern = r"([\x00-\x1f\x85\u2028\u2029])"
+    controls = r"\x00-\x1f\x85\u2028\u2029"
     if escape_delete_and_c1:
-        pattern = r"([\x00-\x1f\x7f-\x9f\u2028\u2029])"
-    for segment in re.split(pattern=pattern, string=value):
-        if segment == "":
-            continue
+        controls = r"\x00-\x1f\x7f-\x9f\u2028\u2029"
+    for match in re.finditer(
+        pattern=rf"[{controls}]|[^{controls}]+", string=value
+    ):
+        segment = match[0]
         if len(segment) == 1 and (
             ord(segment) < control_char_threshold
             or (escape_delete_and_c1 and ord(segment) == delete_code_point)

@@ -61,9 +61,8 @@ def main() -> None:
         document = _build_document(
             json_text=json_text, variable_name=variable_name
         )
-        parsed = roundtrip_common.json_object(
-            value=yaml.safe_load(stream=document),
-        )
+        raw: object = yaml.safe_load(stream=document)
+        parsed = roundtrip_common.json_object(value=raw)
         if variable_name is not None:
             parsed = roundtrip_common.json_object(value=parsed[variable_name])
         roundtrip_common.verify(

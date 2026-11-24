@@ -7,12 +7,14 @@ import json
 import subprocess
 import sys
 import tomllib
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal
 
 import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
+from hypothesis.strategies import dictionaries
 from pydantic import BaseModel, TypeAdapter
 from ruamel.yaml import YAML
 
@@ -35,10 +37,11 @@ class _Contract(BaseModel, extra="forbid", frozen=True):
     include_delimiters: bool
 
 
+_MANIFEST: Mapping[str, object] = tomllib.loads(
+    Path(__file__).with_suffix(suffix=".toml").read_text(encoding="utf-8")
+)
 _CONTRACTS = TypeAdapter(type=tuple[_Contract, ...]).validate_python(
-    tomllib.loads(
-        Path(__file__).with_suffix(suffix=".toml").read_text(encoding="utf-8")
-    )["contracts"]
+    _MANIFEST["contracts"]
 )
 
 type _JSONScalar = str | int | float | bool | None
@@ -69,7 +72,7 @@ def _json_collection_values(
     children: st.SearchStrategy[_JSONValue],
 ) -> st.SearchStrategy[_JSONValue]:
     """Return recursive JSON collection strategies."""
-    return st.lists(elements=children, max_size=3) | st.dictionaries(
+    return st.lists(elements=children, max_size=3) | dictionaries(
         keys=json_text,
         values=children,
         max_size=3,
@@ -85,7 +88,7 @@ json_values: st.SearchStrategy[_JSONValue] = st.recursive(
 json_arrays: st.SearchStrategy[list[_JSONValue]] = st.lists(
     elements=json_values, max_size=5
 )
-json_objects: st.SearchStrategy[dict[str, _JSONValue]] = st.dictionaries(
+json_objects: st.SearchStrategy[dict[str, _JSONValue]] = dictionaries(
     keys=json_text, values=json_values, max_size=5
 )
 
@@ -135,7 +138,9 @@ def _check_program(
 
 
 @pytest.mark.parametrize(
-    argnames="contract", argvalues=_CONTRACTS, ids=lambda case: case.name
+    argnames="contract",
+    argvalues=_CONTRACTS,
+    ids=[case.name for case in _CONTRACTS],
 )
 @pytest.mark.parametrize(
     argnames="version", argvalues=list(Python.VersionFormats)
@@ -166,7 +171,9 @@ def test_json_program_matches_native_golden(
 
 
 @pytest.mark.parametrize(
-    argnames="contract", argvalues=_CONTRACTS, ids=lambda case: case.name
+    argnames="contract",
+    argvalues=_CONTRACTS,
+    ids=[case.name for case in _CONTRACTS],
 )
 @pytest.mark.parametrize(
     argnames="version", argvalues=list(Python.VersionFormats)

@@ -52,7 +52,7 @@ class ListType:
     For leaf lists, ``inner`` is a Python ``type``.
     """
 
-    inner: "type | ListType | DictType"
+    inner: "type[object] | ListType | DictType"
 
 
 @beartype
@@ -67,7 +67,7 @@ class DictType:
     type (e.g. ``std::variant``) without re-walking the source items.
     """
 
-    value_type: "type | ListType | DictType | None"
+    value_type: "type[object] | ListType | DictType | None"
     values: "tuple[Value, ...]" = field(compare=False)
 
 
@@ -139,7 +139,7 @@ def _int_needs_beyond_i64(items: list[Value]) -> bool:
 
 
 @beartype
-def int_widening_tier(items: list[Value]) -> type | None:
+def int_widening_tier(items: list[Value]) -> type[object] | None:
     """Return :class:`BeyondI64`, :class:`WideInt`, or ``None``.
 
     ``None`` when *items* is empty, contains a non-int (including
@@ -149,7 +149,7 @@ def int_widening_tier(items: list[Value]) -> type | None:
     """
     if len(items) == 0:
         return None
-    widest: type | None = None
+    widest: type[object] | None = None
     for item in items:
         if isinstance(item, bool) or not isinstance(item, int):
             return None
@@ -165,7 +165,7 @@ def int_widening_tier(items: list[Value]) -> type | None:
 class _Collected:
     """Per-item type buckets gathered for ``infer_element_type``."""
 
-    element_types: set[type | ListType]
+    element_types: set[type[object] | ListType]
     dict_values: list[Value]
 
 
@@ -181,7 +181,7 @@ def _collect_element_types(
     are no other items contributing a ``ListType``), ``None`` is
     returned because no concrete inner type could be derived.
     """
-    element_types: set[type | ListType] = set()
+    element_types: set[type[object] | ListType] = set()
     dict_values: list[Value] = []
     saw_empty_list = False
     for item in items:
@@ -210,10 +210,10 @@ def _collect_element_types(
 @beartype
 def _resolve_single_type(
     *,
-    the_type: type | ListType,
+    the_type: type[object] | ListType,
     items: list[Value],
     all_dict_values: list[Value],
-) -> type | ListType | DictType:
+) -> type[object] | ListType | DictType:
     """Resolve a unique element type to its inferred return value.
 
     Handles the ``dict`` -> :class:`DictType` and the int-widening to
@@ -232,12 +232,12 @@ def _resolve_single_type(
 
 @beartype
 def _unify_element_types(
-    element_types: set[type | ListType],
-) -> type | ListType | None:
+    element_types: set[type[object] | ListType],
+) -> type[object] | ListType | None:
     """Unify compatible scalar or recursively nested list types."""
     list_types = {item for item in element_types if isinstance(item, ListType)}
     if len(list_types) == len(element_types):
-        inner_types: set[type | ListType] = set()
+        inner_types: set[type[object] | ListType] = set()
         for item in list_types:
             inner = item.inner
             if not isinstance(inner, (type, ListType)):
@@ -249,14 +249,14 @@ def _unify_element_types(
         return None
     numeric_types = {int, float, WideInt, BeyondI64, MixedNumeric}
     if len(element_types) > 0 and element_types <= numeric_types:
-        rank: dict[type | ListType, int] = {
+        rank: dict[type[object] | ListType, int] = {
             int: 0,
             WideInt: 1,
             BeyondI64: 2,
             float: 3,
             MixedNumeric: 3,
         }
-        result_by_rank: dict[int, type | None] = {
+        result_by_rank: dict[int, type[object] | None] = {
             0: None,
             1: WideInt,
             2: BeyondI64,
@@ -280,7 +280,7 @@ def infer_dict_type(*, values: list[Value]) -> DictType:
 @beartype
 def infer_element_type(
     items: list[Value],
-) -> type | ListType | DictType | None:
+) -> type[object] | ListType | DictType | None:
     """Infer the common element type from a list of values.
 
     Returns ``None`` when the list is empty or contains mixed types
