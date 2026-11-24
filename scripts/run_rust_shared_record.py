@@ -17,101 +17,56 @@ toolchain is already available.
 """
 
 import shutil
-import textwrap
+from pathlib import Path
 
 import click
 
+from literalizer import InputFormat, literalize
 from literalizer.languages import Rust
 from scripts import roundtrip_common, shared_record_common
 
 _LABEL = "Rust shared-record"
 
 
-_VALUE_CHECKS = textwrap.dedent(
-    text=r"""
-    fn assert_row(row: &Record0, name: &str, attributes: &[(&str, Value)]) {
-        assert_eq!(row.name, name);
-        assert_eq!(row.attributes.len(), attributes.len(), "{name}");
-        for (key, expected) in attributes {
-            let actual = row.attributes.get(key).expect("missing attribute");
-            match (actual, expected) {
-                (Value::Str(actual), Value::Str(expected)) =>
-                    assert_eq!(actual, expected, "{name}.{key}"),
-                (Value::Bool(actual), Value::Bool(expected)) =>
-                    assert_eq!(actual, expected, "{name}.{key}"),
-                _ => panic!("{name}.{key}: wrong value type"),
-            }
-        }
-    }
-    """,
-).strip()
-
-_DOCUMENT_CHECKS = textwrap.indent(
-    text=textwrap.dedent(
-        text=r"""
-        assert_eq!(declaring_data.len(), 2);
-        assert_eq!(dependent_data.len(), 2);
-        assert_row(&declaring_data[0], "row_1",
-            &[("colour", Value::Str("red")),
-              ("discounted", Value::Bool(true))]);
-        assert_row(&declaring_data[1], "row_2",
-            &[("colour", Value::Str("blue")), ("size", Value::Str("large"))]);
-        assert_row(&dependent_data[0], "row_3",
-            &[("colour", Value::Str("green")), ("size", Value::Str("small"))]);
-        assert_row(&dependent_data[1], "row_4",
-            &[("colour", Value::Str("white"))]);
-        """,
-    ).strip(),
-    prefix="    ",
-)
+_CONSUMER_PATH = Path(__file__).with_name(name="rust_shared_record.rs")
 
 
-def _build_sources() -> tuple[str, str]:
-    """Return a consumer program and its shared data-type library."""
+def _build_sources() -> dict[str, str]:
+    """Render the shared library and both data expressions."""
     language = Rust(
         heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD,
         record_map_value_typing=Rust.record_map_value_typings.WIDE,
     )
-    declaring = roundtrip_common.literalize_new_variable(
+    declaring = literalize(
+        source=shared_record_common.DECLARING_DOCUMENT,
+        input_format=InputFormat.JSON,
         language=language,
-        json_text=shared_record_common.DECLARING_DOCUMENT,
-        var_name=shared_record_common.DECLARING_VAR_NAME_SNAKE,
-        pre_indent_level=1,
     )
-    dependent = roundtrip_common.literalize_new_variable(
+    dependent = literalize(
+        source=shared_record_common.DEPENDENT_DOCUMENT,
+        input_format=InputFormat.JSON,
         language=language,
-        json_text=shared_record_common.DEPENDENT_DOCUMENT,
-        var_name=shared_record_common.DEPENDENT_VAR_NAME_SNAKE,
-        pre_indent_level=1,
     )
     # Both documents use only the declaring document's exported types.
-    preamble = "\n".join((*declaring.preamble, *declaring.body_preamble))
-    ok_document = shared_record_common.OK_DOCUMENT
-    program = (
-        "use std::collections::HashMap;\n"
-        "use record_data::{Record0, Value};\n"
-        f"{_VALUE_CHECKS}\n"
-        "fn main() {\n"
-        f"{declaring.code}\n"
-        f"{dependent.code}\n"
-        f"{_DOCUMENT_CHECKS}\n"
-        f'    print!("{{}}", r#"{ok_document}"#);\n'
-        "}\n"
-    )
-    return program, preamble
+    return {
+        "record_data.rs": "\n".join(
+            (*declaring.preamble, *declaring.body_preamble)
+        ),
+        "declaring_data.rs": declaring.code,
+        "dependent_data.rs": dependent.code,
+    }
 
 
 @click.command()
 def main() -> None:
     """Compile both documents against one set of declarations."""
-    program, library = _build_sources()
     rustc = shutil.which(cmd="rustc")
     if rustc is None or rustc == "":
         rustc = "rustc"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.rs",
-        program=program,
+        program=_CONSUMER_PATH.read_text(encoding="utf-8"),
         steps=[
             roundtrip_common.Step(
                 args=[
@@ -150,7 +105,7 @@ def main() -> None:
         ],
         excluded_keys=(),
         expected_json=shared_record_common.OK_DOCUMENT,
-        extra_files={"record_data.rs": library},
+        extra_files=_build_sources(),
     )
 
 
