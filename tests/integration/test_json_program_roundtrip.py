@@ -18,7 +18,7 @@ from hypothesis.strategies import dictionaries
 from pydantic import BaseModel, TypeAdapter
 from ruamel.yaml import YAML
 
-from literalizer import InputFormat, literalize
+from literalizer import InputFormat, literalize, literalize_call
 from literalizer.languages import Python
 from tests.integration.case_manifests import case_input
 from tests.integration.language_specs import make_golden_path, make_spec
@@ -96,35 +96,49 @@ json_objects: st.SearchStrategy[dict[str, _JSONValue]] = dictionaries(
 def _check_program(
     *, data: _JSONValue, contract: _Contract, version: enum.Enum
 ) -> str:
-    """Compile and execute the actual wrapper, retaining exact JSON
-    containers.
-    """
+    """Execute both the generated literal and direct call in Python."""
     source = json.dumps(obj=data)
+    language = make_spec(
+        lang_cls=Python,
+        language_version=version,
+        date_format=Python.date_formats.PYTHON,
+        datetime_format=Python.datetime_formats.PYTHON,
+        bytes_format=Python.bytes_formats.HEX,
+        sequence_format=Python.sequence_formats.LIST,
+        set_format=Python.set_formats.SET,
+        variable_type_hints=Python.variable_type_hints_formats.NEVER,
+    )
     result = literalize(
         source=source,
         input_format=InputFormat.JSON,
-        language=make_spec(
-            lang_cls=Python,
-            language_version=version,
-            date_format=Python.date_formats.PYTHON,
-            datetime_format=Python.datetime_formats.PYTHON,
-            bytes_format=Python.bytes_formats.HEX,
-            sequence_format=Python.sequence_formats.LIST,
-            set_format=Python.set_formats.SET,
-            variable_type_hints=Python.variable_type_hints_formats.NEVER,
-        ),
+        language=language,
         pre_indent_level=0,
         include_delimiters=contract.include_delimiters,
         variable_form=None,
         wrap_in_file=False,
     )
     assert result.source_data == data
-    # Compare inside Python: serializing the actual value first would hide
-    # an accidental tuple where the LIST option promises a JSON list.
+    call = literalize_call(
+        source=source,
+        input_format=InputFormat.JSON,
+        language=language,
+        target_function="check_value",
+        parameter_names=("actual",),
+        per_element=False,
+    )
+    # Native equality checks collection kinds; JSON encoding also
+    # distinguishes booleans, integers, floats and the sign of zero.
     native_program = f"my_data = {result.code}\n"
     program = (
-        native_program
-        + f"\nimport json\nassert my_data == json.loads({source!r})\n"
+        "import json\n"
+        f"expected = json.loads({source!r})\n"
+        "def check_value(actual):\n"
+        "    assert actual == expected, (actual, expected)\n"
+        "    assert json.dumps(actual, sort_keys=True) == "
+        "json.dumps(expected, sort_keys=True), (actual, expected)\n"
+        f"{native_program}"
+        "check_value(my_data)\n"
+        f"{call.code}\n"
     )
     completed = subprocess.run(  # noqa: S603 - run generated test code
         args=[sys.executable, "-I", "-c", program],
