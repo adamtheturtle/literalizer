@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 suites = ["base", "combined"]
 roles = ["no-variable-form-input"]
 
