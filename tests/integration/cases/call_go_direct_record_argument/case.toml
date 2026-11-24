@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-call"
 
 # Go regression for #7226. Check a record slice in both call modes.
