@@ -3,6 +3,7 @@ corpus.
 """
 
 from collections import Counter
+from pathlib import Path
 
 from tests.integration.golden_batches import (
     GOLDEN_BATCH_VERSION_LIMIT,
@@ -15,7 +16,9 @@ from tests.integration.golden_scenarios import (
 from tests.integration.language_specs import sorted_languages
 
 
-def test_golden_batches_preserve_every_rendering_in_order() -> None:
+def test_golden_batches_preserve_every_rendering_in_order(
+    cases_dir: Path,
+) -> None:
     """Batching neither drops nor duplicates scenarios or their
     versions.
     """
@@ -23,7 +26,7 @@ def test_golden_batches_preserve_every_rendering_in_order() -> None:
     assert len({group.test_id for group in groups}) == len(groups)
     for scenario in GOLDEN_SCENARIOS:
         for lang_cls in sorted_languages():
-            original = scenario.build(lang_cls=lang_cls)
+            original = scenario.build(cases_dir=cases_dir, lang_cls=lang_cls)
             actual = tuple(
                 rendering
                 for group in groups

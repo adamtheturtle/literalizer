@@ -1,7 +1,5 @@
 """Resolved fixture ownership shared by corpus tools and orphan checks."""
 
-import dataclasses
-import os
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -47,20 +45,11 @@ def reference_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
 
 def literal_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
     """Include ordinary and default-module renderings."""
-    source_cases_dir = Path(__file__).parent / "cases"
-    for renderings in scenario_renderings().values():
+    for renderings in scenario_renderings(cases_dir=cases_dir).values():
         for rendering in renderings:
             for spec in rendering.specs:
-                if isinstance(rendering.outcome(spec=spec), Rejection):
-                    continue
-                artifact = rendering.artifact(version=spec.language_version)
-                yield dataclasses.replace(
-                    artifact,
-                    path=cases_dir
-                    / os.path.relpath(
-                        path=artifact.path, start=source_cases_dir
-                    ),
-                )
+                if isinstance(rendering.outcome(spec=spec), Success):
+                    yield rendering.artifact(version=spec.language_version)
 
 
 def authored_paths(*, cases_dir: Path) -> Iterator[Path]:

@@ -63,10 +63,10 @@ _COMBINED_VARIABLE_FORM = literalizer.BothVariableForms(
 
 @runtime_checkable
 class _ScenarioBuilder(Protocol):
-    """A scenario builder accepting one language by keyword."""
+    """Build one language's renderings from a selected corpus."""
 
     def __call__(
-        self, *, lang_cls: literalizer.LanguageCls
+        self, *, cases_dir: Path, lang_cls: literalizer.LanguageCls
     ) -> tuple[GoldenRendering, ...]:
         """Build the renderings selected for one language."""
         ...
@@ -76,8 +76,8 @@ class _ScenarioBuilder(Protocol):
 class GoldenScenario:
     """A named family of golden renderings sharing one runner.
 
-    ``build`` takes a language by keyword and returns the renderings
-    that language takes part in, empty when it takes none.
+    ``build`` takes a case corpus and language. It returns an empty
+    tuple when the language does not participate.
     """
 
     name: str
@@ -87,6 +87,7 @@ class GoldenScenario:
 @beartype
 def _base_renderings(
     *,
+    cases_dir: Path,
     lang_cls: literalizer.LanguageCls,
 ) -> tuple[GoldenRendering, ...]:
     """Render every base-suite case under the language's defaults.
@@ -94,9 +95,9 @@ def _base_renderings(
     The render context -- variable form, layout, pre-indent, record null
     substitutions -- is whatever the case's manifest declares.
     """
-    manifests = case_manifests_by_name(cases_dir=_CASES_DIR)
+    manifests = case_manifests_by_name(cases_dir=cases_dir)
     case_names = discover_cases(
-        cases_dir=_CASES_DIR, suite="base", lang_cls=lang_cls
+        cases_dir=cases_dir, suite="base", lang_cls=lang_cls
     )
     renderings: list[GoldenRendering] = []
     for case_name in case_names:
@@ -109,6 +110,7 @@ def _base_renderings(
         renderings.append(
             dataclasses.replace(
                 unprefixed_rendering(
+                    cases_dir=cases_dir,
                     lang_cls=lang_cls,
                     case_dir_name=case_name,
                     golden_name=lang_cls.__name__,
@@ -136,6 +138,7 @@ def _base_renderings(
 @beartype
 def _default_module_name_renderings(
     *,
+    cases_dir: Path,
     lang_cls: literalizer.LanguageCls,
 ) -> tuple[GoldenRendering, ...]:
     """Render declared inputs with the constructor's module-name default.
@@ -143,14 +146,14 @@ def _default_module_name_renderings(
     These specs bypass both the test default in ``make_spec`` and the
     per-fixture naming policy, so the golden pins the public default.
     """
-    manifests = case_manifests_by_name(cases_dir=_CASES_DIR)
+    manifests = case_manifests_by_name(cases_dir=cases_dir)
     return tuple(
         GoldenRendering(
             consumer=None,
             lang_cls=lang_cls,
             case_dir_name=case_name,
             golden_name=f"{lang_cls.__name__}_default_module_name",
-            golden_parent=_CASES_DIR / case_name,
+            golden_parent=cases_dir / case_name,
             spec_source=lang_cls(language_version=version),
             render=compact_render(
                 variable_form=literalizer.NewVariable(
@@ -172,6 +175,7 @@ def _default_module_name_renderings(
 @beartype
 def _new_variable_renderings(
     *,
+    cases_dir: Path,
     lang_cls: literalizer.LanguageCls,
     languages: Sequence[literalizer.LanguageCls],
     owner: OwnerName,
@@ -184,9 +188,10 @@ def _new_variable_renderings(
         return ()
     return (
         unprefixed_rendering(
+            cases_dir=cases_dir,
             lang_cls=lang_cls,
             case_dir_name=case_dir_name_for_owner(
-                cases_dir=_CASES_DIR,
+                cases_dir=cases_dir,
                 owner=owner,
             ),
             golden_name=lang_cls.__name__,
@@ -203,12 +208,13 @@ def _new_variable_renderings(
 
 @beartype
 def _combined_renderings(
-    *, lang_cls: literalizer.LanguageCls
+    *, cases_dir: Path, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
     """Combine declaration and assignment under each supported style."""
     styles = find_redefinition_styles(spec=make_spec(lang_cls=lang_cls))
     return tuple(
         unprefixed_rendering(
+            cases_dir=cases_dir,
             lang_cls=lang_cls,
             case_dir_name=case_name,
             golden_name=(
@@ -223,7 +229,7 @@ def _combined_renderings(
             render=compact_render(variable_form=_COMBINED_VARIABLE_FORM),
         )
         for case_name in discover_cases(
-            cases_dir=_CASES_DIR, suite="combined", lang_cls=lang_cls
+            cases_dir=cases_dir, suite="combined", lang_cls=lang_cls
         )
         for style in styles
     )
@@ -232,6 +238,7 @@ def _combined_renderings(
 @beartype
 def _variant_renderings(
     *,
+    cases_dir: Path,
     lang_cls: literalizer.LanguageCls,
 ) -> tuple[GoldenRendering, ...]:
     """Render each format variant's own spec against its own case.
@@ -240,13 +247,13 @@ def _variant_renderings(
     explicit version choices pinned. Each variant already carries its
     effective version, so the rendering uses that spec unchanged.
     """
-    grouped = group_variant_cases_by_language()
+    grouped = group_variant_cases_by_language(cases_dir=cases_dir)
     return tuple(
         GoldenRendering(
             lang_cls=lang_cls,
             case_dir_name=variant_case.case_dir_name,
             golden_name=variant_case.golden_name,
-            golden_parent=_CASES_DIR / variant_case.case_dir_name,
+            golden_parent=cases_dir / variant_case.case_dir_name,
             spec_source=variant_case.variant.spec,
             render=RenderArguments(
                 variable_form=variant_case.variable_form,
@@ -268,7 +275,7 @@ def _variant_renderings(
 
 @beartype
 def _statement_terminator_renderings(
-    *, lang_cls: literalizer.LanguageCls
+    *, cases_dir: Path, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
     """Combine both variable forms under each non-default terminator."""
     spec = make_spec(lang_cls=lang_cls)
@@ -276,10 +283,11 @@ def _statement_terminator_renderings(
     if len(styles) == 0:
         return ()
     case_names = manifest_queries.case_dir_names_for_role(
-        cases_dir=_CASES_DIR, role=case_manifests.STATEMENT_TERMINATOR_ROLE
+        cases_dir=cases_dir, role=case_manifests.STATEMENT_TERMINATOR_ROLE
     )
     return tuple(
         unprefixed_rendering(
+            cases_dir=cases_dir,
             lang_cls=lang_cls,
             case_dir_name=case_name,
             golden_name=(
@@ -300,7 +308,7 @@ def _statement_terminator_renderings(
 
 @beartype
 def _heterogeneous_strategy_renderings(
-    *, lang_cls: literalizer.LanguageCls
+    *, cases_dir: Path, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
     """Combine both variable forms under each non-default strategy."""
     spec = make_spec(lang_cls=lang_cls)
@@ -309,9 +317,10 @@ def _heterogeneous_strategy_renderings(
         return ()
     return tuple(
         unprefixed_rendering(
+            cases_dir=cases_dir,
             lang_cls=lang_cls,
             case_dir_name=manifest_queries.case_dir_name_for_role(
-                cases_dir=_CASES_DIR,
+                cases_dir=cases_dir,
                 role=manifest_queries.heterogeneous_strategy_role(
                     strategy_name=strategy.name
                 ),
@@ -333,7 +342,7 @@ def _heterogeneous_strategy_renderings(
 
 @beartype
 def _pre_indent_renderings(
-    *, lang_cls: literalizer.LanguageCls
+    *, cases_dir: Path, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
     """Render each modifier combination at a non-zero pre-indent.
 
@@ -341,10 +350,10 @@ def _pre_indent_renderings(
     Keep container renderings before comment renderings for stable IDs.
     """
     container = manifest_queries.case_dir_name_for_role(
-        cases_dir=_CASES_DIR, role=case_manifests.PRE_INDENT_CONTAINER_ROLE
+        cases_dir=cases_dir, role=case_manifests.PRE_INDENT_CONTAINER_ROLE
     )
     comment = manifest_queries.case_dir_name_for_role(
-        cases_dir=_CASES_DIR,
+        cases_dir=cases_dir,
         role=case_manifests.PRE_INDENT_COMMENT_SCALAR_ROLE,
     )
     contexts = [(container, "")]
@@ -354,6 +363,7 @@ def _pre_indent_renderings(
         contexts.append((comment, f"_{comment}"))
     return tuple(
         unprefixed_rendering(
+            cases_dir=cases_dir,
             lang_cls=lang_cls,
             case_dir_name=case_dir_name,
             golden_name=f"{lang_cls.__name__}_pre_indent_1_{combo.name}{suffix}",
@@ -375,7 +385,7 @@ def _pre_indent_renderings(
 
 @beartype
 def _no_variable_form_renderings(
-    *, lang_cls: literalizer.LanguageCls
+    *, cases_dir: Path, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
     """Render selected role inputs directly at file scope.
 
@@ -384,9 +394,10 @@ def _no_variable_form_renderings(
     """
     if not lang_cls.supports_no_variable_wrap_in_file:
         return ()
-    manifests = case_manifests_by_name(cases_dir=_CASES_DIR)
+    manifests = case_manifests_by_name(cases_dir=cases_dir)
     return tuple(
         unprefixed_rendering(
+            cases_dir=cases_dir,
             lang_cls=lang_cls,
             case_dir_name=case_name,
             golden_name=(
@@ -397,7 +408,7 @@ def _no_variable_form_renderings(
             render=compact_render(variable_form=None),
         )
         for case_name in manifest_queries.case_dir_names_for_role(
-            cases_dir=_CASES_DIR, role=case_manifests.NO_VARIABLE_FORM_ROLE
+            cases_dir=cases_dir, role=case_manifests.NO_VARIABLE_FORM_ROLE
         )
         if manifests[case_name].selection.admits_language(lang_cls=lang_cls)
     )
@@ -405,16 +416,17 @@ def _no_variable_form_renderings(
 
 @beartype
 def _indent_renderings(
-    *, lang_cls: literalizer.LanguageCls
+    *, cases_dir: Path, lang_cls: literalizer.LanguageCls
 ) -> tuple[GoldenRendering, ...]:
     """Exercise the declared indent fixture with three-space
     indentation.
     """
     return (
         unprefixed_rendering(
+            cases_dir=cases_dir,
             lang_cls=lang_cls,
             case_dir_name=manifest_queries.case_dir_name_for_role(
-                cases_dir=_CASES_DIR, role=case_manifests.INDENT_ROLE
+                cases_dir=cases_dir, role=case_manifests.INDENT_ROLE
             ),
             golden_name=f"{lang_cls.__name__}_indent_three_space",
             spec_source={"indent": "   "},
@@ -472,9 +484,10 @@ GOLDEN_SCENARIOS: tuple[GoldenScenario, ...] = (
 
 @functools.cache
 @beartype
-def scenario_renderings() -> Mapping[
-    tuple[str, literalizer.LanguageCls], tuple[GoldenRendering, ...]
-]:
+def scenario_renderings(
+    *,
+    cases_dir: Path = _CASES_DIR,  # noqa: NOD001 - ordinary corpus
+) -> Mapping[tuple[str, literalizer.LanguageCls], tuple[GoldenRendering, ...]]:
     """Expand each scenario once, independently of pytest scheduling.
 
     Golden runners, ownership checks and secondary consumers share this
@@ -482,7 +495,9 @@ def scenario_renderings() -> Mapping[
     without changing which renderings belong to it.
     """
     return {
-        (scenario.name, lang_cls): scenario.build(lang_cls=lang_cls)
+        (scenario.name, lang_cls): scenario.build(
+            cases_dir=cases_dir, lang_cls=lang_cls
+        )
         for scenario in GOLDEN_SCENARIOS
         for lang_cls in sorted_languages()
     }

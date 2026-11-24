@@ -20,9 +20,6 @@ from .literal_rejection_manifest import (
 )
 from .manifest_values import ConsumerCall
 
-_CASES_DIR = Path(__file__).parent / "cases"
-
-
 type SpecSource = literalizer.Language | Mapping[str, object]
 """A pinned language spec or constructor overrides for every version."""
 
@@ -147,6 +144,7 @@ class GoldenRendering:
 @beartype
 def unprefixed_rendering(
     *,
+    cases_dir: Path,
     lang_cls: literalizer.LanguageCls,
     case_dir_name: str,
     golden_name: str,
@@ -159,7 +157,7 @@ def unprefixed_rendering(
         lang_cls=lang_cls,
         case_dir_name=case_dir_name,
         golden_name=golden_name,
-        golden_parent=_CASES_DIR / case_dir_name,
+        golden_parent=cases_dir / case_dir_name,
         spec_source=spec_source,
         render=render,
         extra_preamble=(),
