@@ -35,10 +35,13 @@ where the pinned Perl toolchain is installed.  It shares the same input
 and comparison logic as the other per-language round-trip helpers.
 """
 
+import dataclasses
+import json
 import shutil
 
 import click
 
+from literalizer import CollectionLayout, InputFormat, NewVariable, literalize
 from literalizer.languages import Perl
 from scripts import roundtrip_common
 
@@ -47,17 +50,16 @@ _LABEL = "Perl"
 _EXCLUDED_KEYS = ("float_large_exponent",)
 
 
-def _build_program(json_text: str) -> str:
-    """Return a runnable Perl program literalized from *json_text*."""
-    language = Perl(
-        bool_format=Perl.bool_formats.JSON_PP_REF,
-        integer_width_strategy=Perl.integer_width_strategies.MATH_BIG_INT,
-    )
-    result = roundtrip_common.literalize_new_variable(
+def _build_program(
+    *, json_text: str, language: Perl, layout: CollectionLayout
+) -> str:
+    """Render a Perl program with the selected options."""
+    result = literalize(
+        source=json_text,
+        input_format=InputFormat.JSON,
         language=language,
-        json_text=json_text,
-        var_name=_VAR_NAME,
-        pre_indent_level=0,
+        variable_form=NewVariable(name=_VAR_NAME, modifiers=frozenset()),
+        collection_layout=layout,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     return (
@@ -72,30 +74,104 @@ def _build_program(json_text: str) -> str:
     )
 
 
-@click.command()
-def main() -> None:
-    """Round-trip the shared document through the Perl backend."""
-    json_text = roundtrip_common.input_for_capabilities(
-        capabilities=Perl.variant_metadata.round_trip_capabilities,
-    )
-    program = _build_program(json_text=json_text)
-    perl = shutil.which(cmd="perl")
-    if perl is None or perl == "":
-        perl = "perl"
+def _check_program(
+    *,
+    perl: str,
+    label: str,
+    json_text: str,
+    language: Perl,
+    layout: CollectionLayout,
+    excluded_keys: tuple[str, ...],
+) -> None:
+    """Run one document through Perl's native JSON serializer."""
     roundtrip_common.execute(
-        label=_LABEL,
+        label=label,
         source_filename="main.pl",
-        program=program,
+        program=_build_program(
+            json_text=json_text, language=language, layout=layout
+        ),
         steps=[
             roundtrip_common.Step(
                 args=[perl, "main.pl"],
                 failure_label="perl runtime error",
             ),
         ],
-        excluded_keys=_EXCLUDED_KEYS,
+        excluded_keys=excluded_keys,
         expected_json=json_text,
         extra_files=None,
     )
+
+
+def _check_option_pairs(*, perl: str, language: Perl) -> None:
+    """Exercise every pair across string, integer and layout options."""
+    json_text = json.dumps(
+        obj={
+            "text": 'café 日本語, "quotes", \\ and $value',
+            "values": [-16384, True, 99999999999999999999999999, []],
+        },
+        ensure_ascii=False,
+    )
+    for string_format, integer_format, layout in (
+        (
+            Perl.string_formats.DOUBLE,
+            Perl.integer_formats.HEX,
+            CollectionLayout.COMPACT,
+        ),
+        (
+            Perl.string_formats.DOUBLE,
+            Perl.integer_formats.OCTAL,
+            CollectionLayout.MULTILINE,
+        ),
+        (
+            Perl.string_formats.DOUBLE_UTF8,
+            Perl.integer_formats.HEX,
+            CollectionLayout.MULTILINE,
+        ),
+        (
+            Perl.string_formats.DOUBLE_UTF8,
+            Perl.integer_formats.OCTAL,
+            CollectionLayout.COMPACT,
+        ),
+    ):
+        _check_program(
+            perl=perl,
+            label=(
+                f"{_LABEL} {string_format.name}/{integer_format.name}/"
+                f"{layout.name}"
+            ),
+            json_text=json_text,
+            language=dataclasses.replace(
+                language,
+                string_format=string_format,
+                integer_format=integer_format,
+            ),
+            layout=layout,
+            excluded_keys=(),
+        )
+
+
+@click.command()
+def main() -> None:
+    """Round-trip the shared document and the bounded option pairs."""
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Perl.variant_metadata.round_trip_capabilities,
+    )
+    language = Perl(
+        bool_format=Perl.bool_formats.JSON_PP_REF,
+        integer_width_strategy=Perl.integer_width_strategies.MATH_BIG_INT,
+    )
+    perl = shutil.which(cmd="perl")
+    if perl is None or perl == "":
+        perl = "perl"
+    _check_program(
+        perl=perl,
+        label=_LABEL,
+        json_text=json_text,
+        language=language,
+        layout=CollectionLayout.COMPACT,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    _check_option_pairs(perl=perl, language=language)
 
 
 if __name__ == "__main__":
