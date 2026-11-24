@@ -11,6 +11,7 @@ The ``lint-go`` job in ``.github/workflows/lint.yml`` runs this check.
 """
 
 import shutil
+from pathlib import Path
 
 import click
 
@@ -19,6 +20,7 @@ from literalizer.languages import Go
 from scripts import roundtrip_common, shared_record_common
 
 _LABEL = "Go shared-record"
+_CONSUMER_PATH = Path(__file__).with_name(name="go_shared_record.go")
 _EXPECTED_JSON = (
     f'{{"declaring": {shared_record_common.DECLARING_DOCUMENT},'
     f'"dependent": {shared_record_common.DEPENDENT_DOCUMENT}}}'
@@ -31,51 +33,20 @@ _EXPECTED_JSON = (
 _GO_MOD = "module fixture\n\ngo 1.18\n"
 
 
-def _build_program(
+def _build_data_source(
     *,
     declarations_from: LiteralizeResult,
     declaring: LiteralizeResult,
     dependent: LiteralizeResult,
 ) -> str:
-    """Build a runnable Go program with just the selected preamble."""
-    package_clause, *declarations = (
-        *declarations_from.preamble,
-        *declarations_from.body_preamble,
-    )
-    declared = "\n".join(declarations)
-    return (
-        f"{package_clause}\n"
-        "\n"
-        "import (\n"
-        '\t"encoding/json"\n'
-        '\t"os"\n'
-        ")\n"
-        "\n"
-        f"{declared}\n"
-        "\n"
-        "func main() {\n"
-        f"{declaring.code}\n"
-        f"{dependent.code}\n"
-        "\trecords := map[string][]Record0{\n"
-        f'\t\t"declaring": {shared_record_common.DECLARING_VAR_NAME_CAMEL},\n'
-        f'\t\t"dependent": {shared_record_common.DEPENDENT_VAR_NAME_CAMEL},\n'
-        "\t}\n"
-        "\tdocuments := make(map[string][]map[string]any, len(records))\n"
-        "\tfor document, rows := range records {\n"
-        "\t\tvalues := make([]map[string]any, 0, len(rows))\n"
-        "\t\tfor _, row := range rows {\n"
-        "\t\t\tvalues = append(values, map[string]any{\n"
-        '\t\t\t\t"name": row.Name,\n'
-        '\t\t\t\t"attributes": row.Attributes,\n'
-        "\t\t\t})\n"
-        "\t\t}\n"
-        "\t\tdocuments[document] = values\n"
-        "\t}\n"
-        "\tencoder := json.NewEncoder(os.Stdout)\n"
-        "\tif err := encoder.Encode(documents); err != nil {\n"
-        "\t\tpanic(err)\n"
-        "\t}\n"
-        "}\n"
+    """Put both bindings in the package with the selected declarations."""
+    return "\n".join(
+        (
+            *declarations_from.preamble,
+            *declarations_from.body_preamble,
+            declaring.code,
+            dependent.code,
+        )
     )
 
 
@@ -85,18 +56,19 @@ def main() -> None:
     language = Go(
         heterogeneous_strategy=Go.heterogeneous_strategies.RECORD,
         record_map_value_typing=Go.record_map_value_typings.WIDE,
+        declaration_style=Go.declaration_styles.VAR,
     )
     declaring = roundtrip_common.literalize_new_variable(
         language=language,
         json_text=shared_record_common.DECLARING_DOCUMENT,
         var_name=shared_record_common.DECLARING_VAR_NAME_CAMEL,
-        pre_indent_level=1,
+        pre_indent_level=0,
     )
     dependent = roundtrip_common.literalize_new_variable(
         language=language,
         json_text=shared_record_common.DEPENDENT_DOCUMENT,
         var_name=shared_record_common.DEPENDENT_VAR_NAME_CAMEL,
-        pre_indent_level=1,
+        pre_indent_level=0,
     )
     go = shutil.which(cmd="go")
     if go is None or go == "":
@@ -111,6 +83,7 @@ def main() -> None:
             failure_label="go run error",
         ),
     ]
+    program = _CONSUMER_PATH.read_text(encoding="utf-8")
     for declaration_label, declarations_from in (
         ("mixed-map declaration", declaring),
         ("string-only declaration", dependent),
@@ -118,15 +91,18 @@ def main() -> None:
         roundtrip_common.execute(
             label=f"{_LABEL} ({declaration_label})",
             source_filename="main.go",
-            program=_build_program(
-                declarations_from=declarations_from,
-                declaring=declaring,
-                dependent=dependent,
-            ),
+            program=program,
             steps=steps,
             excluded_keys=(),
             expected_json=_EXPECTED_JSON,
-            extra_files={"go.mod": _GO_MOD},
+            extra_files={
+                "go.mod": _GO_MOD,
+                "record_data.go": _build_data_source(
+                    declarations_from=declarations_from,
+                    declaring=declaring,
+                    dependent=dependent,
+                ),
+            },
         )
 
 
