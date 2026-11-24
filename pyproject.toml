@@ -74,7 +74,7 @@ dev = [
     # ``j178/prek-action`` steps in ``.github/workflows/lint.yml`` and
     # ``.github/workflows/autofix.yml``.
     "prek==0.5.11",
-    "pydantic==2.14.3",
+    "pydantic==2.14.4",
     "pydocstringformatter==1.0.0",
     "pygments==2.21.0",
     "pylint[spelling]==4.1.4",
@@ -132,7 +132,7 @@ test = [
     { include-group = "cli" },
     "beartype==0.23.1",
     "hypothesis==6.170.17",
-    "pydantic==2.14.3",
+    "pydantic==2.14.4",
     "pygments==2.21.0",
     "pytest==9.2.0",
     "pytest-beartype==0.3.0",
@@ -154,7 +154,7 @@ benchmark = [
 cli = [ "click==8.5.1" ]
 fixture-inventory = [
     { include-group = "cli" },
-    "pydantic==2.14.3",
+    "pydantic==2.14.4",
 ]
 # Python parsers used by the corresponding native checks and round trips.
 norg = [ "tree-sitter==0.26.1" ]
@@ -166,7 +166,7 @@ release = [
 # without installing the Python test, lint and documentation toolchains.
 roundtrip = [
     { include-group = "cli" },
-    "pydantic==2.14.3",
+    "pydantic==2.14.4",
     "tenacity==9.2.1",
 ]
 toml = [ "tomli>=2.4.0" ]
