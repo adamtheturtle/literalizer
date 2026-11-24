@@ -35,6 +35,16 @@ def call_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
     )
 
 
+def reference_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
+    """Include successful references declared by the selected corpus."""
+    return (
+        rendering.artifact(cases_dir=cases_dir)
+        for case in reference_golden_cases(cases_dir=cases_dir)
+        for rendering in case.renderings
+        if not isinstance(rendering.outcome, (Rejection, Exclusion))
+    )
+
+
 def literal_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
     """Include ordinary and default-module renderings."""
     source_cases_dir = Path(__file__).parent / "cases"
@@ -74,12 +84,7 @@ def golden_artifacts(*, cases_dir: Path) -> Iterator[GoldenArtifact]:
     """Combine the artifacts exposed by each golden family."""
     yield from literal_artifacts(cases_dir=cases_dir)
     yield from call_artifacts(cases_dir=cases_dir)
-    yield from (
-        rendering.artifact(cases_dir=cases_dir)
-        for case in reference_golden_cases()
-        for rendering in case.renderings
-        if not isinstance(rendering.outcome, (Rejection, Exclusion))
-    )
+    yield from reference_artifacts(cases_dir=cases_dir)
     yield from (
         rendering.artifact
         for case in constructor_binding_cases(cases_dir=cases_dir)

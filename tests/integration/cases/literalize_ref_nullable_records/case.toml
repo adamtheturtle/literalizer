@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-ref"
 # Shared coverage retains the original Swift regression.
 

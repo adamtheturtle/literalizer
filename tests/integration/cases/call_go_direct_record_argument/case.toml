@@ -35,3 +35,37 @@ axis = "wide_record_map_values"
 [call_examples.fixture]
 kind = "composed"
 target_source = "consume.go"
+
+[[call_examples]]
+example = "whole_with_reference_detection"
+gates = [{kind = "capability_flag", flag = "supports_default_ordered_map_value_type"}]
+target_function = "consume"
+detect_references = true
+parameter_names = ["rows"]
+per_element = false
+input_root_key = "whole"
+variant_only = true
+
+[[call_examples.variants]]
+axis = "wide_record_map_values"
+
+[call_examples.fixture]
+kind = "composed"
+target_source = "consume.go"
+
+[[call_examples]]
+example = "per_element_with_reference_detection"
+gates = [{kind = "capability_flag", flag = "supports_default_ordered_map_value_type"}]
+target_function = "consume"
+detect_references = true
+parameter_names = ["rows"]
+per_element = true
+input_root_key = "rows"
+variant_only = true
+
+[[call_examples.variants]]
+axis = "wide_record_map_values"
+
+[call_examples.fixture]
+kind = "composed"
+target_source = "consume.go"

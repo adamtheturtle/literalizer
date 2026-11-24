@@ -13,6 +13,7 @@ from .literalize_ref_cases import (
     run_literalize_ref_golden_case,
 )
 from .reference_cases import (
+    CASES_DIR,
     RefRendering,
     build_literalize_ref_variant_cases,
     discover_literalize_ref_cases,
@@ -27,7 +28,9 @@ from .reference_cases import (
                 f"{case.config.coverage_id}/{case.lang_cls.__name__}",
                 case.renderings,
             )
-            for case in discover_literalize_ref_cases(owner=REF_OWNER)
+            for case in discover_literalize_ref_cases(
+                owner=REF_OWNER, cases_dir=CASES_DIR
+            )
         ),
     ),
 )
@@ -54,7 +57,7 @@ def test_literalize_ref_golden_file(
     argvalues=golden_test_parameters(
         cases=(
             (f"{case.config.coverage_id}/{case.variant.name}", case.renderings)
-            for case in build_literalize_ref_variant_cases()
+            for case in build_literalize_ref_variant_cases(cases_dir=CASES_DIR)
         ),
     ),
 )

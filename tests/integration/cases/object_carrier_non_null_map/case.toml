@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "variant"
 gates = [{kind = "capability_flag", flag = "supports_nullable_object_fallbacks"}]
 

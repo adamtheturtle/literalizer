@@ -24,9 +24,12 @@ cannot represent them losslessly:
   literalization.
 """
 
+import json
 import shutil
+from random import Random
 
 import click
+from pydantic import JsonValue
 
 from literalizer.languages import Php
 from scripts import roundtrip_common
@@ -38,13 +41,9 @@ _EXCLUDED_KEYS = ("biginteger", "empty_object")
 
 def _build_program(json_text: str) -> str:
     """Return a runnable PHP program literalized from *json_text*."""
-    trimmed_json = roundtrip_common.trim_keys(
-        json_text=json_text,
-        excluded_keys=_EXCLUDED_KEYS,
-    )
     result = roundtrip_common.literalize_new_variable(
         language=Php(),
-        json_text=trimmed_json,
+        json_text=json_text,
         var_name=_VAR_NAME,
         pre_indent_level=0,
     )
@@ -52,30 +51,90 @@ def _build_program(json_text: str) -> str:
     return f"{preamble}\n{result.code}\necho json_encode(${_VAR_NAME});\n"
 
 
-@click.command()
-def main() -> None:
-    """Round-trip the shared document through the PHP backend."""
-    json_text = roundtrip_common.input_for_capabilities(
-        capabilities=Php.variant_metadata.round_trip_capabilities,
+def _generated_value(*, generator: Random, depth: int) -> JsonValue:
+    """Generate a bounded value PHP can represent without coercion."""
+    kind_count = 6
+    if depth == 0:
+        kind_count = 4
+    match generator.randrange(start=kind_count):
+        case 0:
+            return generator.randint(a=-32768, b=32767)
+        case 1:
+            return generator.choice(seq=(None, True, False))
+        case 2:
+            return "".join(
+                generator.choices(
+                    population="ab09 '\"\\$\n日本語",
+                    k=generator.randrange(start=17),
+                )
+            )
+        case 3:
+            return (generator.randint(a=-32768, b=32767) * 2 + 1) / 8
+        case 4:
+            return [
+                _generated_value(generator=generator, depth=depth - 1)
+                for _ in range(generator.randrange(start=4))
+            ]
+        case _:
+            # PHP arrays cannot distinguish an empty map or retain
+            # purely numeric string keys.
+            return {
+                f"key_{index}": _generated_value(
+                    generator=generator, depth=depth - 1
+                )
+                for index in range(generator.randint(a=1, b=3))
+            }
+
+
+def _check_document(
+    *, label: str, php: str, json_text: str, excluded_keys: tuple[str, ...]
+) -> None:
+    """Render and execute one document in the shared round-trip runner."""
+    trimmed = roundtrip_common.trim_keys(
+        json_text=json_text, excluded_keys=excluded_keys
     )
-    program = _build_program(json_text=json_text)
-    php = shutil.which(cmd="php")
-    if php is None or php == "":
-        php = "php"
     roundtrip_common.execute(
-        label=_LABEL,
+        label=label,
         source_filename="main.php",
-        program=program,
+        program=_build_program(json_text=trimmed),
         steps=[
             roundtrip_common.Step(
                 args=[php, "main.php"],
                 failure_label="php runtime error",
             ),
         ],
-        excluded_keys=_EXCLUDED_KEYS,
+        excluded_keys=excluded_keys,
         expected_json=json_text,
         extra_files=None,
     )
+
+
+@click.command()
+def main() -> None:
+    """Round-trip the shared corpus and seeded nested documents."""
+    json_text = roundtrip_common.input_for_capabilities(
+        capabilities=Php.variant_metadata.round_trip_capabilities,
+    )
+    php = shutil.which(cmd="php")
+    if php is None or php == "":
+        php = "php"
+    _check_document(
+        label=_LABEL,
+        php=php,
+        json_text=json_text,
+        excluded_keys=_EXCLUDED_KEYS,
+    )
+    for seed in (7, 19, 83):
+        generator = Random(x=seed)  # noqa: S311 - reproducible fixture data
+        samples = [
+            _generated_value(generator=generator, depth=3) for _ in range(16)
+        ]
+        _check_document(
+            label=f"{_LABEL} generated nested values (seed {seed})",
+            php=php,
+            json_text=json.dumps(obj={"samples": samples}),
+            excluded_keys=(),
+        )
 
 
 if __name__ == "__main__":

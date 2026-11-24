@@ -88,7 +88,10 @@ def test_scaffold_refusal_through_golden_runner(
     assert manifest.ref is not None
     assert manifest.owner is not None
     case = LiteralizeRefCase(
-        config=manifest.ref, lang_cls=lang_cls, owner=manifest.owner
+        config=manifest.ref,
+        lang_cls=lang_cls,
+        owner=manifest.owner,
+        cases_dir=tmp_path,
     )
     assert len(case.renderings) > 0
     for rendering in case.renderings:
@@ -128,7 +131,10 @@ def test_redefinition_checks_the_selected_declaration(cases_dir: Path) -> None:
     assert manifest.ref is not None
     assert manifest.owner is not None
     default = LiteralizeRefCase(
-        config=manifest.ref, lang_cls=Rust, owner=manifest.owner
+        config=manifest.ref,
+        lang_cls=Rust,
+        owner=manifest.owner,
+        cases_dir=cases_dir,
     )
     (mutable,) = default.renderings
     explicit = dataclasses.replace(
@@ -154,7 +160,10 @@ def test_external_consumer_requires_effective_call_syntax(
     assert manifest.ref is not None
     assert manifest.owner is not None
     case = LiteralizeRefCase(
-        config=manifest.ref, lang_cls=Yaml, owner=manifest.owner
+        config=manifest.ref,
+        lang_cls=Yaml,
+        owner=manifest.owner,
+        cases_dir=cases_dir,
     )
     (rendering,) = case.renderings
     assert isinstance(rendering.outcome, Exclusion)
@@ -179,6 +188,7 @@ def test_only_explicit_reference_spelling_is_a_prerequisite(
         ),
         lang_cls=Rust,
         owner=REF_OWNER,
+        cases_dir=cases_dir,
     )
     (explicit,) = case.renderings
     (default,) = dataclasses.replace(case, owner=REF_DEFAULT_OWNER).renderings

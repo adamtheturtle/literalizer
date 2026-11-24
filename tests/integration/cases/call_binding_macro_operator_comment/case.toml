@@ -1,6 +1,7 @@
 # Regression provenance: prefixed_identifier_inside_incomplete_expression.
 # A macro identifier before an operator does not hide the final line comment.
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-call"
 
 [call]

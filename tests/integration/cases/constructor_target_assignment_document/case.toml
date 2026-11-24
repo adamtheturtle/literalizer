@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "constructor-binding"
 gates = [{kind = "capability_flag", flag = "supports_bare_mapping_documents"}, {kind = "capability_flag", flag = "supports_key_value_assignment_documents"}]
 

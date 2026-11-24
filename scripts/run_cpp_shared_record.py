@@ -71,7 +71,7 @@ def _build_data_sources() -> dict[str, str]:
 
 
 def _build_composed_program(*, language: Language, reverse: bool) -> str:
-    """Compose independent records with an unhinted real consumer."""
+    """Compose independent records and pass one by reference twice."""
     declarations = [
         literalize(
             source=source,
@@ -87,11 +87,14 @@ def _build_composed_program(*, language: Language, reverse: bool) -> str:
     if reverse:
         declarations.reverse()
     call = literalize_call(
-        source='[[{"$ref": "first_data"}, {"$ref": "second_data"}]]',
+        source=(
+            '[[{"$ref": "first_data"}, {"$ref": "second_data"}, '
+            '{"$ref": "first_data"}]]'
+        ),
         input_format=InputFormat.JSON,
         language=language,
         target_function="consume",
-        parameter_names=("first", "second"),
+        parameter_names=("first", "second", "repeated"),
         per_element=True,
         ref_key="$ref",
     )

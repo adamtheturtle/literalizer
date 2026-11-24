@@ -1,5 +1,6 @@
 # Native JVM offset syntax cannot express fractional seconds (#6603).
 schema_version = 1
+golden_layout = "nested"
 suites = ["base"]
 gates = [{kind = "enum_member_present", option = "datetime_format", member = "INSTANT"}]
 

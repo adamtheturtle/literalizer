@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-ref"
 # Regression provenance: Rust.
 # Rust ownership distinguishes reusable owned bindings from Copy values.

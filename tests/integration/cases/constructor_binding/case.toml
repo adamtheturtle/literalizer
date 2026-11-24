@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "constructor-binding"
 gates = [{kind = "capability_flag", flag = "declares_type_name_call_target"}]
 

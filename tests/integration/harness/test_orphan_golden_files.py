@@ -20,6 +20,7 @@ from tests.integration.golden_inventory import (
     call_artifacts,
     literal_artifacts,
     owned_paths,
+    reference_artifacts,
 )
 from tests.integration.reference_cases import (
     ref_language_specs,
@@ -179,3 +180,33 @@ def test_reference_versions_follow_selected_options() -> None:
         spec.language_version
         for spec in ref_language_specs(config=config, lang_cls=Cpp)
     ) == tuple(Cpp.VersionFormats)
+
+
+def test_reference_inventory_reads_selected_corpus(tmp_path: Path) -> None:
+    """Resolve reference outcomes and paths from the same manifests."""
+    cases_dir = tmp_path / "custom_corpus"
+    case_dir = cases_dir / "custom_references"
+    case_dir.mkdir(parents=True)
+    _ = (case_dir / "case.toml").write_text(
+        data=(
+            'schema_version = 1\ngolden_layout = "nested"\n'
+            'owner = "literalize-ref"\n[ref]\n'
+            '[[ref.variants]]\naxis = "collection_layout"\n'
+        ),
+        encoding="utf-8",
+    )
+    _ = (case_dir / "input.json").write_text(
+        data='{"a": {"$ref": "shared_values"}}\n', encoding="utf-8"
+    )
+    artifacts = tuple(reference_artifacts(cases_dir=cases_dir))
+    assert all(case_dir in artifact.path.parents for artifact in artifacts)
+    python_cases = {
+        artifact.path.name
+        for artifact in artifacts
+        if artifact.language.language_id == "python"
+    }
+    assert python_cases == {
+        "ref.py",
+        "collection_layout_compact_ref.py",
+        "collection_layout_multiline_ref.py",
+    }

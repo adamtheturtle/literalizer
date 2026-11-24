@@ -16,6 +16,7 @@ import json
 import shutil
 from fractions import Fraction
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
@@ -23,10 +24,16 @@ from literalizer import CollectionLayout, InputFormat, NewVariable, literalize
 from literalizer.languages import Ruby
 from scripts import roundtrip_common
 
+if TYPE_CHECKING:
+    from pydantic import JsonValue
+
 _VAR_NAME = "myData"
 _LABEL = "Ruby"
 _OPTION_PAIR_CONSUMER = Path(__file__).with_name(
     name="ruby_option_pair_consumer.rb"
+)
+_SIBLING_CONSUMER = Path(__file__).with_name(
+    name="ruby_sibling_permutations.rb"
 )
 
 
@@ -238,6 +245,56 @@ def _check_option_pairs(*, ruby: str) -> None:
         )
 
 
+def _check_sibling_permutations(*, ruby: str) -> None:
+    """Check empty, null-only and populated siblings in both orders."""
+    consumer = _SIBLING_CONSUMER.read_text(encoding="utf-8")
+    samples: list[JsonValue] = [
+        [],
+        [None, None],
+        {},
+        [True, 17],
+        {"field": False},
+    ]
+    steps = [
+        roundtrip_common.Step(
+            args=[ruby, "main.rb"],
+            failure_label="Ruby sibling permutation error",
+        ),
+    ]
+    for entry_style, key_type in (
+        (Ruby.dict_entry_styles.ROCKET, "String"),
+        (Ruby.dict_entry_styles.SYMBOL, "Symbol"),
+    ):
+        for rows, order in (
+            (samples, "empty first"),
+            (samples[::-1], "populated first"),
+        ):
+            result = roundtrip_common.literalize_new_variable(
+                language=Ruby(dict_entry_style=entry_style),
+                json_text=json.dumps(obj=rows),
+                var_name=_VAR_NAME,
+                pre_indent_level=0,
+            )
+            program = "\n".join(
+                (
+                    "require_relative 'ruby_sibling_permutations'",
+                    *result.preamble,
+                    *result.body_preamble,
+                    result.code,
+                    f"verify_sibling_permutation({_VAR_NAME}, {key_type})",
+                )
+            )
+            roundtrip_common.execute(
+                label=f"{_LABEL} {key_type} siblings ({order})",
+                source_filename="main.rb",
+                program=program,
+                steps=steps,
+                excluded_keys=(),
+                expected_json=json.dumps(obj={"rows": rows}),
+                extra_files={_SIBLING_CONSUMER.name: consumer},
+            )
+
+
 @click.command()
 def main() -> None:
     """Round-trip the shared document through the Ruby backend."""
@@ -265,6 +322,7 @@ def main() -> None:
     _check_date_calendars(ruby=ruby)
     _check_datetime_offsets(ruby=ruby)
     _check_option_pairs(ruby=ruby)
+    _check_sibling_permutations(ruby=ruby)
 
 
 if __name__ == "__main__":

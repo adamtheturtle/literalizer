@@ -22,6 +22,7 @@ lint-fast:
   - *shared
   - '{src/literalizer/languages,tests/integration/languages}/{bash,c,dhall,forth,fortran,java,javascript,lua,nix,php,powershell,ruby,scheme,tcl,wren}.{py,toml}'
   - scripts/run_{bash,c,dhall,forth,fortran,java,javascript,lua,nix,php,powershell,ruby,scheme,tcl,wren}{,_*}.py
+  - scripts/{bash_roundtrip_json.sh,javascript_*.cjs,lua_*_consumer.lua,ruby_*.rb}
   - src/literalizer/languages/forth_prelude.fs
   - scripts/run_interpreted_fixtures.py
   - scripts/{forth_visitor_lint.fs,fval_m.f90,lint-powershell.ps1,run-powershell.ps1}
@@ -164,6 +165,7 @@ build-cpp-toolchain:
   - *shared
   - '{src/literalizer/languages,tests/integration/languages}/{c,cpp}.{py,toml}'
   - scripts/run_cpp{,_*}.py
+  - scripts/{cpp_composed_record.hpp,cpp_shared_record.cpp}
   - scripts/build_cpp_toolchain.py
   - ci/clang/**
   - .clang-tidy
@@ -189,6 +191,7 @@ lint-cpp:
   - *shared
   - '{src/literalizer/languages,tests/integration/languages}/cpp.{py,toml}'
   - scripts/run_cpp{,_*}.py
+  - scripts/{cpp_composed_record.hpp,cpp_shared_record.cpp}
   - scripts/lint-cpp-fixture.sh
   - ci/clang/**
   - scripts/build_cpp_toolchain.py
@@ -249,12 +252,14 @@ lint-go:
   - *shared
   - '{src/literalizer/languages,tests/integration/languages}/go.{py,toml}'
   - scripts/run_go{,_*}.py
+  - scripts/go_shared_record.go
   - tests/integration/cases/**/*.go
 
 lint-rust:
   - *shared
   - '{src/literalizer/languages,tests/integration/languages}/rust.{py,toml}'
   - scripts/run_rust{,_*}.py
+  - scripts/rust_{composed,shared}_record.rs
   - tests/integration/cases/**/*.rs
 
 lint-r:

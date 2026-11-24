@@ -5,17 +5,20 @@ Literalize both documents in :mod:`scripts.shared_record_common` under
 then compile both sets of slice literals against each document's
 ``struct`` declarations in turn. The documents contain mixed and
 string-only maps, which must both use ``map[string]any``. Each program
-emits both documents' native values for comparison with the original JSON.
+executes a separately rendered call over both bindings, checks reuse of
+the dependent slice, and emits both documents for comparison with the
+original JSON.
 
 The ``lint-go`` job in ``.github/workflows/lint.yml`` runs this check.
 """
 
+import json
 import shutil
 from pathlib import Path
 
 import click
 
-from literalizer import LiteralizeResult
+from literalizer import InputFormat, LiteralizeResult, literalize_call
 from literalizer.languages import Go
 from scripts import roundtrip_common, shared_record_common
 
@@ -35,17 +38,16 @@ _GO_MOD = "module fixture\n\ngo 1.18\n"
 
 def _build_data_source(
     *,
-    declarations_from: LiteralizeResult,
-    declaring: LiteralizeResult,
-    dependent: LiteralizeResult,
+    first: LiteralizeResult,
+    second: LiteralizeResult,
 ) -> str:
     """Put both bindings in the package with the selected declarations."""
     return "\n".join(
         (
-            *declarations_from.preamble,
-            *declarations_from.body_preamble,
-            declaring.code,
-            dependent.code,
+            *first.preamble,
+            *first.body_preamble,
+            first.code,
+            second.code,
         )
     )
 
@@ -83,14 +85,34 @@ def main() -> None:
             failure_label="go run error",
         ),
     ]
+    declaring_name = shared_record_common.DECLARING_VAR_NAME_CAMEL
+    dependent_name = shared_record_common.DEPENDENT_VAR_NAME_CAMEL
+    call = literalize_call(
+        source=json.dumps(
+            obj=[
+                [
+                    {"$ref": declaring_name},
+                    {"$ref": dependent_name},
+                    {"$ref": dependent_name},
+                ]
+            ]
+        ),
+        input_format=InputFormat.JSON,
+        language=language,
+        target_function="consume",
+        parameter_names=("declaring", "dependent", "repeated"),
+        per_element=True,
+        ref_key="$ref",
+    )
+    call_source = f"package main\nfunc main() {{\n{call.code}\n}}\n"
     program = _CONSUMER_PATH.read_text(encoding="utf-8")
-    for declaration_label, declarations_from in (
-        ("mixed-map declaration", declaring),
-        ("string-only declaration", dependent),
+    for declaration_label, first, second in (
+        ("mixed-map declaration", declaring, dependent),
+        ("string-only declaration", dependent, declaring),
     ):
         roundtrip_common.execute(
             label=f"{_LABEL} ({declaration_label})",
-            source_filename="main.go",
+            source_filename="consumer.go",
             program=program,
             steps=steps,
             excluded_keys=(),
@@ -98,10 +120,9 @@ def main() -> None:
             extra_files={
                 "go.mod": _GO_MOD,
                 "record_data.go": _build_data_source(
-                    declarations_from=declarations_from,
-                    declaring=declaring,
-                    dependent=dependent,
+                    first=first, second=second
                 ),
+                "main.go": call_source,
             },
         )
 
