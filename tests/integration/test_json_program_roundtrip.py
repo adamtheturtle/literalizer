@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Literal
 
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, example, given, settings
 from hypothesis import strategies as st
 from hypothesis.strategies import dictionaries
 from pydantic import BaseModel, TypeAdapter
@@ -140,6 +140,12 @@ def _check_program(
         "check_value(my_data)\n"
         f"{call.code}\n"
     )
+    _run_python_program(program=program)
+    return native_program
+
+
+def _run_python_program(*, program: str) -> None:
+    """Execute generated code in an isolated, bounded interpreter."""
     completed = subprocess.run(  # noqa: S603 - run generated test code
         args=[sys.executable, "-I", "-c", program],
         check=False,
@@ -148,7 +154,6 @@ def _check_program(
         timeout=30,
     )
     assert completed.returncode == 0, completed.stderr
-    return native_program
 
 
 @pytest.mark.parametrize(
@@ -209,3 +214,42 @@ def test_json_documents_execute_as_complete_programs(
         strategy=strategies[contract.strategy], label=contract.name
     )
     _ = _check_program(data=value, contract=contract, version=version)
+
+
+@pytest.mark.parametrize(
+    argnames="version", argvalues=list(Python.VersionFormats)
+)
+@settings(max_examples=24, deadline=None)
+@given(rows=st.lists(elements=st.tuples(json_values, json_values), max_size=4))
+@example(rows=[])
+@example(rows=[(True, 1), (1.0, -0.0), ([], {"nested": [None]})])
+def test_generated_python_call_rows_preserve_values(
+    *, version: enum.Enum, rows: list[tuple[_JSONValue, _JSONValue]]
+) -> None:
+    """Check argument positions, row order and native value types."""
+    source = json.dumps(obj=rows)
+    call = literalize_call(
+        source=source,
+        input_format=InputFormat.JSON,
+        language=make_spec(
+            lang_cls=Python,
+            language_version=version,
+            sequence_format=Python.sequence_formats.LIST,
+        ),
+        target_function="check_row",
+        parameter_names=("first", "second"),
+        per_element=True,
+    )
+    _run_python_program(
+        program=(
+            "import json\n"
+            f"expected = json.loads({source!r})\n"
+            "collected = []\n"
+            "def check_row(first, second):\n"
+            "    collected.append([first, second])\n"
+            f"{call.code}\n"
+            "assert collected == expected, (collected, expected)\n"
+            "assert json.dumps(collected, sort_keys=True) == "
+            "json.dumps(expected, sort_keys=True), (collected, expected)\n"
+        )
+    )
