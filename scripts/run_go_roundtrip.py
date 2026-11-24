@@ -136,7 +136,9 @@ def _check_sibling_permutations(*, go: str) -> None:
 
 
 def _check_incompatible_siblings() -> None:
-    """Retain the error contract for incompatible inferred record shapes."""
+    """Retain the error contract for incompatible inferred record
+    shapes.
+    """
     language = Go(heterogeneous_strategy=Go.heterogeneous_strategies.RECORD)
     sparse: dict[str, JsonValue] = {"tag": "empty", "items": []}
     typed: dict[str, JsonValue] = {"tag": "typed", "items": [1, 2]}
