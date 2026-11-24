@@ -39,6 +39,9 @@ from scripts import roundtrip_common
 _VAR_NAME = "myData"
 _LABEL = "Kotlin"
 _EXCLUDED_KEYS = ("biginteger",)
+_RECORD_CONSUMER = Path(__file__).with_name(
+    name="kotlin_record_composition_consumer.kt",
+)
 
 
 def _build_program(json_text: str) -> str:
@@ -103,16 +106,7 @@ def _check_record_composition(*, step: roundtrip_common.Step) -> None:
         ref_key="$ref",
         per_element=True,
     )
-    consumer = (
-        "fun consume(first: Record0, second: Record0, again: Record0) {",
-        '    check(first.name == "first")',
-        "    check(first.values.contentEquals(intArrayOf(1, 2)))",
-        '    check(second.name == "second")',
-        "    check(second.values.contentEquals(intArrayOf(3, 4)))",
-        "    check(second === again)",
-        '    println("""{"matched":true}""")',
-        "}",
-    )
+    consumer = tuple(_RECORD_CONSUMER.read_text(encoding="utf-8").splitlines())
     for order, declarations in (
         ("declaring first", (declaring, dependent)),
         ("dependent first", (dependent, declaring)),
