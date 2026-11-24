@@ -8,9 +8,8 @@ hand the emitted JSON to :func:`roundtrip_common.verify`.
 This lives here, driven by a step of the ``lint-fast`` job in
 ``.github/workflows/lint.yml``, because that job is where the Node
 toolchain is already installed for the ``Lint JavaScript`` step.  It
-follows the same template as ``run_typescript_roundtrip.py``: a single
-``.py`` file, no separate serializer source, because ``JSON.stringify``
-is in the JavaScript standard library.
+also checks sibling traversal and bound-reference renaming with Node
+consumers.
 
 The shared input's ``biginteger`` field is excluded before literalization:
 JavaScript cannot represent it as a safe ``Number`` and the backend rejects
@@ -37,6 +36,9 @@ _LABEL = "JavaScript"
 _EXCLUDED_KEYS = ("biginteger",)
 _SIBLING_CONSUMER = Path(__file__).with_name(
     name="javascript_sibling_permutations.cjs"
+)
+_RENAMING_CONSUMER = Path(__file__).with_name(
+    name="javascript_reference_renaming.cjs"
 )
 
 
@@ -170,6 +172,58 @@ def _check_sibling_permutations(*, node: str) -> None:
             )
 
 
+def _check_reference_renaming(*, node: str) -> None:
+    """Rename both bindings while preserving their values and aliasing."""
+    consumer = _RENAMING_CONSUMER.read_text(encoding="utf-8")
+    shared: dict[str, JsonValue] = {"items": [], "enabled": True}
+    expected = json.dumps(obj={"primary": shared, "repeated": [shared]})
+    for binding, reference in (
+        ("payload", "sharedValues"),
+        ("sharedValues", "payload"),
+        ("constructor", "prototype"),
+    ):
+        language = JavaScript()
+        declaration = roundtrip_common.literalize_new_variable(
+            language=language,
+            json_text=json.dumps(obj=shared),
+            var_name=reference,
+            pre_indent_level=0,
+        )
+        marker = {"$ref": reference}
+        result = literalize(
+            source=json.dumps(obj={"primary": marker, "repeated": [marker]}),
+            input_format=InputFormat.JSON,
+            language=language,
+            variable_form=NewVariable(name=binding, modifiers=frozenset()),
+            ref_key="$ref",
+        )
+        data_source = "\n".join(
+            (
+                *declaration.preamble,
+                *result.preamble,
+                *declaration.body_preamble,
+                declaration.code,
+                *result.body_preamble,
+                result.code,
+                f"module.exports = {binding};",
+            )
+        )
+        roundtrip_common.execute(
+            label=f"{_LABEL} reference renaming ({binding}, {reference})",
+            source_filename="check.cjs",
+            program=consumer,
+            steps=[
+                roundtrip_common.Step(
+                    args=[node, "check.cjs"],
+                    failure_label="node reference renaming error",
+                ),
+            ],
+            excluded_keys=(),
+            expected_json=expected,
+            extra_files={"renamed_data.cjs": data_source},
+        )
+
+
 @click.command()
 def main() -> None:
     """Round-trip the shared document through the JavaScript backend."""
@@ -200,6 +254,7 @@ def main() -> None:
     )
     _check_native_datetime_offsets(node=node)
     _check_sibling_permutations(node=node)
+    _check_reference_renaming(node=node)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 # Regression provenance: prefix_without_identifier.
 # An escaped identifier may contain a backtick followed by a non-identifier character.
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-call"
 
 [call]

@@ -20,7 +20,7 @@ def test_call_and_reference_discovery_preserve_multiline_variants(
         ),
         (
             "literalize_ref_singleton_list_rendering",
-            build_literalize_ref_variant_cases(),
+            build_literalize_ref_variant_cases(cases_dir=cases_dir),
         ),
     ):
         multiline = [

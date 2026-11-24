@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-call"
 
 # C++14 regression (#6646): std::vector element inference must keep equal

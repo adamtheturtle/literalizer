@@ -3223,7 +3223,10 @@ def _opener_inference_value(
     around it takes the type that reference holds rather than the
     marker's own ``{str: str}`` shape (issue #4567).
     """
-    if ctx.ref_key is _DISABLED_REF_KEY:
+    if ctx.ref_key is _DISABLED_REF_KEY or not _contains_ref_marker(
+        value=data, ref_key=ctx.ref_key
+    ):
+        # Record opener inference looks up planned records by identity.
         return data
     effective_ref_values_5: Mapping[str, Value]
     if ctx.expand_refs:

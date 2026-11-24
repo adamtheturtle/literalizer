@@ -11,6 +11,7 @@ from .literalize_ref_cases import (
     run_literalize_ref_golden_case,
 )
 from .reference_cases import (
+    CASES_DIR,
     RefRendering,
     discover_literalize_ref_cases,
 )
@@ -24,7 +25,9 @@ from .reference_cases import (
                 f"{case.config.coverage_id}/{case.lang_cls.__name__}",
                 case.renderings,
             )
-            for case in discover_literalize_ref_cases(owner=REF_DEFAULT_OWNER)
+            for case in discover_literalize_ref_cases(
+                owner=REF_DEFAULT_OWNER, cases_dir=CASES_DIR
+            )
         ),
     ),
 )

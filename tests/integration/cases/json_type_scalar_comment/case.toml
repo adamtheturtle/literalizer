@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "variant"
 
 # A scalar document under a json_type that embeds one JSON document

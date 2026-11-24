@@ -1,4 +1,5 @@
 schema_version = 1
+golden_layout = "nested"
 owner = "literalize-ref"
 # Original regression (roc_bound_refs_pre_indented): Roc top-level annotations and their definitions must retain the same pre-indentation margin.
 

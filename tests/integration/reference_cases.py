@@ -81,6 +81,7 @@ def _reference_outcome(
     spec: literalizer.Language,
     golden_name: str,
     ref_case: literalizer.IdentifierCase | None,
+    cases_dir: Path,
 ) -> GoldenOutcome:
     """Resolve fixture prerequisites and documented reference errors."""
     exclusion = _reference_exclusion(
@@ -102,7 +103,7 @@ def _reference_outcome(
     )
     if outcome is None:
         outcome = unsupported_reference_marker(
-            config=config, lang_cls=lang_cls, cases_dir=CASES_DIR
+            config=config, lang_cls=lang_cls, cases_dir=cases_dir
         )
     if outcome is not None:
         return outcome
@@ -173,6 +174,7 @@ class LiteralizeRefCase:
     config: RefCaseSpec
     lang_cls: literalizer.LanguageCls
     owner: OwnerName
+    cases_dir: Path
 
     @functools.cached_property
     def renderings(self) -> tuple[RefRendering, ...]:
@@ -195,6 +197,7 @@ class LiteralizeRefCase:
                     spec=spec,
                     ref_case=ref_case,
                     golden_name=f"{self.lang_cls.__name__}_{suffix}",
+                    cases_dir=self.cases_dir,
                 ),
                 golden_name=f"{self.lang_cls.__name__}_{suffix}",
                 ref_case=(
@@ -214,7 +217,7 @@ class LiteralizeRefCase:
 @functools.cache
 @beartype
 def discover_literalize_ref_cases(
-    *, owner: OwnerName
+    *, owner: OwnerName, cases_dir: Path
 ) -> list[LiteralizeRefCase]:
     """Return reference cases for the selected API owner.
 
@@ -222,8 +225,10 @@ def discover_literalize_ref_cases(
     declaration style and native consumer once it has an effective spec.
     """
     return [
-        LiteralizeRefCase(config=config, lang_cls=lang_cls, owner=owner)
-        for config in ref_case_specs(cases_dir=CASES_DIR, owner=owner)
+        LiteralizeRefCase(
+            config=config, lang_cls=lang_cls, owner=owner, cases_dir=cases_dir
+        )
+        for config in ref_case_specs(cases_dir=cases_dir, owner=owner)
         if not config.variant_only
         for lang_cls in sorted_languages()
         if config.admits_language(lang_cls=lang_cls)
@@ -237,6 +242,7 @@ class LiteralizeRefVariantCase:
     config: RefCaseSpec
     variant: Variant
     ref_case: literalizer.IdentifierCase | None
+    cases_dir: Path
 
     @property
     def lang_cls(self) -> literalizer.LanguageCls:
@@ -265,6 +271,7 @@ class LiteralizeRefVariantCase:
                     spec=self.variant.spec,
                     ref_case=self.ref_case,
                     golden_name=self.golden_name,
+                    cases_dir=self.cases_dir,
                 ),
                 golden_name=self.golden_name,
                 ref_case=self.ref_case,
@@ -274,7 +281,7 @@ class LiteralizeRefVariantCase:
 
 @beartype
 def _reference_variant_case(
-    *, config: RefCaseSpec, variant: Variant, owner: OwnerName
+    *, config: RefCaseSpec, variant: Variant, owner: OwnerName, cases_dir: Path
 ) -> LiteralizeRefVariantCase | None:
     """Retain selected options and reject unsupported reference styles."""
     lang_cls = variant.lang_cls
@@ -311,24 +318,30 @@ def _reference_variant_case(
         config=selected_config,
         variant=dataclasses.replace(variant, spec=spec),
         ref_case=reference_case,
+        cases_dir=cases_dir,
     )
 
 
 @functools.cache
 @beartype
-def build_literalize_ref_variant_cases() -> list[LiteralizeRefVariantCase]:
+def build_literalize_ref_variant_cases(
+    *, cases_dir: Path
+) -> list[LiteralizeRefVariantCase]:
     """Discover reference variants through the existing typed axis
     plans.
     """
     return [
         case
         for owner in (REF_OWNER, REF_DEFAULT_OWNER)
-        for config in ref_case_specs(cases_dir=CASES_DIR, owner=owner)
+        for config in ref_case_specs(cases_dir=cases_dir, owner=owner)
         for entry in config.variants
         for variant in variants_for_axis(axis_key=entry.axis)
         if (
             case := _reference_variant_case(
-                config=config, variant=variant, owner=owner
+                config=config,
+                variant=variant,
+                owner=owner,
+                cases_dir=cases_dir,
             )
         )
         is not None
@@ -412,12 +425,14 @@ def _with_redefinition_style(
 
 
 @beartype
-def reference_golden_cases() -> tuple[
-    LiteralizeRefCase | LiteralizeRefVariantCase, ...
-]:
+def reference_golden_cases(
+    *, cases_dir: Path
+) -> tuple[LiteralizeRefCase | LiteralizeRefVariantCase, ...]:
     """Collect explicit, default and variant reference fixture owners."""
     return (
-        *discover_literalize_ref_cases(owner=REF_OWNER),
-        *discover_literalize_ref_cases(owner=REF_DEFAULT_OWNER),
-        *build_literalize_ref_variant_cases(),
+        *discover_literalize_ref_cases(owner=REF_OWNER, cases_dir=cases_dir),
+        *discover_literalize_ref_cases(
+            owner=REF_DEFAULT_OWNER, cases_dir=cases_dir
+        ),
+        *build_literalize_ref_variant_cases(cases_dir=cases_dir),
     )

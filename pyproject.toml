@@ -638,13 +638,12 @@ max_supported_python = "3.15"
 
 [tool.mypy]
 files = [ "." ]
-# ``@`` in a path stops mypy from forming a module name and triggers an
-# internal error (mypy 2.1.0).  Every golden fixture under
-# ``tests/integration/cases/`` carries a ``@<version>`` tag, so exclude
-# those paths from mypy; ruff and other linters still cover them.
+# Golden fixtures are covered by their runners. Flat filenames contain
+# ``@``, which also prevents mypy from forming a module name.
 exclude = [
     "build",
     "tests/integration/cases/.*@.*",
+    "tests/integration/cases/[^/]+/goldens/",
 ]
 exclude_gitignore = true
 follow_untyped_imports = true
