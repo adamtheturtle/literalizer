@@ -204,7 +204,8 @@ That choice is made per input, so two data files sharing the same record fields 
    assert "attributes: HashMap<&'static str, Value>," in result.preamble[2]
    assert 'Value::Str("green")' in result.code
 
-The generated enum still contains only variants required by the input.
+Rust's generated enum contains only the variants required by the input.
+Use a declaration source that includes every variant required by the dependent literals.
 The default is ``record_map_value_typings.NARROW``.
 
 ``TUPLE``

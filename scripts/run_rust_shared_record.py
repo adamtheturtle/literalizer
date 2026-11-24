@@ -2,13 +2,14 @@
 
 Literalize both documents in :mod:`scripts.shared_record_common` under
 ``Rust(heterogeneous_strategy=RECORD, record_map_value_typing=WIDE)``,
-compile the *declaring* document's public ``enum`` and ``struct``
+compile the mixed document's public ``enum`` and ``struct``
 declarations as a library, then construct and inspect both documents'
 ``vec![...]`` literals in a separate consumer crate.  The dependent
 document's widened maps are all strings, so under the default ``NARROW``
 typing they would render ``HashMap<&'static str, &'static str>`` and fail
 to compile against the declaring document's ``HashMap<&'static str, Value>``
-field.
+field. The mixed document supplies the declarations because it also
+contains the boolean variant used by the mixed literals.
 
 This lives here, driven by a step of the ``lint-rust`` job in
 ``.github/workflows/lint.yml``, because that job is where the Rust
@@ -16,65 +17,56 @@ toolchain is already available.
 """
 
 import shutil
+from pathlib import Path
 
 import click
 
+from literalizer import InputFormat, literalize
 from literalizer.languages import Rust
 from scripts import roundtrip_common, shared_record_common
 
 _LABEL = "Rust shared-record"
 
 
-def _build_sources() -> tuple[str, str]:
-    """Return a consumer program and its shared data-type library."""
+_CONSUMER_PATH = Path(__file__).with_name(name="rust_shared_record.rs")
+
+
+def _build_sources() -> dict[str, str]:
+    """Render the shared library and both data expressions."""
     language = Rust(
         heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD,
         record_map_value_typing=Rust.record_map_value_typings.WIDE,
     )
-    declaring = roundtrip_common.literalize_new_variable(
+    declaring = literalize(
+        source=shared_record_common.DECLARING_DOCUMENT,
+        input_format=InputFormat.JSON,
         language=language,
-        json_text=shared_record_common.DECLARING_DOCUMENT,
-        var_name=shared_record_common.DECLARING_VAR_NAME_SNAKE,
-        pre_indent_level=1,
     )
-    dependent = roundtrip_common.literalize_new_variable(
+    dependent = literalize(
+        source=shared_record_common.DEPENDENT_DOCUMENT,
+        input_format=InputFormat.JSON,
         language=language,
-        json_text=shared_record_common.DEPENDENT_DOCUMENT,
-        var_name=shared_record_common.DEPENDENT_VAR_NAME_SNAKE,
-        pre_indent_level=1,
     )
     # Both documents use only the declaring document's exported types.
-    preamble = "\n".join((*declaring.preamble, *declaring.body_preamble))
-    ok_document = shared_record_common.OK_DOCUMENT
-    program = (
-        "use std::collections::HashMap;\n"
-        "use record_data::{Record0, Value};\n"
-        "fn main() {\n"
-        f"{declaring.code}\n"
-        f"{dependent.code}\n"
-        '    assert_eq!(declaring_data[0].name, "row_1");\n'
-        '    assert!(matches!(declaring_data[0].attributes.get("discounted"), '
-        "Some(Value::Bool(true))));\n"
-        '    assert_eq!(dependent_data[0].name, "row_3");\n'
-        '    assert!(matches!(dependent_data[0].attributes.get("colour"), '
-        'Some(Value::Str("green"))));\n'
-        f'    print!("{{}}", r#"{ok_document}"#);\n'
-        "}\n"
-    )
-    return program, preamble
+    return {
+        "record_data.rs": "\n".join(
+            (*declaring.preamble, *declaring.body_preamble)
+        ),
+        "declaring_data.rs": declaring.code,
+        "dependent_data.rs": dependent.code,
+    }
 
 
 @click.command()
 def main() -> None:
     """Compile both documents against one set of declarations."""
-    program, library = _build_sources()
     rustc = shutil.which(cmd="rustc")
     if rustc is None or rustc == "":
         rustc = "rustc"
     roundtrip_common.execute(
         label=_LABEL,
         source_filename="main.rs",
-        program=program,
+        program=_CONSUMER_PATH.read_text(encoding="utf-8"),
         steps=[
             roundtrip_common.Step(
                 args=[
@@ -113,7 +105,7 @@ def main() -> None:
         ],
         excluded_keys=(),
         expected_json=shared_record_common.OK_DOCUMENT,
-        extra_files={"record_data.rs": library},
+        extra_files=_build_sources(),
     )
 
 
