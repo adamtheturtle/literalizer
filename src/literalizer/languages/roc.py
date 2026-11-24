@@ -165,8 +165,8 @@ def _build_roc_body_preamble(
     *,
     type_name: str,
     constructor_prefix: str,
-    datetime_type_produced: type,
-) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    datetime_type_produced: type[object],
+) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Roc.
 
     The callable receives the set of types present in the data and
@@ -175,12 +175,14 @@ def _build_roc_body_preamble(
     """
 
     @beartype
-    def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
+    def _compute(
+        types: frozenset[type[object]], data: Value, /
+    ) -> tuple[str, ...]:
         """Return the nominal tag union for *types*."""
         del data  # unused
         p = constructor_prefix
-        int_types: set[type] = {int}
-        str_types: set[type] = {str, bytes, dt.date}
+        int_types: set[type[object]] = {int}
+        str_types: set[type[object]] = {str, bytes, dt.date}
         if datetime_type_produced is int:
             int_types.add(dt.datetime)
         else:
@@ -390,7 +392,7 @@ def _indent_call_lines(*, content: str, indent: str) -> str:
 
 @beartype
 def _no_record_body_preamble(
-    _types: frozenset[type], _data: Value, /
+    _types: frozenset[type[object]], _data: Value, /
 ) -> tuple[str, ...]:
     """Native records need no tag-union body preamble."""
     return ()
@@ -1334,19 +1336,19 @@ class Roc(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (Roc needs none)."""
         return {}
 
     scalar_body_preamble: ClassVar[
-        cached_property[dict[type, tuple[str, ...]]]
+        cached_property[dict[type[object], tuple[str, ...]]]
     ] = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Declare the nominal value type for the required data tags."""
         if self.dict_format is type(self.dict_format).RECORD:
             return _no_record_body_preamble

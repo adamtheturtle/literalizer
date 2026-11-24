@@ -595,8 +595,9 @@ CAPABILITY_FLAGS: Mapping[str, Callable[[literalizer.LanguageCls], bool]] = {
     # through a protocol that tolerates its absence, so a missing
     # value means False here too.
     "dotted_call_stub_requires_unique_parts": (
-        lambda lang_cls: bool(
-            vars(lang_cls).get("dotted_call_stub_requires_unique_parts", False)
+        lambda lang_cls: (
+            vars(lang_cls).get("dotted_call_stub_requires_unique_parts")
+            is True
         )
     ),
     "dotted_call_stub_indexes_colliding_helpers": lambda cls: (

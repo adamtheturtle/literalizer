@@ -9,9 +9,10 @@ from sphinx_pyproject import SphinxConfig
 from literalizer.languages import ALL_LANGUAGES
 
 _pyproject_file = Path(__file__).parent.parent.parent / "pyproject.toml"
+_config_overrides: dict[str, object] = {"version": None}
 _pyproject_config = SphinxConfig(
     pyproject_file=_pyproject_file,
-    config_overrides={"version": None},
+    config_overrides=_config_overrides,
 )
 
 project = _pyproject_config.name

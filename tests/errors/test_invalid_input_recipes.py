@@ -34,7 +34,9 @@ _CASES = TypeAdapter(type=_RecipeErrors).validate_python(
 
 
 @pytest.mark.parametrize(
-    argnames="case", argvalues=_CASES.cases, ids=lambda case: case.name
+    argnames="case",
+    argvalues=_CASES.cases,
+    ids=[case.name for case in _CASES.cases],
 )
 def test_invalid_input_recipe(case: _RecipeError, tmp_path: Path) -> None:
     """Invalid construction requests fail before invoking Literalizer."""

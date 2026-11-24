@@ -6,7 +6,7 @@ from typing import Protocol, runtime_checkable
 
 from beartype import beartype
 
-type Scalar = (
+Scalar = (
     str | int | float | bool | dt.date | dt.datetime | dt.time | bytes | None
 )
 type Value = Scalar | list[Value] | dict[Scalar, Value] | set[Scalar]

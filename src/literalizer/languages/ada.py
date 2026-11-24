@@ -1247,19 +1247,19 @@ class Ada(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (Ada needs none)."""
         return {}
 
     scalar_body_preamble: ClassVar[
-        cached_property[dict[type, tuple[str, ...]]]
+        cached_property[dict[type[object], tuple[str, ...]]]
     ] = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Emit local IEEE-special constants when needed.
 
         Ada has no portable inline literal for ``+Inf``, ``-Inf`` or
@@ -1274,7 +1274,7 @@ class Ada(metaclass=LanguageCls):
 
         @beartype
         def _compute(
-            types: frozenset[type],
+            types: frozenset[type[object]],
             data: Value,
             /,
         ) -> tuple[str, ...]:

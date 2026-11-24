@@ -21,7 +21,7 @@ from .record_snapshot_cases import (
 @pytest.mark.parametrize(
     argnames="case",
     argvalues=RECORD_SNAPSHOT_CASES,
-    ids=lambda case: case.name,
+    ids=[case.name for case in RECORD_SNAPSHOT_CASES],
 )
 def test_record_snapshot_golden(
     case: RecordSnapshotCase,

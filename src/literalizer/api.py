@@ -17,6 +17,7 @@ from literalizer._language import (
     Language,
     RenderedCallStub,
     is_reserved_identifier,
+    language_string_option,
     redefinition_config,
 )
 from literalizer._literalize import (
@@ -229,7 +230,7 @@ def _validate_module_name_variable_collision(
     declared = collected_declared_2
     if isinstance(variable_form, NewVariable | ExistingVariable):
         declared.add(variable_form.name)
-    module_name = vars(language)["module_name"]
+    module_name = language_string_option(language=language, name="module_name")
     if is_reserved_identifier(
         case_sensitive=language.reserved_variable_identifiers_case_sensitive,
         name=module_name,

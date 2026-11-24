@@ -17,7 +17,7 @@ from literalizer._types import OrderedMap, Scalar, Value
 
 
 @beartype
-def _scalar_bucket(value: Value) -> type | None:
+def _scalar_bucket(value: Value) -> type[object] | None:
     """Return the scalar-bucket type for *value*, or ``None`` for
     non-scalars.
 
@@ -27,7 +27,7 @@ def _scalar_bucket(value: Value) -> type | None:
     """
     if value is None:
         return type(None)
-    buckets: tuple[type, ...] = (
+    buckets: tuple[type[object], ...] = (
         bool,
         int,
         float,
@@ -48,7 +48,7 @@ def _all_scalars_mixed_buckets(values: Sequence[Value]) -> bool:
     """Return ``True`` when *values* are all scalars spanning more than
     one type bucket.
     """
-    buckets: set[type] = set()
+    buckets: set[type[object]] = set()
     for v in values:
         bucket = _scalar_bucket(value=v)
         if bucket is None:

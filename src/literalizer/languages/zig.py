@@ -215,7 +215,7 @@ def _zig_integer_variant(*, original: int) -> str:
 
 
 @beartype
-def _zig_temporal_variant(*, produced_type: type) -> str:
+def _zig_temporal_variant(*, produced_type: type[object]) -> str:
     """Choose the union variant for the selected temporal
     representation.
     """
@@ -229,8 +229,8 @@ def _format_zig_entry(
     *,
     original: Value,
     formatted: str,
-    date_type: type,
-    datetime_type: type,
+    date_type: type[object],
+    datetime_type: type[object],
 ) -> str:
     """Wrap a formatted entry in the appropriate Zig ``ZVal`` union
     tag.
@@ -417,7 +417,7 @@ _ZIG_NO_RECORD_SHAPE_NAMES: Mapping[frozenset[str], str] = MappingProxyType[
 # accounting (only the int key is crossed with ``RECORD`` by the
 # datetime-cross corpus; the date axis is never crossed, so an
 # ``if``/ternary would leave the string side uncovered).
-_ZIG_EPOCH_INT_FIELD_TYPES: Mapping[type, str] = MappingProxyType(
+_ZIG_EPOCH_INT_FIELD_TYPES: Mapping[type[object], str] = MappingProxyType(
     mapping={int: "i64"},
 )
 
@@ -427,9 +427,9 @@ _ZIG_EPOCH_INT_FIELD_TYPES: Mapping[type, str] = MappingProxyType(
 # the mapping needs no corpus case to stay coverage-clean (the same
 # ``.get``-default trick used for the epoch field type; the coverage
 # tool does not treat a dict lookup default as a branch).
-_ZIG_INFERRED_ELEMENT_TYPES: Mapping[type | ListType | DictType, str] = (
-    MappingProxyType(mapping={MixedNumeric: "f64"})
-)
+_ZIG_INFERRED_ELEMENT_TYPES: Mapping[
+    type[object] | ListType | DictType, str
+] = MappingProxyType(mapping={MixedNumeric: "f64"})
 
 
 @beartype
@@ -2359,13 +2359,13 @@ class Zig(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (Zig needs none)."""
         return {}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (Zig needs none)."""
         return {}
 
@@ -2373,7 +2373,7 @@ class Zig(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

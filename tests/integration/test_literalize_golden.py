@@ -134,10 +134,13 @@ def _check_rendering(
     )
 
 
+_GOLDEN_GROUPS = golden_groups()
+
+
 @pytest.mark.parametrize(
     argnames="group",
-    argvalues=golden_groups(),
-    ids=lambda group: group.test_id,
+    argvalues=_GOLDEN_GROUPS,
+    ids=[group.test_id for group in _GOLDEN_GROUPS],
 )
 def test_golden_file(
     group: GoldenGroup,

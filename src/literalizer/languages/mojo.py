@@ -125,7 +125,7 @@ from literalizer.exceptions import (
 def _mojo_element_type_resolver(
     *,
     datetime_type: str,
-) -> Callable[[type | ListType | DictType], str | None]:
+) -> Callable[[type[object] | ListType | DictType], str | None]:
     """Resolve collection element types with the emitted datetime type."""
     return make_element_to_type(
         dict_value_to_type=None,
@@ -151,7 +151,9 @@ def _mojo_element_type_resolver(
 def _mojo_collection_type(
     *,
     values: list[Value],
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ],
     wrap_ids: frozenset[int],
     variant_type: str,
     sequence_fallback: str,
@@ -216,7 +218,7 @@ def _mojo_collection_type(
 @beartype
 def _mojo_call_arg_type_resolver(
     *, datetime_type: str
-) -> Callable[[type | ListType | DictType], str | None]:
+) -> Callable[[type[object] | ListType | DictType], str | None]:
     """Resolve call types with the configured datetime representation."""
     return make_element_to_type(
         dict_value_to_type=None,
@@ -268,7 +270,7 @@ def _value_to_mojo_type(
     back to the same generic form.
     """
     element_to_type = _mojo_call_arg_type_resolver(datetime_type=datetime_type)
-    effective_element_type: type | ListType | DictType
+    effective_element_type: type[object] | ListType | DictType
     match value:
         case list():
             if heterogeneous_value_type is not None and id(value) in wrap_ids:
@@ -715,7 +717,7 @@ def _mojo_variant_for_scalar(
     value: Scalar,
     /,
     *,
-    datetime_type_produced: type,
+    datetime_type_produced: type[object],
 ) -> _VariantSignature:
     """Return the Mojo Variant alternative for *value*.
 
@@ -764,7 +766,7 @@ hard error under ``--Werror`` in Mojo 0.26.1.0+.
 
 @beartype
 def _mojo_value_inhibits_consuming_form(
-    value: Value, /, *, datetime_type_produced: type
+    value: Value, /, *, datetime_type_produced: type[object]
 ) -> bool:
     """Return ``True`` when ``^`` is illegal for *value*'s Mojo type.
 
@@ -793,13 +795,15 @@ class _HeterogeneousStrategyConfig:
     resulting functions can close over it.
     """
 
-    build_behavior: Callable[[str, type], HeterogeneousBehavior]
-    build_preamble: Callable[[str, type], Callable[[Value], tuple[str, ...]]]
+    build_behavior: Callable[[str, type[object]], HeterogeneousBehavior]
+    build_preamble: Callable[
+        [str, type[object]], Callable[[Value], tuple[str, ...]]
+    ]
 
 
 @beartype
 def _build_error_behavior(
-    _variant_name: str, _datetime_type_produced: type, /
+    _variant_name: str, _datetime_type_produced: type[object], /
 ) -> HeterogeneousBehavior:
     """ERROR strategy: no wrapping, no skipping of checks."""
     return NO_HETEROGENEOUS_BEHAVIOR
@@ -808,7 +812,7 @@ def _build_error_behavior(
 @beartype
 def _build_error_preamble(
     _variant_name: str,
-    _datetime_type_produced: type,
+    _datetime_type_produced: type[object],
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """ERROR strategy: no data-dependent preamble."""
@@ -821,7 +825,7 @@ _VARIANT_IMPORT_LINE = "from std.utils.variant import Variant"
 @beartype
 def _build_variant_behavior(
     variant_name: str,
-    datetime_type_produced: type,
+    datetime_type_produced: type[object],
     /,
 ) -> HeterogeneousBehavior:
     """VARIANT strategy: wrap scalars and skip scalar checks."""
@@ -872,7 +876,7 @@ def _build_variant_behavior(
 
 @beartype
 def _collect_variant_alternatives_from_data(
-    data: Value, /, *, datetime_type_produced: type
+    data: Value, /, *, datetime_type_produced: type[object]
 ) -> tuple[str, ...]:
     """Return Mojo ``Variant`` alternative type names found in *data*.
 
@@ -971,7 +975,7 @@ def _render_variant_preamble(
 @beartype
 def _build_variant_preamble(
     variant_name: str,
-    datetime_type_produced: type,
+    datetime_type_produced: type[object],
     /,
 ) -> Callable[[Value], tuple[str, ...]]:
     """VARIANT strategy: emit the ``Variant`` declaration preamble."""
@@ -2149,13 +2153,13 @@ class Mojo(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (Mojo needs none)."""
         return {}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (Mojo needs none)."""
         return {}
 
@@ -2163,7 +2167,7 @@ class Mojo(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

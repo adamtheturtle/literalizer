@@ -75,14 +75,17 @@ def _declares_immutable_call_binding(lang_cls: LanguageCls, /) -> bool:
     )
 
 
+_IMMUTABLE_CALL_LANGUAGES = [
+    cls
+    for cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
+    if _declares_immutable_call_binding(cls)
+]
+
+
 @pytest.mark.parametrize(
     argnames="lang_cls",
-    argvalues=[
-        cls
-        for cls in sorted(ALL_LANGUAGES, key=lambda cls: cls.__name__)
-        if _declares_immutable_call_binding(cls)
-    ],
-    ids=lambda cls: cls.language_id,
+    argvalues=_IMMUTABLE_CALL_LANGUAGES,
+    ids=[cls.language_id for cls in _IMMUTABLE_CALL_LANGUAGES],
 )
 def test_seeded_scaffold_excludes_immutable_binding(
     *, lang_cls: LanguageCls

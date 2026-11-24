@@ -45,11 +45,12 @@ class CheckedConsumer(BaseModel, extra="forbid", frozen=True):  # noqa: NOD001
 def checked_consumers() -> Mapping[str, CheckedConsumer]:
     """Read caller-owned native syntax without selecting participants."""
     path = Path(__file__).with_name(name="shared_checked_consumers.toml")
+    document: Mapping[str, object] = tomllib.loads(
+        path.read_text(encoding="utf-8")
+    )
     return {
         name: CheckedConsumer.model_validate(obj=config)
-        for name, config in tomllib.loads(
-            path.read_text(encoding="utf-8")
-        ).items()
+        for name, config in document.items()
     }
 
 

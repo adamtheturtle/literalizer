@@ -360,9 +360,9 @@ def _build_elm_body_preamble(
     type_name: str,
     constructor_prefix: str,
     null_constructor_name: str,
-    datetime_type_produced: type,
+    datetime_type_produced: type[object],
     indent: str,
-) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
     """Build a callable that computes body-preamble lines for Elm.
 
     The callable receives the set of types present in the data and returns
@@ -371,12 +371,14 @@ def _build_elm_body_preamble(
     """
 
     @beartype
-    def _compute(types: frozenset[type], data: Value, /) -> tuple[str, ...]:
+    def _compute(
+        types: frozenset[type[object]], data: Value, /
+    ) -> tuple[str, ...]:
         """Return body-preamble lines for the given *types*."""
         del data  # unused
         p = constructor_prefix
-        int_types: set[type] = {int}
-        str_types: set[type] = {
+        int_types: set[type[object]] = {int}
+        str_types: set[type[object]] = {
             str,
             bytes,
             dt.date,
@@ -2013,19 +2015,19 @@ class Elm(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (Elm needs none)."""
         return {}
 
     scalar_body_preamble: ClassVar[
-        cached_property[dict[type, tuple[str, ...]]]
+        cached_property[dict[type[object], tuple[str, ...]]]
     ] = cached_property(func=empty_scalar_preamble)
 
     @cached_property
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines.
 
         Under :attr:`json_type` the preamble is a single
@@ -2037,7 +2039,7 @@ class Elm(metaclass=LanguageCls):
 
             @beartype
             def _json_preamble(
-                _types: frozenset[type], _data: Value, /
+                _types: frozenset[type[object]], _data: Value, /
             ) -> tuple[str, ...]:
                 """Return the single ``import Json.Encode`` line."""
                 return ("import Json.Encode",)

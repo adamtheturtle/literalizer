@@ -173,9 +173,8 @@ def _external_result_value(
     if isinstance(source, dict):
         name = source.get(config.ref_key)
         if len(source) == 1 and isinstance(name, str):
-            return TypeAdapter[Value](type=Value).validate_python(
-                json.loads(s=context.declarations[name])
-            )
+            declaration: object = json.loads(s=context.declarations[name])
+            return TypeAdapter[Value](type=Value).validate_python(declaration)
         return {
             key: _external_result_value(
                 source=value, config=config, context=context
@@ -211,9 +210,8 @@ def external_assignment_spec(
         or "my_data" not in context.declarations
     ):
         return spec
-    initial = TypeAdapter[Value](type=Value).validate_python(
-        json.loads(s=context.declarations["my_data"])
-    )
+    declaration: object = json.loads(s=context.declarations["my_data"])
+    initial = TypeAdapter[Value](type=Value).validate_python(declaration)
     assigned = _external_result_value(
         source=TypeAdapter[Value](type=Value).validate_python(raw_data),
         config=config,

@@ -45,15 +45,20 @@ def _spellings(*, name: str, language_cls: LanguageCls) -> tuple[str, ...]:
 # Select declaration-name cases only where those declarations apply (#4549).
 
 
+_WITH_RESERVED_VARIABLE_NAMES = tuple(
+    language_cls
+    for language_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
+    if len(language_cls.reserved_variable_identifiers) > 0
+    and language_cls.supports_variable_names
+)
+
+
 @pytest.mark.parametrize(
     argnames="language_cls",
-    argvalues=tuple(
-        language_cls
-        for language_cls in sorted(ALL_LANGUAGES, key=_language_class_name)
-        if len(language_cls.reserved_variable_identifiers) > 0
-        and language_cls.supports_variable_names
-    ),
-    ids=lambda language_cls: language_cls.__name__,
+    argvalues=_WITH_RESERVED_VARIABLE_NAMES,
+    ids=[
+        language_cls.__name__ for language_cls in _WITH_RESERVED_VARIABLE_NAMES
+    ],
 )
 def test_all_declared_reserved_names_raise(
     language_cls: LanguageCls,

@@ -54,12 +54,9 @@ class EmptyList(EmptyCollection):
     """An empty sequence appears in the data."""
 
 
-_ALL_VALUE_TYPES: Final[frozenset[type]] = frozenset[type](
-    # pylint does not model PEP 695 aliases, so it does not see the
-    # ``__value__`` every ``type`` statement defines:
-    # https://github.com/pylint-dev/pylint/issues/10091
-    get_args(tp=Scalar.__value__)  # pylint: disable=no-member
-) | frozenset[type]({OrderedMap, dict, list, set})
+_ALL_VALUE_TYPES: Final[frozenset[type[object]]] = frozenset[type[object]](
+    get_args(tp=Scalar)
+) | frozenset[type[object]]({OrderedMap, dict, list, set})
 """Every type :func:`_collect_value_types` can report.
 
 Once all of them have been observed there is nothing left to learn, so
@@ -74,7 +71,7 @@ def _collect_value_types(
     *,
     data: Value,
     recordized_dict_ids: frozenset[int],
-) -> frozenset[type]:
+) -> frozenset[type[object]]:
     """Return the set of Python types present in *data*.
 
     The document is walked with an explicit stack, and the walk stops
@@ -82,7 +79,7 @@ def _collect_value_types(
     a large document costs no more than the point at which its type set
     saturates.
     """
-    found: set[type] = set()
+    found: set[type[object]] = set()
     pending: list[Value] = [data]
     while len(pending) > 0 and len(found) != len(_ALL_VALUE_TYPES):
         value = pending.pop()
@@ -157,7 +154,7 @@ def _needs_annotation(val: Value) -> bool:
 
 
 @beartype
-def _add_collection_type(*, val: Value, result: set[type]) -> None:
+def _add_collection_type(*, val: Value, result: set[type[object]]) -> None:
     """Add the collection type named by a containing annotation."""
     match val:
         case OrderedMap():
@@ -173,7 +170,9 @@ def _add_collection_type(*, val: Value, result: set[type]) -> None:
 
 
 @beartype
-def _walk_annotated_collections(*, val: Value, result: set[type]) -> None:
+def _walk_annotated_collections(
+    *, val: Value, result: set[type[object]]
+) -> None:
     """Walk *val* and add collection types that appear in type annotations."""
     pending: list[Value] = [val]
     while len(pending) > 0:
@@ -248,7 +247,7 @@ def _collections_in(
 def _empty_collection_sentinel(
     *,
     value: _Collection,
-) -> type | None:
+) -> type[object] | None:
     """Return the sentinel for *value*'s type, or ``None`` if non-
     empty.
     """
@@ -270,7 +269,7 @@ def _empty_collection_sentinel(
 @beartype
 def _collect_empty_collection_types(
     *, data: Value, recordized_dict_ids: frozenset[int]
-) -> frozenset[type]:
+) -> frozenset[type[object]]:
     """Return the :class:`EmptyCollection` sentinels *data* calls for."""
     sentinels = (
         _empty_collection_sentinel(value=value)
@@ -306,19 +305,21 @@ def _annotates_every_declaration(*, language: Language) -> bool:
 
 
 @beartype
-def _collect_annotated_collection_types(*, data: Value) -> frozenset[type]:
+def _collect_annotated_collection_types(
+    *, data: Value
+) -> frozenset[type[object]]:
     """Return the set of collection types that appear in type annotations.
 
     This is a superset of empty collection types: it also includes
     non-empty containers that wrap annotated children.
     """
-    result: set[type] = set()
+    result: set[type[object]] = set()
     _walk_annotated_collections(val=data, result=result)
     return frozenset(result)
 
 
 @beartype
-def _preamble_scalar_type(*, value: Scalar) -> type:
+def _preamble_scalar_type(*, value: Scalar) -> type[object]:
     """Return the preamble-relevant type for a scalar.
 
     Like :func:`scalar_type_bucket` but distinguishes
@@ -357,7 +358,7 @@ def _recordized_dict_ids(*, data: Value, language: Language) -> frozenset[int]:
 @beartype
 def _collection_preamble(
     *,
-    types: frozenset[type],
+    types: frozenset[type[object]],
     language: Language,
 ) -> tuple[str, ...]:
     """Return collection-config preamble lines for present types."""
@@ -572,7 +573,7 @@ class _PreambleResult:
     leading: tuple[str, ...]
     header: tuple[str, ...]
     body: tuple[str, ...]
-    types_present: frozenset[type]
+    types_present: frozenset[type[object]]
 
 
 @beartype
@@ -603,7 +604,7 @@ def compute_preamble(
         special_float = ()
     collection = _collection_preamble(types=types, language=language)
     present_collection_types = types & _ANNOTATED_COLLECTION_TYPES
-    annotated_collection_types = frozenset[type]()
+    annotated_collection_types = frozenset[type[object]]()
     if has_variable_declaration and bool(present_collection_types):
         effective_annotated_collection_types = present_collection_types
         if not _annotates_every_declaration(language=language):

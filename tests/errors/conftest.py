@@ -1,10 +1,15 @@
 """Shared target coverage for errors raised before output rendering."""
 
+from typing import TYPE_CHECKING
+
 import pytest
 from pydantic import ConfigDict, TypeAdapter
 
 from literalizer import LanguageCls
 from literalizer.languages import ALL_LANGUAGES
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 def _language_id(cls: LanguageCls, /) -> str:
@@ -26,4 +31,5 @@ _LANGUAGE_CLASS = TypeAdapter[LanguageCls](
 )
 def language_cls(request: pytest.FixtureRequest) -> LanguageCls:
     """Run shared error contracts against every target implementation."""
-    return _LANGUAGE_CLASS.validate_python(request.param, strict=True)
+    params: Mapping[str, object] = vars(request)
+    return _LANGUAGE_CLASS.validate_python(params["param"], strict=True)

@@ -46,14 +46,15 @@ _DECLARATION = re.compile(
 
 def _probe(*, text: str) -> str:
     """Return the consumer probe for the last declaration in *text*."""
-    declarations = _DECLARATION.findall(string=text)
+    declarations = list(_DECLARATION.finditer(string=text))
     if len(declarations) == 0:
         return ""
-    name, annotation, value = declarations[-1]
+    declaration = declarations[-1]
+    name, annotation, value = declaration[1], declaration[2], declaration[3]
     # An object literal without an annotation has no index signature,
     # so indexing it with a ``string`` is a known TS7053 under the
     # ``NEVER`` default (issue #4836); only annotated ones are indexed.
-    if value.startswith("{") and annotation:
+    if value.startswith("{") and annotation is not None:
         return f'void {name}["k" as string];\n'
     if value.startswith("new Map"):
         return f'void {name}.get("k" as string);\n'

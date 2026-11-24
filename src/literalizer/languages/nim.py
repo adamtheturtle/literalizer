@@ -572,10 +572,10 @@ class _NimContainerShape:
     """The native Nim type shape inferred for a container."""
 
     kind: _NimContainerKind
-    child: "type | _NimContainerShape | _NimShapeMarker"
+    child: "type[object] | _NimContainerShape | _NimShapeMarker"
 
 
-type _NimLiteralShape = type | _NimContainerShape
+type _NimLiteralShape = type[object] | _NimContainerShape
 
 
 @beartype
@@ -612,7 +612,7 @@ def _nim_literal_shape(item: Value) -> _NimLiteralShape:
     integer widening tier in the shape as well, matching the magnitude-aware
     collection-literal inference.
     """
-    child_types: set[type | _NimContainerShape]
+    child_types: set[type[object] | _NimContainerShape]
     match item:
         case bool():
             return bool
@@ -656,7 +656,7 @@ def _mark_nim_object_variant_wrap_ids(
     # type. Match that decision here so a list such as ``[1, 2**31]`` stays a
     # native ``seq[int64]`` rather than being treated as mixed and wrapped.
     widening_tier = int_widening_tier(items=children)
-    child_types: set[type | _NimContainerShape]
+    child_types: set[type[object] | _NimContainerShape]
     if widening_tier is not None:
         child_types = {widening_tier}
     else:
@@ -2960,7 +2960,7 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble for Nim scalar types.
 
         Under the default ``ERROR`` heterogeneous strategy
@@ -2997,7 +2997,7 @@ class Nim(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (Nim needs none)."""
         return {}
 
@@ -3005,7 +3005,7 @@ class Nim(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

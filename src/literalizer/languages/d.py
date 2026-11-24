@@ -343,7 +343,7 @@ _D_UNREPRESENTABLE_RECORD_FIELD = (
 # accounting (only the int key is crossed with ``RECORD`` by the
 # datetime corpus; the date axis is never crossed with ``RECORD``, so
 # an ``if``/ternary would leave the string side uncovered).
-_D_EPOCH_INT_FIELD_TYPES: Mapping[type, str] = MappingProxyType(
+_D_EPOCH_INT_FIELD_TYPES: Mapping[type[object], str] = MappingProxyType(
     mapping={int: "long"},
 )
 
@@ -1834,13 +1834,13 @@ class D(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (D needs none)."""
         return {}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (D needs none)."""
         return {}
 
@@ -1848,7 +1848,7 @@ class D(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

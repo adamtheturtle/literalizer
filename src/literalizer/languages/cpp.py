@@ -6,6 +6,7 @@ import enum
 import functools
 import itertools
 import json
+import math
 import re
 from collections.abc import Callable, Mapping, Sequence
 from functools import cached_property
@@ -346,8 +347,8 @@ def _raw_string_delimiters(*, base: str) -> itertools.chain[str]:
     limit.
     """
     suffix_width = _CPP_RAW_STRING_DELIMITER_MAX_LENGTH - len(base)
-    if suffix_width != 0:
-        suffix_indexes = range(10**suffix_width)
+    if suffix_width > 0:
+        suffix_indexes = range(math.prod((10,) * suffix_width))
     else:
         suffix_indexes = range(0)
     suffixed = (f"{base}{index}" for index in suffix_indexes)
@@ -473,7 +474,7 @@ def _static_int_resolver(int_type: str) -> _IntTypeResolver:
 def _collect_int_leaves(
     *,
     items: list[Value],
-    element_type: type | ListType | DictType,
+    element_type: type[object] | ListType | DictType,
 ) -> list[int]:
     """Collect int values that would occupy the int leaf of
     *element_type* when *items* is resolved to its C++ type.
@@ -564,11 +565,11 @@ class _CppElementToType:
     import.
     """
 
-    resolve: Callable[[type | ListType | DictType], str | None]
+    resolve: Callable[[type[object] | ListType | DictType], str | None]
     dict_type_name: str
 
     def _dependencies(
-        self, element_type: type | ListType | DictType | None, /
+        self, element_type: type[object] | ListType | DictType | None, /
     ) -> frozenset[str]:
         """Retain dependencies from the descriptor before emitting its
         type.
@@ -586,7 +587,7 @@ class _CppElementToType:
         return _cpp_native_atomic_headers(self.resolve(element_type))
 
     def __call__(
-        self, element_type: type | ListType | DictType, /
+        self, element_type: type[object] | ListType | DictType, /
     ) -> str | None:
         """Retain the selected type's dependencies and scalar policy."""
         headers = self._dependencies(element_type)
@@ -606,7 +607,7 @@ def _make_cpp_element_to_type(
     date_type: str | None,
     datetime_type: str | None,
     dict_type_name: str,
-) -> Callable[[type | ListType | DictType], str | None]:
+) -> Callable[[type[object] | ListType | DictType], str | None]:
     """Build the C++ element-to-type resolver.
 
     *enable_list_type* is ``False`` under the ``ARRAY`` sequence
@@ -876,7 +877,7 @@ class _CppTypeCtx:
         self,
         *,
         int_type: str,
-    ) -> Callable[[type | ListType | DictType], str | None]:
+    ) -> Callable[[type[object] | ListType | DictType], str | None]:
         """Build an element-to-type resolver with the given *int_type*."""
         return _make_cpp_element_to_type(
             enable_list_type=not self.sequence_is_array,
@@ -1117,7 +1118,9 @@ def _cpp_tuple_type(
 def _compute_cpp_type(
     *,
     item: Value,
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ],
     type_ctx: _CppTypeCtx,
 ) -> str:
     """Return the C++ type string for a single value.
@@ -1199,7 +1202,9 @@ def _compute_cpp_type(
 def _collect_unique_cpp_types(
     *,
     items: list[Value],
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ],
     type_ctx: _CppTypeCtx,
 ) -> list[str]:
     """Collect unique C++ type names for each item, preserving order."""
@@ -1342,7 +1347,9 @@ def _compute_element_type_for_items(
 @beartype
 def _items_need_variant(
     items: list[Value],
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ],
     *,
     type_ctx: _CppTypeCtx,
     tuple_list_ids: frozenset[int],
@@ -1399,7 +1406,9 @@ def _items_need_variant(
 @beartype
 def _needs_variant_type(
     data: Value,
-    element_to_type: Callable[[type | ListType | DictType], str | None],
+    element_to_type: Callable[
+        [type[object] | ListType | DictType], str | None
+    ],
     *,
     type_ctx: _CppTypeCtx,
     tuple_list_ids: frozenset[int],
@@ -2917,8 +2926,8 @@ def _format_variable_declaration(
     value: str,
     data: Value,
     modifiers: frozenset[enum.Enum],
-    date_type: type,
-    datetime_type: type,
+    date_type: type[object],
+    datetime_type: type[object],
 ) -> str:
     """Format a C++ variable declaration.
 
@@ -2951,8 +2960,8 @@ def _format_variable_declaration(
 def _renders_as_string_literal(
     *,
     data: Value,
-    date_type: type,
-    datetime_type: type,
+    date_type: type[object],
+    datetime_type: type[object],
 ) -> bool:
     """Return whether *data* renders as a C string literal.
 
@@ -5834,13 +5843,13 @@ class Cpp(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Native type metadata supplies scalar and field dependencies."""
         return {}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble (C++ needs none)."""
         return {}
 
@@ -5848,7 +5857,7 @@ class Cpp(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         return body_preamble_from_scalars(
             scalar_body_preamble=self.scalar_body_preamble,

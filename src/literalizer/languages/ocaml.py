@@ -208,8 +208,8 @@ def _reject_ocaml_native_call_arg(_value: Value, /) -> None:
 @beartype
 def _ocaml_entry_tag(
     original: Value,
-    date_type: type,
-    datetime_type: type,
+    date_type: type[object],
+    datetime_type: type[object],
 ) -> str | None:
     """Return the ``val_t`` tag required for a source value."""
     if isinstance(original, dt.datetime):
@@ -249,8 +249,8 @@ def _apply_ocaml_entry(
     original: Value,
     formatted: str,
     prefix: str,
-    date_type: type,
-    datetime_type: type,
+    date_type: type[object],
+    datetime_type: type[object],
 ) -> str:
     """Wrap a formatted entry in the appropriate OCaml ``val_t``
     constructor.
@@ -270,7 +270,7 @@ def _apply_ocaml_entry(
 
 @beartype
 def _build_ocaml_entry_formatter(
-    prefix: str, date_type: type, datetime_type: type
+    prefix: str, date_type: type[object], datetime_type: type[object]
 ) -> Callable[[Value, str], str]:
     """Build an entry formatter that wraps values in OCaml ``val_t``
     constructors using the given *prefix*.
@@ -1136,7 +1136,7 @@ class OCaml(metaclass=LanguageCls):
                 msg = "OCaml record mode cannot infer empty list element types"
                 raise UnrepresentableInputError(msg)
             return f"{self._native_value_type(data=data[0])} list"
-        scalar_types: dict[type, str] = {
+        scalar_types: dict[type[object], str] = {
             bool: "bool",
             int: "int",
             float: "float",
@@ -1148,14 +1148,14 @@ class OCaml(metaclass=LanguageCls):
         if scalar_type is not None:
             return scalar_type
         if isinstance(data, dt.datetime):
-            datetime_types: dict[type, str] = {
+            datetime_types: dict[type[object], str] = {
                 int: "int",
                 str: "string",
                 dt.datetime: ("((int * int * int) * (int * int * int))"),
             }
             return datetime_types[self.datetime_format.value.type_produced]
         if isinstance(data, dt.date):
-            date_types: dict[type, str] = {
+            date_types: dict[type[object], str] = {
                 str: "string",
                 dt.date: "(int * int * int)",
             }
@@ -1618,13 +1618,13 @@ class OCaml(metaclass=LanguageCls):
 
     @cached_property
     @beartype
-    def scalar_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar preamble (OCaml needs none)."""
         return {}
 
     @cached_property
     @beartype
-    def scalar_body_preamble(self) -> dict[type, tuple[str, ...]]:
+    def scalar_body_preamble(self) -> dict[type[object], tuple[str, ...]]:
         """Per-instance scalar body preamble for OCaml."""
         if self._json_type_active:
             return {}
@@ -1670,13 +1670,13 @@ class OCaml(metaclass=LanguageCls):
     @beartype
     def compute_body_preamble(
         self,
-    ) -> Callable[[frozenset[type], Value], tuple[str, ...]]:
+    ) -> Callable[[frozenset[type[object]], Value], tuple[str, ...]]:
         """Compute body-preamble lines from the scalar map."""
         if self.dict_format is type(self.dict_format).RECORD:
 
             @beartype
             def _native_body_preamble(
-                _types: frozenset[type], data: Value, /
+                _types: frozenset[type[object]], data: Value, /
             ) -> tuple[str, ...]:
                 """Declare concrete record types inside the module."""
                 return self._native_record_strategy.preamble(data)

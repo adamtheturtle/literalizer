@@ -69,7 +69,7 @@ def is_tuple_eligible(*, value: list[Value]) -> bool:
     position when a language's type inference reuses this predicate
     directly).
     """
-    buckets: set[type] = set()
+    buckets: set[type[object]] = set()
     for element in value:
         bucket = scalar_type_bucket(value=element)
         if bucket is None:

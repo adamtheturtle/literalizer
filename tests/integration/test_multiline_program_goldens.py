@@ -44,15 +44,20 @@ else:
 """
 
 
+_MULTILINE_CASES = [
+    case
+    for case in build_variant_cases()
+    if case.variant.lang_cls is Python
+    and case.variant.spec.string_format is Python.string_formats.MULTILINE
+]
+
+
 @pytest.mark.parametrize(
     argnames="case",
-    argvalues=[
-        case
-        for case in build_variant_cases()
-        if case.variant.lang_cls is Python
-        and case.variant.spec.string_format is Python.string_formats.MULTILINE
+    argvalues=_MULTILINE_CASES,
+    ids=[
+        f"{case.case_dir_name}/{case.golden_name}" for case in _MULTILINE_CASES
     ],
-    ids=lambda case: f"{case.case_dir_name}/{case.golden_name}",
 )
 def test_multiline_string_program_values(
     case: VariantCase,
@@ -68,7 +73,7 @@ def test_multiline_string_program_values(
     input_info = case_input(case_dir=cases_dir / case.case_dir_name)
     source = input_info.path.read_text(encoding="utf-8")
     if input_info.input_format is InputFormat.JSON:
-        expected = json.loads(s=source)
+        expected: object = json.loads(s=source)
     else:
         assert input_info.input_format is InputFormat.YAML
         expected = as_yaml_parser(parser=YAML(typ="safe")).load(stream=source)
