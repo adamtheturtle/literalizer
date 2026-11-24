@@ -15,15 +15,19 @@ import datetime as dt
 import json
 import shutil
 from fractions import Fraction
+from pathlib import Path
 
 import click
 
-from literalizer import InputFormat, NewVariable, literalize
+from literalizer import CollectionLayout, InputFormat, NewVariable, literalize
 from literalizer.languages import Ruby
 from scripts import roundtrip_common
 
 _VAR_NAME = "myData"
 _LABEL = "Ruby"
+_OPTION_PAIR_CONSUMER = Path(__file__).with_name(
+    name="ruby_option_pair_consumer.rb"
+)
 
 
 def _build_program(json_text: str) -> str:
@@ -158,6 +162,82 @@ def _check_datetime_offsets(*, ruby: str) -> None:
     )
 
 
+def _check_option_pairs(*, ruby: str) -> None:
+    """Cover every pair across three two-valued rendering options."""
+    source = json.dumps(
+        obj={
+            "outer": {
+                "word": "it's \\ #{unchanged} 日本語",
+                "items": [True, 0, []],
+            },
+            "empty": {},
+        },
+        ensure_ascii=False,
+    )
+    consumer = _OPTION_PAIR_CONSUMER.read_text(encoding="utf-8")
+    pairs = (
+        (
+            Ruby.string_formats.DOUBLE,
+            Ruby.dict_entry_styles.ROCKET,
+            CollectionLayout.COMPACT,
+            "String",
+        ),
+        (
+            Ruby.string_formats.DOUBLE,
+            Ruby.dict_entry_styles.SYMBOL,
+            CollectionLayout.MULTILINE,
+            "Symbol",
+        ),
+        (
+            Ruby.string_formats.SINGLE,
+            Ruby.dict_entry_styles.ROCKET,
+            CollectionLayout.MULTILINE,
+            "String",
+        ),
+        (
+            Ruby.string_formats.SINGLE,
+            Ruby.dict_entry_styles.SYMBOL,
+            CollectionLayout.COMPACT,
+            "Symbol",
+        ),
+    )
+    steps = [
+        roundtrip_common.Step(
+            args=[ruby, "main.rb"], failure_label="Ruby option pair mismatch"
+        ),
+    ]
+    for string_format, entry_style, layout, key_type in pairs:
+        result = literalize(
+            source=source,
+            input_format=InputFormat.JSON,
+            language=Ruby(
+                string_format=string_format, dict_entry_style=entry_style
+            ),
+            variable_form=NewVariable(name=_VAR_NAME, modifiers=frozenset()),
+            collection_layout=layout,
+        )
+        program = "\n".join(
+            (
+                "require_relative 'ruby_option_pair_consumer'",
+                *result.preamble,
+                *result.body_preamble,
+                result.code,
+                f"verify_option_pair({_VAR_NAME}, {key_type})",
+            )
+        )
+        roundtrip_common.execute(
+            label=(
+                f"Ruby {string_format.name}/{entry_style.name}/{layout.name}"
+            ),
+            source_filename="main.rb",
+            program=program,
+            steps=steps,
+            excluded_keys=(),
+            expected_json=source,
+            extra_files={_OPTION_PAIR_CONSUMER.name: consumer},
+        )
+
+
 @click.command()
 def main() -> None:
     """Round-trip the shared document through the Ruby backend."""
@@ -184,6 +264,7 @@ def main() -> None:
     )
     _check_date_calendars(ruby=ruby)
     _check_datetime_offsets(ruby=ruby)
+    _check_option_pairs(ruby=ruby)
 
 
 if __name__ == "__main__":
