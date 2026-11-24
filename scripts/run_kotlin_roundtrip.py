@@ -73,7 +73,9 @@ def _build_program(json_text: str) -> str:
 
 
 def _check_record_composition(*, step: roundtrip_common.Step) -> None:
-    """Reuse independently rendered declarations in a typed native call."""
+    """Reuse independently rendered declarations in a typed native
+    call.
+    """
     language = Kotlin(
         heterogeneous_strategy=Kotlin.heterogeneous_strategies.RECORD,
     )
