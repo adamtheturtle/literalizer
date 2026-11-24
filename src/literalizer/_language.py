@@ -1921,7 +1921,7 @@ _LANGUAGE_CLASSES: list["LanguageCls"] = []
 
 
 class _LanguageClassRegistry(type):
-    """Register classes when the language metaclass constructs them."""
+    """Register each language class as it is created."""
 
     @override
     def __call__(cls, *args: object, **kwargs: object) -> "LanguageCls":
