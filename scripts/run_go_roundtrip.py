@@ -19,16 +19,26 @@ Every other field round-trips through ``encoding/json`` losslessly
 under the parsed-value comparison in :func:`roundtrip_common.verify`.
 """
 
+import json
 import shutil
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
+from literalizer.exceptions import HeterogeneousSiblingListsError
 from literalizer.languages import Go
 from scripts import roundtrip_common
+
+if TYPE_CHECKING:
+    from pydantic import JsonValue
 
 _VAR_NAME = "myData"
 _LABEL = "Go"
 _EXCLUDED_KEYS = ("biginteger",)
+_SIBLING_CONSUMER = Path(__file__).with_name(
+    name="go_record_sibling_consumer.go"
+)
 
 # ``go 1.18`` matches ``Go.language_version`` in
 # ``src/literalizer/languages/go.py`` and the ``go.mod`` written by the
@@ -80,6 +90,74 @@ def _build_program(json_text: str) -> str:
     )
 
 
+def _check_sibling_permutations(*, go: str) -> None:
+    """Check empty and null-only record siblings in both orders."""
+    language = Go(heterogeneous_strategy=Go.heterogeneous_strategies.RECORD)
+    consumer = _SIBLING_CONSUMER.read_text(encoding="utf-8")
+    populated: dict[str, JsonValue] = {"tag": "mixed", "items": [1, "x", True]}
+    sparse: tuple[dict[str, JsonValue], ...] = (
+        {"tag": "empty", "items": []},
+        {"tag": "nulls", "items": [None, None]},
+    )
+    for empty in sparse:
+        for records in ([empty, populated], [populated, empty]):
+            result = roundtrip_common.literalize_new_variable(
+                language=language,
+                json_text=json.dumps(obj=records),
+                var_name=_VAR_NAME,
+                pre_indent_level=1,
+            )
+            program = "\n".join(
+                (
+                    *result.preamble,
+                    *result.body_preamble,
+                    "func main() {",
+                    result.code,
+                    f"writeSiblingRecords({_VAR_NAME})",
+                    "}",
+                )
+            )
+            roundtrip_common.execute(
+                label=f"{_LABEL} record siblings ({records[0]['tag']} first)",
+                source_filename="main.go",
+                program=program,
+                steps=[
+                    roundtrip_common.Step(
+                        args=[go, "run", "."], failure_label="go run error"
+                    ),
+                ],
+                excluded_keys=(),
+                expected_json=json.dumps(obj={"records": records}),
+                extra_files={
+                    "go.mod": _GO_MOD,
+                    _SIBLING_CONSUMER.name: consumer,
+                },
+            )
+
+
+def _check_incompatible_siblings() -> None:
+    """Retain the error contract for incompatible inferred record
+    shapes.
+    """
+    language = Go(heterogeneous_strategy=Go.heterogeneous_strategies.RECORD)
+    sparse: dict[str, JsonValue] = {"tag": "empty", "items": []}
+    typed: dict[str, JsonValue] = {"tag": "typed", "items": [1, 2]}
+    for records in ([sparse, typed], [typed, sparse]):
+        try:
+            _ = roundtrip_common.literalize_new_variable(
+                language=language,
+                json_text=json.dumps(obj=records),
+                var_name=_VAR_NAME,
+                pre_indent_level=1,
+            )
+        except HeterogeneousSiblingListsError:
+            continue
+        msg = (
+            f"Expected Go RECORD to reject incompatible siblings: {records!r}"
+        )
+        raise AssertionError(msg)
+
+
 @click.command()
 def main() -> None:
     """Round-trip the shared document through the Go backend."""
@@ -104,6 +182,8 @@ def main() -> None:
         expected_json=json_text,
         extra_files={"go.mod": _GO_MOD},
     )
+    _check_sibling_permutations(go=go)
+    _check_incompatible_siblings()
 
 
 if __name__ == "__main__":

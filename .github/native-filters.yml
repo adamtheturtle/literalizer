@@ -255,7 +255,7 @@ lint-go:
   - *shared
   - '{src/literalizer/languages,tests/integration/languages}/go.{py,toml}'
   - scripts/run_go{,_*}.py
-  - scripts/go_shared_record.go
+  - scripts/{go_shared_record,go_record_sibling_consumer}.go
   - tests/integration/cases/**/*.go
 
 lint-rust:
