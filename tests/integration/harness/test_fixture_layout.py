@@ -73,3 +73,16 @@ def test_nested_reference_fixture_selection() -> None:
         fixture_module_name(golden_path=reference)
         == "Fixture_literalize_ref_both_forms_gleam_ref"
     )
+
+
+def test_nested_call_variant_fixture_selection() -> None:
+    """Keep variant call fixtures visible with their original module names."""
+    fixture = (
+        CASES_DIR
+        / "call_json_nested_ref_array/goldens/gleam/v1"
+        / "json_type_gleam_json_json_call.gleam"
+    )
+    assert fixture in fixture_paths(extension=".gleam", version="v1")
+    prefix = "Fixture_call_json_nested_ref_array"
+    expected = f"{prefix}_gleam_json_type_gleam_json_json_call"
+    assert fixture_module_name(golden_path=fixture) == expected
