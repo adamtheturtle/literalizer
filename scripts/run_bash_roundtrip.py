@@ -34,6 +34,13 @@ from pathlib import Path
 import click
 from pydantic import JsonValue
 
+from literalizer import (
+    CollectionLayout,
+    InputFormat,
+    Language,
+    NewVariable,
+    literalize,
+)
 from literalizer.languages import Bash
 from scripts import roundtrip_common
 
@@ -151,13 +158,19 @@ def _next_var(*, counter: list[int]) -> str:
     return f"_c{counter[0]}"
 
 
-def _build_program(json_text: str) -> str:
+def _build_program(
+    *,
+    json_text: str,
+    language: Language,
+    layout: CollectionLayout,
+) -> str:
     """Return a runnable Bash script literalized from *json_text*."""
-    result = roundtrip_common.literalize_new_variable(
-        language=Bash(),
-        json_text=json_text,
-        var_name=_VAR_NAME,
-        pre_indent_level=0,
+    result = literalize(
+        language=language,
+        source=json_text,
+        input_format=InputFormat.JSON,
+        variable_form=NewVariable(name=_VAR_NAME, modifiers=frozenset()),
+        collection_layout=layout,
     )
     preamble = "\n".join((*result.preamble, *result.body_preamble))
     # The shared document is a top-level JSON object, so the parsed value
@@ -181,20 +194,24 @@ def _build_program(json_text: str) -> str:
     )
 
 
-@click.command()
-def main() -> None:
-    """Round-trip the shared document through the Bash backend."""
-    json_text = roundtrip_common.input_for_capabilities(
-        capabilities=Bash.variant_metadata.round_trip_capabilities,
-    )
-    program = _build_program(json_text=json_text)
-    bash = shutil.which(cmd="bash")
-    if bash is None or bash == "":
-        bash = "bash"
+def _check_document(
+    *,
+    bash: str,
+    json_text: str,
+    language: Language,
+    layout: CollectionLayout,
+) -> None:
+    """Exercise one option combination in the native shell."""
     roundtrip_common.execute(
-        label=_LABEL,
+        label=(
+            f"{_LABEL} {language.declaration_style.name}/"
+            f"{language.string_format.name}/{language.integer_format.name}/"
+            f"{layout.name}"
+        ),
         source_filename="main.sh",
-        program=program,
+        program=_build_program(
+            json_text=json_text, language=language, layout=layout
+        ),
         steps=[
             roundtrip_common.Step(
                 args=[bash, "main.sh"],
@@ -209,6 +226,41 @@ def main() -> None:
             )
         },
     )
+
+
+@click.command()
+def main() -> None:
+    """Round-trip the shared corpus and compatible Bash option pairs."""
+    bash = shutil.which(cmd="bash")
+    if bash is None or bash == "":
+        bash = "bash"
+    _check_document(
+        bash=bash,
+        json_text=roundtrip_common.input_for_capabilities(
+            capabilities=Bash.variant_metadata.round_trip_capabilities,
+        ),
+        language=Bash(),
+        layout=CollectionLayout.COMPACT,
+    )
+    # The Bash backend admits only DECLARE and DECIMAL. Cross the two
+    # quoting options with both layouts while those axes stay fixed.
+    text = "quotes '\" and a literal dollar $ plus backslash \\ and café\n"
+    source = json.dumps(
+        obj={
+            "text": text,
+            "number": -9007199254740991,
+            "array": [text, 0, True],
+            "map": {"key with spaces": text, "number": 42},
+        },
+    )
+    for quoting in Bash.StringFormats:
+        for layout in (CollectionLayout.COMPACT, CollectionLayout.MULTILINE):
+            _check_document(
+                bash=bash,
+                json_text=source,
+                language=Bash(string_format=quoting),
+                layout=layout,
+            )
 
 
 if __name__ == "__main__":
