@@ -21,7 +21,13 @@ from pathlib import Path
 
 import click
 
-from literalizer import InputFormat, literalize
+from literalizer import (
+    InputFormat,
+    NewVariable,
+    literalize,
+    literalize_call,
+    literalize_call_with_declarations,
+)
 from literalizer.languages import Rust
 from scripts import roundtrip_common, shared_record_common
 
@@ -29,6 +35,9 @@ _LABEL = "Rust shared-record"
 
 
 _CONSUMER_PATH = Path(__file__).with_name(name="rust_shared_record.rs")
+_COMPOSED_CONSUMER_PATH = Path(__file__).with_name(
+    name="rust_composed_record.rs"
+)
 
 
 def _build_sources() -> dict[str, str]:
@@ -55,6 +64,79 @@ def _build_sources() -> dict[str, str]:
         "declaring_data.rs": declaring.code,
         "dependent_data.rs": dependent.code,
     }
+
+
+def _build_composed_program(*, reverse: bool, include_ref_values: bool) -> str:
+    """Compose separate records and a call with a repeated reference."""
+    language = Rust(
+        heterogeneous_strategy=Rust.heterogeneous_strategies.RECORD,
+    )
+    declarations = {
+        name: literalize(
+            source=source,
+            input_format=InputFormat.JSON,
+            language=language,
+            variable_form=NewVariable(name=name, modifiers=frozenset()),
+        )
+        for name, source in (
+            ("first_data", '{"name":"first","values":[1,2]}'),
+            ("second_data", '{"name":"second","values":[3]}'),
+        )
+    }
+    call = literalize_call(
+        source=(
+            '[[{"$ref":"first_data"},{"$ref":"second_data"},'
+            '{"$ref":"first_data"}]]'
+        ),
+        input_format=InputFormat.JSON,
+        language=language,
+        target_function="consume",
+        parameter_names=("first", "second", "repeated"),
+        per_element=True,
+        ref_key="$ref",
+        ref_values=(
+            {name: result.source_data for name, result in declarations.items()}
+            if include_ref_values
+            else None
+        ),
+    )
+    bindings = tuple(declarations.values())
+    return literalize_call_with_declarations(
+        language=language,
+        declarations=bindings[::-1] if reverse else bindings,
+        call=call,
+        extra_preamble=(f'include!("{_COMPOSED_CONSUMER_PATH.name}");',),
+    ).code
+
+
+def _check_composed_records(*, rustc: str) -> None:
+    """Run both declaration orders with and without reference hints."""
+    consumer = _COMPOSED_CONSUMER_PATH.read_text(encoding="utf-8")
+    steps = [
+        roundtrip_common.Step(
+            args=[rustc, "--edition", "2021", "-D", "warnings", "main.rs"],
+            failure_label="Rust composition rustc error",
+        ),
+        roundtrip_common.Step(
+            args=["./main"], failure_label="Rust composition runtime error"
+        ),
+    ]
+    for reverse in (False, True):
+        for include_ref_values in (False, True):
+            roundtrip_common.execute(
+                label=(
+                    f"Rust composed records reverse={reverse}, "
+                    f"ref_values={include_ref_values}"
+                ),
+                source_filename="main.rs",
+                program=_build_composed_program(
+                    reverse=reverse, include_ref_values=include_ref_values
+                ),
+                steps=steps,
+                excluded_keys=(),
+                expected_json=shared_record_common.OK_DOCUMENT,
+                extra_files={_COMPOSED_CONSUMER_PATH.name: consumer},
+            )
 
 
 @click.command()
@@ -107,6 +189,7 @@ def main() -> None:
         expected_json=shared_record_common.OK_DOCUMENT,
         extra_files=_build_sources(),
     )
+    _check_composed_records(rustc=rustc)
 
 
 if __name__ == "__main__":
