@@ -43,7 +43,7 @@ def _snapshot_renderings() -> list[GoldenRendering]:
     renderings = [
         rendering
         for cls in sorted(languages, key=lambda cls: cls.__name__)
-        for rendering in family.build(lang_cls=cls)
+        for rendering in family.build(cases_dir=_CASES_DIR, lang_cls=cls)
         if rendering.case_dir_name == "record_named_nested_record"
         and rendering.golden_name.startswith(
             cls.__name__ + "_record_shape_names_"

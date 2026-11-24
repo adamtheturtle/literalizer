@@ -7,6 +7,7 @@ checks exercise concurrent calls (issue #4699).
 
 import dataclasses
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import pytest
 from pydantic import BaseModel, TypeAdapter
@@ -21,6 +22,8 @@ from tests.integration.state_goldens import (
     render_state_golden,
 )
 from tests.toml_cases import load_toml_cases
+
+_CASES_DIR = Path(__file__).parents[1] / "integration" / "cases"
 
 
 class _ThreadCase(
@@ -78,7 +81,9 @@ def test_language_instance_is_thread_safe(scenario: _ThreadCase) -> None:
         rendering
         for family in GOLDEN_SCENARIOS
         if family.name == scenario.scenario_name
-        for rendering in family.build(lang_cls=scenario.language)
+        for rendering in family.build(
+            cases_dir=_CASES_DIR, lang_cls=scenario.language
+        )
         if rendering.golden_name == scenario.golden_name
         and rendering.case_dir_name in scenario.case_names
     ]

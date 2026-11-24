@@ -48,7 +48,7 @@ def test_concurrent_yaml_golden_files(cases_dir: Path) -> None:
     renderings = [
         rendering
         for cls in sorted(languages, key=lambda cls: cls.__name__)
-        for rendering in base.build(lang_cls=cls)
+        for rendering in base.build(cases_dir=cases_dir, lang_cls=cls)
         if rendering.case_dir_name in names
     ]
     assert {rendering.case_dir_name for rendering in renderings} == names
