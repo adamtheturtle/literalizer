@@ -386,10 +386,10 @@ def test_literal_null_collection_outcomes(
     )
     case_dir = pytester.path / source_case.name
     case_dir.mkdir()
-    for name in ("case.toml", "input.yaml", "Scala@v3.scala"):
-        _ = (case_dir / name).write_bytes(
-            data=(source_case / name).read_bytes()
-        )
+    for relative in ("case.toml", "input.yaml", "goldens/scala/v3/base.scala"):
+        target = case_dir / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        _ = target.write_bytes(data=(source_case / relative).read_bytes())
     _ = pytester.makepyfile(
         """\
 from dataclasses import replace
@@ -425,7 +425,8 @@ def test_null_sequence(file_regression):
             ),
         ),
     )
-    original = (case_dir / "Scala@v3.scala").read_bytes()
+    golden = rendering.artifact(version=Scala().language_version).path
+    original = golden.read_bytes()
 
     def check(rendering, spec):
         runner._check_rendering(
@@ -442,7 +443,7 @@ def test_null_sequence(file_regression):
     assert not rejected_path.exists()
 
     check(rendering, Scala())
-    assert (case_dir / "Scala@v3.scala").read_bytes() == original
+    assert golden.read_bytes() == original
 
     # Keep the list option so the harness still expects success.
     class ScalaListWithArrayOpener(Scala):
@@ -454,7 +455,7 @@ def test_null_sequence(file_regression):
         NullInCollectionError, match="Array cannot contain null"
     ):
         check(rendering, ScalaListWithArrayOpener())
-    assert (case_dir / "Scala@v3.scala").read_bytes() == original
+    assert golden.read_bytes() == original
 
     class ScalaListWithUnrepresentableOpener(Scala):
         @property
@@ -467,7 +468,7 @@ def test_null_sequence(file_regression):
     ):
         check(missing, ScalaListWithUnrepresentableOpener())
     assert not missing.artifact(version=Scala().language_version).path.exists()
-    assert (case_dir / "Scala@v3.scala").read_bytes() == original
+    assert golden.read_bytes() == original
 """,
     )
     root = Path(__file__).resolve().parents[3]

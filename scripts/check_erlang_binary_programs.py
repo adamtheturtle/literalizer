@@ -90,7 +90,8 @@ def main() -> None:
     """Check the canonical golden and all generated binary documents."""
     golden = (
         Path(__file__).resolve().parents[1]
-        / "tests/integration/cases/binary_octets/Erlang@otp_25.erl"
+        / "tests/integration/cases/binary_octets"
+        / "goldens/erlang/otp_25/base.erl"
     )
     _run_program(
         program=golden.read_text(encoding="utf-8"),

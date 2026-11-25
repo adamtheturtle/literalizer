@@ -3,9 +3,8 @@ Golden cases
 
 Start with the input directory under ``cases/``.
 Its ``case.toml`` declares which public API, rendering contexts and option axes exercise that input.
-Generated expectations are either adjacent ``*@<version>.<extension>`` files or nested under ``goldens/<language-id>/<version>/<scenario>.<extension>``.
-Set ``golden_layout = "nested"`` in ``case.toml`` to select the nested layout.
-Native CI jobs consume both layouts through the golden inventory.
+Generated expectations live under ``goldens/<language-id>/<version>/<scenario>.<extension>`` inside each case directory.
+Native CI jobs select these files through the golden inventory.
 
 Adding coverage
 ---------------

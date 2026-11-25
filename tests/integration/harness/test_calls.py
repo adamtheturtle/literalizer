@@ -154,6 +154,7 @@ def test_call_rejection_handles_stale_fixture(
         target_dir=case_dir,
     )
     golden_path = rendering.artifact(cases_dir=tmp_path).path
+    golden_path.parent.mkdir(parents=True, exist_ok=True)
     _ = golden_path.write_text(data="stale\n")
     with pytest.raises(
         expected_exception=pytest.fail.Exception,

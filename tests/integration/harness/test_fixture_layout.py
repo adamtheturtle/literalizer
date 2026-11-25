@@ -2,12 +2,10 @@
 
 from pathlib import Path
 
+from literalizer.languages import Go
 from scripts.fixture_staging import stage_fixture_modules
-from tests.integration.case_manifests import load_case_manifest
-from tests.integration.fixture_names import (
-    fixture_module_name,
-    nested_golden_path,
-)
+from tests.integration.fixture_names import fixture_module_name
+from tests.integration.language_specs import make_golden_path
 from tests.integration.list_fixtures import CASES_DIR, fixture_paths
 
 
@@ -92,26 +90,15 @@ def test_nested_call_variant_fixture_selection() -> None:
     assert fixture_module_name(golden_path=fixture) == expected
 
 
-def test_nested_layout_uses_manifest_before_generation(tmp_path: Path) -> None:
-    """A new case can choose nested paths before any golden exists."""
+def test_new_case_has_a_path_before_generation(tmp_path: Path) -> None:
+    """Resolve the golden path before creating its case directory."""
     case_dir = tmp_path / "new_case"
-    case_dir.mkdir()
-    _ = (case_dir / "case.toml").write_text(
-        data=(
-            'schema_version = 1\ngolden_layout = "nested"\nsuites = ["base"]\n'
-        ),
-        encoding="utf-8",
-    )
-    _ = (case_dir / "input.json").write_text(data="42", encoding="utf-8")
-    assert load_case_manifest(case_dir=case_dir).golden_layout == "nested"
     assert (
-        nested_golden_path(
-            case_dir=case_dir,
-            stem="Go",
-            language_name="Go",
-            language_id="go",
-            version="v1_18",
-            extension=".go",
+        make_golden_path(
+            parent=case_dir,
+            name="Go",
+            lang_cls=Go,
+            version=Go.VersionFormats.V1_18,
         )
         == case_dir / "goldens/go/v1_18/base.go"
     )

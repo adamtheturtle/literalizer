@@ -1,7 +1,6 @@
 # Backtick raw strings keep comment markers inside the bound call expression.
 # Regression provenance: the scanner-only backtick_strings option.
 schema_version = 1
-golden_layout = "nested"
 owner = "literalize-call"
 
 [call]

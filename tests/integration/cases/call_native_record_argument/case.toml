@@ -1,5 +1,4 @@
 schema_version = 1
-golden_layout = "nested"
 owner = "literalize-call"
 # Regression provenance: Elm, FSharp.
 # These native-record call arguments use record expressions instead of tagged values.

@@ -1,5 +1,4 @@
 schema_version = 1
-golden_layout = "nested"
 owner = "variant"
 # Original regression: Zig reserves only the carrier and parser names occupied by the selected output mode.
 

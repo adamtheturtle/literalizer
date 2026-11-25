@@ -1,5 +1,4 @@
 schema_version = 1
-golden_layout = "nested"
 owner = "constructor-binding"
 gates = [{kind = "capability_flag", flag = "uses_data_keyword_for_algebraic_constructors"}]
 
