@@ -502,7 +502,8 @@ Typed native invocations
 ------------------------
 
 ``literalize_call`` retains its existing string-target calling conventions.
-Use :func:`~literalizer.literalize_native_call` when a call needs a native receiver, selector, constructor, or explicit scalar/object signature.
+Pass a :class:`~literalizer.NativeInvocation` to :func:`~literalizer.literalize_invocations` when a call needs a native receiver, selector, constructor, or explicit scalar/object signature.
+The typed object supplies the target and arguments.
 The first backend declaring ``supports_native_invocations`` is Objective-C.
 Unsupported backends raise :class:`~literalizer.exceptions.NativeCallError` rather than approximating the requested syntax.
 
@@ -522,7 +523,7 @@ The receiver name is emitted unchanged; no synthetic global or function-pointer 
        NativeReference,
        ObjectType,
        ScalarType,
-       literalize_native_call,
+       literalize_invocations,
    )
    from literalizer.languages import ObjectiveC
 
@@ -537,7 +538,7 @@ The receiver name is emitted unchanged; no synthetic global or function-pointer 
        ),
        arguments=(NativeLiteral(value="user_1"), NativeLiteral(value=100.0)),
    )
-   result = literalize_native_call(language=ObjectiveC(), invocation=invocation)
+   result = literalize_invocations(language=ObjectiveC(), invocation=invocation)
    print(result.code)
 
 The expression is rendered as:

@@ -118,7 +118,7 @@ def test_native_invocation_golden(
         zipped = step.get("zipped")
         initial_column = step.get("initial_column", 0)
         if step.get("single", False):
-            result = literalizer.literalize_native_call(
+            result = literalizer.literalize_invocations(
                 language=step_spec,
                 invocation=literalizer.native_invocation_from_data(
                     spec=step["invocation"], values=()
