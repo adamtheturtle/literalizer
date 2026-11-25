@@ -502,7 +502,7 @@ Typed native invocations
 ------------------------
 
 ``literalize_call`` retains its existing string-target calling conventions.
-Pass a :class:`~literalizer.NativeInvocation` to :func:`~literalizer.literalize_invocations` when a call needs a native receiver, selector, constructor, or explicit scalar/object signature.
+Pass a :class:`~literalizer.NativeInvocation` to :func:`~literalizer.literalize_call` when a call needs a native receiver, selector, constructor, or explicit scalar/object signature.
 The typed object supplies the target and arguments.
 The first backend declaring ``supports_native_invocations`` is Objective-C.
 Unsupported backends raise :class:`~literalizer.exceptions.NativeCallError` rather than approximating the requested syntax.
@@ -523,7 +523,7 @@ The receiver name is emitted unchanged; no synthetic global or function-pointer 
        NativeReference,
        ObjectType,
        ScalarType,
-       literalize_invocations,
+       literalize_call,
    )
    from literalizer.languages import ObjectiveC
 
@@ -538,7 +538,7 @@ The receiver name is emitted unchanged; no synthetic global or function-pointer 
        ),
        arguments=(NativeLiteral(value="user_1"), NativeLiteral(value=100.0)),
    )
-   result = literalize_invocations(language=ObjectiveC(), invocation=invocation)
+   result = literalize_call(language=ObjectiveC(), invocation=invocation)
    print(result.code)
 
 The expression is rendered as:
@@ -566,7 +566,7 @@ Preamble and metadata about executable placement support composition with :func:
 Declarative invocation recipes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:func:`~literalizer.literalize_invocations` applies a bare native recipe to source rows parsed by the same input parsers as the existing rendering APIs.
+:func:`~literalizer.literalize_call` applies a bare native recipe to source rows parsed by the same input parsers as the existing rendering APIs.
 Pass the recipe mapping directly as ``invocation``.
 For example:
 
@@ -602,7 +602,7 @@ Keep explanatory prose in the surrounding document or in explicit expected-resul
 Shared invocation recipes
 -------------------------
 
-Use :func:`~literalizer.literalize_invocations` when a data file specifies ordinary calls and calls requiring an explicit native signature.
+Use :func:`~literalizer.literalize_call` when a data file specifies ordinary calls and calls requiring an explicit native signature.
 Keep call metadata in one recipe instead of branching in each consumer::
 
     recipe = {

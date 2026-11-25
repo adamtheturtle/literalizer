@@ -9,14 +9,11 @@ Core functions
 --------------
 
 - Use :func:`literalize` to render a data value as source code.
-- Use :func:`literalize_call` to render calls when you supply the target and parameters directly.
-- Use :func:`literalize_invocations` for a typed native invocation or a recipe with optional language overrides.
+- Use :func:`literalize_call` to render a direct call, an invocation recipe, or a typed native invocation.
 
 .. autofunction:: literalize
 
 .. autofunction:: literalize_call
-
-.. autofunction:: literalize_invocations
 
 File composition
 ----------------
@@ -69,9 +66,7 @@ Unknown fields and language keys, malformed names, and multiline descriptions ar
 Native invocations
 ------------------
 
-Pass a :class:`NativeInvocation` to :func:`literalize_invocations` with the language and any binding or placement options.
-
-.. autofunction:: native_invocation_from_data
+Pass a :class:`NativeInvocation` to :func:`literalize_call` with the language and any binding or placement options.
 
 .. autoclass:: ScalarType
    :members:

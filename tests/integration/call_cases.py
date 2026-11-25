@@ -91,7 +91,7 @@ def _literalize_call_case(
     ):
         call_transform = functools.partial(call_transform)
     if config.shared_invocation:
-        result = literalizer.literalize_invocations(
+        result = literalizer.literalize_call(
             source=source,
             input_format=input_info.input_format,
             language=spec,

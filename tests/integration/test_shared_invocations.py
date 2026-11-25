@@ -11,7 +11,6 @@ from literalizer import (
     NativeCallError,
     NewVariable,
     literalize_call,
-    literalize_invocations,
 )
 from literalizer._enums import enum_payload
 from literalizer._language import (
@@ -92,7 +91,7 @@ def test_constructor_recipe_reuses_backend_syntax(
     }
     rejection = _constructor_rejection(language=language)
     if rejection is None:
-        assert literalize_invocations(
+        assert literalize_call(
             **kwargs, invocation=invocation
         ) == literalize_call(
             **kwargs, target_function=target, parameter_names=[]
@@ -108,7 +107,7 @@ def test_constructor_recipe_reuses_backend_syntax(
     with pytest.raises(
         expected_exception=rejection.error, match=rejection.match
     ) as recipe_error:
-        _ = literalize_invocations(**kwargs, invocation=invocation)
+        _ = literalize_call(**kwargs, invocation=invocation)
     assert direct_error.type is rejection.error
     assert recipe_error.type is rejection.error
 
@@ -159,7 +158,7 @@ def test_invalid_shared_recipes(
 ) -> None:
     """Malformed metadata is rejected before input rendering."""
     with pytest.raises(expected_exception=NativeCallError, match=message):
-        _ = literalize_invocations(
+        _ = literalize_call(
             source="[[]]",
             input_format=InputFormat.JSON,
             language=language_cls(),
@@ -176,7 +175,7 @@ def test_invalid_generic_placement(
     with pytest.raises(
         expected_exception=NativeCallError, match="nonnegative indent"
     ):
-        _ = literalize_invocations(
+        _ = literalize_call(
             source="[[]]",
             input_format=InputFormat.JSON,
             language=language_cls(),
@@ -215,7 +214,7 @@ def test_expected_values_are_required_and_paired(
 ) -> None:
     """Checks cannot drop missing or mismatched expected results."""
     with pytest.raises(expected_exception=LiteralizerError, match=message):
-        _ = literalize_invocations(
+        _ = literalize_call(
             source="[[1]]",
             input_format=InputFormat.JSON,
             language=language_cls(),
@@ -241,7 +240,7 @@ def test_empty_checked_calls_still_require_expected_source(
     with pytest.raises(
         expected_exception=NativeCallError, match="requires zipped"
     ):
-        _ = literalize_invocations(
+        _ = literalize_call(
             source="[]",
             input_format=InputFormat.JSON,
             language=language_cls(),
@@ -279,7 +278,7 @@ def test_checker_rejects_non_expression_call_backend(
     with pytest.raises(
         expected_exception=NativeCallError, match="positional expression"
     ):
-        _ = literalize_invocations(
+        _ = literalize_call(
             source="[[1]]",
             input_format=InputFormat.JSON,
             zip_source="[true]",
@@ -304,7 +303,7 @@ def test_invalid_selected_override(language_cls: LanguageCls) -> None:
     with pytest.raises(
         expected_exception=NativeCallError, match="string-keyed"
     ):
-        _ = literalize_invocations(
+        _ = literalize_call(
             source="[[]]",
             input_format=InputFormat.JSON,
             language=language_cls(),

@@ -42,7 +42,7 @@ def test_native_invocation_rejections(case: dict[str, object]) -> None:
         expected_exception=literalizer.LiteralizerError,
         match=str(object=case["match"]),
     ):
-        _ = literalizer.literalize_invocations(
+        _ = literalizer.literalize_call(
             source=str(object=case["source"]),
             input_format=literalizer.InputFormat.JSON,
             language=ObjectiveC(
@@ -72,14 +72,16 @@ def test_opaque_native_recipe_literals_are_rejected(value: object) -> None:
     with pytest.raises(
         expected_exception=literalizer.NativeCallError, match="Native literal"
     ):
-        _ = literalizer.native_invocation_from_data(
-            spec={
+        _ = literalizer.literalize_call(
+            source="[[]]",
+            input_format=literalizer.InputFormat.JSON,
+            language=ObjectiveC(),
+            invocation={
                 "function": "consume",
                 "parameter-types": ["id"],
                 "return-type": "void",
                 "arguments": [{"literal": value}],
             },
-            values=[],
         )
 
 
@@ -89,7 +91,7 @@ def test_native_binding_rejects_foreign_modifiers() -> None:
         expected_exception=literalizer.NativeCallError,
         match="do not accept modifiers",
     ):
-        _ = literalizer.literalize_invocations(
+        _ = literalizer.literalize_call(
             language=ObjectiveC(),
             invocation=literalizer.NativeInvocation(
                 target=literalizer.ConstructorTarget(class_name="NSObject"),
@@ -128,7 +130,7 @@ def test_native_call_requires_capability(
         expected_exception=literalizer.NativeCallError,
         match="does not support native invocations",
     ):
-        _ = literalizer.literalize_invocations(
+        _ = literalizer.literalize_call(
             language=language_cls(), invocation=invocation
         )
 
@@ -152,7 +154,7 @@ def test_native_rows_require_capability(
         expected_exception=literalizer.NativeCallError,
         match="does not support native invocations",
     ):
-        _ = literalizer.literalize_invocations(
+        _ = literalizer.literalize_call(
             source="[[]]",
             input_format=literalizer.InputFormat.JSON,
             language=language_cls(),
@@ -195,7 +197,7 @@ def test_typed_invocation_rejects_recipe_options(
         match="options require an invocation recipe",
     ):
         _ = _invoke_dynamic(
-            literalizer.literalize_invocations,
+            literalizer.literalize_call,
             language=ObjectiveC(),
             invocation=invocation,
             **options,
@@ -219,7 +221,7 @@ def test_invocation_recipe_requires_source_and_format(
         match="Invocation recipes require source and input_format",
     ):
         _ = _invoke_dynamic(
-            literalizer.literalize_invocations,
+            literalizer.literalize_call,
             language=ObjectiveC(),
             invocation={
                 "function": "consume",
@@ -228,4 +230,79 @@ def test_invocation_recipe_requires_source_and_format(
                 "arguments": [],
             },
             **options,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames=("options", "message"),
+    argvalues=[
+        (
+            {"target_function": "consume", "parameter_names": ()},
+            "Direct call options cannot be combined with invocation",
+        ),
+        (
+            {"wrap_in_file": True},
+            "Direct call options cannot be combined with invocation",
+        ),
+        (
+            {
+                "variable_form": literalizer.BothVariableForms(
+                    name="result", modifiers=frozenset()
+                )
+            },
+            "Invocations require a single variable form",
+        ),
+    ],
+    ids=["target", "file-wrapper", "both-variable-forms"],
+)
+def test_invocation_recipe_rejects_direct_call_options(
+    options: dict[str, object], message: str
+) -> None:
+    """Reject options that only the direct call form supports."""
+    with pytest.raises(
+        expected_exception=literalizer.NativeCallError, match=message
+    ):
+        _ = _invoke_dynamic(
+            literalizer.literalize_call,
+            source="[[]]",
+            input_format=literalizer.InputFormat.JSON,
+            language=ObjectiveC(),
+            invocation={"constructor": "NSObject"},
+            **options,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames=("options", "message"),
+    argvalues=[
+        (
+            {"target_function": "consume", "parameter_names": ()},
+            "Direct calls require source and input_format",
+        ),
+        (
+            {"source": "[[]]", "input_format": literalizer.InputFormat.JSON},
+            "Direct calls require target_function and parameter_names",
+        ),
+        (
+            {
+                "source": "[[]]",
+                "input_format": literalizer.InputFormat.JSON,
+                "target_function": "consume",
+                "parameter_names": (),
+                "initial_column": 1,
+            },
+            "Placement options require an invocation",
+        ),
+    ],
+    ids=["source", "target", "placement"],
+)
+def test_direct_calls_reject_incomplete_or_mixed_options(
+    options: dict[str, object], message: str
+) -> None:
+    """Reject input that does not describe a valid direct call."""
+    with pytest.raises(
+        expected_exception=literalizer.NativeCallError, match=message
+    ):
+        _ = _invoke_dynamic(
+            literalizer.literalize_call, language=ObjectiveC(), **options
         )

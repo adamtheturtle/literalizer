@@ -8,13 +8,17 @@ root.
 import dataclasses
 import enum
 from collections.abc import Callable, Collection, Mapping, Sequence
+from typing import ClassVar, overload
 
 from beartype import beartype
 
+from literalizer import _native_call_data, _native_rendering
+from literalizer._enums import enum_payload
 from literalizer._language import (
     CollectionLayout,
     IdentifierCase,
     Language,
+    PositionalCallStyle,
     RenderedCallStub,
     is_reserved_identifier,
     language_string_option,
@@ -27,7 +31,9 @@ from literalizer._literalize import (
     LiteralizeResult,
     NewVariable,
     VariableForm,
+    assemble_call_expression,
     disabled_ref_key,
+    format_rendered_call_arguments,
     literalize_apply_form,
     literalize_both_forms,
     literalize_bound_refs,
@@ -37,6 +43,7 @@ from literalizer._literalize import (
     merged_reference_values,
     nonempty_mapping,
     reference_inputs_or_empty,
+    validate_call_target,
 )
 from literalizer._literalize import (
     literalize_call_with_declarations as _literalize_call_with_declarations,
@@ -59,12 +66,41 @@ from literalizer.exceptions import (
     InvalidSequenceArgumentError,
     InvalidVariableModifierError,
     ModuleNameVariableCollisionError,
+    NativeCallError,
     PreIndentedWrappedFileError,
     UnsupportedCallShapeError,
     UnsupportedIdentifierCaseError,
     VariableNameNotSupportedError,
     WrapInFileWithoutVariableNotSupportedError,
 )
+from literalizer.native_calls import NativeInvocation
+
+
+@beartype
+@dataclasses.dataclass(frozen=True)
+class _ResultCheck:
+    """Wrap a result and its paired expected value in a positional
+    call.
+    """
+
+    target: str
+    style: PositionalCallStyle
+    uses_zipped: ClassVar[bool] = True
+
+    def __call__(self, context: CallContext, /) -> str:
+        """Compose already-rendered expressions without source
+        templates.
+        """
+        return assemble_call_expression(
+            target_function=self.target,
+            args_str=format_rendered_call_arguments(
+                formatted=[context.call, f"{context.zipped}"],
+                params=("actual", "expected"),
+                style=self.style,
+                allows_empty_call_parens=True,
+            ),
+            style=self.style,
+        )
 
 
 @beartype
@@ -632,6 +668,97 @@ def literalize(
 
 
 @beartype
+def _render_call_from_source(
+    *,
+    source: str,
+    input_format: InputFormat,
+    input_root_key: str | None,
+    language: Language,
+    target_function: str,
+    parameter_names: Sequence[str],
+    call_transform: Callable[[CallContext], str] | None,
+    zip_source: str | None,
+    zip_input_format: InputFormat | None,
+    comment_source: Sequence[str] | None,
+    per_element: bool,
+    wrap_in_file: bool,
+    ref_case: IdentifierCase | None,
+    consumable_refs: frozenset[str],
+    ref_values: Mapping[str, ValueInput] | None,
+    bound_refs: Mapping[str, ValueInput] | None,
+    ref_key: str | None,
+    collection_layout: CollectionLayout,
+    variable_form: VariableForm | None,
+) -> LiteralizeResult:
+    """Render source rows using an explicitly supplied call target."""
+    language = _fresh_language(language=language)
+    if isinstance(parameter_names, str):
+        raise InvalidSequenceArgumentError(argument_name="parameter_names")
+    if isinstance(comment_source, str):
+        raise InvalidSequenceArgumentError(argument_name="comment_source")
+    effective_ref_key = ref_key
+    if effective_ref_key is None:
+        effective_ref_key = disabled_ref_key()
+    _validate_variable_modifiers(
+        language=language,
+        variable_form=variable_form,
+    )
+    effective_bound_ref_names_2: Mapping[str, ValueInput]
+    effective_bound_ref_names_2 = reference_inputs_or_empty(values=bound_refs)
+    _validate_bound_ref_output_name(
+        language=language,
+        variable_form=variable_form,
+        bound_ref_names=(effective_bound_ref_names_2),
+        ref_case=ref_case,
+        wrap_in_file=wrap_in_file,
+    )
+    effective_bound_ref_names_3: Mapping[str, ValueInput]
+    effective_bound_ref_names_3 = reference_inputs_or_empty(values=bound_refs)
+    _validate_module_name_variable_collision(
+        language=language,
+        variable_form=variable_form,
+        bound_ref_names=(effective_bound_ref_names_3),
+        ref_case=ref_case,
+        wrap_in_file=wrap_in_file,
+    )
+    if isinstance(variable_form, BothVariableForms):
+        # Rendering both halves would invoke the call twice -- a silent
+        # side-effect bug for any non-pure target.  Reject up front so
+        # the rest of the function can narrow ``variable_form`` to
+        # ``NewVariable | ExistingVariable | None``.
+        raise UnsupportedCallShapeError(
+            language_name=type(language).__name__,
+            reason=(
+                "BothVariableForms is not supported for literalize_call: "
+                "rendering both a declaration and an assignment would "
+                "invoke the target function twice"
+            ),
+        )
+    return literalize_call_parsed(
+        parsed=_select_input_root(
+            parsed=parse_input(source=source, input_format=input_format),
+            input_root_key=input_root_key,
+        ),
+        language=language,
+        target_function=target_function,
+        parameter_names=parameter_names,
+        call_transform=call_transform,
+        zip_source=zip_source,
+        zip_input_format=zip_input_format,
+        comment_source=comment_source,
+        per_element=per_element,
+        wrap_in_file=wrap_in_file,
+        ref_case=ref_case,
+        consumable_refs=consumable_refs,
+        ref_values=ref_values,
+        bound_refs=bound_refs,
+        ref_key=effective_ref_key,
+        collection_layout=collection_layout,
+        variable_form=variable_form,
+    )
+
+
+@overload
 def literalize_call(
     *,
     source: str,
@@ -653,8 +780,69 @@ def literalize_call(
     ref_key: str | None = None,
     collection_layout: CollectionLayout = CollectionLayout.COMPACT,
     variable_form: VariableForm | None = None,
+) -> LiteralizeResult: ...
+
+
+@overload
+def literalize_call(
+    *,
+    language: Language,
+    invocation: NativeInvocation,
+    variable_form: NewVariable | ExistingVariable | None = None,
+    pre_indent_level: int = 0,
+    initial_column: int = 0,
+) -> LiteralizeResult: ...
+
+
+@overload
+def literalize_call(
+    *,
+    source: str,
+    input_format: InputFormat,
+    language: Language,
+    invocation: Mapping[str, object],
+    per_element: bool = True,
+    zip_source: str | None = None,
+    zip_input_format: InputFormat | None = None,
+    variable_form: NewVariable | ExistingVariable | None = None,
+    pre_indent_level: int = 0,
+    initial_column: int = 0,
+) -> LiteralizeResult: ...
+
+
+@beartype
+def literalize_call(
+    *,
+    source: str | None = None,
+    input_format: InputFormat | None = None,
+    input_root_key: str | None = None,
+    language: Language,
+    target_function: str | None = None,
+    parameter_names: Sequence[str] | None = None,
+    call_transform: Callable[[CallContext], str] | None = None,
+    zip_source: str | None = None,
+    zip_input_format: InputFormat | None = None,
+    comment_source: Sequence[str] | None = None,
+    per_element: bool = True,
+    wrap_in_file: bool = False,
+    ref_case: IdentifierCase | None = None,
+    consumable_refs: frozenset[str] = frozenset(),
+    ref_values: Mapping[str, ValueInput] | None = None,
+    bound_refs: Mapping[str, ValueInput] | None = None,
+    ref_key: str | None = None,
+    collection_layout: CollectionLayout = CollectionLayout.COMPACT,
+    variable_form: VariableForm | None = None,
+    invocation: Mapping[str, object] | NativeInvocation | None = None,
+    pre_indent_level: int = 0,
+    initial_column: int = 0,
 ) -> LiteralizeResult:
     r"""Convert data to function call expressions in the target language.
+
+    For direct calls, supply *target_function*, *parameter_names*,
+    *source*, and *input_format*. A recipe mapping supplies the call
+    signature and can override it by language. A
+    :class:`~literalizer.NativeInvocation` supplies a typed call with
+    its arguments already resolved.
 
     Each top-level list element (when *per_element* is ``True``) becomes
     a separate function call with arguments formatted according to the
@@ -892,6 +1080,10 @@ def literalize_call(
             additionally require a constant expression under the target
             language's rules; for example, Dart ``CONST`` accepts a
             constant constructor but not an ordinary function call.
+        invocation: A recipe mapping with optional language overrides
+            or a typed call. Recipes require *source* and *input_format*.
+        pre_indent_level: Indent level for recipe and typed calls.
+        initial_column: Caller-owned columns before a native call.
 
     .. note::
 
@@ -911,68 +1103,205 @@ def literalize_call(
         "Composing declarations and calls" section of
         :doc:`/function-call-use-case` shows a worked example.
     """
-    language = _fresh_language(language=language)
-    if isinstance(parameter_names, str):
-        raise InvalidSequenceArgumentError(argument_name="parameter_names")
-    if isinstance(comment_source, str):
-        raise InvalidSequenceArgumentError(argument_name="comment_source")
-    effective_ref_key = ref_key
-    if effective_ref_key is None:
-        effective_ref_key = disabled_ref_key()
-    _validate_variable_modifiers(
-        language=language,
-        variable_form=variable_form,
-    )
-    effective_bound_ref_names_2: Mapping[str, ValueInput]
-    effective_bound_ref_names_2 = reference_inputs_or_empty(values=bound_refs)
-    _validate_bound_ref_output_name(
-        language=language,
-        variable_form=variable_form,
-        bound_ref_names=(effective_bound_ref_names_2),
-        ref_case=ref_case,
-        wrap_in_file=wrap_in_file,
-    )
-    effective_bound_ref_names_3: Mapping[str, ValueInput]
-    effective_bound_ref_names_3 = reference_inputs_or_empty(values=bound_refs)
-    _validate_module_name_variable_collision(
-        language=language,
-        variable_form=variable_form,
-        bound_ref_names=(effective_bound_ref_names_3),
-        ref_case=ref_case,
-        wrap_in_file=wrap_in_file,
-    )
-    if isinstance(variable_form, BothVariableForms):
-        # Rendering both halves would invoke the call twice -- a silent
-        # side-effect bug for any non-pure target.  Reject up front so
-        # the rest of the function can narrow ``variable_form`` to
-        # ``NewVariable | ExistingVariable | None``.
-        raise UnsupportedCallShapeError(
-            language_name=type(language).__name__,
-            reason=(
-                "BothVariableForms is not supported for literalize_call: "
-                "rendering both a declaration and an assignment would "
-                "invoke the target function twice"
-            ),
-        )
-    return literalize_call_parsed(
-        parsed=_select_input_root(
-            parsed=parse_input(source=source, input_format=input_format),
+    if invocation is None:
+        if source is None or input_format is None:
+            msg = "Direct calls require source and input_format"
+            raise NativeCallError(msg)
+        if target_function is None or parameter_names is None:
+            msg = "Direct calls require target_function and parameter_names"
+            raise NativeCallError(msg)
+        if pre_indent_level != 0 or initial_column != 0:
+            msg = "Placement options require an invocation"
+            raise NativeCallError(msg)
+        return _render_call_from_source(
+            source=source,
+            input_format=input_format,
             input_root_key=input_root_key,
-        ),
+            language=language,
+            target_function=target_function,
+            parameter_names=parameter_names,
+            call_transform=call_transform,
+            zip_source=zip_source,
+            zip_input_format=zip_input_format,
+            comment_source=comment_source,
+            per_element=per_element,
+            wrap_in_file=wrap_in_file,
+            ref_case=ref_case,
+            consumable_refs=consumable_refs,
+            ref_values=ref_values,
+            bound_refs=bound_refs,
+            ref_key=ref_key,
+            collection_layout=collection_layout,
+            variable_form=variable_form,
+        )
+    if any(
+        (
+            target_function is not None,
+            parameter_names is not None,
+            input_root_key is not None,
+            call_transform is not None,
+            comment_source is not None,
+            wrap_in_file,
+            ref_case is not None,
+            len(consumable_refs) != 0,
+            ref_values is not None,
+            bound_refs is not None,
+            ref_key is not None,
+            collection_layout is not CollectionLayout.COMPACT,
+        )
+    ):
+        msg = "Direct call options cannot be combined with invocation"
+        raise NativeCallError(msg)
+    if isinstance(variable_form, BothVariableForms):
+        msg = "Invocations require a single variable form"
+        raise NativeCallError(msg)
+    if isinstance(invocation, NativeInvocation):
+        if (
+            source is not None
+            or input_format is not None
+            or not per_element
+            or zip_source is not None
+            or zip_input_format is not None
+        ):
+            msg = "Source and row options require an invocation recipe"
+            raise NativeCallError(msg)
+        return _native_rendering.render_typed_invocation(
+            language=language,
+            invocation=invocation,
+            variable_form=variable_form,
+            pre_indent_level=pre_indent_level,
+            initial_column=initial_column,
+        )
+    if source is None or input_format is None:
+        msg = "Invocation recipes require source and input_format"
+        raise NativeCallError(msg)
+    return _render_invocation_recipe(
+        source=source,
+        input_format=input_format,
         language=language,
-        target_function=target_function,
-        parameter_names=parameter_names,
-        call_transform=call_transform,
+        invocation=invocation,
+        per_element=per_element,
         zip_source=zip_source,
         zip_input_format=zip_input_format,
-        comment_source=comment_source,
-        per_element=per_element,
-        wrap_in_file=wrap_in_file,
-        ref_case=ref_case,
-        consumable_refs=consumable_refs,
-        ref_values=ref_values,
-        bound_refs=bound_refs,
-        ref_key=effective_ref_key,
-        collection_layout=collection_layout,
         variable_form=variable_form,
+        pre_indent_level=pre_indent_level,
+        initial_column=initial_column,
+    )
+
+
+def _render_invocation_recipe(
+    *,
+    source: str,
+    input_format: InputFormat,
+    language: Language,
+    invocation: Mapping[str, object],
+    per_element: bool,
+    zip_source: str | None,
+    zip_input_format: InputFormat | None,
+    variable_form: NewVariable | ExistingVariable | None,
+    pre_indent_level: int,
+    initial_column: int,
+) -> LiteralizeResult:
+    """Select a recipe for the language and render its source rows."""
+    selected: dict[str, object] = (
+        _native_call_data.select_language_recipe(invocation, language)
+        if "default" in invocation or "languages" in invocation
+        else {"native": dict(invocation)}
+    )
+    if "native" in selected:
+        _native_call_data.validate_native_fields(
+            selected, {"native"}, {"native"}
+        )
+        return _native_call_data.render_native_recipe(
+            source=source,
+            input_format=input_format,
+            language=language,
+            invocation=_native_call_data.native_recipe_mapping(
+                selected["native"]
+            ),
+            per_element=per_element,
+            zip_source=zip_source,
+            zip_input_format=zip_input_format,
+            variable_form=variable_form,
+            pre_indent_level=pre_indent_level,
+            initial_column=initial_column,
+        )
+    _native_call_data.validate_native_fields(
+        selected,
+        {
+            "target-function",
+            "constructor-class",
+            "parameter-names",
+            "result-function",
+        },
+        {"parameter-names"},
+    )
+    if ("target-function" in selected) == ("constructor-class" in selected):
+        msg = "Specify exactly one target-function or constructor-class"
+        raise NativeCallError(msg)
+    if pre_indent_level < 0 or initial_column != 0:
+        msg = (
+            "Generic invocations require nonnegative indent "
+            "and zero initial_column"
+        )
+        raise NativeCallError(msg)
+    target = (
+        language.format_constructor_target(
+            _native_call_data.native_recipe_text(selected["constructor-class"])
+        )
+        if "constructor-class" in selected
+        else _native_call_data.native_recipe_text(selected["target-function"])
+    )
+    check = None
+    if "result-function" in selected:
+        if zip_source is None:
+            msg = "A result-function requires zipped expected values"
+            raise NativeCallError(msg)
+        name = _native_call_data.native_recipe_text(
+            selected["result-function"]
+        )
+        parts = tuple(name.split(sep="."))
+        validate_call_target(
+            language=language,
+            target_function=name,
+            target_function_parts=parts,
+        )
+        style: PositionalCallStyle | None = None
+        for member in language.call_styles:
+            payload = enum_payload(member=member, payload_type=object)
+            if isinstance(payload, PositionalCallStyle):
+                style = payload
+                break
+        if style is None:
+            msg = (
+                "A result-function requires a positional expression call style"
+            )
+            raise NativeCallError(msg)
+        check = _ResultCheck(
+            target=language.format_call_target(parts), style=style
+        )
+    result = literalize_call(
+        source=source,
+        input_format=input_format,
+        language=language,
+        target_function=target,
+        parameter_names=tuple(
+            _native_call_data.native_recipe_text(value)
+            for value in _native_call_data.native_recipe_list(
+                selected["parameter-names"]
+            )
+        ),
+        call_transform=check,
+        zip_source=zip_source,
+        zip_input_format=zip_input_format,
+        per_element=per_element,
+        variable_form=variable_form,
+    )
+    prefix = language.indent * pre_indent_level
+    return dataclasses.replace(
+        result,
+        declaration_code="\n".join(
+            prefix + line if line != "" else line
+            for line in result.declaration_code.split(sep="\n")
+        ),
     )
