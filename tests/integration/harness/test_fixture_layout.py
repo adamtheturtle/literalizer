@@ -4,6 +4,7 @@ from pathlib import Path
 
 from literalizer.languages import Go
 from scripts.fixture_staging import stage_fixture_modules
+from scripts.run_dart_fixtures import dart_fixture_bindings
 from tests.integration.fixture_names import fixture_module_name
 from tests.integration.language_specs import make_golden_path
 from tests.integration.list_fixtures import CASES_DIR, fixture_paths
@@ -102,3 +103,12 @@ def test_new_case_has_a_path_before_generation(tmp_path: Path) -> None:
         )
         == case_dir / "goldens/go/v1_18/base.go"
     )
+
+
+def test_dart_binding_metadata_matches_native_selection() -> None:
+    """Every selected Dart golden has an executable binding
+    description.
+    """
+    assert dart_fixture_bindings().keys() == {
+        path.resolve() for path in fixture_paths(extension=".dart")
+    }

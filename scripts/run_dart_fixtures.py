@@ -17,6 +17,7 @@ from tests.integration.case_manifests import BoundRefContext, RefCaseSpec
 from tests.integration.constructor_cases import (
     constructor_binding_cases,
 )
+from tests.integration.golden_outcomes import Success
 from tests.integration.golden_scenarios import scenario_renderings
 from tests.integration.list_fixtures import fixture_paths
 from tests.integration.reference_cases import reference_golden_cases
@@ -43,6 +44,7 @@ def _literalize_bindings() -> dict[Path, str | None]:
         if lang_cls is Dart
         for rendering in renderings
         for spec in rendering.specs
+        if isinstance(rendering.outcome(spec=spec), Success)
     }
 
 
@@ -58,7 +60,7 @@ def _call_bindings() -> dict[Path, str]:
         for case in call_golden_cases(cases_dir=_CASES_DIR)
         if case.lang_cls is Dart
         for rendering in case.renderings
-        if rendering.expected_exception is None
+        if isinstance(rendering.outcome, Success)
     }
 
 
@@ -82,6 +84,7 @@ def _ref_bindings() -> dict[Path, str | None]:
         for case in reference_golden_cases(cases_dir=_CASES_DIR)
         if case.lang_cls is Dart
         for rendering in case.renderings
+        if isinstance(rendering.outcome, Success)
     }
 
 
@@ -97,7 +100,10 @@ def _constructor_bindings() -> dict[Path, str]:
             msg = f"Missing constructor metadata for {case.name}."
             raise ValueError(msg)
         for rendering in case.renderings:
-            bindings[rendering.artifact.path.resolve()] = config.variable_name
+            if isinstance(rendering.outcome, Success):
+                bindings[rendering.artifact.path.resolve()] = (
+                    config.variable_name
+                )
     return bindings
 
 
