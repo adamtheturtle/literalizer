@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 from beartype import beartype
 from typing_extensions import TypeIs
 
+from literalizer import _native_rendering
 from literalizer._language import Language
 from literalizer._literalize import (
     ExistingVariable,
@@ -28,7 +29,6 @@ from literalizer.native_calls import (
     NativeType,
     ObjectType,
     ScalarType,
-    render_typed_invocation,
 )
 
 _MISSING = object()
@@ -328,7 +328,7 @@ def render_native_recipe(
                 spec=invocation, values=row, zipped=zipped_values[index]
             )
             results.append(
-                render_typed_invocation(
+                _native_rendering.render_typed_invocation(
                     language=language,
                     invocation=native,
                     variable_form=variable_form,

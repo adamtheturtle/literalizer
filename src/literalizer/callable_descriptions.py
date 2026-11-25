@@ -6,6 +6,7 @@ from beartype import beartype
 
 from literalizer._language import Language
 from literalizer._literalize import validate_call_target
+from literalizer._native_rendering import validate_native_selector
 from literalizer.exceptions import NativeCallError
 from literalizer.invocations import select_language_recipe
 from literalizer.native_call_data import (
@@ -14,10 +15,7 @@ from literalizer.native_call_data import (
     native_recipe_text,
     validate_native_fields,
 )
-from literalizer.native_calls import (
-    NativeInvocationLanguage,
-    validate_native_selector,
-)
+from literalizer.native_calls import NativeInvocationLanguage
 
 
 def _text(value: object, /) -> str:
