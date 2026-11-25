@@ -10,7 +10,7 @@ Core functions
 
 - Use :func:`literalize` to render a data value as source code.
 - Use :func:`literalize_call` to render calls when you supply the target and parameters directly.
-- Use :func:`literalize_invocations` to render calls from a recipe, with optional language overrides.
+- Use :func:`literalize_invocations` for a typed native invocation or a recipe with optional language overrides.
 
 .. autofunction:: literalize
 
@@ -68,6 +68,9 @@ Unknown fields and language keys, malformed names, and multiline descriptions ar
 
 Native invocations
 ------------------
+
+Pass a :class:`NativeInvocation` to :func:`literalize_invocations` with the language and any binding or placement options.
+Existing callers can still use :func:`literalize_native_call` with the same arguments.
 
 .. autofunction:: literalize_native_call
 

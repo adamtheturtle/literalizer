@@ -1,8 +1,8 @@
-"""Shared invocation recipes delegating to the existing call APIs."""
+"""Render typed invocations and source-based invocation recipes."""
 
 import dataclasses
 from collections.abc import Mapping
-from typing import ClassVar
+from typing import ClassVar, overload
 
 from beartype import beartype
 
@@ -28,6 +28,7 @@ from literalizer.native_call_data import (
     render_native_recipe,
     validate_native_fields,
 )
+from literalizer.native_calls import NativeInvocation, literalize_native_call
 
 
 @beartype
@@ -82,7 +83,18 @@ def select_language_recipe(
     return selected if "native" in selected else {**default, **selected}
 
 
-@beartype
+@overload
+def literalize_invocations(
+    *,
+    language: Language,
+    invocation: NativeInvocation,
+    variable_form: NewVariable | ExistingVariable | None = None,
+    pre_indent_level: int = 0,
+    initial_column: int = 0,
+) -> LiteralizeResult: ...
+
+
+@overload
 def literalize_invocations(
     *,
     source: str,
@@ -95,17 +107,86 @@ def literalize_invocations(
     variable_form: NewVariable | ExistingVariable | None = None,
     pre_indent_level: int = 0,
     initial_column: int = 0,
-) -> LiteralizeResult:
-    """Render a shared invocation recipe or a bare native recipe.
+) -> LiteralizeResult: ...
 
-    A shared recipe has a generic ``default`` and optional ``languages``
-    overrides keyed by Pygments ID. Generic overrides amend the default;
-    a ``native`` override replaces it with an explicit native signature.
-    Generic fields are ``target-function`` or ``constructor-class``,
-    ``parameter-names``, and optional ``result-function``. The latter
-    calls a caller-owned positional checker with the actual and zipped
-    expected values. Existing call-style and data-conversion rules apply.
+
+@beartype
+def literalize_invocations(
+    *,
+    source: str | None = None,
+    input_format: InputFormat | None = None,
+    language: Language,
+    invocation: Mapping[str, object] | NativeInvocation,
+    per_element: bool = True,
+    zip_source: str | None = None,
+    zip_input_format: InputFormat | None = None,
+    variable_form: NewVariable | ExistingVariable | None = None,
+    pre_indent_level: int = 0,
+    initial_column: int = 0,
+) -> LiteralizeResult:
+    """Render a typed invocation or apply an invocation recipe to source.
+
+    Pass a :class:`~literalizer.NativeInvocation` to render one call
+    whose target and arguments are already specified. Supply only the
+    language and any binding or placement options.
+
+    A recipe mapping requires ``source`` and ``input_format``. Pass a bare
+    native recipe, or a shared recipe with a generic ``default`` and
+    optional ``languages`` overrides keyed by Pygments ID. Generic overrides
+    amend the default; a ``native`` override replaces it with an explicit
+    native signature. Generic fields are ``target-function`` or
+    ``constructor-class``, ``parameter-names``, and optional
+    ``result-function``. The latter calls a caller-owned positional
+    checker with the actual and zipped expected values.
     """
+    if isinstance(invocation, NativeInvocation):
+        if (
+            source is not None
+            or input_format is not None
+            or not per_element
+            or zip_source is not None
+            or zip_input_format is not None
+        ):
+            msg = "Source and row options require an invocation recipe"
+            raise NativeCallError(msg)
+        return literalize_native_call(
+            language=language,
+            invocation=invocation,
+            variable_form=variable_form,
+            pre_indent_level=pre_indent_level,
+            initial_column=initial_column,
+        )
+    if source is None or input_format is None:
+        msg = "Invocation recipes require source and input_format"
+        raise NativeCallError(msg)
+    return _render_invocation_recipe(
+        source=source,
+        input_format=input_format,
+        language=language,
+        invocation=invocation,
+        per_element=per_element,
+        zip_source=zip_source,
+        zip_input_format=zip_input_format,
+        variable_form=variable_form,
+        pre_indent_level=pre_indent_level,
+        initial_column=initial_column,
+    )
+
+
+def _render_invocation_recipe(
+    *,
+    source: str,
+    input_format: InputFormat,
+    language: Language,
+    invocation: Mapping[str, object],
+    per_element: bool,
+    zip_source: str | None,
+    zip_input_format: InputFormat | None,
+    variable_form: NewVariable | ExistingVariable | None,
+    pre_indent_level: int,
+    initial_column: int,
+) -> LiteralizeResult:
+    """Select a recipe for the language and render its source rows."""
     selected: dict[str, object] = (
         select_language_recipe(invocation, language)
         if "default" in invocation or "languages" in invocation

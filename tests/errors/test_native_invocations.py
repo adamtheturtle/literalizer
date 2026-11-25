@@ -1,7 +1,7 @@
 """Data-driven rejections for structured native invocation contracts."""
 
 import tomllib
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 import pytest
@@ -89,7 +89,7 @@ def test_native_binding_rejects_foreign_modifiers() -> None:
         expected_exception=literalizer.NativeCallError,
         match="do not accept modifiers",
     ):
-        _ = literalizer.literalize_native_call(
+        _ = literalizer.literalize_invocations(
             language=ObjectiveC(),
             invocation=literalizer.NativeInvocation(
                 target=literalizer.ConstructorTarget(class_name="NSObject"),
@@ -128,7 +128,7 @@ def test_native_call_requires_capability(
         expected_exception=literalizer.NativeCallError,
         match="does not support native invocations",
     ):
-        _ = literalizer.literalize_native_call(
+        _ = literalizer.literalize_invocations(
             language=language_cls(), invocation=invocation
         )
 
@@ -157,4 +157,75 @@ def test_native_rows_require_capability(
             input_format=literalizer.InputFormat.JSON,
             language=language_cls(),
             invocation=recipe,
+        )
+
+
+def _invoke_dynamic(
+    render: Callable[..., literalizer.LiteralizeResult], /, **options: object
+) -> literalizer.LiteralizeResult:
+    """Exercise runtime validation for dynamically supplied arguments."""
+    return render(**options)
+
+
+@pytest.mark.parametrize(
+    argnames="options",
+    argvalues=[
+        {"source": "[[]]"},
+        {"input_format": literalizer.InputFormat.JSON},
+        {"per_element": False},
+        {"zip_source": "[]"},
+        {"zip_input_format": literalizer.InputFormat.JSON},
+    ],
+    ids=["source", "format", "single-row", "zip-source", "zip-format"],
+)
+def test_typed_invocation_rejects_recipe_options(
+    options: dict[str, object],
+) -> None:
+    """Options for loading source rows require an invocation recipe."""
+    invocation = literalizer.NativeInvocation(
+        target=literalizer.FunctionTarget(
+            name="consume",
+            parameter_types=(),
+            return_type=literalizer.ScalarType.VOID,
+        ),
+        arguments=(),
+    )
+    with pytest.raises(
+        expected_exception=literalizer.NativeCallError,
+        match="options require an invocation recipe",
+    ):
+        _ = _invoke_dynamic(
+            literalizer.literalize_invocations,
+            language=ObjectiveC(),
+            invocation=invocation,
+            **options,
+        )
+
+
+@pytest.mark.parametrize(
+    argnames="options",
+    argvalues=[
+        {"source": "[[]]"},
+        {"input_format": literalizer.InputFormat.JSON},
+    ],
+    ids=["missing-format", "missing-source"],
+)
+def test_invocation_recipe_requires_source_and_format(
+    options: dict[str, object],
+) -> None:
+    """Report which inputs a recipe needs before trying to render it."""
+    with pytest.raises(
+        expected_exception=literalizer.NativeCallError,
+        match="Invocation recipes require source and input_format",
+    ):
+        _ = _invoke_dynamic(
+            literalizer.literalize_invocations,
+            language=ObjectiveC(),
+            invocation={
+                "function": "consume",
+                "parameter-types": [],
+                "return-type": "void",
+                "arguments": [],
+            },
+            **options,
         )

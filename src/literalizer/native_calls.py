@@ -269,7 +269,8 @@ def literalize_native_call(
 
     The returned fragment is executable code, suitable for composition
     inside a caller's function scope. It never synthesizes callee stubs.
-    Existing string-target ``literalize_call`` behavior is unchanged.
+    This compatibility entry point accepts the same typed calls as
+    :func:`~literalizer.literalize_invocations`.
     ``initial_column`` counts caller-owned text before the fragment after
     its scope indentation; binding prefixes are accounted for automatically.
     """
