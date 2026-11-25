@@ -1,0 +1,67 @@
+JavaScript JSON bare 60
+JavaScript JSON new 24
+JavaScript JSON rows 24
+JavaScript JSON whole 60
+JavaScript TOML rows 48
+JavaScript TOML whole 48
+JavaScript YAML bare 90
+JavaScript YAML new 30
+JavaScript YAML rows 30
+JavaScript YAML whole 90
+Lua JSON bare 60
+Lua JSON new 24
+Lua JSON rows 24
+Lua JSON whole 60
+Lua TOML rows 48
+Lua TOML whole 48
+Lua YAML bare 90
+Lua YAML new 30
+Lua YAML rows 30
+Lua YAML whole 90
+Php JSON bare 60
+Php JSON new 24
+Php JSON rows 24
+Php JSON whole 60
+Php TOML rows 48
+Php TOML whole 48
+Php YAML bare 90
+Php YAML new 30
+Php YAML rows 30
+Php YAML whole 90
+Python JSON bare 60
+Python JSON new 24
+Python JSON rows 24
+Python JSON whole 60
+Python TOML rows 48
+Python TOML whole 48
+Python YAML bare 90
+Python YAML new 30
+Python YAML rows 30
+Python YAML whole 90
+Ruby JSON bare 60
+Ruby JSON new 24
+Ruby JSON rows 24
+Ruby JSON whole 60
+Ruby TOML rows 48
+Ruby TOML whole 48
+Ruby YAML bare 90
+Ruby YAML new 30
+Ruby YAML rows 30
+Ruby YAML whole 90
+Native programs passed: 2520
+Mismatch count: 0
+Expected rejection: JavaScript bare 9007199254740993 UnrepresentableIntegerError
+Expected rejection: JavaScript whole 9007199254740993 UnrepresentableIntegerError
+Expected rejection: JavaScript bare 1969-12-31T23:59:59.123456Z UnrepresentableInputError
+Expected rejection: JavaScript whole 1969-12-31T23:59:59.123456Z UnrepresentableInputError
+Expected rejection: Lua bare {} UnrepresentableEmptyDictError
+Expected rejection: Lua whole {} UnrepresentableEmptyDictError
+Expected rejection: Lua bare {null: 1} UnrepresentableInputError
+Expected rejection: Lua whole {null: 1} UnrepresentableInputError
+Expected rejection: Php bare {} UnrepresentableEmptyDictError
+Expected rejection: Php whole {} UnrepresentableEmptyDictError
+Expected rejection: Php bare {"0": false} UnrepresentableInputError
+Expected rejection: Php whole {"0": false} UnrepresentableInputError
+Wrong-value mutations detected: 20
+Expected API rejections: 12
+Elapsed seconds: 101.413
