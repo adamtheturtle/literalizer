@@ -10,10 +10,17 @@ declaration.
 
 ``record_map_value_typing=WIDE`` pins the carrier instead.  Every
 ``run_<lang>_shared_record.py`` helper literalizes both documents below
-under that setting, splices the *declaring* document's declarations
-together with *both* documents' literals into one translation unit, and
-compiles it: the dependent literals type-check against declarations they
-did not produce, or the toolchain rejects the program.
+under that setting and compiles both sets of literals against one set of
+declarations. C++ and Rust use the mixed document's declarations, so
+the shared value carrier includes the boolean alternative. Go checks
+both orders and compares the values returned by the native consumer.
+
+The C++ and Rust runners also check complete files assembled with
+``literalize_call_with_declarations`` for compatible records and
+repeated references. Cross-file reuse requires compatible inferred
+types and matching generated names. Callers provide the surrounding
+scope and own the names of their helpers. See the function-call guide
+for the composition contract.
 
 The two documents share one record shape (``name`` plus ``attributes``)
 and in each of them the inner ``attributes`` maps have differing key
