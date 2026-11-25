@@ -38,6 +38,7 @@ class CallVariantCase:
 
     config: CallCaseSpec
     variant: Variant
+    cases_dir: Path
 
     @property
     def lang_cls(self) -> literalizer.LanguageCls:
@@ -62,6 +63,7 @@ class CallVariantCase:
                     spec=self.variant.spec,
                 ),
                 golden_name=f"{self.variant.name}_call",
+                cases_dir=self.cases_dir,
             ),
         )
 
@@ -82,6 +84,7 @@ def build_call_variant_cases(*, cases_dir: Path) -> list[CallVariantCase]:
                 config=config, layout=variant.collection_layout
             ),
             variant=variant,
+            cases_dir=cases_dir,
         )
         for config in call_case_specs(cases_dir=cases_dir)
         for manifest_variant in config.variants
@@ -106,6 +109,6 @@ def call_golden_cases(
     inventory.
     """
     return (
-        *discover_call_cases(),
+        *discover_call_cases(cases_dir=cases_dir),
         *build_call_variant_cases(cases_dir=cases_dir),
     )

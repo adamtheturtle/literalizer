@@ -9,7 +9,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 
 from literalizer import InputFormat, LanguageCls, literalize_call
 from literalizer.exceptions import InvalidCallTargetError
-from literalizer.languages import ALL_LANGUAGES, V
+from literalizer.languages import ALL_LANGUAGES, Python, V
 from tests.integration.call_cases import (
     run_call_golden_case,
 )
@@ -20,9 +20,11 @@ from tests.integration.call_collection import (
 )
 from tests.integration.call_variant_cases import (
     build_call_variant_cases,
+    call_golden_cases,
 )
 from tests.integration.case_manifests import CaseManifestError
 from tests.integration.golden_checks import golden_test_parameters
+from tests.integration.golden_inventory import call_artifacts
 from tests.integration.golden_outcomes import Exclusion
 from tests.integration.language_specs import (
     find_redefinition_styles,
@@ -38,7 +40,7 @@ def test_manual_scaffold_rejects_declaration_only_target_error(
     """A valid V fragment must not become an invalid method scaffold."""
     config = next(
         config
-        for config in default_call_case_specs()
+        for config in default_call_case_specs(cases_dir=cases_dir)
         if config.case_dir_name == "call_generated_helper_member_zkv"
     )
     spec = make_spec(lang_cls=V)
@@ -59,6 +61,7 @@ def test_manual_scaffold_rejects_declaration_only_target_error(
                 lang_cls=V,
                 golden_name="V_call",
                 expected_exception=None,
+                cases_dir=cases_dir,
             ),
             cases_dir=cases_dir,
             file_regression=file_regression,
@@ -88,12 +91,12 @@ _IMMUTABLE_CALL_LANGUAGES = [
     ids=[cls.language_id for cls in _IMMUTABLE_CALL_LANGUAGES],
 )
 def test_seeded_scaffold_excludes_immutable_binding(
-    *, lang_cls: LanguageCls
+    *, lang_cls: LanguageCls, cases_dir: Path
 ) -> None:
     """A synthetic seed cannot precede a second immutable binding."""
     config = next(
         config
-        for config in default_call_case_specs()
+        for config in default_call_case_specs(cases_dir=cases_dir)
         if config.case_dir_name == "call_binding_existing_seeded"
     )
     rendering = CallRendering(
@@ -102,6 +105,7 @@ def test_seeded_scaffold_excludes_immutable_binding(
         lang_cls=lang_cls,
         golden_name=f"{lang_cls.__name__}_call",
         expected_exception=None,
+        cases_dir=cases_dir,
     )
     outcome = rendering.outcome
     assert isinstance(outcome, Exclusion)
@@ -143,7 +147,7 @@ def test_call_rejection_handles_stale_fixture(
     else:
         rendering = next(
             case.renderings[0]
-            for case in discover_call_cases()
+            for case in discover_call_cases(cases_dir=cases_dir)
             if case.config.case_dir_name == "call_generated_helper_member_zkv"
             and case.lang_cls is V
         )
@@ -196,3 +200,27 @@ def test_variant_rejection_preserves_unexpected_errors(
             cases_dir=tmp_path,
             file_regression=file_regression,
         )
+
+
+def test_call_discovery_uses_selected_corpus(
+    *, tmp_path: Path, cases_dir: Path
+) -> None:
+    """Load default and option-driven calls from the same corpus."""
+    name = "custom_call"
+    _copy_call_inputs(
+        source_dir=cases_dir / "call_ref_nested_in_dict",
+        target_dir=tmp_path / name,
+    )
+
+    cases = call_golden_cases(cases_dir=tmp_path)
+    default = discover_call_cases(cases_dir=tmp_path)
+    variants = build_call_variant_cases(cases_dir=tmp_path)
+    assert len(default) > 0
+    assert len(variants) > 0
+    assert {case.config.case_dir_name for case in cases} == {name}
+    python_names = {
+        artifact.path.name
+        for artifact in call_artifacts(cases_dir=tmp_path)
+        if artifact.language is Python
+    }
+    assert {"call.py", "collection_layout_multiline_call.py"} <= python_names
