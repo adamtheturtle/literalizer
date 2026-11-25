@@ -70,9 +70,6 @@ Native invocations
 ------------------
 
 Pass a :class:`NativeInvocation` to :func:`literalize_invocations` with the language and any binding or placement options.
-Existing callers can still use :func:`literalize_native_call` with the same arguments.
-
-.. autofunction:: literalize_native_call
 
 .. autofunction:: native_invocation_from_data
 

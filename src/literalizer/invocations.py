@@ -28,7 +28,7 @@ from literalizer.native_call_data import (
     render_native_recipe,
     validate_native_fields,
 )
-from literalizer.native_calls import NativeInvocation, literalize_native_call
+from literalizer.native_calls import NativeInvocation, render_typed_invocation
 
 
 @beartype
@@ -149,7 +149,7 @@ def literalize_invocations(
         ):
             msg = "Source and row options require an invocation recipe"
             raise NativeCallError(msg)
-        return literalize_native_call(
+        return render_typed_invocation(
             language=language,
             invocation=invocation,
             variable_form=variable_form,

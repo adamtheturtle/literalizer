@@ -246,7 +246,7 @@ def test_native_legacy_callback_still_works() -> None:
     """Existing backend callbacks need not implement positioned
     rendering.
     """
-    result = literalizer.literalize_native_call(
+    result = literalizer.literalize_invocations(
         language=_LegacyNativeBackend(),
         invocation=literalizer.NativeInvocation(
             target=literalizer.ConstructorTarget(class_name="NSObject"),
@@ -261,7 +261,7 @@ def test_native_legacy_callback_still_works() -> None:
         expected_exception=literalizer.NativeCallError,
         match="does not support initial_column",
     ):
-        _ = literalizer.literalize_native_call(
+        _ = literalizer.literalize_invocations(
             language=_LegacyNativeBackend(),
             invocation=literalizer.NativeInvocation(
                 target=literalizer.ConstructorTarget(class_name="NSObject"),

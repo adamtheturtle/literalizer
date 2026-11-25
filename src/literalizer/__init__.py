@@ -63,7 +63,6 @@ from literalizer.native_calls import (
     NativeType,
     ObjectType,
     ScalarType,
-    literalize_native_call,
 )
 
 __all__ = [
@@ -119,6 +118,5 @@ __all__ = [
     "literalize_call",
     "literalize_call_with_declarations",
     "literalize_invocations",
-    "literalize_native_call",
     "native_invocation_from_data",
 ]

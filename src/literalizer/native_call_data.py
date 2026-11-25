@@ -28,7 +28,7 @@ from literalizer.native_calls import (
     NativeType,
     ObjectType,
     ScalarType,
-    literalize_native_call,
+    render_typed_invocation,
 )
 
 _MISSING = object()
@@ -328,7 +328,7 @@ def render_native_recipe(
                 spec=invocation, values=row, zipped=zipped_values[index]
             )
             results.append(
-                literalize_native_call(
+                render_typed_invocation(
                     language=language,
                     invocation=native,
                     variable_form=variable_form,

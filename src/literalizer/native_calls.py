@@ -257,7 +257,7 @@ def _value_types(value: Value, /) -> frozenset[type[object]]:
 
 
 @beartype
-def literalize_native_call(
+def render_typed_invocation(
     *,
     language: Language,
     invocation: NativeInvocation,
@@ -269,8 +269,6 @@ def literalize_native_call(
 
     The returned fragment is executable code, suitable for composition
     inside a caller's function scope. It never synthesizes callee stubs.
-    This compatibility entry point accepts the same typed calls as
-    :func:`~literalizer.literalize_invocations`.
     ``initial_column`` counts caller-owned text before the fragment after
     its scope indentation; binding prefixes are accounted for automatically.
     """
