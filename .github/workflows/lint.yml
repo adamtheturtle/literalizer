@@ -812,23 +812,22 @@ jobs:
       - name: Mark workspace as a safe git directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+      - name: Install MATLAB fixture dependencies
+        timeout-minutes: 5
+        run: uv sync --no-dev --group=fixture-inventory --group=roundtrip
+
       - name: Check MATLAB fixture execution
         timeout-minutes: 3
-        run: uv run --no-dev --group=roundtrip python -m scripts.check_matlab_fixture_execution
+        run: uv run --no-sync python -m scripts.check_matlab_fixture_execution
 
       - name: Validate MATLAB fixtures
-        run: uv run --no-dev --group=fixture-inventory --group=roundtrip python -m
-          scripts.run_matlab_fixtures --all-fixtures
+        run: uv run --no-sync python -m scripts.run_matlab_fixtures --all-fixtures
 
       # Basic JSON -> MATLAB -> JSON round-trip (issue 2663). Runs here
-      # because this is the job with the MATLAB toolchain (Octave, the
-      # practical CI substitute) already installed; `uv run` (project
-      # mode, not `--no-project`) is required so `import literalizer`
-      # resolves. See `scripts/run_matlab_roundtrip.py`.
-      # Include cold project-environment setup in this step's budget.
+      # because the job provides Octave as a practical MATLAB substitute.
       - name: MATLAB roundtrip
         timeout-minutes: 3
-        run: uv run --no-dev --group=roundtrip python -m scripts.run_matlab_roundtrip
+        run: uv run --no-sync python -m scripts.run_matlab_roundtrip
 
   lint-perl:
     needs: [native-changes]
