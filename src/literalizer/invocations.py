@@ -6,6 +6,7 @@ from typing import ClassVar, overload
 
 from beartype import beartype
 
+from literalizer import _native_rendering
 from literalizer._enums import enum_payload
 from literalizer._language import Language, PositionalCallStyle
 from literalizer._literalize import (
@@ -28,7 +29,7 @@ from literalizer.native_call_data import (
     render_native_recipe,
     validate_native_fields,
 )
-from literalizer.native_calls import NativeInvocation, literalize_native_call
+from literalizer.native_calls import NativeInvocation
 
 
 @beartype
@@ -149,7 +150,7 @@ def literalize_invocations(
         ):
             msg = "Source and row options require an invocation recipe"
             raise NativeCallError(msg)
-        return literalize_native_call(
+        return _native_rendering.render_typed_invocation(
             language=language,
             invocation=invocation,
             variable_form=variable_form,

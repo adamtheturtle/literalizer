@@ -101,16 +101,15 @@ from literalizer._language import (
     prepend_body_preamble,
     requires_declared_binding,
 )
+from literalizer._native_rendering import (
+    objective_c_invocation,
+    objective_c_type,
+)
 from literalizer._statements import (
     CallLiteralSyntax,
 )
 from literalizer._types import Value
-from literalizer.native_calls import (
-    NativeInvocation,
-    NativeType,
-    objective_c_invocation,
-    objective_c_type,
-)
+from literalizer.native_calls import NativeInvocation, NativeType
 
 _NULL_OBJECT_STUB = NullableObjectCallStubResult(
     type_name="id",
@@ -1229,7 +1228,13 @@ class ObjectiveC(metaclass=LanguageCls):
         language: Language, invocation: NativeInvocation, /
     ) -> str:
         """Render an explicitly typed native call expression."""
-        return objective_c_invocation(language, invocation)
+        return objective_c_invocation(
+            language,
+            invocation,
+            initial_column=0,
+            scope_indent=0,
+            line_indent=0,
+        )
 
     @staticmethod
     @beartype
@@ -1249,6 +1254,7 @@ class ObjectiveC(metaclass=LanguageCls):
             invocation,
             initial_column=initial_column,
             scope_indent=scope_indent,
+            line_indent=0,
         )
 
     @staticmethod
