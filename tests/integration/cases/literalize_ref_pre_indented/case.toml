@@ -1,5 +1,4 @@
 schema_version = 1
-golden_layout = "nested"
 owner = "literalize-ref"
 # Original regression (literalize_ref_pre_indented): A wrapped ref declaration has to take the same margin as the binding it precedes; Roc also aligns each annotation with its definition.
 

@@ -74,7 +74,6 @@ def test_base_cases_own_effective_golden(cases_dir: Path) -> None:
         manifest.case_dir.name
         for manifest in load_case_manifests(cases_dir=cases_dir)
         if "base" in manifest.suites
-        and not any(manifest.case_dir.glob(pattern="*@*"))
         and not any(manifest.case_dir.glob(pattern="goldens/*/*/base.*"))
     ]
     assert empty == [], f"Base cases without effective goldens: {empty}"
@@ -101,33 +100,37 @@ def test_effective_language_version_owns_golden(tmp_path: Path) -> None:
     case_dir = cases_dir / "dict_mixed_scalars"
     case_dir.mkdir(parents=True)
     expected = _literal_paths_in_temp_case(case_dir=case_dir)
-    java_prefix = "Java_heterogeneous_strategy_record_combined@"
-    cpp_prefix = "Cpp_heterogeneous_strategy_record_combined@"
-    java_golden = case_dir / f"{java_prefix}jdk_16.java"
+    scenario = "heterogeneous_strategy_record_combined"
+    java_dir = case_dir / "goldens" / "java"
+    cpp_dir = case_dir / "goldens" / "cpp"
+    relative = Path("goldens/java/jdk_16") / f"{scenario}.java"
+    java_golden = case_dir / relative
     assert {
-        path for path in expected if path.name.startswith(java_prefix)
+        path
+        for path in expected
+        if java_dir in path.parents and path.stem == scenario
+    } == {java_golden}
+    assert {
+        path
+        for path in expected
+        if cpp_dir in path.parents and path.stem == scenario
     } == {
-        java_golden,
-    }
-    assert {path for path in expected if path.name.startswith(cpp_prefix)} == {
-        case_dir / f"{cpp_prefix}cpp14.cpp",
-        case_dir / f"{cpp_prefix}cpp17.cpp",
-        case_dir / f"{cpp_prefix}cpp20.cpp",
+        cpp_dir / version / f"{scenario}.cpp"
+        for version in ("cpp14", "cpp17", "cpp20")
     }
     contents = (
-        Path(__file__).parents[1]
-        / "cases"
-        / "dict_mixed_scalars"
-        / java_golden.name
+        Path(__file__).parents[1] / "cases" / "dict_mixed_scalars" / relative
     ).read_bytes()
+    java_golden.parent.mkdir(parents=True)
     _ = java_golden.write_bytes(data=contents)
     _check_golden_inventory(cases_dir=cases_dir, expected=expected)
 
-    phantom_golden = case_dir / f"{java_prefix}jdk_11.java"
+    phantom_golden = java_dir / "jdk_11" / java_golden.name
+    phantom_golden.parent.mkdir()
     _ = phantom_golden.write_bytes(data=contents)
     with pytest.raises(
         expected_exception=AssertionError,
-        match="Java_heterogeneous_strategy_record_combined@jdk_11",
+        match=r"jdk_11[/\\]+heterogeneous_strategy_record_combined\.java",
     ):
         _check_golden_inventory(cases_dir=cases_dir, expected=expected)
 
@@ -204,7 +207,7 @@ def test_literal_inventory_reads_selected_corpus(
     selected.mkdir()
     _ = (selected / "case.toml").write_text(
         data=(
-            'schema_version = 1\ngolden_layout = "nested"\n'
+            "schema_version = 1\n"
             'suites = ["base", "combined"]\n'
             '[[variants]]\naxis = "collection_layout"\n'
         ),
@@ -253,7 +256,7 @@ def test_reference_inventory_reads_selected_corpus(tmp_path: Path) -> None:
     case_dir.mkdir(parents=True)
     _ = (case_dir / "case.toml").write_text(
         data=(
-            'schema_version = 1\ngolden_layout = "nested"\n'
+            "schema_version = 1\n"
             'owner = "literalize-ref"\n[ref]\n'
             '[[ref.variants]]\naxis = "collection_layout"\n'
         ),

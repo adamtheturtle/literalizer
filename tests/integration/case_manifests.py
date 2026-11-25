@@ -816,7 +816,6 @@ class _CaseManifestData(
     """Strict representation of the data read directly from TOML."""
 
     schema_version: Literal[1]
-    golden_layout: Literal["flat", "nested"] = "flat"
     input: str | None = None
     input_roundtrip: InputRoundtripSpec | None = None
     # Opt in once the literal outcomes are known for every selected option.
@@ -946,7 +945,6 @@ class CaseManifest:
 
     path: Path
     schema_version: Literal[1]
-    golden_layout: Literal["flat", "nested"]
     input: CaseInput
     input_roundtrip: InputRoundtripSpec | None
     selection: CapabilitySelection
@@ -1044,7 +1042,6 @@ def load_case_manifest(case_dir: Path) -> CaseManifest:
     return CaseManifest(
         path=path,
         schema_version=data.schema_version,
-        golden_layout=data.golden_layout,
         input=input_info,
         input_roundtrip=data.input_roundtrip,
         selection=CapabilitySelection(

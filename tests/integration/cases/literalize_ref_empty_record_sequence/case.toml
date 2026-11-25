@@ -1,5 +1,4 @@
 schema_version = 1
-golden_layout = "nested"
 owner = "literalize-ref"
 # Regression provenance: Nim, Cpp, V.
 # Empty sequence declarations must retain the generated record element type inferred from their use.

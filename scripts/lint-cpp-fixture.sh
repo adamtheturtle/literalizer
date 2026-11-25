@@ -6,8 +6,8 @@ mode=$1
 fixture_path=$2
 
 case "$fixture_path" in
-*@cpp14.cpp | */goldens/cpp/cpp14/*.cpp) standard=c++14 ;;
-*@cpp17.cpp | */goldens/cpp/cpp17/*.cpp) standard=c++17 ;;
+*/goldens/cpp/cpp14/*.cpp) standard=c++14 ;;
+*/goldens/cpp/cpp17/*.cpp) standard=c++17 ;;
 *) standard=c++20 ;;
 esac
 

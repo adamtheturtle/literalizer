@@ -6,10 +6,8 @@ we drop every fixture into one project as its own module, generate a
 runner module that calls each fixture's ``main`` in sequence, and run
 ``gleam run`` once.
 
-Each fixture lives under ``tests/integration/cases/<case>/<gleam>.gleam``
-where both ``<case>`` and ``<gleam>`` are valid Gleam module identifiers
-(enforced by ``make_golden_path`` in the test harness), so the in-project
-module path is the fixture's relative path with ``.gleam`` stripped.
+Each fixture is staged at its path relative to the corpus root. The
+path supplies the module name and keeps native diagnostics traceable.
 """
 
 import os
@@ -22,20 +20,6 @@ from pathlib import Path
 import click
 
 _FIXTURE_PREFIX = Path("tests/integration/cases")
-
-
-def _strip_version(*, relative: Path) -> Path:
-    """Drop a ``@<version>`` suffix from *relative*'s stem.
-
-    Version-tagged fixtures (e.g. ``gleam_combined@v1.gleam``)
-    cannot be copied verbatim into a Gleam project because the ``@``
-    is rejected as part of a module identifier.  The runtime path
-    only cares about the base stem so we drop the tag on the way in.
-    """
-    stem = relative.stem
-    if "@" in stem:
-        stem = stem.rsplit(sep="@", maxsplit=1)[0]
-    return relative.with_name(name=stem + relative.suffix)
 
 
 @click.command()
@@ -62,12 +46,9 @@ def main() -> None:
             # ``Path.relative_to`` made ``other`` keyword-capable in Python
             # 3.14.  Keep each supported runtime on its native signature.
             if sys.version_info >= (3, 14):
-                relative_path = fixture.relative_to(other=_FIXTURE_PREFIX)
+                relative = fixture.relative_to(other=_FIXTURE_PREFIX)
             else:
-                relative_path = fixture.relative_to(_FIXTURE_PREFIX)
-            relative = _strip_version(
-                relative=relative_path,
-            )
+                relative = fixture.relative_to(_FIXTURE_PREFIX)
             destination = src_dir / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             _ = destination.write_text(

@@ -48,7 +48,6 @@ lint-matlab:
   - '{src/literalizer/languages,tests/integration/languages}/matlab.{py,toml}'
   - scripts/run_matlab{,_*}.py
   - scripts/check_matlab_fixture_execution.py
-  - tests/integration/cases/*/*.m
   - tests/integration/cases/*/goldens/matlab/*/*.m
 
 lint-perl:
@@ -339,12 +338,10 @@ lint-objectivec:
   - '{src/literalizer/languages,tests/integration/languages}/objective_c.{py,toml}'
   - scripts/run_objective_c{,_*}.py
   - scripts/lint-objc-pch.h
-  - tests/integration/cases/*/*.m
   - tests/integration/cases/*/goldens/objective_c/*/*.m
 
 lint-objectivec-tidy:
   - *shared
   - '{src/literalizer/languages,tests/integration/languages}/objective_c.{py,toml}'
   - .clang-tidy
-  - tests/integration/cases/*/*.m
   - tests/integration/cases/*/goldens/objective_c/*/*.m

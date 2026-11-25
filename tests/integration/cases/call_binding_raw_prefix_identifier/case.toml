@@ -1,7 +1,6 @@
 # Regression provenance: raw_prefix_in_identifier.
 # Raw string prefixes inside ordinary call identifiers do not hide a trailing comment.
 schema_version = 1
-golden_layout = "nested"
 owner = "literalize-call"
 
 [call]

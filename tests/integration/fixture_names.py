@@ -3,49 +3,10 @@
 import functools
 from pathlib import Path
 
-from .case_manifest_documents import MANIFEST_NAME, read_case_manifest_document
-
-
-@functools.cache
-def _uses_nested_goldens(*, case_dir: Path) -> bool:
-    """Read the case's declared layout before any golden exists."""
-    path = case_dir / MANIFEST_NAME
-    return (
-        path.is_file()
-        and read_case_manifest_document(path=path).get("golden_layout")
-        == "nested"
-    )
-
-
-def nested_golden_path(
-    *,
-    case_dir: Path,
-    stem: str,
-    language_name: str,
-    language_id: str,
-    version: str,
-    extension: str,
-) -> Path | None:
-    """Resolve the scenario path for a case using nested fixtures."""
-    if not _uses_nested_goldens(case_dir=case_dir):
-        return None
-    scenario = (
-        "base"
-        if stem.lower() == language_name.lower()
-        else stem[len(language_name) + 1 :]
-    )
-    filename = f"{scenario}{extension}"
-    return case_dir / "goldens" / language_id / version / filename
-
-
-def _is_nested_golden(*, path: Path) -> bool:
-    """Whether the fixture lives under a case's language and version."""
-    return path.parent.parent.parent.name == "goldens"
-
 
 def is_default_module_fixture(*, path: Path) -> bool:
     """Whether this fixture uses the language's public module name."""
-    return _is_nested_golden(path=path) and path.stem == "default_module_name"
+    return path.stem == "default_module_name"
 
 
 @functools.cache
@@ -68,13 +29,10 @@ def _fixture_language_name(*, language_id: str) -> str:
 
 
 def fixture_module_name(*, golden_path: Path) -> str:
-    """Return the generated module name for either layout."""
-    if not _is_nested_golden(path=golden_path):
-        stem = golden_path.stem.rsplit(sep="@", maxsplit=1)[0]
-        return f"Fixture_{golden_path.parent.name}_{stem}"
-    case_name = golden_path.parent.parent.parent.parent.name
+    """Reconstruct the module identifier embedded in the fixture."""
+    case_name = golden_path.parents[3].name
     language_name = _fixture_language_name(
-        language_id=golden_path.parent.parent.name
+        language_id=golden_path.parents[1].name
     )
     scenario = golden_path.stem
     stem = (

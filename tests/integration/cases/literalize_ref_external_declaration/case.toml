@@ -1,5 +1,4 @@
 schema_version = 1
-golden_layout = "nested"
 owner = "literalize-ref-default"
 # Regression provenance: Go, Python, Rust.
 # External declarations retain inference while the generated root is consumed; Go and strict Rust require that use.

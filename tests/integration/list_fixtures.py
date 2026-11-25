@@ -40,8 +40,7 @@ def fixture_paths(
 ) -> tuple[Path, ...]:
     """Select existing golden files, optionally including authored inputs.
 
-    Some renderings skip at runtime, so the ownership inventory can
-    include paths that have no checked-in golden.
+    Filter the resolved inventory to fixtures present on disk.
     """
     by_extension = _artifacts_by_extension()
     artifacts: Iterable[GoldenArtifact] = (

@@ -254,31 +254,31 @@ lint.per-file-ignores."tests/integration/cases/**/*.py" = [
     "Q",
     "RUF",
 ]
-lint.per-file-ignores."tests/integration/cases/**/Python_annotation_evaluation_eager@py38.py" = [
+lint.per-file-ignores."tests/integration/cases/*/goldens/python/py*/union_format_typing.py" = [
+    # These fixtures exercise the explicitly selected typing.Union format.
+    "UP007",
+]
+lint.per-file-ignores."tests/integration/cases/*/goldens/python/py*/union_format_typing_type_hints_always.py" = [
+    # These fixtures exercise the explicitly selected typing.Union format.
+    "UP007",
+]
+lint.per-file-ignores."tests/integration/cases/*/goldens/python/py38/annotation_evaluation_eager.py" = [
     # Eager Python 3.8 annotations require collection aliases from typing
     # and must not import postponed annotations.
     "FA100",
     "UP006",
     "UP007",
 ]
-lint.per-file-ignores."tests/integration/cases/**/Python_annotation_evaluation_eager@py39.py" = [
+lint.per-file-ignores."tests/integration/cases/*/goldens/python/py39/annotation_evaluation_eager.py" = [
     # Eager Python 3.9 annotations require typing.Union because PEP 604
     # unions are not available until Python 3.10.
     "UP007",
 ]
-lint.per-file-ignores."tests/integration/cases/**/Python_union_format_typing@py*.py" = [
-    # These fixtures exercise the explicitly selected typing.Union format.
-    "UP007",
-]
-lint.per-file-ignores."tests/integration/cases/**/Python_union_format_typing_type_hints_always@py*.py" = [
-    # These fixtures exercise the explicitly selected typing.Union format.
-    "UP007",
-]
-lint.per-file-ignores."tests/integration/cases/call_zip_*/Python_call@py*.py" = [
+lint.per-file-ignores."tests/integration/cases/call_zip_*/goldens/python/py*/call.py" = [
     # These generated call fixtures intentionally contain positional booleans.
     "FBT003",
 ]
-lint.per-file-ignores."tests/integration/cases/literalize_ref_forced_camel_name/Python_ref@py*.py" = [
+lint.per-file-ignores."tests/integration/cases/literalize_ref_forced_camel_name/goldens/python/py*/ref.py" = [
     # The camel-case reference name is the behavior under test.
     "N816",
 ]
@@ -303,7 +303,7 @@ lint.flake8-type-checking.runtime-evaluated-base-classes = [ "pydantic.BaseModel
 lint.flake8-type-checking.runtime-evaluated-decorators = [ "beartype.beartype" ]
 lint.pydocstyle.convention = "google"
 lint.preview = true
-per-file-target-version = { "tests/integration/cases/**/Python*@py38.py" = "py38" }
+per-file-target-version = { "tests/integration/cases/*/goldens/python/py38/*.py" = "py38" }
 
 [tool.pylint]
 DEPRECATED_BUILTINS.bad-functions = [
@@ -638,11 +638,9 @@ max_supported_python = "3.15"
 
 [tool.mypy]
 files = [ "." ]
-# Golden fixtures are covered by their runners. Flat filenames contain
-# ``@``, which also prevents mypy from forming a module name.
+# Golden fixtures are covered by their native runners.
 exclude = [
     "build",
-    "tests/integration/cases/.*@.*",
     "tests/integration/cases/[^/]+/goldens/",
 ]
 exclude_gitignore = true
