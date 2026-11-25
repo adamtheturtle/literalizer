@@ -45,6 +45,7 @@ class CallRendering:
     spec: literalizer.Language
     golden_name: str
     expected_exception: type[Exception] | None
+    cases_dir: Path
 
     @functools.cached_property
     def observable(self) -> bool:
@@ -91,7 +92,9 @@ class CallRendering:
         )
         if outcome is None:
             outcome = unsupported_reference_marker(
-                config=self.config, lang_cls=self.lang_cls, cases_dir=CASES_DIR
+                config=self.config,
+                lang_cls=self.lang_cls,
+                cases_dir=self.cases_dir,
             )
         return SUCCESS if outcome is None else outcome
 
@@ -113,6 +116,7 @@ def resolve_call_rendering(
     lang_cls: literalizer.LanguageCls,
     spec: literalizer.Language,
     golden_name: str,
+    cases_dir: Path,
 ) -> CallRendering:
     """Predict the API outcome from the same spec execution receives."""
     return CallRendering(
@@ -120,6 +124,7 @@ def resolve_call_rendering(
         lang_cls=lang_cls,
         spec=spec,
         golden_name=golden_name,
+        cases_dir=cases_dir,
         expected_exception=expected_call_shape_exception(
             lang_cls=lang_cls, config=config, spec=spec
         ),
@@ -132,6 +137,7 @@ class CallCase:
 
     config: CallCaseSpec
     lang_cls: literalizer.LanguageCls
+    cases_dir: Path
 
     @property
     def test_id(self) -> str:
@@ -161,6 +167,7 @@ class CallCase:
                 lang_cls=self.lang_cls,
                 spec=spec,
                 golden_name=f"{self.lang_cls.__name__}_call",
+                cases_dir=self.cases_dir,
             )
             for spec in specs
         )
@@ -168,23 +175,23 @@ class CallCase:
 
 @functools.cache
 @beartype
-def default_call_case_specs() -> tuple[CallCaseSpec, ...]:
+def default_call_case_specs(*, cases_dir: Path) -> tuple[CallCaseSpec, ...]:
     """Return every call case driven by the default per-language
     matrix.
     """
     return tuple(
         spec
-        for spec in call_case_specs(cases_dir=CASES_DIR)
+        for spec in call_case_specs(cases_dir=cases_dir)
         if not spec.variant_only
     )
 
 
 @functools.cache
 @beartype
-def discover_call_cases() -> list[CallCase]:
+def discover_call_cases(*, cases_dir: Path) -> list[CallCase]:
     """Return call test cases for all languages."""
     cases: list[CallCase] = []
-    for config in default_call_case_specs():
+    for config in default_call_case_specs(cases_dir=cases_dir):
         for lang_cls in sorted_languages():
             if not config.admits_language(lang_cls=lang_cls):
                 continue
@@ -210,5 +217,7 @@ def discover_call_cases() -> list[CallCase]:
                     for style in styles
                 ):
                     continue
-            cases.append(CallCase(config=config, lang_cls=lang_cls))
+            cases.append(
+                CallCase(config=config, lang_cls=lang_cls, cases_dir=cases_dir)
+            )
     return cases

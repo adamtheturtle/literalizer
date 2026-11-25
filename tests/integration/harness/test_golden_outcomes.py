@@ -193,7 +193,7 @@ def test_mojo_stub_requires_common_argument_slot_types(
     """A generated Mojo target needs a common type for each slot."""
     case = next(
         case
-        for case in discover_call_cases()
+        for case in discover_call_cases(cases_dir=cases_dir)
         if case.config.case_dir_name == "call_scalar_args"
         and case.lang_cls is Mojo
     )
@@ -240,12 +240,12 @@ def test_mojo_stub_requires_common_argument_slot_types(
     ],
 )
 def test_invalid_call_ref_contract_fails_during_resolution(
-    *, tmp_path: Path, options: str, message: str
+    *, tmp_path: Path, cases_dir: Path, options: str, message: str
 ) -> None:
     """Reject misspelled option selectors and contradictory outcomes."""
     case = next(
         case
-        for case in discover_call_cases()
+        for case in discover_call_cases(cases_dir=cases_dir)
         if case.config.case_dir_name == "call_scalar_args"
         and case.lang_cls is Mojo
     )
