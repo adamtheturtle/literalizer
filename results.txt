@@ -1,0 +1,89 @@
+Python scalar compose False False OK
+Python scalar compose False True OK
+Python scalar reuse-only False False OK
+Python scalar compose True False OK
+Python scalar compose True True OK
+Python scalar reuse-only True False OK
+Python nested compose False False OK
+Python nested compose False True OK
+Python nested reuse-only False False OK
+Python nested compose True False OK
+Python nested compose True True OK
+Python nested reuse-only True False OK
+Python array compose False False OK
+Python array compose False True OK
+Python array reuse-only False False OK
+Python array compose True False OK
+Python array compose True True OK
+Python array reuse-only True False OK
+Python typed_empty compose False False OK
+Python typed_empty compose False True OK
+Python typed_empty reuse-only False False OK
+Python typed_empty compose True False OK
+Python typed_empty compose True True OK
+Python typed_empty reuse-only True False OK
+Python scalar value-mutation rejected AssertionError
+Python incompatible incompatible-schema rejected AssertionError
+Go scalar compose False False OK
+Go scalar compose False True OK
+Go scalar reuse-only False False OK
+Go scalar compose True False OK
+Go scalar compose True True OK
+Go scalar reuse-only True False OK
+Go nested compose False False OK
+Go nested compose False True OK
+Go nested reuse-only False False OK
+Go nested compose True False OK
+Go nested compose True True OK
+Go nested reuse-only True False OK
+Go array compose False False OK
+Go array compose False True OK
+Go array reuse-only False False OK
+Go array compose True False OK
+Go array compose True True OK
+Go array reuse-only True False OK
+Go typed_empty compose False False OK
+Go typed_empty compose False True OK
+Go typed_empty reuse-only False False OK
+Go typed_empty compose True False OK
+Go typed_empty compose True True OK
+Go typed_empty reuse-only True False OK
+Go maps compose False False OK
+Go maps compose False True OK
+Go maps reuse-only False False OK
+Go maps compose True False OK
+Go maps compose True True OK
+Go maps reuse-only True False OK
+Go scalar value-mutation rejected panic: value or reuse mismatch
+Go incompatible incompatible-schema rejected cannot use
+Go scalar caller-name-collision rejected Record0 redeclared
+Kotlin scalar compose False False OK
+Kotlin scalar compose False True OK
+Kotlin scalar reuse-only False False OK
+Kotlin scalar compose True False OK
+Kotlin scalar compose True True OK
+Kotlin scalar reuse-only True False OK
+Kotlin nested compose False False OK
+Kotlin nested compose False True OK
+Kotlin nested reuse-only False False OK
+Kotlin nested compose True False OK
+Kotlin nested compose True True OK
+Kotlin nested reuse-only True False OK
+Kotlin array compose False False OK
+Kotlin array compose False True OK
+Kotlin array reuse-only False False OK
+Kotlin array compose True False OK
+Kotlin array compose True True OK
+Kotlin array reuse-only True False OK
+Kotlin maps compose False False OK
+Kotlin maps compose False True OK
+Kotlin maps reuse-only False False OK
+Kotlin maps compose True False OK
+Kotlin maps compose True True OK
+Kotlin maps reuse-only True False OK
+Kotlin scalar value-mutation rejected IllegalStateException
+Kotlin incompatible incompatible-schema rejected duplicate JVM class name
+Kotlin scalar caller-name-collision rejected duplicate JVM class name
+Kotlin typed_empty incompatible-schema rejected duplicate JVM class name
+Python maps rejected standalone as heterogeneous sibling shapes
+Elapsed 120.401s
