@@ -1,0 +1,3945 @@
+{
+  "phase": "pairwise",
+  "elapsed_seconds": 9.319,
+  "details": {
+    "backends": {
+      "Python": {
+        "candidates": 1536,
+        "supported_contexts": 1536,
+        "admitted_pairs": 198,
+        "inventory": {
+          "literal-variant": {
+            "contexts": 3277,
+            "pairs": 87
+          },
+          "call": {
+            "contexts": 856,
+            "pairs": 110
+          },
+          "reference": {
+            "contexts": 256,
+            "pairs": 67
+          }
+        },
+        "pairs_not_present_in_inventory": 59,
+        "unwitnessed_pairs": [
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "bytes",
+              "BASE64"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "call",
+              "rows"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "new"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "call",
+              "rows"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "call",
+              "whole"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "hints",
+              "ALWAYS"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "sequence",
+              "LIST"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "HEX"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "REPR"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "hints",
+              "ALWAYS"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "sequence",
+              "LIST"
+            ]
+          ],
+          [
+            [
+              "hints",
+              "ALWAYS"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "hints",
+              "ALWAYS"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "hints",
+              "ALWAYS"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "hints",
+              "NEVER"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "DECIMAL"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "sequence",
+              "LIST"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "COMPACT"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "sequence",
+              "LIST"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "DOUBLE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "sequence",
+              "LIST"
+            ]
+          ],
+          [
+            [
+              "references",
+              "direct"
+            ],
+            [
+              "sequence",
+              "LIST"
+            ]
+          ],
+          [
+            [
+              "references",
+              "direct"
+            ],
+            [
+              "sequence",
+              "TUPLE"
+            ]
+          ],
+          [
+            [
+              "references",
+              "unhinted"
+            ],
+            [
+              "sequence",
+              "LIST"
+            ]
+          ]
+        ],
+        "configurations": [
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "direct",
+            "sequence": "TUPLE",
+            "hints": "NEVER"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "HEX",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "MULTILINE",
+            "binding": "existing",
+            "call": "rows",
+            "references": "unhinted",
+            "sequence": "LIST",
+            "hints": "ALWAYS"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "rows",
+            "references": "hinted",
+            "sequence": "LIST",
+            "hints": "ALWAYS"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "HEX",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "hinted",
+            "sequence": "TUPLE",
+            "hints": "NEVER"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "unhinted",
+            "sequence": "TUPLE",
+            "hints": "ALWAYS"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "rows",
+            "references": "direct",
+            "sequence": "LIST",
+            "hints": "NEVER"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "HEX",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "whole",
+            "references": "direct",
+            "sequence": "TUPLE",
+            "hints": "NEVER"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "BASE64",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "unhinted",
+            "sequence": "LIST",
+            "hints": "NEVER"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "SCIENTIFIC",
+            "bytes": "HEX",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "rows",
+            "references": "direct",
+            "sequence": "TUPLE",
+            "hints": "ALWAYS"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "hinted",
+            "sequence": "TUPLE",
+            "hints": "NEVER"
+          }
+        ],
+        "programs": 30
+      },
+      "JavaScript": {
+        "candidates": 1536,
+        "supported_contexts": 1152,
+        "admitted_pairs": 197,
+        "inventory": {
+          "literal-variant": {
+            "contexts": 889,
+            "pairs": 70
+          },
+          "call": {
+            "contexts": 370,
+            "pairs": 97
+          },
+          "reference": {
+            "contexts": 96,
+            "pairs": 67
+          }
+        },
+        "pairs_not_present_in_inventory": 73,
+        "unwitnessed_pairs": [
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "bytes",
+              "BASE64"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "call",
+              "rows"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "new"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "new"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "call",
+              "rows"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "call",
+              "whole"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "declaration",
+              "LET"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "HEX"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "HEX"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "declaration",
+              "LET"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "declaration",
+              "CONST"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "declaration",
+              "CONST"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "declaration",
+              "LET"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "declaration",
+              "LET"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "declaration",
+              "LET"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "declaration",
+              "LET"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "declaration",
+              "LET"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "declaration",
+              "LET"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "float",
+              "REPR"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "REPR"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "DECIMAL"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "DECIMAL"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "COMPACT"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "COMPACT"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "DOUBLE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "DOUBLE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "direct"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "direct"
+            ],
+            [
+              "temporal",
+              "native"
+            ]
+          ],
+          [
+            [
+              "references",
+              "hinted"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "unhinted"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ]
+        ],
+        "configurations": [
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "direct",
+            "temporal": "native",
+            "declaration": "CONST"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "HEX",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "MULTILINE",
+            "binding": "existing",
+            "call": "rows",
+            "references": "unhinted",
+            "temporal": "ISO",
+            "declaration": "LET"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "rows",
+            "references": "hinted",
+            "temporal": "ISO",
+            "declaration": "LET"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "HEX",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "hinted",
+            "temporal": "native",
+            "declaration": "CONST"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "unhinted",
+            "temporal": "native",
+            "declaration": "LET"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "rows",
+            "references": "direct",
+            "temporal": "ISO",
+            "declaration": "CONST"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "HEX",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "whole",
+            "references": "direct",
+            "temporal": "native",
+            "declaration": "LET"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "BASE64",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "unhinted",
+            "temporal": "ISO",
+            "declaration": "CONST"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "SCIENTIFIC",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "rows",
+            "references": "hinted",
+            "temporal": "native",
+            "declaration": "CONST"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "direct",
+            "temporal": "native",
+            "declaration": "CONST"
+          }
+        ],
+        "programs": 30
+      },
+      "Lua": {
+        "candidates": 768,
+        "supported_contexts": 768,
+        "admitted_pairs": 160,
+        "inventory": {
+          "literal-variant": {
+            "contexts": 676,
+            "pairs": 51
+          },
+          "call": {
+            "contexts": 328,
+            "pairs": 75
+          },
+          "reference": {
+            "contexts": 89,
+            "pairs": 49
+          }
+        },
+        "pairs_not_present_in_inventory": 63,
+        "unwitnessed_pairs": [
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "bytes",
+              "BASE64"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "call",
+              "rows"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "new"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "new"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "call",
+              "rows"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "call",
+              "whole"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "HEX"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "HEX"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "float",
+              "REPR"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "REPR"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "DECIMAL"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "DECIMAL"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "COMPACT"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "COMPACT"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "DOUBLE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "DOUBLE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "direct"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "direct"
+            ],
+            [
+              "temporal",
+              "native"
+            ]
+          ],
+          [
+            [
+              "references",
+              "hinted"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "unhinted"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ]
+        ],
+        "configurations": [
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "direct",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "HEX",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "MULTILINE",
+            "binding": "existing",
+            "call": "rows",
+            "references": "unhinted",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "rows",
+            "references": "hinted",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "HEX",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "hinted",
+            "temporal": "native"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "unhinted",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "rows",
+            "references": "direct",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "HEX",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "rows",
+            "references": "direct",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "BASE64",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "whole",
+            "references": "unhinted",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "SCIENTIFIC",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "hinted",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "direct",
+            "temporal": "native"
+          }
+        ],
+        "programs": 30
+      },
+      "Ruby": {
+        "candidates": 768,
+        "supported_contexts": 768,
+        "admitted_pairs": 160,
+        "inventory": {
+          "literal-variant": {
+            "contexts": 777,
+            "pairs": 51
+          },
+          "call": {
+            "contexts": 332,
+            "pairs": 75
+          },
+          "reference": {
+            "contexts": 5,
+            "pairs": 28
+          }
+        },
+        "pairs_not_present_in_inventory": 65,
+        "unwitnessed_pairs": [
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "bytes",
+              "BASE64"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "call",
+              "rows"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "new"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "new"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "new"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "call",
+              "rows"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "call",
+              "whole"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "HEX"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "HEX"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "float",
+              "REPR"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "REPR"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "DECIMAL"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "DECIMAL"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "COMPACT"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "COMPACT"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "DOUBLE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "DOUBLE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "direct"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "direct"
+            ],
+            [
+              "temporal",
+              "native"
+            ]
+          ],
+          [
+            [
+              "references",
+              "hinted"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "unhinted"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ]
+        ],
+        "configurations": [
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "direct",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "HEX",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "MULTILINE",
+            "binding": "existing",
+            "call": "rows",
+            "references": "unhinted",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "rows",
+            "references": "hinted",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "HEX",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "hinted",
+            "temporal": "native"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "unhinted",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "rows",
+            "references": "direct",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "HEX",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "rows",
+            "references": "direct",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "BASE64",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "whole",
+            "references": "unhinted",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "SCIENTIFIC",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "hinted",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "direct",
+            "temporal": "native"
+          }
+        ],
+        "programs": 30
+      },
+      "Php": {
+        "candidates": 768,
+        "supported_contexts": 768,
+        "admitted_pairs": 160,
+        "inventory": {
+          "literal-variant": {
+            "contexts": 825,
+            "pairs": 51
+          },
+          "call": {
+            "contexts": 356,
+            "pairs": 75
+          },
+          "reference": {
+            "contexts": 94,
+            "pairs": 49
+          }
+        },
+        "pairs_not_present_in_inventory": 63,
+        "unwitnessed_pairs": [
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "bytes",
+              "BASE64"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "call",
+              "rows"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "existing"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "new"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "binding",
+              "new"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "call",
+              "rows"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "call",
+              "whole"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "BASE64"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "HEX"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "bytes",
+              "HEX"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "call",
+              "rows"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "float",
+              "SCIENTIFIC"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "call",
+              "whole"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "float",
+              "REPR"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "REPR"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "integer",
+              "HEX"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "float",
+              "SCIENTIFIC"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "DECIMAL"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "DECIMAL"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "layout",
+              "MULTILINE"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "integer",
+              "HEX"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "COMPACT"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "COMPACT"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "quote",
+              "SINGLE"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "layout",
+              "MULTILINE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "DOUBLE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "DOUBLE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "direct"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "hinted"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "references",
+              "unhinted"
+            ]
+          ],
+          [
+            [
+              "quote",
+              "SINGLE"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "direct"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "direct"
+            ],
+            [
+              "temporal",
+              "native"
+            ]
+          ],
+          [
+            [
+              "references",
+              "hinted"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ],
+          [
+            [
+              "references",
+              "unhinted"
+            ],
+            [
+              "temporal",
+              "ISO"
+            ]
+          ]
+        ],
+        "configurations": [
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "direct",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "HEX",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "MULTILINE",
+            "binding": "existing",
+            "call": "rows",
+            "references": "unhinted",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "rows",
+            "references": "hinted",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "HEX",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "hinted",
+            "temporal": "native"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "unhinted",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "SINGLE",
+            "integer": "DECIMAL",
+            "float": "SCIENTIFIC",
+            "bytes": "BASE64",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "rows",
+            "references": "direct",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "HEX",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "rows",
+            "references": "direct",
+            "temporal": "ISO"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "BASE64",
+            "layout": "COMPACT",
+            "binding": "existing",
+            "call": "whole",
+            "references": "unhinted",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "SCIENTIFIC",
+            "bytes": "HEX",
+            "layout": "COMPACT",
+            "binding": "new",
+            "call": "whole",
+            "references": "hinted",
+            "temporal": "native"
+          },
+          {
+            "quote": "DOUBLE",
+            "integer": "DECIMAL",
+            "float": "REPR",
+            "bytes": "HEX",
+            "layout": "MULTILINE",
+            "binding": "new",
+            "call": "whole",
+            "references": "direct",
+            "temporal": "native"
+          }
+        ],
+        "programs": 30
+      }
+    },
+    "controls": {
+      "wrong_reference_values_detected": [
+        "Python",
+        "JavaScript",
+        "Lua",
+        "Ruby",
+        "Php"
+      ],
+      "expected_native_date_precision_rejection": true,
+      "iso_microseconds_preserved": true,
+      "expected_const_reassignment_rejection": true
+    }
+  }
+}

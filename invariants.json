@@ -1,0 +1,122 @@
+{
+  "phase": "invariants",
+  "elapsed_seconds": 18.002,
+  "details": {
+    "passes": [
+      [
+        "JavaScript",
+        "bound_refs",
+        4
+      ],
+      [
+        "JavaScript",
+        "reference",
+        48
+      ],
+      [
+        "JavaScript",
+        "rename",
+        18
+      ],
+      [
+        "JavaScript",
+        "siblings",
+        16
+      ],
+      [
+        "Lua",
+        "bound_refs",
+        4
+      ],
+      [
+        "Lua",
+        "reference",
+        48
+      ],
+      [
+        "Lua",
+        "rename",
+        18
+      ],
+      [
+        "Lua",
+        "siblings",
+        12
+      ],
+      [
+        "Php",
+        "bound_refs",
+        4
+      ],
+      [
+        "Php",
+        "reference",
+        48
+      ],
+      [
+        "Php",
+        "rename",
+        18
+      ],
+      [
+        "Php",
+        "siblings",
+        16
+      ],
+      [
+        "Python",
+        "bound_refs",
+        4
+      ],
+      [
+        "Python",
+        "reference",
+        48
+      ],
+      [
+        "Python",
+        "rename",
+        18
+      ],
+      [
+        "Python",
+        "siblings",
+        16
+      ],
+      [
+        "Ruby",
+        "reference",
+        48
+      ],
+      [
+        "Ruby",
+        "rename",
+        18
+      ],
+      [
+        "Ruby",
+        "siblings",
+        16
+      ]
+    ],
+    "excluded": {
+      "Lua null slots in a native table": 4,
+      "Ruby API-materialized references": 4
+    },
+    "controls": {
+      "wrong_identity_detected": [
+        "Python",
+        "JavaScript",
+        "Lua",
+        "Ruby",
+        "Php"
+      ],
+      "record_renames": [
+        "person_name",
+        "renamed_field",
+        "Record0"
+      ],
+      "expected_rejection": "reserved Python record field"
+    }
+  }
+}
