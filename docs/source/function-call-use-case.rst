@@ -349,6 +349,24 @@ When you already have separate :class:`~literalizer.LiteralizeResult` objects, o
 It exposes the same preamble reconciliation and file assembly used by ``bound_refs``.
 Prefer ``bound_refs`` for the ordinary case where Literalizer can declare every reference itself.
 
+Sharing record declarations across inputs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Render the fragments with the same language instance and representation options.
+Check that every dependent literal can use the chosen declarations in the target language.
+Two independent renders can infer different types for the same field, even when the input keys match.
+For supported backends, ``record_map_value_typing=WIDE`` pins the type of values in widened maps.
+Where supported, ``default_sequence_element_type`` can align an empty sequence with a populated one.
+Nested fields also need compatible declarations, including the generated type names used at their construction sites.
+
+Pass the declaration results in use order.
+Independent declarations can appear in either order when they share a compatible representation.
+When a declaration references another binding, put that binding first.
+Supply external helpers and imports through the appropriate preamble argument and choose names that can coexist with the generated declarations.
+If separate fragments infer conflicting definitions for the same generated type name, choose compatible representation options before rendering.
+When dependent literals already target a shared schema, the caller can compile them against its declarations.
+Compile or execute the complete result with the target toolchain to check that contract.
+
 Snake case is the recommended authoring convention for ``$ref`` names: ``pyhumps`` converts ``snake_case`` to every other case without loss.
 Inputs in other conventions are normalized to ``snake_case`` first, so ``userObj`` or ``UserObj`` also convert correctly, but at the cost of losing any preserved acronyms: ``HTTPRequest`` normalizes to ``http_request`` and converts back to Pascal case as ``HttpRequest``.
 
