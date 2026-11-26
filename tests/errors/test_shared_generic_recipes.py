@@ -7,7 +7,7 @@ import pytest
 from literalizer import (
     InputFormat,
     LanguageCls,
-    literalize_invocations,
+    literalize_call,
 )
 from literalizer._language import CallSupport
 from literalizer.exceptions import (
@@ -38,7 +38,7 @@ def test_shared_recipe_rejects_unsupported_calls(
         else CallsNotSupportedByToolError
     )
     with pytest.raises(expected_exception=error):
-        _ = literalize_invocations(
+        _ = literalize_call(
             source="[[1]]",
             input_format=InputFormat.JSON,
             language=language,

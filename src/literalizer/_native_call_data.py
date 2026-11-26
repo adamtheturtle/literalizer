@@ -17,6 +17,7 @@ from literalizer._literalize import (
 from literalizer._parsing import InputFormat, parse_input
 from literalizer._types import Scalar, Value, ValueInput
 from literalizer.exceptions import NativeCallError
+from literalizer.languages import ALL_LANGUAGES
 from literalizer.native_calls import (
     ConstructorTarget,
     FunctionTarget,
@@ -31,7 +32,7 @@ from literalizer.native_calls import (
     ScalarType,
 )
 
-_MISSING = object()
+MISSING = object()
 
 
 def _is_mapping(value: object, /) -> TypeIs[dict[object, object]]:
@@ -162,7 +163,7 @@ def _operand(
         return NativeLiteral(value=values[index])
     if "zipped" in fields:
         validate_native_fields(fields, {"zipped"}, {"zipped"})
-        if fields["zipped"] is not True or zipped is _MISSING:
+        if fields["zipped"] is not True or zipped is MISSING:
             msg = "Native zipped operand requires a companion value"
             raise NativeCallError(msg)
         # The upstream literal conversion validates these values.
@@ -172,17 +173,15 @@ def _operand(
         return NativeLiteral(value=_value(fields["literal"]))
     if "reference" in fields:
         return _reference(fields)
-    return native_invocation_from_data(
-        spec=fields, values=values, zipped=zipped
-    )
+    return invocation_from_data(spec=fields, values=values, zipped=zipped)
 
 
 @beartype
-def native_invocation_from_data(
+def invocation_from_data(
     *,
     spec: Mapping[str, object],
     values: Sequence[ValueInput],
-    zipped: object = _MISSING,
+    zipped: object,
 ) -> NativeInvocation:
     """Build a native expression from a validated declarative recipe.
 
@@ -243,7 +242,7 @@ def native_invocation_from_data(
             elif "reference" in receiver_data:
                 receiver = _reference(receiver_data)
             else:
-                receiver = native_invocation_from_data(
+                receiver = invocation_from_data(
                     spec=receiver_data, values=values, zipped=zipped
                 )
             target = MessageTarget(
@@ -276,7 +275,7 @@ def _source_rows(
         rows = data
     else:
         rows = [data]
-    zipped_values: list[object] = [_MISSING] * len(rows)
+    zipped_values: list[object] = [MISSING] * len(rows)
     if zip_source is not None and zip_input_format is not None:
         companion = parse_input(
             source=zip_source, input_format=zip_input_format
@@ -290,18 +289,43 @@ def _source_rows(
 
 
 @beartype
+def select_language_recipe(
+    recipe: Mapping[str, object], language: Language, /
+) -> dict[str, object]:
+    """Resolve explicit overrides without inferring names or
+    signatures.
+    """
+    validate_native_fields(recipe, {"default", "languages"}, {"default"})
+    default = native_recipe_mapping(recipe["default"])
+    overrides = native_recipe_mapping(recipe.get("languages", {}))
+    language_id = language.pygments_name
+    known = {spec.pygments_name for spec in ALL_LANGUAGES} | {language_id}
+    unknown = set(overrides) - known
+    if len(unknown) > 0:
+        msg = f"Unknown invocation languages: {sorted(unknown)}"
+        raise NativeCallError(msg)
+    # Native recipes replace the generic default; generic overrides amend it.
+    selected: dict[str, object] = (
+        {}
+        if language_id is None
+        else native_recipe_mapping(overrides.get(language_id, {}))
+    )
+    return selected if "native" in selected else {**default, **selected}
+
+
+@beartype
 def render_native_recipe(
     *,
     source: str,
     input_format: InputFormat,
     language: Language,
     invocation: Mapping[str, object],
-    per_element: bool = True,
-    zip_source: str | None = None,
-    zip_input_format: InputFormat | None = None,
-    variable_form: NewVariable | ExistingVariable | None = None,
-    pre_indent_level: int = 0,
-    initial_column: int = 0,
+    per_element: bool,
+    zip_source: str | None,
+    zip_input_format: InputFormat | None,
+    variable_form: NewVariable | ExistingVariable | None,
+    pre_indent_level: int,
+    initial_column: int,
 ) -> LiteralizeResult:
     """Render source rows through an explicit native invocation recipe.
 
@@ -324,7 +348,7 @@ def render_native_recipe(
             msg = f"Native call row {index} must be a list"
             raise NativeCallError(msg)
         try:
-            native = native_invocation_from_data(
+            native = invocation_from_data(
                 spec=invocation, values=row, zipped=zipped_values[index]
             )
             results.append(

@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from literalizer import InputFormat, literalize_invocations
+from literalizer import InputFormat, literalize_call
 
 from .golden_checks import check_golden, format_consumer
 from .shared_checked_cases import SharedCheckedCase, shared_checked_cases
@@ -30,7 +30,7 @@ def test_shared_checked_golden(
 ) -> None:
     """The actual public result must call receivers and pair expected rows."""
     recipe = case.recipe
-    result = literalize_invocations(
+    result = literalize_call(
         source=recipe.source,
         input_format=InputFormat.JSON,
         zip_source=recipe.zip_source,

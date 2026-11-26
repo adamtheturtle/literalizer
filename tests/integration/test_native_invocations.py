@@ -11,6 +11,7 @@ from pydantic import BaseModel, TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
+from literalizer._native_call_data import MISSING, invocation_from_data
 from literalizer.languages import ObjectiveC, Python
 
 from .native_invocation_cases import (
@@ -118,10 +119,10 @@ def test_native_invocation_golden(
         zipped = step.get("zipped")
         initial_column = step.get("initial_column", 0)
         if step.get("single", False):
-            result = literalizer.literalize_invocations(
+            result = literalizer.literalize_call(
                 language=step_spec,
-                invocation=literalizer.native_invocation_from_data(
-                    spec=step["invocation"], values=()
+                invocation=invocation_from_data(
+                    spec=step["invocation"], values=(), zipped=MISSING
                 ),
                 variable_form=form,
                 initial_column=initial_column,
@@ -142,7 +143,7 @@ def test_native_invocation_golden(
                         step_spec.pygments_name: {"native": invocation},
                     },
                 }
-            result = literalizer.literalize_invocations(
+            result = literalizer.literalize_call(
                 source=json.dumps(obj=step["rows"]),
                 input_format=literalizer.InputFormat.JSON,
                 language=step_spec,
@@ -246,7 +247,7 @@ def test_native_legacy_callback_still_works() -> None:
     """Existing backend callbacks need not implement positioned
     rendering.
     """
-    result = literalizer.literalize_invocations(
+    result = literalizer.literalize_call(
         language=_LegacyNativeBackend(),
         invocation=literalizer.NativeInvocation(
             target=literalizer.ConstructorTarget(class_name="NSObject"),
@@ -261,7 +262,7 @@ def test_native_legacy_callback_still_works() -> None:
         expected_exception=literalizer.NativeCallError,
         match="does not support initial_column",
     ):
-        _ = literalizer.literalize_invocations(
+        _ = literalizer.literalize_call(
             language=_LegacyNativeBackend(),
             invocation=literalizer.NativeInvocation(
                 target=literalizer.ConstructorTarget(class_name="NSObject"),

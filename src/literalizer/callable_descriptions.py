@@ -4,23 +4,17 @@ from collections.abc import Callable, Mapping
 
 from beartype import beartype
 
+from literalizer import _native_call_data
 from literalizer._language import Language
 from literalizer._literalize import validate_call_target
 from literalizer._native_rendering import validate_native_selector
 from literalizer.exceptions import NativeCallError
-from literalizer.invocations import select_language_recipe
-from literalizer.native_call_data import (
-    native_recipe_list,
-    native_recipe_mapping,
-    native_recipe_text,
-    validate_native_fields,
-)
 from literalizer.native_calls import NativeInvocationLanguage
 
 
 def _text(value: object, /) -> str:
     """Require a nonempty single-line description field."""
-    text = native_recipe_text(value)
+    text = _native_call_data.native_recipe_text(value)
     if len(text.strip()) == 0 or "\n" in text or "\r" in text:
         msg = "Callable description fields must be single-line text"
         raise NativeCallError(msg)
@@ -61,11 +55,11 @@ def describe_callable(
     """
     shared = "default" in description or "languages" in description
     selected = (
-        select_language_recipe(description, language)
+        _native_call_data.select_language_recipe(description, language)
         if shared
         else dict(description)
     )
-    validate_native_fields(
+    _native_call_data.validate_native_fields(
         selected,
         {
             "name",
@@ -79,10 +73,10 @@ def describe_callable(
     )
     overrides: dict[str, object] = {}
     if shared and language.pygments_name is not None:
-        overrides = native_recipe_mapping(
-            native_recipe_mapping(description.get("languages", {})).get(
-                language.pygments_name, {}
-            )
+        overrides = _native_call_data.native_recipe_mapping(
+            _native_call_data.native_recipe_mapping(
+                description.get("languages", {})
+            ).get(language.pygments_name, {})
         )
     name = _text(selected["name"])
     if name_renamer is not None and "name" not in overrides:
@@ -94,7 +88,9 @@ def describe_callable(
     )
     parameters = [
         _text(value)
-        for value in native_recipe_list(selected["parameter-names"])
+        for value in _native_call_data.native_recipe_list(
+            selected["parameter-names"]
+        )
     ]
     if parameter_renamer is not None and "parameter-names" not in overrides:
         parameters = [_text(parameter_renamer(value)) for value in parameters]
