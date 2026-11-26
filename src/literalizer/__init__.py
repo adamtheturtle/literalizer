@@ -48,8 +48,6 @@ from literalizer.api import (
 )
 from literalizer.callable_descriptions import describe_callable
 from literalizer.exceptions import LiteralizerError, NativeCallError
-from literalizer.invocations import literalize_invocations
-from literalizer.native_call_data import native_invocation_from_data
 from literalizer.native_calls import (
     ConstructorTarget,
     FunctionTarget,
@@ -115,6 +113,4 @@ __all__ = [
     "literalize",
     "literalize_call",
     "literalize_call_with_declarations",
-    "literalize_invocations",
-    "native_invocation_from_data",
 ]

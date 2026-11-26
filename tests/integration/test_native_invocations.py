@@ -11,6 +11,7 @@ from pydantic import BaseModel, TypeAdapter
 from pytest_regressions.file_regression import FileRegressionFixture
 
 import literalizer
+from literalizer._native_call_data import MISSING, invocation_from_data
 from literalizer.languages import ObjectiveC, Python
 
 from .native_invocation_cases import (
@@ -120,8 +121,8 @@ def test_native_invocation_golden(
         if step.get("single", False):
             result = literalizer.literalize_call(
                 language=step_spec,
-                invocation=literalizer.native_invocation_from_data(
-                    spec=step["invocation"], values=()
+                invocation=invocation_from_data(
+                    spec=step["invocation"], values=(), zipped=MISSING
                 ),
                 variable_form=form,
                 initial_column=initial_column,
@@ -269,36 +270,3 @@ def test_native_legacy_callback_still_works() -> None:
             ),
             initial_column=1,
         )
-
-
-def test_deprecated_invocation_entry_point() -> None:
-    """The released renderer accepts typed invocations and recipes."""
-    language = ObjectiveC()
-    recipe = {"constructor": "NSObject"}
-    invocation = literalizer.native_invocation_from_data(
-        spec=recipe, values=()
-    )
-    with pytest.warns(
-        expected_warning=DeprecationWarning, match="Use literalize_call"
-    ):
-        typed = literalizer.literalize_invocations(
-            language=language, invocation=invocation
-        )
-    assert typed == literalizer.literalize_call(
-        language=language, invocation=invocation
-    )
-    with pytest.warns(
-        expected_warning=DeprecationWarning, match="Use literalize_call"
-    ):
-        from_recipe = literalizer.literalize_invocations(
-            source="[[]]",
-            input_format=literalizer.InputFormat.JSON,
-            language=language,
-            invocation=recipe,
-        )
-    assert from_recipe == literalizer.literalize_call(
-        source="[[]]",
-        input_format=literalizer.InputFormat.JSON,
-        language=language,
-        invocation=recipe,
-    )

@@ -7,7 +7,6 @@ root.
 
 import dataclasses
 import enum
-import warnings
 from collections.abc import Callable, Collection, Mapping, Sequence
 from typing import ClassVar, overload
 
@@ -1161,98 +1160,6 @@ def literalize_call(
     if isinstance(variable_form, BothVariableForms):
         msg = "Invocations require a single variable form"
         raise NativeCallError(msg)
-    return _render_call_with_invocation(
-        source=source,
-        input_format=input_format,
-        language=language,
-        invocation=invocation,
-        per_element=per_element,
-        zip_source=zip_source,
-        zip_input_format=zip_input_format,
-        variable_form=variable_form,
-        pre_indent_level=pre_indent_level,
-        initial_column=initial_column,
-    )
-
-
-@overload
-def literalize_invocations(
-    *,
-    language: Language,
-    invocation: NativeInvocation,
-    variable_form: NewVariable | ExistingVariable | None = None,
-    pre_indent_level: int = 0,
-    initial_column: int = 0,
-) -> LiteralizeResult: ...
-
-
-@overload
-def literalize_invocations(
-    *,
-    source: str,
-    input_format: InputFormat,
-    language: Language,
-    invocation: Mapping[str, object],
-    per_element: bool = True,
-    zip_source: str | None = None,
-    zip_input_format: InputFormat | None = None,
-    variable_form: NewVariable | ExistingVariable | None = None,
-    pre_indent_level: int = 0,
-    initial_column: int = 0,
-) -> LiteralizeResult: ...
-
-
-def literalize_invocations(
-    *,
-    source: str | None = None,
-    input_format: InputFormat | None = None,
-    language: Language,
-    invocation: Mapping[str, object] | NativeInvocation,
-    per_element: bool = True,
-    zip_source: str | None = None,
-    zip_input_format: InputFormat | None = None,
-    variable_form: NewVariable | ExistingVariable | None = None,
-    pre_indent_level: int = 0,
-    initial_column: int = 0,
-) -> LiteralizeResult:
-    """Render an invocation.
-
-    Use :func:`literalize_call` with the same arguments.
-    """
-    warnings.warn(
-        message="Use literalize_call instead of literalize_invocations.",
-        category=DeprecationWarning,
-        stacklevel=2,
-    )
-    return _render_call_with_invocation(
-        source=source,
-        input_format=input_format,
-        language=language,
-        invocation=invocation,
-        per_element=per_element,
-        zip_source=zip_source,
-        zip_input_format=zip_input_format,
-        variable_form=variable_form,
-        pre_indent_level=pre_indent_level,
-        initial_column=initial_column,
-    )
-
-
-@beartype
-def _render_call_with_invocation(
-    *,
-    source: str | None,
-    input_format: InputFormat | None,
-    language: Language,
-    invocation: Mapping[str, object] | NativeInvocation,
-    per_element: bool,
-    zip_source: str | None,
-    zip_input_format: InputFormat | None,
-    variable_form: NewVariable | ExistingVariable | None,
-    pre_indent_level: int,
-    initial_column: int,
-) -> LiteralizeResult:
-    """Render an invocation using its typed or recipe form."""
     if isinstance(invocation, NativeInvocation):
         if (
             source is not None
