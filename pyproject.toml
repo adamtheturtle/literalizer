@@ -157,7 +157,7 @@ fixture-inventory = [
     "pydantic==2.14.4",
 ]
 # Python parsers used by the corresponding native checks and round trips.
-norg = [ "tree-sitter==0.26.1" ]
+norg = [ "tree-sitter==0.27.0" ]
 release = [
     "check-wheel-contents==0.6.3",
     "towncrier==26.9.0",
